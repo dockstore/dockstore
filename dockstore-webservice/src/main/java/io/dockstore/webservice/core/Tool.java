@@ -39,6 +39,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.Check;
 
 /**
  * This describes one tool in the dockstore, extending entry with fields necessary to describe bioinformatics tools.
@@ -66,6 +67,7 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPath", query = "SELECT c FROM Tool c WHERE c.path = :path AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByNamespace", query = "SELECT c FROM Tool c WHERE lower(c.namespace) = lower(:namespace) AND c.isPublished = true ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE ((c.path LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true") })
+@Check(constraints = "(defaultwdlpath is not null or defaultcwlpath is not null)")
 public class Tool extends Entry<Tool, Tag> {
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
@@ -77,7 +79,7 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true)
     private String name;
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("default_dockerfile_path")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true)
     private String defaultDockerfilePath = "/Dockerfile";
@@ -88,7 +90,7 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true)
     private String defaultCwlPath = "/Dockstore.cwl";
 
-    @Column(columnDefinition = "text")
+    @Column(columnDefinition = "text default '/Dockstore.wdl'")
     @JsonProperty("default_wdl_path")
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
@@ -108,12 +110,12 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "The email address of the tool maintainer. Required for private repositories", required = false)
     private String toolMaintainerEmail = "";
 
-    @Column
+    @Column(columnDefinition = "boolean default false")
     @JsonProperty("private_access")
     @ApiModelProperty(value = "Is the docker image private or not.", required = true)
     private boolean privateAccess = false;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "Text default ''")
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "

@@ -23,6 +23,8 @@ import java.util.List;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Organizes all methods that have to do with parsing of input and creation of output.
@@ -31,6 +33,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  * @author dyuen
  */
 public final class ArgumentUtility {
+
     public static final String CONVERT = "convert";
     public static final String LAUNCH = "launch";
     public static final String CWL_STRING = "cwl";
@@ -39,6 +42,8 @@ public final class ArgumentUtility {
     public static final String DESCRIPTION_HEADER = "DESCRIPTION";
     public static final String GIT_HEADER = "Git Repo";
     public static final int MAX_DESCRIPTION = 50;
+
+    private static final Logger LOG = LoggerFactory.getLogger(ArgumentUtility.class);
 
     private ArgumentUtility() {
         // hide the constructor for utility classes

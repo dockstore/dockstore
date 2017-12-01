@@ -1,0 +1,66 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2017 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd" context="1.3.1.consistency">
+
+    <!-- upgrade production from varchar to text -->
+    <changeSet author="dyuen (generated)" id="1511451548130-5">
+        <modifyDataType columnName="defaulttestcwlparameterfile" newDataType="clob" tableName="tool"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511451548130-6">
+        <modifyDataType columnName="defaulttestparameterfilepath" newDataType="clob" tableName="workflow"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511451548130-7">
+        <modifyDataType columnName="defaulttestwdlparameterfile" newDataType="clob" tableName="tool"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511467543373-5">
+        <modifyDataType columnName="toolname" newDataType="clob" tableName="tool"/>
+    </changeSet>
+    <changeSet author="dyuen" id="fix toolname default">
+        <addDefaultValue tableName="tool" columnName="toolname" defaultValue=""/>
+    </changeSet>
+
+
+    <!-- replace null constraint with check constraint -->
+    <changeSet author="dyuen (generated)" id="1511467543373-3">
+        <dropNotNullConstraint columnDataType="clob" columnName="defaultcwlpath" tableName="tool"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511467543373-4">
+        <dropNotNullConstraint columnDataType="clob" columnName="defaultwdlpath" tableName="tool"/>
+    </changeSet>
+    <changeSet author="dyuen" id="add check constraint">
+        <sql>alter table tool add constraint tool_check check (defaultwdlpath is not null or defaultcwlpath is not null)</sql>
+    </changeSet>
+
+
+    <!-- remember to just delete the one odd workflow with null paths in sourcefiles -->
+    <changeSet author="dyuen (generated)-edited" id="1511451548130-11">
+        <sql>delete from version_sourcefile where sourcefileid IN (select id from sourcefile where path is null)</sql>
+        <sql>delete from sourcefile where path is null</sql>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="path" tableName="sourcefile"/>
+    </changeSet>
+
+    <!-- remember to just delete the odd tool with a null registry -->
+    <changeSet author="dyuen (generated)-edited" id="1511451548130-13">
+        <sql>delete from tool_tag where toolid IN (select id from tool where registry is null)</sql>
+        <sql>delete from tool where registry is null</sql>
+        <addNotNullConstraint columnDataType="varchar(255)" columnName="registry" tableName="tool"/>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="1511451548130-18">
+        <addNotNullConstraint columnDataType="clob" columnName="workflowpath" tableName="workflowversion"/>
+    </changeSet>
+</databaseChangeLog>

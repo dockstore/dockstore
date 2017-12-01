@@ -118,7 +118,7 @@
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-models</artifactId>
-            <version>1.5.9</version>
+            <version>${swagger-annotations-version}</version>
         </dependency>
 
         <dependency>
@@ -744,6 +744,75 @@
                                 </fileset>
                             </filesets>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- use this to check out the difference between webservice_test and webservice_test_old
+                     note that target/detected-migrations.xml will be redundantly appended to each time if not empty
+                -->
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-maven-plugin</artifactId>
+                <version>3.5.3</version>
+                <configuration>
+                    <driver>org.postgresql.Driver</driver>
+                    <referenceDriver>org.postgresql.Driver</referenceDriver>
+                    <username>dockstore</username>
+                    <referenceUsername>dockstore</referenceUsername>
+                    <password>dockstore</password>
+                    <referencePassword>dockstore</referencePassword>
+                    <url>jdbc:postgresql://localhost:5432/webservice_test</url>
+                    <referenceUrl>jdbc:postgresql://localhost:5432/webservice_test_proposed</referenceUrl>
+
+                    <changeLogFile>src/main/resources/migrations.xml</changeLogFile>
+                    <logging>info</logging>
+                    <diffChangeLogFile>target/detected-migrations.xml</diffChangeLogFile>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${postgresql.version}</version>
+                        <scope>runtime</scope>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>com.github.kongchen</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <version>3.1.5</version>
+                <configuration>
+                    <apiSources>
+                        <apiSource>
+                            <springmvc>false</springmvc>
+                            <locations>
+                                <location>io.swagger.api</location>
+                                <location>io.dockstore.webservice.resources</location>
+                                <location>io.dockstore.webservice.resources.rss</location>
+                                <location>io.dockstore.webservice.resources.proposedGA4GH</location>
+                            </locations>
+                            <swaggerDirectory>${pom.basedir}/src/main/resources</swaggerDirectory>
+                            <swaggerFileName>swagger</swaggerFileName>
+                            <outputFormats>yaml</outputFormats>
+                            <basePath>/</basePath>
+                            <!-- "can be used to strictly use the official Swagger reader in order to generate the exact same output as Swagger''s runtime generation (with all its bugs). "
+                            <swaggerApiReader>com.github.kongchen.swagger.docgen.reader.SwaggerReader</swaggerApiReader>
+                            -->
+                            <attachSwaggerArtifact>true</attachSwaggerArtifact>
+                            <securityDefinitions>
+                                <securityDefinition>
+                                    <json>/securityDefinition.json</json>
+                                </securityDefinition>
+                            </securityDefinitions>
+                        </apiSource>
+                    </apiSources>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

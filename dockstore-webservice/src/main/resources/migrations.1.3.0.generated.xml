@@ -1,0 +1,382 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd" context="1.3.0.generated">
+    <changeSet author="dyuen (generated)" id="1511468490651-1">
+        <createSequence sequenceName="container_id_seq"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-2">
+        <createSequence sequenceName="tag_id_seq"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-3">
+        <createTable tableName="enduser">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="enduser_pkey"/>
+            </column>
+            <column name="avatarurl" type="VARCHAR(255)"/>
+            <column name="bio" type="VARCHAR(255)"/>
+            <column name="company" type="VARCHAR(255)"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="isadmin" type="BOOLEAN"/>
+            <column name="location" type="VARCHAR(255)"/>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-4">
+        <createTable tableName="endusergroup">
+            <column name="groupid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-5">
+        <createTable tableName="entry_label">
+            <column name="entryid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="labelid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-6">
+        <createTable tableName="label">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="label_pkey"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-7">
+        <createTable tableName="sourcefile">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="sourcefile_pkey"/>
+            </column>
+            <column name="content" type="TEXT"/>
+            <column name="path" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-8">
+        <createTable tableName="starred">
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entryid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-9">
+        <createTable tableName="tag">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="dirtybit" type="BOOLEAN"/>
+            <column name="hidden" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP(6) WITHOUT TIME ZONE"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="reference" type="VARCHAR(255)"/>
+            <column name="valid" type="BOOLEAN"/>
+            <column defaultValueBoolean="false" name="verified" type="BOOLEAN"/>
+            <column name="verifiedsource" type="VARCHAR(255)"/>
+            <column name="automated" type="BOOLEAN"/>
+            <column name="cwlpath" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dockerfilepath" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imageid" type="VARCHAR(255)"/>
+            <column name="size" type="BIGINT"/>
+            <column defaultValue="/Dockstore.wdl" name="wdlpath" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-10">
+        <createTable tableName="token">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="token_pkey"/>
+            </column>
+            <column name="content" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="refreshtoken" type="VARCHAR(255)"/>
+            <column name="tokensource" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="userid" type="BIGINT"/>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-11">
+        <createTable tableName="tool">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="defaultversion" type="VARCHAR(255)"/>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="INT"/>
+            <column name="lastupdated" type="TIMESTAMP(6) WITHOUT TIME ZONE"/>
+            <column name="defaultcwlpath" type="TEXT"/>
+            <column name="defaultdockerfilepath" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="defaulttestcwlparameterfile" type="TEXT"/>
+            <column name="defaulttestwdlparameterfile" type="TEXT"/>
+            <column defaultValue="/Dockstore.wdl" name="defaultwdlpath" type="TEXT"/>
+            <column name="lastbuild" type="TIMESTAMP(6) WITHOUT TIME ZONE"/>
+            <column defaultValue="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="namespace" type="VARCHAR(255)"/>
+            <column name="path" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="privateaccess" type="BOOLEAN"/>
+            <column name="registry" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="toolmaintaineremail" type="VARCHAR(255)"/>
+            <column name="toolname" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-12">
+        <createTable tableName="tool_tag">
+            <column name="toolid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tagid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-13">
+        <createTable tableName="user_entry">
+            <column name="userid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entryid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-14">
+        <createTable tableName="usergroup">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="usergroup_pkey"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-15">
+        <createTable tableName="version_sourcefile">
+            <column name="versionid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sourcefileid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-16">
+        <createTable tableName="workflow">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="defaultversion" type="VARCHAR(255)"/>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="giturl" type="VARCHAR(255)"/>
+            <column name="ispublished" type="BOOLEAN"/>
+            <column name="lastmodified" type="INT"/>
+            <column name="lastupdated" type="TIMESTAMP(6) WITHOUT TIME ZONE"/>
+            <column name="defaulttestparameterfilepath" type="TEXT"/>
+            <column name="defaultworkflowpath" type="TEXT"/>
+            <column name="descriptortype" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="STUB" name="mode" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organization" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="path" type="VARCHAR(255)"/>
+            <column name="repository" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowname" type="TEXT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-17">
+        <createTable tableName="workflow_workflowversion">
+            <column name="workflowid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="workflowversionid" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-18">
+        <createTable tableName="workflowversion">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="dirtybit" type="BOOLEAN"/>
+            <column name="hidden" type="BOOLEAN"/>
+            <column name="lastmodified" type="TIMESTAMP(6) WITHOUT TIME ZONE"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="reference" type="VARCHAR(255)"/>
+            <column name="valid" type="BOOLEAN"/>
+            <column defaultValueBoolean="false" name="verified" type="BOOLEAN"/>
+            <column name="verifiedsource" type="VARCHAR(255)"/>
+            <column name="workflowpath" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-19">
+        <addPrimaryKey columnNames="userid, groupid" constraintName="endusergroup_pkey" tableName="endusergroup"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-20">
+        <addPrimaryKey columnNames="entryid, labelid" constraintName="entry_label_pkey" tableName="entry_label"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-21">
+        <addPrimaryKey columnNames="entryid, userid" constraintName="starred_pkey" tableName="starred"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-22">
+        <addPrimaryKey columnNames="id" constraintName="tag_pkey" tableName="tag"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-23">
+        <addPrimaryKey columnNames="id" constraintName="tool_pkey" tableName="tool"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-24">
+        <addPrimaryKey columnNames="toolid, tagid" constraintName="tool_tag_pkey" tableName="tool_tag"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-25">
+        <addPrimaryKey columnNames="entryid, userid" constraintName="user_entry_pkey" tableName="user_entry"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-26">
+        <addPrimaryKey columnNames="versionid, sourcefileid" constraintName="version_sourcefile_pkey" tableName="version_sourcefile"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-27">
+        <addPrimaryKey columnNames="id" constraintName="workflow_pkey" tableName="workflow"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-28">
+        <addPrimaryKey columnNames="workflowid, workflowversionid" constraintName="workflow_workflowversion_pkey" tableName="workflow_workflowversion"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-29">
+        <addPrimaryKey columnNames="id" constraintName="workflowversion_pkey" tableName="workflowversion"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-30">
+        <addUniqueConstraint columnNames="username" constraintName="uk_9vcoeu4nuu2ql7fh05mn20ydd" tableName="enduser"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-31">
+        <addUniqueConstraint columnNames="value" constraintName="uk_9xhsn1bsea2csoy3l0gtq41vv" tableName="label"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-32">
+        <addUniqueConstraint columnNames="sourcefileid" constraintName="uk_e2j71kjdot9b8l5qmjw2ve38o" tableName="version_sourcefile"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-33">
+        <addUniqueConstraint columnNames="workflowversionid" constraintName="uk_encl8hnebnkcaxj9tlugr9cxh" tableName="workflow_workflowversion"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-34">
+        <addUniqueConstraint columnNames="tagid" constraintName="uk_jdgfioq44aqox39xrs1wceow1" tableName="tool_tag"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-35">
+        <addUniqueConstraint columnNames="registry, namespace, name, toolname" constraintName="ukbq5vy17y4ocaist3d3r3imcus" tableName="tool"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-36">
+        <addUniqueConstraint columnNames="organization, repository, workflowname" constraintName="ukkprrtg54h6rjca5l1navospm8" tableName="workflow"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)-edited" id="1511391708947-37">
+        <createIndex indexName="full_tool_name" tableName="tool" unique="true">
+            <column computed="true" name="registry"/>
+            <column computed="true" name="namespace"/>
+            <column computed="true" name="name"/>
+            <column computed="true" name="toolname"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <append value=" WHERE toolname IS NOT NULL"/>
+        </modifySql>
+    </changeSet>
+    <changeSet author="dyuen (generated)-edited" id="1511391708947-38">
+        <createIndex indexName="full_workflow_name" tableName="workflow" unique="true">
+            <column computed="true" name="organization"/>
+            <column computed="true" name="repository"/>
+            <column computed="true" name="workflowname"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <append value=" WHERE workflowname IS NOT NULL"/>
+        </modifySql>
+    </changeSet>
+    <changeSet author="dyuen (generated)-edited" id="1511391708947-39">
+        <createIndex indexName="partial_tool_name" tableName="tool" unique="true">
+            <column computed="true" name="registry"/>
+            <column computed="true" name="namespace"/>
+            <column computed="true" name="name"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <append value=" WHERE toolname IS NULL"/>
+        </modifySql>
+    </changeSet>
+    <changeSet author="dyuen (generated)-edited" id="1511391708947-40">
+        <createIndex indexName="partial_workflow_name" tableName="workflow" unique="true">
+            <column computed="true" name="organization"/>
+            <column computed="true" name="repository"/>
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <append value=" WHERE workflowname IS NULL"/>
+        </modifySql>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-41">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="starred" constraintName="fkdcfqiy0arvxmmh5e68ix75gwo" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-42">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="user_entry" constraintName="fkhdtovkjeuj2u4adc073nh02w" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-43">
+        <addForeignKeyConstraint baseColumnNames="workflowversionid" baseTableName="workflow_workflowversion" constraintName="fkibmeux3552ua8dwnqdb8w6991" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflowversion"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-44">
+        <addForeignKeyConstraint baseColumnNames="tagid" baseTableName="tool_tag" constraintName="fkjkn6qubuvn25bun52eqjleyl6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tag"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-45">
+        <addForeignKeyConstraint baseColumnNames="toolid" baseTableName="tool_tag" constraintName="fkjtsjg6jdnwxoeicd27ujmeeaj" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-46">
+        <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="workflow_workflowversion" constraintName="fkl8yg13ahjhtn0notrlf3amwwi" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-47">
+        <addForeignKeyConstraint baseColumnNames="groupid" baseTableName="endusergroup" constraintName="fkm0exig2r3dsxqafwaraf7rnr3" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="usergroup"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-48">
+        <addForeignKeyConstraint baseColumnNames="sourcefileid" baseTableName="version_sourcefile" constraintName="fkmby5o476bdwrx07ax2keoyttn" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="sourcefile"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-49">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="endusergroup" constraintName="fkrxn6hh2max4sk4ceehyv7mt2e" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511468490651-50">
+        <addForeignKeyConstraint baseColumnNames="labelid" baseTableName="entry_label" constraintName="fks71c9mk0f98015eqgtyvs0ewp" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="label"/>
+    </changeSet>
+</databaseChangeLog>

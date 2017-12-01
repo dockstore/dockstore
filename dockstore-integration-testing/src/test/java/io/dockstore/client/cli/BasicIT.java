@@ -16,32 +16,23 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.Assertion;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
@@ -51,11 +42,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  * @author aduncan
  */
 @Category(ConfidentialTest.class)
-public class BasicIT {
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
-
+public class BasicIT extends BaseIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -66,8 +53,9 @@ public class BasicIT {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearStateMakePrivate();
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
         /*

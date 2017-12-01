@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.resources;
 
+import javax.ws.rs.ext.Provider;
+
 import io.swagger.annotations.Contact;
 import io.swagger.annotations.ExternalDocs;
 import io.swagger.annotations.Info;
@@ -35,6 +37,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  *
  * @author dyuen
  */
+@Provider
 @SwaggerDefinition(info = @Info(description =
         "This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as "
                 + "CWL documents and Dockerfiles used to build those images", version = "1.3.0", title = "Dockstore API", contact = @Contact(name = "Dockstore@ga4gh", email = " theglobalalliance@genomicsandhealth.org", url = "https://github.com/ga4gh/dockstore"), license = @License(name = " GNU Lesser General Public License", url = "https://www.gnu.org/licenses/lgpl-3.0.en.html")), consumes = "application/json", produces = "application/json", tags = {

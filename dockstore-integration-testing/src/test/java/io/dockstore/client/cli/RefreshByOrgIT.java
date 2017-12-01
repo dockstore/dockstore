@@ -18,7 +18,6 @@ package io.dockstore.client.cli;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.client.Client;
@@ -34,18 +33,13 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
-import io.swagger.client.ApiException;
+import io.dropwizard.testing.DropwizardTestSupport;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.glassfish.jersey.client.ClientProperties;
-import org.junit.Before;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -54,9 +48,20 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class RefreshByOrgIT {
 
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
+    }
+
     // Travis is slow, need to wait up to 1 min for webservice to return
     private static final int WAIT_TIME = 60000;
     private static final List<String> newDockstoreTestUser2Tools = Arrays.asList("dockstore-tool-imports");
@@ -75,19 +80,15 @@ public class RefreshByOrgIT {
     private static List<Workflow> previousWorkflows;
 
     @BeforeClass
-    public static void clearDBandSetup() throws IOException, TimeoutException, ApiException {
-        clearStateMakePrivate2();
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+    public static void clearDBandSetup() throws Exception {
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());
-        Environment environment = RULE.getEnvironment();
+        Environment environment = SUPPORT.getEnvironment();
         token = testingPostgres.runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>());
         client = new JerseyClientBuilder(environment).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
         objectMapper = environment.getObjectMapper();
-    }
-
-    @Before
-    public void clearDB() throws IOException, TimeoutException, ApiException {
-        clearStateMakePrivate2();
     }
 
     private void checkInitialDB() throws IOException {
@@ -169,7 +170,7 @@ public class RefreshByOrgIT {
     }
 
     private List<Tool> clientHelperTool(String url) throws IOException {
-        Response response = client.target(String.format(url, RULE.getLocalPort())).request()
+        Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
         return objectMapper.readValue(entity, new TypeReference<List<Tool>>() {
@@ -275,7 +276,7 @@ public class RefreshByOrgIT {
     }
 
     private List<Workflow> clientHelperWorkflow(String url) throws IOException {
-        Response response = client.target(String.format(url, RULE.getLocalPort())).request()
+        Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
         return objectMapper.readValue(entity, new TypeReference<List<Workflow>>() {

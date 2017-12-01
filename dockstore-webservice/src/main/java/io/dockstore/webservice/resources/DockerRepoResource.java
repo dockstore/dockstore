@@ -413,7 +413,7 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Delete manually registered image", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "Delete a tool", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid "))
     public Response deleteContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool id to delete", required = true) @PathParam("containerId") Long containerId) {
@@ -421,20 +421,16 @@ public class DockerRepoResource {
         Helper.checkUser(user, tool);
         Tool deleteTool = new Tool();
         deleteTool.setId(tool.getId());
-        // only allow users to delete manually added images
-        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
-            tool.getTags().clear();
-            toolDAO.delete(tool);
 
-            tool = toolDAO.findById(containerId);
-            if (tool == null) {
-                elasticManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
-                return Response.noContent().build();
-            } else {
-                return Response.serverError().build();
-            }
+        tool.getTags().clear();
+        toolDAO.delete(tool);
+
+        tool = toolDAO.findById(containerId);
+        if (tool == null) {
+            elasticManager.handleIndexUpdate(deleteTool, ElasticMode.DELETE);
+            return Response.noContent().build();
         } else {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            return Response.serverError().build();
         }
     }
 
@@ -799,18 +795,11 @@ public class DockerRepoResource {
     @Timed
     @UnitOfWork
     @Path("/dockerRegistryList")
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
-    public List<Map<String, String>> getDockerRegistries() {
-        ArrayList<Map<String, String>> registryList = new ArrayList<>();
+    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
+    public List<Registry.RegistryBean> getDockerRegistries() {
+        List<Registry.RegistryBean> registryList = new ArrayList<>();
         for (Registry r : Registry.values()) {
-            Map<String, String> registry = new HashMap<>();
-            registry.put("enum", r.name());
-            registry.put("friendlyName", r.getFriendlyName());
-            registry.put("dockerPath", r.toString());
-            registry.put("url", r.getUrl());
-            registry.put("privateOnly", Boolean.toString(r.isPrivateOnly()));
-            registry.put("customDockerPath", Boolean.toString(r.hasCustomDockerPath()));
-            registryList.add(registry);
+            registryList.add(new Registry.RegistryBean(r));
         }
         return registryList;
     }

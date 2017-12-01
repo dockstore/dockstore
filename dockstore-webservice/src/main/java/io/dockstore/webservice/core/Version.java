@@ -85,11 +85,11 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true)
     private String name;
 
-    @Column
+    @Column(columnDefinition = "boolean default false")
     @ApiModelProperty(value = "True if user has altered the tag")
     private boolean dirtyBit = false;
 
-    @Column
+    @Column(columnDefinition =  "boolean default false")
     @ApiModelProperty("Whether this version has been verified or not")
     private boolean verified;
     @Column

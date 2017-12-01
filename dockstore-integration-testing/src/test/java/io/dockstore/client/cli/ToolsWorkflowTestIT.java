@@ -24,11 +24,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -38,7 +35,6 @@ import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,21 +42,17 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 
 /**
  * @author jpatricia on 04/07/16.
  */
 @Category(ConfidentialTest.class)
-public class ToolsWorkflowTestIT {
-
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
+public class ToolsWorkflowTestIT extends BaseIT {
 
     @Before
-    public void clearDBandSetup() throws IOException, TimeoutException, ApiException {
-        clearStateMakePrivate2();
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
     @Rule

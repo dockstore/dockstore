@@ -28,13 +28,13 @@ import java.util.concurrent.TimeoutException;
 import javax.ws.rs.core.UriBuilder;
 
 import com.google.common.io.Resources;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -62,12 +62,16 @@ import io.swagger.client.model.Workflow;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
+import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.ClassRule;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 
-import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -81,9 +85,35 @@ public class SystemClientIT {
 
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
+
+    @Rule
+    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
+
+    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+
+    @BeforeClass
+    public static void dumpDBAndCreateSchema() throws Exception {
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        SUPPORT.after();
+    }
+
+    @Before
+    public void clearDBandSetup() throws Exception {
+        CommonTestUtilities.cleanState(SUPPORT);
+    }
 
     private static ApiClient getWebClient() throws IOException, TimeoutException {
         return getWebClient(true, false);
@@ -107,16 +137,6 @@ public class SystemClientIT {
                 : "foobar"));
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         return client;
-    }
-
-    @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearState();
-    }
-
-    @Before
-    public void cleanState() {
-        clearState();
     }
 
     @Test(expected = ApiException.class)

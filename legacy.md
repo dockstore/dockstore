@@ -59,3 +59,43 @@ To regenerate:
 3. Copy them to the appropriate directory in dockstore-client (you will need to refactor and insert package names)
 
 Eventually, this will be moved out as a proper Maven dependency on https://github.com/common-workflow-language/cwlavro
+
+### Demo Integration with Github.com
+
+Setup your copy of Dockstore as a third-party application able to communicate with GitHub on behalf of a GitHub user. 
+
+1. Setup a new OAuth application at [Register a new OAuth application](https://github.com/settings/applications/new)
+2. Browse to [http://localhost:8080/integration.github.com](http://localhost:8080/integration.github.com)
+3. Authorize via github.com using the provided link
+4. Browse to [http://localhost:8080/github.repo](http://localhost:8080/github.repo) to list repos along with their collab.json (if they exist)
+
+### Demo Integration with Quay.io
+
+Setup your copy of Dockstore as a third-party application able to communicate with quay.io on behalf of a quay.io user. 
+
+1. Setup an application as described in [Creating a new Application](http://docs.quay.io/api/)
+2. Browse to [http://localhost:8080/integration.quay.io](http://localhost:8080/integration.quay.io)
+3. Authorize via quay.io using the provided link
+4. Browse to [http://localhost:8080/container](http://localhost:8080/container) to list repos that we have tokens for at quay.io
+
+### Demo Integration with Bitbucket
+ 
+1. Setup a new application as described in [Integrate another application through OAuth](https://confluence.atlassian.com/bitbucket/integrate-another-application-through-oauth-372605388.html). 
+2. Use the dockstore-ui to authorize Bitbucket access for your current logged in user. Use the UI refresh controls to refresh your tools. 
+
+### Webservice Demo
+
+Demo the webservice and test communication with GitHub and quay.io
+
+1. Build the project and run the webservice. NOTE: The webservice will grab and use the IP of the server running the API. For example, if running on a docker container with IP 172.17.0.24, the API will use this for the curl commands and request URLs.
+2. Add your Github token. Follow the the steps above to get your Github token. This will create a user with the same username.
+3. Add your Quay token. It will automatically be assigned to the user created with Github if the username is the same. If not, you need to user /token/assignEndUser to associate it with the user.
+4. To load all your containers from Quay, use /container/refresh to load them in the database for viewing. This needs to be done automatically once the Quay token is set.
+5. Now you can see and list your containers. Note that listing Github repos do not return anything because it does not return a valid json.
+
+### Dockstore Java Client
+
+Some background on the client:
+
+* https://sdngeeks.wordpress.com/2014/08/01/swagger-example-with-java-spring-apache-cxf-jackson/
+* http://developers-blog.helloreverb.com/enabling-oauth-with-swagger/
