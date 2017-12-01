@@ -186,7 +186,7 @@ paths:
           description: "A Metadata object describing this service."
           schema:
             $ref: "#/definitions/Metadata"
-  /api/ga4gh/v1/tool-classes:
+  /api/ga4gh/v1/toolClasses:
     get:
       tags:
       - "GA4GH"
@@ -322,7 +322,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolVersion"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}:
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}:
     get:
       tags:
       - "GA4GH"
@@ -339,7 +339,7 @@ paths:
           \ example `123456`"
         required: true
         type: "string"
-      - name: "version-id"
+      - name: "version_id"
         in: "path"
         description: "An identifier of the tool version, scoped to this registry,\
           \ for example `v1`"
@@ -350,7 +350,106 @@ paths:
           description: "A tool version."
           schema:
             $ref: "#/definitions/ToolVersion"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}/dockerfile:
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/descriptor:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "Get the tool descriptor (CWL/WDL) for the specified tool."
+      description: "Returns the CWL or WDL descriptor for the specified tool."
+      operationId: "toolsIdVersionsVersionIdTypeDescriptorGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "type"
+        in: "query"
+        description: "The output type of the descriptor. If not specified it is up\
+          \ to the underlying implementation to determine which output type to return.\
+          \ Plain types return the bare descriptor while the \"non-plain\" types return\
+          \ a descriptor wrapped with metadata"
+        required: true
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "PLAIN_CWL"
+        - "PLAIN_WDL"
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The tool descriptor."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+        404:
+          description: "The tool can not be output in the specified type."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/descriptor/{relative_path}:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "Get additional tool descriptor files (CWL/WDL) relative to the main\
+        \ file"
+      description: "Returns additional CWL or WDL descriptors for the specified tool\
+        \ in the same or subdirectories"
+      operationId: "toolsIdVersionsVersionIdTypeDescriptorRelativePathGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "type"
+        in: "query"
+        description: "The output type of the descriptor. If not specified it is up\
+          \ to the underlying implementation to determine which output type to return.\
+          \  Plain types return the bare descriptor while the \"non-plain\" types\
+          \ return a descriptor wrapped with metadata"
+        required: true
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+        - "PLAIN_CWL"
+        - "PLAIN_WDL"
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      - name: "relative_path"
+        in: "path"
+        description: "A relative path to the additional file (same directory or subdirectories),\
+          \ for example 'foo.cwl' would return a 'foo.cwl' from the same directory\
+          \ as the main descriptor"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The tool descriptor."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+        404:
+          description: "The tool can not be output in the specified type."
+          schema:
+            $ref: "#/definitions/ToolDescriptor"
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/dockerfile:
     get:
       tags:
       - "GA4GH"
@@ -367,7 +466,7 @@ paths:
           \ example `123456`"
         required: true
         type: "string"
-      - name: "version-id"
+      - name: "version_id"
         in: "path"
         description: "An identifier of the tool version for this particular tool registry,\
           \ for example `v1`"
@@ -382,106 +481,7 @@ paths:
           description: "The tool payload is not present in the service."
           schema:
             $ref: "#/definitions/ToolDockerfile"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/descriptor:
-    get:
-      tags:
-      - "GA4GH"
-      summary: "Get the tool descriptor (CWL/WDL) for the specified tool."
-      description: "Returns the CWL or WDL descriptor for the specified tool."
-      operationId: "toolsIdVersionsVersionIdTypeDescriptorGet"
-      produces:
-      - "application/json"
-      - "text/plain"
-      parameters:
-      - name: "type"
-        in: "path"
-        description: "The output type of the descriptor. If not specified it is up\
-          \ to the underlying implementation to determine which output type to return.\
-          \ Plain types return the bare descriptor while the \"non-plain\" types return\
-          \ a descriptor wrapped with metadata"
-        required: true
-        type: "string"
-        enum:
-        - "CWL"
-        - "WDL"
-        - "plain-CWL"
-        - "plain-WDL"
-      - name: "id"
-        in: "path"
-        description: "A unique identifier of the tool, scoped to this registry, for\
-          \ example `123456`"
-        required: true
-        type: "string"
-      - name: "version-id"
-        in: "path"
-        description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "The tool descriptor."
-          schema:
-            $ref: "#/definitions/ToolDescriptor"
-        404:
-          description: "The tool can not be output in the specified type."
-          schema:
-            $ref: "#/definitions/ToolDescriptor"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/descriptor/{relative-path}:
-    get:
-      tags:
-      - "GA4GH"
-      summary: "Get additional tool descriptor files (CWL/WDL) relative to the main\
-        \ file"
-      description: "Returns additional CWL or WDL descriptors for the specified tool\
-        \ in the same or subdirectories"
-      operationId: "toolsIdVersionsVersionIdTypeDescriptorRelativePathGet"
-      produces:
-      - "application/json"
-      - "text/plain"
-      parameters:
-      - name: "type"
-        in: "path"
-        description: "The output type of the descriptor. If not specified it is up\
-          \ to the underlying implementation to determine which output type to return.\
-          \  Plain types return the bare descriptor while the \"non-plain\" types\
-          \ return a descriptor wrapped with metadata"
-        required: true
-        type: "string"
-        enum:
-        - "CWL"
-        - "WDL"
-        - "plain-CWL"
-        - "plain-WDL"
-      - name: "id"
-        in: "path"
-        description: "A unique identifier of the tool, scoped to this registry, for\
-          \ example `123456`"
-        required: true
-        type: "string"
-      - name: "version-id"
-        in: "path"
-        description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`"
-        required: true
-        type: "string"
-      - name: "relative-path"
-        in: "path"
-        description: "A relative path to the additional file (same directory or subdirectories),\
-          \ for example 'foo.cwl' would return a 'foo.cwl' from the same directory\
-          \ as the main descriptor"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "The tool descriptor."
-          schema:
-            $ref: "#/definitions/ToolDescriptor"
-        404:
-          description: "The tool can not be output in the specified type."
-          schema:
-            $ref: "#/definitions/ToolDescriptor"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/tests:
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/tests:
     get:
       tags:
       - "GA4GH"
@@ -493,7 +493,7 @@ paths:
       - "text/plain"
       parameters:
       - name: "type"
-        in: "path"
+        in: "query"
         description: "The output type of the descriptor. If not specified it is up\
           \ to the underlying implementation to determine which output type to return.\
           \ Plain types return the bare descriptor while the \"non-plain\" types return\
@@ -503,15 +503,15 @@ paths:
         enum:
         - "CWL"
         - "WDL"
-        - "plain-CWL"
-        - "plain-WDL"
+        - "PLAIN_CWL"
+        - "PLAIN_WDL"
       - name: "id"
         in: "path"
         description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`"
         required: true
         type: "string"
-      - name: "version-id"
+      - name: "version_id"
         in: "path"
         description: "An identifier of the tool version for this particular tool registry,\
           \ for example `v1`"
@@ -3771,20 +3771,20 @@ definitions:
   Metadata:
     type: "object"
     required:
-    - "api-version"
+    - "api_version"
     - "version"
     properties:
       version:
         type: "string"
         description: "The version of this registry"
-      api-version:
+      api_version:
         type: "string"
         description: "The version of the GA4GH tool-registry API supported by this\
           \ registry"
       country:
         type: "string"
         description: "A country code for the registry (ISO 3166-1 alpha-3)"
-      friendly-name:
+      friendly_name:
         type: "string"
         description: "A friendly name that can be used in addition to the hostname\
           \ to describe a registry"
@@ -3957,7 +3957,7 @@ definitions:
     required:
     - "author"
     - "id"
-    - "meta-version"
+    - "meta_version"
     - "organization"
     - "toolclass"
     - "url"
@@ -3985,7 +3985,7 @@ definitions:
         type: "string"
         description: "Contact information for the author of this tool entry in the\
           \ registry. (More complex authorship information is handled by the descriptor)"
-      meta-version:
+      meta_version:
         type: "string"
         description: "The version of this tool in the registry. Iterates when fields\
           \ like the description, author, etc. are updated."
@@ -3999,7 +3999,7 @@ definitions:
         type: "boolean"
         description: "Reports whether this tool has been verified by a specific organization\
           \ or individual"
-      verified-source:
+      verified_source:
         type: "string"
         description: "Source of metadata that can support a verified tool, such as\
           \ an email or URL"
@@ -4082,7 +4082,7 @@ definitions:
     type: "object"
     required:
     - "id"
-    - "meta-version"
+    - "meta_version"
     - "url"
     properties:
       name:
@@ -4099,7 +4099,7 @@ definitions:
         type: "string"
         description: "The docker path to the image (and version) for this tool. (e.g.\
           \ quay.io/seqware/seqware_full/1.1)"
-      descriptor-type:
+      descriptor_type:
         type: "array"
         description: "The type (or types) of descriptors available."
         items:
@@ -4110,7 +4110,7 @@ definitions:
       dockerfile:
         type: "boolean"
         description: "Reports if this tool has a dockerfile available."
-      meta-version:
+      meta_version:
         type: "string"
         description: "The version of this tool version in the registry. Iterates when\
           \ fields like the description, author, etc. are updated."
@@ -4118,7 +4118,7 @@ definitions:
         type: "boolean"
         description: "Reports whether this tool has been verified by a specific organization\
           \ or individual"
-      verified-source:
+      verified_source:
         type: "string"
         description: "Source of metadata that can support a verified tool, such as\
           \ an email or URL"
