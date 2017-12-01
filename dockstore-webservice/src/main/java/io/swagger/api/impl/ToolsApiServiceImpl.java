@@ -218,7 +218,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
-        boolean plainTextResponse = value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.contains("plain");
+        boolean plainTextResponse = value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.toLowerCase().contains("plain");
 
         switch (fileType) {
         case CWL_TEST_JSON:

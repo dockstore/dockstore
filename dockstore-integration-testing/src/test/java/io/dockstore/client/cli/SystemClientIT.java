@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import javax.ws.rs.core.UriBuilder;
+
 import com.google.common.io.Resources;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
@@ -362,28 +364,31 @@ public class SystemClientIT {
                 .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
         final ToolDescriptor cwl = toolApi
-                .toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
+                .toolsIdVersionsVersionIdTypeDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "cwl");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor");
+        URL url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/descriptor")
+                .queryParam("type", "PLAIN_CWL").build().toURL();
+
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
-        url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor/"
-                        + encodedPath);
+        url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/descriptor/" + encodedPath)
+                .queryParam("type", "PLAIN_CWL").build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         // Get test files
-        url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/tests/");
+        url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/tests")
+                .queryParam("type", "PLAIN_CWL").build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.get(0).equals("testparameterstuff"));
         assertTrue(strings.get(1).equals("moretestparameterstuff"));
