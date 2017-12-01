@@ -19,32 +19,32 @@ package io.dockstore.common;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * This enumerates the types of source control that we can associate an entry with.
+ * This enumerates the types of descriptor language that we can associate an entry with.
  *
  * @author agduncan94
  */
-public enum SourceControl {
-    // Add new source control here
-    GITHUB("github.com", "GitHub"), BITBUCKET("bitbucket.org", "BitBucket"), GITLAB("gitlab.com", "GitLab");
+public enum DescriptorLanguage {
+    // Add new descriptor language here
+    CWL("CWL", "Common Workflow Language"), WDL("WDL", "Workflow Description Language");
 
     /**
-     * this name is used in the source control path
+     * this name is used in the workflow path
      */
-    private final String sourceControlPath;
+    private final String descriptorLanguageShort;
 
     /**
-     * this name is what is displayed to users to name the source control
+     * this name is what is displayed to users to name the descriptor language
      */
     private final String friendlyName;
 
-    SourceControl(final String sourceControlPath, final String friendlyName) {
-        this.sourceControlPath = sourceControlPath;
+    DescriptorLanguage(final String descriptorLanguageShort, final String friendlyName) {
+        this.descriptorLanguageShort = descriptorLanguageShort;
         this.friendlyName = friendlyName;
     }
 
     @Override
     public String toString() {
-        return sourceControlPath;
+        return descriptorLanguageShort;
     }
 
     public String getFriendlyName() {
@@ -52,18 +52,18 @@ public enum SourceControl {
     }
 
     /**
-     * Expanded version for API list of source control
+     * Expanded version for API list of descriptor language
      */
-    public static class SourceControlBean {
+    public static class DescriptorLanguageBean {
 
         @JsonProperty("enum")
         public String value;
 
         public String friendlyName;
 
-        public SourceControlBean(SourceControl sourceControl) {
-            this.value = sourceControl.toString();
-            this.friendlyName = sourceControl.getFriendlyName();
+        public DescriptorLanguageBean(DescriptorLanguage descriptorLanguage) {
+            this.value = descriptorLanguage.toString();
+            this.friendlyName = descriptorLanguage.getFriendlyName();
         }
     }
 }

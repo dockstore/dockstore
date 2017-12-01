@@ -29,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -188,6 +189,20 @@ public class MetadataResource {
             registryList.add(new Registry.RegistryBean(r));
         }
         return registryList;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/descriptorLanguageList")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "Does not need authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
+    public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
+        List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
+        for (DescriptorLanguage descriptorLanguage : DescriptorLanguage.values()) {
+            descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage));
+        }
+        return descriptorLanguageList;
     }
 
 }
