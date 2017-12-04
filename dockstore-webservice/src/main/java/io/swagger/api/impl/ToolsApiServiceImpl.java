@@ -179,31 +179,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        boolean unwrap = value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain");
-        Response fileByToolVersionID = getFileByToolVersionID(id, versionId, fileType, relativePath, unwrap);
-        if (!unwrap) {
-            SourceFile file = (SourceFile)fileByToolVersionID.getEntity();
-            ToolDescriptor toolDescriptor = new ToolDescriptor();
-            toolDescriptor.setType(stringToEnum(type));
-            toolDescriptor.setDescriptor(file.getContent());
-            toolDescriptor.setUrl(file.getPath());
-            return Response.status(Response.Status.OK).type(MediaType.APPLICATION_JSON)
-                    .entity(toolDescriptor).build();
-        } else {
-            return fileByToolVersionID;
-        }
-
-    }
-
-    private ToolDescriptor.TypeEnum stringToEnum(String type) {
-        switch (type) {
-        case "CWL":
-            return ToolDescriptor.TypeEnum.CWL;
-        case "WDL":
-            return ToolDescriptor.TypeEnum.WDL;
-        default:
-            return null;
-        }
+        return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
