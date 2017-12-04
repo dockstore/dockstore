@@ -21,6 +21,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.gson.Gson;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -126,7 +127,7 @@ public final class ToolsImplCommon {
             }
 
             String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools/",
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/",
                     null, null);
             globalId = uri.toString() + escapedID;
         } catch (URISyntaxException | UnsupportedEncodingException e) {
