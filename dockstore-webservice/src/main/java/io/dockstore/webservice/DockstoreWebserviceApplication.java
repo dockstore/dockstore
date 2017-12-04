@@ -102,7 +102,8 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM
  * @author dyuen
  */
 public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
-    public static final String GA4GH_API_PATH = "/api/ga4gh/v1";
+    public static final String GA4GH_API_PATH = "/api/ga4gh/v1.1";
+    public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
     private static final int KILOBYTES_IN_MEGABYTE = 1024;

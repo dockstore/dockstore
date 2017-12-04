@@ -350,7 +350,39 @@ paths:
           description: "A tool version."
           schema:
             $ref: "#/definitions/ToolVersion"
-  /api/ga4gh/v1/tools/{id}/versions/{version_id}/descriptor:
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/dockerfile:
+    get:
+      tags:
+      - "GA4GH"
+      summary: "Get the dockerfile for the specified image."
+      description: "Returns the dockerfile for the specified image."
+      operationId: "toolsIdVersionsVersionIdDockerfileGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The tool payload."
+          schema:
+            $ref: "#/definitions/ToolDockerfile"
+        404:
+          description: "The tool payload is not present in the service."
+          schema:
+            $ref: "#/definitions/ToolDockerfile"
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       tags:
       - "GA4GH"
@@ -362,7 +394,7 @@ paths:
       - "text/plain"
       parameters:
       - name: "type"
-        in: "query"
+        in: "path"
         description: "The output type of the descriptor. If not specified it is up\
           \ to the underlying implementation to determine which output type to return.\
           \ Plain types return the bare descriptor while the \"non-plain\" types return\
@@ -395,7 +427,7 @@ paths:
           description: "The tool can not be output in the specified type."
           schema:
             $ref: "#/definitions/ToolDescriptor"
-  /api/ga4gh/v1/tools/{id}/versions/{version_id}/descriptor/{relative_path}:
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
     get:
       tags:
       - "GA4GH"
@@ -409,7 +441,7 @@ paths:
       - "text/plain"
       parameters:
       - name: "type"
-        in: "query"
+        in: "path"
         description: "The output type of the descriptor. If not specified it is up\
           \ to the underlying implementation to determine which output type to return.\
           \  Plain types return the bare descriptor while the \"non-plain\" types\
@@ -449,39 +481,7 @@ paths:
           description: "The tool can not be output in the specified type."
           schema:
             $ref: "#/definitions/ToolDescriptor"
-  /api/ga4gh/v1/tools/{id}/versions/{version_id}/dockerfile:
-    get:
-      tags:
-      - "GA4GH"
-      summary: "Get the dockerfile for the specified image."
-      description: "Returns the dockerfile for the specified image."
-      operationId: "toolsIdVersionsVersionIdDockerfileGet"
-      produces:
-      - "application/json"
-      - "text/plain"
-      parameters:
-      - name: "id"
-        in: "path"
-        description: "A unique identifier of the tool, scoped to this registry, for\
-          \ example `123456`"
-        required: true
-        type: "string"
-      - name: "version_id"
-        in: "path"
-        description: "An identifier of the tool version for this particular tool registry,\
-          \ for example `v1`"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "The tool payload."
-          schema:
-            $ref: "#/definitions/ToolDockerfile"
-        404:
-          description: "The tool payload is not present in the service."
-          schema:
-            $ref: "#/definitions/ToolDockerfile"
-  /api/ga4gh/v1/tools/{id}/versions/{version_id}/tests:
+  /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
       - "GA4GH"
@@ -493,7 +493,7 @@ paths:
       - "text/plain"
       parameters:
       - name: "type"
-        in: "query"
+        in: "path"
         description: "The output type of the descriptor. If not specified it is up\
           \ to the underlying implementation to determine which output type to return.\
           \ Plain types return the bare descriptor while the \"non-plain\" types return\
