@@ -63,6 +63,7 @@ public class ToolVersion {
 
     private Boolean verified = null;
 
+    @JsonProperty("verified_source")
     private String verifiedSource = null;
 
     public ToolVersion name(String name) {

@@ -391,8 +391,8 @@ public class SystemClientIT {
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
         URL url = UriBuilder.fromPath(basePath)
-                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/descriptor")
-                .queryParam("type", "PLAIN_CWL").build().toURL();
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor")
+                .build().toURL();
 
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
@@ -400,15 +400,15 @@ public class SystemClientIT {
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
         url = UriBuilder.fromPath(basePath)
-                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/descriptor/" + encodedPath)
-                .queryParam("type", "PLAIN_CWL").build().toURL();
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor/" + encodedPath)
+                .build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         // Get test files
         url = UriBuilder.fromPath(basePath)
-                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/tests")
-                .queryParam("type", "PLAIN_CWL").build().toURL();
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/tests")
+                .build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.get(0).equals("testparameterstuff"));
         assertTrue(strings.get(1).equals("moretestparameterstuff"));
@@ -432,7 +432,7 @@ public class SystemClientIT {
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID);
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test root version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified_source\":\"[\\\"funky source\\\"]\""));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true") && strings.get(0).contains("\"verified_source\":\"[\\\"funky source\\\"]\""));
 
         // TODO: really, we should be using deserialized versions, but this is not currently working
         //        ObjectMapper mapper = new ObjectMapper();
@@ -448,8 +448,9 @@ public class SystemClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test nested version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified_source\":\"funky source\""));
-
+        assertTrue(strings.size() == 1);
+        assertTrue(strings.get(0).contains("\"verified\":true"));
+        assertTrue(strings.get(0).contains("\"verified_source\":\"funky source\""));
     }
 
     // Can't test publish repos that don't exist

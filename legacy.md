@@ -40,7 +40,7 @@ Background:
  To regenerate the swagger client:
  
 1. Run `echo "{\"library\":\"jersey2\",\"invokerPackage\":\"io.swagger.quay.client\",\"modelPackage\":\"io.swagger.quay.client.model\",\"apiPackage\":\"io.swagger.quay.client.api\"}" > config.json`
-2. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i https://quay.io/api/v1/discovery -l java -o <output directory> --library jersey2 --config config.json`. The output directory is where you have dockstore/swagger-java-client/.
+2. Run `java -jar modules/swagger-codegen-cli/target/swagger-codegen-cli.jar generate -i https://quay.io/api/v1.1/discovery -l java -o <output directory> --library jersey2 --config config.json`. The output directory is where you have dockstore/swagger-java-client/.
 3. NOTE: Rengenerating the swagger client will probably generate an incorrect pom file. Use git checkout on the pom file to undo the changes to it.
 
 ### CWL Avro documents
