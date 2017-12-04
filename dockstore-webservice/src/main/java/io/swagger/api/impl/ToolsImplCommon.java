@@ -21,6 +21,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 import com.google.gson.Gson;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -126,7 +127,7 @@ public final class ToolsImplCommon {
             }
 
             String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), "/api/ga4gh/v1/tools/",
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/",
                     null, null);
             globalId = uri.toString() + escapedID;
         } catch (URISyntaxException | UnsupportedEncodingException e) {
@@ -153,16 +154,14 @@ public final class ToolsImplCommon {
         // tool specific
         if (container instanceof io.dockstore.webservice.core.Tool) {
             io.dockstore.webservice.core.Tool inputTool = (io.dockstore.webservice.core.Tool)container;
-            tool.setToolname(inputTool.getToolname());
+            tool.setToolname(Strings.isNullOrEmpty(inputTool.getToolname()) ? Strings.nullToEmpty(inputTool.getName()) : Strings.nullToEmpty(inputTool.getToolname()));
             tool.setOrganization(inputTool.getNamespace());
-            tool.setToolname(inputTool.getName());
         }
         // workflow specific
         if (container instanceof Workflow) {
             Workflow inputTool = (Workflow)container;
-            tool.setToolname(inputTool.getPath());
+            tool.setToolname(Strings.isNullOrEmpty(inputTool.getWorkflowName()) ? Strings.nullToEmpty(inputTool.getPath()) : Strings.nullToEmpty(inputTool.getWorkflowName()));
             tool.setOrganization(inputTool.getOrganization());
-            tool.setToolname(inputTool.getWorkflowName());
         }
 
         // TODO: contains has no counterpart in our DB
@@ -181,6 +180,9 @@ public final class ToolsImplCommon {
         Gson gson = new Gson();
         tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
 
+        // Not sure how to get signed
+        tool.setSigned(false);
+        tool.setDescription(container.getDescription() != null ? container.getDescription() : "");
         for (Version inputVersion : (Set<Version>)inputVersions) {
 
             // tags with no names make no sense here
@@ -206,10 +208,16 @@ public final class ToolsImplCommon {
             version.setId(tool.getId() + ":" + inputVersion.getName());
 
             version.setName(inputVersion.getName());
-
             version.setVerified(inputVersion.isVerified());
             version.setVerifiedSource(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
             version.setDockerfile(false);
+
+            if (inputVersion instanceof Tag) {
+                Tag tag = (Tag)inputVersion;
+                version.setImage(tag.getImageId());
+            } else {
+                version.setImage("");
+            }
 
             String urlBuilt;
             final String githubPrefix = "git@github.com:";

@@ -17,6 +17,7 @@ package io.swagger.model;
 
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
@@ -75,6 +76,7 @@ public class Metadata {
         return apiVersion;
     }
 
+    @JsonProperty("api_version")
     public void setApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
     }
@@ -98,6 +100,7 @@ public class Metadata {
         this.country = country;
     }
 
+    @JsonProperty("friendly_name")
     public Metadata friendlyName(String friendlyName) {
         this.friendlyName = friendlyName;
         return this;

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
@@ -49,12 +50,14 @@ public class Tool {
 
     private String author = null;
 
+    @JsonProperty("meta_version")
     private String metaVersion = null;
 
     private List<String> contains = new ArrayList<String>();
 
     private Boolean verified = null;
 
+    @JsonProperty("verified_source")
     private String verifiedSource = null;
 
     private Boolean signed = null;
@@ -193,7 +196,7 @@ public class Tool {
     public void setAuthor(String author) {
         this.author = author;
     }
-
+    
     public Tool metaVersion(String metaVersion) {
         this.metaVersion = metaVersion;
         return this;

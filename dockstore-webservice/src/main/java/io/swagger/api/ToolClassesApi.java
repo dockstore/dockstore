@@ -27,7 +27,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.api.factories.ToolClassesApiServiceFactory;
 import io.swagger.model.ToolClass;
 
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tool-classes")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/toolClasses")
 
 @Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the tool-classes API")

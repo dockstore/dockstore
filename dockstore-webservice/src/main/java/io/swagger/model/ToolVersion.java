@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
@@ -43,6 +44,7 @@ public class ToolVersion {
 
     private String image = null;
 
+    @JsonProperty("descriptor_type")
     private List<DescriptorTypeEnum> descriptorType = new ArrayList<DescriptorTypeEnum>();
     private Boolean dockerfile = null;
 
@@ -56,6 +58,7 @@ public class ToolVersion {
         return name;
     }
 
+    @JsonProperty("meta_version")
     private String metaVersion = null;
 
     private Boolean verified = null;

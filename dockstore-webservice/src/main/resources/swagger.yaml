@@ -45,7 +45,7 @@ tags:
 - name: "workflows"
   description: "List and register workflows in the dockstore (CWL or WDL)"
 paths:
-  /api/ga4gh/v1/extended/containers/{organization}:
+  /api/ga4gh/v1.1/extended/containers/{organization}:
     get:
       tags:
       - "extendedGA4GH"
@@ -68,7 +68,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/ga4gh/v1/extended/organizations:
+  /api/ga4gh/v1.1/extended/organizations:
     get:
       tags:
       - "extendedGA4GH"
@@ -86,7 +86,7 @@ paths:
             type: "array"
             items:
               type: "string"
-  /api/ga4gh/v1/extended/tools/entry/_search:
+  /api/ga4gh/v1.1/extended/tools/entry/_search:
     post:
       tags:
       - "extendedGA4GH"
@@ -108,7 +108,7 @@ paths:
           description: "An elastic search result."
           schema:
             type: "string"
-  /api/ga4gh/v1/extended/tools/index:
+  /api/ga4gh/v1.1/extended/tools/index:
     post:
       tags:
       - "extendedGA4GH"
@@ -124,7 +124,7 @@ paths:
           schema:
             type: "integer"
             format: "int32"
-  /api/ga4gh/v1/extended/tools/{organization}:
+  /api/ga4gh/v1.1/extended/tools/{organization}:
     get:
       tags:
       - "extendedGA4GH"
@@ -147,7 +147,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/ga4gh/v1/extended/workflows/{organization}:
+  /api/ga4gh/v1.1/extended/workflows/{organization}:
     get:
       tags:
       - "extendedGA4GH"
@@ -170,7 +170,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/ga4gh/v1/metadata:
+  /api/ga4gh/v1.1/metadata:
     get:
       tags:
       - "GA4GH"
@@ -186,7 +186,7 @@ paths:
           description: "A Metadata object describing this service."
           schema:
             $ref: "#/definitions/Metadata"
-  /api/ga4gh/v1/tool-classes:
+  /api/ga4gh/v1.1/toolClasses:
     get:
       tags:
       - "GA4GH"
@@ -204,7 +204,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolClass"
-  /api/ga4gh/v1/tools:
+  /api/ga4gh/v1.1/tools:
     get:
       tags:
       - "GA4GH"
@@ -275,7 +275,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/ga4gh/v1/tools/{id}:
+  /api/ga4gh/v1.1/tools/{id}:
     get:
       tags:
       - "GA4GH"
@@ -298,7 +298,7 @@ paths:
           description: "A tool."
           schema:
             $ref: "#/definitions/Tool"
-  /api/ga4gh/v1/tools/{id}/versions:
+  /api/ga4gh/v1.1/tools/{id}/versions:
     get:
       tags:
       - "GA4GH"
@@ -322,7 +322,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolVersion"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}:
+  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}:
     get:
       tags:
       - "GA4GH"
@@ -339,7 +339,7 @@ paths:
           \ example `123456`"
         required: true
         type: "string"
-      - name: "version-id"
+      - name: "version_id"
         in: "path"
         description: "An identifier of the tool version, scoped to this registry,\
           \ for example `v1`"
@@ -350,7 +350,7 @@ paths:
           description: "A tool version."
           schema:
             $ref: "#/definitions/ToolVersion"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}/dockerfile:
+  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}/dockerfile:
     get:
       tags:
       - "GA4GH"
@@ -367,7 +367,7 @@ paths:
           \ example `123456`"
         required: true
         type: "string"
-      - name: "version-id"
+      - name: "version_id"
         in: "path"
         description: "An identifier of the tool version for this particular tool registry,\
           \ for example `v1`"
@@ -382,7 +382,7 @@ paths:
           description: "The tool payload is not present in the service."
           schema:
             $ref: "#/definitions/ToolDockerfile"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/descriptor:
+  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       tags:
       - "GA4GH"
@@ -404,15 +404,15 @@ paths:
         enum:
         - "CWL"
         - "WDL"
-        - "plain-CWL"
-        - "plain-WDL"
+        - "PLAIN_CWL"
+        - "PLAIN_WDL"
       - name: "id"
         in: "path"
         description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`"
         required: true
         type: "string"
-      - name: "version-id"
+      - name: "version_id"
         in: "path"
         description: "An identifier of the tool version for this particular tool registry,\
           \ for example `v1`"
@@ -427,7 +427,7 @@ paths:
           description: "The tool can not be output in the specified type."
           schema:
             $ref: "#/definitions/ToolDescriptor"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/descriptor/{relative-path}:
+  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
     get:
       tags:
       - "GA4GH"
@@ -451,21 +451,21 @@ paths:
         enum:
         - "CWL"
         - "WDL"
-        - "plain-CWL"
-        - "plain-WDL"
+        - "PLAIN_CWL"
+        - "PLAIN_WDL"
       - name: "id"
         in: "path"
         description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`"
         required: true
         type: "string"
-      - name: "version-id"
+      - name: "version_id"
         in: "path"
         description: "An identifier of the tool version for this particular tool registry,\
           \ for example `v1`"
         required: true
         type: "string"
-      - name: "relative-path"
+      - name: "relative_path"
         in: "path"
         description: "A relative path to the additional file (same directory or subdirectories),\
           \ for example 'foo.cwl' would return a 'foo.cwl' from the same directory\
@@ -481,7 +481,7 @@ paths:
           description: "The tool can not be output in the specified type."
           schema:
             $ref: "#/definitions/ToolDescriptor"
-  /api/ga4gh/v1/tools/{id}/versions/{version-id}/{type}/tests:
+  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
       - "GA4GH"
@@ -503,15 +503,15 @@ paths:
         enum:
         - "CWL"
         - "WDL"
-        - "plain-CWL"
-        - "plain-WDL"
+        - "PLAIN_CWL"
+        - "PLAIN_WDL"
       - name: "id"
         in: "path"
         description: "A unique identifier of the tool, scoped to this registry, for\
           \ example `123456`"
         required: true
         type: "string"
-      - name: "version-id"
+      - name: "version_id"
         in: "path"
         description: "An identifier of the tool version for this particular tool registry,\
           \ for example `v1`"
@@ -3771,20 +3771,20 @@ definitions:
   Metadata:
     type: "object"
     required:
-    - "api-version"
+    - "api_version"
     - "version"
     properties:
       version:
         type: "string"
         description: "The version of this registry"
-      api-version:
-        type: "string"
-        description: "The version of the GA4GH tool-registry API supported by this\
-          \ registry"
       country:
         type: "string"
         description: "A country code for the registry (ISO 3166-1 alpha-3)"
-      friendly-name:
+      api_version:
+        type: "string"
+        description: "The version of the GA4GH tool-registry API supported by this\
+          \ registry"
+      friendly_name:
         type: "string"
         description: "A friendly name that can be used in addition to the hostname\
           \ to describe a registry"
@@ -3957,7 +3957,7 @@ definitions:
     required:
     - "author"
     - "id"
-    - "meta-version"
+    - "meta_version"
     - "organization"
     - "toolclass"
     - "url"
@@ -3985,10 +3985,6 @@ definitions:
         type: "string"
         description: "Contact information for the author of this tool entry in the\
           \ registry. (More complex authorship information is handled by the descriptor)"
-      meta-version:
-        type: "string"
-        description: "The version of this tool in the registry. Iterates when fields\
-          \ like the description, author, etc. are updated."
       contains:
         type: "array"
         description: "An array of IDs for the applications that are stored inside\
@@ -3999,10 +3995,6 @@ definitions:
         type: "boolean"
         description: "Reports whether this tool has been verified by a specific organization\
           \ or individual"
-      verified-source:
-        type: "string"
-        description: "Source of metadata that can support a verified tool, such as\
-          \ an email or URL"
       signed:
         type: "boolean"
         description: "Reports whether this tool has been signed."
@@ -4011,6 +4003,14 @@ definitions:
         description: "A list of versions for this tool"
         items:
           $ref: "#/definitions/ToolVersion"
+      meta_version:
+        type: "string"
+        description: "The version of this tool in the registry. Iterates when fields\
+          \ like the description, author, etc. are updated."
+      verified_source:
+        type: "string"
+        description: "Source of metadata that can support a verified tool, such as\
+          \ an email or URL"
     description: "A tool (or described tool) describes one pairing of a tool as described\
       \ in a descriptor file (which potentially describes multiple tools) and a Docker\
       \ image."
@@ -4082,7 +4082,7 @@ definitions:
     type: "object"
     required:
     - "id"
-    - "meta-version"
+    - "meta_version"
     - "url"
     properties:
       name:
@@ -4099,21 +4099,9 @@ definitions:
         type: "string"
         description: "The docker path to the image (and version) for this tool. (e.g.\
           \ quay.io/seqware/seqware_full/1.1)"
-      descriptor-type:
-        type: "array"
-        description: "The type (or types) of descriptors available."
-        items:
-          type: "string"
-          enum:
-          - "CWL"
-          - "WDL"
       dockerfile:
         type: "boolean"
         description: "Reports if this tool has a dockerfile available."
-      meta-version:
-        type: "string"
-        description: "The version of this tool version in the registry. Iterates when\
-          \ fields like the description, author, etc. are updated."
       verified:
         type: "boolean"
         description: "Reports whether this tool has been verified by a specific organization\
@@ -4122,6 +4110,18 @@ definitions:
         type: "string"
         description: "Source of metadata that can support a verified tool, such as\
           \ an email or URL"
+      descriptor_type:
+        type: "array"
+        description: "The type (or types) of descriptors available."
+        items:
+          type: "string"
+          enum:
+          - "CWL"
+          - "WDL"
+      meta_version:
+        type: "string"
+        description: "The version of this tool version in the registry. Iterates when\
+          \ fields like the description, author, etc. are updated."
     description: "A tool version describes a particular iteration of a tool as described\
       \ by a reference to a specific image and dockerfile."
   User:

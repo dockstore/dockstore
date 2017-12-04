@@ -16,10 +16,31 @@
 
 package io.swagger.api.impl;
 
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
 import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -39,26 +60,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.CWL_TEST_JSON;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
@@ -179,11 +180,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-
         return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
-
-
 
     @Override
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
@@ -197,7 +195,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
-        boolean plainTextResponse = value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.contains("plain");
+        boolean plainTextResponse = value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.toLowerCase().contains("plain");
 
         switch (fileType) {
         case CWL_TEST_JSON:
@@ -313,8 +311,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             results = pagedResults.get(offsetInteger);
         }
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
-        responseBuilder.header("current-offset", offset);
-        responseBuilder.header("current-limit", limit);
+        responseBuilder.header("current_offset", offset);
+        responseBuilder.header("current_limit", limit);
         // construct links to other pages
         try {
             List<String> filters = new ArrayList<>();
@@ -329,12 +327,12 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
-                        "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
-                responseBuilder.header("next-page", nextPageURI.toURL().toString());
+                        DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
+                responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
-                    "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
-            responseBuilder.header("last-page", lastPageURI.toURL().toString());
+                    DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
+            responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
             throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);

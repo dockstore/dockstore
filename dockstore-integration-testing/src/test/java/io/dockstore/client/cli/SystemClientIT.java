@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import javax.ws.rs.core.UriBuilder;
+
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Constants;
@@ -131,8 +133,8 @@ public class SystemClientIT {
         ApiClient client = new ApiClient();
         ApiKeyAuth bearer = (ApiKeyAuth)client.getAuthentication("BEARER");
         bearer.setApiKeyPrefix("BEARER");
-        bearer.setApiKey((correctUser ? parseConfig
-            .getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
+        bearer.setApiKey((correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2)
+                : "foobar"));
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         return client;
     }
@@ -281,7 +283,7 @@ public class SystemClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata");
         final List<String> metadataStrings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
-        assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly-name")));
+        assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly_name")));
     }
 
     @Test
@@ -382,28 +384,31 @@ public class SystemClientIT {
                 .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
         final ToolDescriptor cwl = toolApi
-                .toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
+                .toolsIdVersionsVersionIdTypeDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "cwl");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor");
+        URL url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/descriptor")
+                .queryParam("type", "PLAIN_CWL").build().toURL();
+
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
-        url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor/"
-                        + encodedPath);
+        url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/descriptor/" + encodedPath)
+                .queryParam("type", "PLAIN_CWL").build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         // Get test files
-        url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/tests/");
+        url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/tests")
+                .queryParam("type", "PLAIN_CWL").build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.get(0).equals("testparameterstuff"));
         assertTrue(strings.get(1).equals("moretestparameterstuff"));
@@ -427,7 +432,7 @@ public class SystemClientIT {
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID);
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test root version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"[\\\"funky source\\\"]\""));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified_source\":\"[\\\"funky source\\\"]\""));
 
         // TODO: really, we should be using deserialized versions, but this is not currently working
         //        ObjectMapper mapper = new ObjectMapper();
@@ -443,7 +448,7 @@ public class SystemClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test nested version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"funky source\""));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified_source\":\"funky source\""));
 
     }
 
