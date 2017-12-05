@@ -384,7 +384,7 @@ public class SystemClientIT {
                 .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
         final ToolDescriptor cwl = toolApi
-                .toolsIdVersionsVersionIdTypeDescriptorGet("registry.hub.docker.com/seqware/seqware/test5", "master", "cwl");
+                .toolsIdVersionsVersionIdTypeDescriptorGet("cwl","registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
