@@ -34,6 +34,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.DataExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
@@ -259,6 +260,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi());
         environment.jersey().register(new ToolClassesApi());
+        environment.jersey().register(new DataExceptionMapper());
 
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());
@@ -298,16 +300,16 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         Transaction transaction = session.getTransaction();
         transaction.begin();
 
-        session.createSQLQuery(
+        session.createNativeQuery(
                 "CREATE UNIQUE INDEX IF NOT EXISTS full_workflow_name ON workflow (organization, repository, workflowname) WHERE workflowname IS NOT NULL;")
                 .executeUpdate();
-        session.createSQLQuery(
+        session.createNativeQuery(
                 "CREATE UNIQUE INDEX IF NOT EXISTS partial_workflow_name ON workflow (organization, repository) WHERE workflowname IS NULL;")
                 .executeUpdate();
-        session.createSQLQuery(
+        session.createNativeQuery(
                 "CREATE UNIQUE INDEX IF NOT EXISTS full_tool_name ON tool (registry, namespace, name, toolname) WHERE toolname IS NOT NULL")
                 .executeUpdate();
-        session.createSQLQuery("CREATE UNIQUE INDEX IF NOT EXISTS partial_tool_name ON tool (registry, namespace, name) WHERE toolname IS NULL;")
+        session.createNativeQuery("CREATE UNIQUE INDEX IF NOT EXISTS partial_tool_name ON tool (registry, namespace, name) WHERE toolname IS NULL;")
                 .executeUpdate();
         try {
             session.getTransaction().commit();
