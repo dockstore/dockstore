@@ -498,11 +498,15 @@ public abstract class SourceCodeRepoInterface {
         // If source file is found and valid then add it
         if (sourceFile != null && sourceFile.getContent() != null) {
             version.getSourceFiles().add(sourceFile);
+            LOG.debug("Combining version " + version.getName() + " and source file " + sourceFile.getPath());
+        } else {
+            LOG.debug("NOT combining version " + version.getName() + " and source file " + sourceFile.getPath());
         }
 
         // add extra source files here (dependencies from "main" descriptor)
         if (sourceFileSet.size() > 0) {
             version.getSourceFiles().addAll(sourceFileSet);
+            LOG.debug("Combining version " + version.getName() + " and extra sourcefiles");
         }
 
         return version;
