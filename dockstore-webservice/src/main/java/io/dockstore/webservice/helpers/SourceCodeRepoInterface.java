@@ -99,8 +99,9 @@ public abstract class SourceCodeRepoInterface {
      * Updates the username and repository used to retrieve files from github
      * Note that this is only called when refreshing multiple workflows at once, because
      * the code does not instantiate them (since they vary)
-     * @param username
-     * @param repository
+     * Ex. ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow (breaks up into examples below)
+     * @param username ex. ICGC-TCGA-PanCancer
+     * @param repository ex. wdl-pcawg-sanger-cgp-workflow
      */
     public void updateUsernameAndRepository(String username, String repository) {
         this.gitUsername = username;
