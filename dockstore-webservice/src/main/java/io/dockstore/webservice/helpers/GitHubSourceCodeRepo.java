@@ -139,6 +139,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    @Override
+    public boolean checkSourceCodeValidity() {
+        try {
+            oService.getOrganizations();
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(
+                "Please recreate your GitHub token, we need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
+        }
+        return true;
+    }
+
     private String extractGitHubContents(List<RepositoryContents> cwlContents) {
         String encoded = cwlContents.get(0).getContent().replace("\n", "");
         byte[] decode = Base64.getDecoder().decode(encoded);

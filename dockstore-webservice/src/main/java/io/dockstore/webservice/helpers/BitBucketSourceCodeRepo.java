@@ -357,4 +357,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         return content;
     }
+
+    @Override
+    public boolean checkSourceCodeValidity() {
+        //TODO
+        return true;
+    }
 }

@@ -194,6 +194,11 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
 
+    /**
+     * Checks to see if a particular source code repository is properly setup for issues like token scope
+     */
+    public abstract boolean checkSourceCodeValidity();
+
     List<String> getWdlImports(File workflowFile) {
         Bridge bridge = new Bridge();
         return bridge.getImportFiles(workflowFile);

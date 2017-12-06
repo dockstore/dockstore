@@ -393,4 +393,10 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         }
         return null;
     }
+
+    @Override
+    public boolean checkSourceCodeValidity() {
+        //TODO
+        return true;
+    }
 }

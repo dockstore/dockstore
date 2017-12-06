@@ -199,39 +199,51 @@ public class WorkflowResource {
      * @param user a user to refresh workflows for
      */
     public void refreshStubWorkflowsForUser(User user, String organization) {
+
+        List<Token> tokens = checkOnBitbucketToken(user);
+        // Check if tokens for git hosting services are valid and refresh corresponding workflows
+        // Refresh Bitbucket
+        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        // Refresh Github
+        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        // Refresh Gitlab
+        Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+
+        // create each type of repo and check its validity
+        BitBucketSourceCodeRepo bitBucketSourceCodeRepo = null;
+        if (bitbucketToken != null) {
+            bitBucketSourceCodeRepo = new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null);
+            bitBucketSourceCodeRepo.checkSourceCodeValidity();
+        }
+
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = null;
+        if (githubToken != null) {
+            gitHubSourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null);
+            gitHubSourceCodeRepo.checkSourceCodeValidity();
+        }
+
+        GitLabSourceCodeRepo gitLabSourceCodeRepo = null;
+        if (gitlabToken != null) {
+            gitLabSourceCodeRepo = new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null);
+            gitLabSourceCodeRepo.checkSourceCodeValidity();
+        }
+
         try {
-            List<Token> tokens = checkOnBitbucketToken(user);
-
-            // Check if tokens for git hosting services are valid and refresh corresponding workflows
-
-            // Refresh Bitbucket
-            Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-
             // Update bitbucket workflows if token exists
             if (bitbucketToken != null && bitbucketToken.getContent() != null) {
                 // get workflows from bitbucket for a user and updates db
-                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user,
-                        organization);
+                refreshHelper(bitBucketSourceCodeRepo, user, organization);
             }
-
-            // Refresh Github
-            Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
-
             // Update github workflows if token exists
             if (githubToken != null && githubToken.getContent() != null) {
                 // get workflows from github for a user and updates db
-                refreshHelper(new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null), user, organization);
+                refreshHelper(gitHubSourceCodeRepo, user, organization);
             }
-
-            // Refresh Gitlab
-            Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
-
             // Update gitlab workflows if token exists
             if (gitlabToken != null && gitlabToken.getContent() != null) {
                 // get workflows from gitlab for a user and updates db
-                refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user, organization);
+                refreshHelper(gitLabSourceCodeRepo, user, organization);
             }
-
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
             LOG.info(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
