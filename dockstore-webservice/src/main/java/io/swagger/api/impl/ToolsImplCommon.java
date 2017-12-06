@@ -45,10 +45,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
@@ -154,13 +156,23 @@ public final class ToolsImplCommon {
         // tool specific
         if (container instanceof io.dockstore.webservice.core.Tool) {
             io.dockstore.webservice.core.Tool inputTool = (io.dockstore.webservice.core.Tool)container;
-            tool.setToolname(Strings.isNullOrEmpty(inputTool.getToolname()) ? Strings.nullToEmpty(inputTool.getName()) : Strings.nullToEmpty(inputTool.getToolname()));
+
+            // The name is composed of the repository name and then the optional toolname split with a '/'
+            String name = inputTool.getName();
+            String toolName = inputTool.getToolname();
+            String returnName = constructName(Arrays.asList(name, toolName));
+            tool.setToolname(returnName);
             tool.setOrganization(inputTool.getNamespace());
         }
         // workflow specific
         if (container instanceof Workflow) {
             Workflow inputTool = (Workflow)container;
-            tool.setToolname(Strings.isNullOrEmpty(inputTool.getWorkflowName()) ? Strings.nullToEmpty(inputTool.getPath()) : Strings.nullToEmpty(inputTool.getWorkflowName()));
+
+            // The name is composed of the repository name and then the optional toolname split with a '/'
+            String name = inputTool.getRepository();
+            String workflowName = inputTool.getWorkflowName();
+            String returnName = constructName(Arrays.asList(name, workflowName));
+            tool.setToolname(returnName);
             tool.setOrganization(inputTool.getOrganization());
         }
 
@@ -180,7 +192,7 @@ public final class ToolsImplCommon {
         Gson gson = new Gson();
         tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
 
-        // Not sure how to get signed
+        // Signed is currently not supported
         tool.setSigned(false);
         tool.setDescription(container.getDescription() != null ? container.getDescription() : "");
         for (Version inputVersion : (Set<Version>)inputVersions) {
@@ -292,5 +304,16 @@ public final class ToolsImplCommon {
 
         }
         return new ImmutablePair<>(tool, fileTable);
+    }
+
+    private static String constructName(List<String> strings) {
+        // The name is composed of the repository name and then the optional workflowname split with a '/'
+        StringJoiner joiner = new StringJoiner("/");
+        for (String string: strings) {
+            if (!Strings.isNullOrEmpty(string)) {
+                joiner.add(string);
+            }
+        }
+        return joiner.toString();
     }
 }
