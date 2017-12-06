@@ -254,6 +254,10 @@ public class WorkflowResource {
         }
         // For each entry found of the associated git hosting service
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
+            // Split entry into organization/namespace and repository/name
+            String[] entryPathSplit = entry.getValue().split("/");
+            sourceCodeRepoInterface.updateUsernameAndRepository(entryPathSplit[0], entryPathSplit[1]);
+
             // Get all workflows with the same giturl)
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
             if (byGitUrl.size() > 0) {

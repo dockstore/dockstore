@@ -57,12 +57,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
-    private final String gitUsername;
     private final ContentsService cService;
     private final RepositoryService service;
     private final OrganizationService oService;
     private final UserService uService;
-    private final String gitRepository;
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {

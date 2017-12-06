@@ -51,8 +51,10 @@ import wdl4s.parser.WdlParser;
  * @author dyuen
  */
 public abstract class SourceCodeRepoInterface {
-
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
+
+    protected String gitUsername;
+    protected String gitRepository;
 
     /**
      * If this interface is pointed at a specific repository, grab a
@@ -91,6 +93,18 @@ public abstract class SourceCodeRepoInterface {
         targetWorkflow.setDescriptorType(sourceWorkflow.getDescriptorType());
         targetWorkflow.setDefaultVersion(sourceWorkflow.getDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(sourceWorkflow.getDefaultTestParameterFilePath());
+    }
+
+    /**
+     * Updates the username and repository used to retrieve files from github
+     * Note that this is only called when refreshing multiple workflows at once, because
+     * the code does not instantiate them (since they vary)
+     * @param username
+     * @param repository
+     */
+    public void updateUsernameAndRepository(String username, String repository) {
+        this.gitUsername = username;
+        this.gitRepository = repository;
     }
 
     /**
