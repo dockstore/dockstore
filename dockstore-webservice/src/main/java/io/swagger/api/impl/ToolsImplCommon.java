@@ -15,6 +15,19 @@
  */
 package io.swagger.api.impl;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.HashBasedTable;
@@ -33,25 +46,13 @@ import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
@@ -62,8 +63,8 @@ import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
  * Created by kcao on 01/03/17.
  */
 public final class ToolsImplCommon {
-    private static ToolsImplCommon instance = null;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
+    private static ToolsImplCommon instance = null;
 
     private ToolsImplCommon() {}
 
@@ -112,7 +113,8 @@ public final class ToolsImplCommon {
      * @param container our data object
      * @return standardised data object
      */
-     public static Pair<Tool, Table<String, SourceFile.FileType, Object>> convertContainer2Tool(Entry container, DockstoreWebserviceConfiguration config) {
+    public static Pair<Tool, Table<String, SourceFile.FileType, Object>> convertContainer2Tool(Entry container,
+            DockstoreWebserviceConfiguration config) {
         Table<String, SourceFile.FileType, Object> fileTable = HashBasedTable.create();
         String globalId;
         // TODO: properly pass this information
@@ -129,8 +131,8 @@ public final class ToolsImplCommon {
             }
 
             String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()), DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/",
-                    null, null);
+            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
+                    DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
             globalId = uri.toString() + escapedID;
         } catch (URISyntaxException | UnsupportedEncodingException e) {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
@@ -248,41 +250,41 @@ public final class ToolsImplCommon {
             for (SourceFile file : sourceFiles) {
                 if (inputVersion instanceof Tag) {
                     switch (file.getType()) {
-                        case DOCKERFILE:
-                            ToolDockerfile dockerfile = new ToolDockerfile();
-                            dockerfile.setDockerfile(file.getContent());
-                            dockerfile.setUrl(urlBuilt + ((Tag)inputVersion).getDockerfilePath());
-                            version.setDockerfile(true);
-                            fileTable.put(inputVersion.getName(), DOCKERFILE, dockerfile);
-                            break;
-                        case DOCKSTORE_CWL:
-                            if (((Tag)inputVersion).getCwlPath().equalsIgnoreCase(file.getPath())) {
-                                version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                                fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
-                                        buildSourceFile(urlBuilt + ((Tag)inputVersion).getCwlPath(), file));
-                            }
-                            break;
-                        case DOCKSTORE_WDL:
+                    case DOCKERFILE:
+                        ToolDockerfile dockerfile = new ToolDockerfile();
+                        dockerfile.setDockerfile(file.getContent());
+                        dockerfile.setUrl(urlBuilt + ((Tag)inputVersion).getDockerfilePath());
+                        version.setDockerfile(true);
+                        fileTable.put(inputVersion.getName(), DOCKERFILE, dockerfile);
+                        break;
+                    case DOCKSTORE_CWL:
+                        if (((Tag)inputVersion).getCwlPath().equalsIgnoreCase(file.getPath())) {
                             version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                            fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
-                                    buildSourceFile(urlBuilt + ((Tag)inputVersion).getWdlPath(), file));
-                            break;
+                            fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
+                                    buildSourceFile(urlBuilt + ((Tag)inputVersion).getCwlPath(), file));
+                        }
+                        break;
+                    case DOCKSTORE_WDL:
+                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
+                                buildSourceFile(urlBuilt + ((Tag)inputVersion).getWdlPath(), file));
+                        break;
                     }
                 } else if (inputVersion instanceof WorkflowVersion) {
                     switch (file.getType()) {
-                        case DOCKSTORE_CWL:
-                            // get the "main" workflow file
-                            if (((WorkflowVersion)inputVersion).getWorkflowPath().equalsIgnoreCase(file.getPath())) {
-                                version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                                fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
-                                        buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
-                            }
-                            break;
-                        case DOCKSTORE_WDL:
+                    case DOCKSTORE_CWL:
+                        // get the "main" workflow file
+                        if (((WorkflowVersion)inputVersion).getWorkflowPath().equalsIgnoreCase(file.getPath())) {
                             version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                            fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
+                            fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
                                     buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
-                            break;
+                        }
+                        break;
+                    case DOCKSTORE_WDL:
+                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
+                                buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
+                        break;
                     }
                 }
             }
@@ -309,11 +311,18 @@ public final class ToolsImplCommon {
     private static String constructName(List<String> strings) {
         // The name is composed of the repository name and then the optional workflowname split with a '/'
         StringJoiner joiner = new StringJoiner("/");
-        for (String string: strings) {
+        for (String string : strings) {
             if (!Strings.isNullOrEmpty(string)) {
                 joiner.add(string);
             }
         }
         return joiner.toString();
+    }
+
+    public static ToolTests sourceFileToToolTests(SourceFile file) {
+        ToolTests toolTests = new ToolTests();
+        toolTests.setUrl(file.getPath());
+        toolTests.setTest(file.getContent());
+        return toolTests;
     }
 }

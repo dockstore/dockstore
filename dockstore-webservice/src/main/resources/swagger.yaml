@@ -4106,10 +4106,6 @@ definitions:
         type: "boolean"
         description: "Reports whether this tool has been verified by a specific organization\
           \ or individual"
-      verified-source:
-        type: "string"
-        description: "Source of metadata that can support a verified tool, such as\
-          \ an email or URL"
       descriptor_type:
         type: "array"
         description: "The type (or types) of descriptors available."
@@ -4122,6 +4118,10 @@ definitions:
         type: "string"
         description: "The version of this tool version in the registry. Iterates when\
           \ fields like the description, author, etc. are updated."
+      verified_source:
+        type: "string"
+        description: "Source of metadata that can support a verified tool, such as\
+          \ an email or URL"
     description: "A tool version describes a particular iteration of a tool as described\
       \ by a reference to a specific image and dockerfile."
   User:
