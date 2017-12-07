@@ -1,5 +1,7 @@
 <?xml version="1.1" encoding="UTF-8" standalone="no"?>
-<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd" context="1.3.0.generated">
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.3.0.generated">
     <changeSet author="dyuen (generated)" id="1511468490651-1">
         <createSequence sequenceName="container_id_seq"/>
     </changeSet>
@@ -378,5 +380,9 @@
     </changeSet>
     <changeSet author="dyuen (generated)" id="1511468490651-50">
         <addForeignKeyConstraint baseColumnNames="labelid" baseTableName="entry_label" constraintName="fks71c9mk0f98015eqgtyvs0ewp" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="label"/>
+    </changeSet>
+
+    <changeSet author="dyuen" id="add check constraint">
+        <sql>alter table tool add constraint tool_check check (defaultwdlpath is not null or defaultcwlpath is not null)</sql>
     </changeSet>
 </databaseChangeLog>
