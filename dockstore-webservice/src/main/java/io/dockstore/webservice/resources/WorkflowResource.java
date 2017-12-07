@@ -361,19 +361,15 @@ public class WorkflowResource {
         newWorkflow.getWorkflowVersions().forEach(version -> newVersionMap.put(version.getName(), version));
         Sets.SetView<String> removedVersions = Sets.difference(existingVersionMap.keySet(), newVersionMap.keySet());
         for (String version : removedVersions) {
-            LOG.debug("Removing workflow version " + existingVersionMap.get(version).getName());
             workflow.removeWorkflowVersion(existingVersionMap.get(version));
         }
 
         // Then copy over content that changed
         for (WorkflowVersion version : newWorkflow.getVersions()) {
-            LOG.debug("Looking at version " + version.getName());
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
             if (existingVersionMap.containsKey(version.getName())) {
-                LOG.debug("This is an existing version");
                 workflowVersionFromDB.update(version);
             } else {
-                LOG.debug("This is an new version");
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
@@ -385,12 +381,9 @@ public class WorkflowResource {
             Map<String, SourceFile> existingFileMap = new HashMap<>();
             workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getPath(), file));
             for (SourceFile file : version.getSourceFiles()) {
-                LOG.debug("Looking at file" + file.getPath());
                 if (existingFileMap.containsKey(file.getType().toString() + file.getPath())) {
-                    LOG.debug("Updating source file content for " + file.getPath());
                     existingFileMap.get(file.getType().toString() + file.getPath()).setContent(file.getContent());
                 } else {
-                    LOG.debug("Adding new source file " + file.getPath());
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);
                     workflowVersionFromDB.getSourceFiles().add(fileFromDB);
@@ -406,7 +399,6 @@ public class WorkflowResource {
                     }
                 }
                 if (toDelete) {
-                    LOG.debug("Removing sourcefile " + entry.getValue().getPath() + " from " + version.getName());
                     workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
                 }
             }
