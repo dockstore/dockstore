@@ -48,7 +48,7 @@ import java.util.TreeSet;
  */
 @ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore")
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "organization", "repository", "workflowName" }))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "sourcecontrol", "organization", "repository", "workflowName" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c FROM Workflow c WHERE c.isPublished = true ORDER BY size(c.starredUsers) DESC"),
