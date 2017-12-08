@@ -199,39 +199,51 @@ public class WorkflowResource {
      * @param user a user to refresh workflows for
      */
     public void refreshStubWorkflowsForUser(User user, String organization) {
+
+        List<Token> tokens = checkOnBitbucketToken(user);
+        // Check if tokens for git hosting services are valid and refresh corresponding workflows
+        // Refresh Bitbucket
+        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        // Refresh Github
+        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        // Refresh Gitlab
+        Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+
+        // create each type of repo and check its validity
+        BitBucketSourceCodeRepo bitBucketSourceCodeRepo = null;
+        if (bitbucketToken != null) {
+            bitBucketSourceCodeRepo = new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null);
+            bitBucketSourceCodeRepo.checkSourceCodeValidity();
+        }
+
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = null;
+        if (githubToken != null) {
+            gitHubSourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null);
+            gitHubSourceCodeRepo.checkSourceCodeValidity();
+        }
+
+        GitLabSourceCodeRepo gitLabSourceCodeRepo = null;
+        if (gitlabToken != null) {
+            gitLabSourceCodeRepo = new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null);
+            gitLabSourceCodeRepo.checkSourceCodeValidity();
+        }
+
         try {
-            List<Token> tokens = checkOnBitbucketToken(user);
-
-            // Check if tokens for git hosting services are valid and refresh corresponding workflows
-
-            // Refresh Bitbucket
-            Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-
             // Update bitbucket workflows if token exists
             if (bitbucketToken != null && bitbucketToken.getContent() != null) {
                 // get workflows from bitbucket for a user and updates db
-                refreshHelper(new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null), user,
-                        organization);
+                refreshHelper(bitBucketSourceCodeRepo, user, organization);
             }
-
-            // Refresh Github
-            Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
-
             // Update github workflows if token exists
             if (githubToken != null && githubToken.getContent() != null) {
                 // get workflows from github for a user and updates db
-                refreshHelper(new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null), user, organization);
+                refreshHelper(gitHubSourceCodeRepo, user, organization);
             }
-
-            // Refresh Gitlab
-            Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
-
             // Update gitlab workflows if token exists
             if (gitlabToken != null && gitlabToken.getContent() != null) {
                 // get workflows from gitlab for a user and updates db
-                refreshHelper(new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null), user, organization);
+                refreshHelper(gitLabSourceCodeRepo, user, organization);
             }
-
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
             LOG.info(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
@@ -254,6 +266,10 @@ public class WorkflowResource {
         }
         // For each entry found of the associated git hosting service
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
+            // Split entry into organization/namespace and repository/name
+            String[] entryPathSplit = entry.getValue().split("/");
+            sourceCodeRepoInterface.updateUsernameAndRepository(entryPathSplit[0], entryPathSplit[1]);
+
             // Get all workflows with the same giturl)
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
             if (byGitUrl.size() > 0) {
@@ -345,19 +361,15 @@ public class WorkflowResource {
         newWorkflow.getWorkflowVersions().forEach(version -> newVersionMap.put(version.getName(), version));
         Sets.SetView<String> removedVersions = Sets.difference(existingVersionMap.keySet(), newVersionMap.keySet());
         for (String version : removedVersions) {
-            LOG.debug("Removing workflow version " + existingVersionMap.get(version).getName());
             workflow.removeWorkflowVersion(existingVersionMap.get(version));
         }
 
         // Then copy over content that changed
         for (WorkflowVersion version : newWorkflow.getVersions()) {
-            LOG.debug("Looking at version " + version.getName());
             WorkflowVersion workflowVersionFromDB = existingVersionMap.get(version.getName());
             if (existingVersionMap.containsKey(version.getName())) {
-                LOG.debug("This is an existing version");
                 workflowVersionFromDB.update(version);
             } else {
-                LOG.debug("This is an new version");
                 // create a new one and replace the old one
                 final long workflowVersionId = workflowVersionDAO.create(version);
                 workflowVersionFromDB = workflowVersionDAO.findById(workflowVersionId);
@@ -369,12 +381,9 @@ public class WorkflowResource {
             Map<String, SourceFile> existingFileMap = new HashMap<>();
             workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getPath(), file));
             for (SourceFile file : version.getSourceFiles()) {
-                LOG.debug("Looking at file" + file.getPath());
                 if (existingFileMap.containsKey(file.getType().toString() + file.getPath())) {
-                    LOG.debug("Updating source file content for " + file.getPath());
                     existingFileMap.get(file.getType().toString() + file.getPath()).setContent(file.getContent());
                 } else {
-                    LOG.debug("Adding new source file " + file.getPath());
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);
                     workflowVersionFromDB.getSourceFiles().add(fileFromDB);
@@ -390,7 +399,6 @@ public class WorkflowResource {
                     }
                 }
                 if (toDelete) {
-                    LOG.debug("Removing sourcefile " + entry.getValue().getPath() + " from " + version.getName());
                     workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
                 }
             }

@@ -51,8 +51,10 @@ import wdl4s.parser.WdlParser;
  * @author dyuen
  */
 public abstract class SourceCodeRepoInterface {
-
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
+
+    protected String gitUsername;
+    protected String gitRepository;
 
     /**
      * If this interface is pointed at a specific repository, grab a
@@ -91,6 +93,19 @@ public abstract class SourceCodeRepoInterface {
         targetWorkflow.setDescriptorType(sourceWorkflow.getDescriptorType());
         targetWorkflow.setDefaultVersion(sourceWorkflow.getDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(sourceWorkflow.getDefaultTestParameterFilePath());
+    }
+
+    /**
+     * Updates the username and repository used to retrieve files from github
+     * Note that this is only called when refreshing multiple workflows at once, because
+     * the code does not instantiate them (since they vary)
+     * Ex. ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow (breaks up into examples below)
+     * @param username ex. ICGC-TCGA-PanCancer
+     * @param repository ex. wdl-pcawg-sanger-cgp-workflow
+     */
+    public void updateUsernameAndRepository(String username, String repository) {
+        this.gitUsername = username;
+        this.gitRepository = repository;
     }
 
     /**
@@ -178,6 +193,11 @@ public abstract class SourceCodeRepoInterface {
      * @return giturl -> repositoryid
      */
     public abstract Map<String, String> getWorkflowGitUrl2RepositoryId();
+
+    /**
+     * Checks to see if a particular source code repository is properly setup for issues like token scope
+     */
+    public abstract boolean checkSourceCodeValidity();
 
     List<String> getWdlImports(File workflowFile) {
         Bridge bridge = new Bridge();
@@ -498,15 +518,11 @@ public abstract class SourceCodeRepoInterface {
         // If source file is found and valid then add it
         if (sourceFile != null && sourceFile.getContent() != null) {
             version.getSourceFiles().add(sourceFile);
-            LOG.debug("Combining version " + version.getName() + " and source file " + sourceFile.getPath());
-        } else {
-            LOG.debug("NOT combining version " + version.getName() + " and source file " + sourceFile.getPath());
         }
 
         // add extra source files here (dependencies from "main" descriptor)
         if (sourceFileSet.size() > 0) {
             version.getSourceFiles().addAll(sourceFileSet);
-            LOG.debug("Combining version " + version.getName() + " and extra sourcefiles");
         }
 
         return version;
