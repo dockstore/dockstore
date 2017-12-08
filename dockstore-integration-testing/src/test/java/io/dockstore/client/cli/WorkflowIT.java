@@ -67,10 +67,10 @@ public class WorkflowIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT);
     }
 
-    private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/hello-dockstore-workflow";
-    private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = "dockstore_testuser2/dockstore-workflow";
-    private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/dockstore-whalesay-imports";
-    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = "DockstoreTestUser2/dockstore_workflow_cnv";
+    private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = "github.com/DockstoreTestUser2/hello-dockstore-workflow";
+    private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = "bitbucket.org/dockstore_testuser2/dockstore-workflow";
+    private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = "github.com/DockstoreTestUser2/dockstore-whalesay-imports";
+    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = "github.com/DockstoreTestUser2/dockstore_workflow_cnv";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();

@@ -95,14 +95,14 @@ public class BasicIT extends BaseIT {
         Assert.assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
 
         // refresh a specific workflow
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser/dockstore-whalesay-wdl"});
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry", "github.com/DockstoreTestUser/dockstore-whalesay-wdl"});
 
         // artificially create an invalid version
         testingPostgres.runUpdateStatement("update workflowversion set name = 'test'");
         testingPostgres.runUpdateStatement("update workflowversion set reference = 'test'");
 
         // refresh
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry", "DockstoreTestUser/dockstore-whalesay-wdl"});
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry", "github.com/DockstoreTestUser/dockstore-whalesay-wdl"});
 
         // check that the version was deleted
         final long updatedWorkflowVersionCount = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
@@ -120,7 +120,7 @@ public class BasicIT extends BaseIT {
         // refresh
         systemExit.expectSystemExit();
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry",
-            "DockstoreTestUser/dockstore-whalesay-wdl" });
+            "github.com/DockstoreTestUser/dockstore-whalesay-wdl" });
 
 
     }
