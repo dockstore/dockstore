@@ -284,7 +284,8 @@
             <column name="descriptortype" value="cwl"/>
             <column name="mode" value="FULL"/>
             <column name="organization" value="A"/>
-            <column name="path" value="A/l"/>
+            <column name="path" value="G/A/l"/>
+            <column name="sourcecontrol" value="GITHUB"/>
             <column name="repository" value="l"/>
             <column name="workflowname"/>
         </insert>
