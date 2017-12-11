@@ -57,12 +57,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
-    private final String gitUsername;
     private final ContentsService cService;
     private final RepositoryService service;
     private final OrganizationService oService;
     private final UserService uService;
-    private final String gitRepository;
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
@@ -139,6 +137,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": Cannot getWorkflowGitUrl2RepositoryId workflows {}", gitUsername);
             return null;
         }
+    }
+
+    @Override
+    public boolean checkSourceCodeValidity() {
+        try {
+            oService.getOrganizations();
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(
+                "Please recreate your GitHub token, we need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
+        }
+        return true;
     }
 
     private String extractGitHubContents(List<RepositoryContents> cwlContents) {

@@ -48,10 +48,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private static final String BITBUCKET_GIT_URL_SUFFIX = ".git";
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
-    private final String gitUsername;
     private final HttpClient client;
     private final String bitbucketTokenContent;
-    private final String gitRepository;
 
     // TODO: should be made protected in favour of factory
 
@@ -358,5 +356,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return content;
+    }
+
+    @Override
+    public boolean checkSourceCodeValidity() {
+        //TODO
+        return true;
     }
 }
