@@ -18,7 +18,6 @@
     <changeSet author="agduncan" id="74274923472389478923">
         <addColumn tableName="workflow">
             <column name="sourcecontrol" type="text">
-                <constraints nullable="false"/>
             </column>
         </addColumn>
 
@@ -27,16 +26,32 @@
         </sql>
 
         <sql dbms="postgresql">
+            update workflow set path = CONCAT('github.com/', path) where sourcecontrol='GITHUB'
+        </sql>
+
+        <sql dbms="postgresql">
             update workflow set sourcecontrol='BITBUCKET' where giturl like '%bitbucket%'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set path = CONCAT('bitbucket.org/', path) where sourcecontrol='BITBUCKET'
         </sql>
 
         <sql dbms="postgresql">
             update workflow set sourcecontrol='GITLAB' where giturl like '%gitlab%'
         </sql>
 
+        <sql dbms="postgresql">
+            update workflow set path = CONCAT('gitlab.com/', path) where sourcecontrol='GITLAB'
+        </sql>
+
+        <addNotNullConstraint tableName="workflow" columnName="sourcecontrol"></addNotNullConstraint>
+
         <addUniqueConstraint columnNames="sourcecontrol, organization, repository, workflowname" constraintName="uknlbos7i98icbaql5cyt5bhhy2" tableName="workflow"/>
 
         <dropUniqueConstraint constraintName="ukkprrtg54h6rjca5l1navospm8" tableName="workflow"/>
+
+        <dropUniqueConstraint constraintName="uk_kprrtg54h6rjca5l1navospm8" tableName="workflow"/>
 
         <dropIndex indexName="full_workflow_name" tableName="workflow"/>
 
