@@ -50,10 +50,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private static final String GITLAB_GIT_URL_SUFFIX = ".git";
 
     private static final Logger LOG = LoggerFactory.getLogger(GitLabSourceCodeRepo.class);
-    private final String gitUsername;
     private final HttpClient client;
     private final String gitlabTokenContent;
-    private final String gitRepository;
 
     public GitLabSourceCodeRepo(String gitUsername, HttpClient client, String gitlabTokenContent, String gitRepository) {
         this.client = client;
@@ -394,5 +392,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean checkSourceCodeValidity() {
+        //TODO
+        return true;
     }
 }
