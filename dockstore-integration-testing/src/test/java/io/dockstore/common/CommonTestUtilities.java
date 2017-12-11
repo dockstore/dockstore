@@ -46,7 +46,7 @@ public final class CommonTestUtilities {
     public static void dropAndRecreate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.4.0");
     }
 
     public static void cleanState(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {

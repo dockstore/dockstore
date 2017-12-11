@@ -381,8 +381,4 @@
     <changeSet author="dyuen (generated)" id="1511468490651-50">
         <addForeignKeyConstraint baseColumnNames="labelid" baseTableName="entry_label" constraintName="fks71c9mk0f98015eqgtyvs0ewp" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="label"/>
     </changeSet>
-
-    <changeSet author="dyuen" id="add check constraint">
-        <sql>alter table tool add constraint tool_check check (defaultwdlpath is not null or defaultcwlpath is not null)</sql>
-    </changeSet>
 </databaseChangeLog>
