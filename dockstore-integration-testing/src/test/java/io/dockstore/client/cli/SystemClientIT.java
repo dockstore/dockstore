@@ -410,8 +410,8 @@ public class SystemClientIT {
                 .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/tests")
                 .build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
-        assertTrue(strings.get(0).equals("testparameterstuff"));
-        assertTrue(strings.get(1).equals("moretestparameterstuff"));
+        assertTrue(strings.get(0).contains("testparameterstuff"));
+        assertTrue(strings.get(0).contains("moretestparameterstuff"));
     }
 
     @Test
