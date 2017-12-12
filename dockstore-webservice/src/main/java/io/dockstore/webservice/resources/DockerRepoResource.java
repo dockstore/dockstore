@@ -90,7 +90,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool>, StarrableResourceInterface {
+public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool>, StarrableResourceInterface, SourceControlResourceInterface{
 
     private static final String TARGET_URL = "https://quay.io/api/v1/";
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
@@ -146,7 +146,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
-            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
         return Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO, organization);
     }
@@ -169,7 +169,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
-            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
         Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
@@ -522,7 +522,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         checkEntry(tool);
 
-        Helper.checkUser(user, tool);
+        AuthenticatedResourceInterface.checkUser(user, tool);
 
         return tool;
     }

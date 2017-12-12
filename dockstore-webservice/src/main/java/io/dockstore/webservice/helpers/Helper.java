@@ -16,9 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,11 +25,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Optional;
-import com.google.gson.Gson;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
@@ -44,7 +39,6 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.resources.ResourceUtilities;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -58,8 +52,6 @@ import org.slf4j.LoggerFactory;
 public final class Helper {
 
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
-
-    private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
     private Helper() {
         // hide the constructor for utility classes
@@ -179,7 +171,7 @@ public final class Helper {
 
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
-            if (f != FileType.CWL_TEST_JSON && f != FileType.WDL_TEST_JSON) {
+            if (f != FileType.CWL_TEST_JSON && f != FileType.WDL_TEST_JSON && f != FileType.NEXTFLOW_PARAMS) {
                 String fileResponse = importer.readGitRepositoryFile(f, tag, null);
                 if (fileResponse != null) {
                     SourceFile dockstoreFile = new SourceFile();
@@ -196,6 +188,10 @@ public final class Helper {
                         dockstoreFile.setPath(tag.getWdlPath());
                         Map<String, SourceFile> importedFiles = importer.resolveImports(fileResponse, c, f, tag);
                         files.addAll(importedFiles.values());
+                    } else {
+                        //TODO add nextflow work here
+                        LOG.error("file type not implemented yet");
+                        continue;
                     }
                     files.add(dockstoreFile);
                 }
@@ -299,68 +295,6 @@ public final class Helper {
             }
         }
         return null;
-    }
-
-    /**
-     * Refreshes user's Bitbucket token.
-     *
-     * @param token
-     * @param client
-     * @param tokenDAO
-     * @param bitbucketClientID
-     * @param bitbucketClientSecret
-     * @return the updated token
-     */
-    public static Token refreshBitbucketToken(Token token, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
-            String bitbucketClientSecret) {
-
-        String url = BITBUCKET_URL + "site/oauth2/access_token";
-
-        try {
-            Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
-                    "grant_type=refresh_token&refresh_token=" + token.getRefreshToken());
-
-            if (asString.isPresent()) {
-                String accessToken;
-                String refreshToken;
-                LOG.info(token.getUsername() + ": RESOURCE CALL: {}", url);
-                String json = asString.get();
-
-                Gson gson = new Gson();
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>)gson.fromJson(json, map.getClass());
-
-                accessToken = map.get("access_token");
-                refreshToken = map.get("refresh_token");
-
-                token.setContent(accessToken);
-                token.setRefreshToken(refreshToken);
-
-                long create = tokenDAO.create(token);
-                return tokenDAO.findById(create);
-            } else {
-                throw new CustomWebApplicationException("Could not retrieve bitbucket.org token based on code",
-                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-        } catch (UnsupportedEncodingException ex) {
-            LOG.info(token.getUsername() + ": " + ex.toString());
-            throw new CustomWebApplicationException(ex.toString(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Check if admin or if container belongs to user
-     *
-     * @param user
-     * @param list
-     */
-    public static void checkUser(User user, List<? extends Entry> list) {
-        for (Entry entry : list) {
-            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                        HttpStatus.SC_FORBIDDEN);
-            }
-        }
     }
 
     public static String convertHttpsToSsh(String url) {

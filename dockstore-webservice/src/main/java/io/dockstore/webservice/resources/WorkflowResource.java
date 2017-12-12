@@ -55,6 +55,7 @@ import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -99,7 +100,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/workflows")
 @Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow>, StarrableResourceInterface {
+public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow>, StarrableResourceInterface, SourceControlResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private final ElasticManager elasticManager;
@@ -308,7 +309,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
-            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
         return tokenDAO.findByUserId(user.getId());
@@ -553,13 +554,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         return c;
     }
 
-    private SourceFile createSourceFile(String path, SourceFile.FileType type) {
-        SourceFile sourcefile = new SourceFile();
-        sourcefile.setPath(path);
-        sourcefile.setType(type);
-        return sourcefile;
-    }
-
     @GET
     @Timed
     @UnitOfWork
@@ -714,7 +708,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
 
         Set<String> verifiedSourcesArray = new HashSet<>();
-        workflow.getWorkflowVersions().stream().filter((WorkflowVersion u) -> u.isVerified())
+        workflow.getWorkflowVersions().stream().filter(Version::isVerified)
                 .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
 
         JSONArray jsonArray;

@@ -64,6 +64,21 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
+     * Check if admin or if container belongs to user
+     *
+     * @param user
+     * @param list
+     */
+    static void checkUser(User user, List<? extends Entry> list) {
+        for (Entry entry : list) {
+            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                    HttpStatus.SC_FORBIDDEN);
+            }
+        }
+    }
+
+    /**
      * Check if admin or correct user
      *
      * @param user
