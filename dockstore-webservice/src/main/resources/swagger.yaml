@@ -3555,9 +3555,9 @@ definitions:
   DescriptorLanguageBean:
     type: "object"
     properties:
-      friendlyName:
+      value:
         type: "string"
-      enum:
+      friendlyName:
         type: "string"
   DockstoreTool:
     type: "object"
@@ -3883,9 +3883,9 @@ definitions:
   SourceControlBean:
     type: "object"
     properties:
-      friendlyName:
+      value:
         type: "string"
-      enum:
+      friendlyName:
         type: "string"
   SourceFile:
     type: "object"

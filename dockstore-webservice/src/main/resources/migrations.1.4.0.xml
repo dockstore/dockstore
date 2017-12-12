@@ -47,9 +47,14 @@
 
         <addNotNullConstraint tableName="workflow" columnName="sourcecontrol"/>
 
-        <addUniqueConstraint columnNames="sourcecontrol, organization, repository, workflowname" constraintName="uknlbos7i98icbaql5cyt5bhhy2" tableName="workflow"/>
+        <sql dbms="postgresql">
+            alter table workflow drop constraint if exists ukkprrtg54h6rjca5l1navospm8
+        </sql>
 
-        <dropUniqueConstraint constraintName="ukkprrtg54h6rjca5l1navospm8" tableName="workflow"/>
+        <sql dbms="postgresql">
+            alter table workflow drop constraint if exists uk_kprrtg54h6rjca5l1navospm8
+        </sql>
+
 
         <dropIndex indexName="full_workflow_name" tableName="workflow"/>
 

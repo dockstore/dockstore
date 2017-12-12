@@ -16,8 +16,6 @@
 
 package io.dockstore.common;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 /**
  * This enumerates the types of source control that we can associate an entry with.
  *
@@ -56,7 +54,6 @@ public enum SourceControl {
      */
     public static class SourceControlBean {
 
-        @JsonProperty("enum")
         public String value;
 
         public String friendlyName;

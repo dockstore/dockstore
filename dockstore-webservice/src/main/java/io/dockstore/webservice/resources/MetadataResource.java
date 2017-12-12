@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.List;
@@ -171,9 +172,7 @@ public class MetadataResource {
     @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "Does not need authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
     public List<SourceControl.SourceControlBean> getSourceControlList() {
         List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
-        for (SourceControl sourceControl : SourceControl.values()) {
-            sourceControlList.add(new SourceControl.SourceControlBean(sourceControl));
-        }
+        Arrays.asList(SourceControl.values()).forEach(sourceControl -> sourceControlList.add(new SourceControl.SourceControlBean(sourceControl)));
         return sourceControlList;
     }
 
@@ -185,9 +184,7 @@ public class MetadataResource {
     @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
         List<Registry.RegistryBean> registryList = new ArrayList<>();
-        for (Registry r : Registry.values()) {
-            registryList.add(new Registry.RegistryBean(r));
-        }
+        Arrays.asList(Registry.values()).forEach(registry -> registryList.add(new Registry.RegistryBean(registry)));
         return registryList;
     }
 
@@ -199,9 +196,7 @@ public class MetadataResource {
     @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "Does not need authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
     public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
-        for (DescriptorLanguage descriptorLanguage : DescriptorLanguage.values()) {
-            descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage));
-        }
+        Arrays.asList(DescriptorLanguage.values()).forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
     }
 
