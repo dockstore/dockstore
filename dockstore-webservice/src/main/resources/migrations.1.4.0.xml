@@ -15,4 +15,19 @@
   ~    limitations under the License.
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd" context="1.4.0">
+
+    <changeSet author="dyuen" id="add check constraint if not present">
+        <sql>ALTER TABLE tool DROP CONSTRAINT IF EXISTS tool_check</sql>
+        <update tableName="tool">
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <where>defaultwdlpath IS NULL</where>
+        </update>
+        <update tableName="tool">
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
+            <where>defaultcwlpath IS NULL</where>
+        </update>
+        <sql>ALTER TABLE tool ADD CONSTRAINT tool_check CHECK (defaultwdlpath is not null or defaultcwlpath is not null)</sql>
+
+    </changeSet>
+
 </databaseChangeLog>
