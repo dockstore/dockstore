@@ -183,11 +183,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         }
 
         if ("main_descriptor".equals(relativePath)) {
-            return toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value);
-        } else {
-            return getFileByToolVersionID(id, versionId, fileType, relativePath,
-                    value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+            relativePath = null;
         }
+        return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
 
@@ -430,8 +428,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                     return Response.status(Response.Status.NOT_FOUND).build();
                 } else {
                     final Set<SourceFile> sourceFiles = oldFirst.get().getSourceFiles();
-                    final Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
+                    Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
                             .findFirst();
+                    if (!first1.isPresent()) {
+                        first1 = sourceFiles.stream().filter(file -> (cleanRelativePath(file.getPath()).equalsIgnoreCase(cleanRelativePath(relativePath)))).findFirst();
+                    }
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
                         ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
@@ -454,6 +455,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         return this.toolDAO;
     }
 
+    private String cleanRelativePath(String relativePath) {
+        String cleanRelativePath = StringUtils.stripStart(relativePath, "./");
+        return StringUtils.stripStart(cleanRelativePath, "/");
+    }
 
     /**
      * Used to parse localised IDs (no URL)
