@@ -90,7 +90,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool>, StarrableResourceInterface, SourceControlResourceInterface{
+public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool>, StarrableResourceInterface, SourceControlResourceInterface {
 
     private static final String TARGET_URL = "https://quay.io/api/v1/";
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
