@@ -45,13 +45,11 @@
             update workflow set path = CONCAT('gitlab.com/', path) where sourcecontrol='GITLAB'
         </sql>
 
-        <addNotNullConstraint tableName="workflow" columnName="sourcecontrol"></addNotNullConstraint>
+        <addNotNullConstraint tableName="workflow" columnName="sourcecontrol"/>
 
         <addUniqueConstraint columnNames="sourcecontrol, organization, repository, workflowname" constraintName="uknlbos7i98icbaql5cyt5bhhy2" tableName="workflow"/>
 
         <dropUniqueConstraint constraintName="ukkprrtg54h6rjca5l1navospm8" tableName="workflow"/>
-
-        <dropUniqueConstraint constraintName="uk_kprrtg54h6rjca5l1navospm8" tableName="workflow"/>
 
         <dropIndex indexName="full_workflow_name" tableName="workflow"/>
 
