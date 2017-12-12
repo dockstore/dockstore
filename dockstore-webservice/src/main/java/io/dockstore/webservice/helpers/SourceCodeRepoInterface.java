@@ -503,16 +503,7 @@ public abstract class SourceCodeRepoInterface {
                     .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
 
             FileImporter importer = new FileImporter(this);
-            for (SourceFile testJson : testParameterFiles) {
-                String fileResponse = importer.readGitRepositoryFile(workflowDescriptorType, existingVersion, testJson.getPath());
-                if (fileResponse != null) {
-                    SourceFile dockstoreFile = new SourceFile();
-                    dockstoreFile.setType(workflowDescriptorType);
-                    dockstoreFile.setContent(fileResponse);
-                    dockstoreFile.setPath(testJson.getPath());
-                    sourceFileSet.add(dockstoreFile);
-                }
-            }
+            testParameterFiles.forEach(file -> importer.readFile(existingVersion, sourceFileSet, workflowDescriptorType, file));
         }
 
         // If source file is found and valid then add it

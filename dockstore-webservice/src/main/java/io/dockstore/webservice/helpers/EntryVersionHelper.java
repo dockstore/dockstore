@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
@@ -38,21 +39,21 @@ import org.apache.http.HttpStatus;
  * <p>
  * Created by dyuen on 10/03/16.
  */
-public class EntryVersionHelper<T extends Entry> {
+public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResourceInterface {
 
-    private final EntryDAO dao;
+    /**
+     * Implementors of this interface require a DAO
+     */
+    EntryDAO getDAO();
 
-    public EntryVersionHelper(EntryDAO dao) {
-        this.dao = dao;
-    }
 
-    public T filterContainersForHiddenTags(T entry) {
+    default T filterContainersForHiddenTags(T entry) {
         return filterContainersForHiddenTags(Lists.newArrayList(entry)).get(0);
     }
 
-    public List<T> filterContainersForHiddenTags(List<T> entries) {
+    default List<T> filterContainersForHiddenTags(List<T> entries) {
         for (T entry : entries) {
-            dao.evict(entry);
+            getDAO().evict(entry);
             // clear users which are also lazy loaded
             entry.setUsers(null);
             // need to have this evict so that hibernate does not actually delete the tags and users
@@ -70,7 +71,7 @@ public class EntryVersionHelper<T extends Entry> {
      * @param fileType narrow the file to a specific type
      * @return return the primary descriptor or Dockerfile
      */
-    public SourceFile getSourceFile(long entryId, String tag, SourceFile.FileType fileType) {
+    default SourceFile getSourceFile(long entryId, String tag, SourceFile.FileType fileType) {
         return getSourceFileByPath(entryId, tag, fileType, null);
     }
 
@@ -84,7 +85,7 @@ public class EntryVersionHelper<T extends Entry> {
      * @param path     a specific path to a file
      * @return a single file depending on parameters
      */
-    public SourceFile getSourceFileByPath(long entryId, String tag, SourceFile.FileType fileType, String path) {
+    default SourceFile getSourceFileByPath(long entryId, String tag, SourceFile.FileType fileType, String path) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType);
         for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
             if (path != null) {
@@ -99,7 +100,7 @@ public class EntryVersionHelper<T extends Entry> {
         throw new CustomWebApplicationException("No descriptor found", HttpStatus.SC_BAD_REQUEST);
     }
 
-    public List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType) {
+    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType);
         List<SourceFile> files = Lists.newArrayList();
         for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
@@ -110,7 +111,7 @@ public class EntryVersionHelper<T extends Entry> {
         return files;
     }
 
-    public List<SourceFile> getAllSourceFiles(long workflowId, String tag, SourceFile.FileType fileType) {
+    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, SourceFile.FileType fileType) {
         final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType);
         List<SourceFile> files = Lists.newArrayList();
         for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
@@ -121,10 +122,10 @@ public class EntryVersionHelper<T extends Entry> {
         return files;
     }
 
-    private Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
+    default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
             SourceFile.FileType fileType) {
-        T entry = (T)dao.findById(workflowId);
-        Helper.checkEntry(entry);
+        T entry = (T)getDAO().findById(workflowId);
+        checkEntry(entry);
         this.filterContainersForHiddenTags(entry);
         Version tagInstance = null;
 
@@ -221,7 +222,7 @@ public class EntryVersionHelper<T extends Entry> {
         }
     }
 
-    private class FileDescription {
+    class FileDescription {
         boolean primaryDescriptor;
 
         FileDescription(boolean isPrimaryDescriptor) {

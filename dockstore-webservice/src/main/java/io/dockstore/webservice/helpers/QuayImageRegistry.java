@@ -37,7 +37,6 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.helpers.Helper.RepoList;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import io.swagger.quay.client.ApiClient;
 import io.swagger.quay.client.ApiException;
@@ -355,5 +354,18 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     @Override
     public Registry getRegistry() {
         return Registry.QUAY_IO;
+    }
+
+    public static class RepoList {
+
+        private List<Tool> repositories;
+
+        public List<Tool> getRepositories() {
+            return repositories;
+        }
+
+        public void setRepositories(List<Tool> repositories) {
+            this.repositories = repositories;
+        }
     }
 }

@@ -87,7 +87,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/auth/tokens")
 @Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
-public class TokenResource {
+public class TokenResource implements AuthenticatedResourceInterface {
     /**
      * Global instance of the HTTP transport.
      */
@@ -152,7 +152,7 @@ public class TokenResource {
     public Token listToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
         Token t = tokenDAO.findById(tokenId);
-        Helper.checkUser(user, t.getUserId());
+        checkUser(user, t.getUserId());
 
         return t;
     }
@@ -208,7 +208,7 @@ public class TokenResource {
     public Response deleteToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
-        Helper.checkUser(user, token.getUserId());
+        checkUser(user, token.getUserId());
 
         // invalidate cache now that we're deleting the token
         cachingAuthenticator.invalidate(token.getContent());

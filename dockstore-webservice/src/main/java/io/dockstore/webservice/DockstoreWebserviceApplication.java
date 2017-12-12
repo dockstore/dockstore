@@ -244,7 +244,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 workflowVersionDAO, labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
         environment.jersey().register(workflowResource);
 
-        environment.jersey().register(new UserResource(httpClient, tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
+        environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
 
         // attach the container dao statically to avoid too much modification of generated code

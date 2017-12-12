@@ -3841,6 +3841,9 @@ definitions:
         - "DOCKERFILE"
         - "CWL_TEST_JSON"
         - "WDL_TEST_JSON"
+        - "NEXTFLOW"
+        - "NEXTFLOW_CONFIG"
+        - "NEXTFLOW_PARAMS"
       content:
         type: "string"
         description: "Cache for the contents of the target file"

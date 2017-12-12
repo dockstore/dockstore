@@ -52,7 +52,9 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author xliu
+ * @deprecated let's gradually remove this class, this is a bit of an ugly grab-bag
  */
+@Deprecated
 public final class Helper {
 
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
@@ -199,39 +201,15 @@ public final class Helper {
                 }
             } else {
                 // If test json, must grab all
-                if (f == FileType.CWL_TEST_JSON) {
-                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream()
-                            .filter((SourceFile u) -> u.getType() == FileType.CWL_TEST_JSON).collect(Collectors.toList());
-                    for (SourceFile testJson : cwlTestJson) {
-                        String fileResponse = importer.readGitRepositoryFile(f, tag, testJson.getPath());
-                        if (fileResponse != null) {
-                            SourceFile dockstoreFile = new SourceFile();
-                            dockstoreFile.setType(f);
-                            dockstoreFile.setContent(fileResponse);
-                            dockstoreFile.setPath(testJson.getPath());
-                            files.add(dockstoreFile);
-                        }
-                    }
-                } else if (f == FileType.WDL_TEST_JSON) {
-                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream()
-                            .filter((SourceFile u) -> u.getType() == FileType.WDL_TEST_JSON).collect(Collectors.toList());
-                    for (SourceFile testJson : cwlTestJson) {
-                        String fileResponse = importer.readGitRepositoryFile(f, tag, testJson.getPath());
-                        if (fileResponse != null) {
-                            SourceFile dockstoreFile = new SourceFile();
-                            dockstoreFile.setType(f);
-                            dockstoreFile.setContent(fileResponse);
-                            dockstoreFile.setPath(testJson.getPath());
-                            files.add(dockstoreFile);
-                        }
-                    }
-                }
+                List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == f)
+                    .collect(Collectors.toList());
+                cwlTestJson.forEach(file -> importer.readFile(tag, files, f, file));
             }
-
         }
-
         return files;
     }
+
+
 
     /**
      * Refreshes user's containers
@@ -371,31 +349,6 @@ public final class Helper {
     }
 
     /**
-     * Check if admin or correct user
-     *
-     * @param user
-     * @param id
-     */
-    public static void checkUser(User user, long id) {
-        if (!user.getIsAdmin() && user.getId() != id) {
-            throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
-        }
-    }
-
-    /**
-     * Check if admin or if tool belongs to user
-     *
-     * @param user
-     * @param entry
-     */
-    public static void checkUser(User user, Entry entry) {
-        if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-            throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-        }
-    }
-
-    /**
      * Check if admin or if container belongs to user
      *
      * @param user
@@ -408,29 +361,6 @@ public final class Helper {
                         HttpStatus.SC_FORBIDDEN);
             }
         }
-    }
-
-    /**
-     * Check if tool is null
-     *
-     * @param entry
-     */
-    public static void checkEntry(Entry entry) {
-        if (entry == null) {
-            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Check if tool is null
-     *
-     * @param entry
-     */
-    public static void checkEntry(List<? extends Entry> entry) {
-        if (entry == null) {
-            throw new CustomWebApplicationException("No entries provided", HttpStatus.SC_BAD_REQUEST);
-        }
-        entry.forEach(Helper::checkEntry);
     }
 
     public static String convertHttpsToSsh(String url) {
@@ -525,46 +455,7 @@ public final class Helper {
         }
     }
 
-    /**
-     * Stars the entry
-     *
-     * @param entry     the entry to star
-     * @param user      the user to star the entry with
-     * @param entryType the entry type which is either "workflow" or "tool"
-     * @param entryPath the path of the entry
-     */
-    public static void starEntryHelper(Entry entry, User user, String entryType, String entryPath) {
-        Helper.checkEntry(entry);
-        Set<User> starredUsers = entry.getStarredUsers();
-        if (!starredUsers.contains(user)) {
-            entry.addStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException(
-                    "You cannot star the " + entryType + " " + entryPath + " because you have already starred it.",
-                    HttpStatus.SC_BAD_REQUEST);
-        }
-    }
 
-    /**
-     * Unstars the entry
-     *
-     * @param entry     the entry to unstar
-     * @param user      the user to unstar the entry with
-     * @param entryType the entry type which is either "workflow" or "tool"
-     * @param entryPath the path of the entry
-     */
-    public static void unstarEntryHelper(Entry entry, User user, String entryType, String entryPath) {
-        Helper.checkEntry(entry);
-
-        Set<User> starredUsers = entry.getStarredUsers();
-        if (starredUsers.contains(user)) {
-            entry.removeStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException(
-                    "You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.",
-                    HttpStatus.SC_BAD_REQUEST);
-        }
-    }
 
     /**
      * Updates the given user with metadata from Github
@@ -582,16 +473,4 @@ public final class Helper {
         return existingUser;
     }
 
-    public static class RepoList {
-
-        private List<Tool> repositories;
-
-        public List<Tool> getRepositories() {
-            return repositories;
-        }
-
-        public void setRepositories(List<Tool> repositories) {
-            this.repositories = repositories;
-        }
-    }
 }

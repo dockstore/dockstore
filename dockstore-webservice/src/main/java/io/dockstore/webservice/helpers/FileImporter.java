@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -227,5 +228,23 @@ public class FileImporter {
         sourceFile.setContent(fileResponse);
         sourceFile.setPath(mapValue);
         imports.put(mapValue, sourceFile);
+    }
+
+    /**
+     * Read a file from the importer and add it into files
+     * @param tag the version of source control we want to read from
+     * @param files the files collection we want to add to
+     * @param f the type of file
+     * @param testJson the sourcefile to read
+     */
+    public void readFile(Version tag, Collection<SourceFile> files, SourceFile.FileType f, SourceFile testJson) {
+        String fileResponse = this.readGitRepositoryFile(f, tag, testJson.getPath());
+        if (fileResponse != null) {
+            SourceFile dockstoreFile = new SourceFile();
+            dockstoreFile.setType(f);
+            dockstoreFile.setContent(fileResponse);
+            dockstoreFile.setPath(testJson.getPath());
+            files.add(dockstoreFile);
+        }
     }
 }

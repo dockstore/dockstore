@@ -39,9 +39,13 @@ import io.swagger.annotations.ApiModelProperty;
 @Entity
 @Table(name = "sourcefile")
 public class SourceFile {
+    /**
+     * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
+     *
+     */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON
+        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_PARAMS
     }
 
     @Id

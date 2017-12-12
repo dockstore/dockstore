@@ -63,7 +63,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,10 +74,9 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/users")
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
-public class UserResource {
+public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final ElasticManager elasticManager;
-    private final HttpClient client;
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
     private final TokenDAO tokenDAO;
@@ -86,9 +84,8 @@ public class UserResource {
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
 
-    public UserResource(HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, WorkflowResource workflowResource,
+    public UserResource(TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, WorkflowResource workflowResource,
             DockerRepoResource dockerRepoResource) {
-        this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
         this.tokenDAO = tokenDAO;
@@ -147,7 +144,7 @@ public class UserResource {
     public User listUser(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("Username of user to return") @PathParam("username") String username) {
         User user = userDAO.findByUsername(username);
-        Helper.checkUser(authUser, user.getId());
+        checkUser(authUser, user.getId());
         return user;
     }
 
@@ -157,7 +154,7 @@ public class UserResource {
     @Path("/{userId}")
     @ApiOperation(value = "Get user with id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
         User user = userDAO.findById(userId);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
@@ -181,7 +178,7 @@ public class UserResource {
     @ApiOperation(value = "Get tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findByUserId(userId);
     }
@@ -193,7 +190,7 @@ public class UserResource {
     @ApiOperation(value = "Get Github tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findGithubByUserId(userId);
     }
@@ -205,7 +202,7 @@ public class UserResource {
     @ApiOperation(value = "Get Gitlab tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findGitlabByUserId(userId);
     }
@@ -217,7 +214,7 @@ public class UserResource {
     @ApiOperation(value = "Get Quay tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findQuayByUserId(userId);
     }
@@ -229,7 +226,7 @@ public class UserResource {
     @ApiOperation(value = "Get Dockstore tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findQuayByUserId(userId);
     }
@@ -240,7 +237,7 @@ public class UserResource {
     @Path("/{userId}/groups")
     @ApiOperation(value = "Get groups that the user belongs to", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class, responseContainer = "List")
     public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User") @PathParam("userId") long userId) {
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         if (user == null) {
@@ -289,7 +286,7 @@ public class UserResource {
     @ApiOperation(value = "Add a group to a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User addGroupToUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User ID of user") @PathParam("userId") long userId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group groupParam) {
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         // need a live group
@@ -315,7 +312,7 @@ public class UserResource {
     public User removeUserFromGroup(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("User ID of user") @PathParam("userId") long userId,
             @ApiParam("Group ID of group") @PathParam("groupId") long groupId) {
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);
@@ -336,7 +333,7 @@ public class UserResource {
     @ApiOperation(value = "List all published containers from a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
     public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         // get live entity
         final User byId = this.userDAO.findById(user.getId());
@@ -361,7 +358,7 @@ public class UserResource {
     @ApiOperation(value = "List all published workflows from a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get user's published workflows only", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         // get live entity
         final User byId = this.userDAO.findById(user.getId());
@@ -388,7 +385,7 @@ public class UserResource {
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
 
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
@@ -453,7 +450,7 @@ public class UserResource {
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
@@ -480,7 +477,7 @@ public class UserResource {
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
 
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
@@ -503,7 +500,7 @@ public class UserResource {
     public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         // Update user data
         Helper.updateUserHelper(authUser, userDAO, tokenDAO);
@@ -524,7 +521,7 @@ public class UserResource {
     @ApiOperation(value = "List workflows owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
         // need to avoid lazy initialize error
         final User authUser = this.userDAO.findById(userId);
         return getWorkflows(authUser);
@@ -545,7 +542,7 @@ public class UserResource {
     @ApiOperation(value = "List repos owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
         return getTools(byId);

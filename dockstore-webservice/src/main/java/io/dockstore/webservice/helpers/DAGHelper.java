@@ -39,7 +39,6 @@ import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.client.Bridge;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.resources.WorkflowResource;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
@@ -70,7 +69,7 @@ public class DAGHelper {
      * @return String
      */
     public String getContentWDL(String mainDescName, File tempMainDescriptor, Map<String, String> secondaryDescContent,
-            WorkflowResource.Type type) {
+            Type type) {
         // Initialize general variables
         Bridge bridge = new Bridge();
         bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
@@ -153,9 +152,9 @@ public class DAGHelper {
         nodePairs.add(new MutablePair<>("UniqueEndKey", ""));
 
         // Create JSON for DAG/table
-        if (type == WorkflowResource.Type.DAG) {
+        if (type == Type.DAG) {
             return setupJSONDAG(nodePairs, callToDependencies, callToType, nodeDockerInfo);
-        } else if (type == WorkflowResource.Type.TOOLS) {
+        } else if (type == Type.TOOLS) {
             return getJSONTableToolContent(nodeDockerInfo);
         }
 
@@ -173,7 +172,7 @@ public class DAGHelper {
      * @return String
      */
     @SuppressWarnings("checkstyle:methodlength")
-    public String getContentCWL(String mainDescName, String content, Map<String, String> secondaryDescContent, WorkflowResource.Type type) {
+    public String getContentCWL(String mainDescName, String content, Map<String, String> secondaryDescContent, Type type) {
         Yaml yaml = new Yaml();
         if (isValidCwl(content, yaml)) {
             // Initialize data structures for DAG
@@ -316,7 +315,7 @@ public class DAGHelper {
                         dockerUrl = getURLFromEntry(stepDockerRequirement);
                     }
 
-                    if (type == WorkflowResource.Type.DAG) {
+                    if (type == Type.DAG) {
                         nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
                     }
 
@@ -333,7 +332,7 @@ public class DAGHelper {
 
                 }
 
-                if (type == WorkflowResource.Type.DAG) {
+                if (type == Type.DAG) {
                     // Determine steps that point to end
                     ArrayList<String> endDependencies = new ArrayList<>();
 
@@ -736,5 +735,9 @@ public class DAGHelper {
         LOG.debug(json);
 
         return json;
+    }
+
+    public enum Type {
+        DAG, TOOLS
     }
 }
