@@ -182,7 +182,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
-        return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+        if ("main_descriptor".equals(relativePath)) {
+            return toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value);
+        } else {
+            return getFileByToolVersionID(id, versionId, fileType, relativePath,
+                    value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+        }
     }
 
 
