@@ -79,11 +79,20 @@ public class DAGWorkflowTestIT extends BaseIT {
 
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
             throws IOException, TimeoutException, ApiException {
+        final String TEST_WORKFLOW_NAME = "test-workflow";
         WorkflowsApi workflowApi = setupWebService();
-        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, "test-workflow", descType, "/test.json");
+        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
+
+
+        // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
+        Assert.assertTrue(githubWorkflow.getWorkflowName().equals(TEST_WORKFLOW_NAME));
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
+
+        // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
+        Assert.assertTrue(refresh.getWorkflowName().equals(TEST_WORKFLOW_NAME));
+
         Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch))
                 .findFirst();
 
