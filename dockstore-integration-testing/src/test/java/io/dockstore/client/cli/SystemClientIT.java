@@ -27,6 +27,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
@@ -69,6 +70,7 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -79,6 +81,7 @@ import static org.junit.Assert.fail;
  *
  * @author xliu
  */
+@Category(ConfidentialTest.class)
 public class SystemClientIT {
 
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
