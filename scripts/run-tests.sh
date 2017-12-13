@@ -8,6 +8,7 @@ echo "${TRAVIS_PULL_REQUEST_SHA}"
 
 if [ ${#EXTRA_MAVEN_VAR} -eq 0 ]; then
         # always do non-coverage builds
+        cd dockstore-webservice
 	mvn --batch-mode clean install -Ptravis-tests ${EXTRA_MAVEN_VAR}
 else
         # for coverage builds, we need to be more picky, let's exclude builds from branches other than develop and master
