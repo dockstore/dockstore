@@ -50,7 +50,7 @@ public class FileImporter {
     public static final Logger LOG = LoggerFactory.getLogger(FileImporter.class);
     private final SourceCodeRepoInterface sourceCodeRepo;
 
-    public FileImporter(SourceCodeRepoInterface sourceCodeRepo) {
+    FileImporter(SourceCodeRepoInterface sourceCodeRepo) {
         this.sourceCodeRepo = sourceCodeRepo;
     }
 
@@ -61,7 +61,7 @@ public class FileImporter {
      * @param specificPath if specified, look for a specific file, otherwise return the "default" for a fileType
      * @return  a FileResponse instance
      */
-    public String readGitRepositoryFile(SourceFile.FileType fileType, Version version, String specificPath) {
+    String readGitRepositoryFile(SourceFile.FileType fileType, Version version, String specificPath) {
 
         if (sourceCodeRepo == null) {
             return null;
@@ -110,7 +110,7 @@ public class FileImporter {
         return sourceCodeRepo.readFile(fileName, reference);
     }
 
-    public Map<String, SourceFile> resolveImports(String content, Entry entry, SourceFile.FileType fileType, Version version) {
+    Map<String, SourceFile> resolveImports(String content, Entry entry, SourceFile.FileType fileType, Version version) {
 
         Map<String, SourceFile> imports = new HashMap<>();
 
@@ -237,7 +237,7 @@ public class FileImporter {
      * @param f the type of file
      * @param testJson the sourcefile to read
      */
-    public void readFile(Version tag, Collection<SourceFile> files, SourceFile.FileType f, SourceFile testJson) {
+    void readFile(Version tag, Collection<SourceFile> files, SourceFile.FileType f, SourceFile testJson) {
         String fileResponse = this.readGitRepositoryFile(f, tag, testJson.getPath());
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();

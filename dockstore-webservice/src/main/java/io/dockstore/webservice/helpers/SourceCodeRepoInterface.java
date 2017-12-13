@@ -115,7 +115,7 @@ public abstract class SourceCodeRepoInterface {
      * @param content a cwl document
      * @return the updated entry
      */
-    protected Entry parseCWLContent(Entry entry, String content) {
+    private Entry parseCWLContent(Entry entry, String content) {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
@@ -210,7 +210,7 @@ public abstract class SourceCodeRepoInterface {
      * @param content
      * @return true if valid WDL workflow, false otherwise
      */
-    public Boolean checkValidWDLWorkflow(String content) {
+    Boolean checkValidWDLWorkflow(String content) {
         //        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
         //        if (nameSpaceWithWorkflow != null) {
         //            return true;
@@ -227,12 +227,9 @@ public abstract class SourceCodeRepoInterface {
      * @param content
      * @return true if valid CWL workflow, false otherwise
      */
-    public boolean checkValidCWLWorkflow(String content) {
-        if (content.contains("class: Workflow")) {
-            return true;
-        }
+    boolean checkValidCWLWorkflow(String content) {
+        return content.contains("class: Workflow");
 
-        return false;
     }
 
     /**
@@ -311,7 +308,7 @@ public abstract class SourceCodeRepoInterface {
      * @param type
      * @return
      */
-    public Entry updateEntryMetadata(Entry entry, AbstractEntryClient.Type type) {
+    Entry updateEntryMetadata(Entry entry, AbstractEntryClient.Type type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
 
@@ -424,8 +421,8 @@ public abstract class SourceCodeRepoInterface {
      * @param existingDefaults
      * @return workflow version
      */
-    public WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults) {
+    WorkflowVersion initializeWorkflowVersion(String branch, Optional<Workflow> existingWorkflow,
+        Map<String, WorkflowVersion> existingDefaults) {
         WorkflowVersion version = new WorkflowVersion();
         version.setName(branch);
         version.setReference(branch);
@@ -459,7 +456,7 @@ public abstract class SourceCodeRepoInterface {
      * @param path
      * @return descriptor file type
      */
-    public SourceFile.FileType getFileType(String path) {
+    SourceFile.FileType getFileType(String path) {
         String calculatedExtension = FilenameUtils.getExtension(path);
         if ("cwl".equalsIgnoreCase(calculatedExtension) || "yml".equalsIgnoreCase(calculatedExtension) || "yaml"
                 .equalsIgnoreCase(calculatedExtension)) {
@@ -480,8 +477,8 @@ public abstract class SourceCodeRepoInterface {
      * @param version
      * @return workflow version
      */
-    public WorkflowVersion combineVersionAndSourcefile(SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType,
-            WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
+    WorkflowVersion combineVersionAndSourcefile(SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType,
+        WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         // try to use the FileImporter to re-use code for handling imports
