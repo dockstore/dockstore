@@ -791,6 +791,8 @@ public class DockerRepoResource {
         }
     }
 
+    // TODO: This endpoint has been moved to metadata, though it still exists here to deal with the case of
+    // users trying to interact with this endpoint.
     @GET
     @Timed
     @UnitOfWork

@@ -81,6 +81,7 @@ public abstract class SourceCodeRepoInterface {
      */
     protected void copyWorkflow(Workflow sourceWorkflow, Workflow targetWorkflow) {
         targetWorkflow.setPath(sourceWorkflow.getPath());
+        targetWorkflow.setSourceControl(sourceWorkflow.getSourceControl());
         targetWorkflow.setIsPublished(sourceWorkflow.getIsPublished());
         targetWorkflow.setWorkflowName(sourceWorkflow.getWorkflowName());
         targetWorkflow.setAuthor(sourceWorkflow.getAuthor());
