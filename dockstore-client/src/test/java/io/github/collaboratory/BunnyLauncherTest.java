@@ -25,4 +25,9 @@ public class BunnyLauncherTest extends LauncherTest {
     public String getConfigFile() {
         return FileUtils.getFile("src", "test", "resources", "launcher.bunny.ini").getAbsolutePath();
     }
+
+    @Override
+    public String getConfigFileWithExtraParameters() {
+        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.extra.ini").getAbsolutePath();
+    }
 }
