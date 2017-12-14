@@ -45,6 +45,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
@@ -170,6 +171,7 @@ public class WorkflowResource {
         newWorkflow.setDefaultTestParameterFilePath(workflow.getDefaultTestParameterFilePath());
         newWorkflow.setOrganization(workflow.getOrganization());
         newWorkflow.setRepository(workflow.getRepository());
+        newWorkflow.setSourceControl(workflow.getSourceControl());
         newWorkflow.setPath(workflow.getPath());
         newWorkflow.setIsPublished(workflow.getIsPublished());
         newWorkflow.setGitUrl(workflow.getGitUrl());
@@ -935,6 +937,22 @@ public class WorkflowResource {
             @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
             @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
+        // Set up source code interface and ensure token is set up
+        // construct git url like git@github.com:ga4gh/dockstore-ui.git
+        String registryURLPrefix;
+        SourceControl sourceControlEnum;
+        if (workflowRegistry.toLowerCase().equals(SourceControl.BITBUCKET.getFriendlyName().toLowerCase())) {
+            sourceControlEnum = SourceControl.BITBUCKET;
+            registryURLPrefix = sourceControlEnum.toString();
+        } else if (workflowRegistry.toLowerCase().equals(SourceControl.GITHUB.getFriendlyName().toLowerCase())) {
+            sourceControlEnum = SourceControl.GITHUB;
+            registryURLPrefix = sourceControlEnum.toString();
+        } else if (workflowRegistry.toLowerCase().equals(SourceControl.GITLAB.getFriendlyName().toLowerCase())) {
+            sourceControlEnum = SourceControl.GITLAB;
+            registryURLPrefix = sourceControlEnum.toString();
+        } else {
+            throw new CustomWebApplicationException("The given git registry is not supported.", HttpStatus.SC_BAD_REQUEST);
+        }
         String completeWorkflowPath = workflowPath;
         // Check that no duplicate workflow (same WorkflowPath) exists
         if (workflowName != null && !"".equals(workflowName)) {
@@ -947,25 +965,15 @@ public class WorkflowResource {
                             + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Workflow duplicate = workflowDAO.findByPath(completeWorkflowPath);
+        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath);
         if (duplicate != null) {
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Set up source code interface and ensure token is set up
-        // construct git url like git@github.com:ga4gh/dockstore-ui.git
-        String registryURLPrefix;
-        if (workflowRegistry.toLowerCase().equals("bitbucket")) {
-            registryURLPrefix = TokenType.BITBUCKET_ORG.toString();
-        } else if (workflowRegistry.toLowerCase().equals("github")) {
-            registryURLPrefix = TokenType.GITHUB_COM.toString();
-        } else if (workflowRegistry.toLowerCase().equals("gitlab")) {
-            registryURLPrefix = TokenType.GITLAB_COM.toString();
-        } else {
-            throw new CustomWebApplicationException("The given git registry is not supported.", HttpStatus.SC_BAD_REQUEST);
-        }
+
         String gitURL = "git@" + registryURLPrefix + ":" + workflowPath + ".git";
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
+
 
         // Create workflow
         Workflow newWorkflow = sourceCodeRepo.getWorkflow(completeWorkflowPath, Optional.absent());
@@ -975,7 +983,7 @@ public class WorkflowResource {
         }
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
-        newWorkflow.setPath(completeWorkflowPath);
+        newWorkflow.setPath(sourceControlEnum.toString() + '/' + completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 

@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -47,7 +48,7 @@ import java.util.TreeSet;
  */
 @ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore")
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "organization", "repository", "workflowName" }))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "sourcecontrol", "organization", "repository", "workflowName" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c FROM Workflow c WHERE c.isPublished = true ORDER BY size(c.starredUsers) DESC"),
@@ -74,12 +75,20 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a git organization for the workflow", required = true)
     private String organization;
+
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a git repository name", required = true)
     private String repository;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true)
+    private SourceControl sourceControl;
+
     @Column
     @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name")
     private String path;
+
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true)
     private String descriptorType;
@@ -194,7 +203,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     public String getPath() {
         String constructedPath;
         if (path == null) {
-            constructedPath = organization + '/' + repository + (workflowName == null ? "" : '/' + workflowName);
+            constructedPath = getSourceControl().toString() + '/' + organization + '/' + repository + (workflowName == null ? "" : '/' + workflowName);
             path = constructedPath;
         } else {
             constructedPath = path;
@@ -221,4 +230,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
         this.defaultTestParameterFilePath = defaultTestParameterFilePath;
     }
+    public SourceControl getSourceControl() {
+        return sourceControl;
+    }
+
+    public void setSourceControl(SourceControl sourceControl) {
+        this.sourceControl = sourceControl;
+    }
+
 }
