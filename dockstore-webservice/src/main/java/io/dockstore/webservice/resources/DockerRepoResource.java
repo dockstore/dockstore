@@ -783,7 +783,8 @@ public class DockerRepoResource {
     @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = {
             "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-            @QueryParam("tag") String tag, @QueryParam("descriptorType") String descriptorType) {
+            @QueryParam("tag") String tag,
+            @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
         if (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
             return entryVersionHelper.getAllSourceFiles(containerId, tag, FileType.WDL_TEST_JSON);
         } else {
@@ -815,7 +816,8 @@ public class DockerRepoResource {
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
-            @QueryParam("tagName") String tagName, @QueryParam("descriptorType") String descriptorType) {
+            @QueryParam("tagName") String tagName,
+            @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
 
@@ -858,7 +860,8 @@ public class DockerRepoResource {
     public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
-            @QueryParam("tagName") String tagName, @QueryParam("descriptorType") String descriptorType) {
+            @QueryParam("tagName") String tagName,
+            @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
         Helper.checkEntry(tool);
 
