@@ -24,6 +24,7 @@ import java.util.concurrent.TimeoutException;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
+import io.dockstore.common.SourceControl;
 import io.dockstore.common.Utilities;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -67,10 +68,10 @@ public class WorkflowIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT);
     }
 
-    private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/hello-dockstore-workflow";
-    private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = "dockstore_testuser2/dockstore-workflow";
-    private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/dockstore-whalesay-imports";
-    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = "DockstoreTestUser2/dockstore_workflow_cnv";
+    private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
+    private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
+    private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
+    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -234,11 +235,11 @@ public class WorkflowIT extends BaseIT {
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
-                .manualRegister("github", DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "/Dockstore.wdl", "altname", "wdl","/test.json");
+                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl","/test.json");
 
         // Manually register workflow bitbucket
         Workflow bitbucketWorkflow = workflowApi
-                .manualRegister("bitbucket", DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "/Dockstore.cwl", "altname", "cwl","/test.json");
+                .manualRegister("bitbucket", "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "altname", "cwl","/test.json");
 
         // Assert some things
         final long count = testingPostgres
@@ -288,7 +289,7 @@ public class WorkflowIT extends BaseIT {
         // Manually register workflow
         boolean success = true;
         try {
-            workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "/Dockstore.wdl", "", "wdl", "/test.json");
+            workflowApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "", "wdl", "/test.json");
         } catch (ApiException c) {
             success = false;
         } finally {
@@ -310,7 +311,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW, "/Dockstore.cwl", "", "cwl", "/test.json");
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW);
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
         // test out methods to access secondary files
@@ -330,7 +331,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        workflowApi.manualRegister("github", DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
         // test out methods to access secondary files

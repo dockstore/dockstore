@@ -1858,6 +1858,40 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/QuayIOView"
+  /metadata/descriptorLanguageList:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get the list of descriptor languages supported on Dockstore."
+      description: "Does not need authentication"
+      operationId: "getDescriptorLanguages"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/DescriptorLanguageBean"
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get the list of docker registries supported on Dockstore."
+      description: "Does not need authentication"
+      operationId: "getDockerRegistries"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/RegistryBean"
   /metadata/rss:
     get:
       tags:
@@ -1889,6 +1923,23 @@ paths:
           description: "successful operation"
           schema:
             type: "string"
+  /metadata/sourceControlList:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get the list of source controls supported on Dockstore."
+      description: "Does not need authentication"
+      operationId: "getSourceControlList"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceControlBean"
   /users:
     get:
       tags:
@@ -3501,6 +3552,13 @@ definitions:
     properties:
       parent:
         $ref: "#/definitions/BitbucketOrgAuthenticationResource"
+  DescriptorLanguageBean:
+    type: "object"
+    properties:
+      value:
+        type: "string"
+      friendlyName:
+        type: "string"
   DockstoreTool:
     type: "object"
     required:
@@ -3821,6 +3879,13 @@ definitions:
       customDockerPath:
         type: "string"
       enum:
+        type: "string"
+  SourceControlBean:
+    type: "object"
+    properties:
+      value:
+        type: "string"
+      friendlyName:
         type: "string"
   SourceFile:
     type: "object"
@@ -4176,6 +4241,7 @@ definitions:
     - "mode"
     - "organization"
     - "repository"
+    - "sourceControl"
     - "workflow_path"
     properties:
       id:
@@ -4241,6 +4307,14 @@ definitions:
       repository:
         type: "string"
         description: "This is a git repository name"
+      sourceControl:
+        type: "string"
+        description: "This is a specific source control provider like github or bitbucket\
+          \ or n/a?, required: GA4GH"
+        enum:
+        - "GITHUB"
+        - "BITBUCKET"
+        - "GITLAB"
       path:
         type: "string"
         description: "This is a generated full workflow path including organization,\

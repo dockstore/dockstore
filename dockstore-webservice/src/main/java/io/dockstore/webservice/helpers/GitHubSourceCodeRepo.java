@@ -28,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Optional;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -57,12 +58,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
-    private final String gitUsername;
     private final ContentsService cService;
     private final RepositoryService service;
     private final OrganizationService oService;
     private final UserService uService;
-    private final String gitRepository;
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
@@ -141,6 +140,17 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    @Override
+    public boolean checkSourceCodeValidity() {
+        try {
+            oService.getOrganizations();
+        } catch (IOException e) {
+            throw new CustomWebApplicationException(
+                "Please recreate your GitHub token, we need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
+        }
+        return true;
+    }
+
     private String extractGitHubContents(List<RepositoryContents> cwlContents) {
         String encoded = cwlContents.get(0).getContent().replace("\n", "");
         byte[] decode = Base64.getDecoder().decode(encoded);
@@ -159,6 +169,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             final Repository repository = service.getRepository(id);
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
+            workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
             // Why is the path not set here?

@@ -29,6 +29,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -50,10 +51,8 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private static final String GITLAB_GIT_URL_SUFFIX = ".git";
 
     private static final Logger LOG = LoggerFactory.getLogger(GitLabSourceCodeRepo.class);
-    private final String gitUsername;
     private final HttpClient client;
     private final String gitlabTokenContent;
-    private final String gitRepository;
 
     public GitLabSourceCodeRepo(String gitUsername, HttpClient client, String gitlabTokenContent, String gitRepository) {
         this.client = client;
@@ -148,6 +147,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         // Setup workflow
         workflow.setOrganization(owner);
         workflow.setRepository(name);
+        workflow.setSourceControl(SourceControl.GITLAB);
 
         final String gitUrl = GITLAB_GIT_URL_PREFIX + repositoryId + GITLAB_GIT_URL_SUFFIX;
         workflow.setGitUrl(gitUrl);
@@ -394,5 +394,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean checkSourceCodeValidity() {
+        //TODO
+        return true;
     }
 }
