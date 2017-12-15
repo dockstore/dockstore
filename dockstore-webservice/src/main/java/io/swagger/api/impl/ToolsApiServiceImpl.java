@@ -457,12 +457,17 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
             if (textSegments.get(0).equalsIgnoreCase("#workflow")) {
                 tool = false;
+                registry = textSegments.get(1);
+                organization = textSegments.get(2);
+                name = textSegments.get(3);
+                toolName = textSegments.size() > 4 ? textSegments.get(4) : "";
             } else {
                 registry = textSegments.get(0);
+                organization = textSegments.get(1);
+                name = textSegments.get(2);
+                toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
             }
-            organization = textSegments.get(1);
-            name = textSegments.get(2);
-            toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
+
         }
 
         public String getRegistry() {
@@ -487,11 +492,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
          * @return an internal path, usable only if we know if we have a tool or workflow
          */
         public String getPath() {
-            if (tool) {
-                return registry + "/" + organization + "/" + name;
-            } else {
-                return organization + "/" + name;
-            }
+            return registry + "/" + organization + "/" + name;
         }
 
         public boolean isTool() {
