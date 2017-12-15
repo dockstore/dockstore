@@ -32,8 +32,6 @@ env:
    - EXTRA_MAVEN_VAR=""
    - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report"
 
-group: deprecated-2017Q4
-
 script: ./scripts/run-tests.sh
 
 before_install:
