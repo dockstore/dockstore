@@ -37,7 +37,7 @@ import io.swagger.model.Tool;
 import org.apache.http.HttpStatus;
 
 /**
- * GET methods for organization related information on path: /api/ga4gh/v1.1/tools
+ * GET methods for organization related information on path: /api/ga4gh/v2/tools
  */
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended")
 @Api("extendedGA4GH")

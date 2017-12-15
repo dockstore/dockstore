@@ -45,7 +45,7 @@ tags:
 - name: "workflows"
   description: "List and register workflows in the dockstore (CWL or WDL)"
 paths:
-  /api/ga4gh/v1.1/extended/containers/{organization}:
+  /api/ga4gh/v2/extended/containers/{organization}:
     get:
       tags:
       - "extendedGA4GH"
@@ -68,7 +68,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/ga4gh/v1.1/extended/organizations:
+  /api/ga4gh/v2/extended/organizations:
     get:
       tags:
       - "extendedGA4GH"
@@ -86,7 +86,7 @@ paths:
             type: "array"
             items:
               type: "string"
-  /api/ga4gh/v1.1/extended/tools/entry/_search:
+  /api/ga4gh/v2/extended/tools/entry/_search:
     post:
       tags:
       - "extendedGA4GH"
@@ -108,7 +108,7 @@ paths:
           description: "An elastic search result."
           schema:
             type: "string"
-  /api/ga4gh/v1.1/extended/tools/index:
+  /api/ga4gh/v2/extended/tools/index:
     post:
       tags:
       - "extendedGA4GH"
@@ -124,7 +124,7 @@ paths:
           schema:
             type: "integer"
             format: "int32"
-  /api/ga4gh/v1.1/extended/tools/{organization}:
+  /api/ga4gh/v2/extended/tools/{organization}:
     get:
       tags:
       - "extendedGA4GH"
@@ -147,7 +147,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/ga4gh/v1.1/extended/workflows/{organization}:
+  /api/ga4gh/v2/extended/workflows/{organization}:
     get:
       tags:
       - "extendedGA4GH"
@@ -170,7 +170,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/ga4gh/v1.1/metadata:
+  /api/ga4gh/v2/metadata:
     get:
       tags:
       - "GA4GH"
@@ -186,7 +186,7 @@ paths:
           description: "A Metadata object describing this service."
           schema:
             $ref: "#/definitions/Metadata"
-  /api/ga4gh/v1.1/toolClasses:
+  /api/ga4gh/v2/toolClasses:
     get:
       tags:
       - "GA4GH"
@@ -204,7 +204,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolClass"
-  /api/ga4gh/v1.1/tools:
+  /api/ga4gh/v2/tools:
     get:
       tags:
       - "GA4GH"
@@ -275,7 +275,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Tool"
-  /api/ga4gh/v1.1/tools/{id}:
+  /api/ga4gh/v2/tools/{id}:
     get:
       tags:
       - "GA4GH"
@@ -298,7 +298,7 @@ paths:
           description: "A tool."
           schema:
             $ref: "#/definitions/Tool"
-  /api/ga4gh/v1.1/tools/{id}/versions:
+  /api/ga4gh/v2/tools/{id}/versions:
     get:
       tags:
       - "GA4GH"
@@ -322,7 +322,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/ToolVersion"
-  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}:
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}:
     get:
       tags:
       - "GA4GH"
@@ -350,7 +350,7 @@ paths:
           description: "A tool version."
           schema:
             $ref: "#/definitions/ToolVersion"
-  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}/dockerfile:
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/dockerfile:
     get:
       tags:
       - "GA4GH"
@@ -382,7 +382,7 @@ paths:
           description: "The tool payload is not present in the service."
           schema:
             $ref: "#/definitions/ToolDockerfile"
-  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}/{type}/descriptor:
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       tags:
       - "GA4GH"
@@ -427,7 +427,7 @@ paths:
           description: "The tool can not be output in the specified type."
           schema:
             $ref: "#/definitions/ToolDescriptor"
-  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
     get:
       tags:
       - "GA4GH"
@@ -481,7 +481,7 @@ paths:
           description: "The tool can not be output in the specified type."
           schema:
             $ref: "#/definitions/ToolDescriptor"
-  /api/ga4gh/v1.1/tools/{id}/versions/{version_id}/{type}/tests:
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
       - "GA4GH"
