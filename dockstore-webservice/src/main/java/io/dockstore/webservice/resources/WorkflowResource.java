@@ -326,11 +326,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
         checkUser(user, workflow);
 
+        // get a live user for the following
+        user = userDAO.findById(user.getId());
         // Update user data
         user.updateUserMetadata(tokenDAO);
 
-        // get a live user for the following
-        user = userDAO.findById(user.getId());
         // Set up source code interface and ensure token is set up
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(workflow.getGitUrl(), user);
 

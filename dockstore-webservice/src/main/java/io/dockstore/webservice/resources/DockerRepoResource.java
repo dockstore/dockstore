@@ -163,7 +163,8 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         checkUser(user, c);
 
         // Update user data
-        user.updateUserMetadata(tokenDAO);
+        User dbUser = userDAO.findById(user.getId());
+        dbUser.updateUserMetadata(tokenDAO);
 
         List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
 

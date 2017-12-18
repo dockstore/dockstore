@@ -387,15 +387,15 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         checkUser(authUser, userId);
 
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
-
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
+        // Update user data
+        authUser.updateUserMetadata(tokenDAO);
+
         List<Tool> finalTools = getTools(authUser);
         bulkUpsertTools(authUser);
         return finalTools;
@@ -452,10 +452,6 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         checkUser(authUser, userId);
 
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
-
-
         // Checks if the user has the tokens for their current tools
         checkToolTokens(authUser, userId, null);
 
@@ -463,6 +459,9 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // TODO: Only update the ones that have changed
         authUser = userDAO.findById(authUser.getId());
+        // Update user data
+        authUser.updateUserMetadata(tokenDAO);
+
         List<Tool> finalTools = getTools(authUser);
         bulkUpsertTools(authUser);
         return finalTools;
@@ -479,14 +478,14 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         checkUser(authUser, userId);
 
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
-
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser, organization);
         userDAO.clearCache();
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
+        // Update user data
+        authUser.updateUserMetadata(tokenDAO);
+
         List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
         return finalWorkflows;
@@ -502,13 +501,13 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         checkUser(authUser, userId);
 
-        // Update user data
-        authUser.updateUserMetadata(tokenDAO);
-
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser, null);
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
+        // Update user data
+        authUser.updateUserMetadata(tokenDAO);
+
         List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
         return finalWorkflows;
@@ -591,7 +590,8 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/user/updateUserMetadata")
     @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update metadata for logged in user.", response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user) {
-        user.updateUserMetadata(tokenDAO);
-        return userDAO.findById(user.getId());
+        User dbuser = userDAO.findById(user.getId());
+        dbuser.updateUserMetadata(tokenDAO);
+        return dbuser;
     }
 }

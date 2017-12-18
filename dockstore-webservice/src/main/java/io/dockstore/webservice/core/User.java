@@ -118,7 +118,6 @@ public class User implements Principal {
      * Updates the given user with metadata from Github
      *
      * @param tokenDAO
-     * @return updated user
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
         Token githubToken = tokenDAO.findGithubByUserId(getId()).get(0);

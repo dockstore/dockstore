@@ -64,7 +64,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
-
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(githubTokenContent);
 
@@ -80,8 +79,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public String readFile(String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
         try {
-            Repository repo = service.getRepository(gitUsername,
-                    gitRepository); // may need to pass owner from git url, as this may differ from the git username
+            // may need to pass owner from git url, as this may differ from the git username
+            Repository repo = service.getRepository(gitUsername, gitRepository);
             List<RepositoryContents> contents;
             try {
                 contents = cService.getContents(repo, fileName, reference);
@@ -94,7 +93,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } else {
                 return null;
             }
-
         } catch (RequestException e) {
             if (e.getStatus() == HttpStatus.SC_UNAUTHORIZED) {
                 // we have bad credentials which should not be ignored

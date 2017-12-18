@@ -167,7 +167,7 @@ public abstract class SourceCodeRepoInterface {
      * @param content the actual wdl content
      * @return the tool that was given
      */
-    Entry parseWDLContent(Entry entry, String content) {
+    private Entry parseWDLContent(Entry entry, String content) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
         try {
@@ -267,6 +267,8 @@ public abstract class SourceCodeRepoInterface {
         // Initialize workflow
         Workflow workflow = initializeWorkflow(repositoryId);
 
+        // NextFlow and (future) dockstore.yml workflow can be detected and handled without stubs
+
         // Determine if workflow should be returned as a STUB or FULL
         if (!existingWorkflow.isPresent()) {
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
@@ -277,6 +279,7 @@ public abstract class SourceCodeRepoInterface {
             // when there is an existing stub workflow, just return the new stub as well
             return workflow;
         }
+
 
         // If this point has been reached, then the workflow will be a FULL workflow (and not a STUB)
         workflow.setMode(WorkflowMode.FULL);

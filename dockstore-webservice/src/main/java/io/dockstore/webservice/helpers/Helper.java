@@ -166,6 +166,9 @@ public final class Helper {
         final String githubTokenContent = githubToken == null ? null : githubToken.getContent();
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(c.getGitUrl(), client, bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
+        if (sourceCodeRepo == null) {
+            return files;
+        }
 
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
