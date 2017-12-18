@@ -609,7 +609,7 @@ public class SystemClientIT {
     public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("A/l");
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("G/A/l");
         long workflowId = workflow.getId();
         assertTrue(workflowId == 11);
         StarRequest request = SwaggerUtility.createStarRequest(true);
@@ -629,7 +629,7 @@ public class SystemClientIT {
     public void testUnstarUnstarredWorkflow() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("A/l");
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("G/A/l");
         long workflowId = workflow.getId();
         assertTrue(workflowId == 11);
         workflowApi.unstarEntry(workflowId);
