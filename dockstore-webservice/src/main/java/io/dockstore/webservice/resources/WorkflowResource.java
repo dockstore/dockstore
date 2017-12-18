@@ -198,7 +198,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
      *
      * @param user a user to refresh workflows for
      */
-    public void refreshStubWorkflowsForUser(User user, String organization) {
+    void refreshStubWorkflowsForUser(User user, String organization) {
 
         List<Token> tokens = checkOnBitbucketToken(user);
         // Check if tokens for git hosting services are valid and refresh corresponding workflows
@@ -327,7 +327,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkUser(user, workflow);
 
         // Update user data
-        Helper.updateUserHelper(user, userDAO, tokenDAO);
+        user.updateUserMetadata(tokenDAO);
 
         // get a live user for the following
         user = userDAO.findById(user.getId());

@@ -388,7 +388,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(authUser, userId);
 
         // Update user data
-        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        authUser.updateUserMetadata(tokenDAO);
 
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
@@ -453,7 +453,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(authUser, userId);
 
         // Update user data
-        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        authUser.updateUserMetadata(tokenDAO);
 
 
         // Checks if the user has the tokens for their current tools
@@ -480,7 +480,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(authUser, userId);
 
         // Update user data
-        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        authUser.updateUserMetadata(tokenDAO);
 
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser, organization);
@@ -503,7 +503,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(authUser, userId);
 
         // Update user data
-        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        authUser.updateUserMetadata(tokenDAO);
 
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser, null);
@@ -579,7 +579,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
-            Helper.updateUserHelper(u, userDAO, tokenDAO);
+            u.updateUserMetadata(tokenDAO);
         }
 
         return userDAO.findAll();
@@ -591,7 +591,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/user/updateUserMetadata")
     @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update metadata for logged in user.", response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user) {
-        Helper.updateUserHelper(user, userDAO, tokenDAO);
+        user.updateUserMetadata(tokenDAO);
         return userDAO.findById(user.getId());
     }
 }

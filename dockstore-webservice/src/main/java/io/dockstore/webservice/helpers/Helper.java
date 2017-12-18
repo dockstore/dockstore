@@ -33,7 +33,6 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -57,8 +56,8 @@ public final class Helper {
         // hide the constructor for utility classes
     }
 
-    public static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken,
-            final Token bitbucketToken, final Token gitlabToken) {
+    static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken,
+        final Token gitlabToken) {
         Set<Tag> tags = tool.getTags();
 
         // For each tag, will download files to db and determine if the tag is valid
@@ -167,12 +166,11 @@ public final class Helper {
         final String githubTokenContent = githubToken == null ? null : githubToken.getContent();
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(c.getGitUrl(), client, bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
-        FileImporter importer = new FileImporter(sourceCodeRepo);
 
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
             if (f != FileType.CWL_TEST_JSON && f != FileType.WDL_TEST_JSON && f != FileType.NEXTFLOW_PARAMS) {
-                String fileResponse = importer.readGitRepositoryFile(f, tag, null);
+                String fileResponse = sourceCodeRepo.readGitRepositoryFile(f, tag, null);
                 if (fileResponse != null) {
                     SourceFile dockstoreFile = new SourceFile();
                     dockstoreFile.setType(f);
@@ -182,11 +180,11 @@ public final class Helper {
                     } else if (f == FileType.DOCKSTORE_CWL) {
                         dockstoreFile.setPath(tag.getCwlPath());
                         // see if there are imported files and resolve them
-                        Map<String, SourceFile> importedFiles = importer.resolveImports(fileResponse, c, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(fileResponse, c, f, tag);
                         files.addAll(importedFiles.values());
                     } else if (f == FileType.DOCKSTORE_WDL) {
                         dockstoreFile.setPath(tag.getWdlPath());
-                        Map<String, SourceFile> importedFiles = importer.resolveImports(fileResponse, c, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(fileResponse, c, f, tag);
                         files.addAll(importedFiles.values());
                     } else {
                         //TODO add nextflow work here
@@ -199,7 +197,7 @@ public final class Helper {
                 // If test json, must grab all
                 List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == f)
                     .collect(Collectors.toList());
-                cwlTestJson.forEach(file -> importer.readFile(tag, files, f, file));
+                cwlTestJson.forEach(file -> sourceCodeRepo.readFile(tag, files, f, file));
             }
         }
         return files;
@@ -387,24 +385,6 @@ public final class Helper {
         if (quayToken == null) {
             LOG.info("WARNING: QUAY token not found!");
         }
-    }
-
-
-
-    /**
-     * Updates the given user with metadata from Github
-     *
-     * @param user
-     * @param userDAO
-     * @param tokenDAO
-     * @return updated user
-     */
-    public static User updateUserHelper(final User user, final UserDAO userDAO, final TokenDAO tokenDAO) {
-        User existingUser = userDAO.findById(user.getId());
-        Token githubToken = tokenDAO.findGithubByUserId(existingUser.getId()).get(0);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(existingUser.getUsername(), githubToken.getContent(), null);
-        existingUser.update(gitHubSourceCodeRepo.getUserMetadata(existingUser));
-        return existingUser;
     }
 
 }
