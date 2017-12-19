@@ -35,6 +35,7 @@ import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
 import io.dockstore.client.cli.SwaggerUtility;
+import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -151,7 +152,7 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  Update certain fields for a given workflow.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                              Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entry <entry>                                              Complete workflow path in the Dockstore (ex. github.com/collaboratory/seqware-bwa-workflow)");
         out("");
         out("Optional Parameters");
         out("  --workflow-name <workflow-name>                              Name for the given workflow");
@@ -832,8 +833,20 @@ public class WorkflowClient extends AbstractEntryClient {
                 workflow.setWorkflowPath(workflowDescriptorPath);
                 workflow.setDefaultTestParameterFilePath(defaultTestJsonPath);
 
+
+                String sourceControlPath = null;
+                if (workflow.getSourceControl() == Workflow.SourceControlEnum.GITHUB) {
+                    sourceControlPath = SourceControl.GITHUB.toString();
+                } else if (workflow.getSourceControl() == Workflow.SourceControlEnum.GITLAB) {
+                    sourceControlPath = SourceControl.GITLAB.toString();
+                } else if (workflow.getSourceControl() == Workflow.SourceControlEnum.BITBUCKET) {
+                    sourceControlPath = SourceControl.BITBUCKET.toString();
+                } else {
+                    errorMessage("The source control type is not valid.", Client.CLIENT_ERROR);
+                }
+
                 String path = Joiner.on("/").skipNulls()
-                        .join(workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
+                        .join(sourceControlPath, workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
                 workflow.setPath(path);
 
                 // If valid version

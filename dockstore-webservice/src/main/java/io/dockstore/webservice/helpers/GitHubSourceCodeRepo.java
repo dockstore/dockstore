@@ -28,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Optional;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -168,6 +169,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             final Repository repository = service.getRepository(id);
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
+            workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
             // Why is the path not set here?
