@@ -16,26 +16,16 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.esotericsoftware.yamlbeans.YamlException;
-import com.esotericsoftware.yamlbeans.YamlReader;
-import com.google.common.base.Optional;
 import com.google.common.base.Strings;
-import com.google.common.io.Files;
-import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -46,12 +36,12 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import org.apache.commons.io.FileUtils;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import wdl4s.parser.WdlParser;
 
 /**
  * This defines the set of operations that is needed to interact with a particular
@@ -114,85 +104,6 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Parses the cwl content to get the author, email, and description, then updates entry.
-     *
-     * @param entry   an entry to be updated
-     * @param content a cwl document
-     * @return the updated entry
-     */
-    private Entry parseCWLContent(Entry entry, String content) {
-        // parse the collab.cwl file to get important metadata
-        if (content != null && !content.isEmpty()) {
-            try {
-                YamlReader reader = new YamlReader(content);
-                Object object = reader.read();
-                Map map = (Map)object;
-
-                String description = (String)map.get("description");
-                // changed for CWL 1.0
-                if (map.containsKey("doc")) {
-                    description = (String)map.get("doc");
-                }
-                if (description != null) {
-                    entry.setDescription(description);
-                } else {
-                    LOG.info("Description not found!");
-                }
-
-                map = (Map)map.get("dct:creator");
-                if (map != null) {
-                    String author = (String)map.get("foaf:name");
-                    entry.setAuthor(author);
-                    String email = (String)map.get("foaf:mbox");
-                    if (!Strings.isNullOrEmpty(email)) {
-                        entry.setEmail(email.replaceFirst("^mailto:", ""));
-                    }
-                } else {
-                    LOG.info("Creator not found!");
-                }
-
-                LOG.info("Repository has Dockstore.cwl");
-            } catch (YamlException ex) {
-                LOG.info("CWL file is malformed " + ex.getCause().toString());
-                throw new CustomWebApplicationException("Could not parse yaml: " + ex.getCause().toString(), HttpStatus.SC_BAD_REQUEST);
-            }
-        }
-        return entry;
-    }
-
-    /**
-     * Default implementation that parses WDL content from an entry?
-     *
-     * @param entry   the source for the wdl content
-     * @param content the actual wdl content
-     * @return the tool that was given
-     */
-    private Entry parseWDLContent(Entry entry, String content) {
-        // Use Broad WDL parser to grab data
-        // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
-        try {
-            WdlParser parser = new WdlParser();
-            WdlParser.TokenStream tokens;
-            if (entry.getClass().equals(Tool.class)) {
-                tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Tool)entry).getDefaultWdlPath())));
-            } else {
-                tokens = new WdlParser.TokenStream(parser.lex(content, FilenameUtils.getName(((Workflow)entry).getDefaultWorkflowPath())));
-            }
-            WdlParser.Ast ast = (WdlParser.Ast)parser.parse(tokens).toAst();
-
-            if (ast == null) {
-                LOG.info("Error with WDL file.");
-            } else {
-                LOG.info("Repository has Dockstore.wdl");
-            }
-        } catch (WdlParser.SyntaxError syntaxError) {
-            LOG.info("Invalid WDL file.");
-        }
-
-        return entry;
-    }
-
-    /**
      * Get a map of git url to an id that can uniquely identify a repository
      *
      * @return giturl -> repositoryid
@@ -204,37 +115,6 @@ public abstract class SourceCodeRepoInterface {
      */
     public abstract boolean checkSourceCodeValidity();
 
-    List<String> getWdlImports(File workflowFile) {
-        Bridge bridge = new Bridge();
-        return bridge.getImportFiles(workflowFile);
-    }
-
-    /**
-     * Given the content of a file, determines if it is a valid WDL workflow
-     *
-     * @param content
-     * @return true if valid WDL workflow, false otherwise
-     */
-    Boolean checkValidWDLWorkflow(String content) {
-        //        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-        //        if (nameSpaceWithWorkflow != null) {
-        //            return true;
-        //        }
-        //
-        //        return false;
-        // For now as long as a file exists, it is a valid WDL
-        return true;
-    }
-
-    /**
-     * Given the content of a file, determines if it is a valid CWL workflow
-     *
-     * @param content
-     * @return true if valid CWL workflow, false otherwise
-     */
-    boolean checkValidCWLWorkflow(String content) {
-        return content.contains("class: Workflow");
-    }
 
     /**
      * Set up workflow with basic attributes from git repository
@@ -383,13 +263,8 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Parse file content and update
-        if (type == AbstractEntryClient.Type.CWL) {
-            entry = parseCWLContent(entry, content);
-        }
-        if (type == AbstractEntryClient.Type.WDL) {
-            entry = parseWDLContent(entry, content);
-        }
-
+        LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type, this);
+        entry = anInterface.parseWorkflowContent(entry, content);
         return entry;
     }
 
@@ -470,6 +345,8 @@ public abstract class SourceCodeRepoInterface {
             return SourceFile.FileType.DOCKSTORE_CWL;
         } else if ("wdl".equalsIgnoreCase(calculatedExtension)) {
             return SourceFile.FileType.DOCKSTORE_WDL;
+        } else if (path.contains("nextflow.config")) {
+            return SourceFile.FileType.NEXTFLOW_CONFIG;
         } else {
             throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
         }
@@ -488,9 +365,8 @@ public abstract class SourceCodeRepoInterface {
         WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
-        // try to use the FileImporter to re-use code for handling imports
         if (sourceFile != null && sourceFile.getContent() != null) {
-            final Map<String, SourceFile> stringSourceFileMap = this.resolveImports(sourceFile.getContent(), workflow, identifiedType, version);
+            final Map<String, SourceFile> stringSourceFileMap = this.resolveImports(sourceFile.getContent(), identifiedType, version);
             sourceFileSet.addAll(stringSourceFileMap.values());
         }
 
@@ -527,7 +403,7 @@ public abstract class SourceCodeRepoInterface {
      * @param specificPath if specified, look for a specific file, otherwise return the "default" for a fileType
      * @return  a FileResponse instance
      */
-    String readGitRepositoryFile(SourceFile.FileType fileType, Version version, String specificPath) {
+    public String readGitRepositoryFile(SourceFile.FileType fileType, Version version, String specificPath) {
 
         final String reference = version.getReference();
 
@@ -572,123 +448,37 @@ public abstract class SourceCodeRepoInterface {
         return this.readFile(fileName, reference);
     }
 
-    Map<String, SourceFile> resolveImports(String content, Entry entry, SourceFile.FileType fileType, Version version) {
-
-        Map<String, SourceFile> imports = new HashMap<>();
-
-        if (fileType == SourceFile.FileType.DOCKSTORE_CWL) {
-
-            YamlReader reader = new YamlReader(content);
-            try {
-                Map<String, ?> map = reader.read(Map.class);
-                handleMap(entry, fileType, version, imports, map);
-
-            } catch (YamlException e) {
-                SourceCodeRepoInterface.LOG.error("Could not process content from " + entry.getId() + " as yaml");
-            }
-
-            Map<String, SourceFile> recursiveImports = new HashMap<>();
-            for (SourceFile file : imports.values()) {
-                final Map<String, SourceFile> sourceFiles = resolveImports(file.getContent(), entry, fileType, version);
-                recursiveImports.putAll(sourceFiles);
-            }
-            recursiveImports.putAll(imports);
-            return recursiveImports;
-        } else if (fileType == SourceFile.FileType.DOCKSTORE_WDL) {
-            final File tempDesc;
-            try {
-                tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
-                Files.write(content, tempDesc, StandardCharsets.UTF_8);
-
-                // Use matcher to get imports
-                List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
-                ArrayList<String> importPaths = new ArrayList<>();
-                Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
-
-                for (String line : lines) {
-                    Matcher m = p.matcher(line);
-
-                    while (m.find()) {
-                        String match = m.group(1);
-                        if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
-                            importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
-                        }
-                    }
-                }
-
-                for (String importPath : importPaths) {
-                    SourceFile importFile = new SourceFile();
-
-                    final String fileResponse = readGitRepositoryFile(fileType, version, importPath);
-                    if (fileResponse == null) {
-                        SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
-                        continue;
-                    }
-                    importFile.setContent(fileResponse);
-                    importFile.setPath(importPath);
-                    importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                    imports.put(importFile.getPath(), importFile);
-                }
-            } catch (IOException e) {
-                throw new CustomWebApplicationException("Internal server error, out of space",
-                    HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
-            }
-
-            return imports;
-        } else {
-            throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
-        }
+    Map<String, SourceFile> resolveImports(String content, SourceFile.FileType fileType, Version version) {
+        LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType, this);
+        return languageInterface.processImports(content, version);
     }
 
-    private void handleMap(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports,
-        Map<String, ?> map) {
-        for (Map.Entry<String, ?> e : map.entrySet()) {
-            final Object mapValue = e.getValue();
-            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include") || e.getKey().equalsIgnoreCase("import")
-                || e.getKey().equalsIgnoreCase("include")) {
-                // handle imports and includes
-                if (mapValue instanceof String) {
-                    handleImport(fileType, version, imports, (String)mapValue);
+    /**
+     * The following methods were duplicated code, but are not well designed for this interface
+     */
+
+    abstract SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type);
+
+    void createTestParameterFiles(Workflow workflow, String id, String branchName, WorkflowVersion version,
+        SourceFile.FileType identifiedType) {
+        if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
+            // Set Filetype
+            SourceFile.FileType testJsonType = null;
+            if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                testJsonType = SourceFile.FileType.CWL_TEST_JSON;
+            } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
+                testJsonType = SourceFile.FileType.WDL_TEST_JSON;
+            }
+
+            // Check if test parameter file has already been added
+            final SourceFile.FileType finalFileType = testJsonType;
+            long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == finalFileType).count();
+            if (duplicateCount == 0) {
+                SourceFile testJsonSourceFile = getSourceFile(workflow.getDefaultTestParameterFilePath(), id, branchName, testJsonType);
+                if (testJsonSourceFile != null) {
+                    version.getSourceFiles().add(testJsonSourceFile);
                 }
-            } else if (e.getKey().equalsIgnoreCase("run")) {
-                // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
-                //ex:
-                //  run: {import: revtool.cwl}
-                //  run: revtool.cwl
-                if (mapValue instanceof String) {
-                    handleImport(fileType, version, imports, (String)mapValue);
-                } else if (mapValue instanceof Map) {
-                    // this handles the case where an import is used
-                    handleMap(entry, fileType, version, imports, (Map)mapValue);
-                }
-            } else {
-                handleMapValue(entry, fileType, version, imports, mapValue);
             }
         }
-    }
-
-    private void handleMapValue(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports,
-        Object mapValue) {
-        if (mapValue instanceof Map) {
-            handleMap(entry, fileType, version, imports, (Map)mapValue);
-        } else if (mapValue instanceof List) {
-            for (Object listMember : (List)mapValue) {
-                handleMapValue(entry, fileType, version, imports, listMember);
-            }
-        }
-    }
-
-    void handleImport(SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports, String mapValue) {
-        // create a new source file
-        final String fileResponse = readGitRepositoryFile(fileType, version, mapValue);
-        if (fileResponse == null) {
-            SourceCodeRepoInterface.LOG.error("Could not read: " + mapValue);
-            return;
-        }
-        SourceFile sourceFile = new SourceFile();
-        sourceFile.setType(fileType);
-        sourceFile.setContent(fileResponse);
-        sourceFile.setPath(mapValue);
-        imports.put(mapValue, sourceFile);
     }
 }

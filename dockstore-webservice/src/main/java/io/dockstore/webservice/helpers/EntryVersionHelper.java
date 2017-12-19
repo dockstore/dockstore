@@ -177,7 +177,7 @@ public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResour
             List<SourceFile> filteredTypes = workflowVersion.getSourceFiles().stream()
                 .filter(file -> Objects.equals(file.getType(), fileType)).collect(Collectors.toList());
             for (SourceFile file : filteredTypes) {
-                if (fileType == SourceFile.FileType.CWL_TEST_JSON || fileType == SourceFile.FileType.WDL_TEST_JSON) {
+                if (fileType == SourceFile.FileType.CWL_TEST_JSON || fileType == SourceFile.FileType.WDL_TEST_JSON || fileType == SourceFile.FileType.NEXTFLOW_TEST_PARAMS) {
                     resultMap.put(file.getPath(), ImmutablePair.of(file, new FileDescription(true)));
                 } else {
                     // looks like this takes into account a potentially different workflow path for a specific version of a workflow

@@ -18,8 +18,8 @@ package io.dockstore.webservice.resources;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;

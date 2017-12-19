@@ -172,7 +172,7 @@ public final class Helper {
 
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
-            if (f != FileType.CWL_TEST_JSON && f != FileType.WDL_TEST_JSON && f != FileType.NEXTFLOW_PARAMS) {
+            if (f != FileType.CWL_TEST_JSON && f != FileType.WDL_TEST_JSON && f != FileType.NEXTFLOW_TEST_PARAMS) {
                 String fileResponse = sourceCodeRepo.readGitRepositoryFile(f, tag, null);
                 if (fileResponse != null) {
                     SourceFile dockstoreFile = new SourceFile();
@@ -183,11 +183,11 @@ public final class Helper {
                     } else if (f == FileType.DOCKSTORE_CWL) {
                         dockstoreFile.setPath(tag.getCwlPath());
                         // see if there are imported files and resolve them
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(fileResponse, c, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(fileResponse, f, tag);
                         files.addAll(importedFiles.values());
                     } else if (f == FileType.DOCKSTORE_WDL) {
                         dockstoreFile.setPath(tag.getWdlPath());
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(fileResponse, c, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(fileResponse, f, tag);
                         files.addAll(importedFiles.values());
                     } else {
                         //TODO add nextflow work here

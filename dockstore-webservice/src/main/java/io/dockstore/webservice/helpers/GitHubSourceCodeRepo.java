@@ -24,10 +24,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.base.Optional;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -35,7 +35,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import org.apache.commons.io.FilenameUtils;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import org.apache.http.HttpStatus;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -202,9 +202,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             WorkflowVersion version = initializeWorkflowVersion(ref, existingWorkflow, existingDefaults);
             String calculatedPath = version.getWorkflowPath();
 
-            //TODO: is there a case-insensitive endsWith?
-            String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
-            boolean validWorkflow;
+            SourceFile.FileType identifiedType = getFileType(calculatedPath);
 
             // Grab workflow file from github
             try {
@@ -213,19 +211,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
 
-                    // TODO: Is this the best way to determine file type? I don't think so
-                    // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
-                    if ("cwl".equalsIgnoreCase(calculatedExtension) || "yml".equalsIgnoreCase(calculatedExtension) || "yaml"
-                            .equalsIgnoreCase(calculatedExtension)) {
-                        validWorkflow = checkValidCWLWorkflow(content);
-                    } else {
-                        validWorkflow = checkValidWDLWorkflow(content);
-                    }
+                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType, this).isValidWorkflow(content);
 
                     if (validWorkflow) {
                         // if we have a valid workflow document
                         SourceFile file = new SourceFile();
-                        SourceFile.FileType identifiedType = getFileType(calculatedPath);
                         file.setContent(content);
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
@@ -234,6 +224,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
+                    // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
                         final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref);
                         if (testJsonFile != null && testJsonFile.size() > 0) {
@@ -241,7 +232,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             SourceFile testJson = new SourceFile();
 
                             // Set Filetype
-                            SourceFile.FileType identifiedType = getFileType(calculatedPath);
                             if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
                                 testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
                             } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
@@ -338,9 +328,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return content;
     }
 
+    @Override
+    SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
+        return null;
+    }
+
     /**
      * Updates a user object with metadata from GitHub
-     * @param user
+     * @param user the user to be updated
      * @return Updated user object
      */
     public io.dockstore.webservice.core.User getUserMetadata(io.dockstore.webservice.core.User user) {
