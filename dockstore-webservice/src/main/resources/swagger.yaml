@@ -3555,9 +3555,9 @@ definitions:
   DescriptorLanguageBean:
     type: "object"
     properties:
-      value:
-        type: "string"
       friendlyName:
+        type: "string"
+      enum:
         type: "string"
   DockstoreTool:
     type: "object"
@@ -3870,6 +3870,8 @@ definitions:
   RegistryBean:
     type: "object"
     properties:
+      dockerPath:
+        type: "string"
       friendlyName:
         type: "string"
       url:
