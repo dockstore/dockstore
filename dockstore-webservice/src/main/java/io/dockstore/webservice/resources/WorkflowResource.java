@@ -68,7 +68,6 @@ import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GitLabSourceCodeRepo;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -205,11 +204,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         List<Token> tokens = checkOnBitbucketToken(user);
         // Check if tokens for git hosting services are valid and refresh corresponding workflows
         // Refresh Bitbucket
-        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
         // Refresh Github
-        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
         // Refresh Gitlab
-        Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
 
         // create each type of repo and check its validity
         BitBucketSourceCodeRepo bitBucketSourceCodeRepo = null;
@@ -854,23 +853,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         FileType fileType =
                 (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
                         : FileType.WDL_TEST_JSON;
-        for (String path : testParameterPaths) {
-            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
-                    .count();
-            if (sourcefileDuplicate == 0) {
-                // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
-                SourceFile sourceFile = new SourceFile();
-                sourceFile.setPath(path);
-                sourceFile.setType(fileType);
-
-                long id = fileDAO.create(sourceFile);
-                SourceFile sourceFileWithId = fileDAO.findById(id);
-                workflowVersion.addSourceFile(sourceFileWithId);
-            }
-        }
+        createTestParameters(testParameterPaths, workflowVersion, sourceFiles, fileType, fileDAO);
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
+
+
 
     @DELETE
     @Timed
@@ -991,9 +979,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     private SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
         List<Token> tokens = checkOnBitbucketToken(user);
-        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
 
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
@@ -1104,9 +1092,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             if (workflow.getDescriptorType().equals("wdl")) {
                 //WDL workflow
                 result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, DAGHelper.Type.TOOLS);
-            } else {
+            } else if (workflow.getDescriptorType().equals("cwl")) {
                 //CWL workflow
                 result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, DAGHelper.Type.TOOLS);
+            } else if (workflow.getDescriptorType().equals("nextflow")) {
+                // TODO
+                result = "";
+            } else {
+                result = "";
             }
             return result;
         }

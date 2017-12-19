@@ -37,22 +37,42 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String content) {
-        // TODO
+        // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
+        ConfigSlurper slurper = new ConfigSlurper();
+        ConfigObject parse = slurper.parse(content);
+        ConfigObject manifest = (ConfigObject)parse.get("manifest");
+        if (manifest.containsKey("description")) {
+            entry.setDescription((String)manifest.get("description"));
+        }
+        if (manifest.containsKey("author")) {
+            entry.setDescription((String)manifest.get("author"));
+        }
+
         return entry;
     }
 
     @Override
     public boolean isValidWorkflow(String content) {
-        // TODO
-        return true;
+        return content.contains("manifest");
     }
 
     @Override
     public Map<String, SourceFile> processImports(String content, Version version) {
-        // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         ConfigSlurper slurper = new ConfigSlurper();
         ConfigObject parse = slurper.parse(content);
         Map<String, SourceFile> imports = new HashMap<>();
+
+        // add the NextFlow scripts
+        ConfigObject manifest = (ConfigObject)parse.get("manifest");
+        String mainScriptPath;
+        if (manifest.containsKey("mainScript")) {
+            mainScriptPath = (String)manifest.get("mainScript");
+            SourceFile sourceFile = sourceCodeRepoInterface.readFile(version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
+            imports.put(mainScriptPath, sourceFile);
+        }
+
+        // TODO: does NextFlow have imports beyond the main script file linked to from nextflow.config?
+
         return imports;
     }
 }

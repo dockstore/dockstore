@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -38,8 +37,6 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,17 +67,29 @@ public abstract class SourceCodeRepoInterface {
      * @param tag the version of source control we want to read from
      * @param files the files collection we want to add to
      * @param fileType the type of file
-     * @param sourceFile the sourcefile to read
      */
-    void readFile(Version tag, Collection<SourceFile> files, SourceFile.FileType fileType, SourceFile sourceFile) {
-        String fileResponse = this.readGitRepositoryFile(fileType, tag, sourceFile.getPath());
+    void readFile(Version tag, Collection<SourceFile> files, SourceFile.FileType fileType, String path) {
+        SourceFile sourceFile = this.readFile(tag, fileType, path);
+        if (sourceFile != null) {
+            files.add(sourceFile);
+        }
+    }
+
+    /**
+     * Read a file from the importer and add it into files
+     * @param tag the version of source control we want to read from
+     * @param fileType the type of file
+     */
+    public SourceFile readFile(Version tag, SourceFile.FileType fileType, String path) {
+        String fileResponse = this.readGitRepositoryFile(fileType, tag, path);
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
             dockstoreFile.setType(fileType);
             dockstoreFile.setContent(fileResponse);
-            dockstoreFile.setPath(sourceFile.getPath());
-            files.add(dockstoreFile);
+            dockstoreFile.setPath(path);
+            return dockstoreFile;
         }
+        return null;
     }
 
     /**
@@ -179,12 +188,7 @@ public abstract class SourceCodeRepoInterface {
         setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
 
         // Get metadata for workflow and update workflow with it
-        if (workflow.getDescriptorType().equals(AbstractEntryClient.Type.CWL.toString())) {
-            updateEntryMetadata(workflow, AbstractEntryClient.Type.CWL);
-        } else {
-            updateEntryMetadata(workflow, AbstractEntryClient.Type.WDL);
-        }
-
+        updateEntryMetadata(workflow, workflow.determineWorkflowType());
         return workflow;
     }
 
@@ -226,8 +230,10 @@ public abstract class SourceCodeRepoInterface {
                 if (tag.getReference() != null && tag.getReference().equals(branch)) {
                     if (type == AbstractEntryClient.Type.CWL) {
                         filePath = tag.getCwlPath();
-                    } else {
+                    } else if (type == AbstractEntryClient.Type.WDL) {
                         filePath = tag.getWdlPath();
+                    } else {
+                        throw new UnsupportedOperationException("tool is not a CWL or WDL file");
                     }
                 }
             }
@@ -333,26 +339,6 @@ public abstract class SourceCodeRepoInterface {
     }
 
     /**
-     * Determine descriptor type from file path
-     *
-     * @param path
-     * @return descriptor file type
-     */
-    SourceFile.FileType getFileType(String path) {
-        String calculatedExtension = FilenameUtils.getExtension(path);
-        if ("cwl".equalsIgnoreCase(calculatedExtension) || "yml".equalsIgnoreCase(calculatedExtension) || "yaml"
-                .equalsIgnoreCase(calculatedExtension)) {
-            return SourceFile.FileType.DOCKSTORE_CWL;
-        } else if ("wdl".equalsIgnoreCase(calculatedExtension)) {
-            return SourceFile.FileType.DOCKSTORE_WDL;
-        } else if (path.contains("nextflow.config")) {
-            return SourceFile.FileType.NEXTFLOW_CONFIG;
-        } else {
-            throw new CustomWebApplicationException("Invalid file type for import", HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
      * Resolves imports for a sourcefile, associates with version
      *
      * @param sourceFile
@@ -373,13 +359,11 @@ public abstract class SourceCodeRepoInterface {
         // Look for test parameter files if existing workflow
         if (existingDefaults.get(version.getName()) != null) {
             WorkflowVersion existingVersion = existingDefaults.get(version.getName());
-            SourceFile.FileType workflowDescriptorType =
-                    (workflow.getDescriptorType().toLowerCase().equals("cwl")) ? SourceFile.FileType.CWL_TEST_JSON
-                            : SourceFile.FileType.WDL_TEST_JSON;
+            SourceFile.FileType workflowDescriptorType = workflow.getTestParameterType();
 
             List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream()
                     .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
-            testParameterFiles.forEach(file -> this.readFile(existingVersion, sourceFileSet, workflowDescriptorType, file));
+            testParameterFiles.forEach(file -> this.readFile(existingVersion, sourceFileSet, workflowDescriptorType, file.getPath()));
         }
 
         // If source file is found and valid then add it
@@ -394,7 +378,6 @@ public abstract class SourceCodeRepoInterface {
 
         return version;
     }
-
 
     /**
      * Look in a source code repo for a particular file

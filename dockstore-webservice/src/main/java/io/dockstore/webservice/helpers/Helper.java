@@ -105,49 +105,6 @@ public final class Helper {
     }
 
     /**
-     * // Determine which tags need to be deleted (no longer exist on registry)
-     * // Iterate over tags found from registry
-     * // Find if user already has the tool (if so then update)
-     * sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
-     * // Creates list of tools to delete
-     * final List<Tool> toDelete = new ArrayList<>();
-     * <p>
-     * // Does the tool in the database still exist in Quay
-     * <p>
-     * // Add tool to remove list if it is no longer on Quay (Ignore manual DockerHub/Quay tools)
-     * // when a tool from the registry (ex: quay.io) has newer content, update it from
-     * // Find if user already has the tool, if so just update
-     * // Tool does not already exist, add it
-     * <p>
-     * // Save all new and existing tools
-     * // delete tool if it has no users
-     * Check if the given quay tool has tags
-     *
-     * @param tool
-     * @param client
-     * @param objectMapper
-     * @param tokenDAO
-     * @param userId
-     * @return true if tool has tags, false otherwise
-     */
-    public static boolean checkQuayContainerForTags(final Tool tool, final HttpClient client, final ObjectMapper objectMapper,
-            final TokenDAO tokenDAO, final long userId) {
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
-        if (quayToken == null) {
-            // no quay token extracted
-            throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
-                    HttpStatus.SC_NOT_FOUND);
-        }
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
-
-        final AbstractImageRegistry imageRegistry = factory.createImageRegistry(tool.getRegistry());
-        final List<Tag> tags = imageRegistry.getTags(tool);
-
-        return !tags.isEmpty();
-    }
-
-    /**
      * Given a container and tags, load up required files from git repository
      *
      * @param client
@@ -200,7 +157,7 @@ public final class Helper {
                 // If test json, must grab all
                 List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == f)
                     .collect(Collectors.toList());
-                cwlTestJson.forEach(file -> sourceCodeRepo.readFile(tag, files, f, file));
+                cwlTestJson.forEach(file -> sourceCodeRepo.readFile(tag, files, f, file.getPath()));
             }
         }
         return files;
@@ -227,10 +184,10 @@ public final class Helper {
             final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO, String organization) {
         // Get user's quay and git tokens
         List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
-        Token githubToken = extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        Token gitlabToken = extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
@@ -268,10 +225,10 @@ public final class Helper {
 
         // Get user's quay and git tokens
         List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
-        Token githubToken = extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token gitlabToken = extractToken(tokens, TokenType.GITLAB_COM.toString());
-        Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
@@ -287,15 +244,6 @@ public final class Helper {
         return abstractImageRegistry
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken);
 
-    }
-
-    public static Token extractToken(List<Token> tokens, String source) {
-        for (Token token : tokens) {
-            if (token.getTokenSource().equals(source)) {
-                return token;
-            }
-        }
-        return null;
     }
 
     public static String convertHttpsToSsh(String url) {
@@ -344,7 +292,7 @@ public final class Helper {
             final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         // get quay token
-        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
 
         if (tool.getRegistry() == Registry.QUAY_IO && quayToken == null) {
             LOG.info("WARNING: QUAY.IO token not found!");

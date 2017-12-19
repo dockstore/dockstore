@@ -32,6 +32,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
@@ -220,6 +221,25 @@ public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResour
             }
         }
         return resultMap;
+    }
+
+
+
+    default void createTestParameters(List<String> testParameterPaths, Version workflowVersion, Set<SourceFile> sourceFiles, SourceFile.FileType fileType, FileDAO fileDAO) {
+        for (String path : testParameterPaths) {
+            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
+                .count();
+            if (sourcefileDuplicate == 0) {
+                // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
+                SourceFile sourceFile = new SourceFile();
+                sourceFile.setPath(path);
+                sourceFile.setType(fileType);
+
+                long id = fileDAO.create(sourceFile);
+                SourceFile sourceFileWithId = fileDAO.findById(id);
+                workflowVersion.addSourceFile(sourceFileWithId);
+            }
+        }
     }
 
     /**

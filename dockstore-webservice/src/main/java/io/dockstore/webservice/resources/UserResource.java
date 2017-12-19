@@ -50,7 +50,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -427,8 +426,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (organization != null && !organization.isEmpty()) {
             tools.removeIf(tool -> !tool.getNamespace().equals(organization));
         }
-        Token gitLabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
-        Token quayioToken = Helper.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token gitLabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token quayioToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
         Set<Registry> uniqueRegistry = new HashSet<>();
         tools.forEach(tool -> uniqueRegistry.add(tool.getRegistry()));
         if (uniqueRegistry.size() == 0 && quayioToken == null) {

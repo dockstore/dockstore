@@ -532,11 +532,15 @@ public class DAGHelper {
     }
 
     private boolean isValidCwl(String content, Yaml yaml) {
-        Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
-        String cwlVersion = mapping.get("cwlVersion").toString();
+        try {
+            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
+            String cwlVersion = mapping.get("cwlVersion").toString();
 
-        if (cwlVersion != null) {
-            return "v1.0".equals(cwlVersion);
+            if (cwlVersion != null) {
+                return "v1.0".equals(cwlVersion);
+            }
+        } catch (ClassCastException e) {
+            return false;
         }
         return false;
     }

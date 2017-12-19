@@ -54,11 +54,13 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.Helper;
+import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -389,8 +391,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
 
         // Check if tool has tags
-        if (tool.getRegistry() == Registry.QUAY_IO && !Helper
-                .checkQuayContainerForTags(tool, client, objectMapper, tokenDAO, user.getId())) {
+        if (tool.getRegistry() == Registry.QUAY_IO && !checkContainerForTags(tool, user.getId())) {
             LOG.info(user.getUsername() + ": tool has no tags.");
             throw new CustomWebApplicationException(
                     "Tool " + tool.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
@@ -407,6 +408,28 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
         return toolDAO.findById(id);
+    }
+
+    /**
+     * Look for the tags that a tool has using a user's own tokens
+     * @param tool the tool to examine
+     * @param userId the id for the user that is doing the checking
+     * @return true if the container has tags
+     */
+    private boolean checkContainerForTags(final Tool tool, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        if (quayToken == null) {
+            // no quay token extracted
+            throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
+                HttpStatus.SC_NOT_FOUND);
+        }
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+
+        final AbstractImageRegistry imageRegistry = factory.createImageRegistry(tool.getRegistry());
+        final List<Tag> tags = imageRegistry.getTags(tool);
+
+        return !tags.isEmpty();
     }
 
     @DELETE
@@ -819,33 +842,21 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        Tag tag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst().get();
+        Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
-        if (tag == null) {
+        if (!firstTag.isPresent()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
             throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
                     HttpStatus.SC_BAD_REQUEST);
         }
 
+        Tag tag = firstTag.get();
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Add new test parameter files
         FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
                 : FileType.WDL_TEST_JSON;
-        for (String path : testParameterPaths) {
-            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
-                    .count();
-            if (sourcefileDuplicate == 0) {
-                // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
-                SourceFile sourceFile = new SourceFile();
-                sourceFile.setPath(path);
-                sourceFile.setType(fileType);
-
-                long id = fileDAO.create(sourceFile);
-                SourceFile sourceFileWithId = fileDAO.findById(id);
-                tag.addSourceFile(sourceFileWithId);
-            }
-        }
+        createTestParameters(testParameterPaths, tag, sourceFiles, fileType, fileDAO);
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tag.getSourceFiles();
     }
@@ -862,14 +873,15 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
 
-        Tag tag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst().get();
+        Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
-        if (tag == null) {
+        if (!firstTag.isPresent()) {
             LOG.info("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.");
             throw new CustomWebApplicationException("The tag \'" + tagName + "\' for tool \'" + tool.getToolPath() + "\' does not exist.",
                     HttpStatus.SC_BAD_REQUEST);
         }
 
+        Tag tag = firstTag.get();
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Remove test parameter files

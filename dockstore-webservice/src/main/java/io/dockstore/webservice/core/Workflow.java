@@ -18,7 +18,6 @@ package io.dockstore.webservice.core;
 
 import java.util.Set;
 import java.util.SortedSet;
-import io.dockstore.common.SourceControl;
 import java.util.TreeSet;
 
 import javax.persistence.Column;
@@ -36,7 +35,10 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.SourceControl;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -246,6 +248,31 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public String getDescriptorType() {
         return this.descriptorType;
+    }
+
+    public AbstractEntryClient.Type determineWorkflowType() {
+        AbstractEntryClient.Type fileType;
+        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+            fileType = AbstractEntryClient.Type.WDL;
+        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+            fileType = AbstractEntryClient.Type.CWL;
+        } else {
+            fileType = AbstractEntryClient.Type.NEXTFLOW;
+        }
+        return fileType;
+    }
+
+    @JsonIgnore
+    public SourceFile.FileType getTestParameterType() {
+        SourceFile.FileType fileType;
+        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+            fileType = SourceFile.FileType.WDL_TEST_JSON;
+        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+            fileType = SourceFile.FileType.CWL_TEST_JSON;
+        } else {
+            fileType = SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
+        }
+        return fileType;
     }
 
     public String getDefaultTestParameterFilePath() {

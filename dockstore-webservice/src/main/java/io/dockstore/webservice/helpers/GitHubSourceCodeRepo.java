@@ -202,7 +202,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             WorkflowVersion version = initializeWorkflowVersion(ref, existingWorkflow, existingDefaults);
             String calculatedPath = version.getWorkflowPath();
 
-            SourceFile.FileType identifiedType = getFileType(calculatedPath);
+            SourceFile.FileType identifiedType = workflow.getTestParameterType();
 
             // Grab workflow file from github
             try {

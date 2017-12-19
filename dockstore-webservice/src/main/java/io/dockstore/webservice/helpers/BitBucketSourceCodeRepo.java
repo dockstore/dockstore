@@ -244,11 +244,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     String calculatedPath = version.getWorkflowPath();
 
                     // Now grab source files
-                    SourceFile sourceFile;
-                    SourceFile.FileType identifiedType = getFileType(calculatedPath);
-
+                    SourceFile.FileType identifiedType = workflow.getTestParameterType();
                     // TODO: No exceptions are caught here in the event of a failed call
-                    sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+                    SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
                     // Non-null sourcefile means that the sourcefile is valid
                     if (sourceFile != null) {
