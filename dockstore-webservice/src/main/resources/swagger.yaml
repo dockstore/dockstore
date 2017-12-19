@@ -3555,9 +3555,9 @@ definitions:
   DescriptorLanguageBean:
     type: "object"
     properties:
-      friendlyName:
+      value:
         type: "string"
-      enum:
+      friendlyName:
         type: "string"
   DockstoreTool:
     type: "object"
