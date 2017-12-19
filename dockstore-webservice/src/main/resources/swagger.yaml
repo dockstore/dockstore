@@ -3870,6 +3870,8 @@ definitions:
   RegistryBean:
     type: "object"
     properties:
+      dockerPath:
+        type: "string"
       friendlyName:
         type: "string"
       url:
