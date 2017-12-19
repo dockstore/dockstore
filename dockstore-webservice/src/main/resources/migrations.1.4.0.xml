@@ -15,4 +15,57 @@
   ~    limitations under the License.
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd" context="1.4.0">
+    <changeSet author="agduncan" id="74274923472389478923">
+        <addColumn tableName="workflow">
+            <column name="sourcecontrol" type="text">
+            </column>
+        </addColumn>
+
+        <sql dbms="postgresql">
+            update workflow set sourcecontrol='GITHUB' where giturl like '%github%'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set path = CONCAT('github.com/', path) where sourcecontrol='GITHUB'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set sourcecontrol='BITBUCKET' where giturl like '%bitbucket%'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set path = CONCAT('bitbucket.org/', path) where sourcecontrol='BITBUCKET'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set sourcecontrol='GITLAB' where giturl like '%gitlab%'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set path = CONCAT('gitlab.com/', path) where sourcecontrol='GITLAB'
+        </sql>
+
+        <addNotNullConstraint tableName="workflow" columnName="sourcecontrol"/>
+
+        <sql dbms="postgresql">
+            alter table workflow drop constraint if exists ukkprrtg54h6rjca5l1navospm8
+        </sql>
+
+        <sql dbms="postgresql">
+            alter table workflow drop constraint if exists uk_kprrtg54h6rjca5l1navospm8
+        </sql>
+
+
+        <dropIndex indexName="full_workflow_name" tableName="workflow"/>
+
+        <sql dbms="postgresql">
+            create unique index if not exists full_workflow_name on workflow (sourcecontrol, organization, repository, workflowname) where workflowname is not null
+        </sql>
+
+        <dropIndex indexName="partial_workflow_name" tableName="workflow"/>
+
+        <sql dbms="postgresql">
+            create unique index if not exists partial_workflow_name on workflow (sourcecontrol, organization, repository) where workflowname is null
+        </sql>
+    </changeSet>
 </databaseChangeLog>
