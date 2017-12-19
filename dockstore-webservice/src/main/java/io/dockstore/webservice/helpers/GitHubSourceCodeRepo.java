@@ -143,6 +143,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             oService.getOrganizations();
         } catch (IOException e) {
+            if (e instanceof RequestException && e.getMessage().contains("API rate limit")) {
+                throw new CustomWebApplicationException(
+                    e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            }
             throw new CustomWebApplicationException(
                 "Please recreate your GitHub token, we need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -202,7 +206,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             WorkflowVersion version = initializeWorkflowVersion(ref, existingWorkflow, existingDefaults);
             String calculatedPath = version.getWorkflowPath();
 
-            SourceFile.FileType identifiedType = workflow.getTestParameterType();
+            SourceFile.FileType identifiedType = workflow.getFileType();
 
             // Grab workflow file from github
             try {

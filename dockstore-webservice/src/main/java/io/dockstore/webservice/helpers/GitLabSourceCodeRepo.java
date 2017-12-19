@@ -188,7 +188,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                     String calculatedPath = version.getWorkflowPath();
 
                     // Now grab source files
-                    SourceFile.FileType identifiedType = workflow.getTestParameterType();
+                    SourceFile.FileType identifiedType = workflow.getFileType();
                     // TODO: No exceptions are caught here in the event of a failed call
                     SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
 

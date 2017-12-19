@@ -263,6 +263,19 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @JsonIgnore
+    public SourceFile.FileType getFileType() {
+        SourceFile.FileType fileType;
+        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+            fileType = SourceFile.FileType.DOCKSTORE_WDL;
+        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+            fileType = SourceFile.FileType.DOCKSTORE_CWL;
+        } else {
+            fileType = SourceFile.FileType.NEXTFLOW;
+        }
+        return fileType;
+    }
+
+    @JsonIgnore
     public SourceFile.FileType getTestParameterType() {
         SourceFile.FileType fileType;
         if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
