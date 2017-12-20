@@ -88,6 +88,13 @@ public final class ToolsImplCommon {
         return descriptor;
     }
 
+    public static ToolDescriptor sourceFileTotoolDescriptor(SourceFile sourceFile) {
+        ToolDescriptor toolDescriptor = new ToolDescriptor();
+        toolDescriptor.setDescriptor(sourceFile.getContent());
+        toolDescriptor.setUrl(sourceFile.getPath());
+        return toolDescriptor;
+    }
+
     /**
      * @param gitUrl       The git formatted url for the repo
      * @param reference    the git tag or branch

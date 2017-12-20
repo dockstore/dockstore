@@ -381,7 +381,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         io.swagger.model.Tool convertedTool = toolTablePair.getKey();
         final Optional<ToolVersion> first = convertedTool.getVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-
         Optional<? extends Version> oldFirst;
         if (entry instanceof Tool) {
             Tool toolEntry = (Tool)entry;
@@ -429,8 +428,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                             .findFirst();
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
+                        ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileTotoolDescriptor(entity);
+                        if (entity.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                            toolDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+                        }
+                        else {
+                            toolDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+                        }
                         return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                                .entity(unwrap ? entity.getContent() : entity).build();
+                                .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
                     }
                 }
             }
