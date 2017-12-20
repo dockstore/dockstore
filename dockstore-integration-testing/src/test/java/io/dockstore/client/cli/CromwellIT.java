@@ -29,12 +29,14 @@ import com.google.gson.Gson;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
 
@@ -80,6 +82,7 @@ public class CromwellIT {
     }
 
     @Test
+    @Category(ConfidentialTest.class)
     public void fileProvisioning() throws IOException, ApiException {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
