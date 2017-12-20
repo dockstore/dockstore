@@ -617,7 +617,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new github.com token, used by quay.io redirect"
+      summary: "Add a new github.com token, used by github.com redirect"
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"

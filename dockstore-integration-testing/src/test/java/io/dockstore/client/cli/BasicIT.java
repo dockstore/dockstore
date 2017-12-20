@@ -91,7 +91,7 @@ public class BasicIT extends BaseIT {
     public void testRefreshWorkflow() {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh"});
-        // should have a certain number of tools based on github contents
+        // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
         Assert.assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
 
@@ -118,12 +118,16 @@ public class BasicIT extends BaseIT {
             final long thirdWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
             Assert.assertTrue("there should be no change in count of workflows", secondWorkflowCount == thirdWorkflowCount);
         });
+
+
+        // should include nextflow example workflow stub
+        final long nfWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow where giturl like '%ampa-nf%'", new ScalarHandler<>());
+        Assert.assertTrue("should find non-zero number of next flow workflows", nfWorkflowCount > 0);
+
         // refresh
         systemExit.expectSystemExit();
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry",
             SourceControl.GITHUB.toString() + "/DockstoreTestUser/dockstore-whalesay-wdl" });
-
-
     }
 
     /**

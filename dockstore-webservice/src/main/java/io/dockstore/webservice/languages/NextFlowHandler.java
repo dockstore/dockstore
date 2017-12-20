@@ -64,12 +64,12 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
         // add the NextFlow scripts
         ConfigObject manifest = (ConfigObject)parse.get("manifest");
-        String mainScriptPath;
+        String mainScriptPath = "main.nf";
         if (manifest.containsKey("mainScript")) {
             mainScriptPath = (String)manifest.get("mainScript");
-            SourceFile sourceFile = sourceCodeRepoInterface.readFile(version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
-            imports.put(mainScriptPath, sourceFile);
         }
+        SourceFile sourceFile = sourceCodeRepoInterface.readFile(version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
+        imports.put(mainScriptPath, sourceFile);
 
         // TODO: does NextFlow have imports beyond the main script file linked to from nextflow.config?
 

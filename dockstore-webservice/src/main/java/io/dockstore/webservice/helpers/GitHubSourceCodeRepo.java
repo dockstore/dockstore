@@ -148,7 +148,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     e.getMessage(), HttpStatus.SC_BAD_REQUEST);
             }
             throw new CustomWebApplicationException(
-                "Please recreate your GitHub token, we need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
+                "Please recreate your GitHub token, we probably need an upgraded token to list your organizations: ", HttpStatus.SC_BAD_REQUEST);
         }
         return true;
     }
@@ -334,7 +334,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
-        return null;
+        throw new UnsupportedOperationException("not implemented/needed for github");
     }
 
     /**

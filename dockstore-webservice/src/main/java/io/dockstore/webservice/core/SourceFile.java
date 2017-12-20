@@ -65,10 +65,6 @@ public class SourceFile {
     @ApiModelProperty(value = "Path to source file in git repo", required = true)
     private String path;
 
-    public void update(SourceFile file) {
-        content = file.content;
-    }
-
     public long getId() {
         return id;
     }

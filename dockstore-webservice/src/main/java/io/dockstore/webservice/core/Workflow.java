@@ -270,7 +270,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
             fileType = SourceFile.FileType.DOCKSTORE_CWL;
         } else {
-            fileType = SourceFile.FileType.NEXTFLOW;
+            fileType = SourceFile.FileType.NEXTFLOW_CONFIG;
         }
         return fileType;
     }

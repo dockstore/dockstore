@@ -301,7 +301,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/github.com")
-    @ApiOperation(value = "Add a new github.com token, used by quay.io redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
+    @ApiOperation(value = "Add a new github.com token, used by github.com redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {

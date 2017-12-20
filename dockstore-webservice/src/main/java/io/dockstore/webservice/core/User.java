@@ -252,13 +252,4 @@ public class User implements Principal {
         // do not depend on lazily loaded collections for equality
         return Objects.equals(isAdmin, other.isAdmin);
     }
-
-    public void update(User user) {
-        email = user.getEmail();
-        location = user.getLocation();
-        bio = user.getBio();
-        avatarUrl = user.getAvatarUrl();
-        company = user.getCompany();
-    }
-
 }

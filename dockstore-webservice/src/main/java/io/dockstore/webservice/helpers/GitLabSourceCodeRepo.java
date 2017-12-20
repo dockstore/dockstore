@@ -325,26 +325,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     /**
-     * Given a gitlab project id, branch name and filepath, find the contents of a file
-     *
-     * @param id
-     * @param branch
-     * @param filepath
-     * @return contents of a file
-     */
-    private String getFileContentsFromId(String id, String branch, String filepath) {
-        if (id != null && branch != null && filepath != null) {
-            String fileUrl = GITLAB_API_URL + "projects/" + id + "/repository/blobs/" + branch + "?filepath=" + filepath;
-
-            Optional<String> fileAsString = ResourceUtilities.asString(fileUrl, gitlabTokenContent, client);
-            if (fileAsString.isPresent()) {
-                return fileAsString.get();
-            }
-        }
-        return null;
-    }
-
-    /**
      * Given a gitlab project id, branch name and filepath, find the contents of a file with API V4
      *
      * @param id
