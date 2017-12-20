@@ -3665,6 +3665,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
+      languages:
+        type: "array"
+        readOnly: true
+        items:
+          type: "string"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
