@@ -14,7 +14,20 @@
   ~    See the License for the specific language governing permissions and
   ~    limitations under the License.
   -->
+
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd" context="1.4.0">
+    <changeSet id="workflowWorkflownameConvertEmptyStringToNull" author="gluu">
+        <update schemaName="public"
+                tableName="workflow">
+            <column name="workflowname"/>
+            <where>workflowname = ''</where>
+        </update>
+    </changeSet>
+    <changeSet id="addWorkflowWorkflownameNotEmptyConstraint" author="gluu" >
+        <sql dbms="postgresql">
+            ALTER TABLE workflow add constraint workflow_workflowname_notempty check (workflowname &lt;&gt; '')
+        </sql>
+    </changeSet>
     <changeSet author="agduncan" id="74274923472389478923">
         <addColumn tableName="workflow">
             <column name="sourcecontrol" type="text">

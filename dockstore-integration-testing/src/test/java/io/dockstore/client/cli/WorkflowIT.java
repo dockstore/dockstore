@@ -46,6 +46,9 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -97,6 +100,11 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         final List<Workflow> workflows = workflowApi.refreshAll();
+
+        for (Workflow workflow: workflows) {
+            assertNotSame("", workflow.getWorkflowName());
+        }
+
         assertTrue("workflow size was " + workflows.size(), workflows.size() > 1);
         assertTrue(
                 "found non stub workflows " + workflows.stream().filter(workflow -> workflow.getMode() != Workflow.ModeEnum.STUB).count(),
@@ -111,7 +119,12 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        workflowApi.refreshAll();
+
+        final List<Workflow> workflows = workflowApi.refreshAll();
+
+        for (Workflow workflow: workflows) {
+            assertNotSame("", workflow.getWorkflowName());
+        }
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
@@ -313,9 +326,16 @@ public class WorkflowIT extends BaseIT {
 
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW);
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-        // test out methods to access secondary files
 
+        // This checks if a workflow whose default name was manually registered as an empty string would become null
+        assertNull(workflowByPathGithub.getWorkflowName());
+
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+
+        // This checks if a workflow whose default name is null would remain as null after refresh
+        assertNull(workflow.getWorkflowName());
+
+        // test out methods to access secondary files
         final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
         assertTrue("should find 2 imports, found " + masterImports.size(), masterImports.size() == 2);
         final SourceFile master = workflowApi.cwl(workflow.getId(), "master");
@@ -330,10 +350,17 @@ public class WorkflowIT extends BaseIT {
     public void testRelativeSecondaryFileOperations() throws IOException, TimeoutException, ApiException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+
+        // This checks if a workflow whose default name was manually registered as an empty string would become null
+        assertNull(workflowByPathGithub.getWorkflowName());
+
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+
+        // This checks if a workflow whose default name is null would remain as null after refresh
+        assertNull(workflow.getWorkflowName());
+
         // test out methods to access secondary files
 
         final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");

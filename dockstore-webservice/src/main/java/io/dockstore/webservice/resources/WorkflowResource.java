@@ -959,6 +959,10 @@ public class WorkflowResource {
             completeWorkflowPath += "/" + workflowName;
         }
 
+        if (workflowName.isEmpty()) {
+            workflowName = null;
+        }
+
         if (!defaultWorkflowPath.endsWith(descriptorType)) {
             throw new CustomWebApplicationException(
                     "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
