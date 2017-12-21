@@ -36,12 +36,12 @@ import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/tools")
 
 @Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the tools API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-public class ToolsApi {
+public class ToolsApiV1 {
     private final ToolsApiService delegate = ToolsApiServiceFactory.getToolsApi();
 
     @GET
@@ -62,7 +62,7 @@ public class ToolsApi {
             @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request this will start at the beginning of the results.") @QueryParam("offset") String offset,
             @ApiParam(value = "Amount of records to return in a given page.  By default it is 1000.") @QueryParam("limit") Integer limit,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return ApiVersionConverter.convertToVersion(delegate.toolsGet(id, registry, organization, name, toolname, description, author, offset, limit, securityContext, value), ApiVersionConverter.ApiVersion.v2);
+        return ApiVersionConverter.convertToVersion(delegate.toolsGet(id, registry, organization, name, toolname, description, author, offset, limit, securityContext, value), ApiVersionConverter.ApiVersion.v1);
     }
 
     @GET

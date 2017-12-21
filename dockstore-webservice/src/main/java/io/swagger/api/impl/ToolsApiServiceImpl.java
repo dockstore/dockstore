@@ -54,7 +54,8 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolDockerfile;;
+import io.swagger.model.ToolV1;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -371,8 +372,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } catch (URISyntaxException | MalformedURLException e) {
             throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
-
-        return responseBuilder.build();
+        Response response = responseBuilder.build();
+        return response;
     }
 
     private void handleParameter(String parameter, String queryName, List<String> filters) {

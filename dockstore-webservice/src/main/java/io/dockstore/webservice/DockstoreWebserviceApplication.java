@@ -76,6 +76,7 @@ import io.dropwizard.views.ViewBundle;
 import io.swagger.api.MetadataApi;
 import io.swagger.api.ToolClassesApi;
 import io.swagger.api.ToolsApi;
+import io.swagger.api.ToolsApiV1;
 import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
@@ -258,6 +259,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         environment.jersey().register(new ToolsApi());
+        environment.jersey().register(new ToolsApiV1());
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi());
         environment.jersey().register(new ToolClassesApi());

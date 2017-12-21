@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -34,7 +31,6 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class Tool {
     private String url = null;
 
@@ -50,14 +46,12 @@ public class Tool {
 
     private String author = null;
 
-    @JsonProperty("meta_version")
     private String metaVersion = null;
 
     private List<String> contains = new ArrayList<String>();
 
     private Boolean verified = null;
 
-    @JsonProperty("verified_source")
     private String verifiedSource = null;
 
     private Boolean signed = null;
@@ -196,7 +190,7 @@ public class Tool {
     public void setAuthor(String author) {
         this.author = author;
     }
-    
+
     public Tool metaVersion(String metaVersion) {
         this.metaVersion = metaVersion;
         return this;
@@ -322,7 +316,7 @@ public class Tool {
     }
 
     @Override
-    public boolean equals(java.lang.Object o) {
+    public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -372,7 +366,7 @@ public class Tool {
      * Convert the given object to string with each line indented by 4 spaces
      * (except the first line).
      */
-    private String toIndentedString(java.lang.Object o) {
+    private String toIndentedString(Object o) {
         if (o == null) {
             return "null";
         }
