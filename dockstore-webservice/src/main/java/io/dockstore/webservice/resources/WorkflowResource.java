@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -41,7 +42,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -56,6 +56,7 @@ import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -67,9 +68,9 @@ import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GitLabSourceCodeRepo;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -99,7 +100,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/workflows")
 @Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowResource {
+public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow>, StarrableResourceInterface, SourceControlResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private final ElasticManager elasticManager;
@@ -114,7 +115,6 @@ public class WorkflowResource {
 
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
-    private final EntryVersionHelper<Workflow> entryVersionHelper;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
@@ -132,7 +132,6 @@ public class WorkflowResource {
         this.bitbucketClientSecret = bitbucketClientSecret;
 
         this.workflowDAO = workflowDAO;
-        entryVersionHelper = new EntryVersionHelper<>(workflowDAO);
         elasticManager = new ElasticManager();
     }
 
@@ -200,16 +199,16 @@ public class WorkflowResource {
      *
      * @param user a user to refresh workflows for
      */
-    public void refreshStubWorkflowsForUser(User user, String organization) {
+    void refreshStubWorkflowsForUser(User user, String organization) {
 
         List<Token> tokens = checkOnBitbucketToken(user);
         // Check if tokens for git hosting services are valid and refresh corresponding workflows
         // Refresh Bitbucket
-        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
         // Refresh Github
-        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
         // Refresh Gitlab
-        Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
 
         // create each type of repo and check its validity
         BitBucketSourceCodeRepo bitBucketSourceCodeRepo = null;
@@ -289,7 +288,7 @@ public class WorkflowResource {
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.absent());
+                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.empty());
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
@@ -311,7 +310,7 @@ public class WorkflowResource {
 
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
-            Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+            refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
         return tokenDAO.findByUserId(user.getId());
@@ -325,14 +324,14 @@ public class WorkflowResource {
     public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
-        Helper.checkUser(user, workflow);
-
-        // Update user data
-        Helper.updateUserHelper(user, userDAO, tokenDAO);
+        checkEntry(workflow);
+        checkUser(user, workflow);
 
         // get a live user for the following
         user = userDAO.findById(user.getId());
+        // Update user data
+        user.updateUserMetadata(tokenDAO);
+
         // Set up source code interface and ensure token is set up
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(workflow.getGitUrl(), user);
 
@@ -424,9 +423,9 @@ public class WorkflowResource {
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
-        Helper.checkUser(user, c);
+        checkUser(user, c);
         return c;
     }
 
@@ -440,7 +439,7 @@ public class WorkflowResource {
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
         Workflow c = workflowDAO.findById(workflowId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
         EntryLabelHelper<Workflow> labeller = new EntryLabelHelper<>(labelDAO);
 
@@ -458,9 +457,9 @@ public class WorkflowResource {
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow c = workflowDAO.findById(workflowId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
-        Helper.checkUser(user, c);
+        checkUser(user, c);
 
         Workflow duplicate = workflowDAO.findByPath(workflow.getPath());
 
@@ -471,7 +470,7 @@ public class WorkflowResource {
 
         updateInfo(c, workflow);
         Workflow result = workflowDAO.findById(workflowId);
-        Helper.checkEntry(result);
+        checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
@@ -502,10 +501,10 @@ public class WorkflowResource {
             @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
             @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
+        checkEntry(workflow);
         // Note: if you set someone as an admin, they are not actually admin right away. Users must wait until after the
         // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
-        Helper.checkUser(user, workflow);
+        checkUser(user, workflow);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -524,7 +523,7 @@ public class WorkflowResource {
         }
 
         Workflow result = workflowDAO.findById(workflowId);
-        Helper.checkEntry(result);
+        checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getWorkflowVersions();
 
@@ -542,8 +541,8 @@ public class WorkflowResource {
         Workflow c = workflowDAO.findById(workflowId);
 
         //check if the user and the entry is correct
-        Helper.checkEntry(c);
-        Helper.checkUser(user, c);
+        checkEntry(c);
+        checkUser(user, c);
 
         //update the workflow path in all workflowVersions
         Set<WorkflowVersion> versions = c.getVersions();
@@ -556,13 +555,6 @@ public class WorkflowResource {
         return c;
     }
 
-    private SourceFile createSourceFile(String path, SourceFile.FileType type) {
-        SourceFile sourcefile = new SourceFile();
-        sourcefile.setPath(path);
-        sourcefile.setType(type);
-        return sourcefile;
-    }
-
     @GET
     @Timed
     @UnitOfWork
@@ -571,9 +563,9 @@ public class WorkflowResource {
     public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
-        Helper.checkUser(user, c);
+        checkUser(user, c);
 
         return new ArrayList(c.getUsers());
     }
@@ -585,8 +577,8 @@ public class WorkflowResource {
     @ApiOperation(value = "Get a published workflow", notes = "NO authentication", response = Workflow.class)
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
-        Helper.checkEntry(workflow);
-        return entryVersionHelper.filterContainersForHiddenTags(workflow);
+        checkEntry(workflow);
+        return filterContainersForHiddenTags(workflow);
     }
 
     @GET
@@ -597,7 +589,7 @@ public class WorkflowResource {
     public List<Workflow> getPublishedWorkflowsByOrganization(
             @ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
         List<Workflow> workflows = workflowDAO.findPublishedByOrganization(organization);
-        entryVersionHelper.filterContainersForHiddenTags(workflows);
+        filterContainersForHiddenTags(workflows);
         return workflows;
     }
 
@@ -610,9 +602,9 @@ public class WorkflowResource {
             @ApiParam(value = "Tool id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Workflow c = workflowDAO.findById(workflowId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
-        Helper.checkUser(user, c);
+        checkUser(user, c);
 
         if (request.getPublish()) {
             boolean validTag = false;
@@ -651,7 +643,7 @@ public class WorkflowResource {
             "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> allPublishedWorkflows() {
         List<Workflow> tools = workflowDAO.findAllPublished();
-        entryVersionHelper.filterContainersForHiddenTags(tools);
+        filterContainersForHiddenTags(tools);
         return tools;
     }
 
@@ -664,8 +656,8 @@ public class WorkflowResource {
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
 
         Workflow workflow = workflowDAO.findByPath(path);
-        Helper.checkEntry(workflow);
-        Helper.checkUser(user, workflow);
+        checkEntry(workflow);
+        checkUser(user, workflow);
         return workflow;
     }
 
@@ -676,7 +668,7 @@ public class WorkflowResource {
     @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findPublishedByPath(path);
-        Helper.checkEntry(workflow);
+        checkEntry(workflow);
         return workflow;
     }
 
@@ -697,9 +689,9 @@ public class WorkflowResource {
     @ApiOperation(value = "List the versions for a published workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findById(workflowId);
-        Helper.checkEntry(repository);
+        checkEntry(repository);
 
-        Helper.checkUser(user, repository);
+        checkUser(user, repository);
 
         List<WorkflowVersion> tags = new ArrayList<>();
         tags.addAll(repository.getVersions());
@@ -714,10 +706,10 @@ public class WorkflowResource {
             "workflows" }, notes = "Does not need authentication", response = String.class)
     public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
+        checkEntry(workflow);
 
         Set<String> verifiedSourcesArray = new HashSet<>();
-        workflow.getWorkflowVersions().stream().filter((WorkflowVersion u) -> u.isVerified())
+        workflow.getWorkflowVersions().stream().filter(Version::isVerified)
                 .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
 
         JSONArray jsonArray;
@@ -739,7 +731,7 @@ public class WorkflowResource {
             "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
-        return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
+        return getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
 
     @GET
@@ -750,7 +742,7 @@ public class WorkflowResource {
             "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile wdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
-        return entryVersionHelper.getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
+        return getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
 
     @GET
@@ -762,7 +754,7 @@ public class WorkflowResource {
     public SourceFile secondaryCwlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
 
-        return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
+        return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
     }
 
     @GET
@@ -774,7 +766,7 @@ public class WorkflowResource {
     public SourceFile secondaryWdlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
 
-        return entryVersionHelper.getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
+        return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
     }
 
     @GET
@@ -785,7 +777,7 @@ public class WorkflowResource {
             "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
-        return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
+        return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
     }
 
     @GET
@@ -796,7 +788,7 @@ public class WorkflowResource {
             "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
-        return entryVersionHelper.getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
+        return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
     }
 
     @GET
@@ -810,12 +802,12 @@ public class WorkflowResource {
             @QueryParam("version") String version) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
+        checkEntry(workflow);
 
         if (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
-            return entryVersionHelper.getAllSourceFiles(workflowId, version, FileType.WDL_TEST_JSON);
+            return getAllSourceFiles(workflowId, version, FileType.WDL_TEST_JSON);
         } else {
-            return entryVersionHelper.getAllSourceFiles(workflowId, version, FileType.CWL_TEST_JSON);
+            return getAllSourceFiles(workflowId, version, FileType.CWL_TEST_JSON);
         }
     }
 
@@ -830,7 +822,7 @@ public class WorkflowResource {
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
             @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
+        checkEntry(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
             LOG.info("The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files");
@@ -861,23 +853,12 @@ public class WorkflowResource {
         FileType fileType =
                 (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
                         : FileType.WDL_TEST_JSON;
-        for (String path : testParameterPaths) {
-            long sourcefileDuplicate = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
-                    .count();
-            if (sourcefileDuplicate == 0) {
-                // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
-                SourceFile sourceFile = new SourceFile();
-                sourceFile.setPath(path);
-                sourceFile.setType(fileType);
-
-                long id = fileDAO.create(sourceFile);
-                SourceFile sourceFileWithId = fileDAO.findById(id);
-                workflowVersion.addSourceFile(sourceFileWithId);
-            }
-        }
+        createTestParameters(testParameterPaths, workflowVersion, sourceFiles, fileType, fileDAO);
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
+
+
 
     @DELETE
     @Timed
@@ -889,7 +870,7 @@ public class WorkflowResource {
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
             @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
+        checkEntry(workflow);
 
         WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter((WorkflowVersion v) -> v.getName().equals(version))
                 .findFirst().get();
@@ -980,7 +961,7 @@ public class WorkflowResource {
 
 
         // Create workflow
-        Workflow newWorkflow = sourceCodeRepo.getWorkflow(completeWorkflowPath, Optional.absent());
+        Workflow newWorkflow = sourceCodeRepo.getWorkflow(completeWorkflowPath, Optional.empty());
 
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);
@@ -996,16 +977,15 @@ public class WorkflowResource {
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
         workflowFromDB.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
-        Workflow finalWorkflow = workflowDAO.findById(workflowID);
-        return finalWorkflow;
+        return workflowDAO.findById(workflowID);
 
     }
 
     private SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
         List<Token> tokens = checkOnBitbucketToken(user);
-        Token bitbucketToken = Helper.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        Token githubToken = Helper.extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token gitlabToken = Helper.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
 
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
@@ -1029,9 +1009,9 @@ public class WorkflowResource {
             @ApiParam(value = "List of modified workflow versions", required = true) List<WorkflowVersion> workflowVersions) {
 
         Workflow w = workflowDAO.findById(workflowId);
-        Helper.checkEntry(w);
+        checkEntry(w);
 
-        Helper.checkUser(user, w);
+        checkUser(user, w);
 
         // create a map for quick lookup
         Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();
@@ -1053,7 +1033,7 @@ public class WorkflowResource {
             }
         }
         Workflow result = workflowDAO.findById(workflowId);
-        Helper.checkEntry(result);
+        checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getVersions();
     }
@@ -1074,29 +1054,13 @@ public class WorkflowResource {
             String descFileContent = mainDescriptor.getContent();
             Map<String, String> secondaryDescContent = new HashMap<>();
             File tmpDir = Files.createTempDir();
-            File tempMainDescriptor = null;
-
-            try {
-                // Write main descriptor to file
-                // The use of temporary files is not needed here and might cause new problems
-                tempMainDescriptor = File.createTempFile("main", "descriptor", tmpDir);
-                Files.write(mainDescriptor.getContent(), tempMainDescriptor, StandardCharsets.UTF_8);
-
-                // get secondary files
-                for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
-                    if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                        secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            File tempMainDescriptor = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, secondaryDescContent, tmpDir);
 
             DAGHelper dagHelper = new DAGHelper(toolDAO);
             if (workflow.getDescriptorType().equals("wdl")) {
-                result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, Type.DAG);
+                result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, DAGHelper.Type.DAG);
             } else {
-                result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, Type.DAG);
+                result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, DAGHelper.Type.DAG);
             }
         }
         return result;
@@ -1125,37 +1089,55 @@ public class WorkflowResource {
             Map<String, String> secondaryDescContent = new HashMap<>();
 
             File tmpDir = Files.createTempDir();
-            File tempMainDescriptor = null;
-
-            try {
-                // Write main descriptor to file
-                // The use of temporary files is not needed here and might cause new problems
-                tempMainDescriptor = File.createTempFile("main", "descriptor", tmpDir);
-                Files.write(mainDescriptor.getContent(), tempMainDescriptor, StandardCharsets.UTF_8);
-
-                // get secondary files
-                for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
-                    if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                        secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
-                    }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            File tempMainDescriptor = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, secondaryDescContent, tmpDir);
 
             String result; // will have the JSON string after done calling the method
             DAGHelper dagHelper = new DAGHelper(toolDAO);
             if (workflow.getDescriptorType().equals("wdl")) {
                 //WDL workflow
-                result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, Type.TOOLS);
-            } else {
+                result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, DAGHelper.Type.TOOLS);
+            } else if (workflow.getDescriptorType().equals("cwl")) {
                 //CWL workflow
-                result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, Type.TOOLS);
+                result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, DAGHelper.Type.TOOLS);
+            } else if (workflow.getDescriptorType().equals("nextflow")) {
+                // TODO
+                result = "";
+            } else {
+                result = "";
             }
             return result;
         }
 
         return null;
+    }
+
+    /**
+     * Populates the return file with the descriptor and secondaryDescContent as a map between file paths and secondary files
+     * @param workflowVersion source control version to consider
+     * @param mainDescriptor database record for the main descriptor
+     * @param secondaryDescContent secondary file map
+     * @param tmpDir a directory where to create the written out descriptor
+     * @return a file with the content of the descriptor
+     */
+    private File extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion, SourceFile mainDescriptor,
+        Map<String, String> secondaryDescContent, File tmpDir) {
+        File tempMainDescriptor = null;
+        try {
+            // Write main descriptor to file
+            // The use of temporary files is not needed here and might cause new problems
+            tempMainDescriptor = File.createTempFile("main", "descriptor", tmpDir);
+            Files.write(mainDescriptor.getContent(), tempMainDescriptor, StandardCharsets.UTF_8);
+
+            // get secondary files
+            for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
+                if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
+                    secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
+                }
+            }
+        } catch (IOException e) {
+            LOG.error("unable to create descriptor or secondary files", e);
+        }
+        return tempMainDescriptor;
     }
 
     /**
@@ -1208,7 +1190,7 @@ public class WorkflowResource {
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
 
-        Helper.starEntryHelper(workflow, user, "workflow", workflow.getPath());
+        starEntryHelper(workflow, user, "workflow", workflow.getPath());
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
     }
 
@@ -1220,7 +1202,7 @@ public class WorkflowResource {
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.unstarEntryHelper(workflow, user, "workflow", workflow.getPath());
+        unstarEntryHelper(workflow, user, "workflow", workflow.getPath());
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
     }
 
@@ -1232,12 +1214,13 @@ public class WorkflowResource {
     public Set<User> getStarredUsers(
             @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        Helper.checkEntry(workflow);
+        checkEntry(workflow);
 
         return workflow.getStarredUsers();
     }
 
-    public enum Type {
-        DAG, TOOLS
+    @Override
+    public EntryDAO getDAO() {
+        return this.workflowDAO;
     }
 }

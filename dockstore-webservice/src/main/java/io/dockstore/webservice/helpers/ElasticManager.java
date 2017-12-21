@@ -16,12 +16,10 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,8 +29,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.jackson.Jackson;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -52,10 +48,6 @@ public class ElasticManager {
     public static String hostname;
     public static int port;
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
-    private static ToolDAO toolDAO = null;
-    private static WorkflowDAO workflowDAO = null;
-    private List<Long> toolIds;
-    private List<Long> workflowIds;
 
     public ElasticManager() {
 
@@ -69,29 +61,6 @@ public class ElasticManager {
         ElasticManager.config = config;
         ElasticManager.hostname = config.getEsConfiguration().getHostname();
         ElasticManager.port = config.getEsConfiguration().getPort();
-    }
-
-    public List<Long> getToolIds() {
-        return toolIds;
-    }
-
-    public void setToolIds(ArrayList<Long> toolIds) {
-        this.toolIds = toolIds;
-    }
-
-    public List<Long> getWorkflowIds() {
-        return workflowIds;
-    }
-
-    public void setWorkflowIds(ArrayList<Long> workflowIds) {
-        this.workflowIds = workflowIds;
-    }
-
-    private String getNDJSONFromIDs() {
-        List<Entry> entries = new ArrayList<>();
-        toolIds.forEach(id -> entries.add(toolDAO.findPublishedById(id)));
-        workflowIds.forEach(id -> entries.add(workflowDAO.findPublishedById(id)));
-        return getNDJSON(entries);
     }
 
     /**
@@ -182,23 +151,6 @@ public class ElasticManager {
         return false;
     }
 
-    /**
-     * Gets the json used to update labels
-     *
-     * @param entry The entry whose labels have been updated
-     * @return The json used to update labels
-     */
-    public String updateDocumentValueFromLabels(Entry entry) {
-        Gson gson = new GsonBuilder().create();
-        StringBuilder builder = new StringBuilder();
-        Map<String, Set> labelsMap = new HashMap<>();
-        labelsMap.put("labels", entry.getLabels());
-        Map<String, Object> doc = new HashMap<>();
-        doc.put("doc", labelsMap);
-        builder.append(gson.toJson(doc, Map.class));
-        return builder.toString();
-    }
-
     public void bulkUpsert(List<Entry> entries) {
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String newlineDJSON = getNDJSON(entries);
@@ -218,7 +170,7 @@ public class ElasticManager {
      * @param publishedEntries A list of published entries
      * @return The json used for bulk insert
      */
-    public String getNDJSON(List<Entry> publishedEntries) {
+    private String getNDJSON(List<Entry> publishedEntries) {
         ObjectMapper mapper = Jackson.newObjectMapper();
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();

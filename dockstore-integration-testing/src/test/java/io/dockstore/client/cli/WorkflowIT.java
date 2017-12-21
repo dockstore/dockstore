@@ -184,6 +184,26 @@ public class WorkflowIT extends BaseIT {
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
         assertTrue("No workflows are in full mode", count3 == 0);
 
+        // check that a nextflow workflow made it
+        long nfWorkflowCount = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
+        assertTrue("Nextflow workflow not found", nfWorkflowCount > 0);
+        Workflow mtaNf = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        mtaNf.setWorkflowPath("/nextflow.config");
+        mtaNf.setDescriptorType(SourceFile.TypeEnum.NEXTFLOW.toString());
+        workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
+        workflowApi.refresh(mtaNf.getId());
+        mtaNf = workflowApi.getWorkflow(mtaNf.getId());
+        assertTrue("Nextflow workflow not found after update", mtaNf != null);
+        assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
+        int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> version.getSourceFiles().size()).sum();
+        assertTrue("nextflow workflow should have at least two sourcefiles", numOfSourceFiles >= 2);
+        long scriptCount = mtaNf.getWorkflowVersions().stream()
+            .mapToLong(version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW).count()).sum();
+        long configCount = mtaNf.getWorkflowVersions().stream()
+            .mapToLong(version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW_CONFIG).count()).sum();
+        assertTrue("nextflow workflow should have at least one config file and one script file", scriptCount >= 1 && configCount >= 1);
+
     }
 
     /**
@@ -248,11 +268,11 @@ public class WorkflowIT extends BaseIT {
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl","/test.json");
+                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl", "/test.json");
 
         // Manually register workflow bitbucket
         Workflow bitbucketWorkflow = workflowApi
-                .manualRegister("bitbucket", "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "altname", "cwl","/test.json");
+                .manualRegister("bitbucket", "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "altname", "cwl", "/test.json");
 
         // Assert some things
         final long count = testingPostgres

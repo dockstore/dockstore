@@ -29,8 +29,6 @@ import org.hibernate.SessionFactory;
  */
 public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
-    protected static final String SCHEMA = "http://schema.org/";
-
     private Class<T> typeOfT;
 
     public EntryDAO(SessionFactory factory) {

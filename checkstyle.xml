@@ -330,7 +330,6 @@
             <property name="severity" value="ignore"/>
         </module>
         <module name="UpperEll"/>
-
     </module>
 
 </module>

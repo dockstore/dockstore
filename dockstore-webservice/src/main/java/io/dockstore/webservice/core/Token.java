@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.List;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -75,11 +76,13 @@ public class Token {
     public Token() {
     }
 
-    public Token(long id, long userId, String tokenSource, String content) {
-        this.id = id;
-        this.userId = userId;
-        this.tokenSource = tokenSource;
-        this.content = content;
+    public static Token extractToken(List<Token> tokens, String source) {
+        for (Token token : tokens) {
+            if (token.getTokenSource().equals(source)) {
+                return token;
+            }
+        }
+        return null;
     }
 
     @JsonProperty

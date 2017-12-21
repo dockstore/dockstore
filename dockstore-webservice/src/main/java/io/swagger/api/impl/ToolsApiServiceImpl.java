@@ -16,36 +16,6 @@
 
 package io.swagger.api.impl;
 
-import avro.shaded.com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Table;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.swagger.api.NotFoundException;
-import io.swagger.api.ToolsApiService;
-import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;
-import io.swagger.model.ToolVersion;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -60,14 +30,46 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
+import avro.shaded.com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Table;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.jdbi.EntryDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.swagger.api.NotFoundException;
+import io.swagger.api.ToolsApiService;
+import io.swagger.model.ToolDescriptor;
+import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolVersion;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static io.dockstore.webservice.core.SourceFile.FileType.CWL_TEST_JSON;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
 import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 
-public class ToolsApiServiceImpl extends ToolsApiService {
+public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersionHelper<Tool> {
 
+    public static final int SEGMENTS_IN_ID = 3;
     public static final int DEFAULT_PAGE_SIZE = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
@@ -400,8 +402,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             switch (type) {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
-                final EntryVersionHelper<Tool> entryVersionHelper = new EntryVersionHelper<>(toolDAO);
-                List<SourceFile> sourceFile = entryVersionHelper.getAllSourceFiles(entry.getId(), versionId, type);
+                List<SourceFile> sourceFile = getAllSourceFiles(entry.getId(), versionId, type);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.stream().map(SourceFile::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n")) : sourceFile).build();
             case DOCKERFILE:
@@ -438,6 +439,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return Response.status(Response.Status.NOT_FOUND).build();
     }
 
+    @Override
+    public EntryDAO getDAO() {
+        return this.toolDAO;
+    }
+
     /**
      * Used to parse localised IDs (no URL)
      */
@@ -462,7 +468,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
             organization = textSegments.get(1);
             name = textSegments.get(2);
-            toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
+            toolName = textSegments.size() > SEGMENTS_IN_ID ? textSegments.get(SEGMENTS_IN_ID) : "";
         }
 
         public String getRegistry() {

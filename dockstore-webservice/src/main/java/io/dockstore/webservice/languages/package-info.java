@@ -14,22 +14,9 @@
  *    limitations under the License.
  */
 
-package io.dockstore.webservice.resources;
-
 /**
- * Created by aduncan on 01/11/16.
+ * This package has the goal of collecting all code relating to parsing and processing specific to workflow languages
+ * @since 1.4
  */
-public enum DescriptorType {
-    CWL("cwl"), WDL("wdl"), NONE("none");
-    private final String desc;
+package io.dockstore.webservice.languages;
 
-    DescriptorType(String name) {
-        desc = name;
-    }
-
-    @Override
-    public String toString() {
-        return desc;
-    }
-
-}

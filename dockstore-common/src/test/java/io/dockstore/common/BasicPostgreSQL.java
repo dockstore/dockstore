@@ -136,15 +136,6 @@ public class BasicPostgreSQL {
         }
     }
 
-    protected <T> T runInsertStatement(String query, ResultSetHandler<T> handler, Object... params) {
-        try {
-            QueryRunner run = new QueryRunner(dataSource);
-            return run.insert(query, handler, params);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     protected boolean runUpdateStatement(String query, Object... params) {
         try {
             QueryRunner run = new QueryRunner(dataSource);
@@ -153,34 +144,6 @@ public class BasicPostgreSQL {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
-        }
-    }
-
-    protected boolean runUpdateStatementConfidential(String query) {
-        try {
-            QueryRunner run = new QueryRunner(dataSource);
-            run.update(query);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected boolean loadDatabaseDump(String sqlDumpFile) {
-        Statement statement = null;
-        try {
-            final String s = FileUtils.readFileToString(new File(sqlDumpFile), StandardCharsets.UTF_8);
-            try (Connection connection = dataSource.getConnection()) {
-                statement = connection.createStatement();
-                statement.execute(s);
-            }
-            return true;
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } finally {
-            DbUtils.closeQuietly(statement);
         }
     }
 }
