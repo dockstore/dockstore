@@ -45,11 +45,6 @@
             <version>1.4.0-alpha.2-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.jackson</groupId>
-            <artifactId>jackson-mapper-asl</artifactId>
-            <version>1.9.13</version>
-        </dependency>
-        <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-jersey2-jaxrs</artifactId>
             <version>${swagger-annotations-version}</version>

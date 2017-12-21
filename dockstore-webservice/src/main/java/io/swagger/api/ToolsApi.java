@@ -76,7 +76,7 @@ public class ToolsApi {
     public Response toolsIdGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return delegate.toolsIdGet(id, securityContext, value);
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdGet(id, securityContext, value), ApiVersionConverter.ApiVersion.v2);
     }
 
     @GET
@@ -90,7 +90,7 @@ public class ToolsApi {
     public Response toolsIdVersionsGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return delegate.toolsIdVersionsGet(id, securityContext, value);
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsGet(id, securityContext, value), ApiVersionConverter.ApiVersion.v2);
     }
 
     @GET
@@ -107,7 +107,7 @@ public class ToolsApi {
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdDockerfileGet(id, versionId, securityContext, value);
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdDockerfileGet(id, versionId, securityContext, value), ApiVersionConverter.ApiVersion.v2);
     }
 
     @GET
@@ -122,7 +122,7 @@ public class ToolsApi {
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version, scoped to this registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdGet(id, versionId, securityContext, value);
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdGet(id, versionId, securityContext, value), ApiVersionConverter.ApiVersion.v2);
     }
 
     @GET
@@ -140,7 +140,7 @@ public class ToolsApi {
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value);
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value), ApiVersionConverter.ApiVersion.v2);
     }
 
     @GET
@@ -159,7 +159,7 @@ public class ToolsApi {
             @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor", required = true) @PathParam("relative_path") String relativePath,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext, value);
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext, value), ApiVersionConverter.ApiVersion.v2);
     }
 
     @GET
@@ -177,6 +177,6 @@ public class ToolsApi {
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return delegate.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext, value);
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext, value), ApiVersionConverter.ApiVersion.v2);
     }
 }
