@@ -33,7 +33,7 @@ import io.swagger.model.Metadata;
 @Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the metadata API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-public class MetadataApi {
+public class MetadataApiV1 {
     private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
 
     @GET
@@ -44,6 +44,6 @@ public class MetadataApi {
     @io.swagger.annotations.ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) })
     public Response metadataGet(@Context SecurityContext securityContext) throws NotFoundException {
-        return ApiVersionConverter.convertToVersion(delegate.metadataGet(securityContext), ApiVersionConverter.ApiVersion.v2);
+        return ApiVersionConverter.convertToVersion(delegate.metadataGet(securityContext), ApiVersionConverter.ApiVersion.v1);
     }
 }

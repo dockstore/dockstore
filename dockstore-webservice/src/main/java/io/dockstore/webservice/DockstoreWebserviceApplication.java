@@ -74,6 +74,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import io.swagger.api.MetadataApi;
+import io.swagger.api.MetadataApiV1;
 import io.swagger.api.ToolClassesApi;
 import io.swagger.api.ToolClassesApiV1;
 import io.swagger.api.ToolsApi;
@@ -260,12 +261,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         environment.jersey().register(new ToolsApi());
-        environment.jersey().register(new ToolsApiV1());
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi());
         environment.jersey().register(new ToolClassesApi());
-        environment.jersey().register(new ToolClassesApiV1());
         environment.jersey().register(new DataExceptionMapper());
+
+        environment.jersey().register(new ToolsApiV1());
+        environment.jersey().register(new MetadataApiV1());
+        environment.jersey().register(new ToolClassesApiV1());
 
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());

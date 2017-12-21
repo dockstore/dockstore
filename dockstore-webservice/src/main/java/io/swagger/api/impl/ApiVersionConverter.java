@@ -5,6 +5,9 @@ import java.util.List;
 
 import javax.ws.rs.core.Response;
 
+import io.swagger.model.Metadata;
+import io.swagger.model.MetadataV1;
+import io.swagger.model.MetadataV2;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolV2;
@@ -55,10 +58,12 @@ public final class ApiVersionConverter {
                 ToolVersionV1 toolVersionV1 = getToolVersionV1(toolVersion);
                 Response.ResponseBuilder responseBuilder = Response.ok(toolVersionV1);
                 return responseBuilder.build();
-            } else {
+            } else if (apiVersion.equals(ApiVersion.v2)) {
                 ToolVersionV2 toolVersionV2 = getToolVersionV2(toolVersion);
                 Response.ResponseBuilder responseBuilder = Response.ok(toolVersionV2);
                 return responseBuilder.build();
+            } else {
+                handleError();
             }
 
         } else if (object instanceof Tool) {
@@ -70,6 +75,19 @@ public final class ApiVersionConverter {
             } else if (apiVersion.equals(ApiVersion.v2)) {
                 ToolV2 toolV2 = getToolV2(tool);
                 Response.ResponseBuilder responseBuilder = Response.ok(toolV2);
+                return responseBuilder.build();
+            } else {
+                handleError();
+            }
+        } else if (object instanceof Metadata) {
+            Metadata metadata = (Metadata) object;
+            if (apiVersion.equals(ApiVersion.v1)) {
+                MetadataV1 metadataV1 = getMetadataV1(metadata);
+                Response.ResponseBuilder responseBuilder = Response.ok(metadataV1);
+                return responseBuilder.build();
+            } else if (apiVersion.equals(ApiVersion.v2)) {
+                MetadataV2 metadataV2 = getMetadataV2(metadata);
+                Response.ResponseBuilder responseBuilder = Response.ok(metadataV2);
                 return responseBuilder.build();
             } else {
                 handleError();
@@ -101,6 +119,19 @@ public final class ApiVersionConverter {
         toolVersionV2.setToolVersion(toolVersion);
         return toolVersionV2;
     }
+
+    private static MetadataV1 getMetadataV1(Metadata metadata) {
+        MetadataV1 metadataV1 = new MetadataV1();
+        metadataV1.setMetadata(metadata);
+        return metadataV1;
+    }
+
+    private static MetadataV2 getMetadataV2(Metadata metadata) {
+        MetadataV2 metadataV2 = new MetadataV2();
+        metadataV2.setMetadata(metadata);
+        return metadataV2;
+    }
+
 
     public enum ApiVersion {
         v1, v2
