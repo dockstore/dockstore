@@ -45,7 +45,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             entry.setDescription((String)manifest.get("description"));
         }
         if (manifest.containsKey("author")) {
-            entry.setDescription((String)manifest.get("author"));
+            entry.setAuthor((String)manifest.get("author"));
         }
 
         return entry;
