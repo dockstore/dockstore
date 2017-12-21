@@ -553,7 +553,7 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    private void cwl2json(final List<String> args, boolean json) throws ApiException, IOException {
+    private void cwl2json(final List<String> args, boolean json) throws ApiException {
         if (args.isEmpty() || containsHelpRequest(args)) {
             if (json) {
                 cwl2jsonHelp();
@@ -624,7 +624,7 @@ public abstract class AbstractEntryClient {
      * this function will validate CWL file
      * using this command: cwltool --non-strict --validate <file_path>
      *
-     * @param cwlFilePath
+     * @param cwlFilePath a path to the cwl file to be validated
      */
     private boolean validateCWL(String cwlFilePath) {
         final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
@@ -1113,8 +1113,18 @@ public abstract class AbstractEntryClient {
         try {
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             if (jsonRun != null) {
-                // if the root document is an array, this indicates multiple runs
+                // translate jsonRun to absolute path
+                if (Paths.get(jsonRun).toFile().exists()) {
+                    jsonRun = Paths.get(jsonRun).toFile().getAbsolutePath();
+                }
+
+                // download jsonRun if remote
                 JsonParser parser = new JsonParser();
+                String jsonTempRun = File.createTempFile("parameter", "json").getAbsolutePath();
+                FileProvisioning.retryWrapper(null, jsonRun, Paths.get(jsonTempRun), 1, true, 1);
+                jsonRun = jsonTempRun;
+
+                // if the root document is an array, this indicates multiple runs
                 final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
                 if (parsed.isJsonArray()) {
                     final JsonArray asJsonArray = parsed.getAsJsonArray();
@@ -1195,7 +1205,7 @@ public abstract class AbstractEntryClient {
     }
 
     /**
-     * Returns the first path that is not null
+     * Returns the first path that is not null and is not remote
      *
      * @param yamlRun The yaml file path
      * @param jsonRun The json file path
@@ -1204,7 +1214,8 @@ public abstract class AbstractEntryClient {
      */
     private String getOriginalTestParameterFilePath(String yamlRun, String jsonRun, String csvRun) {
         java.util.Optional<String> s = Arrays.asList(yamlRun, jsonRun, csvRun).stream().filter(o -> o != null).findFirst();
-        if (s.isPresent()) {
+        if (s.isPresent() && Paths.get(s.get()).toFile().exists()) {
+            // convert relative path to absolute path
             return s.get();
         } else {
             return "";
