@@ -60,7 +60,7 @@ import io.swagger.client.api.GA4GHApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
-import io.swagger.client.model.Metadata;
+import io.swagger.client.model.MetadataV1;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
@@ -615,7 +615,7 @@ public class Client {
      */
     private void serverMetadata() {
         try {
-            final Metadata metadata = ga4ghApi.metadataGet();
+            final MetadataV1 metadata = ga4ghApi.metadataGet();
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             out(gson.toJson(metadata));
         } catch (ApiException ex) {

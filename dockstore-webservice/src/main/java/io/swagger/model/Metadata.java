@@ -32,7 +32,6 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class Metadata {
     private String version = null;
 
@@ -76,7 +75,6 @@ public class Metadata {
         return apiVersion;
     }
 
-    @JsonProperty("api_version")
     public void setApiVersion(String apiVersion) {
         this.apiVersion = apiVersion;
     }
@@ -100,7 +98,6 @@ public class Metadata {
         this.country = country;
     }
 
-    @JsonProperty("friendly_name")
     public Metadata friendlyName(String friendlyName) {
         this.friendlyName = friendlyName;
         return this;

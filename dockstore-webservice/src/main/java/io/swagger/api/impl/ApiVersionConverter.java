@@ -2,7 +2,9 @@ package io.swagger.api.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
 import io.swagger.model.Metadata;
@@ -23,7 +25,7 @@ public final class ApiVersionConverter {
     private ApiVersionConverter() { }
 
     public static Response convertToVersion(Response response, ApiVersion apiVersion) {
-
+        MultivaluedMap<String, Object> headers = response.getHeaders();
         Object object = response.getEntity();
         if (object instanceof List) {
             List<Object> arrayList = (List<Object>)object;
@@ -50,18 +52,15 @@ public final class ApiVersionConverter {
                     }
                 }
             }
-            Response.ResponseBuilder responseBuilder = Response.ok(newArrayList);
-            return responseBuilder.build();
+            return getResponse(newArrayList, response.getHeaders(), apiVersion);
         } else if (object instanceof ToolVersion) {
             ToolVersion toolVersion = (ToolVersion)object;
             if (apiVersion.equals(ApiVersion.v1)) {
                 ToolVersionV1 toolVersionV1 = getToolVersionV1(toolVersion);
-                Response.ResponseBuilder responseBuilder = Response.ok(toolVersionV1);
-                return responseBuilder.build();
+                return getResponse(toolVersionV1, response.getHeaders(), apiVersion);
             } else if (apiVersion.equals(ApiVersion.v2)) {
                 ToolVersionV2 toolVersionV2 = getToolVersionV2(toolVersion);
-                Response.ResponseBuilder responseBuilder = Response.ok(toolVersionV2);
-                return responseBuilder.build();
+                return getResponse(toolVersionV2, response.getHeaders(), apiVersion);
             } else {
                 handleError();
             }
@@ -70,12 +69,10 @@ public final class ApiVersionConverter {
             Tool tool = (Tool)object;
             if (apiVersion.equals(ApiVersion.v1)) {
                 ToolV1 toolV1 = getToolV1(tool);
-                Response.ResponseBuilder responseBuilder = Response.ok(toolV1);
-                return responseBuilder.build();
+                return getResponse(toolV1, response.getHeaders(), apiVersion);
             } else if (apiVersion.equals(ApiVersion.v2)) {
                 ToolV2 toolV2 = getToolV2(tool);
-                Response.ResponseBuilder responseBuilder = Response.ok(toolV2);
-                return responseBuilder.build();
+                return getResponse(toolV2, response.getHeaders(), apiVersion);
             } else {
                 handleError();
             }
@@ -83,12 +80,10 @@ public final class ApiVersionConverter {
             Metadata metadata = (Metadata) object;
             if (apiVersion.equals(ApiVersion.v1)) {
                 MetadataV1 metadataV1 = getMetadataV1(metadata);
-                Response.ResponseBuilder responseBuilder = Response.ok(metadataV1);
-                return responseBuilder.build();
+                return getResponse(metadataV1, response.getHeaders(), apiVersion);
             } else if (apiVersion.equals(ApiVersion.v2)) {
                 MetadataV2 metadataV2 = getMetadataV2(metadata);
-                Response.ResponseBuilder responseBuilder = Response.ok(metadataV2);
-                return responseBuilder.build();
+                return getResponse(metadataV2, response.getHeaders(), apiVersion);
             } else {
                 handleError();
             }
@@ -118,6 +113,42 @@ public final class ApiVersionConverter {
         ToolVersionV2 toolVersionV2 = new ToolVersionV2();
         toolVersionV2.setToolVersion(toolVersion);
         return toolVersionV2;
+    }
+
+    private static Response getResponse(Object object, MultivaluedMap<String, Object> headers, ApiVersion apiVersion) {
+        Response.ResponseBuilder responseBuilder = Response.ok(object);
+        if (!headers.isEmpty()) {
+            if (apiVersion.equals(ApiVersion.v2)) {
+                for (String str: headers.keySet()) {
+                    responseBuilder.header(str, headers.getFirst(str));
+                }
+            } else if (apiVersion.equals(ApiVersion.v1)) {
+                for (String str: headers.keySet()) {
+                    String newString = "";
+                    switch (str) {
+                    case "next_page":
+                        newString = "next-page";
+                        responseBuilder.header(newString, headers.getFirst(str));
+                        break;
+                    case "last_page":
+                        newString = "last-page";
+                        responseBuilder.header(newString, headers.getFirst(str));
+                        break;
+                    case "current_offset":
+                        newString = "current-offset";
+                        responseBuilder.header(newString, headers.getFirst(str));
+                        break;
+                    case "current_limit":
+                        newString = "current-limit";
+                        responseBuilder.header(newString, headers.getFirst(str));
+                        break;
+                    default:
+                        throw new RuntimeException("Unknown header to convert");
+                    }
+                }
+            }
+        }
+        return responseBuilder.build();
     }
 
     private static MetadataV1 getMetadataV1(Metadata metadata) {

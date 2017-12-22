@@ -47,6 +47,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.Metadata;
+import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
@@ -290,7 +291,7 @@ public class SystemClientIT {
     public void testGA4GHMetadata() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
         GA4GHApi toolApi = new GA4GHApi(client);
-        final Metadata metadata = toolApi.metadataGet();
+        final MetadataV1 metadata = toolApi.metadataGet();
         assertTrue(metadata.getFriendlyName().contains("Dockstore"));
     }
 

@@ -27,8 +27,9 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.api.factories.MetadataApiServiceFactory;
 import io.swagger.api.impl.ApiVersionConverter;
 import io.swagger.model.Metadata;
+import io.swagger.model.MetadataV1;
 
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/metadata")
 
 @Produces({ "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the metadata API")
@@ -42,7 +43,7 @@ public class MetadataApiV1 {
     @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags = {
             "GA4GH", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) })
+            @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = MetadataV1.class) })
     public Response metadataGet(@Context SecurityContext securityContext) throws NotFoundException {
         return ApiVersionConverter.convertToVersion(delegate.metadataGet(securityContext), ApiVersionConverter.ApiVersion.v1);
     }
