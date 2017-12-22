@@ -19,27 +19,36 @@ cache:
 language: java
 jdk:
 - oraclejdk8
-install:
-- docker version
-- pip2.7 install --user setuptools==36.5.0
-- pip2.7 install --user cwl-runner cwltool==1.0.20170828135420 schema-salad==2.6.20170806163416 avro==1.8.1 ruamel.yaml==0.14.12 requests==2.18.4
-before_script:
-- psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
-- psql -c "ALTER USER dockstore WITH superuser;" -U postgres
-- psql -c 'create database webservice_test with owner = dockstore;' -U postgres
-- export PATH=$PATH:$PWD/dockstore-client/target
 
 env:
    - EXTRA_MAVEN_VAR=""
    - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report"
 
-script: ./scripts/run-tests.sh
+# build lifecycle is before_install, install, before_script, script, after_script
 
 before_install:
 - pip install --upgrade pip
 - mvn --batch-mode dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
 - openssl aes-256-cbc -K $encrypted_c42a0604a544_key -iv $encrypted_c42a0604a544_iv -in secrets.tar.enc -out secrets.tar -d
 - tar xvf secrets.tar
+# pre-build to check dependencies and look for out-of-sync swagger
+- mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
+- git diff --exit-code
+
+install:
+- docker version
+- pip2.7 install --user setuptools==36.5.0
+- pip2.7 install --user cwl-runner cwltool==1.0.20170828135420 schema-salad==2.6.20170806163416 avro==1.8.1 ruamel.yaml==0.14.12 requests==2.18.4
+
+before_script:
+- psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
+- psql -c "ALTER USER dockstore WITH superuser;" -U postgres
+- psql -c 'create database webservice_test with owner = dockstore;' -U postgres
+- export PATH=$PATH:$PWD/dockstore-client/target
+
+script: ./scripts/run-tests.sh
+
+
 
 
 
