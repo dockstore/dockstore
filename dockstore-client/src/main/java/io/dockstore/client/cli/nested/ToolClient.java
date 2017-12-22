@@ -256,11 +256,11 @@ public class ToolClient extends AbstractEntryClient {
             long containerId = container.getId();
 
             if (adds.size() > 0) {
-                containersApi.addTestParameterFiles(containerId, adds, "", versionName, descriptorType);
+                containersApi.addTestParameterFiles(containerId, adds, descriptorType, "", versionName);
             }
 
             if (removes.size() > 0) {
-                containersApi.deleteTestParameterFiles(containerId, removes, versionName, descriptorType);
+                containersApi.deleteTestParameterFiles(containerId, removes, descriptorType, versionName);
             }
 
             if (adds.size() > 0 || removes.size() > 0) {
