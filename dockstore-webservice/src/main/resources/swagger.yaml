@@ -149,7 +149,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/Tool"
+              $ref: "#/definitions/ToolV1"
   /api/ga4gh/v1/tools/{id}:
     get:
       tags:
@@ -172,7 +172,7 @@ paths:
         200:
           description: "A tool."
           schema:
-            $ref: "#/definitions/Tool"
+            $ref: "#/definitions/ToolV1"
   /api/ga4gh/v1/tools/{id}/versions:
     get:
       tags:
@@ -196,7 +196,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/ToolVersion"
+              $ref: "#/definitions/ToolVersionV1"
   /api/ga4gh/v1/tools/{id}/versions/{version_id}:
     get:
       tags:
@@ -224,7 +224,7 @@ paths:
         200:
           description: "A tool version."
           schema:
-            $ref: "#/definitions/ToolVersion"
+            $ref: "#/definitions/ToolVersionV1"
   /api/ga4gh/v1/tools/{id}/versions/{version_id}/dockerfile:
     get:
       tags:
@@ -634,7 +634,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/Tool"
+              $ref: "#/definitions/ToolV2"
   /api/ga4gh/v2/tools/{id}:
     get:
       tags:
@@ -657,7 +657,7 @@ paths:
         200:
           description: "A tool."
           schema:
-            $ref: "#/definitions/Tool"
+            $ref: "#/definitions/ToolV2"
   /api/ga4gh/v2/tools/{id}/versions:
     get:
       tags:
@@ -681,7 +681,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/ToolVersion"
+              $ref: "#/definitions/ToolVersionV2"
   /api/ga4gh/v2/tools/{id}/versions/{version_id}:
     get:
       tags:
@@ -709,7 +709,7 @@ paths:
         200:
           description: "A tool version."
           schema:
-            $ref: "#/definitions/ToolVersion"
+            $ref: "#/definitions/ToolVersionV2"
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/dockerfile:
     get:
       tags:
@@ -4545,6 +4545,75 @@ definitions:
         description: "Optional url to the test JSON used to test this tool"
     description: "A tool document that describes how to test with one or more sample\
       \ test JSON."
+  ToolV1:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+      description:
+        type: "string"
+      url:
+        type: "string"
+      organization:
+        type: "string"
+      versions:
+        type: "array"
+        items:
+          $ref: "#/definitions/ToolVersion"
+      signed:
+        type: "boolean"
+      meta-version:
+        type: "string"
+      contains:
+        type: "array"
+        items:
+          type: "string"
+      verified:
+        type: "boolean"
+      toolclass:
+        $ref: "#/definitions/ToolClass"
+      author:
+        type: "string"
+      toolname:
+        type: "string"
+      verified-source:
+        type: "string"
+    description: "A tool (or described tool) describes one pairing of a tool as described\
+      \ in a descriptor file (which potentially describes multiple tools) and a Docker\
+      \ image."
+  ToolV2:
+    type: "object"
+    properties:
+      id:
+        type: "string"
+      description:
+        type: "string"
+      url:
+        type: "string"
+      organization:
+        type: "string"
+      versions:
+        type: "array"
+        items:
+          $ref: "#/definitions/ToolVersion"
+      signed:
+        type: "boolean"
+      meta_version:
+        type: "string"
+      contains:
+        type: "array"
+        items:
+          type: "string"
+      verified:
+        type: "boolean"
+      toolclass:
+        $ref: "#/definitions/ToolClass"
+      author:
+        type: "string"
+      toolname:
+        type: "string"
+      verified_source:
+        type: "string"
   ToolVersion:
     type: "object"
     required:
@@ -4586,6 +4655,98 @@ definitions:
         description: "Reports whether this tool has been verified by a specific organization\
           \ or individual"
       verifiedSource:
+        type: "string"
+        description: "Source of metadata that can support a verified tool, such as\
+          \ an email or URL"
+    description: "A tool version describes a particular iteration of a tool as described\
+      \ by a reference to a specific image and dockerfile."
+  ToolVersionV1:
+    type: "object"
+    required:
+    - "id"
+    - "meta-version"
+    - "url"
+    properties:
+      name:
+        type: "string"
+        description: "The name of the version."
+      url:
+        type: "string"
+        description: "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`"
+      id:
+        type: "string"
+        description: "An identifier of the version of this tool for this particular\
+          \ tool registry, for example `v1`"
+      image:
+        type: "string"
+        description: "The docker path to the image (and version) for this tool. (e.g.\
+          \ quay.io/seqware/seqware_full/1.1)"
+      descriptor-type:
+        type: "array"
+        description: "The type (or types) of descriptors available."
+        items:
+          type: "string"
+          enum:
+          - "CWL"
+          - "WDL"
+      dockerfile:
+        type: "boolean"
+        description: "Reports if this tool has a dockerfile available."
+      meta-version:
+        type: "string"
+        description: "The version of this tool version in the registry. Iterates when\
+          \ fields like the description, author, etc. are updated."
+      verified:
+        type: "boolean"
+        description: "Reports whether this tool has been verified by a specific organization\
+          \ or individual"
+      verified-source:
+        type: "string"
+        description: "Source of metadata that can support a verified tool, such as\
+          \ an email or URL"
+    description: "A tool version describes a particular iteration of a tool as described\
+      \ by a reference to a specific image and dockerfile."
+  ToolVersionV2:
+    type: "object"
+    required:
+    - "id"
+    - "meta_version"
+    - "url"
+    properties:
+      name:
+        type: "string"
+        description: "The name of the version."
+      url:
+        type: "string"
+        description: "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`"
+      id:
+        type: "string"
+        description: "An identifier of the version of this tool for this particular\
+          \ tool registry, for example `v1`"
+      image:
+        type: "string"
+        description: "The docker path to the image (and version) for this tool. (e.g.\
+          \ quay.io/seqware/seqware_full/1.1)"
+      descriptor_type:
+        type: "array"
+        description: "The type (or types) of descriptors available."
+        items:
+          type: "string"
+          enum:
+          - "CWL"
+          - "WDL"
+      dockerfile:
+        type: "boolean"
+        description: "Reports if this tool has a dockerfile available."
+      meta_version:
+        type: "string"
+        description: "The version of this tool version in the registry. Iterates when\
+          \ fields like the description, author, etc. are updated."
+      verified:
+        type: "boolean"
+        description: "Reports whether this tool has been verified by a specific organization\
+          \ or individual"
+      verified_source:
         type: "string"
         description: "Source of metadata that can support a verified tool, such as\
           \ an email or URL"

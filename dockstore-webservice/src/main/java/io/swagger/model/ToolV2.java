@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
-@JsonTypeName("Tool")
 public class ToolV2 extends ToolPresenter {
 }
 

@@ -22,7 +22,6 @@ import io.swagger.annotations.ApiModel;
 
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
 @JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
-@JsonTypeName("Tool")
 public class ToolV1 extends ToolPresenter {
 }
 

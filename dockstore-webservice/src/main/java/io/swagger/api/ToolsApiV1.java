@@ -34,7 +34,9 @@ import io.swagger.model.Tool;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTests;
+import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersion;
+import io.swagger.model.ToolVersionV1;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/tools")
 
@@ -47,10 +49,10 @@ public class ToolsApiV1 {
     @GET
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List all tools", notes = "This endpoint returns all tools available or a filtered subset using metadata query parameters. ", response = Tool.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(value = "List all tools", notes = "This endpoint returns all tools available or a filtered subset using metadata query parameters. ", response = ToolV1.class, responseContainer = "List", tags = {
             "GA4GH", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "An array of Tools that match the filter.", response = Tool.class, responseContainer = "List") })
+            @io.swagger.annotations.ApiResponse(code = 200, message = "An array of Tools that match the filter.", response = ToolV1.class, responseContainer = "List") })
     public Response toolsGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`") @QueryParam("id") String id,
             @ApiParam(value = "The image registry that contains the image.") @QueryParam("registry") String registry,
@@ -69,10 +71,10 @@ public class ToolsApiV1 {
     @Path("/{id}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List one specific tool, acts as an anchor for self references", notes = "This endpoint returns one specific tool (which has ToolVersions nested inside it)", response = Tool.class, tags = {
+    @io.swagger.annotations.ApiOperation(value = "List one specific tool, acts as an anchor for self references", notes = "This endpoint returns one specific tool (which has ToolVersions nested inside it)", response = ToolV1.class, tags = {
             "GA4GH", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "A tool.", response = Tool.class) })
+            @io.swagger.annotations.ApiResponse(code = 200, message = "A tool.", response = ToolV1.class) })
     public Response toolsIdGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
@@ -83,10 +85,10 @@ public class ToolsApiV1 {
     @Path("/{id}/versions")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List versions of a tool", notes = "Returns all versions of the specified tool", response = ToolVersion.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(value = "List versions of a tool", notes = "Returns all versions of the specified tool", response = ToolVersionV1.class, responseContainer = "List", tags = {
             "GA4GH", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "An array of tool versions", response = ToolVersion.class, responseContainer = "List") })
+            @io.swagger.annotations.ApiResponse(code = 200, message = "An array of tool versions", response = ToolVersionV1.class, responseContainer = "List") })
     public Response toolsIdVersionsGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
@@ -114,10 +116,10 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersion.class, tags = {
+    @io.swagger.annotations.ApiOperation(value = "List one specific tool version, acts as an anchor for self references", notes = "This endpoint returns one specific tool version", response = ToolVersionV1.class, tags = {
             "GA4GH", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "A tool version.", response = ToolVersion.class) })
+            @io.swagger.annotations.ApiResponse(code = 200, message = "A tool version.", response = ToolVersionV1.class) })
     public Response toolsIdVersionsVersionIdGet(
             @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
             @ApiParam(value = "An identifier of the tool version, scoped to this registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
