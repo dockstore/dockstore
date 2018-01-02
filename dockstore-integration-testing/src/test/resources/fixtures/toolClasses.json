@@ -1,0 +1,12 @@
+[
+  {
+    "id": "0",
+    "name": "CommandLineTool",
+    "description": "CommandLineTool"
+  },
+  {
+    "id": "1",
+    "name": "Workflow",
+    "description": "Workflow"
+  }
+]
