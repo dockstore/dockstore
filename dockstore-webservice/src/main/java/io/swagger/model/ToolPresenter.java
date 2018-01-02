@@ -6,7 +6,7 @@ import java.util.List;
  * @author gluu
  * @since 21/12/17
  */
-public abstract class ToolPresenter {
+public abstract class ToolPresenter extends Tool {
     Tool tool;
 
     public Tool setTool(Tool newTool) {

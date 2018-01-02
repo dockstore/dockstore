@@ -15,12 +15,9 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import io.swagger.annotations.ApiModel;
 
-@ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
 @JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class ToolV1 extends ToolPresenter {
 }

@@ -46,17 +46,15 @@ import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.Group;
-import io.swagger.client.model.Metadata;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
-import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
-import io.swagger.client.model.ToolVersion;
+import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
@@ -304,7 +302,7 @@ public class SystemClientIT {
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
+        List<io.swagger.client.model.ToolV1> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
         assertTrue(tools.size() == 3);
 
         // test a few constraints
@@ -325,17 +323,17 @@ public class SystemClientIT {
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        final Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        final io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertTrue(tool != null);
         assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
         // get versions
-        final List<ToolVersion> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        final List<ToolVersionV1> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertTrue(toolVersions.size() == 1);
 
-        final ToolVersion master = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
+        final ToolVersionV1 master = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
         assertTrue(master != null);
         try {
-            final ToolVersion foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
+            final ToolVersionV1 foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
             assertTrue(foobar != null); // this should be unreachable
         } catch (ApiException e) {
             assertTrue(e.getCode() == HttpStatus.SC_NOT_FOUND);
@@ -352,7 +350,7 @@ public class SystemClientIT {
         DockstoreTool c = getContainer();
         final DockstoreTool dockstoreTool = containersApi.registerManual(c);
 
-        Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertTrue(tool != null);
         assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
         List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
