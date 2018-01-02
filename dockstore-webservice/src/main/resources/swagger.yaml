@@ -1488,8 +1488,12 @@ paths:
         type: "string"
       - name: "descriptorType"
         in: "query"
-        required: false
+        description: "Descriptor Type"
+        required: true
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
       responses:
         200:
           description: "successful operation"
@@ -1533,8 +1537,12 @@ paths:
         type: "string"
       - name: "descriptorType"
         in: "query"
-        required: false
+        description: "Descriptor Type"
+        required: true
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
       responses:
         200:
           description: "successful operation"
@@ -1574,8 +1582,12 @@ paths:
         type: "string"
       - name: "descriptorType"
         in: "query"
-        required: false
+        description: "Descriptor Type"
+        required: true
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
       responses:
         200:
           description: "successful operation"
@@ -3665,7 +3677,7 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
-      languages:
+      descriptorType:
         type: "array"
         readOnly: true
         items:
