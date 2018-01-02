@@ -16,7 +16,7 @@
 package io.swagger.model;
 
 public abstract class MetadataPresenter extends Metadata {
-    Metadata metadata;
+    private Metadata metadata;
 
     public Metadata setMetadata(Metadata metadata) {
         this.metadata = metadata;
@@ -27,7 +27,7 @@ public abstract class MetadataPresenter extends Metadata {
         return this.metadata.getVersion();
     }
 
-    public String getApiVersion() {return this.metadata.getVersion(); }
+    public String getApiVersion() { return this.metadata.getApiVersion(); }
 
     public String getCountry() {
         return this.metadata.getCountry();
