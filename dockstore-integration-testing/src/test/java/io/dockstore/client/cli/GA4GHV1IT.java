@@ -12,6 +12,7 @@ import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.jackson.Jackson;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.ToolClass;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolV1;
 import io.swagger.client.model.ToolVersionV1;
 import org.junit.Test;
@@ -37,8 +38,10 @@ public class GA4GHV1IT extends BaseIT {
                 .request()
                 .get();
         MetadataV1 metadata = response.readEntity(MetadataV1.class);
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture(fixturesPath + "metadata.json"), MetadataV1.class));
-        assertThat(MAPPER.writeValueAsString(metadata)).isEqualTo(expected);
+        assertThat(MAPPER.writeValueAsString(metadata)).contains("api-version");
+        assertThat(MAPPER.writeValueAsString(metadata)).contains("friendly-name");
+        assertThat(MAPPER.writeValueAsString(metadata)).doesNotContain("api_version");
+        assertThat(MAPPER.writeValueAsString(metadata)).doesNotContain("friendly_name");
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
@@ -48,10 +51,12 @@ public class GA4GHV1IT extends BaseIT {
                 basePath + "tools")
                 .request()
                 .get();
-        List<ToolV1> tools = response.readEntity(new GenericType<List<ToolV1>>() {
+        List<ToolV1> responseObject = response.readEntity(new GenericType<List<ToolV1>>() {
         });
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture(fixturesPath + "tools.json"),new TypeReference<List<ToolV1>>(){}));
-        assertThat(MAPPER.writeValueAsString(tools)).isEqualTo(expected);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("meta-version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("verified-source");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("meta_version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("verified_source");
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
@@ -61,9 +66,11 @@ public class GA4GHV1IT extends BaseIT {
                 basePath + "tools/quay.io%2Ftest_org%2Ftest6")
                 .request()
                 .get();
-        ToolV1 tools = response.readEntity(ToolV1.class);
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture(fixturesPath + "toolsId.json"), ToolV1.class));
-        assertThat(MAPPER.writeValueAsString(tools)).isEqualTo(expected);
+        ToolV1 responseObject = response.readEntity(ToolV1.class);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("meta-version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("verified-source");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("meta_version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("verified_source");
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
@@ -73,10 +80,9 @@ public class GA4GHV1IT extends BaseIT {
                 basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions")
                 .request()
                 .get();
-        List<ToolVersionV1> tools = response.readEntity(new GenericType<List<ToolVersionV1>>() {
+        List<ToolVersionV1> responseObject = response.readEntity(new GenericType<List<ToolVersionV1>>() {
         });
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture(fixturesPath + "toolsVersion.json"), new TypeReference<List<ToolVersionV1>>(){}));
-        assertThat(MAPPER.writeValueAsString(tools)).isEqualTo(expected);
+        assertVersion(MAPPER.writeValueAsString(responseObject));
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
@@ -94,4 +100,48 @@ public class GA4GHV1IT extends BaseIT {
     }
 
     // TODO: Test everything that has {version-id}
+    @Test
+    public void toolIdVersionsVersionId() throws Exception {
+        Response response = client.target(
+                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName")
+                .request()
+                .get();
+        ToolVersionV1 responseObject = response.readEntity(ToolVersionV1.class);
+        assertVersion(MAPPER.writeValueAsString(responseObject));
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    public void toolIdVersionsVersionIdTypeDescriptor() throws Exception {
+        Response response = client.target(
+                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor")
+                .request()
+                .get();
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(MAPPER.writeValueAsString(responseObject).contains("type"));
+        assertThat(MAPPER.writeValueAsString(responseObject).contains("descriptor"));
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    public void toolIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
+        Response response = client.target(
+                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl")
+                .request()
+                .get();
+//        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+//        assertThat(MAPPER.writeValueAsString(responseObject).contains("type"));
+//        assertThat(MAPPER.writeValueAsString(responseObject).contains("descriptor"));
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
+    private void assertVersion(String version) {
+        assertThat(version).contains("meta-version");
+        assertThat(version).contains("descriptor-type");
+        assertThat(version).contains("verified-source");
+        assertThat(version).doesNotContain("meta_version");
+        assertThat(version).doesNotContain("descriptor_type");
+        assertThat(version).doesNotContain("verified_source");
+    }
+
 }

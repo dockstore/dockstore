@@ -36,8 +36,10 @@ public class GA4GHV2IT extends BaseIT{
                 .request()
                 .get();
         MetadataV2 responseObject = response.readEntity(MetadataV2.class);
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture(fixturesPath + "metadata.json"), MetadataV2.class));
-        assertThat(MAPPER.writeValueAsString(responseObject)).isEqualTo(expected);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("api_version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("friendly_name");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("api-version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("friendly-name");
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
@@ -49,8 +51,10 @@ public class GA4GHV2IT extends BaseIT{
                 .get();
         List<ToolV2> responseObject = response.readEntity(new GenericType<List<ToolV2>>() {
         });
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture(fixturesPath + "tools.json"),new TypeReference<List<ToolV2>>(){}));
-        assertThat(MAPPER.writeValueAsString(responseObject)).isEqualTo(expected);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("meta_version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("verified_source");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("meta-version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("verified-source");
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
@@ -61,8 +65,10 @@ public class GA4GHV2IT extends BaseIT{
                 .request()
                 .get();
         ToolV2 responseObject = response.readEntity(ToolV2.class);
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture(fixturesPath + "toolsId.json"), ToolV2.class));
-        assertThat(MAPPER.writeValueAsString(responseObject)).isEqualTo(expected);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("meta_version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("verified_source");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("meta-version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("verified-source");
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
@@ -74,8 +80,12 @@ public class GA4GHV2IT extends BaseIT{
                 .get();
         List<ToolVersionV2> responseObject = response.readEntity(new GenericType<List<ToolVersionV2>>() {
         });
-        final String expected = MAPPER.writeValueAsString(MAPPER.readValue(fixture(fixturesPath + "toolsVersion.json"), new TypeReference<List<ToolVersionV2>>(){}));
-        assertThat(MAPPER.writeValueAsString(responseObject)).isEqualTo(expected);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("meta_version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("descriptor_type");
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("verified_source");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("meta-version");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("descriptor-type");
+        assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("verified-source");
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
