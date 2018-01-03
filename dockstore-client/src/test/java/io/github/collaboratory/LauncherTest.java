@@ -70,6 +70,8 @@ public abstract class LauncherTest {
 
     public abstract String getConfigFile();
 
+    public abstract String getConfigFileWithExtraParameters();
+
     @Test
     public void testCWL() throws Exception {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
@@ -81,6 +83,20 @@ public abstract class LauncherTest {
         final LauncherCWL launcherCWL = new LauncherCWL(
                 new String[] { "--config", getConfigFile(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
                         jobFile.getAbsolutePath() });
+        launcherCWL.run(CommandLineTool.class);
+    }
+
+    @Test
+    public void testCWLWithExtraParameters() throws Exception {
+        File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
+        File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
+
+        if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
+            expectedEx.expectMessage("plugin threw an exception");
+        }
+        final LauncherCWL launcherCWL = new LauncherCWL(
+            new String[] { "--config", getConfigFileWithExtraParameters(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
+                jobFile.getAbsolutePath() });
         launcherCWL.run(CommandLineTool.class);
     }
 

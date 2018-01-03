@@ -17,8 +17,10 @@ package io.dockstore.client.cwlrunner;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import io.cwl.avro.CWL;
 
 public class BunnyWrapper implements CWLRunnerInterface {
@@ -30,7 +32,7 @@ public class BunnyWrapper implements CWLRunnerInterface {
     @Override
     public List<String> getExecutionCommand(String outputDir, String tmpDir, String workingDir, String cwlFile, String jsonSettings) {
         Path path = Paths.get(System.getProperty("user.home"), CWL.RABIX_EXEC_LOCATION);
-        return Arrays.asList(path.toAbsolutePath().toString(), "--basedir", workingDir, cwlFile, jsonSettings);
+        return new ArrayList<>(Arrays.asList(path.toAbsolutePath().toString(), "--basedir", workingDir, cwlFile, jsonSettings));
     }
 
 }

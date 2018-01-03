@@ -25,4 +25,9 @@ public class CWLToolLauncherTest extends LauncherTest {
     public String getConfigFile() {
         return FileUtils.getFile("src", "test", "resources", "launcher.cwltool.ini").getAbsolutePath();
     }
+
+    @Override
+    public String getConfigFileWithExtraParameters() {
+        return FileUtils.getFile("src", "test", "resources", "launcher.cwltool.extra.ini").getAbsolutePath();
+    }
 }
