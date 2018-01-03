@@ -89,6 +89,18 @@ public final class ToolsImplCommon {
     }
 
     /**
+     * This converts a Dockstore's SourceFile to a GA4GH ToolDescriptor
+     * @param sourceFile The Dockstore SourceFile
+     * @return The converted GA4GH ToolDescriptor
+     */
+    public static ToolDescriptor sourceFileToToolDescriptor(SourceFile sourceFile) {
+        ToolDescriptor toolDescriptor = new ToolDescriptor();
+        toolDescriptor.setDescriptor(sourceFile.getContent());
+        toolDescriptor.setUrl(sourceFile.getPath());
+        return toolDescriptor;
+    }
+
+    /**
      * @param gitUrl       The git formatted url for the repo
      * @param reference    the git tag or branch
      * @param githubPrefix the prefix for the git formatted url to strip out

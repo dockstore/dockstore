@@ -383,7 +383,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         io.swagger.model.Tool convertedTool = toolTablePair.getKey();
         final Optional<ToolVersion> first = convertedTool.getVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-
         Optional<? extends Version> oldFirst;
         if (entry instanceof Tool) {
             Tool toolEntry = (Tool)entry;
@@ -430,8 +429,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                             .findFirst();
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
+                        ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
+                        if (entity.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                            toolDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+                        } else {
+                            toolDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+                        }
                         return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                                .entity(unwrap ? entity.getContent() : entity).build();
+                                .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
                     }
                 }
             }
@@ -444,8 +449,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         return this.toolDAO;
     }
 
+
     /**
      * Used to parse localised IDs (no URL)
+     * If tool, the id will look something like "registry.hub.docker.com/sequenza/sequenza"
+     * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
+     * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it.
      */
     private class ParsedRegistryID {
         private boolean tool = true;
@@ -461,14 +470,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                 throw new RuntimeException(e);
             }
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
-            if (textSegments.get(0).equalsIgnoreCase("#workflow")) {
+            List<String> list = new ArrayList<>(textSegments);
+            if (list.get(0).equalsIgnoreCase("#workflow")) {
+                list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
                 tool = false;
-            } else {
-                registry = textSegments.get(0);
             }
-            organization = textSegments.get(1);
-            name = textSegments.get(2);
-            toolName = textSegments.size() > SEGMENTS_IN_ID ? textSegments.get(SEGMENTS_IN_ID) : "";
+            registry = list.get(0);
+            organization = list.get(1);
+            name = list.get(2);
+            toolName = list.size() > SEGMENTS_IN_ID ? list.get(SEGMENTS_IN_ID) : "";
         }
 
         public String getRegistry() {
@@ -493,11 +503,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
          * @return an internal path, usable only if we know if we have a tool or workflow
          */
         public String getPath() {
-            if (tool) {
-                return registry + "/" + organization + "/" + name;
-            } else {
-                return organization + "/" + name;
-            }
+            return registry + "/" + organization + "/" + name;
         }
 
         public boolean isTool() {
