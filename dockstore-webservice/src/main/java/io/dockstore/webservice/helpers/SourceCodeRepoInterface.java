@@ -162,7 +162,7 @@ public abstract class SourceCodeRepoInterface {
      */
     private void processAuthor(Entry entry, Map map, String dctKey, String authorKey, String emailKey, String errorMessage) {
         Object o = map.get(dctKey);
-        if (o instanceof List){
+        if (o instanceof List) {
             o = ((List)o).get(0);
         }
         map = (Map)o;
