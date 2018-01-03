@@ -49,7 +49,6 @@ import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.validator.routines.EmailValidator;
-import org.apache.http.HttpStatus;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
@@ -1001,18 +1000,10 @@ public class ToolClient extends AbstractEntryClient {
         }
 
         if (container != null) {
-            try {
-                if (descriptorType.equals(CWL_STRING)) {
-                    file = containersApi.cwl(container.getId(), tag);
-                } else if (descriptorType.equals(WDL_STRING)) {
-                    file = containersApi.wdl(container.getId(), tag);
-                }
-            } catch (ApiException ex) {
-                if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
-                    exceptionMessage(ex, "Invalid tag", Client.API_ERROR);
-                } else {
-                    exceptionMessage(ex, "No " + descriptorType + " file found.", Client.API_ERROR);
-                }
+            if (descriptorType.equals(CWL_STRING)) {
+                file = containersApi.cwl(container.getId(), tag);
+            } else if (descriptorType.equals(WDL_STRING)) {
+                file = containersApi.wdl(container.getId(), tag);
             }
         } else {
             errorMessage("No tool found with path " + entry, Client.API_ERROR);
