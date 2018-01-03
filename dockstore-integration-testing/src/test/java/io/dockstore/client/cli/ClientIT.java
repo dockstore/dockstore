@@ -194,6 +194,15 @@ public class ClientIT extends BaseIT{
     }
 
     @Test
+    public void launchingCWLToolWithRemoteParameters() throws IOException {
+        final String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
+
+        Client.main(
+            new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool,
+                "--json", "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
+    }
+
+    @Test
     public void testMetadataMethods() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--version" });
         Assert.assertTrue(systemOutRule.getLog().contains("Dockstore version"));

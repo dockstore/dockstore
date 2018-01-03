@@ -1,0 +1,14 @@
+{
+  "template_file": {
+    "class": "File",
+    "path": "template.txt"
+  },
+  "input_file": {
+    "class": "File",
+    "path": "input.txt"
+  },
+  "output_file": {
+    "class": "File",
+    "path": "helloworld.txt"
+  }
+}
