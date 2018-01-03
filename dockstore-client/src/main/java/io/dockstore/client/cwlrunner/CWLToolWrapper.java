@@ -15,6 +15,7 @@
  */
 package io.dockstore.client.cwlrunner;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -54,7 +55,8 @@ public class CWLToolWrapper implements CWLRunnerInterface {
 
     @Override
     public List<String> getExecutionCommand(String outputDir, String tmpDir, String workingDir, String cwlFile, String jsonSettings) {
-        return Arrays.asList("cwltool", "--enable-dev", "--non-strict", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix", workingDir, cwlFile,
-                jsonSettings);
+        return new ArrayList<>(Arrays
+            .asList("cwltool", "--enable-dev", "--non-strict", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix",
+                workingDir, cwlFile, jsonSettings));
     }
 }

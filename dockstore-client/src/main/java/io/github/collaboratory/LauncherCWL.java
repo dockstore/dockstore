@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -583,7 +584,7 @@ public class LauncherCWL {
         }
 
         // Trim the input
-        extraFlags = extraFlags.stream().map(this::trimAndPrintInput).collect(Collectors.toList());
+        extraFlags = extraFlags.stream().map(string -> string.split(",")).flatMap(Arrays::stream).map(this::trimAndPrintInput).collect(Collectors.toList());
 
         // Create cwltool command
         CWLRunnerInterface cwlRunner = CWLRunnerFactory.createCWLRunner();
