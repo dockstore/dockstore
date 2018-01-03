@@ -16,10 +16,9 @@
 
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.common.SourceControl;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
@@ -35,9 +34,13 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.SourceControl;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
 /**
  * This describes one workflow in the dockstore, extending Entry with the fields necessary to describe workflows.
@@ -138,6 +141,30 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.setPath(workflow.getPath());
     }
 
+    /**
+     * Copies some of the attributes of the source workflow to the target workflow
+     * There are two of these which seems redundant.
+     *
+     * @param targetWorkflow
+     * @deprecated seems to overlap with {@link #update(Workflow)} , it is not clear why both exist
+     */
+    @Deprecated
+    public void copyWorkflow(Workflow targetWorkflow) {
+        targetWorkflow.setPath(getPath());
+        targetWorkflow.setIsPublished(getIsPublished());
+        targetWorkflow.setWorkflowName(getWorkflowName());
+        targetWorkflow.setAuthor(getAuthor());
+        targetWorkflow.setEmail(getEmail());
+        targetWorkflow.setDescription(getDescription());
+        targetWorkflow.setLastModified(getLastModified());
+        targetWorkflow.setOrganization(getOrganization());
+        targetWorkflow.setRepository(getRepository());
+        targetWorkflow.setGitUrl(getGitUrl());
+        targetWorkflow.setDescriptorType(getDescriptorType());
+        targetWorkflow.setDefaultVersion(getDefaultVersion());
+        targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
+    }
+
     @JsonProperty
     public WorkflowMode getMode() {
         return mode;
@@ -221,6 +248,44 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public String getDescriptorType() {
         return this.descriptorType;
+    }
+
+    public AbstractEntryClient.Type determineWorkflowType() {
+        AbstractEntryClient.Type fileType;
+        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+            fileType = AbstractEntryClient.Type.WDL;
+        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+            fileType = AbstractEntryClient.Type.CWL;
+        } else {
+            fileType = AbstractEntryClient.Type.NEXTFLOW;
+        }
+        return fileType;
+    }
+
+    @JsonIgnore
+    public SourceFile.FileType getFileType() {
+        SourceFile.FileType fileType;
+        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+            fileType = SourceFile.FileType.DOCKSTORE_WDL;
+        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+            fileType = SourceFile.FileType.DOCKSTORE_CWL;
+        } else {
+            fileType = SourceFile.FileType.NEXTFLOW_CONFIG;
+        }
+        return fileType;
+    }
+
+    @JsonIgnore
+    public SourceFile.FileType getTestParameterType() {
+        SourceFile.FileType fileType;
+        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+            fileType = SourceFile.FileType.WDL_TEST_JSON;
+        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+            fileType = SourceFile.FileType.CWL_TEST_JSON;
+        } else {
+            fileType = SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
+        }
+        return fileType;
     }
 
     public String getDefaultTestParameterFilePath() {

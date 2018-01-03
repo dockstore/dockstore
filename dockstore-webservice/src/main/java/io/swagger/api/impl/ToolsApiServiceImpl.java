@@ -50,13 +50,13 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;;
-import io.swagger.model.ToolV1;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -71,8 +71,9 @@ import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
 import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 
-public class ToolsApiServiceImpl extends ToolsApiService {
+public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersionHelper<Tool> {
 
+    public static final int SEGMENTS_IN_ID = 3;
     public static final int DEFAULT_PAGE_SIZE = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
@@ -415,19 +416,16 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         io.swagger.model.Tool convertedTool = toolTablePair.getKey();
         final Optional<ToolVersion> first = convertedTool.getVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-
         Optional<? extends Version> oldFirst;
         EntryVersionHelper<Tool> entryVersionHelper;
         if (entry instanceof Tool) {
             Tool toolEntry = (Tool)entry;
             oldFirst = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
                     .findFirst();
-            entryVersionHelper = new EntryVersionHelper<>(toolDAO);
         } else {
             Workflow workflowEntry = (Workflow)entry;
             oldFirst = workflowEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
                     .findFirst();
-            entryVersionHelper = new EntryVersionHelper<>(workflowDAO);
         }
 
         final Table<String, SourceFile.FileType, Object> table = toolTablePair.getValue();
@@ -437,8 +435,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             switch (type) {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
-
-                List<SourceFile> sourceFile = entryVersionHelper.getAllSourceFiles(entry.getId(), versionId, type);
+                List<SourceFile> sourceFile = getAllSourceFiles(entry.getId(), versionId, type);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.stream().map(SourceFile::getContent).filter(Objects::nonNull)
                                 .collect(Collectors.joining("\n")) : sourceFile).build();
@@ -467,8 +464,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                             .findFirst();
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
+                        ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
+                        if (entity.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+                            toolDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+                        } else {
+                            toolDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+                        }
                         return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                                .entity(unwrap ? entity.getContent() : entity).build();
+                                .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
                     }
                 }
             }
@@ -476,8 +479,17 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return Response.status(Response.Status.NOT_FOUND).build();
     }
 
+    @Override
+    public EntryDAO getDAO() {
+        return this.toolDAO;
+    }
+
+
     /**
      * Used to parse localised IDs (no URL)
+     * If tool, the id will look something like "registry.hub.docker.com/sequenza/sequenza"
+     * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
+     * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it.
      */
     private class ParsedRegistryID {
         private boolean tool = true;
@@ -493,14 +505,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 throw new RuntimeException(e);
             }
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
-            if (textSegments.get(0).equalsIgnoreCase("#workflow")) {
+            List<String> list = new ArrayList<>(textSegments);
+            if (list.get(0).equalsIgnoreCase("#workflow")) {
+                list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
                 tool = false;
-            } else {
-                registry = textSegments.get(0);
             }
-            organization = textSegments.get(1);
-            name = textSegments.get(2);
-            toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
+            registry = list.get(0);
+            organization = list.get(1);
+            name = list.get(2);
+            toolName = list.size() > SEGMENTS_IN_ID ? list.get(SEGMENTS_IN_ID) : "";
         }
 
         public String getRegistry() {
@@ -525,11 +538,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
          * @return an internal path, usable only if we know if we have a tool or workflow
          */
         public String getPath() {
-            if (tool) {
-                return registry + "/" + organization + "/" + name;
-            } else {
-                return organization + "/" + name;
-            }
+            return registry + "/" + organization + "/" + name;
         }
 
         public boolean isTool() {

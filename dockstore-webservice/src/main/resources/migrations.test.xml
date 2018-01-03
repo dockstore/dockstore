@@ -297,11 +297,31 @@
             <column name="path" value="/Dockstore.cwl"/>
             <column name="type" value="DOCKSTORE_CWL"/>
         </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9002"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/test.cwl.json"/>
+            <column name="type" value="CWL_TEST_JSON"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9003"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/Dockerfile"/>
+            <column name="type" value="DOCKERFILE"/>
+        </insert>
     </changeSet>
     <changeSet author="gluu" id="insert_version_sourcefiles">
         <insert tableName="version_sourcefile">
             <column name="versionid" valueNumeric="1"/>
             <column name="sourcefileid" value="9001"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9002"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9003"/>
         </insert>
     </changeSet>
     <changeSet author="dyuen" id="custom_test_sequence1">

@@ -680,7 +680,7 @@ public class Client {
                     } else if ("plugin".equals(mode)) {
                         handled = PluginClient.handleCommand(args, Utilities.parseConfig(configFile));
                     } else if ("search".equals(mode)) {
-                        handled = SearchClient.handleCommand(args, Utilities.parseConfig(configFile), this.extendedGA4GHApi);
+                        handled = SearchClient.handleCommand(args, this.extendedGA4GHApi);
                     }
 
                     if (targetClient != null) {

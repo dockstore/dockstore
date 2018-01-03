@@ -16,10 +16,13 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -36,6 +39,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -222,6 +226,26 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    /**
+     * Calculated property for demonstrating search by language, inefficient
+     * @return the languages that this tool supports
+     */
+    @JsonProperty
+    public List<String> getDescriptorType() {
+        Set<SourceFile.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType)
+            .distinct().collect(Collectors.toSet());
+        boolean supportsCWL = set.contains(SourceFile.FileType.DOCKSTORE_CWL);
+        boolean supportsWDL = set.contains(SourceFile.FileType.DOCKSTORE_WDL);
+        List<String> languages = new ArrayList<>();
+        if (supportsCWL) {
+            languages.add(AbstractEntryClient.Type.CWL.toString());
+        }
+        if (supportsWDL) {
+            languages.add(AbstractEntryClient.Type.WDL.toString());
+        }
+        return languages;
     }
 
     @JsonProperty

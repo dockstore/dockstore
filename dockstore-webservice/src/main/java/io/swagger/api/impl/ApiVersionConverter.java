@@ -3,6 +3,7 @@ package io.swagger.api.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -40,15 +41,18 @@ public final class ApiVersionConverter {
                     } else {
                         handleError();
                     }
-                }
-                if (innerObject instanceof io.swagger.model.ToolVersion) {
-                    ToolVersion toolVersion = (ToolVersion)innerObject;
-                    if (apiVersion.equals(ApiVersion.v1)) {
-                        newArrayList.add(getToolVersionV1(toolVersion));
-                    } else if (apiVersion.equals(ApiVersion.v2)) {
-                        newArrayList.add(getToolVersionV2(toolVersion));
-                    } else {
-                        handleError();
+                } else {
+                    if (innerObject instanceof io.swagger.model.ToolVersion) {
+                        ToolVersion toolVersion = (ToolVersion)innerObject;
+                        if (apiVersion.equals(ApiVersion.v1)) {
+                            newArrayList.add(getToolVersionV1(toolVersion));
+                        } else if (apiVersion.equals(ApiVersion.v2)) {
+                            newArrayList.add(getToolVersionV2(toolVersion));
+                        } else {
+                            handleError();
+                        }
+                    }  else {
+                        return getResponse(object, response.getHeaders(), apiVersion);
                     }
                 }
             }
@@ -143,7 +147,7 @@ public final class ApiVersionConverter {
                         responseBuilder.header(newString, headers.getFirst(str));
                         break;
                     default:
-                        throw new RuntimeException("Unknown header to convert");
+                        continue; // Skipping all other headers
                     }
                 }
             }
