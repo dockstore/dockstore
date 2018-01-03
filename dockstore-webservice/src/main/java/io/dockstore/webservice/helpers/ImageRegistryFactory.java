@@ -64,7 +64,7 @@ public class ImageRegistryFactory {
             }
             return new QuayImageRegistry(client, objectMapper, quayToken);
         } else if (validRegistry) {
-            return new ManualRegistry(client, registry);
+            return new ManualRegistry(registry);
         } else {
             throw new CustomWebApplicationException("Sorry, we do not support " + registry + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }

@@ -617,7 +617,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new github.com token, used by quay.io redirect"
+      summary: "Add a new github.com token, used by github.com redirect"
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
@@ -1488,8 +1488,12 @@ paths:
         type: "string"
       - name: "descriptorType"
         in: "query"
-        required: false
+        description: "Descriptor Type"
+        required: true
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
       responses:
         200:
           description: "successful operation"
@@ -1533,8 +1537,12 @@ paths:
         type: "string"
       - name: "descriptorType"
         in: "query"
-        required: false
+        description: "Descriptor Type"
+        required: true
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
       responses:
         200:
           description: "successful operation"
@@ -1574,8 +1582,12 @@ paths:
         type: "string"
       - name: "descriptorType"
         in: "query"
-        required: false
+        description: "Descriptor Type"
+        required: true
         type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
       responses:
         200:
           description: "successful operation"
@@ -3665,6 +3677,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
+      descriptorType:
+        type: "array"
+        readOnly: true
+        items:
+          type: "string"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -3870,6 +3887,8 @@ definitions:
   RegistryBean:
     type: "object"
     properties:
+      dockerPath:
+        type: "string"
       friendlyName:
         type: "string"
       url:
@@ -3906,6 +3925,9 @@ definitions:
         - "DOCKERFILE"
         - "CWL_TEST_JSON"
         - "WDL_TEST_JSON"
+        - "NEXTFLOW"
+        - "NEXTFLOW_CONFIG"
+        - "NEXTFLOW_TEST_PARAMS"
       content:
         type: "string"
         description: "Cache for the contents of the target file"

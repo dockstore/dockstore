@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
@@ -39,6 +40,7 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -60,6 +62,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PowerMockIgnore({ "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*" })
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Client.class, ToolClient.class, UsersApi.class })
+@Category(ConfidentialTest.class)
 public class MockedIT {
 
     @Rule

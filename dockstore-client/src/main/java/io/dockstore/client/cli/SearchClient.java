@@ -28,7 +28,6 @@ import io.dockstore.common.ToolWorkflowDeserializer;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ExtendedGA4GHApi;
 import io.swagger.client.model.Tool;
-import org.apache.commons.configuration2.INIConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,9 +60,8 @@ public final class SearchClient {
 
     /**
      * @param args
-     * @param configFile
      */
-    public static boolean handleCommand(List<String> args, INIConfiguration configFile, ExtendedGA4GHApi api) {
+    static boolean handleCommand(List<String> args, ExtendedGA4GHApi api) {
         String[] argv = args.toArray(new String[args.size()]);
         JCommander jc = new JCommander();
 

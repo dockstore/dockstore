@@ -46,6 +46,9 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -97,6 +100,11 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         final List<Workflow> workflows = workflowApi.refreshAll();
+
+        for (Workflow workflow: workflows) {
+            assertNotSame("", workflow.getWorkflowName());
+        }
+
         assertTrue("workflow size was " + workflows.size(), workflows.size() > 1);
         assertTrue(
                 "found non stub workflows " + workflows.stream().filter(workflow -> workflow.getMode() != Workflow.ModeEnum.STUB).count(),
@@ -111,7 +119,12 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        workflowApi.refreshAll();
+
+        final List<Workflow> workflows = workflowApi.refreshAll();
+
+        for (Workflow workflow: workflows) {
+            assertNotSame("", workflow.getWorkflowName());
+        }
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
@@ -170,6 +183,26 @@ public class WorkflowIT extends BaseIT {
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
         assertTrue("No workflows are in full mode", count3 == 0);
+
+        // check that a nextflow workflow made it
+        long nfWorkflowCount = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
+        assertTrue("Nextflow workflow not found", nfWorkflowCount > 0);
+        Workflow mtaNf = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        mtaNf.setWorkflowPath("/nextflow.config");
+        mtaNf.setDescriptorType(SourceFile.TypeEnum.NEXTFLOW.toString());
+        workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
+        workflowApi.refresh(mtaNf.getId());
+        mtaNf = workflowApi.getWorkflow(mtaNf.getId());
+        assertTrue("Nextflow workflow not found after update", mtaNf != null);
+        assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
+        int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> version.getSourceFiles().size()).sum();
+        assertTrue("nextflow workflow should have at least two sourcefiles", numOfSourceFiles >= 2);
+        long scriptCount = mtaNf.getWorkflowVersions().stream()
+            .mapToLong(version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW).count()).sum();
+        long configCount = mtaNf.getWorkflowVersions().stream()
+            .mapToLong(version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW_CONFIG).count()).sum();
+        assertTrue("nextflow workflow should have at least one config file and one script file", scriptCount >= 1 && configCount >= 1);
 
     }
 
@@ -235,11 +268,11 @@ public class WorkflowIT extends BaseIT {
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl","/test.json");
+                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl", "/test.json");
 
         // Manually register workflow bitbucket
         Workflow bitbucketWorkflow = workflowApi
-                .manualRegister("bitbucket", "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "altname", "cwl","/test.json");
+                .manualRegister("bitbucket", "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "altname", "cwl", "/test.json");
 
         // Assert some things
         final long count = testingPostgres
@@ -313,9 +346,16 @@ public class WorkflowIT extends BaseIT {
 
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW);
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-        // test out methods to access secondary files
 
+        // This checks if a workflow whose default name was manually registered as an empty string would become null
+        assertNull(workflowByPathGithub.getWorkflowName());
+
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+
+        // This checks if a workflow whose default name is null would remain as null after refresh
+        assertNull(workflow.getWorkflowName());
+
+        // test out methods to access secondary files
         final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
         assertTrue("should find 2 imports, found " + masterImports.size(), masterImports.size() == 2);
         final SourceFile master = workflowApi.cwl(workflow.getId(), "master");
@@ -330,10 +370,17 @@ public class WorkflowIT extends BaseIT {
     public void testRelativeSecondaryFileOperations() throws IOException, TimeoutException, ApiException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+
+        // This checks if a workflow whose default name was manually registered as an empty string would become null
+        assertNull(workflowByPathGithub.getWorkflowName());
+
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+
+        // This checks if a workflow whose default name is null would remain as null after refresh
+        assertNull(workflow.getWorkflowName());
+
         // test out methods to access secondary files
 
         final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");

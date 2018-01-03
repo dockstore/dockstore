@@ -22,7 +22,6 @@ import java.util.List;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
-import org.apache.http.client.HttpClient;
 
 /**
  * A no-op interface intended as a place-holder for where we will implement docker hub functionality when they get around to exposing and
@@ -31,12 +30,6 @@ import org.apache.http.client.HttpClient;
  * @author dyuen
  */
 public class DockerHubRegistry extends AbstractImageRegistry {
-
-    private final HttpClient client;
-
-    public DockerHubRegistry(HttpClient client) {
-        this.client = client;
-    }
 
     @Override
     public List<Tag> getTags(Tool tool) {

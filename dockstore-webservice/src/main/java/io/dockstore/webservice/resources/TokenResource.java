@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 import javax.annotation.security.RolesAllowed;
@@ -46,7 +47,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
@@ -57,7 +57,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -87,7 +86,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/auth/tokens")
 @Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
-public class TokenResource {
+public class TokenResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     /**
      * Global instance of the HTTP transport.
      */
@@ -152,7 +151,7 @@ public class TokenResource {
     public Token listToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
         Token t = tokenDAO.findById(tokenId);
-        Helper.checkUser(user, t.getUserId());
+        checkUser(user, t.getUserId());
 
         return t;
     }
@@ -208,7 +207,7 @@ public class TokenResource {
     public Response deleteToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
-        Helper.checkUser(user, token.getUserId());
+        checkUser(user, token.getUserId());
 
         // invalidate cache now that we're deleting the token
         cachingAuthenticator.invalidate(token.getContent());
@@ -302,7 +301,7 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @Path("/github.com")
-    @ApiOperation(value = "Add a new github.com token, used by quay.io redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
+    @ApiOperation(value = "Add a new github.com token, used by github.com redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
@@ -496,6 +495,6 @@ public class TokenResource {
 
         Token bitbucketToken = tokens.get(0);
 
-        return Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        return refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
     }
 }

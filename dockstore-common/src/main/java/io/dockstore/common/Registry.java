@@ -92,14 +92,15 @@ public enum Registry {
 
         @JsonProperty("enum")
         public String value;
-
+        public String dockerPath;
         public String friendlyName;
         public String url;
         public String privateOnly;
         public String customDockerPath;
 
         public RegistryBean(Registry registry) {
-            this.value = registry.toString();
+            this.value = registry.name();
+            this.dockerPath = registry.toString();
             this.friendlyName = registry.getFriendlyName();
             this.url = registry.url;
             this.privateOnly = Boolean.toString(registry.isPrivateOnly());

@@ -39,6 +39,8 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.jdbi.TokenDAO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -110,6 +112,17 @@ public class User implements Principal {
         groups = new HashSet<>(0);
         entries = new HashSet<>(0);
         starredEntries = new LinkedHashSet<>();
+    }
+
+    /**
+     * Updates the given user with metadata from Github
+     *
+     * @param tokenDAO
+     */
+    public void updateUserMetadata(final TokenDAO tokenDAO) {
+        Token githubToken = tokenDAO.findGithubByUserId(getId()).get(0);
+        GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(getUsername(), githubToken.getContent(), null);
+        gitHubSourceCodeRepo.getUserMetadata(this);
     }
 
     @JsonProperty
@@ -239,13 +252,4 @@ public class User implements Principal {
         // do not depend on lazily loaded collections for equality
         return Objects.equals(isAdmin, other.isAdmin);
     }
-
-    public void update(User user) {
-        email = user.getEmail();
-        location = user.getLocation();
-        bio = user.getBio();
-        avatarUrl = user.getAvatarUrl();
-        company = user.getCompany();
-    }
-
 }

@@ -41,7 +41,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
@@ -63,7 +62,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containertags")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoTagResource {
+public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoTagResource.class);
     private final ElasticManager elasticManager;
     private final ToolDAO toolDAO;
@@ -83,9 +82,9 @@ public class DockerRepoTagResource {
     public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
-        Helper.checkUser(user, c);
+        checkUser(user, c);
 
         return c.getTags();
     }
@@ -100,9 +99,9 @@ public class DockerRepoTagResource {
             @ApiParam(value = "List of modified tags", required = true) List<Tag> tags) {
 
         Tool c = toolDAO.findById(containerId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
-        Helper.checkUser(user, c);
+        checkUser(user, c);
 
         // create a map for quick lookup
         Map<Long, Tag> mapOfExistingTags = new HashMap<>();
@@ -128,7 +127,7 @@ public class DockerRepoTagResource {
             }
         }
         Tool result = toolDAO.findById(containerId);
-        Helper.checkEntry(result);
+        checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getTags();
     }
@@ -143,9 +142,9 @@ public class DockerRepoTagResource {
             @ApiParam(value = "List of new tags", required = true) List<Tag> tags) {
 
         Tool c = toolDAO.findById(containerId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
-        Helper.checkUser(user, c);
+        checkUser(user, c);
 
         for (Tag tag : tags) {
             final long tagId = tagDAO.create(tag);
@@ -158,7 +157,7 @@ public class DockerRepoTagResource {
         }
 
         Tool result = toolDAO.findById(containerId);
-        Helper.checkEntry(result);
+        checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getTags();
     }
@@ -173,9 +172,9 @@ public class DockerRepoTagResource {
             @ApiParam(value = "Tag to delete", required = true) @PathParam("tagId") Long tagId) {
 
         Tool c = toolDAO.findById(containerId);
-        Helper.checkEntry(c);
+        checkEntry(c);
 
-        Helper.checkUser(user, c);
+        checkUser(user, c);
 
         Tag tag = tagDAO.findById(tagId);
         if (tag == null) {
@@ -211,8 +210,8 @@ public class DockerRepoTagResource {
             @ApiParam(value = "Tag to verify.", required = true) @PathParam("tagId") Long tagId,
             @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
         Tool tool = toolDAO.findById(containerId);
-        Helper.checkEntry(tool);
-        Helper.checkUser(user, tool);
+        checkEntry(tool);
+        checkUser(user, tool);
 
         Tag tag = tagDAO.findById(tagId);
         if (tag == null) {
@@ -230,7 +229,7 @@ public class DockerRepoTagResource {
         }
 
         Tool result = toolDAO.findById(containerId);
-        Helper.checkEntry(result);
+        checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result.getTags();
     }
