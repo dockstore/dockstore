@@ -429,7 +429,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                             .findFirst();
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
-                        ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileTotoolDescriptor(entity);
+                        ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
                         if (entity.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
                             toolDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
                         } else {
@@ -453,8 +453,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     /**
      * Used to parse localised IDs (no URL)
      * If tool, the id will look something like "registry.hub.docker.com/sequenza/sequenza"
-     * If workflow, the id will look something like #workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl
-     * Both cases have registry/organization/name/toolName but workflows have a #workflow prepended to it.
+     * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
+     * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it.
      */
     private class ParsedRegistryID {
         private boolean tool = true;
