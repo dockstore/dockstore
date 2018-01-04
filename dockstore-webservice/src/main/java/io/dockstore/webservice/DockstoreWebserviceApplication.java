@@ -89,6 +89,8 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -293,8 +295,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // "*");
 
 
-        /**
-         * Ugly, but it does not look like there is a JPA standard annotation for partial indexes
+        /*
+          Ugly, but it does not look like there is a JPA standard annotation for partial indexes
          */
         Session session = hibernate.getSessionFactory().openSession();
         Transaction transaction = session.getTransaction();
