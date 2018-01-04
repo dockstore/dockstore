@@ -170,7 +170,7 @@ public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResour
         }
 
         if (tagInstance == null) {
-            throw new CustomWebApplicationException("Invalid version.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Invalid or missing tag " + tag + ".", HttpStatus.SC_BAD_REQUEST);
         }
 
         if (tagInstance instanceof WorkflowVersion) {
