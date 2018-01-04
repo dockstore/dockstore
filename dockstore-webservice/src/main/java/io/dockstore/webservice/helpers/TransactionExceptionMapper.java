@@ -15,19 +15,25 @@
  */
 package io.dockstore.webservice.helpers;
 
-import javax.persistence.PersistenceException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
 import io.dropwizard.jersey.errors.ErrorMessage;
+import org.hibernate.TransactionException;
 
 @Provider
-public class DataExceptionMapper implements ExceptionMapper<PersistenceException> {
+public class TransactionExceptionMapper implements ExceptionMapper<TransactionException> {
 
     @Override
-    public Response toResponse(PersistenceException e) {
+    public Response toResponse(TransactionException e) {
+
+        return processResponse(e);
+    }
+
+    public static Response processResponse(Exception e) {
         StringBuilder builder = new StringBuilder();
+        builder.append(e.getMessage()).append(' ');
         Throwable cause = e.getCause();
         while (cause != null) {
             builder.append(cause.getMessage());
