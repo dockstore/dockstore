@@ -261,7 +261,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization) {
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
-        LOG.error(Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
+        LOG.info("found giturl to workflow name map" + Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
         if (organization != null) {
             workflowGitUrl2Name.entrySet().removeIf(thing -> !(thing.getValue().split("/"))[0].equals(organization));
         }

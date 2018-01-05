@@ -89,8 +89,6 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -293,31 +291,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
         // cors.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, environment.getApplicationContext().getContextPath() +
         // "*");
-
-
-        /*
-          Ugly, but it does not look like there is a JPA standard annotation for partial indexes
-         */
-        Session session = hibernate.getSessionFactory().openSession();
-        Transaction transaction = session.getTransaction();
-        transaction.begin();
-
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS full_workflow_name ON workflow (organization, repository, workflowname) WHERE workflowname IS NOT NULL;")
-                .executeUpdate();
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS partial_workflow_name ON workflow (organization, repository) WHERE workflowname IS NULL;")
-                .executeUpdate();
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS full_tool_name ON tool (registry, namespace, name, toolname) WHERE toolname IS NOT NULL")
-                .executeUpdate();
-        session.createNativeQuery("CREATE UNIQUE INDEX IF NOT EXISTS partial_tool_name ON tool (registry, namespace, name) WHERE toolname IS NULL;")
-                .executeUpdate();
-        try {
-            session.getTransaction().commit();
-        } finally {
-            session.close();
-        }
     }
 
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {
