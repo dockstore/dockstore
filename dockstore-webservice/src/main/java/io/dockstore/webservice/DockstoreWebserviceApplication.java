@@ -220,6 +220,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final ObjectMapper mapper = environment.getObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // For when we want to globally ignore all json properties with null value during serialization
+//        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO,

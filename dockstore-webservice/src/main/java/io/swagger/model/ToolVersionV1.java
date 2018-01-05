@@ -20,5 +20,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 @JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class ToolVersionV1 extends ToolVersionPresenter {
+    public ToolVersionV1(ToolVersion newToolVersion) {
+        this.toolVersion = newToolVersion;
+    }
 }
 

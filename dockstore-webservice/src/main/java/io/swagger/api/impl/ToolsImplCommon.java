@@ -66,7 +66,7 @@ public final class ToolsImplCommon {
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
     private static ToolsImplCommon instance = null;
 
-    private ToolsImplCommon() {}
+    private ToolsImplCommon() { }
 
     /**
      * Build a descriptor and attach it to a version
@@ -238,10 +238,15 @@ public final class ToolsImplCommon {
             version.setVerifiedSource(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
             version.setDockerfile(false);
 
+            /**
+             * Set image if it's a DockstoreTool, otherwise make it empty string (for now)
+             */
             if (inputVersion instanceof Tag) {
                 Tag tag = (Tag)inputVersion;
                 version.setImage(tag.getImageId());
             } else {
+                // TODO: Modify mapper to ignore null-value properties during serialization for specific endpoint(s)
+                // version.setImage(null);
                 version.setImage("");
             }
 

@@ -18,12 +18,7 @@ package io.swagger.model;
 import java.util.List;
 
 public abstract class ToolVersionPresenter extends ToolVersion {
-    ToolVersion toolVersion;
-
-    public ToolVersion setToolVersion(ToolVersion newToolVersion) {
-        this.toolVersion = newToolVersion;
-        return this.toolVersion;
-    }
+    protected ToolVersion toolVersion;
 
     public String getName() {
         return this.toolVersion.getName();

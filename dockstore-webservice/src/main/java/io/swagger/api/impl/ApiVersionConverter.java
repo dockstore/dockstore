@@ -2,8 +2,6 @@ package io.swagger.api.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.logging.Logger;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -51,7 +49,7 @@ public final class ApiVersionConverter {
                         } else {
                             handleError();
                         }
-                    }  else {
+                    } else {
                         return getResponse(object, response.getHeaders(), apiVersion);
                     }
                 }
@@ -81,7 +79,7 @@ public final class ApiVersionConverter {
                 handleError();
             }
         } else if (object instanceof Metadata) {
-            Metadata metadata = (Metadata) object;
+            Metadata metadata = (Metadata)object;
             if (apiVersion.equals(ApiVersion.v1)) {
                 MetadataV1 metadataV1 = getMetadataV1(metadata);
                 return getResponse(metadataV1, response.getHeaders(), apiVersion);
@@ -96,26 +94,20 @@ public final class ApiVersionConverter {
     }
 
     private static ToolV1 getToolV1(Tool tool) {
-        ToolV1 toolV1 = new ToolV1();
-        toolV1.setTool(tool);
-        return toolV1;
+        return new ToolV1(tool);
     }
 
     private static ToolV2 getToolV2(Tool tool) {
-        ToolV2 toolV2 = new ToolV2();
-        toolV2.setTool(tool);
-        return toolV2;
+        return new ToolV2(tool);
     }
 
     private static ToolVersionV1 getToolVersionV1(ToolVersion toolVersion) {
-        ToolVersionV1 toolVersionV1 = new ToolVersionV1();
-        toolVersionV1.setToolVersion(toolVersion);
+        ToolVersionV1 toolVersionV1 = new ToolVersionV1(toolVersion);
         return toolVersionV1;
     }
 
     private static ToolVersionV2 getToolVersionV2(ToolVersion toolVersion) {
-        ToolVersionV2 toolVersionV2 = new ToolVersionV2();
-        toolVersionV2.setToolVersion(toolVersion);
+        ToolVersionV2 toolVersionV2 = new ToolVersionV2(toolVersion);
         return toolVersionV2;
     }
 
@@ -123,11 +115,11 @@ public final class ApiVersionConverter {
         Response.ResponseBuilder responseBuilder = Response.ok(object);
         if (!headers.isEmpty()) {
             if (apiVersion.equals(ApiVersion.v2)) {
-                for (String str: headers.keySet()) {
+                for (String str : headers.keySet()) {
                     responseBuilder.header(str, headers.getFirst(str));
                 }
             } else if (apiVersion.equals(ApiVersion.v1)) {
-                for (String str: headers.keySet()) {
+                for (String str : headers.keySet()) {
                     String newString = "";
                     switch (str) {
                     case "next_page":
@@ -156,23 +148,18 @@ public final class ApiVersionConverter {
     }
 
     private static MetadataV1 getMetadataV1(Metadata metadata) {
-        MetadataV1 metadataV1 = new MetadataV1();
-        metadataV1.setMetadata(metadata);
-        return metadataV1;
+        return new MetadataV1(metadata);
     }
 
     private static MetadataV2 getMetadataV2(Metadata metadata) {
-        MetadataV2 metadataV2 = new MetadataV2();
-        metadataV2.setMetadata(metadata);
-        return metadataV2;
-    }
-
-
-    public enum ApiVersion {
-        v1, v2
+        return new MetadataV2(metadata);
     }
 
     private static void handleError() {
         throw new RuntimeException("Unknown");
+    }
+
+    public enum ApiVersion {
+        v1, v2
     }
 }

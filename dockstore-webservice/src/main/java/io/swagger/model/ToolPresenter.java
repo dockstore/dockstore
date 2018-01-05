@@ -9,11 +9,6 @@ import java.util.List;
 public abstract class ToolPresenter extends Tool {
     Tool tool;
 
-    public Tool setTool(Tool newTool) {
-        this.tool = newTool;
-        return this.tool;
-    }
-
     public String getUrl() {
         return this.tool.getUrl();
     }

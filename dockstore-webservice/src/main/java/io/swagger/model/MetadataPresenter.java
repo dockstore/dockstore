@@ -16,12 +16,7 @@
 package io.swagger.model;
 
 public abstract class MetadataPresenter extends Metadata {
-    private Metadata metadata;
-
-    public Metadata setMetadata(Metadata metadata) {
-        this.metadata = metadata;
-        return this.metadata;
-    }
+    protected Metadata metadata;
 
     public String getVersion() {
         return this.metadata.getVersion();

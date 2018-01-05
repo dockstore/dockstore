@@ -10,14 +10,17 @@ info:
   contact:
     name: "Dockstore@ga4gh"
     url: "https://github.com/ga4gh/dockstore"
-    email: " theglobalalliance@genomicsandhealth.org"
+    email: "theglobalalliance@genomicsandhealth.org"
   license:
     name: " GNU Lesser General Public License"
     url: "https://www.gnu.org/licenses/lgpl-3.0.en.html"
 host: ""
 basePath: "/"
 tags:
-- name: "GA4GH"
+- name: "GA4GHV1"
+  description: "A curated subset of resources proposed as a common standard for tool\
+    \ repositories"
+- name: "GA4GHV2"
   description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories"
 - name: "containers"
@@ -48,7 +51,7 @@ paths:
   /api/ga4gh/v1/metadata:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "Return some metadata that is useful for describing this registry"
       description: "Return some metadata that is useful for describing this registry"
       operationId: "metadataGet"
@@ -64,7 +67,7 @@ paths:
   /api/ga4gh/v1/tool-classes:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "List all tool types"
       description: "This endpoint returns all tool-classes available "
       operationId: "toolClassesGet"
@@ -82,7 +85,7 @@ paths:
   /api/ga4gh/v1/tools:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "List all tools"
       description: "This endpoint returns all tools available or a filtered subset\
         \ using metadata query parameters. "
@@ -153,7 +156,7 @@ paths:
   /api/ga4gh/v1/tools/{id}:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "List one specific tool, acts as an anchor for self references"
       description: "This endpoint returns one specific tool (which has ToolVersions\
         \ nested inside it)"
@@ -176,7 +179,7 @@ paths:
   /api/ga4gh/v1/tools/{id}/versions:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "List versions of a tool"
       description: "Returns all versions of the specified tool"
       operationId: "toolsIdVersionsGet"
@@ -200,7 +203,7 @@ paths:
   /api/ga4gh/v1/tools/{id}/versions/{version_id}:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "List one specific tool version, acts as an anchor for self references"
       description: "This endpoint returns one specific tool version"
       operationId: "toolsIdVersionsVersionIdGet"
@@ -228,7 +231,7 @@ paths:
   /api/ga4gh/v1/tools/{id}/versions/{version_id}/dockerfile:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "Get the dockerfile for the specified image."
       description: "Returns the dockerfile for the specified image."
       operationId: "toolsIdVersionsVersionIdDockerfileGet"
@@ -260,7 +263,7 @@ paths:
   /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "Get the tool descriptor (CWL/WDL) for the specified tool."
       description: "Returns the CWL or WDL descriptor for the specified tool."
       operationId: "toolsIdVersionsVersionIdTypeDescriptorGet"
@@ -305,7 +308,7 @@ paths:
   /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "Get additional tool descriptor files (CWL/WDL) relative to the main\
         \ file"
       description: "Returns additional CWL or WDL descriptors for the specified tool\
@@ -359,7 +362,7 @@ paths:
   /api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV1"
       summary: "Get an array of test JSONs suitable for use with this descriptor type."
       description: ""
       operationId: "toolsIdVersionsVersionIdTypeTestsGet"
@@ -533,7 +536,7 @@ paths:
   /api/ga4gh/v2/metadata:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "Return some metadata that is useful for describing this registry"
       description: "Return some metadata that is useful for describing this registry"
       operationId: "metadataGet"
@@ -549,7 +552,7 @@ paths:
   /api/ga4gh/v2/toolClasses:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "List all tool types"
       description: "This endpoint returns all tool-classes available "
       operationId: "toolClassesGet"
@@ -567,7 +570,7 @@ paths:
   /api/ga4gh/v2/tools:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "List all tools"
       description: "This endpoint returns all tools available or a filtered subset\
         \ using metadata query parameters. "
@@ -638,7 +641,7 @@ paths:
   /api/ga4gh/v2/tools/{id}:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "List one specific tool, acts as an anchor for self references"
       description: "This endpoint returns one specific tool (which has ToolVersions\
         \ nested inside it)"
@@ -661,7 +664,7 @@ paths:
   /api/ga4gh/v2/tools/{id}/versions:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "List versions of a tool"
       description: "Returns all versions of the specified tool"
       operationId: "toolsIdVersionsGet"
@@ -685,7 +688,7 @@ paths:
   /api/ga4gh/v2/tools/{id}/versions/{version_id}:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "List one specific tool version, acts as an anchor for self references"
       description: "This endpoint returns one specific tool version"
       operationId: "toolsIdVersionsVersionIdGet"
@@ -713,7 +716,7 @@ paths:
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/dockerfile:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "Get the dockerfile for the specified image."
       description: "Returns the dockerfile for the specified image."
       operationId: "toolsIdVersionsVersionIdDockerfileGet"
@@ -745,7 +748,7 @@ paths:
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "Get the tool descriptor (CWL/WDL) for the specified tool."
       description: "Returns the CWL or WDL descriptor for the specified tool."
       operationId: "toolsIdVersionsVersionIdTypeDescriptorGet"
@@ -790,7 +793,7 @@ paths:
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "Get additional tool descriptor files (CWL/WDL) relative to the main\
         \ file"
       description: "Returns additional CWL or WDL descriptors for the specified tool\
@@ -844,7 +847,7 @@ paths:
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
-      - "GA4GH"
+      - "GA4GHV2"
       summary: "Get an array of test JSONs suitable for use with this descriptor type."
       description: ""
       operationId: "toolsIdVersionsVersionIdTypeTestsGet"
@@ -4514,8 +4517,11 @@ definitions:
     - "organization"
     - "toolclass"
     - "url"
-    - "versions"
     properties:
+      versions:
+        type: "array"
+        items:
+          $ref: "#/definitions/ToolVersionV1"
       url:
         type: "string"
         position: 1
@@ -4571,12 +4577,6 @@ definitions:
         type: "boolean"
         position: 12
         description: "Reports whether this tool has been signed."
-      versions:
-        type: "array"
-        position: 13
-        description: "A list of versions for this tool"
-        items:
-          $ref: "#/definitions/ToolVersion"
     description: "A tool (or described tool) describes one pairing of a tool as described\
       \ in a descriptor file (which potentially describes multiple tools) and a Docker\
       \ image."
@@ -4589,8 +4589,11 @@ definitions:
     - "organization"
     - "toolclass"
     - "url"
-    - "versions"
     properties:
+      versions:
+        type: "array"
+        items:
+          $ref: "#/definitions/ToolVersionV2"
       url:
         type: "string"
         position: 1
@@ -4646,70 +4649,9 @@ definitions:
         type: "boolean"
         position: 12
         description: "Reports whether this tool has been signed."
-      versions:
-        type: "array"
-        position: 13
-        description: "A list of versions for this tool"
-        items:
-          $ref: "#/definitions/ToolVersion"
     description: "A tool (or described tool) describes one pairing of a tool as described\
       \ in a descriptor file (which potentially describes multiple tools) and a Docker\
       \ image."
-  ToolVersion:
-    type: "object"
-    required:
-    - "id"
-    - "metaVersion"
-    - "url"
-    properties:
-      name:
-        type: "string"
-        position: 1
-        description: "The name of the version."
-      url:
-        type: "string"
-        position: 2
-        description: "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`"
-      id:
-        type: "string"
-        position: 3
-        description: "An identifier of the version of this tool for this particular\
-          \ tool registry, for example `v1`"
-      image:
-        type: "string"
-        position: 4
-        description: "The docker path to the image (and version) for this tool. (e.g.\
-          \ quay.io/seqware/seqware_full/1.1)"
-      descriptorType:
-        type: "array"
-        position: 5
-        description: "The type (or types) of descriptors available."
-        items:
-          type: "string"
-          enum:
-          - "CWL"
-          - "WDL"
-      dockerfile:
-        type: "boolean"
-        position: 6
-        description: "Reports if this tool has a dockerfile available."
-      metaVersion:
-        type: "string"
-        position: 7
-        description: "The version of this tool version in the registry. Iterates when\
-          \ fields like the description, author, etc. are updated."
-      verified:
-        type: "boolean"
-        position: 8
-        description: "Reports whether this tool has been verified by a specific organization\
-          \ or individual"
-      verifiedSource:
-        type: "string"
-        position: 9
-        description: "Source of metadata that can support a verified tool, such as\
-          \ an email or URL"
-    description: "A tool version describes a particular iteration of a tool as described\
-      \ by a reference to a specific image and dockerfile."
   ToolVersionV1:
     type: "object"
     required:

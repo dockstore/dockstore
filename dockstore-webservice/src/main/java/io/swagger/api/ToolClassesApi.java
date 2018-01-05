@@ -39,7 +39,7 @@ public class ToolClassesApi {
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
-            "GA4GH", })
+            "GA4GHV2", })
     @io.swagger.annotations.ApiResponses(value = {
             @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
     public Response toolClassesGet(@Context SecurityContext securityContext) throws NotFoundException {

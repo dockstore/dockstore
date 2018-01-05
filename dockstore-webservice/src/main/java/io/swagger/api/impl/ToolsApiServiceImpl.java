@@ -56,7 +56,7 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;;
+import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -206,41 +206,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
         boolean plainTextResponse =
                 value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.toLowerCase().contains("plain");
-        ObjectMapper mapper = new ObjectMapper();
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
-            List<ToolTests> cwlToolTests = new ArrayList<>();
-            Response cwlFilesResponse = getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
-            if (cwlFilesResponse.getStatus() == Response.Status.OK.getStatusCode()) {
-                List<SourceFile> files = (List<SourceFile>)cwlFilesResponse.getEntity();
-                for (SourceFile file : files) {
-                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
-                    cwlToolTests.add(toolTests);
-                }
-            }
-            try {
-                return Response.status(Response.Status.OK).type(plainTextResponse ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(plainTextResponse ? mapper.writeValueAsString(cwlToolTests) : cwlToolTests).build();
-            } catch (IOException e) {
-                return Response.status(Response.Status.BAD_REQUEST).build();
-            }
+            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
         case WDL_TEST_JSON:
         case DOCKSTORE_WDL:
-            List<ToolTests> wdlToolTests = new ArrayList<>();
-            Response wdlFilesResponse = getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, false);
-            if (wdlFilesResponse.getStatus() == Response.Status.OK.getStatusCode()) {
-                List<SourceFile> files = (List<SourceFile>)wdlFilesResponse.getEntity();
-                for (SourceFile file : files) {
-                    wdlToolTests.add(ToolsImplCommon.sourceFileToToolTests(file));
-                }
-            }
-            try {
-                return Response.status(Response.Status.OK).type(plainTextResponse ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(plainTextResponse ? mapper.writeValueAsString(wdlToolTests) : wdlToolTests).build();
-            } catch (IOException e) {
-                return Response.status(Response.Status.BAD_REQUEST).build();
-            }
+            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, false);
         default:
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -435,10 +407,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             switch (type) {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
-                List<SourceFile> sourceFile = getAllSourceFiles(entry.getId(), versionId, type);
+                List<SourceFile> testSourceFiles = getAllSourceFiles(entry.getId(), versionId, type);
+                List<ToolTests> toolTestsList = new ArrayList<>();
+                for (SourceFile file : testSourceFiles) {
+                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
+                    toolTestsList.add(toolTests);
+                }
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? sourceFile.stream().map(SourceFile::getContent).filter(Objects::nonNull)
-                                .collect(Collectors.joining("\n")) : sourceFile).build();
+                        .entity(unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull)
+                                .collect(Collectors.joining("\n")) : toolTestsList).build();
             case DOCKERFILE:
                 final ToolDockerfile dockerfile = (ToolDockerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
@@ -483,7 +460,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     public EntryDAO getDAO() {
         return this.toolDAO;
     }
-
 
     /**
      * Used to parse localised IDs (no URL)

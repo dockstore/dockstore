@@ -15,10 +15,24 @@
  */
 package io.swagger.model;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 @JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class ToolV1 extends ToolPresenter {
+    public ToolV1(Tool tool) {
+        this.tool = tool;
+    }
+
+    @JsonProperty("versions")
+    public List<ToolVersionV1> getVersionsV1() {
+        List<ToolVersion> toolVersions = this.tool.getVersions();
+        return toolVersions.parallelStream().map(toolVersion -> new ToolVersionV1(toolVersion)).collect(Collectors.toList());
+    }
 }
 

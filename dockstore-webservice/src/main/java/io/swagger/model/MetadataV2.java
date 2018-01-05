@@ -22,5 +22,8 @@ import io.swagger.annotations.ApiModel;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
 public class MetadataV2 extends MetadataPresenter {
+    public MetadataV2(Metadata metadata) {
+        this.metadata = metadata;
+    }
 }
 
