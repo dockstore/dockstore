@@ -106,4 +106,26 @@ public class GA4GHV1IT extends GA4GHIT {
             assertVersion(tool);
         }
     }
+
+    /**
+     * This tests if the 4 workflows with a combination of different repositories and either same or matching workflow name
+     * can be retrieved separately
+     *
+     * @throws Exception
+     */
+    @Test
+    public void toolsIdGet4Workflows() throws Exception {
+        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
+        ToolV1 responseObject = response.readEntity(ToolV1.class);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("author1");
+        response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
+        responseObject = response.readEntity(ToolV1.class);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("author2");
+        response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
+        responseObject = response.readEntity(ToolV1.class);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("author3");
+        response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
+        responseObject = response.readEntity(ToolV1.class);
+        assertThat(MAPPER.writeValueAsString(responseObject)).contains("author4");
+    }
 }
