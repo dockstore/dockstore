@@ -40,7 +40,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.GA4GHApi;
+import io.swagger.client.api.GA4GHV1Api;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
@@ -291,7 +291,7 @@ public class SystemClientIT {
     @Test
     public void testGA4GHMetadata() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         final MetadataV1 metadata = toolApi.metadataGet();
         assertTrue(metadata.getFriendlyName().contains("Dockstore"));
     }
@@ -299,7 +299,7 @@ public class SystemClientIT {
     @Test
     public void testGA4GHListContainers() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
@@ -320,7 +320,7 @@ public class SystemClientIT {
     @Test
     public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
@@ -346,7 +346,7 @@ public class SystemClientIT {
     @Test
     public void testGetVerifiedSpecificTool() throws ApiException, IOException, TimeoutException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         ContainertagsApi containertagsApi = new ContainertagsApi(client);
         // register one more to give us something to look at
@@ -376,7 +376,7 @@ public class SystemClientIT {
     @Test
     public void testGetFiles() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
