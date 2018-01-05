@@ -34,8 +34,9 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.DataExceptionMapper;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
+import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -260,7 +261,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi());
         environment.jersey().register(new ToolClassesApi());
-        environment.jersey().register(new DataExceptionMapper());
+        environment.jersey().register(new PersistenceExceptionMapper());
+        environment.jersey().register(new TransactionExceptionMapper());
 
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());
@@ -293,8 +295,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // "*");
 
 
-        /**
-         * Ugly, but it does not look like there is a JPA standard annotation for partial indexes
+        /*
+          Ugly, but it does not look like there is a JPA standard annotation for partial indexes
          */
         Session session = hibernate.getSessionFactory().openSession();
         Transaction transaction = session.getTransaction();
