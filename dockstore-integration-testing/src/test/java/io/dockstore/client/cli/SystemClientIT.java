@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import javax.ws.rs.core.UriBuilder;
+
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -38,23 +40,22 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.GA4GHApi;
+import io.swagger.client.api.GA4GHV1Api;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.Group;
-import io.swagger.client.model.Metadata;
+import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
-import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
-import io.swagger.client.model.ToolVersion;
+import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
@@ -134,8 +135,8 @@ public class SystemClientIT {
         ApiClient client = new ApiClient();
         ApiKeyAuth bearer = (ApiKeyAuth)client.getAuthentication("BEARER");
         bearer.setApiKeyPrefix("BEARER");
-        bearer.setApiKey((correctUser ? parseConfig
-            .getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) : "foobar"));
+        bearer.setApiKey((correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2)
+                : "foobar"));
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         return client;
     }
@@ -284,27 +285,27 @@ public class SystemClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata");
         final List<String> metadataStrings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).contains("CommandLineTool"));
-        assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly-name")));
+        assertTrue(metadataStrings.stream().anyMatch(s -> s.contains("friendly_name")));
     }
 
     @Test
     public void testGA4GHMetadata() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
-        final Metadata metadata = toolApi.metadataGet();
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
+        final MetadataV1 metadata = toolApi.metadataGet();
         assertTrue(metadata.getFriendlyName().contains("Dockstore"));
     }
 
     @Test
     public void testGA4GHListContainers() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        List<Tool> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
+        List<io.swagger.client.model.ToolV1> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
         assertTrue(tools.size() == 3);
 
         // test a few constraints
@@ -319,23 +320,23 @@ public class SystemClientIT {
     @Test
     public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         containersApi.registerManual(c);
 
-        final Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        final io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertTrue(tool != null);
         assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
         // get versions
-        final List<ToolVersion> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        final List<ToolVersionV1> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertTrue(toolVersions.size() == 1);
 
-        final ToolVersion master = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
+        final ToolVersionV1 master = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
         assertTrue(master != null);
         try {
-            final ToolVersion foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
+            final ToolVersionV1 foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
             assertTrue(foobar != null); // this should be unreachable
         } catch (ApiException e) {
             assertTrue(e.getCode() == HttpStatus.SC_NOT_FOUND);
@@ -345,14 +346,14 @@ public class SystemClientIT {
     @Test
     public void testGetVerifiedSpecificTool() throws ApiException, IOException, TimeoutException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         ContainertagsApi containertagsApi = new ContainertagsApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
         final DockstoreTool dockstoreTool = containersApi.registerManual(c);
 
-        Tool tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         assertTrue(tool != null);
         assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
         List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
@@ -375,7 +376,7 @@ public class SystemClientIT {
     @Test
     public void testGetFiles() throws IOException, TimeoutException, ApiException {
         ApiClient client = getAdminWebClient();
-        GA4GHApi toolApi = new GA4GHApi(client);
+        GA4GHV1Api toolApi = new GA4GHV1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
         DockstoreTool c = getContainer();
@@ -385,31 +386,34 @@ public class SystemClientIT {
                 .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
         final ToolDescriptor cwl = toolApi
-                .toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
+                .toolsIdVersionsVersionIdTypeDescriptorGet("cwl","registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();
         String encodedID = "registry.hub.docker.com%2Fseqware%2Fseqware%2Ftest5";
-        URL url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor");
+        URL url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor")
+                .build().toURL();
+
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         //hit up the relative path version
         String encodedPath = "%2FDockstore.cwl";
-        url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/descriptor/"
-                        + encodedPath);
+        url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/descriptor/" + encodedPath)
+                .build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.size() == 1 && strings.get(0).equals("cwlstuff"));
 
         // Get test files
-        url = new URL(
-                basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/plain-CWL/tests/");
+        url = UriBuilder.fromPath(basePath)
+                .path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master/PLAIN_CWL/tests")
+                .build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
-        assertTrue(strings.get(0).equals("testparameterstuff"));
-        assertTrue(strings.get(1).equals("moretestparameterstuff"));
+        assertTrue(strings.get(0).contains("testparameterstuff"));
+        assertTrue(strings.get(0).contains("moretestparameterstuff"));
     }
 
     @Test
@@ -430,7 +434,7 @@ public class SystemClientIT {
         URL url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID);
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test root version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"[\\\"funky source\\\"]\""));
+        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true") && strings.get(0).contains("\"verified_source\":\"[\\\"funky source\\\"]\""));
 
         // TODO: really, we should be using deserialized versions, but this is not currently working
         //        ObjectMapper mapper = new ObjectMapper();
@@ -446,8 +450,9 @@ public class SystemClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test nested version
-        assertTrue(strings.size() == 1 && strings.get(0).contains("\"verified\":true,\"verified-source\":\"funky source\""));
-
+        assertTrue(strings.size() == 1);
+        assertTrue(strings.get(0).contains("\"verified\":true"));
+        assertTrue(strings.get(0).contains("\"verified_source\":\"funky source\""));
     }
 
     // Can't test publish repos that don't exist

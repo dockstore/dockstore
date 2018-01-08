@@ -33,11 +33,11 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.api.NotFoundException;
-import io.swagger.model.Tool;
+import io.swagger.model.ToolV1;
 import org.apache.http.HttpStatus;
 
 /**
- * GET methods for organization related information on path: /api/ga4gh/v1/tools
+ * GET methods for organization related information on path: /api/ga4gh/v2/tools
  */
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended")
 @Api("extendedGA4GH")
@@ -49,9 +49,9 @@ public class ToolsExtendedApi {
     @Path("/tools/{organization}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List tools of an organization", notes = "This endpoint returns tools of an organization. ", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List tools of an organization", notes = "This endpoint returns tools of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
+            @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = ToolV1.class, responseContainer = "List") })
     public Response toolsOrgGet(
             @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
             @Context SecurityContext securityContext) throws NotFoundException {
@@ -83,9 +83,9 @@ public class ToolsExtendedApi {
     @Path("/workflows/{organization}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List workflows of an organization", notes = "This endpoint returns workflows of an organization. ", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List workflows of an organization", notes = "This endpoint returns workflows of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
+            @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = ToolV1.class, responseContainer = "List") })
     public Response workflowsOrgGet(
             @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organization,
             @Context SecurityContext securityContext) throws NotFoundException {
@@ -96,9 +96,9 @@ public class ToolsExtendedApi {
     @Path("/containers/{organization}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @ApiOperation(value = "List entries of an organization", notes = "This endpoint returns entries of an organization. ", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "List entries of an organization", notes = "This endpoint returns entries of an organization. ", response = ToolV1.class, responseContainer = "List")
     @ApiResponses(value = {
-            @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = Tool.class, responseContainer = "List") })
+            @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.", response = ToolV1.class, responseContainer = "List") })
     public Response entriesOrgGet(
             @ApiParam(value = "An organization, for example `cancercollaboratory`", required = true) @PathParam("organization") String organizations,
             @Context SecurityContext securityContext) throws NotFoundException {

@@ -19,21 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
-/**
- * A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.
- **/
 
 /**
  * A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.
  */
 @ApiModel(description = "A tool (or described tool) describes one pairing of a tool as described in a descriptor file (which potentially describes multiple tools) and a Docker image.")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class Tool {
     private String url = null;
 
@@ -71,7 +64,7 @@ public class Tool {
      *
      * @return url
      **/
-    @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`")
+    @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456`", position = 1)
     public String getUrl() {
         return url;
     }
@@ -90,7 +83,7 @@ public class Tool {
      *
      * @return id
      **/
-    @ApiModelProperty(required = true, value = "A unique identifier of the tool, scoped to this registry, for example `123456` or `123456_v1`")
+    @ApiModelProperty(required = true, value = "A unique identifier of the tool, scoped to this registry, for example `123456` or `123456_v1`", position = 2)
     public String getId() {
         return id;
     }
@@ -109,7 +102,7 @@ public class Tool {
      *
      * @return organization
      **/
-    @ApiModelProperty(required = true, value = "The organization that published the image.")
+    @ApiModelProperty(required = true, value = "The organization that published the image.", position = 3)
     public String getOrganization() {
         return organization;
     }
@@ -128,7 +121,7 @@ public class Tool {
      *
      * @return toolname
      **/
-    @ApiModelProperty(value = "The name of the tool.")
+    @ApiModelProperty(value = "The name of the tool.", position = 4)
     public String getToolname() {
         return toolname;
     }
@@ -147,7 +140,7 @@ public class Tool {
      *
      * @return toolclass
      **/
-    @ApiModelProperty(required = true, value = "")
+    @ApiModelProperty(required = true, value = "", position = 5)
     public ToolClass getToolclass() {
         return toolclass;
     }
@@ -166,7 +159,7 @@ public class Tool {
      *
      * @return description
      **/
-    @ApiModelProperty(value = "The description of the tool.")
+    @ApiModelProperty(value = "The description of the tool.", position = 6)
     public String getDescription() {
         return description;
     }
@@ -185,7 +178,7 @@ public class Tool {
      *
      * @return author
      **/
-    @ApiModelProperty(required = true, value = "Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)")
+    @ApiModelProperty(required = true, value = "Contact information for the author of this tool entry in the registry. (More complex authorship information is handled by the descriptor)", position = 7)
     public String getAuthor() {
         return author;
     }
@@ -204,7 +197,7 @@ public class Tool {
      *
      * @return metaVersion
      **/
-    @ApiModelProperty(required = true, value = "The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.")
+    @ApiModelProperty(required = true, value = "The version of this tool in the registry. Iterates when fields like the description, author, etc. are updated.", position = 8)
     public String getMetaVersion() {
         return metaVersion;
     }
@@ -228,7 +221,7 @@ public class Tool {
      *
      * @return contains
      **/
-    @ApiModelProperty(value = "An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)")
+    @ApiModelProperty(value = "An array of IDs for the applications that are stored inside this tool (for example `https://bio.tools/tool/mytum.de/SNAP2/1`)", position = 9)
     public List<String> getContains() {
         return contains;
     }
@@ -247,7 +240,7 @@ public class Tool {
      *
      * @return verified
      **/
-    @ApiModelProperty(value = "Reports whether this tool has been verified by a specific organization or individual")
+    @ApiModelProperty(value = "Reports whether this tool has been verified by a specific organization or individual", position = 10)
     public Boolean getVerified() {
         return verified;
     }
@@ -266,7 +259,7 @@ public class Tool {
      *
      * @return verifiedSource
      **/
-    @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL")
+    @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL", position = 11)
     public String getVerifiedSource() {
         return verifiedSource;
     }
@@ -285,7 +278,7 @@ public class Tool {
      *
      * @return signed
      **/
-    @ApiModelProperty(value = "Reports whether this tool has been signed.")
+    @ApiModelProperty(value = "Reports whether this tool has been signed.", position = 12)
     public Boolean getSigned() {
         return signed;
     }
@@ -309,7 +302,7 @@ public class Tool {
      *
      * @return versions
      **/
-    @ApiModelProperty(required = true, value = "A list of versions for this tool")
+    @ApiModelProperty(required = true, value = "A list of versions for this tool", position = 13)
     public List<ToolVersion> getVersions() {
         return versions;
     }
@@ -319,7 +312,7 @@ public class Tool {
     }
 
     @Override
-    public boolean equals(java.lang.Object o) {
+    public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
@@ -369,7 +362,7 @@ public class Tool {
      * Convert the given object to string with each line indented by 4 spaces
      * (except the first line).
      */
-    private String toIndentedString(java.lang.Object o) {
+    private String toIndentedString(Object o) {
         if (o == null) {
             return "null";
         }

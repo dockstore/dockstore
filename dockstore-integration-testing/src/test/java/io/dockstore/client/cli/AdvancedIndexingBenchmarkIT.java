@@ -182,7 +182,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     }
 
     private void buildIndex() {
-        Response response = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/api/ga4gh/v1/extended/tools/index").request()
+        Response response = client.target("http://localhost:" + SUPPORT.getLocalPort() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended/tools/index").request()
                 .post(null);
         long startTime = System.nanoTime();
         String output = response.readEntity(String.class);

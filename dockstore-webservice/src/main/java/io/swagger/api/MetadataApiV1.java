@@ -24,25 +24,27 @@ import javax.ws.rs.core.SecurityContext;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.hibernate.UnitOfWork;
-import io.swagger.api.factories.ToolClassesApiServiceFactory;
-import io.swagger.model.ToolClass;
+import io.swagger.api.factories.MetadataApiServiceFactory;
+import io.swagger.api.impl.ApiVersionConverter;
+import io.swagger.model.Metadata;
+import io.swagger.model.MetadataV1;
 
-@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/toolClasses")
+@Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/metadata")
 
 @Produces({ "application/json", "text/plain" })
-@io.swagger.annotations.Api(description = "the tool-classes API")
+@io.swagger.annotations.Api(description = "the metadata API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-public class ToolClassesApi {
-    private final ToolClassesApiService delegate = ToolClassesApiServiceFactory.getToolClassesApi();
+public class MetadataApiV1 {
+    private final MetadataApiService delegate = MetadataApiServiceFactory.getMetadataApi();
 
     @GET
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
-            "GA4GHV2", })
+    @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags = {
+            "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
-    public Response toolClassesGet(@Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolClassesGet(securityContext);
+            @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = MetadataV1.class) })
+    public Response metadataGet(@Context SecurityContext securityContext) throws NotFoundException {
+        return ApiVersionConverter.convertToVersion(delegate.metadataGet(securityContext), ApiVersionConverter.ApiVersion.v1);
     }
 }
