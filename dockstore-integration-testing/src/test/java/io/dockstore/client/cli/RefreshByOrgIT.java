@@ -42,6 +42,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -65,8 +66,6 @@ public class RefreshByOrgIT {
         SUPPORT.after();
     }
 
-    // Travis is slow, need to wait up to 1 min for webservice to return
-    private static final int WAIT_TIME = 60000;
     private static final List<String> newDockstoreTestUser2Tools = Arrays.asList("dockstore-tool-imports");
     private static final List<String> newDockstoreTestUser2Workflows = Arrays
             .asList("dockerhubandgithub", "dockstore_empty_repo", "dockstore-whalesay-imports", "parameter_test_workflow",
