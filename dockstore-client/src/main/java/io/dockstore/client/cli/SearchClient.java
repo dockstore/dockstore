@@ -27,7 +27,7 @@ import com.google.gson.annotations.SerializedName;
 import io.dockstore.common.ToolWorkflowDeserializer;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ExtendedGA4GHApi;
-import io.swagger.client.model.Tool;
+import io.swagger.client.model.ToolV1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +113,7 @@ public final class SearchClient {
             Gson gson = new GsonBuilder().registerTypeAdapter(ElasticSearchObject.HitsInternal.class, new ToolWorkflowDeserializer()).create();
             ElasticSearchObject elasticSearchObject = gson.fromJson(s, ElasticSearchObject.class);
             for (ElasticSearchObject.HitsInternal hit : elasticSearchObject.hits.hits) {
-                if (hit.source instanceof Tool) {
+                if (hit.source instanceof ToolV1) {
                     System.out.println("Found deserialized tool");
                 } else {
                     System.out.println("Found deserialized workflow");

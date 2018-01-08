@@ -56,11 +56,11 @@ import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.ExtendedGA4GHApi;
-import io.swagger.client.api.GA4GHApi;
+import io.swagger.client.api.GA4GHV2Api;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
-import io.swagger.client.model.Metadata;
+import io.swagger.client.model.MetadataV2;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
@@ -106,7 +106,7 @@ public class Client {
     private String configFile = null;
     private ContainersApi containersApi;
     private UsersApi usersApi;
-    private GA4GHApi ga4ghApi;
+    private GA4GHV2Api ga4ghApi;
     private ExtendedGA4GHApi extendedGA4GHApi;
 
     private boolean isAdmin = false;
@@ -615,7 +615,7 @@ public class Client {
      */
     private void serverMetadata() {
         try {
-            final Metadata metadata = ga4ghApi.metadataGet();
+            final MetadataV2 metadata = ga4ghApi.metadataGet();
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             out(gson.toJson(metadata));
         } catch (ApiException ex) {
@@ -768,7 +768,7 @@ public class Client {
 
         this.containersApi = new ContainersApi(defaultApiClient);
         this.usersApi = new UsersApi(defaultApiClient);
-        this.ga4ghApi = new GA4GHApi(defaultApiClient);
+        this.ga4ghApi = new GA4GHV2Api(defaultApiClient);
         this.extendedGA4GHApi = new ExtendedGA4GHApi(defaultApiClient);
 
 
