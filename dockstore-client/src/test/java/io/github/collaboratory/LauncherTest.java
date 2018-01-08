@@ -58,7 +58,7 @@ public abstract class LauncherTest {
     public ExpectedException expectedEx = ExpectedException.none();
 
     @Before
-    public void cleanCache() throws ConfigurationException, IOException {
+    public void cleanCache() throws IOException {
         // need to clean cache to make tests predictable
         INIConfiguration config = Utilities.parseConfig(getConfigFile());
         final String cacheDirectory = getCacheDirectory(config);
@@ -70,8 +70,10 @@ public abstract class LauncherTest {
 
     public abstract String getConfigFile();
 
+    public abstract String getConfigFileWithExtraParameters();
+
     @Test
-    public void testCWL() throws Exception {
+    public void testCWL() {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
@@ -85,7 +87,21 @@ public abstract class LauncherTest {
     }
 
     @Test
-    public void testCWLProgrammatic() throws Exception {
+    public void testCWLWithExtraParameters() throws Exception {
+        File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
+        File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
+
+        if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
+            expectedEx.expectMessage("plugin threw an exception");
+        }
+        final LauncherCWL launcherCWL = new LauncherCWL(
+            new String[] { "--config", getConfigFileWithExtraParameters(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
+                jobFile.getAbsolutePath() });
+        launcherCWL.run(CommandLineTool.class);
+    }
+
+    @Test
+    public void testCWLProgrammatic() {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();
@@ -102,7 +118,7 @@ public abstract class LauncherTest {
     }
 
     @Test
-    public void testCWLWorkflowProgrammatic() throws Exception {
+    public void testCWLWorkflowProgrammatic() {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "filtercount.cwl.yaml");
         File jobFile = FileUtils.getFile("src", "test", "resources", "filtercount-job.json");
         ByteArrayOutputStream stdout = new ByteArrayOutputStream();

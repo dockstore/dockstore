@@ -13,21 +13,18 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
+package io.dockstore.webservice.helpers;
 
-import org.apache.commons.io.FileUtils;
+import javax.persistence.PersistenceException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.ext.ExceptionMapper;
+import javax.ws.rs.ext.Provider;
 
-/**
- * @author dyuen
- */
-public class BunnyLauncherTest extends LauncherTest {
-
-    public String getConfigFile() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.ini").getAbsolutePath();
-    }
+@Provider
+public class PersistenceExceptionMapper implements ExceptionMapper<PersistenceException> {
 
     @Override
-    public String getConfigFileWithExtraParameters() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.extra.ini").getAbsolutePath();
+    public Response toResponse(PersistenceException e) {
+        return TransactionExceptionMapper.processResponse(e);
     }
 }

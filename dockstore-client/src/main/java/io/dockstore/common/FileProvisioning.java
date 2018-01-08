@@ -146,7 +146,16 @@ public class FileProvisioning {
         }
     }
 
-    static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries,
+    /**
+     *
+     * @param provisionInterface null to use vfs2, an interface to a provisioning plugin otherwise
+     * @param targetPath where to download from
+     * @param destinationPath where to download to
+     * @param maxRetries number of times to retry
+     * @param download true if this is a download (rather than an upload)
+     * @param threads number of threads, used for display purposes
+     */
+    public static void retryWrapper(ProvisionInterface provisionInterface, String targetPath, Path destinationPath, int maxRetries,
             boolean download, int threads) {
         retryWrapper(provisionInterface, targetPath, destinationPath, maxRetries, download, null, threads);
     }
@@ -204,6 +213,7 @@ public class FileProvisioning {
                 throw new RuntimeException(e.getCause());
             }
         }
+        executorService.shutdownNow();
     }
 
     /**
@@ -481,6 +491,8 @@ public class FileProvisioning {
                 for (Future future : futures) {
                     future.get();
                 }
+
+                executorService.shutdownNow();
 
                 if (pInterface != null) {
                     pInterface.finalizeFileSet(destList, srcList, metadataList);

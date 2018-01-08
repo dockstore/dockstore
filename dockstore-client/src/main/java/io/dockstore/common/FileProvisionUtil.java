@@ -202,11 +202,8 @@ public final class FileProvisionUtil {
      * @param version            The version of the plugin
      * @param pluginName         The name of the plugin
      * @param sourceLocation     The place to download the plugin from
-     * @throws MalformedURLException Exception if URL is invalid like "htp://..."
-     * @throws URISyntaxException    Exception if invalid query like "http:// ..."
      */
-    private static boolean downloadPlugin(String filePluginLocation, String version, String pluginName, String sourceLocation)
-            throws MalformedURLException, URISyntaxException {
+    private static boolean downloadPlugin(String filePluginLocation, String version, String pluginName, String sourceLocation) {
         String pluginZip = String.format("%2$s-%1$s.zip", version, pluginName);
         Path pluginPath = Paths.get(filePluginLocation, pluginZip);
         String destinationLocation = pluginPath.toString();
