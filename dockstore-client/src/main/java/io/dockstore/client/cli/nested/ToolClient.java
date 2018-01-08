@@ -119,7 +119,7 @@ public class ToolClient extends AbstractEntryClient {
     }
 
     private static void printToolList(List<DockstoreTool> containers) {
-        Collections.sort(containers, new ToolComparator());
+        containers.sort(new ToolComparator());
 
         int[] maxWidths = columnWidthsTool(containers);
 
@@ -135,7 +135,7 @@ public class ToolClient extends AbstractEntryClient {
             String description = "";
             String gitUrl = "";
 
-            if (container.getIsPublished()) {
+            if (container.isIsPublished()) {
                 descriptor = "Yes";
             }
 
@@ -151,7 +151,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
 
-            outFormatted(format, container.getToolPath(), description, gitUrl, boolWord(container.getIsPublished()), descriptor, automated);
+            outFormatted(format, container.getToolPath(), description, gitUrl, boolWord(container.isIsPublished()), descriptor, automated);
         }
     }
 
@@ -513,7 +513,7 @@ public class ToolClient extends AbstractEntryClient {
                 DockstoreTool publishedTool;
                 try {
                     publishedTool = containersApi.publish(tool.getId(), pub);
-                    if (publishedTool.getIsPublished()) {
+                    if (publishedTool.isIsPublished()) {
                         out("Successfully published " + fullName);
                     } else {
                         out("Successfully registered " + fullName + ", however it is not valid to publish."); // Should this throw an
@@ -637,7 +637,7 @@ public class ToolClient extends AbstractEntryClient {
                 verifyRequest = SwaggerUtility.createVerifyRequest(false, null);
             } else {
                 // Check if already has been verified
-                if (tagToUpdate.getVerified() && !isScript) {
+                if (tagToUpdate.isVerified() && !isScript) {
                     Scanner scanner = new Scanner(System.in, "utf-8");
                     out("The tag " + versionName + " has already been verified by \'" + tagToUpdate.getVerifiedSource() + "\'");
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
@@ -669,7 +669,7 @@ public class ToolClient extends AbstractEntryClient {
     public void handleInfo(String entryPath) {
         try {
             DockstoreTool container = containersApi.getPublishedContainerByToolPath(entryPath);
-            if (container == null || !container.getIsPublished()) {
+            if (container == null || !container.isIsPublished()) {
                 errorMessage("This container is not published.", Client.COMMAND_ERROR);
             } else {
 
@@ -796,7 +796,7 @@ public class ToolClient extends AbstractEntryClient {
 
                         for (Tag tag : tags) {
                             if (tag.getName().equals(tagName)) {
-                                final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", tag.getHidden().toString()));
+                                final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", tag.isHidden().toString()));
                                 final String cwlPath = optVal(args, "--cwl-path", tag.getCwlPath());
                                 final String wdlPath = optVal(args, "--wdl-path", tag.getWdlPath());
                                 final String dockerfilePath = optVal(args, "--dockerfile-path", tag.getDockerfilePath());
@@ -890,7 +890,7 @@ public class ToolClient extends AbstractEntryClient {
                 }
 
                 final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", tool.getToolMaintainerEmail());
-                final String privateAccess = optVal(args, "--private", tool.getPrivateAccess().toString());
+                final String privateAccess = optVal(args, "--private", tool.isPrivateAccess().toString());
 
                 // Check for correct private access
                 if (!("false".equalsIgnoreCase(privateAccess) || "true".equalsIgnoreCase(privateAccess))) {
@@ -917,7 +917,7 @@ public class ToolClient extends AbstractEntryClient {
                 // The following is only for manual tools as only they can be private tools
                 if (tool.getMode() == DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH) {
                     // Can't set tool maintainer null for private, published repos unless tool author email exists
-                    if (tool.getIsPublished() && tool.getPrivateAccess()) {
+                    if (tool.isIsPublished() && tool.isPrivateAccess()) {
                         if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
                             errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
                                     Client.CLIENT_ERROR);
@@ -930,7 +930,7 @@ public class ToolClient extends AbstractEntryClient {
                     boolean setPrivateAccess = Boolean.parseBoolean(privateAccess);
 
                     // When changing public tool to private and the tool is published, either tool author email or tool maintainer email must be set up
-                    if (setPrivateAccess && !tool.getPrivateAccess() && tool.getIsPublished()) {
+                    if (setPrivateAccess && !tool.isPrivateAccess() && tool.isIsPublished()) {
                         if (Strings.isNullOrEmpty(toolMaintainerEmail) && Strings.isNullOrEmpty(tool.getEmail())) {
                             errorMessage("A published, private tool must have either an tool author email or tool maintainer email set up.",
                                     Client.CLIENT_ERROR);

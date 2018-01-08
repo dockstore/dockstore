@@ -46,7 +46,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -59,26 +58,24 @@ import static org.junit.Assert.assertTrue;
 @Category(ConfidentialTest.class)
 public class WorkflowIT extends BaseIT {
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @Before
-    @Override
-    public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
-    }
-
     private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
 
     @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
+    @Before
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+    }
 
     protected static ApiClient getWebClient() throws IOException, TimeoutException {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -140,8 +137,8 @@ public class WorkflowIT extends BaseIT {
                 refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count()
                         == 2);
         assertTrue("should find two valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                        .filter(WorkflowVersion::getValid).count(),
-                refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count() == 2);
+                        .filter(WorkflowVersion::isValid).count(),
+                refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 2);
 
         assertTrue("bitbucket workflow is not in full mode", refreshBitbucket.getMode() == Workflow.ModeEnum.FULL);
 
@@ -152,8 +149,8 @@ public class WorkflowIT extends BaseIT {
                 refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
                         .count() == 4);
         assertTrue("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
-                        .filter(WorkflowVersion::getValid).count(),
-                refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count() == 4);
+                        .filter(WorkflowVersion::isValid).count(),
+                refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 4);
     }
 
     /**
