@@ -48,12 +48,6 @@ before_script:
 
 script: ./scripts/run-tests.sh
 
-
-
-# master branch will require this till 1.4.0
-dist: trusty
-group: deprecated-2017Q4
-
 notifications:
   webhooks:
     urls:
