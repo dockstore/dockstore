@@ -179,7 +179,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
 
         // Copy Labels
-        SortedSet<Label> labels = (SortedSet)workflow.getLabels();
+        SortedSet<Label> labels = (SortedSet<Label>)workflow.getLabels();
         newWorkflow.setLabels(labels);
 
         // copy to new object
@@ -437,7 +437,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Workflow updateLabels(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
 
@@ -567,7 +567,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         checkUser(user, c);
 
-        return new ArrayList(c.getUsers());
+        return new ArrayList<>(c.getUsers());
     }
 
     @GET
@@ -693,9 +693,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         checkUser(user, repository);
 
-        List<WorkflowVersion> tags = new ArrayList<>();
-        tags.addAll(repository.getVersions());
-        return tags;
+        return new ArrayList<>(repository.getVersions());
     }
 
     @GET
@@ -819,7 +817,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody,
             @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
@@ -1042,7 +1040,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/dag/{workflowVersionId}")
-    @ApiOperation(value = "Get the DAG for a given workflow version", notes = "", response = String.class)
+    @ApiOperation(value = "Get the DAG for a given workflow version", response = String.class)
     public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -1083,6 +1081,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         Workflow workflow = workflowDAO.findById(workflowId);
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        if (workflowVersion == null) {
+            throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
+        }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
             String descFileContent = mainDescriptor.getContent();
@@ -1093,17 +1094,24 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
             String result; // will have the JSON string after done calling the method
             DAGHelper dagHelper = new DAGHelper(toolDAO);
-            if (workflow.getDescriptorType().equals("wdl")) {
+            switch (workflow.getDescriptorType()) {
+            case "wdl":
                 //WDL workflow
-                result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, DAGHelper.Type.TOOLS);
-            } else if (workflow.getDescriptorType().equals("cwl")) {
+                result = dagHelper
+                    .getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, DAGHelper.Type.TOOLS);
+                break;
+            case "cwl":
                 //CWL workflow
-                result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, DAGHelper.Type.TOOLS);
-            } else if (workflow.getDescriptorType().equals("nextflow")) {
+                result = dagHelper
+                    .getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, DAGHelper.Type.TOOLS);
+                break;
+            case "nextflow":
                 // TODO
                 result = "";
-            } else {
+                break;
+            default:
                 result = "";
+                break;
             }
             return result;
         }
@@ -1164,7 +1172,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     /**
      * This method will find the main descriptor file based on the workflow version passed in the parameter
      *
-     * @param workflowVersion
+     * @param workflowVersion workflowVersion with collects sourcefiles
      * @return mainDescriptor
      */
     private SourceFile getMainDescriptorFile(WorkflowVersion workflowVersion) {
