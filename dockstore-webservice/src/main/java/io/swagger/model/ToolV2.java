@@ -31,7 +31,7 @@ public class ToolV2 extends ToolPresenter {
     @JsonProperty("versions")
     public List<ToolVersionV2> getVersionsV2() {
         List<ToolVersion> toolVersions = this.tool.getVersions();
-        return toolVersions.parallelStream().map(toolVersion -> new ToolVersionV2(toolVersion)).collect(Collectors.toList());
+        return toolVersions.stream().map(toolVersion -> new ToolVersionV2(toolVersion)).collect(Collectors.toList());
     }
 }
 

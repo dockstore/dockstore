@@ -32,7 +32,7 @@ public class ToolV1 extends ToolPresenter {
     @JsonProperty("versions")
     public List<ToolVersionV1> getVersionsV1() {
         List<ToolVersion> toolVersions = this.tool.getVersions();
-        return toolVersions.parallelStream().map(toolVersion -> new ToolVersionV1(toolVersion)).collect(Collectors.toList());
+        return toolVersions.stream().map(toolVersion -> new ToolVersionV1(toolVersion)).collect(Collectors.toList());
     }
 }
 
