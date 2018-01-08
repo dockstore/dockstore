@@ -440,7 +440,7 @@ public abstract class SourceCodeRepoInterface {
      * The following methods were duplicated code, but are not well designed for this interface
      */
 
-    abstract SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type);
+    public abstract SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type);
 
     void createTestParameterFiles(Workflow workflow, String id, String branchName, WorkflowVersion version,
         SourceFile.FileType identifiedType) {

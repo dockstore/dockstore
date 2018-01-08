@@ -333,7 +333,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
+    public SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
         throw new UnsupportedOperationException("not implemented/needed for github");
     }
 
