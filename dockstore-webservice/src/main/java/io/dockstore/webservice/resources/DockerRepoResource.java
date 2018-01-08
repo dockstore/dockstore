@@ -17,7 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -209,7 +209,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public Tool updateLabels(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody) {
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
 
@@ -318,7 +318,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         checkEntry(c);
 
         checkUser(user, c);
-        return new ArrayList(c.getUsers());
+        return new ArrayList<>(c.getUsers());
     }
 
     @GET
@@ -638,8 +638,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
                     LOG.info(user.getUsername() + ": RESOURCE CALL: {}", url);
 
                     Gson gson = new Gson();
-                    Map<String, ArrayList> map = new HashMap<>();
-                    map = (Map<String, ArrayList>)gson.fromJson(json, map.getClass());
+                    Map<String, ArrayList> map = gson.fromJson(json, new TypeToken<Map<String, ArrayList>>() { }.getType());
 
                     Map<String, Map<String, String>> map2;
 
@@ -685,9 +684,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         checkUser(user, repository);
 
-        List<Tag> tags = new ArrayList<>();
-        tags.addAll(repository.getTags());
-        return tags;
+        return new ArrayList<>(repository.getTags());
     }
 
     @GET

@@ -1800,7 +1800,7 @@ public abstract class AbstractEntryClient {
 
     public enum Type {
         CWL("cwl"), WDL("wdl"), NEXTFLOW("nextflow"), NONE("none");
-        private final String desc;
+        public final String desc;
 
         Type(String name) {
             desc = name;

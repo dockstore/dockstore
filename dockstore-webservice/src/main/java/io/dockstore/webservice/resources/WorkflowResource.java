@@ -45,6 +45,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -746,6 +747,17 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{workflowId}/nextflow")
+    @ApiOperation(value = "Get the corresponding nextflow.config file on Github.", tags = {
+        "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile nextflow(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag) {
+        return getSourceFile(workflowId, tag, FileType.NEXTFLOW_CONFIG);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{workflowId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
             "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
@@ -770,8 +782,20 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{workflowId}/nextflow/{relative-path}")
+    @ApiOperation(value = "Get the corresponding nextflow documents on Github.", tags = {
+        "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
+    public SourceFile secondaryNextFlowPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
+
+        return getSourceFileByPath(workflowId, tag, FileType.NEXTFLOW, path);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{workflowId}/secondaryCwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+    @ApiOperation(value = "Get the corresponding cwl documents on Github.", tags = {
             "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
@@ -782,11 +806,22 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/secondaryWdl")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+    @ApiOperation(value = "Get the corresponding wdl documents on Github.", tags = {
             "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
             @QueryParam("tag") String tag) {
         return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/secondaryNextflow")
+    @ApiOperation(value = "Get the corresponding Nextflow documents on Github.", tags = {
+        "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
+    public List<SourceFile> secondaryNextflow(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
+        @QueryParam("tag") String tag) {
+        return getAllSecondaryFiles(workflowId, tag, FileType.NEXTFLOW);
     }
 
     @GET
@@ -802,11 +837,16 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
 
-        if (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
+        String workflowDescriptorType = workflow.getDescriptorType().toUpperCase();
+
+        if (workflowDescriptorType.equals(AbstractEntryClient.Type.WDL.toString())) {
             return getAllSourceFiles(workflowId, version, FileType.WDL_TEST_JSON);
-        } else {
+        } else if (workflowDescriptorType.equals(AbstractEntryClient.Type.CWL.toString())) {
             return getAllSourceFiles(workflowId, version, FileType.CWL_TEST_JSON);
+        } else if (workflowDescriptorType.equals(AbstractEntryClient.Type.NEXTFLOW.toString())) {
+            return getAllSourceFiles(workflowId, version, FileType.NEXTFLOW_TEST_PARAMS);
         }
+        throw new CustomWebApplicationException("descriptor type not supported", HttpStatus.SC_BAD_REQUEST);
     }
 
     @PUT
