@@ -181,10 +181,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-
-        if ("main_descriptor".equals(relativePath)) {
-            relativePath = null;
-        }
         return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
