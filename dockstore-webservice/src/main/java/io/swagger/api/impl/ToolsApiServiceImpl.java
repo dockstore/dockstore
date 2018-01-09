@@ -16,7 +16,6 @@
 
 package io.swagger.api.impl;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -38,7 +37,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 import avro.shaded.com.google.common.base.Joiner;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
@@ -53,6 +51,7 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.swagger.api.ApiResponseMessage;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.ToolDescriptor;
@@ -459,6 +458,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     @Override
     public EntryDAO getDAO() {
         return this.toolDAO;
+    }
+
+    @Override
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext)
+            throws NotFoundException {
+        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        // do some magic!
+        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
     }
 
     /**
