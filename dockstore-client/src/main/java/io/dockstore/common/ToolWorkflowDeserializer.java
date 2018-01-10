@@ -26,7 +26,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import io.dockstore.client.cli.SearchClient;
-import io.swagger.client.model.Tool;
+import io.swagger.client.model.ToolV1;
 import io.swagger.client.model.Workflow;
 
 /**
@@ -50,7 +50,7 @@ public class ToolWorkflowDeserializer implements JsonDeserializer<SearchClient.E
         if ("workflow".equals(type)) {
             internalHit.source = gson.fromJson(sourceString, Workflow.class);
         } else if ("tool".equals(type)) {
-            internalHit.source = gson.fromJson(sourceString, Tool.class);
+            internalHit.source = gson.fromJson(sourceString, ToolV1.class);
         }
 
         return internalHit;

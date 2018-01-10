@@ -33,6 +33,8 @@ import org.apache.commons.io.FileUtils;
  */
 public final class CommonTestUtilities {
 
+    // Travis is slow, need to wait up to 1 min for webservice to return
+    public static final int WAIT_TIME = 60000;
     /**
      * confidential testing config, includes keys
      */

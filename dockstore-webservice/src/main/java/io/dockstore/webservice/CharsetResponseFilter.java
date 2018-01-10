@@ -41,7 +41,9 @@ public class CharsetResponseFilter implements ContainerResponseFilter {
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
         MediaType contentType = responseContext.getMediaType();
         if (contentType != null) {
-            responseContext.getHeaders().putSingle("Content-Type", contentType.toString() + ";charset=UTF-8");
+            if (!contentType.toString().toLowerCase().contains("charset=utf-8")) {
+                responseContext.getHeaders().putSingle("Content-Type", contentType.toString() + ";charset=UTF-8");
+            }
         }
     }
 }
