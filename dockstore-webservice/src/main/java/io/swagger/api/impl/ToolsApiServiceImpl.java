@@ -23,12 +23,14 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -478,8 +480,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                 // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
                 primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
                 Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
-                List<ToolFile> toolFiles = getToolFiles(filteredSourceFiles, primaryDescriptorPaths);
+                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type);
                 return Response.ok().entity(toolFiles).build();
             } else {
                 return Response.noContent().build();
@@ -494,8 +495,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                 primaryDescriptorPaths.add(tag.getCwlPath());
                 primaryDescriptorPaths.add(tag.getWdlPath());
                 Set<SourceFile> sourceFiles = tag.getSourceFiles();
-                List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
-                List<ToolFile> toolFiles = getToolFiles(filteredSourceFiles, primaryDescriptorPaths);
+                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type);
                 return Response.ok().entity(toolFiles).build();
             } else {
                 return Response.noContent().build();
@@ -536,8 +536,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
      * @param mainDescriptor    The main descriptor path, used to determine if the file is a primary or secondary descriptor
      * @return  A list of ToolFile for the Tool
      */
-    private List<ToolFile> getToolFiles(List<SourceFile> sourceFiles, List<String> mainDescriptor) {
-        return sourceFiles.stream().map(file -> {
+    private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type) {
+        List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
+        List<ToolFile> toolFiles = filteredSourceFiles.stream().map(file -> {
             ToolFile toolFile = new ToolFile();
             toolFile.setPath(file.getPath());
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
@@ -547,43 +548,45 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             toolFile.setFileType(fileTypeEnum);
             return toolFile;
         }).filter(Objects::nonNull).collect(Collectors.toList());
+        Collections.sort(toolFiles, Comparator.comparing(ToolFile::getPath));
+        return toolFiles;
     }
 
     /**
      * Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL)
      * @param sourceFiles The original source files for the Tool
-     * @param type The type (CWL or WDL)
+     * @param type The type (CWL or WDL), nextflow is not currently handled
      * @return A list of source files that are possibly relevant to the type (CWL or WDL)
      */
     private List<SourceFile> filterSourcefiles(Set<SourceFile> sourceFiles, String type) {
         switch (type) {
         case "CWL":
-            return sourceFiles.stream().filter(sourceFile -> notWDL(sourceFile)).collect(Collectors.toList());
+            return sourceFiles.stream().filter(sourceFile -> isCWL(sourceFile)).collect(Collectors.toList());
         case "WDL":
-            return sourceFiles.stream().filter(sourceFile -> notCWL(sourceFile)).collect(Collectors.toList());
+            return sourceFiles.stream().filter(sourceFile -> isWDL(sourceFile)).collect(Collectors.toList());
         default:
             throw new CustomWebApplicationException("Unknown descriptor type.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
     /**
-     * This checks whether the sourcefile is not CWL
+     * This checks whether the sourcefile is CWL
      * @param sourceFile the sourcefile to check
-     * @return true if the sourcefile is not CWL, false if the sourcefile is CWL
+     * @return true if the sourcefile is CWL-related, false otherwise
      */
-    private boolean notCWL(SourceFile sourceFile) {
+    private boolean isCWL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
-        return !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.DOCKSTORE_CWL);
+        return Stream.of(SourceFile.FileType.CWL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_CWL).anyMatch(type::equals);
     }
 
     /**
-     * This checks whether the sourcefile is not WDL
+     * This checks whether the sourcefile is WDL
      * @param sourceFile the sourcefile to check
-     * @return true if the sourcefile is not WDL, false if the sourcefile is WDL
+     * @return true if the sourcefile is WDL-related, false otherwise
      */
-    private boolean notWDL(SourceFile sourceFile) {
+    private boolean isWDL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
-        return !type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.DOCKSTORE_WDL);
+        return Stream.of(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL).anyMatch(type::equals);
     }
 
     /**
