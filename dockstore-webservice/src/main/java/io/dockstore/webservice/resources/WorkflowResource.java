@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -85,7 +86,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import io.swagger.model.ToolDescriptor;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.json.JSONArray;
@@ -255,8 +255,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     /**
      * Gets a mapping of all workflows from git host, and updates/adds as appropriate
      *
-     * @param sourceCodeRepoInterface
-     * @param user
+     * @param sourceCodeRepoInterface interface to read data from source control
+     * @param user the user that made the request to refresh
      * @param organization            if specified, only refresh if workflow belongs to the organization
      */
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization) {
@@ -836,17 +836,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
-
-        String workflowDescriptorType = workflow.getDescriptorType().toUpperCase();
-
-        if (workflowDescriptorType.equals(AbstractEntryClient.Type.WDL.toString())) {
-            return getAllSourceFiles(workflowId, version, FileType.WDL_TEST_JSON);
-        } else if (workflowDescriptorType.equals(AbstractEntryClient.Type.CWL.toString())) {
-            return getAllSourceFiles(workflowId, version, FileType.CWL_TEST_JSON);
-        } else if (workflowDescriptorType.equals(AbstractEntryClient.Type.NEXTFLOW.toString())) {
-            return getAllSourceFiles(workflowId, version, FileType.NEXTFLOW_TEST_PARAMS);
-        }
-        throw new CustomWebApplicationException("descriptor type not supported", HttpStatus.SC_BAD_REQUEST);
+        FileType testParameterType = workflow.getTestParameterType();
+        return getAllSourceFiles(workflowId, version, testParameterType);
     }
 
     @PUT
@@ -863,35 +854,34 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
-            LOG.info("The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files");
-            throw new CustomWebApplicationException(
-                    "The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files",
-                    HttpStatus.SC_BAD_REQUEST);
+            String msg =
+                "The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter((WorkflowVersion v) -> v.getName().equals(version))
-                .findFirst().get();
+        Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream().filter((WorkflowVersion v) -> v.getName().equals(version))
+            .findFirst();
 
-        if (workflowVersion == null) {
-            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
-            throw new CustomWebApplicationException(
-                    "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.",
-                    HttpStatus.SC_BAD_REQUEST);
+        if (!potentialWorfklowVersion.isPresent()) {
+            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
+
+        WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
 
         if (!workflowVersion.isValid()) {
-            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
-            throw new CustomWebApplicationException(
-                    "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Add new test parameter files
-        FileType fileType =
-                (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
-                        : FileType.WDL_TEST_JSON;
-        createTestParameters(testParameterPaths, workflowVersion, sourceFiles, fileType, fileDAO);
+        FileType testParameterType = workflow.getTestParameterType();
+        createTestParameters(testParameterPaths, workflowVersion, sourceFiles, testParameterType, fileDAO);
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
@@ -910,15 +900,17 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
 
-        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().stream().filter((WorkflowVersion v) -> v.getName().equals(version))
-                .findFirst().get();
+        Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream().filter((WorkflowVersion v) -> v.getName().equals(version))
+            .findFirst();
 
-        if (workflowVersion == null) {
+        if (!potentialWorfklowVersion.isPresent()) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
             throw new CustomWebApplicationException(
                     "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.",
                     HttpStatus.SC_BAD_REQUEST);
         }
+
+        WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
 
         if (!workflowVersion.isValid()) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
@@ -929,15 +921,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Remove test parameter files
-        FileType fileType =
-                (workflow.getDescriptorType().toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
-                        : FileType.WDL_TEST_JSON;
+        FileType testParameterType = workflow.getTestParameterType();
         for (String path : testParameterPaths) {
-            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
-                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
-                        .findFirst().get();
-                sourceFiles.remove(toRemove);
-            }
+            sourceFiles.stream()
+                .filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType).forEach(sourceFiles::remove);
         }
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
@@ -978,7 +965,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             completeWorkflowPath += "/" + workflowName;
         }
 
-        if (workflowName.isEmpty()) {
+        if (Strings.isNullOrEmpty(workflowName)) {
             workflowName = null;
         }
 
@@ -1095,10 +1082,13 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             File tempMainDescriptor = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, secondaryDescContent, tmpDir);
 
             DAGHelper dagHelper = new DAGHelper(toolDAO);
-            if (workflow.getDescriptorType().equals("wdl")) {
+            if (Objects.equals(workflow.getDescriptorType(), AbstractEntryClient.Type.WDL.toString())) {
                 result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, DAGHelper.Type.DAG);
-            } else {
+            } else if (Objects.equals(workflow.getDescriptorType(), AbstractEntryClient.Type.CWL.toString())) {
                 result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, DAGHelper.Type.DAG);
+            } else {
+                // TODO: need to implement NextFlow here to get DAG rendering
+                throw new CustomWebApplicationException("workflow type not supported yet", HttpStatus.SC_NOT_FOUND);
             }
         }
         return result;
@@ -1107,15 +1097,15 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     /**
      * This method will create a json data consisting tool and its data required in a workflow for 'Tool' tab
      *
-     * @param workflowId
-     * @param workflowVersionId
-     * @return String
+     * @param workflowId workflow to grab tools for
+     * @param workflowVersionId version of the workflow to grab tools for
+     * @return json content consisting of a workflow and the tools it uses
      */
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/tools/{workflowVersionId}")
-    @ApiOperation(value = "Get the Tools for a given workflow version", notes = "", response = String.class)
+    @ApiOperation(value = "Get the Tools for a given workflow version", response = String.class)
     public String getTableToolContent(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
             @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
@@ -1191,8 +1181,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     /**
      * This method will find the workflowVersion based on the workflowVersionId passed in the parameter and return it
      *
-     * @param workflow
-     * @param workflowVersionId
+     * @param workflow a workflow to grab a workflow version from
+     * @param workflowVersionId the workflow version to get
      * @return WorkflowVersion
      */
     private WorkflowVersion getWorkflowVersion(Workflow workflow, Long workflowVersionId) {
