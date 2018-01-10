@@ -81,4 +81,12 @@
             create unique index if not exists partial_workflow_name on workflow (sourcecontrol, organization, repository) where workflowname is null
         </sql>
     </changeSet>
+
+    <!-- odd, but required for starting workflow refresh from a clean db -->
+    <changeSet author="dyuen" id="custom_tool_sequence1">
+        <sql>alter sequence container_id_seq increment by 50</sql>
+    </changeSet>
+    <changeSet author="dyuen" id="custom_tag_sequence2">
+        <sql>alter sequence tag_id_seq increment by 50</sql>
+    </changeSet>
 </databaseChangeLog>

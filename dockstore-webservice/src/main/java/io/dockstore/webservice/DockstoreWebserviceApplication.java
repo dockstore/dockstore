@@ -75,8 +75,11 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import io.swagger.api.MetadataApi;
+import io.swagger.api.MetadataApiV1;
 import io.swagger.api.ToolClassesApi;
+import io.swagger.api.ToolClassesApiV1;
 import io.swagger.api.ToolsApi;
+import io.swagger.api.ToolsApiV1;
 import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
@@ -89,8 +92,6 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +105,8 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM
  * @author dyuen
  */
 public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
-    public static final String GA4GH_API_PATH = "/api/ga4gh/v1";
+    public static final String GA4GH_API_PATH = "/api/ga4gh/v2";
+    public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
@@ -217,6 +219,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final ObjectMapper mapper = environment.getObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // For when we want to globally ignore all json properties with null value during serialization
+//        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
@@ -264,6 +268,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new PersistenceExceptionMapper());
         environment.jersey().register(new TransactionExceptionMapper());
 
+        environment.jersey().register(new ToolsApiV1());
+        environment.jersey().register(new MetadataApiV1());
+        environment.jersey().register(new ToolClassesApiV1());
+
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());
 
@@ -293,31 +301,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
         // cors.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, environment.getApplicationContext().getContextPath() +
         // "*");
-
-
-        /*
-          Ugly, but it does not look like there is a JPA standard annotation for partial indexes
-         */
-        Session session = hibernate.getSessionFactory().openSession();
-        Transaction transaction = session.getTransaction();
-        transaction.begin();
-
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS full_workflow_name ON workflow (organization, repository, workflowname) WHERE workflowname IS NOT NULL;")
-                .executeUpdate();
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS partial_workflow_name ON workflow (organization, repository) WHERE workflowname IS NULL;")
-                .executeUpdate();
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS full_tool_name ON tool (registry, namespace, name, toolname) WHERE toolname IS NOT NULL")
-                .executeUpdate();
-        session.createNativeQuery("CREATE UNIQUE INDEX IF NOT EXISTS partial_tool_name ON tool (registry, namespace, name) WHERE toolname IS NULL;")
-                .executeUpdate();
-        try {
-            session.getTransaction().commit();
-        } finally {
-            session.close();
-        }
     }
 
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {

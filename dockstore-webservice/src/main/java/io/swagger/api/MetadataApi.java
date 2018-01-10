@@ -25,7 +25,9 @@ import javax.ws.rs.core.SecurityContext;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.api.factories.MetadataApiServiceFactory;
+import io.swagger.api.impl.ApiVersionConverter;
 import io.swagger.model.Metadata;
+import io.swagger.model.MetadataV2;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/metadata")
 
@@ -39,10 +41,10 @@ public class MetadataApi {
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "Return some metadata that is useful for describing this registry", notes = "Return some metadata that is useful for describing this registry", response = Metadata.class, tags = {
-            "GA4GH", })
+            "GA4GHV2", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = Metadata.class) })
+            @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = MetadataV2.class) })
     public Response metadataGet(@Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.metadataGet(securityContext);
+        return ApiVersionConverter.convertToVersion(delegate.metadataGet(securityContext), ApiVersionConverter.ApiVersion.v2);
     }
 }

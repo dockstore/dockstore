@@ -48,10 +48,6 @@ before_script:
 
 script: ./scripts/run-tests.sh
 
-
-
-
-
 notifications:
   webhooks:
     urls:

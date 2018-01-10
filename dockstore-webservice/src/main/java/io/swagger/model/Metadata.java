@@ -17,8 +17,6 @@ package io.swagger.model;
 
 import java.util.Objects;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -31,7 +29,6 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class Metadata {
     private String version = null;
 

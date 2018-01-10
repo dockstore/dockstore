@@ -19,21 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-
-/**
- * A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
- **/
 
 /**
  * A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.
  */
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
 public class ToolVersion {
     private String name = null;
 
@@ -45,22 +38,23 @@ public class ToolVersion {
 
     private List<DescriptorTypeEnum> descriptorType = new ArrayList<DescriptorTypeEnum>();
     private Boolean dockerfile = null;
+    private String metaVersion = null;
+    private Boolean verified = null;
+    private String verifiedSource = null;
 
     /**
      * The name of the version.
      *
      * @return name
      **/
-    @ApiModelProperty(value = "The name of the version.")
+    @ApiModelProperty(value = "The name of the version.", position = 1)
     public String getName() {
         return name;
     }
 
-    private String metaVersion = null;
-
-    private Boolean verified = null;
-
-    private String verifiedSource = null;
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public ToolVersion name(String name) {
         this.name = name;
@@ -72,13 +66,13 @@ public class ToolVersion {
      *
      * @return url
      **/
-    @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`")
+    @ApiModelProperty(required = true, value = "The URL for this tool in this registry, for example `http://agora.broadinstitute.org/tools/123456/1`", position = 2)
     public String getUrl() {
         return url;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public ToolVersion url(String url) {
@@ -91,13 +85,13 @@ public class ToolVersion {
      *
      * @return id
      **/
-    @ApiModelProperty(required = true, value = "An identifier of the version of this tool for this particular tool registry, for example `v1`")
+    @ApiModelProperty(required = true, value = "An identifier of the version of this tool for this particular tool registry, for example `v1`", position = 3)
     public String getId() {
         return id;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public ToolVersion id(String id) {
@@ -110,13 +104,13 @@ public class ToolVersion {
      *
      * @return image
      **/
-    @ApiModelProperty(value = "The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)")
+    @ApiModelProperty(value = "The docker path to the image (and version) for this tool. (e.g. quay.io/seqware/seqware_full/1.1)", position = 4)
     public String getImage() {
         return image;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public ToolVersion image(String image) {
@@ -129,10 +123,6 @@ public class ToolVersion {
         return this;
     }
 
-    public void setImage(String image) {
-        this.image = image;
-    }
-
     public ToolVersion addDescriptorTypeItem(DescriptorTypeEnum descriptorTypeItem) {
         this.descriptorType.add(descriptorTypeItem);
         return this;
@@ -143,7 +133,7 @@ public class ToolVersion {
      *
      * @return descriptorType
      **/
-    @ApiModelProperty(value = "The type (or types) of descriptors available.")
+    @ApiModelProperty(value = "The type (or types) of descriptors available.", position = 5)
     public List<DescriptorTypeEnum> getDescriptorType() {
         return descriptorType;
     }
@@ -162,7 +152,7 @@ public class ToolVersion {
      *
      * @return dockerfile
      **/
-    @ApiModelProperty(value = "Reports if this tool has a dockerfile available.")
+    @ApiModelProperty(value = "Reports if this tool has a dockerfile available.", position = 6)
     public Boolean getDockerfile() {
         return dockerfile;
     }
@@ -176,9 +166,13 @@ public class ToolVersion {
      *
      * @return metaVersion
      **/
-    @ApiModelProperty(required = true, value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.")
+    @ApiModelProperty(required = true, value = "The version of this tool version in the registry. Iterates when fields like the description, author, etc. are updated.", position = 7)
     public String getMetaVersion() {
         return metaVersion;
+    }
+
+    public void setMetaVersion(String metaVersion) {
+        this.metaVersion = metaVersion;
     }
 
     public ToolVersion metaVersion(String metaVersion) {
@@ -191,13 +185,13 @@ public class ToolVersion {
      *
      * @return verified
      **/
-    @ApiModelProperty(value = "Reports whether this tool has been verified by a specific organization or individual")
+    @ApiModelProperty(value = "Reports whether this tool has been verified by a specific organization or individual", position = 8)
     public Boolean getVerified() {
         return verified;
     }
 
-    public void setMetaVersion(String metaVersion) {
-        this.metaVersion = metaVersion;
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
     }
 
     public ToolVersion verified(Boolean verified) {
@@ -210,13 +204,13 @@ public class ToolVersion {
      *
      * @return verifiedSource
      **/
-    @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL")
+    @ApiModelProperty(value = "Source of metadata that can support a verified tool, such as an email or URL", position = 9)
     public String getVerifiedSource() {
         return verifiedSource;
     }
 
-    public void setVerified(Boolean verified) {
-        this.verified = verified;
+    public void setVerifiedSource(String verifiedSource) {
+        this.verifiedSource = verifiedSource;
     }
 
     public ToolVersion verifiedSource(String verifiedSource) {
@@ -238,10 +232,6 @@ public class ToolVersion {
                 .equals(this.descriptorType, toolVersion.descriptorType) && Objects.equals(this.dockerfile, toolVersion.dockerfile)
                 && Objects.equals(this.metaVersion, toolVersion.metaVersion) && Objects.equals(this.verified, toolVersion.verified)
                 && Objects.equals(this.verifiedSource, toolVersion.verifiedSource);
-    }
-
-    public void setVerifiedSource(String verifiedSource) {
-        this.verifiedSource = verifiedSource;
     }
 
     @Override
