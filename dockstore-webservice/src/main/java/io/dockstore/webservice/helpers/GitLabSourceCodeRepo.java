@@ -313,7 +313,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             boolean validWorkflow;
             file = new SourceFile();
 
-            validWorkflow = LanguageHandlerFactory.getInterface(type, this).isValidWorkflow(content);
+            validWorkflow = LanguageHandlerFactory.getInterface(type).isValidWorkflow(content);
 
             if (validWorkflow) {
                 file.setType(type);

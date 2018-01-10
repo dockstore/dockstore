@@ -184,7 +184,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             // Is workflow descriptor valid?
             boolean validWorkflow = true;
             if (LanguageHandlerFactory.isWorkflow(type)) {
-                validWorkflow = LanguageHandlerFactory.getInterface(type, this).isValidWorkflow(content);
+                validWorkflow = LanguageHandlerFactory.getInterface(type).isValidWorkflow(content);
             }
 
             if (validWorkflow) {

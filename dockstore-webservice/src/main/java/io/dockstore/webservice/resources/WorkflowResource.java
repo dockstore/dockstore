@@ -17,15 +17,12 @@
 package io.dockstore.webservice.resources;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -46,7 +43,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
-import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -63,7 +59,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
-import io.dockstore.webservice.helpers.DAGHelper;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
@@ -80,6 +75,8 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -922,10 +919,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         // Remove test parameter files
         FileType testParameterType = workflow.getTestParameterType();
-        for (String path : testParameterPaths) {
-            sourceFiles.stream()
-                .filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType).forEach(sourceFiles::remove);
-        }
+        testParameterPaths.forEach(path -> sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType));
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
@@ -1073,25 +1067,16 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow workflow = workflowDAO.findById(workflowId);
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
-        String result = null;
 
         if (mainDescriptor != null) {
-            String descFileContent = mainDescriptor.getContent();
-            Map<String, String> secondaryDescContent = new HashMap<>();
             File tmpDir = Files.createTempDir();
-            File tempMainDescriptor = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, secondaryDescContent, tmpDir);
+            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, tmpDir);
 
-            DAGHelper dagHelper = new DAGHelper(toolDAO);
-            if (Objects.equals(workflow.getDescriptorType(), AbstractEntryClient.Type.WDL.toString())) {
-                result = dagHelper.getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, DAGHelper.Type.DAG);
-            } else if (Objects.equals(workflow.getDescriptorType(), AbstractEntryClient.Type.CWL.toString())) {
-                result = dagHelper.getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, DAGHelper.Type.DAG);
-            } else {
-                // TODO: need to implement NextFlow here to get DAG rendering
-                throw new CustomWebApplicationException("workflow type not supported yet", HttpStatus.SC_NOT_FOUND);
-            }
+            LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
+            return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+                LanguageHandlerInterface.Type.DAG, toolDAO);
         }
-        return result;
+        return null;
     }
 
     /**
@@ -1116,34 +1101,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
-            String descFileContent = mainDescriptor.getContent();
-            Map<String, String> secondaryDescContent = new HashMap<>();
-
             File tmpDir = Files.createTempDir();
-            File tempMainDescriptor = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, secondaryDescContent, tmpDir);
-
-            String result; // will have the JSON string after done calling the method
-            DAGHelper dagHelper = new DAGHelper(toolDAO);
-            switch (workflow.getDescriptorType()) {
-            case "wdl":
-                //WDL workflow
-                result = dagHelper
-                    .getContentWDL(workflowVersion.getWorkflowPath(), tempMainDescriptor, secondaryDescContent, DAGHelper.Type.TOOLS);
-                break;
-            case "cwl":
-                //CWL workflow
-                result = dagHelper
-                    .getContentCWL(workflowVersion.getWorkflowPath(), descFileContent, secondaryDescContent, DAGHelper.Type.TOOLS);
-                break;
-            case "nextflow":
-                // TODO
-                result = "";
-                break;
-            default:
-                result = "";
-                break;
-            }
-            return result;
+            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, tmpDir);
+            LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
+            return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
+                LanguageHandlerInterface.Type.TOOLS, toolDAO);
         }
 
         return null;
@@ -1153,29 +1115,18 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
      * Populates the return file with the descriptor and secondaryDescContent as a map between file paths and secondary files
      * @param workflowVersion source control version to consider
      * @param mainDescriptor database record for the main descriptor
-     * @param secondaryDescContent secondary file map
      * @param tmpDir a directory where to create the written out descriptor
-     * @return a file with the content of the descriptor
+     * @return secondary file map (string path -> string content)
      */
-    private File extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion, SourceFile mainDescriptor,
-        Map<String, String> secondaryDescContent, File tmpDir) {
-        File tempMainDescriptor = null;
-        try {
-            // Write main descriptor to file
-            // The use of temporary files is not needed here and might cause new problems
-            tempMainDescriptor = File.createTempFile("main", "descriptor", tmpDir);
-            Files.write(mainDescriptor.getContent(), tempMainDescriptor, StandardCharsets.UTF_8);
-
-            // get secondary files
-            for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
-                if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
-                    secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
-                }
+    private Map<String, String> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion, SourceFile mainDescriptor, File tmpDir) {
+        Map<String, String> secondaryDescContent = new HashMap<>();
+        // get secondary files
+        for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
+            if (!secondaryFile.getPath().equals(workflowVersion.getWorkflowPath())) {
+                secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
             }
-        } catch (IOException e) {
-            LOG.error("unable to create descriptor or secondary files", e);
         }
-        return tempMainDescriptor;
+        return secondaryDescContent;
     }
 
     /**

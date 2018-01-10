@@ -20,20 +20,18 @@ import java.util.Map;
 
 import groovy.util.ConfigObject;
 import groovy.util.ConfigSlurper;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.http.HttpStatus;
 
 /**
  * This class will eventually handle support for NextFlow
  */
 public class NextFlowHandler implements LanguageHandlerInterface {
-    private final SourceCodeRepoInterface sourceCodeRepoInterface;
-
-    NextFlowHandler(SourceCodeRepoInterface sourceCodeRepoInterface) {
-        this.sourceCodeRepoInterface = sourceCodeRepoInterface;
-    }
 
     @Override
     public Entry parseWorkflowContent(Entry entry, String content) {
@@ -57,7 +55,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processImports(String content, Version version) {
+    public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
         ConfigSlurper slurper = new ConfigSlurper();
         ConfigObject parse = slurper.parse(content);
         Map<String, SourceFile> imports = new HashMap<>();
@@ -74,5 +72,11 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         // TODO: does NextFlow have imports beyond the main script file linked to from nextflow.config?
 
         return imports;
+    }
+
+    @Override
+    public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao) {
+        // pending some better bindings to understand nextflow workflows
+        throw new CustomWebApplicationException("Dockstore currently does not parse NextFlow workflows into DAG form", HttpStatus.SC_SERVICE_UNAVAILABLE);
     }
 }

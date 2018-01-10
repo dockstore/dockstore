@@ -215,7 +215,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
 
-                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType, this).isValidWorkflow(content);
+                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(content);
 
                     if (validWorkflow) {
                         // if we have a valid workflow document
