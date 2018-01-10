@@ -40,22 +40,25 @@ import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.swagger.api.ApiResponseMessage;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolFile;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -461,11 +464,126 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext)
-            throws NotFoundException {
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext) throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        // do some magic!
-        return Response.ok().entity(new ApiResponseMessage(ApiResponseMessage.OK, "magic!")).build();
+        Entry entry = getEntry(parsedID);
+        List<String> primaryDescriptorPaths = new ArrayList<>();
+        if (entry instanceof Workflow) {
+            Workflow workflow = (Workflow)entry;
+            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+            Optional<WorkflowVersion> first = workflowVersions.stream()
+                    .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
+            if (first.isPresent()) {
+                WorkflowVersion workflowVersion = first.get();
+                // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
+                primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
+                Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+                List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
+                List<ToolFile> toolFiles = getToolFiles(filteredSourceFiles, primaryDescriptorPaths);
+                return Response.ok().entity(toolFiles).build();
+            } else {
+                return Response.noContent().build();
+            }
+        } else if (entry instanceof Tool) {
+            Tool tool = (Tool)entry;
+            Set<Tag> versions = tool.getVersions();
+            Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
+            if (first.isPresent()) {
+                Tag tag = first.get();
+                // Matching the CWL path or WDL path in a tool automatically indicates that the file is a primary descriptor
+                primaryDescriptorPaths.add(tag.getCwlPath());
+                primaryDescriptorPaths.add(tag.getWdlPath());
+                Set<SourceFile> sourceFiles = tag.getSourceFiles();
+                List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
+                List<ToolFile> toolFiles = getToolFiles(filteredSourceFiles, primaryDescriptorPaths);
+                return Response.ok().entity(toolFiles).build();
+            } else {
+                return Response.noContent().build();
+            }
+        } else {
+            return Response.noContent().build();
+        }
+    }
+
+    /**
+     * Converts SourceFile.FileType to ToolFile.FileTypeEnum
+     * @param fileType  The SourceFile.FileType
+     * @return          The ToolFile.FileTypeEnum
+     */
+    private ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(SourceFile.FileType fileType) {
+        switch (fileType) {
+        case NEXTFLOW_TEST_PARAMS:
+        case CWL_TEST_JSON:
+        case WDL_TEST_JSON:
+            return ToolFile.FileTypeEnum.TEST_FILE;
+        case DOCKERFILE:
+            return ToolFile.FileTypeEnum.DOCKERFILE;
+        case DOCKSTORE_WDL:
+        case DOCKSTORE_CWL:
+            return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
+        case NEXTFLOW_CONFIG:
+            return ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
+        case NEXTFLOW:
+            return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
+        default:
+            return ToolFile.FileTypeEnum.OTHER;
+        }
+    }
+
+    /**
+     * Converts a list of SourceFile to a list of ToolFile.
+     * @param sourceFiles   The list of SourceFile to convert
+     * @param mainDescriptor    The main descriptor path, used to determine if the file is a primary or secondary descriptor
+     * @return  A list of ToolFile for the Tool
+     */
+    private List<ToolFile> getToolFiles(List<SourceFile> sourceFiles, List<String> mainDescriptor) {
+        return sourceFiles.stream().map(file -> {
+            ToolFile toolFile = new ToolFile();
+            toolFile.setPath(file.getPath());
+            ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
+            if (fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) && mainDescriptor.contains(file.getPath())) {
+                fileTypeEnum = ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
+            }
+            toolFile.setFileType(fileTypeEnum);
+            return toolFile;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    /**
+     * Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL)
+     * @param sourceFiles The original source files for the Tool
+     * @param type The type (CWL or WDL)
+     * @return A list of source files that are possibly relevant to the type (CWL or WDL)
+     */
+    private List<SourceFile> filterSourcefiles(Set<SourceFile> sourceFiles, String type) {
+        switch (type) {
+        case "CWL":
+            return sourceFiles.stream().filter(sourceFile -> notWDL(sourceFile)).collect(Collectors.toList());
+        case "WDL":
+            return sourceFiles.stream().filter(sourceFile -> notCWL(sourceFile)).collect(Collectors.toList());
+        default:
+            throw new CustomWebApplicationException("Unknown descriptor type.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * This checks whether the sourcefile is not CWL
+     * @param sourceFile the sourcefile to check
+     * @return true if the sourcefile is not CWL, false if the sourcefile is CWL
+     */
+    private boolean notCWL(SourceFile sourceFile) {
+        SourceFile.FileType type = sourceFile.getType();
+        return !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.DOCKSTORE_CWL);
+    }
+
+    /**
+     * This checks whether the sourcefile is not WDL
+     * @param sourceFile the sourcefile to check
+     * @return true if the sourcefile is not WDL, false if the sourcefile is WDL
+     */
+    private boolean notWDL(SourceFile sourceFile) {
+        SourceFile.FileType type = sourceFile.getType();
+        return !type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.DOCKSTORE_WDL);
     }
 
     /**
