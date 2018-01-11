@@ -590,6 +590,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     private boolean isWDL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
         return Stream.of(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL).anyMatch(type::equals);
+    }
     
     private String cleanRelativePath(String relativePath) {
         String cleanRelativePath = StringUtils.stripStart(relativePath, "./");
