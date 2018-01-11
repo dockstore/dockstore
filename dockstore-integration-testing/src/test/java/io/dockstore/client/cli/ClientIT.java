@@ -18,7 +18,6 @@ package io.dockstore.client.cli;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.TimeoutException;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
@@ -61,23 +60,23 @@ public class ClientIT extends BaseIT{
     }
 
     @Test
-    public void testListEntries() throws IOException, TimeoutException, ApiException {
+    public void testListEntries() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list" });
     }
 
     @Test
-    public void testDebugModeListEntries() throws IOException, TimeoutException, ApiException {
+    public void testDebugModeListEntries() throws IOException, ApiException {
         Client.main(new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list" });
     }
 
     @Test
-    public void testListEntriesWithoutCreds() throws IOException, TimeoutException, ApiException {
+    public void testListEntriesWithoutCreds() throws IOException, ApiException {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(false), "tool", "list" });
     }
 
     @Test
-    public void testListEntriesOnWrongPort() throws IOException, TimeoutException, ApiException {
+    public void testListEntriesOnWrongPort() throws IOException, ApiException {
         systemExit.expectSystemExitWithStatus(Client.CONNECTION_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true, false, false), "tool", "list" });
     }
