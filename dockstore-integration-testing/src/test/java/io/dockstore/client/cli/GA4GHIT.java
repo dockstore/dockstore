@@ -6,12 +6,18 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.jackson.Jackson;
+import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolTests;
 import org.glassfish.jersey.client.ClientProperties;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
@@ -21,15 +27,27 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author gluu
  * @since 03/01/18
  */
-public abstract class GA4GHIT extends BaseIT {
+public abstract class GA4GHIT {
+    protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
+            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
     protected static final ObjectMapper MAPPER = Jackson.newObjectMapper();
-    protected static final javax.ws.rs.client.Client client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client")
-            .property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
+    protected static javax.ws.rs.client.Client client;
     protected final String basePath = String.format("http://localhost:%d/" + getApiVersion(), SUPPORT.getLocalPort());
 
-    protected abstract String getApiVersion();
+    @BeforeClass
+    public static void dropAndRecreateDB() throws Exception {
+        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
+        CommonTestUtilities.cleanState(SUPPORT);
+        client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
+    }
 
-    ;
+    @AfterClass
+    public static void afterClass() {
+        SUPPORT.after();
+    }
+
+    protected abstract String getApiVersion();
 
     /**
      * This tests the /metadata endpoint
@@ -94,8 +112,29 @@ public abstract class GA4GHIT extends BaseIT {
 
     @Test
     public void toolsIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
+        toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal();
+        toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash();
+        toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot();
+    }
+
+    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal() throws Exception {
         Response response = checkedResponse(
                 basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertDescriptor(MAPPER.writeValueAsString(responseObject));
+    }
+
+    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertDescriptor(MAPPER.writeValueAsString(responseObject));
+    }
+
+    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot() throws Exception {
+        Response response = checkedResponse(
+                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertDescriptor(MAPPER.writeValueAsString(responseObject));

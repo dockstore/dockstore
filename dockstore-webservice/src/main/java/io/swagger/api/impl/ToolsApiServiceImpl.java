@@ -437,8 +437,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                     return Response.status(Response.Status.NOT_FOUND).build();
                 } else {
                     final Set<SourceFile> sourceFiles = oldFirst.get().getSourceFiles();
-                    final Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
+                    Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
                             .findFirst();
+                    if (!first1.isPresent()) {
+                        first1 = sourceFiles.stream().filter(file -> (cleanRelativePath(file.getPath()).equalsIgnoreCase(cleanRelativePath(relativePath)))).findFirst();
+                    }
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
                         ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
@@ -459,6 +462,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     @Override
     public EntryDAO getDAO() {
         return this.toolDAO;
+    }
+
+    private String cleanRelativePath(String relativePath) {
+        String cleanRelativePath = StringUtils.stripStart(relativePath, "./");
+        return StringUtils.stripStart(cleanRelativePath, "/");
     }
 
     /**
