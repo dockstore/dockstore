@@ -4256,27 +4256,6 @@ definitions:
         description: "String representation of the tag"
     description: "This describes a descriptive label that can be placed on an entry\
       \ in the dockstore"
-  Metadata:
-    type: "object"
-    required:
-    - "apiVersion"
-    - "version"
-    properties:
-      version:
-        type: "string"
-        description: "The version of this registry"
-      apiVersion:
-        type: "string"
-        description: "The version of the GA4GH tool-registry API supported by this\
-          \ registry"
-      country:
-        type: "string"
-        description: "A country code for the registry (ISO 3166-1 alpha-3)"
-      friendlyName:
-        type: "string"
-        description: "A friendly name that can be used in addition to the hostname\
-          \ to describe a registry"
-    description: "Describes this registry to better allow for mirroring and indexing."
   MetadataV1:
     type: "object"
     required:
