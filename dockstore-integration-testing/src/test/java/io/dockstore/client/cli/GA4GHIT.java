@@ -29,8 +29,6 @@ public abstract class GA4GHIT extends BaseIT {
 
     protected abstract String getApiVersion();
 
-    ;
-
     /**
      * This tests the /metadata endpoint
      *

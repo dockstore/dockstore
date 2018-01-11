@@ -1,0 +1,14 @@
+[
+  {
+    "path": "\/Dockerfile",
+    "file_type": "DOCKERFILE"
+  },
+  {
+    "path": "\/Dockstore.wdl",
+    "file_type": "PRIMARY_DESCRIPTOR"
+  },
+  {
+    "path": "\/test.wdl.json",
+    "file_type": "TEST_FILE"
+  }
+]
