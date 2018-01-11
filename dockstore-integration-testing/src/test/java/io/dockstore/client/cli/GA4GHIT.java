@@ -94,8 +94,30 @@ public abstract class GA4GHIT extends BaseIT {
 
     @Test
     public void toolsIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
+        toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal();
+        toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash();
+        toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot();
+    }
+
+    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal() throws Exception {
         Response response = checkedResponse(
                 basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertDescriptor(MAPPER.writeValueAsString(responseObject));
+    }
+
+    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
+        Response response = checkedResponse(
+                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertDescriptor(MAPPER.writeValueAsString(responseObject));
+    }
+
+    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot() throws Exception {
+        Response response = checkedResponse(
+                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertDescriptor(MAPPER.writeValueAsString(responseObject));
