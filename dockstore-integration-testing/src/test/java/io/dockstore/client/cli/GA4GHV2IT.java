@@ -10,6 +10,7 @@ import io.swagger.client.model.MetadataV2;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolV2;
 import io.swagger.client.model.ToolVersionV2;
+import io.swagger.model.ToolFile;
 import org.junit.Test;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
@@ -86,6 +87,37 @@ public class GA4GHV2IT extends GA4GHIT {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersionV2 responseObject = response.readEntity(ToolVersionV2.class);
         assertVersion(MAPPER.writeValueAsString(responseObject));
+    }
+
+    /**
+     * This tests the /tools/{id}/versions/{version_id}/{type}/files endpoint
+     * @throws Exception
+     */
+    @Test
+    public void toolsIdVersionsVersionIdTypeFile() throws Exception {
+        toolsIdVersionsVersionIdTypeFileCWL();
+        toolsIdVersionsVersionIdTypeFileWDL();
+    }
+
+    private void toolsIdVersionsVersionIdTypeFileCWL() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/files");
+        List<ToolFile> responseObject = response.readEntity(new GenericType<List<ToolFile>>() {
+        });
+
+        final String expected = MAPPER
+                .writeValueAsString(MAPPER.readValue(fixture("fixtures/cwlFiles.json"), new TypeReference<List<ToolFile>>() {
+                }));
+        assertThat(MAPPER.writeValueAsString(responseObject)).isEqualTo(expected);
+    }
+
+    private void toolsIdVersionsVersionIdTypeFileWDL() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/files");
+        List<ToolFile> responseObject = response.readEntity(new GenericType<List<ToolFile>>() {
+        });
+        final String expected = MAPPER
+                .writeValueAsString(MAPPER.readValue(fixture("fixtures/wdlFiles.json"), new TypeReference<List<ToolFile>>() {
+                }));
+        assertThat(MAPPER.writeValueAsString(responseObject)).isEqualTo(expected);
     }
 
     protected void assertVersion(String version) {

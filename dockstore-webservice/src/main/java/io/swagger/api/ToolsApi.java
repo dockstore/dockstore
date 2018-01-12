@@ -30,12 +30,11 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiParam;
 import io.swagger.api.factories.ToolsApiServiceFactory;
 import io.swagger.api.impl.ApiVersionConverter;
-import io.swagger.model.Tool;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolFile;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolV2;
-import io.swagger.model.ToolVersion;
 import io.swagger.model.ToolVersionV2;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools")
@@ -162,6 +161,24 @@ public class ToolsApi {
             @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor", required = true) @PathParam("relative_path") String relativePath,
             @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext, value), ApiVersionConverter.ApiVersion.v2);
+    }
+
+    @GET
+    @Path("/{id}/versions/{version_id}/{type}/files")
+    @UnitOfWork
+    @Produces({ "application/json", "text/plain" })
+    @io.swagger.annotations.ApiOperation(value = "Get an array of objects that contain the relative path and file type.  Intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} endpoint.", notes = "", response = ToolFile.class, responseContainer = "List", tags = {
+            "GA4GHV2", })
+    @io.swagger.annotations.ApiResponses(value = {
+            @io.swagger.annotations.ApiResponse(code = 200, message = "The array of File JSON responses.", response = ToolFile.class, responseContainer = "List"),
+
+            @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolFile.class, responseContainer = "List") })
+    public Response toolsIdVersionsVersionIdTypeFilesGet(
+            @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata. Allowable values are \"CWL\", \"WDL\", \"PLAIN_CWL\", \"PLAIN_WDL\".", required = true, allowableValues = "CWL, WDL") @PathParam("type") String type,
+            @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
+            @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
+            @Context SecurityContext securityContext) throws NotFoundException {
+        return delegate.toolsIdVersionsVersionIdTypeFilesGet(type, id, versionId, securityContext);
     }
 
     @GET

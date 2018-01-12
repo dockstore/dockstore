@@ -844,6 +844,56 @@ paths:
           description: "The tool can not be output in the specified type."
           schema:
             $ref: "#/definitions/ToolDescriptor"
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files:
+    get:
+      tags:
+      - "GA4GHV2"
+      summary: "Get an array of objects that contain the relative path and file type.\
+        \  Intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}\
+        \ endpoint."
+      description: ""
+      operationId: "toolsIdVersionsVersionIdTypeFilesGet"
+      produces:
+      - "application/json"
+      - "text/plain"
+      parameters:
+      - name: "type"
+        in: "path"
+        description: "The output type of the descriptor. If not specified it is up\
+          \ to the underlying implementation to determine which output type to return.\
+          \ Plain types return the bare descriptor while the \"non-plain\" types return\
+          \ a descriptor wrapped with metadata. Allowable values are \"CWL\", \"WDL\"\
+          , \"PLAIN_CWL\", \"PLAIN_WDL\"."
+        required: true
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+      - name: "id"
+        in: "path"
+        description: "A unique identifier of the tool, scoped to this registry, for\
+          \ example `123456`"
+        required: true
+        type: "string"
+      - name: "version_id"
+        in: "path"
+        description: "An identifier of the tool version for this particular tool registry,\
+          \ for example `v1`"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "The array of File JSON responses."
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/ToolFile"
+        404:
+          description: "The tool can not be output in the specified type."
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/ToolFile"
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
@@ -4206,27 +4256,6 @@ definitions:
         description: "String representation of the tag"
     description: "This describes a descriptive label that can be placed on an entry\
       \ in the dockstore"
-  Metadata:
-    type: "object"
-    required:
-    - "apiVersion"
-    - "version"
-    properties:
-      version:
-        type: "string"
-        description: "The version of this registry"
-      apiVersion:
-        type: "string"
-        description: "The version of the GA4GH tool-registry API supported by this\
-          \ registry"
-      country:
-        type: "string"
-        description: "A country code for the registry (ISO 3166-1 alpha-3)"
-      friendlyName:
-        type: "string"
-        description: "A friendly name that can be used in addition to the hostname\
-          \ to describe a registry"
-    description: "Describes this registry to better allow for mirroring and indexing."
   MetadataV1:
     type: "object"
     required:
@@ -4495,6 +4524,21 @@ definitions:
           \ )"
     description: "A tool dockerfile is a document that describes how to build a particular\
       \ Docker image."
+  ToolFile:
+    type: "object"
+    properties:
+      path:
+        type: "string"
+        description: "relative path of the file that can be used with the GA4GH .../{type}/descriptor/{relative_path}\
+          \ endpoint if it's a descriptor"
+      file_type:
+        type: "string"
+        enum:
+        - "TEST_FILE"
+        - "PRIMARY_DESCRIPTOR"
+        - "SECONDARY_DESCRIPTOR"
+        - "DOCKERFILE"
+        - "OTHER"
   ToolTests:
     type: "object"
     required:

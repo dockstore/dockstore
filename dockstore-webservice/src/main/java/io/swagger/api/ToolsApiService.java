@@ -41,6 +41,8 @@ public abstract class ToolsApiService {
     public abstract Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId,
             String relativePath, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
 
+    public abstract Response toolsIdVersionsVersionIdTypeFilesGet(String type,String id,String versionId,SecurityContext securityContext) throws NotFoundException;
+
     public abstract Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
             throws NotFoundException;
 }
