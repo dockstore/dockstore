@@ -175,7 +175,11 @@
             <artifactId>logback-classic</artifactId>
             <optional>true</optional>
         </dependency>
-
+        <dependency>
+            <groupId>net.gpedro.integrations.slack</groupId>
+            <artifactId>slack-webhook</artifactId>
+            <version>1.4.0</version>
+        </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
