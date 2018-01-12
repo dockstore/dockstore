@@ -25,9 +25,7 @@ import java.util.concurrent.TimeoutException;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
-import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -37,10 +35,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.io.FileUtils;
-import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -71,12 +66,6 @@ public class GeneralIT extends BaseIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
-    @Before
-    @Override
-    public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
-    }
-
     @Rule
     public TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {
@@ -87,16 +76,10 @@ public class GeneralIT extends BaseIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
-
-    private static ApiClient getWebClient() throws IOException, TimeoutException {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        ApiClient client = new ApiClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                .runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>())));
-        return client;
+    @Before
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
     }
 
     /**
@@ -147,11 +130,9 @@ public class GeneralIT extends BaseIT {
      * this method will set up the webservice and return the container api
      *
      * @return ContainersApi
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
-    private ContainersApi setupWebService() throws IOException, TimeoutException, ApiException {
+    private ContainersApi setupWebService() throws ApiException {
         // Set up webservice
         ApiClient client = getWebClient();
 
@@ -171,8 +152,6 @@ public class GeneralIT extends BaseIT {
      * this method will set up the databse and select data needed
      *
      * @return cwl/wdl/dockerfile path of the tool's tag in the database
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     private String getPathfromDB(String type) {
@@ -181,9 +160,8 @@ public class GeneralIT extends BaseIT {
         // Select data from DB
         final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", new ScalarHandler<>());
         final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = " + toolID, new ScalarHandler<>());
-        final String path = testingPostgres.runSelectStatement("select " + type + " from tag where id = " + tagID, new ScalarHandler<>());
 
-        return path;
+        return testingPostgres.runSelectStatement("select " + type + " from tag where id = " + tagID, new ScalarHandler<>());
     }
 
     /**
@@ -424,7 +402,7 @@ public class GeneralIT extends BaseIT {
      * @throws IOException
      */
     @Test
-    public void registerUnregisterAndCopy() throws IOException {
+    public void registerUnregisterAndCopy() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -463,7 +441,7 @@ public class GeneralIT extends BaseIT {
     }
 
     @Test
-    public void testCWL2JSON() throws JSONException {
+    public void testCWL2JSON() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2json", "--cwl",
                 sourceFile.getAbsolutePath(), "--script" });
@@ -609,12 +587,10 @@ public class GeneralIT extends BaseIT {
     /**
      * Test to update the default path of CWL and it should change the tag's CWL path in the database
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathCWL() throws IOException, TimeoutException, ApiException {
+    public void testUpdateToolPathCWL() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -636,12 +612,10 @@ public class GeneralIT extends BaseIT {
     /**
      * Test to update the default path of WDL and it should change the tag's WDL path in the database
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathWDL() throws IOException, TimeoutException, ApiException {
+    public void testUpdateToolPathWDL() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -663,12 +637,10 @@ public class GeneralIT extends BaseIT {
     /**
      * Test to update the default path of Dockerfile and it should change the tag's dockerfile path in the database
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathDockerfile() throws IOException, TimeoutException, ApiException {
+    public void testUpdateToolPathDockerfile() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 

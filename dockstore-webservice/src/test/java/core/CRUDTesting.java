@@ -44,7 +44,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.hibernate.Session;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
@@ -150,7 +150,7 @@ public class CRUDTesting {
         // 1) plain version via the Accept
         HttpGet get = new HttpGet("http://localhost:" + RULE.getLocalPort() + DockstoreWebserviceApplication.GA4GH_API_PATH + targetURL);
         get.setHeader("Accept", "text/plain");
-        HttpClient httpClient = new DefaultHttpClient();
+        HttpClient httpClient = HttpClientBuilder.create().build();
         HttpResponse execute = httpClient.execute(get);
         String result = IOUtils.toString(execute.getEntity().getContent(), StandardCharsets.UTF_8);
         Assert.assertTrue(Objects.equals(result, contentCheck));

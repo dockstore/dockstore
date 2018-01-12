@@ -117,7 +117,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String description = getCleanedDescription(workflow.getDescription());
 
-            outFormatted(format, workflow.getPath(), description, gitUrl, boolWord(workflow.getIsPublished()));
+            outFormatted(format, workflow.getPath(), description, gitUrl, boolWord(workflow.isIsPublished()));
         }
     }
 
@@ -411,7 +411,7 @@ public class WorkflowClient extends AbstractEntryClient {
     public void handleInfo(String entryPath) {
         try {
             Workflow workflow = workflowsApi.getPublishedWorkflowByPath(entryPath);
-            if (workflow == null || !workflow.getIsPublished()) {
+            if (workflow == null || !workflow.isIsPublished()) {
                 errorMessage("This workflow is not published.", COMMAND_ERROR);
             } else {
                 Date lastUpdated = Date.from(workflow.getLastUpdated().toInstant());
@@ -501,7 +501,7 @@ public class WorkflowClient extends AbstractEntryClient {
         boolean isPublished = false;
         try {
             existingWorkflow = workflowsApi.getWorkflowByPath(entryPath);
-            isPublished = existingWorkflow.getIsPublished();
+            isPublished = existingWorkflow.isIsPublished();
         } catch (ApiException ex) {
             exceptionMessage(ex, "Unable to publish/unpublish " + newName, Client.API_ERROR);
         }
@@ -565,7 +565,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 verifyRequest = SwaggerUtility.createVerifyRequest(false, null);
             } else {
                 // Check if already has been verified
-                if (versionToUpdate.getVerified() && !isScript) {
+                if (versionToUpdate.isVerified() && !isScript) {
                     Scanner scanner = new Scanner(System.in, "utf-8");
                     out("The version " + versionName + " has already been verified by \'" + versionToUpdate.getVerifiedSource() + "\'");
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
@@ -771,7 +771,7 @@ public class WorkflowClient extends AbstractEntryClient {
             boolean valid = false;
             if (workflow != null) {
                 for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
-                    if (workflowVersion.getValid()) {
+                    if (workflowVersion.isValid()) {
                         valid = true;
                         break;
                     }
@@ -917,7 +917,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                 for (WorkflowVersion workflowVersion : workflowVersions) {
                     if (workflowVersion.getName().equals(name)) {
-                        final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", workflowVersion.getHidden().toString()));
+                        final Boolean hidden = Boolean.valueOf(optVal(args, "--hidden", workflowVersion.isHidden().toString()));
                         final String workflowPath = optVal(args, "--workflow-path", workflowVersion.getWorkflowPath());
 
                         // Check that workflow path matches with the workflow descriptor type
@@ -953,7 +953,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 final String entry = reqVal(args, "--entry");
                 Workflow workflow = workflowsApi.getWorkflowByPath(entry);
 
-                if (workflow.getIsPublished()) {
+                if (workflow.isIsPublished()) {
                     errorMessage("Cannot restub a published workflow. Please unpublish if you wish to restub.", Client.CLIENT_ERROR);
                 }
 
@@ -996,7 +996,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
         boolean valid = false;
         for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
-            if (workflowVersion.getValid()) {
+            if (workflowVersion.isValid()) {
                 valid = true;
                 break;
             }

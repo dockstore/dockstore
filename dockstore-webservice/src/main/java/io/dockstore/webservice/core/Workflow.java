@@ -72,7 +72,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     private WorkflowMode mode = WorkflowMode.STUB;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", required = false)
+    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo")
     private String workflowName;
 
     @Column(nullable = false)
@@ -132,7 +132,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     /**
      * Used during refresh to update containers
      *
-     * @param workflow
+     * @param workflow workflow to update from
      */
     public void update(Workflow workflow) {
         super.update(workflow);
@@ -145,7 +145,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
      * Copies some of the attributes of the source workflow to the target workflow
      * There are two of these which seems redundant.
      *
-     * @param targetWorkflow
+     * @param targetWorkflow workflow to update from this
      * @deprecated seems to overlap with {@link #update(Workflow)} , it is not clear why both exist
      */
     @Deprecated

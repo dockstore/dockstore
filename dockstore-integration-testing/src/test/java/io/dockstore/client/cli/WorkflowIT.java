@@ -16,16 +16,12 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
+import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.Constants;
 import io.dockstore.common.SourceControl;
-import io.dockstore.common.Utilities;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -34,9 +30,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
-import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,7 +40,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -59,11 +52,19 @@ import static org.junit.Assert.assertTrue;
 @Category(ConfidentialTest.class)
 public class WorkflowIT extends BaseIT {
 
+    private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
+    private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
+    private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
+    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
+    private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    @Rule
+    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
     @Before
     @Override
@@ -71,28 +72,8 @@ public class WorkflowIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT);
     }
 
-    private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
-    private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
-    private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
-    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-
-    protected static ApiClient getWebClient() throws IOException, TimeoutException {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        ApiClient client = new ApiClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                .runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>())));
-        return client;
-    }
-
     @Test
-    public void testStubRefresh() throws IOException, TimeoutException, ApiException {
+    public void testStubRefresh() throws ApiException {
         // need to promote user to admin to refresh all stubs
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
@@ -112,7 +93,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testTargettedRefresh() throws IOException, TimeoutException, ApiException {
+    public void testTargettedRefresh() throws ApiException {
         // need to promote user to admin to refresh all stubs
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
@@ -140,8 +121,8 @@ public class WorkflowIT extends BaseIT {
                 refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count()
                         == 2);
         assertTrue("should find two valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                        .filter(WorkflowVersion::getValid).count(),
-                refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count() == 2);
+                        .filter(WorkflowVersion::isValid).count(),
+                refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 2);
 
         assertTrue("bitbucket workflow is not in full mode", refreshBitbucket.getMode() == Workflow.ModeEnum.FULL);
 
@@ -152,19 +133,59 @@ public class WorkflowIT extends BaseIT {
                 refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
                         .count() == 4);
         assertTrue("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
-                        .filter(WorkflowVersion::getValid).count(),
-                refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::getValid).count() == 4);
+                        .filter(WorkflowVersion::isValid).count(),
+                refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 4);
+    }
+
+    @Test
+    public void testNextFlowRefresh() throws ApiException {
+        // need to promote user to admin to refresh all stubs
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        final List<Workflow> workflows = workflowApi.refreshAll();
+
+        for (Workflow workflow: workflows) {
+            assertNotSame("", workflow.getWorkflowName());
+        }
+
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);
+        // need to set paths properly
+        workflowByPathGithub.setWorkflowPath("/nextflow.config");
+        workflowByPathGithub.setDescriptorType(AbstractEntryClient.Type.NEXTFLOW.toString());
+        workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
+
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);
+        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+
+        assertTrue("github workflow is not in full mode", refreshGithub.getMode() == Workflow.ModeEnum.FULL);
+        assertTrue("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(),
+            refreshGithub.getWorkflowVersions().size() == 12);
+        assertTrue("should find 12 versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
+                .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(),
+            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count()
+                == 12);
+        assertTrue("should find 12 valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
+                .filter(WorkflowVersion::isValid).count(),
+            refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 12);
+
+        // nextflow version should have
+        assertTrue("should find 2 files for each version for now: " + refreshGithub.getWorkflowVersions().stream()
+                .filter(workflowVersion -> workflowVersion.getSourceFiles().size() != 2).count(),
+            refreshGithub.getWorkflowVersions().stream().noneMatch(workflowVersion -> workflowVersion.getSourceFiles().size() != 2));
     }
 
     /**
      * This test checks that a user can successfully refresh their workflows (only stubs)
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testRefreshAllForAUser() throws IOException, TimeoutException, ApiException {
+    public void testRefreshAllForAUser() throws ApiException {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         long userId = 1;
@@ -209,12 +230,10 @@ public class WorkflowIT extends BaseIT {
     /**
      * This test does not use admin rights, note that a number of operations go through the UserApi to get this to work
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testPublishingAndListingOfPublished() throws IOException, TimeoutException, ApiException {
+    public void testPublishingAndListingOfPublished() throws ApiException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -245,12 +264,10 @@ public class WorkflowIT extends BaseIT {
     /**
      * Tests manual registration and publishing of a github and bitbucket workflow
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testManualRegisterThenPublish() throws IOException, TimeoutException, ApiException {
+    public void testManualRegisterThenPublish() throws ApiException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -305,11 +322,9 @@ public class WorkflowIT extends BaseIT {
      * Tests that trying to register a duplicate workflow fails, and that registering a non-existant repository failes
      *
      * @throws ApiException
-     * @throws IOException
-     * @throws TimeoutException
      */
     @Test
-    public void testManualRegisterErrors() throws ApiException, IOException, TimeoutException {
+    public void testManualRegisterErrors() throws ApiException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -340,7 +355,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testSecondaryFileOperations() throws IOException, TimeoutException, ApiException {
+    public void testSecondaryFileOperations() throws ApiException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -367,7 +382,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testRelativeSecondaryFileOperations() throws IOException, TimeoutException, ApiException {
+    public void testRelativeSecondaryFileOperations() throws ApiException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");

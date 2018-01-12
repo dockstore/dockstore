@@ -48,15 +48,15 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.client.cwlrunner.CWLRunnerFactory;
-import io.dockstore.common.Utilities;
 import io.dockstore.client.cwlrunner.CWLRunnerInterface;
+import io.dockstore.common.Utilities;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.ExtendedGA4GHApi;
-import io.swagger.client.api.GA4GHV2Api;
+import io.swagger.client.api.ExtendedGa4GhApi;
+import io.swagger.client.api.Ga4Ghv2Api;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
@@ -106,8 +106,8 @@ public class Client {
     private String configFile = null;
     private ContainersApi containersApi;
     private UsersApi usersApi;
-    private GA4GHV2Api ga4ghApi;
-    private ExtendedGA4GHApi extendedGA4GHApi;
+    private Ga4Ghv2Api ga4ghApi;
+    private ExtendedGa4GhApi extendedGA4GHApi;
 
     private boolean isAdmin = false;
     private ToolClient toolClient;
@@ -768,13 +768,13 @@ public class Client {
 
         this.containersApi = new ContainersApi(defaultApiClient);
         this.usersApi = new UsersApi(defaultApiClient);
-        this.ga4ghApi = new GA4GHV2Api(defaultApiClient);
-        this.extendedGA4GHApi = new ExtendedGA4GHApi(defaultApiClient);
+        this.ga4ghApi = new Ga4Ghv2Api(defaultApiClient);
+        this.extendedGA4GHApi = new ExtendedGa4GhApi(defaultApiClient);
 
 
         try {
             if (this.usersApi.getApiClient() != null) {
-                this.isAdmin = this.usersApi.getUser().getIsAdmin();
+                this.isAdmin = this.usersApi.getUser().isIsAdmin();
             }
         } catch (ApiException ex) {
             this.isAdmin = false;

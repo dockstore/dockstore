@@ -184,10 +184,10 @@ class Bridge {
     tasks
   }
 
-  def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.ArrayList[String]] = {
+  def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.List[String]] = {
     val lines = scala.io.Source.fromFile(file).mkString
     val ns = NamespaceWithWorkflow.load(lines, dagResolver)
-    val dependencyMap = new util.LinkedHashMap[String, util.ArrayList[String]]()
+    val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
     ns.workflow.calls foreach { call =>
       val dependencies = new util.ArrayList[String]()
       call.inputMappings foreach { case (key, value) =>

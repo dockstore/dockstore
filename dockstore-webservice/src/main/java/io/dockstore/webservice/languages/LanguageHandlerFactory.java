@@ -17,7 +17,6 @@ package io.dockstore.webservice.languages;
 
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 
 public final class LanguageHandlerFactory {
     private LanguageHandlerFactory() {
@@ -29,27 +28,27 @@ public final class LanguageHandlerFactory {
             || identifiedType == SourceFile.FileType.NEXTFLOW_CONFIG;
     }
 
-    public static LanguageHandlerInterface getInterface(AbstractEntryClient.Type type, SourceCodeRepoInterface sourceCodeRepoInterface) {
+    public static LanguageHandlerInterface getInterface(AbstractEntryClient.Type type) {
         switch (type) {
         case CWL:
-            return new CWLHandler(sourceCodeRepoInterface);
+            return new CWLHandler();
         case WDL:
-            return new WDLHandler(sourceCodeRepoInterface);
+            return new WDLHandler();
         case NEXTFLOW:
-            return new NextFlowHandler(sourceCodeRepoInterface);
+            return new NextFlowHandler();
         default:
             throw new UnsupportedOperationException("language not known");
         }
     }
 
-    public static LanguageHandlerInterface getInterface(SourceFile.FileType type, SourceCodeRepoInterface sourceCodeRepoInterface) {
+    public static LanguageHandlerInterface getInterface(SourceFile.FileType type) {
         switch (type) {
         case DOCKSTORE_CWL:
-            return new CWLHandler(sourceCodeRepoInterface);
+            return new CWLHandler();
         case DOCKSTORE_WDL:
-            return new WDLHandler(sourceCodeRepoInterface);
+            return new WDLHandler();
         case NEXTFLOW_CONFIG:
-            return new NextFlowHandler(sourceCodeRepoInterface);
+            return new NextFlowHandler();
         default:
             throw new UnsupportedOperationException("language not known");
         }

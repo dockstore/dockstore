@@ -22,7 +22,7 @@
     <name>swagger-java-quay-client</name>
 
     <parent>
-        <version>1.4.0-alpha.5-SNAPSHOT</version>
+        <version>1.4.0-alpha.6-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -46,6 +46,7 @@
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
                                 <library>jersey2</library>
+                                <dateLibrary>java8</dateLibrary>
                                 <invokerPackage>io.swagger.quay.client</invokerPackage>
                                 <modelPackage>io.swagger.quay.client.model</modelPackage>
                                 <apiPackage>io.swagger.quay.client.api</apiPackage>
@@ -301,17 +302,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-joda</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.fasterxml.jackson.core</groupId>
-                    <artifactId>jackson-annotations</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
         </dependency>
@@ -320,11 +310,10 @@
             <artifactId>jersey-common</artifactId>
         </dependency>
 
-        <!-- Base64 encoding that works in both JVM and Android -->
         <dependency>
-            <groupId>com.brsanthu</groupId>
-            <artifactId>migbase64</artifactId>
-            <version>2.2</version>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson-datatype-jsr310.version}</version>
         </dependency>
     </dependencies>
 </project>

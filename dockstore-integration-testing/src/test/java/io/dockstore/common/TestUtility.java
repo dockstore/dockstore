@@ -30,7 +30,7 @@ import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
  */
 public final class TestUtility {
 
-    private TestUtility(){
+    private TestUtility() {
         // utility class
     }
 
@@ -43,7 +43,7 @@ public final class TestUtility {
         final File tempFile = File.createTempFile("config", "config", tempDir);
         FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n", StandardCharsets.UTF_8);
         FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? "8080" : "9001") + "\n", StandardCharsets.UTF_8, true);
-        if (useCache){
+        if (useCache) {
             FileUtils.write(tempFile, "use-cache: true\n", StandardCharsets.UTF_8, true);
         }
 

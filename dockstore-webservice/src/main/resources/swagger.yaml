@@ -3423,6 +3423,60 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+  /workflows/{workflowId}/nextflow:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding nextflow.config file on Github."
+      description: "Does not need authentication"
+      operationId: "nextflow"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
+  /workflows/{workflowId}/nextflow/{relative-path}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding nextflow documents on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryNextFlowPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      - name: "relative-path"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/SourceFile"
   /workflows/{workflowId}/publish:
     post:
       tags:
@@ -3532,9 +3586,36 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.cwl file on Github."
+      summary: "Get the corresponding cwl documents on Github."
       description: "Does not need authentication"
       operationId: "secondaryCwl"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow id"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tag"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/SourceFile"
+  /workflows/{workflowId}/secondaryNextflow:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get the corresponding Nextflow documents on Github."
+      description: "Does not need authentication"
+      operationId: "secondaryNextflow"
       produces:
       - "application/json"
       parameters:
@@ -3559,7 +3640,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.wdl file on Github."
+      summary: "Get the corresponding wdl documents on Github."
       description: "Does not need authentication"
       operationId: "secondaryWdl"
       produces:

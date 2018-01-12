@@ -269,7 +269,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Parse file content and update
-        LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type, this);
+        LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
         entry = anInterface.parseWorkflowContent(entry, content);
         return entry;
     }
@@ -432,8 +432,8 @@ public abstract class SourceCodeRepoInterface {
     }
 
     Map<String, SourceFile> resolveImports(String content, SourceFile.FileType fileType, Version version) {
-        LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType, this);
-        return languageInterface.processImports(content, version);
+        LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
+        return languageInterface.processImports(content, version, this);
     }
 
     /**
