@@ -31,7 +31,6 @@ import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -111,7 +110,7 @@ public abstract class LauncherTest {
             expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(getConfigFile(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
-                stdout, stderr, jobFile.getAbsolutePath());
+                stdout, stderr, jobFile.getAbsolutePath(), null);
         launcherCWL.run(CommandLineTool.class);
 
         assertTrue(!stdout.toString().isEmpty());
@@ -128,7 +127,7 @@ public abstract class LauncherTest {
             expectedEx.expectMessage("plugin threw an exception");
         }
         final LauncherCWL launcherCWL = new LauncherCWL(getConfigFile(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
-                stdout, stderr, jobFile.getAbsolutePath());
+                stdout, stderr, jobFile.getAbsolutePath(), null);
         launcherCWL.run(Workflow.class);
 
         assertTrue(!stdout.toString().isEmpty());

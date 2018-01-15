@@ -5,10 +5,10 @@ package io.dockstore.client.cli.nested.NotifcationsClients;
  * @since 12/01/18
  */
 public class NotificationsClient {
-    public static final String PROVISION_INPUT = "Provisioning your input files to your local machine";
-    public static final String RUN = "Provisioning your input files to your local machine";
-    public static final String PROVISION_OUTPUT = "Provisioning your output files to their final destinations";
-    public static final String COMPLETED = "Tool/Workflow launch completed";
+    public static final String PROVISION_INPUT = "provision-in";
+    public static final String RUN = "workflow-start";
+    public static final String PROVISION_OUTPUT = "provision-out";
+    public static final String COMPLETED = "workflow-complete";
     protected static final String USERNAME = "Dockstore CLI";
     protected String hookURL;
     protected String uuid;
@@ -18,16 +18,25 @@ public class NotificationsClient {
         this.uuid = uuid;
     }
 
-    public void sendMessage(String message) {
-        if (hookURL.isEmpty() || hookURL == null || uuid.isEmpty() || uuid == null) {
+    public void sendMessage(String message, boolean success) {
+        if (hookURL == null || hookURL.isEmpty() || uuid == null || uuid.isEmpty()) {
             return;
         } else {
+            String messageToSend = createMessage(message, success);
             if (this.hookURL.contains("://hooks.slack.com")) {
                 SlackClient slackClient = new SlackClient();
-                slackClient.sendMessage(this.hookURL, message);
+                slackClient.sendMessage(this.hookURL, messageToSend);
             } else {
                 return;
             }
         }
+    }
+
+    private String createMessage(String message, boolean success) {
+        String messageToSend = uuid + ": " + message;
+        if (!success) {
+            messageToSend = uuid + ": failed-" + message;
+        }
+        return messageToSend;
     }
 }

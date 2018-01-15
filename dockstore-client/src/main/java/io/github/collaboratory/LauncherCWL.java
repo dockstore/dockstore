@@ -85,7 +85,7 @@ public class LauncherCWL {
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
-    private final String uuid;
+    private final String notificationsUUID;
     private final OutputStream stdoutStream;
     private final OutputStream stderrStream;
     private final Yaml yaml = new Yaml(new SafeConstructor());
@@ -108,7 +108,7 @@ public class LauncherCWL {
         configFilePath = line.getOptionValue("config");
         imageDescriptorPath = line.getOptionValue("descriptor");
         runtimeDescriptorPath = line.getOptionValue("job");
-        uuid = line.getOptionValue("uuid");
+        notificationsUUID = line.getOptionValue("notificationsUUID");
         originalTestParameterFilePath = "";
         this.stdoutStream = null;
         this.stderrStream = null;
@@ -118,18 +118,19 @@ public class LauncherCWL {
 
     /**
      * Constructor for programmatic launch
-     *
-     * @param configFilePath        configuration for this launcher
+     *  @param configFilePath        configuration for this launcher
      * @param imageDescriptorPath   descriptor for the tool itself
      * @param runtimeDescriptorPath descriptor for this run of the tool
      * @param stdoutStream          pass a stream in order to capture stdout from the run tool
      * @param stderrStream          pass a stream in order to capture stderr from the run tool
+     * @param uuid
      */
     public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath, OutputStream stdoutStream,
-            OutputStream stderrStream, String originalTestParameterFilePath) {
+            OutputStream stderrStream, String originalTestParameterFilePath, String uuid) {
         this.configFilePath = configFilePath;
         this.imageDescriptorPath = imageDescriptorPath;
         this.runtimeDescriptorPath = runtimeDescriptorPath;
+        this.notificationsUUID = uuid;
         this.originalTestParameterFilePath = originalTestParameterFilePath;
         fileProvisioning = new FileProvisioning(configFilePath);
         this.stdoutStream = stdoutStream;
@@ -167,7 +168,7 @@ public class LauncherCWL {
         // parse the CWL tool definition without validation
         CWLRunnerFactory.setConfig(config);
         String notificationsWebHookURL = config.getString("notifications", "");
-        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
+        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
         String cwlRunner = CWLRunnerFactory.getCWLRunner();
         CWL cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
@@ -198,7 +199,7 @@ public class LauncherCWL {
 
         Map<String, FileProvisioning.FileInfo> inputsId2dockerMountMap;
         Map<String, List<FileProvisioning.FileInfo>> outputMap;
-        notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT);
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
         System.out.println("Provisioning your input files to your local machine");
         if (cwlObject instanceof Workflow) {
             Workflow workflow = (Workflow)cwlObject;
@@ -226,20 +227,20 @@ public class LauncherCWL {
         String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
 
         // run command
-        notificationsClient.sendMessage(NotificationsClient.RUN);
+        notificationsClient.sendMessage(NotificationsClient.RUN, true);
         System.out.println("Calling out to a cwl-runner to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
         Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
                 globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
         System.out.println();
 
-        notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT);
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
         // push output files
         if (outputMap.size() > 0) {
             System.out.println("Provisioning your output files to their final destinations");
             List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, outputObj);
             this.fileProvisioning.uploadFiles(outputList);
         }
-        notificationsClient.sendMessage(NotificationsClient.COMPLETED);
+        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
     }
 
     /**
