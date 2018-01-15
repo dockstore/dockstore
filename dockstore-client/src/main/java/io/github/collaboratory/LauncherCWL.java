@@ -85,6 +85,7 @@ public class LauncherCWL {
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
+    private final String uuid;
     private final OutputStream stdoutStream;
     private final OutputStream stderrStream;
     private final Yaml yaml = new Yaml(new SafeConstructor());
@@ -107,6 +108,7 @@ public class LauncherCWL {
         configFilePath = line.getOptionValue("config");
         imageDescriptorPath = line.getOptionValue("descriptor");
         runtimeDescriptorPath = line.getOptionValue("job");
+        uuid = line.getOptionValue("uuid");
         originalTestParameterFilePath = "";
         this.stdoutStream = null;
         this.stderrStream = null;
@@ -165,7 +167,7 @@ public class LauncherCWL {
         // parse the CWL tool definition without validation
         CWLRunnerFactory.setConfig(config);
         String notificationsWebHookURL = config.getString("notifications", "");
-        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL);
+        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
         String cwlRunner = CWLRunnerFactory.getCWLRunner();
         CWL cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();

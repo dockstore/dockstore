@@ -11,13 +11,15 @@ public class NotificationsClient {
     public static final String COMPLETED = "Tool/Workflow launch completed";
     protected static final String USERNAME = "Dockstore CLI";
     protected String hookURL;
+    protected String uuid;
 
-    public NotificationsClient(String hookURL) {
+    public NotificationsClient(String hookURL, String uuid) {
         this.hookURL = hookURL;
+        this.uuid = uuid;
     }
 
     public void sendMessage(String message) {
-        if (hookURL.isEmpty() || hookURL == null) {
+        if (hookURL.isEmpty() || hookURL == null || uuid.isEmpty() || uuid == null) {
             return;
         } else {
             if (this.hookURL.contains("://hooks.slack.com")) {
