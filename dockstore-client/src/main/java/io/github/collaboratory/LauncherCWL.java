@@ -118,7 +118,8 @@ public class LauncherCWL {
 
     /**
      * Constructor for programmatic launch
-     *  @param configFilePath        configuration for this launcher
+     *
+     * @param configFilePath        configuration for this launcher
      * @param imageDescriptorPath   descriptor for the tool itself
      * @param runtimeDescriptorPath descriptor for this run of the tool
      * @param stdoutStream          pass a stream in order to capture stdout from the run tool
@@ -200,45 +201,61 @@ public class LauncherCWL {
         Map<String, FileProvisioning.FileInfo> inputsId2dockerMountMap;
         Map<String, List<FileProvisioning.FileInfo>> outputMap;
         notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
+        Map<String, Object> outputObj;
+        String newJsonPath;
         System.out.println("Provisioning your input files to your local machine");
-        if (cwlObject instanceof Workflow) {
-            Workflow workflow = (Workflow)cwlObject;
-            if (!"bunny".equals(cwlRunner)) {
-                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
-                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+        try {
+            if (cwlObject instanceof Workflow) {
+                Workflow workflow = (Workflow)cwlObject;
+                if (!"bunny".equals(cwlRunner)) {
+                    SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
+                    secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+                }
+                // pull input files
+                inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
+
+                // prep outputs, just creates output dir and records what the local output path will be
+                outputMap = prepUploadsWorkflow(workflow, inputsAndOutputsJson);
+
+            } else if (cwlObject instanceof CommandLineTool) {
+                CommandLineTool commandLineTool = (CommandLineTool)cwlObject;
+                // pull input files
+                inputsId2dockerMountMap = pullFiles(commandLineTool, inputsAndOutputsJson);
+
+                // prep outputs, just creates output dir and records what the local output path will be
+                outputMap = prepUploadsTool(commandLineTool, inputsAndOutputsJson);
+            } else {
+                throw new UnsupportedOperationException("CWL target type not supported yet");
             }
-            // pull input files
-            inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
+            // create updated JSON inputs document
+            newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
 
-            // prep outputs, just creates output dir and records what the local output path will be
-            outputMap = prepUploadsWorkflow(workflow, inputsAndOutputsJson);
-
-        } else if (cwlObject instanceof CommandLineTool) {
-            CommandLineTool commandLineTool = (CommandLineTool)cwlObject;
-            // pull input files
-            inputsId2dockerMountMap = pullFiles(commandLineTool, inputsAndOutputsJson);
-
-            // prep outputs, just creates output dir and records what the local output path will be
-            outputMap = prepUploadsTool(commandLineTool, inputsAndOutputsJson);
-        } else {
-            throw new UnsupportedOperationException("CWL target type not supported yet");
+            // run command
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
+            throw e;
         }
-        // create updated JSON inputs document
-        String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
-
-        // run command
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
-        System.out.println("Calling out to a cwl-runner to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
-        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
-                globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
-        System.out.println();
-
+        try {
+            System.out.println("Calling out to a cwl-runner to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
+            outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
+                    globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
+            System.out.println();
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.RUN, false);
+            throw e;
+        }
         notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
         // push output files
-        if (outputMap.size() > 0) {
-            System.out.println("Provisioning your output files to their final destinations");
-            List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, outputObj);
-            this.fileProvisioning.uploadFiles(outputList);
+        try {
+            if (outputMap.size() > 0) {
+                System.out.println("Provisioning your output files to their final destinations");
+                List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, outputObj);
+                this.fileProvisioning.uploadFiles(outputList);
+            }
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
+            throw e;
         }
         notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
     }
