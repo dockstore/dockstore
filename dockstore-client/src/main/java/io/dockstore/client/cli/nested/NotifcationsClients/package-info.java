@@ -16,7 +16,8 @@
 
 /**
  * Implements notifications with various applications (Slack) during Dockstore launch commands
- *
+ * New clients (such as Slack should be added here and implement Notifications).
+ * The client should be resolved in NotificationsClient.java (currently only Slack)
  * @author gluu
  */
 package io.dockstore.client.cli.nested.NotifcationsClients;

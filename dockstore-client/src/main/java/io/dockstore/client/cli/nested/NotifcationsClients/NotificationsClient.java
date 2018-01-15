@@ -18,6 +18,11 @@ public class NotificationsClient {
         this.uuid = uuid;
     }
 
+    /**
+     * Send message using the webhook URL originally provided
+     * @param message   Base message indicating the step of the tool/workflow
+     * @param success   The status of the step
+     */
     public void sendMessage(String message, boolean success) {
         if (hookURL == null || hookURL.isEmpty() || uuid == null || uuid.isEmpty()) {
             return;
@@ -32,6 +37,12 @@ public class NotificationsClient {
         }
     }
 
+    /**
+     * Construct the fail/success message to send
+     * @param message   The base message which does not include failure/success status
+     * @param success   Whether the step of the workflow/tool failed/succeeded
+     * @return
+     */
     private String createMessage(String message, boolean success) {
         String messageToSend = uuid + ": " + message;
         if (!success) {
