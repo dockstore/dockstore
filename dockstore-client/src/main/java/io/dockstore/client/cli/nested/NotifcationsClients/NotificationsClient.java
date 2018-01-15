@@ -24,8 +24,10 @@ public class NotificationsClient {
      * @param success   The status of the step
      */
     public void sendMessage(String message, boolean success) {
-        if (hookURL == null || hookURL.isEmpty() || uuid == null || uuid.isEmpty()) {
+        if (uuid == null || uuid.isEmpty()) {
             return;
+        } else if (hookURL == null || hookURL.isEmpty()) {
+            System.err.println("Notifications UUID is specified but no notifications webhook URL found in config file");
         } else {
             String messageToSend = createMessage(message, success);
             if (this.hookURL.contains("://hooks.slack.com")) {
