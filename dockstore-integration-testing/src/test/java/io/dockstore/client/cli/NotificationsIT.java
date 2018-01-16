@@ -2,10 +2,13 @@ package io.dockstore.client.cli;
 
 import java.io.IOException;
 
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -34,6 +37,13 @@ public class NotificationsIT extends BaseIT {
         systemErrRule.clearLog();
     }
 
+    @Override
+    @Before
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanState(SUPPORT);
+        clearLogs();
+    }
+
     /**
      * Tests if an error is displayed when UUID is specified with no webhook URL
      *
@@ -45,7 +55,7 @@ public class NotificationsIT extends BaseIT {
                 new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
                         firstToolJSON, "--uuid", "potato", "--debug" });
         String log = systemErrRule.getLog();
-        Assert.assertTrue(log.contains("Notifications UUID is specified but no notifications webhook URL found in config file"));
+        Assert.assertTrue(log, log.contains("Notifications UUID is specified but no notifications webhook URL found in config file"));
     }
 
     /**
@@ -58,8 +68,8 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithInvalidNotifications(true), "tool", "launch",
                 "--local-entry", firstTool, "--json", firstToolJSON, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log.contains("Sending notifications message"));
-        Assert.assertTrue(log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, log.contains("Sending notifications message"));
+        Assert.assertTrue(log, log.contains("Can not resolve webhook URL"));
     }
 
     /**
@@ -73,8 +83,8 @@ public class NotificationsIT extends BaseIT {
                 new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch", "--local-entry",
                         firstTool, "--json", firstToolJSON, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log.contains("Sending notifications message"));
-        Assert.assertTrue(!log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, log.contains("Sending notifications message"));
+        Assert.assertTrue(log, !log.contains("Can not resolve webhook URL"));
     }
 
     /**
@@ -88,8 +98,8 @@ public class NotificationsIT extends BaseIT {
                 new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch", "--local-entry",
                         firstTool, "--json", firstToolJSON, "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(!log.contains("Sending notifications message"));
-        Assert.assertTrue(!log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, !log.contains("Sending notifications message"));
+        Assert.assertTrue(log, !log.contains("Can not resolve webhook URL"));
     }
 
     // WDL TESTS
@@ -105,7 +115,7 @@ public class NotificationsIT extends BaseIT {
                 new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstWorkflow,
                         "--json", firstWorkflowJSON, "--uuid", "potato", "--debug" });
         String log = systemErrRule.getLog();
-        Assert.assertTrue(log.contains("Notifications UUID is specified but no notifications webhook URL found in config file"));
+        Assert.assertTrue(log, log.contains("Notifications UUID is specified but no notifications webhook URL found in config file"));
     }
 
     /**
@@ -118,8 +128,8 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithInvalidNotifications(true), "tool", "launch",
                 "--local-entry", firstWorkflow, "--json", firstWorkflowJSON, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log.contains("Sending notifications message"));
-        Assert.assertTrue(log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, log.contains("Sending notifications message"));
+        Assert.assertTrue(log, log.contains("Can not resolve webhook URL"));
     }
 
     /**
@@ -132,8 +142,8 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch",
                 "--local-entry", firstWorkflow, "--json", firstWorkflowJSON, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log.contains("Sending notifications message"));
-        Assert.assertTrue(!log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, log.contains("Sending notifications message"));
+        Assert.assertTrue(log, !log.contains("Can not resolve webhook URL"));
     }
 
     /**
@@ -146,7 +156,7 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch",
                 "--local-entry", firstWorkflow, "--json", firstWorkflowJSON, "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(!log.contains("Sending notifications message"));
-        Assert.assertTrue(!log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, !log.contains("Sending notifications message"));
+        Assert.assertTrue(log, !log.contains("Can not resolve webhook URL"));
     }
 }
