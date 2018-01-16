@@ -73,6 +73,7 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -304,15 +305,15 @@ public class SystemClientIT {
         containersApi.registerManual(c);
 
         List<io.swagger.client.model.ToolV1> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
-        assertTrue(tools.size() == 3);
+        assertEquals(7, tools.size());
 
         // test a few constraints
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
-        assertTrue(tools.size() == 1);
+        assertEquals(1, tools.size());
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.QUAY_IO.toString(), null, null, null, null, null, null, null);
-        assertTrue(tools.size() == 1);
+        assertEquals(1, tools.size());
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, Registry.DOCKER_HUB.toString(), null, null, null, null, null, null, null);
-        assertTrue(tools.size() == 0);
+        assertEquals(0, tools.size());
     }
 
     @Test
