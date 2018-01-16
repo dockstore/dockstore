@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -39,10 +40,12 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
 
 /**
  * Stores end user information
@@ -120,7 +123,11 @@ public class User implements Principal {
      * @param tokenDAO
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
-        Token githubToken = tokenDAO.findGithubByUserId(getId()).get(0);
+        List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
+        if (githubByUserId.isEmpty()) {
+            throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.", HttpStatus.SC_FORBIDDEN);
+        }
+        Token githubToken = githubByUserId.get(0);
         GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(getUsername(), githubToken.getContent(), null);
         gitHubSourceCodeRepo.getUserMetadata(this);
     }
