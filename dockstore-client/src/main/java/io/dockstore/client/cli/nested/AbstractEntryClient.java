@@ -1065,12 +1065,13 @@ public abstract class AbstractEntryClient {
         final String yamlRun = optVal(args, "--yaml", null);
         String jsonRun = optVal(args, "--json", null);
         final String csvRuns = optVal(args, "--tsv", null);
+        final String uuid = optVal(args, "--uuid", null);
 
         if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)) {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
 
-        handleCWLLaunch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, null);
+        handleCWLLaunch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, null, uuid);
 
     }
 
@@ -1080,11 +1081,13 @@ public abstract class AbstractEntryClient {
      * @param yamlRun      runtime descriptor, one of these is required
      * @param jsonRun      runtime descriptor, one of these is required
      * @param csvRuns      runtime descriptor, one of these is required
+     * @param uuid         uuid that was optional specified for notifications
      * @throws IOException
      * @throws ApiException
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream,
-            OutputStream stderrStream) throws IOException, ApiException {
+            OutputStream stderrStream, String uuid) throws IOException, ApiException {
         String originalTestParameterFilePath = getOriginalTestParameterFilePath(yamlRun, jsonRun, csvRuns);
         if (!SCRIPT.get()) {
             getClient().checkForCWLDependencies();
@@ -1133,7 +1136,7 @@ public abstract class AbstractEntryClient {
                         final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                         FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
                         final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(),
-                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath);
+                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath, uuid);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -1142,7 +1145,7 @@ public abstract class AbstractEntryClient {
                     }
                 } else {
                     final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, stdoutStream,
-                            stderrStream, originalTestParameterFilePath);
+                            stderrStream, originalTestParameterFilePath, uuid);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {
@@ -1186,7 +1189,7 @@ public abstract class AbstractEntryClient {
                         // final String stringMapAsString = gson.toJson(stringMap);
                         // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
                         final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(),
-                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath);
+                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath, uuid);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -1770,6 +1773,7 @@ public abstract class AbstractEntryClient {
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
         out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
         out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
+        out("  --uuid                              Allows you to specify a uuid for 3rd party notifications");
         printHelpFooter();
     }
 

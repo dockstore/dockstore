@@ -49,4 +49,26 @@ public final class TestUtility {
 
         return tempFile.getAbsolutePath();
     }
+
+    /**
+     * Returns a path to a temporary configuration file with a invalid notifications webhook URL
+     * All slack webhook URLs are apparently valid.
+     */
+    public static String getConfigFileLocationWithInvalidNotifications(boolean correctUser) throws IOException {
+        String configFileLocation = getConfigFileLocation(correctUser);
+        File f = new File(configFileLocation);
+        FileUtils.write(f, "notifications: " + "potato" + "\n", StandardCharsets.UTF_8, true);
+        return f.getAbsolutePath();
+    }
+
+    /**
+     * Returns a path to a temporary configuration file with a valid notifications webhook URL
+     * All slack webhook URLs are apparently valid.
+     */
+    public static String getConfigFileLocationWithValidNotifications(boolean correctUser) throws IOException {
+        String configFileLocation = getConfigFileLocation(correctUser);
+        File f = new File(configFileLocation);
+        FileUtils.write(f, "notifications: " + "https://hooks.slack.com/services/potato" + "\n", StandardCharsets.UTF_8, true);
+        return f.getAbsolutePath();
+    }
 }
