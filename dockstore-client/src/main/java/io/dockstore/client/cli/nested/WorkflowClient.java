@@ -335,7 +335,7 @@ public class WorkflowClient extends AbstractEntryClient {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {
                                 try {
-                                    launchWdlInternal(entry, false, jsonRun, wdlOutputTarget);
+                                    launchWdlInternal(entry, false, jsonRun, wdlOutputTarget, uuid);
                                 } catch (IOException e) {
                                     errorMessage("Could not launch entry", IO_ERROR);
                                 }
@@ -382,7 +382,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 handleCWLLaunch(entry, true, yamlRun, jsonRun, tsvRuns, null, null, uuid);
                 break;
             case WDL:
-                launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
+                launchWdlInternal(entry, true, jsonRun, wdlOutputTarget, uuid);
                 break;
             default:
                 Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
@@ -395,7 +395,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 case WDL:
                     out("This is a WDL file.. Please put an extension to the entry file name.");
                     out("Launching entry file as a WDL file..");
-                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget);
+                    launchWdlInternal(entry, true, jsonRun, wdlOutputTarget, uuid);
                     break;
                 default:
                     errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
