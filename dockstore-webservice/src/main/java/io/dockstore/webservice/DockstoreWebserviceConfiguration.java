@@ -89,6 +89,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String uiPort = null;
 
+    private String sqsURL;
+
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
         return database;
@@ -310,6 +312,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setUiPort(String uiPort) {
         this.uiPort = uiPort;
+    }
+
+    @JsonProperty
+    public String getSqsURL() {
+        return sqsURL;
+    }
+
+    public void setSqsURL(String sqsURL) {
+        this.sqsURL = sqsURL;
     }
 
     public class ElasticSearchConfig {

@@ -1680,6 +1680,37 @@ paths:
             $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
+  /containers/{containerId}/requestDOI/{tagId}:
+    post:
+      tags:
+      - "containertags"
+      summary: "Request a DOI for this version of a tool"
+      description: ""
+      operationId: "requestDOIForToolTag"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "containerId"
+        in: "path"
+        description: "Tool to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tagId"
+        in: "path"
+        description: "Tag to verify."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Tag"
+      security:
+      - BEARER: []
   /containers/{containerId}/secondaryCwl:
     get:
       tags:
@@ -1907,6 +1938,7 @@ paths:
         enum:
         - "CWL"
         - "WDL"
+        - "NFL"
       responses:
         200:
           description: "successful operation"
@@ -3529,6 +3561,37 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+  /workflows/{workflowId}/requestDOI/{workflowVersionId}:
+    put:
+      tags:
+      - "workflows"
+      summary: "Request a DOI for this version of a workflow"
+      description: ""
+      operationId: "requestDOIForWorkflowVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "workflowVersionId"
+        in: "path"
+        description: "workflowVersionId"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/WorkflowVersion"
+      security:
+      - BEARER: []
   /workflows/{workflowId}/resetVersionPaths:
     put:
       tags:
@@ -4498,6 +4561,16 @@ definitions:
       verifiedSource:
         type: "string"
         description: "Verified source for the version"
+      doiURL:
+        type: "string"
+        description: "This is a URL for the DOI for the version of the entry"
+      doiStatus:
+        type: "string"
+        description: "This indicates the DOI status"
+        enum:
+        - "NOT_REQUESTED"
+        - "REQUESTED"
+        - "CREATED"
       size:
         type: "integer"
         format: "int64"
@@ -5086,6 +5159,16 @@ definitions:
       verifiedSource:
         type: "string"
         description: "Verified source for the version"
+      doiURL:
+        type: "string"
+        description: "This is a URL for the DOI for the version of the entry"
+      doiStatus:
+        type: "string"
+        description: "This indicates the DOI status"
+        enum:
+        - "NOT_REQUESTED"
+        - "REQUESTED"
+        - "CREATED"
       workingDirectory:
         type: "string"
       last_modified:

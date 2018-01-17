@@ -150,6 +150,7 @@
         <module>swagger-java-quay-client</module>
         <module>dockstore-client</module>
         <module>dockstore-integration-testing</module>
+        <module>dockstore-event-consumer</module>
     </modules>
 
 
@@ -324,6 +325,11 @@
                 <artifactId>jersey-media-multipart</artifactId>
                 <version>${jersey-version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-json-jackson</artifactId>
+                <version>2.25.1</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.swagger</groupId>
@@ -349,7 +355,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.5</version>
+                <version>3.6</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -379,7 +385,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.1</version>
+                <version>2.2</version>
             </dependency>
 
             <dependency>
@@ -625,7 +631,7 @@
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.9.2</version>
+                <version>1.9.3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -666,6 +672,21 @@
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson-datatype-jsr310.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dockstore</groupId>
+                <artifactId>zenodo-client-generated</artifactId>
+                <version>0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>5.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>5.0.3</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
