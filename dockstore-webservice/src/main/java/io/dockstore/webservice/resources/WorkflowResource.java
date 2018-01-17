@@ -169,7 +169,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         newWorkflow.setOrganization(workflow.getOrganization());
         newWorkflow.setRepository(workflow.getRepository());
         newWorkflow.setSourceControl(workflow.getSourceControl());
-        newWorkflow.setPath(workflow.getPath());
         newWorkflow.setIsPublished(workflow.getIsPublished());
         newWorkflow.setGitUrl(workflow.getGitUrl());
         newWorkflow.setLastUpdated(workflow.getLastUpdated());
@@ -459,7 +458,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         checkUser(user, c);
 
-        Workflow duplicate = workflowDAO.findByPath(workflow.getPath());
+        LOG.info(workflow.getSourceControl().name());
+        Workflow duplicate = workflowDAO.findByPath(workflow.getPath(), false);
 
         if (duplicate != null && duplicate.getId() != workflowId) {
             LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getPath());
@@ -477,7 +477,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
         oldWorkflow.setWorkflowName(newWorkflow.getWorkflowName());
-        oldWorkflow.setPath(newWorkflow.getPath());
         oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
@@ -653,7 +652,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
 
-        Workflow workflow = workflowDAO.findByPath(path);
+        Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
         checkUser(user, workflow);
         return workflow;
@@ -665,7 +664,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Workflow workflow = workflowDAO.findPublishedByPath(path);
+        Workflow workflow = workflowDAO.findByPath(path, true);
         checkEntry(workflow);
         return workflow;
     }
@@ -969,7 +968,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                             + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath);
+        Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false);
         if (duplicate != null) {
             throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -987,7 +986,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
         newWorkflow.setDefaultWorkflowPath(defaultWorkflowPath);
         newWorkflow.setWorkflowName(workflowName);
-        newWorkflow.setPath(sourceControlEnum.toString() + '/' + completeWorkflowPath);
         newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
 

@@ -5013,10 +5013,6 @@ definitions:
         - "GITHUB"
         - "BITBUCKET"
         - "GITLAB"
-      path:
-        type: "string"
-        description: "This is a generated full workflow path including organization,\
-          \ repository name, and workflow name"
       descriptorType:
         type: "string"
         description: "This is a descriptor type for the workflow, either CWL or WDL\
@@ -5028,6 +5024,8 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
+      path:
+        type: "string"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"

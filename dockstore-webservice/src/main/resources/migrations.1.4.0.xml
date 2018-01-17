@@ -89,4 +89,12 @@
     <changeSet author="dyuen" id="custom_tag_sequence2">
         <sql>alter sequence tag_id_seq increment by 50</sql>
     </changeSet>
+
+    <changeSet id="dropWorkflowPath" author="agduncan">
+        <dropColumn tableName="workflow" columnName="path"></dropColumn>
+    </changeSet>
+
+    <!--<changeSet id="dropToolPath" author="agduncan">-->
+        <!--<dropColumn tableName="tool" columnName="path"></dropColumn>-->
+    <!--</changeSet>-->
 </databaseChangeLog>

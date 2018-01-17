@@ -16,8 +16,10 @@
 
 package io.dockstore.webservice.jdbi;
 
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.Workflow;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 
 import java.util.List;
 
@@ -25,33 +27,69 @@ import java.util.List;
  * @author dyuen
  */
 public class WorkflowDAO extends EntryDAO<Workflow> {
+    private final int sourcecontrolIndex = 0;
+    private final int organizationIndex = 1;
+    private final int repositoryIndex = 2;
+    private final int workflownameIndex = 3;
+
     public WorkflowDAO(SessionFactory factory) {
         super(factory);
     }
 
-    public Workflow findByPath(String path) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findByPath").setParameter("path", path));
+    public Workflow findByPath(String path, boolean findPublished) {
+        Object[] splitPath = Workflow.splitWorkflowPath(path);
+
+        // Not a valid path
+        if (splitPath == null) {
+            return null;
+        }
+
+        // Valid path
+        SourceControl sourcecontrol = (SourceControl)splitPath[sourcecontrolIndex];
+        String organization = (String)splitPath[organizationIndex];
+        String repository = (String)splitPath[repositoryIndex];
+        String workflowname = (String)splitPath[workflownameIndex];
+
+
+        // Create full query name
+        String fullQueryName = "io.dockstore.webservice.core.Workflow.";
+
+        if (splitPath[workflownameIndex] == null) {
+            if (findPublished) {
+                fullQueryName += "findPublishedByPathNullWorkflowName";
+            } else {
+                fullQueryName += "findByPathNullWorkflowName";
+            }
+
+        } else {
+            if (findPublished) {
+                fullQueryName += "findPublishedByPath";
+            } else {
+                fullQueryName += "findByPath";
+            }
+        }
+
+        // Create query
+        Query query = namedQuery(fullQueryName)
+            .setParameter("sourcecontrol", sourcecontrol)
+            .setParameter("organization", organization)
+            .setParameter("repository", repository);
+
+        if (splitPath[workflownameIndex] != null) {
+            query.setParameter("workflowname", workflowname);
+        }
+
+        return uniqueResult(query);
     }
 
-    public Workflow findPublishedByPath(String path) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByPath").setParameter("path", path));
-    }
-    public Workflow findPublishedByWorkflowPath(String path, String name) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath")
-                .setParameter("path", path)
-                .setParameter("name", name));
-    }
-
-    public Workflow findPublishedByWorkflowPathNullWorkflowName(String path) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName")
-                .setParameter("path", path));
-    }
 
     public List<Workflow> findByGitUrl(String giturl) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl").setParameter("gitUrl", giturl));
+        return list(namedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
+            .setParameter("gitUrl", giturl));
     }
 
     public List<Workflow> findPublishedByOrganization(String organization) {
-        return list(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization").setParameter("organization", organization));
+        return list(namedQuery("io.dockstore.webservice.core.Workflow.findPublishedByOrganization")
+            .setParameter("organization", organization));
     }
 }

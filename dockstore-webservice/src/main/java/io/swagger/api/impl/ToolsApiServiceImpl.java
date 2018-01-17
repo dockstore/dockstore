@@ -162,10 +162,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             String workflowName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
             if (workflowName != null) {
                 workflowPath += "/" + parsedID.getToolName();
-                entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, workflowName);
-            } else {
-                entry = workflowDAO.findPublishedByWorkflowPathNullWorkflowName(workflowPath);
             }
+            entry = workflowDAO.findByPath(workflowPath, true);
 
         }
         return entry;
