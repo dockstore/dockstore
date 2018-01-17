@@ -238,6 +238,7 @@ public final class ToolsImplCommon {
             version.setVerifiedSource(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
             version.setDockerfile(false);
 
+
             /**
              * Set image if it's a DockstoreTool, otherwise make it empty string (for now)
              */
@@ -282,7 +283,7 @@ public final class ToolsImplCommon {
                         }
                         break;
                     case DOCKSTORE_WDL:
-                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.WDL);
                         fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
                                 buildSourceFile(urlBuilt + ((Tag)inputVersion).getWdlPath(), file));
                         break;
@@ -298,7 +299,7 @@ public final class ToolsImplCommon {
                         }
                         break;
                     case DOCKSTORE_WDL:
-                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.WDL);
                         fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
                                 buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
                         break;
