@@ -15,16 +15,13 @@
  */
 package io.dockstore.consumer;
 
-import cloud.localstack.LocalstackTestRunner;
 import cloud.localstack.TestUtils;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-@RunWith(LocalstackTestRunner.class)
-public class ConsumerTest {
+public class ConsumerIT {
     @Test
     public void testLocalstackFunctional() {
         AmazonSQS clientSQS = TestUtils.getClientSQS();

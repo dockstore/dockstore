@@ -5,7 +5,6 @@ notifications:
     rooms:
     - oicr:S9k4EowgQv9AnbCfEZHSzCsg
 sudo: required
-group: deprecated-2017Q4
 services:
 - docker
 
@@ -15,6 +14,7 @@ addons:
 cache:
   directories:
   - $HOME/.m2
+  - /tmp/localstack_install_dir
 
 language: java
 jdk:
@@ -33,6 +33,9 @@ before_install:
 - tar xvf secrets.tar
 # pre-build to check dependencies and look for out-of-sync swagger
 - mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
+# start local stack in the background
+- pip install --user localstack
+- localstack start &
 - git diff --exit-code
 
 install:
