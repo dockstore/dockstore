@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -316,6 +317,7 @@ public final class ToolsImplCommon {
         final List<String> collect = versions.stream().filter(Version::isVerified).map(Version::getVerifiedSource)
                 .collect(Collectors.toList());
         Gson gson = new Gson();
+        Collections.sort(collect);
         tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
         return tool;
     }
