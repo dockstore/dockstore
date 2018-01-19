@@ -280,7 +280,6 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         tool.setDefaultCwlPath(randomIdentifier());
         tool.setDefaultWdlPath(randomIdentifier());
         tool.setPrivateAccess(RAND.nextBoolean());
-        tool.setPath(randomIdentifier());
         tool.setToolname(randomIdentifier());
         return tool;
     }

@@ -1312,9 +1312,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/DockstoreTool"
+            $ref: "#/definitions/DockstoreTool"
   /containers/published:
     get:
       tags:
@@ -4176,6 +4174,8 @@ definitions:
         readOnly: true
         items:
           type: "string"
+      path:
+        type: "string"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -4210,10 +4210,6 @@ definitions:
       private_access:
         type: "boolean"
         description: "Is the docker image private or not."
-      path:
-        type: "string"
-        description: "This is a generated full docker path including registry and\
-          \ namespace, used for docker pull commands"
       tool_path:
         type: "string"
         readOnly: true

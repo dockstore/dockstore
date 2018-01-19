@@ -172,7 +172,6 @@ public class CRUDTesting {
         tool.setName("name");
         tool.setToolname("toolname");
         tool.setIsPublished(true);
-        tool.setPath("quay.io/namespace/name");
 
         final VersionDAO<Tag> toolVersionDAO = new VersionDAO<>(application.getHibernate().getSessionFactory());
         Tag toolVersion = new Tag();

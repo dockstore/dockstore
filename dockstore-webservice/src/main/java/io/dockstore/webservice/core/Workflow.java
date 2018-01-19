@@ -221,8 +221,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     public String getPath() {
-        String constructedPath;
-        constructedPath = getSourceControl().toString() + '/' + organization + '/' + repository + (workflowName == null ? "" : '/' + workflowName);
+        String constructedPath = getSourceControl().toString() + '/' + organization + '/' + repository + (workflowName == null ? "" : '/' + workflowName);
         return constructedPath;
     }
 

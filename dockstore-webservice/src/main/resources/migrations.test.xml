@@ -96,7 +96,6 @@
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test1"/>
             <column name="namespace" value="test_org"/>
-            <column name="path" value="quay.io/test_org/test1"/>
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
@@ -121,7 +120,6 @@
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test2"/>
             <column name="namespace" value="test_org"/>
-            <column name="path" value="quay.io/test_org/test2"/>
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
@@ -146,7 +144,6 @@
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test3"/>
             <column name="namespace" value="test_org"/>
-            <column name="path" value="quay.io/test_org/test3"/>
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
@@ -171,7 +168,6 @@
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test4"/>
             <column name="namespace" value="test_org"/>
-            <column name="path" value="quay.io/test_org/test4"/>
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
@@ -196,7 +192,6 @@
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test5"/>
             <column name="namespace" value="test_org"/>
-            <column name="path" value="quay.io/test_org/test5"/>
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
@@ -221,7 +216,6 @@
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test6"/>
             <column name="namespace" value="test_org"/>
-            <column name="path" value="quay.io/test_org/test6"/>
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
@@ -284,7 +278,6 @@
             <column name="descriptortype" value="cwl"/>
             <column name="mode" value="FULL"/>
             <column name="organization" value="A"/>
-            <column name="path" value="G/A/l"/>
             <column name="sourcecontrol" value="GITHUB"/>
             <column name="repository" value="l"/>
             <column name="workflowname"/>

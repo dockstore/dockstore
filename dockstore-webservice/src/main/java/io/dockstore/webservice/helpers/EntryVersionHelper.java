@@ -56,7 +56,11 @@ public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResour
      * @return the filtered entry
      */
     default T filterContainersForHiddenTags(T entry) {
-        return filterContainersForHiddenTags(Lists.newArrayList(entry)).get(0);
+        if (entry == null) {
+            return null;
+        } else {
+            return filterContainersForHiddenTags(Lists.newArrayList(entry)).get(0);
+        }
     }
 
     /**

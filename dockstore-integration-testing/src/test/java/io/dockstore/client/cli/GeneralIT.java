@@ -463,7 +463,7 @@ public class GeneralIT extends BaseIT {
     public void testRefreshOtherUsersContainer() {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "refresh", "--entry",
-                "quay.io/test_org/test1", "--script" });
+                "Tquay.io/test_org/test1", "--script" });
     }
 
     /**

@@ -220,7 +220,6 @@ public class SystemClientIT {
         c.setIsPublished(true);
         c.setNamespace("seqware");
         c.setToolname("test5");
-        c.setPath("registry.hub.docker.com/seqware/seqware");
         c.setPrivateAccess(false);
         //c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
