@@ -54,7 +54,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
-import io.dockstore.client.cli.nested.NotifcationsClients.NotificationsClient;
+import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
@@ -1294,10 +1294,10 @@ public abstract class AbstractEntryClient {
         File cromwellTargetFile = getCromwellTargetFile();
 
         final SourceFile wdlFromServer;
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        String notificationsWebHookURL = config.getString("notifications", "");
+        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
         try {
-            INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
-            String notificationsWebHookURL = config.getString("notifications", "");
-            NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
             // Grab WDL from server and store to file
             final File tempDir = Files.createTempDir();
             File tmp;
@@ -1415,6 +1415,7 @@ public abstract class AbstractEntryClient {
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
         }
+        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
         return 0;
     }
 

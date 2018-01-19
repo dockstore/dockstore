@@ -50,7 +50,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
-import io.dockstore.client.cli.nested.NotifcationsClients.NotificationsClient;
+import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.client.cwlrunner.CWLRunnerInterface;
 import io.dockstore.common.FileProvisioning;
