@@ -26,11 +26,20 @@ public class NotificationsClient {
     private static final Logger LOG = LoggerFactory.getLogger(NotificationsClient.class);
     protected String hookURL;
     protected String uuid;
+    protected boolean disabled = false;
 
 
     public NotificationsClient(String hookURL, String uuid) {
         this.hookURL = hookURL;
         this.uuid = uuid;
+        boolean invalidHookURL = (hookURL == null || hookURL.isEmpty());
+        boolean invalidUUID = (uuid == null || uuid.isEmpty());
+        if (invalidHookURL || invalidUUID) {
+            disabled = true;
+            if (!invalidUUID) {
+                System.err.println("Notifications UUID is specified but no notifications webhook URL found in config file");
+            }
+        }
     }
 
     /**
@@ -40,10 +49,8 @@ public class NotificationsClient {
      * @param success The status of the step
      */
     public void sendMessage(String message, boolean success) {
-        if (uuid == null || uuid.isEmpty()) {
+        if (disabled) {
             return;
-        } else if (hookURL == null || hookURL.isEmpty()) {
-            System.err.println("Notifications UUID is specified but no notifications webhook URL found in config file");
         } else {
             LOG.debug("Sending notifications message");
             String messageToSend = createText(message, success);
