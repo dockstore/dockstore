@@ -29,7 +29,7 @@ public class NotificationsIT extends BaseIT {
     private final static String sampleWDLDescriptor = ResourceHelpers.resourceFilePath("wdl.wdl");
     private final static String sampleCWLTestJson = "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json";
     private final static String sampleWDLTestJson = ResourceHelpers.resourceFilePath("wdl.json");
-
+    private final static String SlackDestination = "Destination is Slack.";
     @After
     public void clearLogs() {
         systemOutRule.clearLog();
@@ -68,7 +68,7 @@ public class NotificationsIT extends BaseIT {
                 "--local-entry", sampleCWLDescriptor, "--json", sampleCWLTestJson, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
         Assert.assertTrue(log, log.contains("Sending notifications message"));
-        Assert.assertTrue(log, log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, !log.contains(SlackDestination));
     }
 
     /**
@@ -83,7 +83,7 @@ public class NotificationsIT extends BaseIT {
                         sampleCWLDescriptor, "--json", sampleCWLTestJson, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
         Assert.assertTrue(log, log.contains("Sending notifications message"));
-        Assert.assertTrue(log, !log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, log.contains(SlackDestination));
     }
 
     /**
@@ -98,7 +98,7 @@ public class NotificationsIT extends BaseIT {
                         sampleCWLDescriptor, "--json", sampleCWLTestJson, "--debug" });
         String log = systemOutRule.getLog();
         Assert.assertTrue(log, !log.contains("Sending notifications message"));
-        Assert.assertTrue(log, !log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, !log.contains(SlackDestination));
     }
 
     // WDL TESTS
@@ -128,7 +128,7 @@ public class NotificationsIT extends BaseIT {
                 "--local-entry", sampleWDLDescriptor, "--json", sampleWDLTestJson, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
         Assert.assertTrue(log, log.contains("Sending notifications message"));
-        Assert.assertTrue(log, log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, !log.contains(SlackDestination));
     }
 
     /**
@@ -142,7 +142,7 @@ public class NotificationsIT extends BaseIT {
                 "--local-entry", sampleWDLDescriptor, "--json", sampleWDLTestJson, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
         Assert.assertTrue(log, log.contains("Sending notifications message"));
-        Assert.assertTrue(log, !log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, log.contains(SlackDestination));
     }
 
     /**
@@ -156,6 +156,6 @@ public class NotificationsIT extends BaseIT {
                 "--local-entry", sampleWDLDescriptor, "--json", sampleWDLTestJson, "--debug" });
         String log = systemOutRule.getLog();
         Assert.assertTrue(log, !log.contains("Sending notifications message"));
-        Assert.assertTrue(log, !log.contains("Can not resolve webhook URL"));
+        Assert.assertTrue(log, !log.contains(SlackDestination));
     }
 }

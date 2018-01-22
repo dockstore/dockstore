@@ -60,14 +60,13 @@ public class NotificationsClient {
             // This block figures out the message to send based on the hookURL. Can only figure it out if it's Slack
             // Otherwise, not sure what to send
             if (this.hookURL.contains("://hooks.slack.com")) {
-                SlackMessage slackPojo = new SlackMessage();
-                slackPojo.setText(messageToSend);
-                Gson gson = new Gson();
-                jsonMessage = gson.toJson(slackPojo);
-            } else {
-                LOG.debug("Can not resolve webhook URL");
-                return;
+                LOG.debug("Destination is Slack.");
             }
+            Message messageObject = new Message();
+            messageObject.setText(messageToSend);
+            messageObject.setUuid(this.uuid);
+            Gson gson = new Gson();
+            jsonMessage = gson.toJson(messageObject);
             // If there's a message, send it.
             if (jsonMessage != null && !jsonMessage.isEmpty()) {
                 generalSendMessage(jsonMessage);
@@ -83,9 +82,9 @@ public class NotificationsClient {
      * @return
      */
     private String createText(String message, boolean success) {
-        String textToSend = uuid + ": " + message;
+        String textToSend = message;
         if (!success) {
-            textToSend = uuid + ": failed-" + message;
+            textToSend = "failed-" + message;
         }
         return textToSend;
     }
