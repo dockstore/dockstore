@@ -115,7 +115,30 @@ Consonance's strategy is to provision either on-demand VMs or spot priced VMs de
 consonance run --tool-dockstore-id quay.io/collaboratory/dockstore-tool-bamstats:1.25-6_1.0 --run-descriptor Dockstore.json --flavour <AWS instance-type>
 ```
 
+## Notifications
+The Dockstore CLI has the ability to provide notifications via a Dockstore wrapper HTTP post to a user-defined endpoint for 4 milestones:
+- The beginning of input files provisioning
+- The beginning of tool/workflow execution
+- The beginning of output files provisioning
+- Final launch completion
 
+Additionally, it will also provide notifications when any of the first 3 milestones have failed.
+
+### Usage
+- Define a webhook URL in the Dockstore config file like:
+```
+notifications: https://hooks.slack.com/services/aaa/bbb/ccc
+```
+- Put --uuid 'your user defined uuid' in the dockstore launch command like:
+```
+dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUUID
+```
+- An HTTP post with a JSON payload will be sent to the url defined earlier that looks like:
+```json
+"text": "someTextBasedOnMilestoneAndStatus"
+"uuid": "someUserDefinedUUID"
+"username": "Dockstore CLI"
+```
 ## Next Steps
 
 While launching tools and workflows locally is useful for testing, this approach is not useful for processing a large amount of data in a production environment. The next step is to take our Docker images, described by CWL/WDL and run them in an environment that supports those descriptors. For now, we can suggest taking a look at the environments that currently support and are validated with CWL at [https://ci.commonwl.org/](https://ci.commonwl.org/) and for WDL, [Cromwell](https://github.com/broadinstitute/cromwell).
