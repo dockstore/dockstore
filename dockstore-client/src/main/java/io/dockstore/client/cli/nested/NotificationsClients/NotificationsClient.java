@@ -99,7 +99,6 @@ public class NotificationsClient {
      * @param jsonMessage
      */
     private void generalSendMessage(String jsonMessage) {
-        CloseableHttpClient client = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(this.hookURL);
 
         StringEntity entity = null;
@@ -111,9 +110,8 @@ public class NotificationsClient {
         httpPost.setEntity(entity);
         httpPost.setHeader("Accept", "application/json");
         httpPost.setHeader("Content-type", "application/json");
-        try {
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
             CloseableHttpResponse response = client.execute(httpPost);
-            client.close();
             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
                 LOG.warn("Did not successfully send notification");
             }
