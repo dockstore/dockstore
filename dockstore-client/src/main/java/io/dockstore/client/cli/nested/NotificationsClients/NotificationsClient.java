@@ -52,13 +52,12 @@ public class NotificationsClient {
         if (disabled) {
             return;
         } else {
-            LOG.debug("Sending notifications message");
+            LOG.debug("Sending notifications message.");
             String messageToSend = createText(message, success);
             // Message to be sent
             String jsonMessage;
 
-            // This block figures out the message to send based on the hookURL. Can only figure it out if it's Slack
-            // Otherwise, not sure what to send
+            // Currently the general Message to be sent is compatible with Slack, may need to change later
             if (this.hookURL.contains("://hooks.slack.com")) {
                 LOG.debug("Destination is Slack.");
             }

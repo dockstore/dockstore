@@ -9,7 +9,7 @@ package io.dockstore.client.cli.nested.NotificationsClients;
 public class Message {
     String text;
 
-    // Slack specific property
+    // Slack specific property to let the user know that the message came from Dockstore CLI
     String username = "Dockstore CLI";
     String uuid;
 

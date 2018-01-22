@@ -29,7 +29,8 @@ public class NotificationsIT extends BaseIT {
     private final static String sampleWDLDescriptor = ResourceHelpers.resourceFilePath("wdl.wdl");
     private final static String sampleCWLTestJson = "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json";
     private final static String sampleWDLTestJson = ResourceHelpers.resourceFilePath("wdl.json");
-    private final static String SlackDestination = "Destination is Slack.";
+    private final static String SLACK_DESTINATION = "Destination is Slack.";
+    private final static String SENDING_NOTIFICATION = "Sending notifications message.";
     @After
     public void clearLogs() {
         systemOutRule.clearLog();
@@ -55,6 +56,8 @@ public class NotificationsIT extends BaseIT {
                         sampleCWLTestJson, "--uuid", "potato", "--debug" });
         String log = systemErrRule.getLog();
         Assert.assertTrue(log, log.contains("Notifications UUID is specified but no notifications webhook URL found in config file"));
+        Assert.assertFalse(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertFalse(log, log.contains(SLACK_DESTINATION));
     }
 
     /**
@@ -67,8 +70,8 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithInvalidNotifications(true), "tool", "launch",
                 "--local-entry", sampleCWLDescriptor, "--json", sampleCWLTestJson, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log, log.contains("Sending notifications message"));
-        Assert.assertTrue(log, !log.contains(SlackDestination));
+        Assert.assertTrue(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertFalse(log, log.contains(SLACK_DESTINATION));
     }
 
     /**
@@ -82,8 +85,8 @@ public class NotificationsIT extends BaseIT {
                 new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch", "--local-entry",
                         sampleCWLDescriptor, "--json", sampleCWLTestJson, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log, log.contains("Sending notifications message"));
-        Assert.assertTrue(log, log.contains(SlackDestination));
+        Assert.assertTrue(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertTrue(log, log.contains(SLACK_DESTINATION));
     }
 
     /**
@@ -97,8 +100,8 @@ public class NotificationsIT extends BaseIT {
                 new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch", "--local-entry",
                         sampleCWLDescriptor, "--json", sampleCWLTestJson, "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log, !log.contains("Sending notifications message"));
-        Assert.assertTrue(log, !log.contains(SlackDestination));
+        Assert.assertFalse(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertFalse(log, log.contains(SLACK_DESTINATION));
     }
 
     // WDL TESTS
@@ -115,6 +118,8 @@ public class NotificationsIT extends BaseIT {
                         "--json", sampleWDLTestJson, "--uuid", "potato", "--debug" });
         String log = systemErrRule.getLog();
         Assert.assertTrue(log, log.contains("Notifications UUID is specified but no notifications webhook URL found in config file"));
+        Assert.assertFalse(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertFalse(log, log.contains(SLACK_DESTINATION));
     }
 
     /**
@@ -127,8 +132,8 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithInvalidNotifications(true), "tool", "launch",
                 "--local-entry", sampleWDLDescriptor, "--json", sampleWDLTestJson, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log, log.contains("Sending notifications message"));
-        Assert.assertTrue(log, !log.contains(SlackDestination));
+        Assert.assertTrue(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertFalse(log, log.contains(SLACK_DESTINATION));
     }
 
     /**
@@ -141,8 +146,8 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch",
                 "--local-entry", sampleWDLDescriptor, "--json", sampleWDLTestJson, "--uuid", "potato", "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log, log.contains("Sending notifications message"));
-        Assert.assertTrue(log, log.contains(SlackDestination));
+        Assert.assertTrue(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertTrue(log, log.contains(SLACK_DESTINATION));
     }
 
     /**
@@ -155,7 +160,7 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch",
                 "--local-entry", sampleWDLDescriptor, "--json", sampleWDLTestJson, "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertTrue(log, !log.contains("Sending notifications message"));
-        Assert.assertTrue(log, !log.contains(SlackDestination));
+        Assert.assertFalse(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertFalse(log, log.contains(SLACK_DESTINATION));
     }
 }
