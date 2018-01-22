@@ -29,7 +29,13 @@ import org.hibernate.SessionFactory;
  */
 public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
+    public final int firstIndex = 0;
+    public final int secondIndex = 1;
+    public final int thirdIndex = 2;
+    public final int fourthIndex = 3;
+
     private Class<T> typeOfT;
+
 
     public EntryDAO(SessionFactory factory) {
         super(factory);

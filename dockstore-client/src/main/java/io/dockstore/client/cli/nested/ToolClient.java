@@ -230,6 +230,7 @@ public class ToolClient extends AbstractEntryClient {
                     newContainer.setIsPublished(false);
                     newContainer.setGitUrl(container.getGitUrl());
                     newContainer.setToolname(newName);
+                    newContainer.setCustomdockerregistrypath(container.getCustomdockerregistrypath());
 
                     newContainer = containersApi.registerManual(newContainer);
 
@@ -461,6 +462,9 @@ public class ToolClient extends AbstractEntryClient {
                 }
             }
 
+            if (hasCustomDockerPath) {
+                tool.setCustomdockerregistrypath(registryPath.get());
+            }
 
             tool.setDefaultDockerfilePath(dockerfilePath);
             tool.setDefaultCwlPath(cwlPath);

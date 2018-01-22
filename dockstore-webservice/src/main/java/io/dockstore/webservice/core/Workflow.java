@@ -286,38 +286,5 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.sourceControl = sourceControl;
     }
 
-    public static Object[] splitWorkflowPath(String path) {
-        final int sourcecontrolIndex = 0;
-        final int organizationIndex = 1;
-        final int repositoryIndex = 2;
-        final int workflownameIndex = 3;
-        final int pathNoNameLength = 3;
-        final int pathWithNameLength = 4;
-
-        SourceControl sourcecontrol = null;
-        String organization;
-        String repository;
-        String workflowname = null;
-
-        String[] splitPath = path.split("/");
-
-        if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
-            for (SourceControl sc : SourceControl.values()) {
-                if (splitPath[sourcecontrolIndex].equals(sc.toString())) {
-                    // Matching source control
-                    sourcecontrol = sc;
-                    break;
-                }
-            }
-            organization = splitPath[organizationIndex];
-            repository = splitPath[repositoryIndex];
-            if (splitPath.length == pathWithNameLength) {
-                workflowname = splitPath[workflownameIndex];
-            }
-            return new Object[]{sourcecontrol, organization, repository, workflowname};
-        } else {
-            return null;
-        }
-    }
 
 }

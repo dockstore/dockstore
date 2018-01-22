@@ -29,10 +29,6 @@ import java.util.List;
  * @author xliu
  */
 public class ToolDAO extends EntryDAO<Tool> {
-    private final int registryIndex = 0;
-    private final int namespaceIndex = 1;
-    private final int nameIndex = 2;
-    private final int toolnameIndex = 3;
 
     public ToolDAO(SessionFactory factory) {
         super(factory);
@@ -42,8 +38,8 @@ public class ToolDAO extends EntryDAO<Tool> {
         return list(namedQuery("io.dockstore.webservice.core.Tool.findByMode").setParameter("mode", mode));
     }
 
-    public Tool findByPath(String path, boolean findPublished) {
-        Object[] splitPath = Tool.splitToolPath(path);
+    public List<Tool> findAllByPath(String path, boolean findPublished) {
+        Object[] splitPath = Tool.splitPath(path, true);
 
         // Not a valid path
         if (splitPath == null) {
@@ -51,16 +47,48 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
 
         // Valid path
-        Registry registry = (Registry)splitPath[registryIndex];
-        String namespace = (String)splitPath[namespaceIndex];
-        String name = (String)splitPath[nameIndex];
-        String toolname = (String)splitPath[toolnameIndex];
+        Registry registry = (Registry)splitPath[firstIndex];
+        String namespace = (String)splitPath[secondIndex];
+        String name = (String)splitPath[thirdIndex];
+        String toolname = (String)splitPath[fourthIndex];
+
+        // Create full query name
+        String fullQueryName = "io.dockstore.webservice.core.Tool.";
+
+        if (findPublished) {
+            fullQueryName += "findAllPublishedByPath";
+        } else {
+            fullQueryName += "findAllByPath";
+        }
+
+        // Create query
+        Query query = namedQuery(fullQueryName)
+            .setParameter("registry", registry)
+            .setParameter("namespace", namespace)
+            .setParameter("name", name);
+
+        return list(query);
+    }
+
+    public Tool findByPath(String path, boolean findPublished) {
+        Object[] splitPath = Tool.splitPath(path, true);
+
+        // Not a valid path
+        if (splitPath == null) {
+            return null;
+        }
+
+        // Valid path
+        Registry registry = (Registry)splitPath[firstIndex];
+        String namespace = (String)splitPath[secondIndex];
+        String name = (String)splitPath[thirdIndex];
+        String toolname = (String)splitPath[fourthIndex];
 
 
         // Create full query name
         String fullQueryName = "io.dockstore.webservice.core.Tool.";
 
-        if (splitPath[toolnameIndex] == null) {
+        if (splitPath[fourthIndex] == null) {
             if (findPublished) {
                 fullQueryName += "findPublishedByPathNullToolName";
             } else {
@@ -81,7 +109,7 @@ public class ToolDAO extends EntryDAO<Tool> {
             .setParameter("namespace", namespace)
             .setParameter("name", name);
 
-        if (splitPath[toolnameIndex] != null) {
+        if (splitPath[fourthIndex] != null) {
             query.setParameter("toolname", toolname);
         }
 

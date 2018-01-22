@@ -40,6 +40,8 @@ import javax.persistence.SequenceGenerator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -286,5 +288,46 @@ public abstract class Entry<S extends Entry, T extends Version> {
             }
         }
         return false;
+    }
+
+    public static Object[] splitPath(String path, boolean isTool) {
+        final int firstIndex = 0;
+        final int secondIndex = 1;
+        final int thirdIndex = 2;
+        final int fourthIndex = 3;
+        final int pathNoNameLength = 3;
+        final int pathWithNameLength = 4;
+
+        Object firstPosition = null;
+        String secondPosition;
+        String thirdPosition;
+        String fourthPosition = null;
+
+        String[] splitPath = path.split("/");
+
+        if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
+            Object[] values;
+            if (isTool) {
+                values = Registry.values();
+            } else {
+                values = SourceControl.values();
+            }
+
+            for (Object val : values) {
+                if (splitPath[firstIndex].equals(val.toString())) {
+                    firstPosition = val;
+                    break;
+                }
+            }
+
+            secondPosition = splitPath[secondIndex];
+            thirdPosition = splitPath[thirdIndex];
+            if (splitPath.length == pathWithNameLength) {
+                fourthPosition = splitPath[fourthIndex];
+            }
+            return new Object[]{firstPosition, secondPosition, thirdPosition, fourthPosition};
+        } else {
+            return null;
+        }
     }
 }

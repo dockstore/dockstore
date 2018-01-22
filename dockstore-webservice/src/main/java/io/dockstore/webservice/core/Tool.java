@@ -67,7 +67,9 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByNamespace", query = "SELECT c FROM Tool c WHERE lower(c.namespace) = lower(:namespace) AND c.isPublished = true ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE ((c.registry + '/' + c.namespace + '/' + c.name + '/' + c.toolname LIKE :pattern) OR (c.registry LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublishedByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.isPublished = true"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = ''"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = '' AND c.isPublished = true") })
@@ -139,6 +141,11 @@ public class Tool extends Entry<Tool, Tag> {
     @Column
     @ApiModelProperty("Implementation specific timestamp for last built")
     private Date lastBuild;
+
+    @Column
+    @JsonProperty("customdockerregistrypath")
+    @ApiModelProperty(value = "Only used for docker registries that allow for custom paths")
+    private String customDockerRegistryPath = null;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
@@ -212,6 +219,15 @@ public class Tool extends Entry<Tool, Tag> {
         String repositoryPath = registry.toString() + '/' + namespace + '/' + name + (toolname == null ? "" : '/' + toolname);
         return repositoryPath;
     }
+
+    public String getCustomDockerRegistryPath() {
+        return customDockerRegistryPath;
+    }
+
+    public void setCustomDockerRegistryPath(String customDockerRegistryPath) {
+        this.customDockerRegistryPath = customDockerRegistryPath;
+    }
+
 
     /**
      * Calculated property for demonstrating search by language, inefficient
@@ -335,39 +351,5 @@ public class Tool extends Entry<Tool, Tag> {
 
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
         this.defaultTestCwlParameterFile = defaultTestCwlParameterFile;
-    }
-
-    public static Object[] splitToolPath(String path) {
-        final int registryIndex = 0;
-        final int namespaceIndex = 1;
-        final int nameIndex = 2;
-        final int toolnameIndex = 3;
-        final int pathNoNameLength = 3;
-        final int pathWithNameLength = 4;
-
-        Registry registry = null;
-        String namespace;
-        String name;
-        String toolname = null;
-
-        String[] splitPath = path.split("/");
-
-        if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
-            for (Registry reg : Registry.values()) {
-                if (splitPath[registryIndex].equals(reg.toString())) {
-                    // Matching registry
-                    registry = reg;
-                    break;
-                }
-            }
-            namespace = splitPath[namespaceIndex];
-            name = splitPath[nameIndex];
-            if (splitPath.length == pathWithNameLength) {
-                toolname = splitPath[toolnameIndex];
-            }
-            return new Object[]{registry, namespace, name, toolname};
-        } else {
-            return null;
-        }
     }
 }

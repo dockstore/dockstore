@@ -97,4 +97,10 @@
     <changeSet id="dropToolPath" author="agduncan">
         <dropColumn tableName="tool" columnName="path"></dropColumn>
     </changeSet>
+
+    <changeSet id="addCustomDockerRegistryPath" author="agduncan">
+        <addColumn tableName="tool">
+            <column name="customdockerregistrypath" type="text"></column>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

@@ -524,44 +524,38 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @Path("/path/{repository}/published")
-    @ApiOperation(value = "Get a published container by path", notes = "NO authentication", response = Tool.class)
-    public Tool getPublishedContainerByPath(
+    @ApiOperation(value = "Get a list of published tools by path", notes = "NO authentication", response = Tool.class)
+    public List<Tool> getPublishedContainerByPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Tool container = toolDAO.findByPath(path, true);
-        filterContainersForHiddenTags(container);
-        checkEntry(container);
-        return container;
+        List<Tool> tools = toolDAO.findAllByPath(path, true);
+        filterContainersForHiddenTags(tools);
+        checkEntry(tools);
+        return tools;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/path/{repository}")
-    @ApiOperation(value = "Get a list of containers by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
-    public Tool getContainerByPath(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Get a list of tools by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of tool. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
+    public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        Tool tool = toolDAO.findByPath(path, false);
-
-        checkEntry(tool);
-
-        checkUser(user, tool);
-
-        return tool;
+        List<Tool> tools = toolDAO.findAllByPath(path, false);
+        checkEntry(tools);
+        AuthenticatedResourceInterface.checkUser(user, tools);
+        return tools;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}")
-    @ApiOperation(value = "Get a container by tool path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    @ApiOperation(value = "Get a tool by the specific tool path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of tool. Enter full path (include quay.io in path).", response = Tool.class)
     public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Tool tool = toolDAO.findByPath(path, false);
-
         checkEntry(tool);
-
         checkUser(user, tool);
-
         return tool;
     }
 
@@ -569,7 +563,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}/published")
-    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    @ApiOperation(value = "Get a published tool by the specific tool path", notes = "Lists info of tool. Enter full path (include quay.io in path).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         try {

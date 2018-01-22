@@ -1328,7 +1328,7 @@ public class BasicIT extends BaseIT {
                         "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "amazon.registry", "--script" });
 
                 // Check that tool is published and has correct values
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='" + Registry.AMAZON_ECR.name() +"' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='" + Registry.AMAZON_ECR.name() +"' and namespace = 'notarealnamespace' and name = 'notarealname' and customdockerregistrypath = 'amazon.registry'", new ScalarHandler<>());
                 Assert.assertTrue("one tool should be private, published and from amazon, there are " + count, count == 1);
 
                 // Update tool to public (shouldn't work)
