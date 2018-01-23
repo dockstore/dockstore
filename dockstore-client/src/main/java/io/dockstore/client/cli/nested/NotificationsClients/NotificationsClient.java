@@ -5,6 +5,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 import com.google.gson.Gson;
+import io.dockstore.client.cli.ArgumentUtility;
+import io.dockstore.client.cli.Client;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -35,7 +37,8 @@ public class NotificationsClient {
         boolean invalidUUID = (uuid == null || uuid.isEmpty());
         if (invalidHookURL) {
             if (!invalidUUID) {
-                System.err.println("Notifications UUID is specified but no notifications webhook URL found in config file");
+                ArgumentUtility.errorMessage("Notifications UUID is specified but no notifications webhook URL found in config file.  Aborting launch.",
+                        Client.CLIENT_ERROR);
             }
             disabled = true;
 
