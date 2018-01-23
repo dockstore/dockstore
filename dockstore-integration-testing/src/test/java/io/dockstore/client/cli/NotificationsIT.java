@@ -29,8 +29,9 @@ public class NotificationsIT extends BaseIT {
     private final static String sampleWDLDescriptor = ResourceHelpers.resourceFilePath("wdl.wdl");
     private final static String sampleCWLTestJson = "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json";
     private final static String sampleWDLTestJson = ResourceHelpers.resourceFilePath("wdl.json");
-    private final static String SLACK_DESTINATION = "Destination is Slack.";
+    private final static String SLACK_DESTINATION = "Destination is Slack. Message is not 100% compatible.";
     private final static String SENDING_NOTIFICATION = "Sending notifications message.";
+    private final static String GENERATING_UUID = "The UUID generated for this specific execution is ";
     @After
     public void clearLogs() {
         systemOutRule.clearLog();
@@ -100,8 +101,9 @@ public class NotificationsIT extends BaseIT {
                 new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch", "--local-entry",
                         sampleCWLDescriptor, "--json", sampleCWLTestJson, "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertFalse(log, log.contains(SENDING_NOTIFICATION));
-        Assert.assertFalse(log, log.contains(SLACK_DESTINATION));
+        Assert.assertTrue(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertTrue(log, log.contains(GENERATING_UUID));
+        Assert.assertTrue(log, log.contains(SLACK_DESTINATION));
     }
 
     // WDL TESTS
@@ -160,7 +162,8 @@ public class NotificationsIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocationWithValidNotifications(true), "tool", "launch",
                 "--local-entry", sampleWDLDescriptor, "--json", sampleWDLTestJson, "--debug" });
         String log = systemOutRule.getLog();
-        Assert.assertFalse(log, log.contains(SENDING_NOTIFICATION));
-        Assert.assertFalse(log, log.contains(SLACK_DESTINATION));
+        Assert.assertTrue(log, log.contains(GENERATING_UUID));
+        Assert.assertTrue(log, log.contains(SENDING_NOTIFICATION));
+        Assert.assertTrue(log, log.contains(SLACK_DESTINATION));
     }
 }

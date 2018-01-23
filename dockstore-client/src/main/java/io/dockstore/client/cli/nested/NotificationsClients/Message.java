@@ -12,7 +12,7 @@ public class Message {
     // Slack keyword
     String username = System.getProperty("user.name");
     String uuid;
-    String platform = "Dockstore " + Message.class.getPackage().getImplementationVersion() + " CLI";
+    String platform = "Dockstore CLI " + Message.class.getPackage().getImplementationVersion();
 
     public String getUuid() {
         return uuid;

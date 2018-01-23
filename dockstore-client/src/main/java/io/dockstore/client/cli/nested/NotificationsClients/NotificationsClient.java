@@ -2,6 +2,7 @@ package io.dockstore.client.cli.nested.NotificationsClients;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.UUID;
 
 import com.google.gson.Gson;
 import org.apache.http.HttpStatus;
@@ -30,16 +31,23 @@ public class NotificationsClient {
 
 
     public NotificationsClient(String hookURL, String uuid) {
-        this.hookURL = hookURL;
-        this.uuid = uuid;
         boolean invalidHookURL = (hookURL == null || hookURL.isEmpty());
         boolean invalidUUID = (uuid == null || uuid.isEmpty());
-        if (invalidHookURL || invalidUUID) {
-            disabled = true;
+        if (invalidHookURL) {
             if (!invalidUUID) {
                 System.err.println("Notifications UUID is specified but no notifications webhook URL found in config file");
             }
+            disabled = true;
+
+        } else {
+            if (invalidUUID) {
+                uuid = UUID.randomUUID().toString();
+                System.out.println("The UUID generated for this specific execution is " + uuid);
+            }
+            this.hookURL = hookURL;
+            this.uuid = uuid;
         }
+
     }
 
     /**
@@ -57,9 +65,8 @@ public class NotificationsClient {
             // Message to be sent
             String jsonMessage;
 
-            // Currently the general Message to be sent is compatible with Slack, may need to change later
             if (this.hookURL.contains("://hooks.slack.com")) {
-                LOG.debug("Destination is Slack.");
+                LOG.warn("Destination is Slack. Message is not 100% compatible.");
             }
             Message messageObject = new Message();
             messageObject.setText(messageToSend);
