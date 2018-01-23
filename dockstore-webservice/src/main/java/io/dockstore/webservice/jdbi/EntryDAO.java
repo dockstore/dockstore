@@ -36,7 +36,6 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
     private Class<T> typeOfT;
 
-
     public EntryDAO(SessionFactory factory) {
         super(factory);
         /**

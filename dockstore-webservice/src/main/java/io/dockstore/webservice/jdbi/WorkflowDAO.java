@@ -27,9 +27,39 @@ import java.util.List;
  * @author dyuen
  */
 public class WorkflowDAO extends EntryDAO<Workflow> {
-
     public WorkflowDAO(SessionFactory factory) {
         super(factory);
+    }
+
+    public List<Workflow> findAllByPath(String path, boolean findPublished) {
+        Object[] splitPath = Workflow.splitPath(path, false);
+
+        // Not a valid path
+        if (splitPath == null) {
+            return null;
+        }
+
+        // Valid path
+        SourceControl sourcecontrol = (SourceControl)splitPath[firstIndex];
+        String organization = (String)splitPath[secondIndex];
+        String repository = (String)splitPath[thirdIndex];
+
+        // Create full query name
+        String fullQueryName = "io.dockstore.webservice.core.Workflow.";
+
+        if (findPublished) {
+            fullQueryName += "findAllPublishedByPath";
+        } else {
+            fullQueryName += "findAllByPath";
+        }
+
+        // Create query
+        Query query = namedQuery(fullQueryName)
+            .setParameter("sourcecontrol", sourcecontrol)
+            .setParameter("organization", organization)
+            .setParameter("repository", repository);
+
+        return list(query);
     }
 
     public Workflow findByPath(String path, boolean findPublished) {

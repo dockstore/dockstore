@@ -1204,8 +1204,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a container by tool path"
-      description: "Lists info of container. Enter full path (include quay.io in path)."
+      summary: "Get a tool by the specific tool path"
+      description: "Lists info of tool. Enter full path (include quay.io in path)."
       operationId: "getContainerByToolPath"
       produces:
       - "application/json"
@@ -1226,8 +1226,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published container by tool path"
-      description: "Lists info of container. Enter full path (include quay.io in path)."
+      summary: "Get a published tool by the specific tool path"
+      description: "Lists info of tool. Enter full path (include quay.io in path)."
       operationId: "getPublishedContainerByToolPath"
       produces:
       - "application/json"
@@ -1273,8 +1273,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a list of containers by path"
-      description: "Lists info of container. Enter full path (include quay.io in path)."
+      summary: "Get a list of tools by path"
+      description: "Lists info of tool. Enter full path (include quay.io in path)."
       operationId: "getContainerByPath"
       produces:
       - "application/json"
@@ -1297,7 +1297,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published container by path"
+      summary: "Get a list of published tools by path"
       description: "NO authentication"
       operationId: "getPublishedContainerByPath"
       produces:

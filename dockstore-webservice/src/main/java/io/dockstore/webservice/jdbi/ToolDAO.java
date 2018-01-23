@@ -29,7 +29,6 @@ import java.util.List;
  * @author xliu
  */
 public class ToolDAO extends EntryDAO<Tool> {
-
     public ToolDAO(SessionFactory factory) {
         super(factory);
     }
@@ -50,7 +49,6 @@ public class ToolDAO extends EntryDAO<Tool> {
         Registry registry = (Registry)splitPath[firstIndex];
         String namespace = (String)splitPath[secondIndex];
         String name = (String)splitPath[thirdIndex];
-        String toolname = (String)splitPath[fourthIndex];
 
         // Create full query name
         String fullQueryName = "io.dockstore.webservice.core.Tool.";

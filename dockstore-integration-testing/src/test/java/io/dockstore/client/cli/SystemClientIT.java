@@ -495,7 +495,7 @@ public class SystemClientIT {
         assertTrue(containers.size() == 1);
         assertTrue(containers.get(0).getPath().equals(QUAY_IO_TEST_ORG_TEST6));
 
-        containers = containersApi.search("test5");
+        containers = containersApi.search("test52");
         assertTrue(containers.isEmpty());
     }
 

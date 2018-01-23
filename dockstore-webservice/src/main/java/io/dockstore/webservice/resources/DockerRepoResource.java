@@ -567,7 +567,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public Tool getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         try {
-            Tool tool = toolDAO.findByPath(path, false);
+            Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {
