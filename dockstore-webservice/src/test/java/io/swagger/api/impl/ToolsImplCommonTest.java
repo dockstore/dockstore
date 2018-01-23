@@ -32,9 +32,6 @@ import static org.junit.Assert.assertEquals;
  */
 public class ToolsImplCommonTest {
     static final Gson gson = new Gson();
-    static final String REFERENCE1 = "aaa";
-    static final String REFERENCE2 = "bbb";
-    static final String REFERENCE3 = "ccc";
     static final String PLACEHOLDER_CONTENT = "potato";
     static DockstoreWebserviceConfiguration  actualConfig = new DockstoreWebserviceConfiguration();
 
@@ -167,6 +164,9 @@ public class ToolsImplCommonTest {
      */
     @Test
     public void convertDockstoreWorkflowToTool() throws Exception {
+        final String REFERENCE1 = "aaa";
+        final String REFERENCE2 = "bbb";
+        final String REFERENCE3 = "ccc";
         SourceFile actualSourceFile1 = new SourceFile();
         actualSourceFile1.setId(461402);
         actualSourceFile1.setType(SourceFile.FileType.DOCKSTORE_WDL);
