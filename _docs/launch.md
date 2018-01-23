@@ -129,16 +129,22 @@ Additionally, it will also provide notifications when any of the first 3 milesto
 ```
 notifications: https://hooks.slack.com/services/aaa/bbb/ccc
 ```
-- Put --uuid 'your user defined uuid' in the dockstore launch command like:
+- UUID can be generated or user-defined uuid in the dockstore launch command like:
 ```
 dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUUID
 ```
 - An HTTP post with a JSON payload will be sent to the url defined earlier that looks like:
 ```json
 "text": "someTextBasedOnMilestoneAndStatus"
-"uuid": "someUserDefinedUUID"
-"username": "Dockstore CLI"
+"username": "your linux username"
+"platform": "Dockstore CLI 1.4"
+"uuid": "someUserDefinedOrGeneratedUUID"
 ```
+
+### Notes
+- To disable notifications, simply remove the webhook URL from the Dockstore config file
+- If the UUID is generated, the generated UUID will be displayed in beginning of the launch stdout
+
 ## Next Steps
 
 While launching tools and workflows locally is useful for testing, this approach is not useful for processing a large amount of data in a production environment. The next step is to take our Docker images, described by CWL/WDL and run them in an environment that supports those descriptors. For now, we can suggest taking a look at the environments that currently support and are validated with CWL at [https://ci.commonwl.org/](https://ci.commonwl.org/) and for WDL, [Cromwell](https://github.com/broadinstitute/cromwell).
