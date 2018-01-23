@@ -116,13 +116,13 @@ consonance run --tool-dockstore-id quay.io/collaboratory/dockstore-tool-bamstats
 ```
 
 ## Notifications
-The Dockstore CLI has the ability to provide notifications via a Dockstore wrapper HTTP post to a user-defined endpoint for 4 milestones:
+The Dockstore CLI has the ability to provide notifications via an HTTP post to a user-defined endpoint for the following steps:
 - The beginning of input files provisioning
 - The beginning of tool/workflow execution
 - The beginning of output files provisioning
 - Final launch completion
 
-Additionally, it will also provide notifications when any of the first 3 milestones have failed.
+Additionally, it will also provide notifications when any of these steps have failed.
 
 ### Usage
 - Define a webhook URL in the Dockstore config file like:
