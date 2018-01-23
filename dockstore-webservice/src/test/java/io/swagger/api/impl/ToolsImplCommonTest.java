@@ -41,7 +41,7 @@ public class ToolsImplCommonTest {
         actualConfig.setPort("8080");
         actualConfig.setScheme("http");
     }
-    static String json;
+
     @Test
     public void wdlSourceFileToToolDescriptor() throws Exception {
         SourceFile sourceFile = new SourceFile();
@@ -167,6 +167,7 @@ public class ToolsImplCommonTest {
         final String REFERENCE1 = "aaa";
         final String REFERENCE2 = "bbb";
         final String REFERENCE3 = "ccc";
+        String json;
         SourceFile actualSourceFile1 = new SourceFile();
         actualSourceFile1.setId(461402);
         actualSourceFile1.setType(SourceFile.FileType.DOCKSTORE_WDL);
