@@ -127,18 +127,22 @@ Additionally, it will also provide notifications when any of the first 3 milesto
 ### Usage
 - Define a webhook URL in the Dockstore config file like:
 ```
+...
 notifications: https://hooks.slack.com/services/aaa/bbb/ccc
+...
 ```
 - UUID can be generated or user-defined uuid in the dockstore launch command like:
-```
+```bash
 dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUUID
 ```
 - An HTTP post with a JSON payload will be sent to the url defined earlier that looks like:
 ```json
-"text": "someTextBasedOnMilestoneAndStatus"
-"username": "your linux username"
-"platform": "Dockstore CLI 1.4"
-"uuid": "someUserDefinedOrGeneratedUUID"
+{
+  "text": "someTextBasedOnMilestoneAndStatus",
+  "username": "your linux username",
+  "platform": "Dockstore CLI 1.4",
+  "uuid": "someUserDefinedOrGeneratedUUID"
+}
 ```
 
 ### Notes
