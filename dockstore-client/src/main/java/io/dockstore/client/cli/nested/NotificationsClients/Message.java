@@ -1,17 +1,18 @@
 package io.dockstore.client.cli.nested.NotificationsClients;
 
 /**
- * Message structure based on what Slack accepts with the exception of the uuid
+ * Message structure to be sent
  *
  * @author gluu
  * @since 19/01/18
  */
 public class Message {
+    // Slack keyword
     String text;
-
-    // Slack specific property to let the user know that the message came from Dockstore CLI
-    String username = "Dockstore CLI";
+    // Slack keyword
+    String username = System.getProperty("user.name");
     String uuid;
+    String platform = "Dockstore " + Message.class.getPackage().getImplementationVersion() + " CLI";
 
     public String getUuid() {
         return uuid;
