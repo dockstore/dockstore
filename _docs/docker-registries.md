@@ -67,4 +67,4 @@ If you would like to request support for a registry that is not currently suppor
 
 ## Next Steps
 
-Read up on the differences between public and private tools on Dockstore at the [Public and Private Tools](/docs/publisher-tutorials/public-and-private-tools/) page or see our [full list of documentation](/docs).
+Read up on the differences between public and private tools on Dockstore at the [Public and Private Tools]({{"/docs/publisher-tutorials/public-and-private-tools/" | relative_url }}) page or see our [full list of documentation]({{"/docs" | relative_url }}).

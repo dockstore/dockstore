@@ -351,4 +351,4 @@ We are currently monitoring WDL to see how metadata like that provided for CWL w
 
 ## Next Steps
 
-Follow the [next tutorial](/docs/publisher-tutorials/getting-started-with-dockstore/) to register your tool on Dockstore.
+Follow the [next tutorial]({{"/docs/publisher-tutorials/getting-started-with-dockstore/" | relative_url }}) to register your tool on Dockstore.

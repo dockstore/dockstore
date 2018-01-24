@@ -84,4 +84,4 @@ You can find tools on the Dockstore website or also through the `dockstore workf
 
 ## Next Steps
 
-Find out how to launch your tools and workflows at [Launching Tools and Workflows](/docs/user-tutorials/launch/).
+Find out how to launch your tools and workflows at [Launching Tools and Workflows]({{"/docs/user-tutorials/launch/" | relative_url }}).
