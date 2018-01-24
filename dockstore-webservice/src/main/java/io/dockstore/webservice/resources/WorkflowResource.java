@@ -458,7 +458,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         checkUser(user, c);
 
-        LOG.info(workflow.getSourceControl().name());
         Workflow duplicate = workflowDAO.findByPath(workflow.getPath(), false);
 
         if (duplicate != null && duplicate.getId() != workflowId) {

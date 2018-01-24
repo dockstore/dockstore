@@ -231,7 +231,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         checkUser(user, c);
 
-        Tool duplicate = toolDAO.findByPath(tool.getPath(), false);
+        Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
 
         if (duplicate != null && duplicate.getId() != containerId) {
             LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
@@ -381,7 +381,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         if (!Helper.isGit(tool.getGitUrl())) {
             tool.setGitUrl(Helper.convertHttpsToSsh(tool.getGitUrl()));
         }
-        Tool duplicate = toolDAO.findByPath(tool.getPath(), false);
+        Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
 
         if (duplicate != null) {
             LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
@@ -883,7 +883,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
-        starEntryHelper(tool, user, "tool", tool.getPath());
+        starEntryHelper(tool, user, "tool", tool.getToolPath());
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
     }
 
@@ -895,7 +895,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        unstarEntryHelper(tool, user, "tool", tool.getPath());
+        unstarEntryHelper(tool, user, "tool", tool.getToolPath());
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
     }
 

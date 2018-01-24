@@ -216,7 +216,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     public String getPath() {
-        String repositoryPath = registry.toString() + '/' + namespace + '/' + name + (toolname == null || "".equals(toolname) ? "" : '/' + toolname);
+        String repositoryPath = registry.toString() + '/' + namespace + '/' + name;
         return repositoryPath;
     }
 

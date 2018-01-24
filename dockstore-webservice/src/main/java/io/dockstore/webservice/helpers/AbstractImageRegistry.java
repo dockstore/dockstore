@@ -202,7 +202,7 @@ public abstract class AbstractImageRegistry {
 
         // Grab updated tool from the database
         final List<Tool> newDBTools = new ArrayList<>();
-        newDBTools.add(toolDAO.findById(tool.getId()));
+        newDBTools.add(toolDAO.findById(toolId));
 
         // Get tags and update for each tool
         List<Tag> toolTags = getTags(tool);
@@ -411,7 +411,7 @@ public abstract class AbstractImageRegistry {
 
         // when a container from the registry (ex: quay.io) has newer content, update it from
         for (Tool newTool : apiToolList) {
-            String path = newTool.getPath();
+            String path = newTool.getToolPath();
             boolean exists = false;
 
             // Find if user already has the container
