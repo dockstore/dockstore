@@ -155,15 +155,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
     private Entry getEntry(ParsedRegistryID parsedID) {
         Entry entry;
+        String entryPath = parsedID.getPath();
+        String entryName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
+        if (entryName != null) {
+            entryPath += "/" + parsedID.getToolName();
+        }
         if (parsedID.isTool()) {
-            entry = toolDAO.findByPath(parsedID.getPath(), true);
+            entry = toolDAO.findByPath(entryPath, true);
         } else {
-            String workflowPath = parsedID.getPath();
-            String workflowName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
-            if (workflowName != null) {
-                workflowPath += "/" + parsedID.getToolName();
-            }
-            entry = workflowDAO.findByPath(workflowPath, true);
+            entry = workflowDAO.findByPath(entryPath, true);
 
         }
         return entry;
