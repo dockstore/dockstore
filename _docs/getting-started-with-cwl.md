@@ -92,7 +92,7 @@ doc: |
 
 These items are recommended and the doc (description) is actually parsed and displayed in the Dockstore page. Here's an example:
 
-![Entry](/assets/images/docs/entry.png)
+![Entry]("{{"/assets/images/docs/entry.png" | relative_url }})
 
 In the code above you can see how to have an extended doc (description) which is quite useful.
 
@@ -256,7 +256,7 @@ The output looks fine, just what we'd expect.
 
 So what's going on here?  What's the Dockstore CLI doing?  It can best be summed up with this image:
 
-![Lifecycle](/assets/images/docs/dockstore_lifecycle.png)
+![Lifecycle]("{{"/assets/images/docs/dockstore_lifecycle.png" | relative_url }})
 
 The command line first provisions file.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs.  After provisioning the docker image is pulled and ran via the `cwltool` command line. This uses the `Dockerfile.cwl` and parameterization JSON file (`sample_configs.local.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.  In this case it's just a file copy to `/tmp/bamstats_report.zip` but it could copy the result to a destination in S3 for example.
 
@@ -279,7 +279,7 @@ At this point, we've successfully created our tool in Docker, tested it, written
 
 Releasing will tag your GitHub repository with a version tag so you always can get back to this particular release.  I'm going to use the tag `1.25-6_1.1` which you can see referenced in my Docker image tag and also my CWL file. Note that if you're following the tutorial using a forked version of the bamstats repo, your organization name should be different. GitHub makes it very easy to release:
 
-![Release](/assets/images/docs/release.png)
+![Release]("{{"/assets/images/docs/release.png" | relative_url }})
 
 I click on "releases" in my forked version of the GitHub project [page](https://github.com/CancerCollaboratory/dockstore-tool-bamstats) and then follow the directions to create a new release. Simple as that!
 
@@ -293,11 +293,11 @@ You can manually `docker push` the image you have already built but the most rel
 
 Log onto Quay.io now and setup a new repository (click the "+" icon).
 
-![New Quay Repo](/assets/images/docs/quay_new_repo.png)
+![New Quay Repo]("{{"/assets/images/docs/quay_new_repo.png" | relative_url }})
 
 For your sanity, you should match the name to what you were using previously. So in this case, it's my username then the same repo name as in GitHub `denis-yuen/dockstore-tool-bamstats`. Also, Dockstore will only work with `Public` repositories currently. Notice I'm selecting "Link to a GitHub Repository Push", this is because we want Quay to automatically build our Docker image every time we update the repository on GitHub.  Very slick!
 
-![Build Trigger](/assets/images/docs/build_all.png)
+![Build Trigger]("{{"/assets/images/docs/build_all.png" | relative_url }})
 
 Click through to select the organization and repo that will act as the source for your image. Here I select the GitHub repo for `denis-yuen/dockstore-tool-bamstats` but this should be your username or organization in your tutorial run-through.
 
@@ -305,19 +305,19 @@ It will then ask if there are particular branches you want to build, I typically
 
 So every time you do a commit to your GitHub repo Quay automatically builds and tags a Docker image.  If this is overkill for you, consider setting up particular build trigger regular expressions at this step.
 
-![Build Trigger](/assets/images/docs/run_trigger.png)
+![Build Trigger]("{{"/assets/images/docs/run_trigger.png" | relative_url }})
 
 It will also ask you where your Dockerfile is located and where your build context is (normally the root).
 
 At this point, you can confirm your settings and "Create Trigger" followed by "Run Trigger Now" to actually perform the initial build of the Docker images.  You'll need to click on the little gear icon next to your build trigger to accomplish this.
 
-![Manual Trigger](/assets/images/docs/manual_trigger.png)
+![Manual Trigger]("{{"/assets/images/docs/manual_trigger.png" | relative_url }})
 
 Manually trigger it with a version name of `1.25-6_1.1` for this tutorial. Normally, I let the build trigger build a new tag for each new release on GitHub. "latest" on Quay.io is built any time I check-in on any branch. This can be useful for development but is discouraged in favour of a tagged version number for formal releases of your tool.
 
 In my example, I should see a `1.25-6_1.1` listed for this Quay.io Docker repository:
 
-![Build Tags](/assets/images/docs/build_tags.png)
+![Build Tags]("{{"/assets/images/docs/build_tags.png" | relative_url }})
 
 And I do, so this Docker image has been built successfully by Quay and is ready for sharing with the community.
 

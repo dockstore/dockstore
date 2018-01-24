@@ -1,13 +1,13 @@
 # List of all sponsers
 - title: Cancer Collaboratory
   link: https://www.cancercollaboratory.org/
-  img: /assets/images/collaboratory.png
+  img: assets/images/collaboratory.png
 - title: OICR
   link: https://oicr.on.ca
-  img: /assets/images/oicr.png
+  img: assets/images/oicr.png
 - title: GA4GH
   link: https://genomicsandhealth.org/
-  img: /assets/images/ga4gh.png
+  img: assets/images/ga4gh.png
 - title: CWL
   link: http://www.commonwl.org/
-  img: /assets/images/cwl.png
+  img: assets/images/cwl.png

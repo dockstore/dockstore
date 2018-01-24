@@ -13,7 +13,7 @@ Dockstore also attempts to work with new and alternative languages/standards suc
 
 Docker repositories, like [Docker Hub](https://hub.docker.com/),  [Quay.io](https://quay.io/) and [GitLab](https://gitlab.com), and source control repositories like [GitHub](http://github.com), [Bitbucket](https://bitbucket.org/), and [GitLab](https://gitlab.com), provide much of the infrastructure we need.  They allow users build, publish, and share both public and private Docker images.  However, the services lack standardized ways of describing how to invoke tools contained within Docker containers.  The CWL standard has defined a way to define the inputs, parameterizations, and outputs of tools using a YAML-formatted file.  Together, these resources provide the necessary tools to share analytical tools in a highly portable way, a key concern for the scientific community.
 
-![Overview](/assets/images/docs/dockstore_logos.png)
+![Overview]({{"/assets/images/docs/dockstore_logos.png" | relative_url }})
 
 ## Best Practices
 
