@@ -54,9 +54,9 @@ public class ToolDAO extends EntryDAO<Tool> {
         String fullQueryName = "io.dockstore.webservice.core.Tool.";
 
         if (findPublished) {
-            fullQueryName += "findAllPublishedByPath";
+            fullQueryName += "findPublishedByPath";
         } else {
-            fullQueryName += "findAllByPath";
+            fullQueryName += "findByPath";
         }
 
         // Create query
@@ -88,16 +88,16 @@ public class ToolDAO extends EntryDAO<Tool> {
 
         if (splitPath[fourthIndex] == null) {
             if (findPublished) {
-                fullQueryName += "findPublishedByPathNullToolName";
+                fullQueryName += "findPublishedByToolPathNullToolName";
             } else {
-                fullQueryName += "findByPathNullToolName";
+                fullQueryName += "findByToolPathNullToolName";
             }
 
         } else {
             if (findPublished) {
-                fullQueryName += "findPublishedByPath";
+                fullQueryName += "findPublishedByToolPath";
             } else {
-                fullQueryName += "findByPath";
+                fullQueryName += "findByToolPath";
             }
         }
 

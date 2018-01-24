@@ -48,9 +48,9 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         String fullQueryName = "io.dockstore.webservice.core.Workflow.";
 
         if (findPublished) {
-            fullQueryName += "findAllPublishedByPath";
+            fullQueryName += "findPublishedByPath";
         } else {
-            fullQueryName += "findAllByPath";
+            fullQueryName += "findByPath";
         }
 
         // Create query
@@ -82,16 +82,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
 
         if (splitPath[fourthIndex] == null) {
             if (findPublished) {
-                fullQueryName += "findPublishedByPathNullWorkflowName";
+                fullQueryName += "findPublishedByWorkflowPathNullWorkflowName";
             } else {
-                fullQueryName += "findByPathNullWorkflowName";
+                fullQueryName += "findByWorkflowPathNullWorkflowName";
             }
 
         } else {
             if (findPublished) {
-                fullQueryName += "findPublishedByPath";
+                fullQueryName += "findPublishedByWorkflowPath";
             } else {
-                fullQueryName += "findByPath";
+                fullQueryName += "findByWorkflowPath";
             }
         }
 
