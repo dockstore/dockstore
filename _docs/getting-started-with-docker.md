@@ -114,7 +114,7 @@ $> docker build -t quay.io/collaboratory/dockstore-tool-bamstats:1.25-3 .
 
 The `.` is the path to the location of the Dockerfile, which is in the same directory here. The `-t` parameter is the "tag" that this Docker image will be called locally when it's cached on your host.  A few things to point out, the `quay.io` part of the tag typically denotes that this was built on Quay.io (which we will see in the next section).  I'm manually specifying this tag so it will match the Quay.io-built version.  This allows me to build and test locally then, eventually, switch over to the quay.io-built version.  The next part of the tag, `collaboratory/dockstore-tool-bamstats`, denotes the name of the tool which is derived from the organization and repository name on Quay.io.  Finally `1.25-3` denotes a version string, typically you want to sync that with releases on GitHub. In this case I'm working on release `1.25-3` so this is on a release branch.  However the most recent release via GitHub is the previous version `1.25-2`.  The ramifications of this will come up in the Quay.io section below.
 
-![Release in Github]("{{"/assets/images/docs/previous_release.png" | relative_url }})
+![Release in Github]({{"/assets/images/docs/previous_release.png" | relative_url }})
 
 Really, you could use whatever you want for the tag but, practically, you want this to match what Quay.io will use, aka your next release, so that's what I'm doing here. The tool should build normally and should exit without errors.  You should see something like:
 
@@ -171,7 +171,7 @@ The `-v` parameter used earlier is mounting the current working directory into `
 
 You can now unzip and examine the `bamstats_report.zip` file on your computer to see what type of reports are created by this tool. For example, here's a snippet:
 
-![Sample report]("{{"/assets/images/docs/report.png" | relative_url }})
+![Sample report]({{"/assets/images/docs/report.png" | relative_url }})
 
 Rather than interactively working with the image, you could also run your Docker image from the command-line.
 

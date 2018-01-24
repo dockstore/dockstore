@@ -34,7 +34,7 @@ You can set a default test parameter file for a workflow, which defaults to `/te
 
 The second step is to log in to the Dockstore. Make sure that you properly link Bitbucket and/or GitLab to your account if you are using workflows hosted on Bitbucket/Gitlab. After successfully linking your GitHub, Bitbucket and GitLab credentials (if applicable), you will be able to refresh your account on Dockstore and list your available repos on GitHub, Bitbucket and GitLab.
 
-![My Workflows]("{{"/assets/images/docs/workflow_ui.png" | relative_url }})
+![My Workflows]({{"/assets/images/docs/workflow_ui.png" | relative_url }})
 
 The above image shows the general structure of the UI that you should see after visiting "My Workflows." You can hit "Refresh All Workflows" in order to update information on published workflows or create new stubs for repos that you are about to publish. Workflows are a bit different from tools in that we create a stub entry for all your GitHub repos (and Bitbucket/GitLab repos). You can then promote these to full entries by refreshing, publishing and editing them. It is only at this point that the Dockstore will reach out and populate information such as available tags and source files. Workflows are handled differently from Tools in this regard since users may often have many more tags and repos on GitHub than Docker images on Quay.io.
 
@@ -56,7 +56,7 @@ In certain cases, you may wish to register workflows in a different source code 
 
 Workflows can be registered manually from the 'My Workflows' page by pressing the 'Register Workflow' button at the bottom of the right side bar, or any of the '+' buttons in each accordion namespace group. A modal will appear as below:
 
-![Register Workflow Manual]("{{"/assets/images/docs/register_workflow_manual.png" | relative_url }})
+![Register Workflow Manual]({{"/assets/images/docs/register_workflow_manual.png" | relative_url }})
 
 The Source Code Repository field must be filled out and is in the format `namespace/name` (the two paths may differ). The Workflow (descriptor) path and test parameter path are relative to the root of the Source Code Repository (and must begin with '/'), these will be the default locations to find their corresponding files, unless specified otherwise in the tags. The toolname is an optional 'suffix' appended to the Dockstore path, it allows for two workflows to share the same Git paths; the toolname uniquely distinguishes image repositories in Dockstore.
 
