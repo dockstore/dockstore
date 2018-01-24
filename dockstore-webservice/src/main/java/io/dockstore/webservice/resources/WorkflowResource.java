@@ -458,11 +458,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         checkUser(user, c);
 
-        Workflow duplicate = workflowDAO.findByPath(workflow.getPath(), false);
+        Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false);
 
         if (duplicate != null && duplicate.getId() != workflowId) {
-            LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getPath());
-            throw new CustomWebApplicationException("Workflow " + workflow.getPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+            LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getWorkflowPath());
+            throw new CustomWebApplicationException("Workflow " + workflow.getWorkflowPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
         updateInfo(c, workflow);
@@ -504,7 +504,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
-            LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
+            LOG.error(user.getUsername() + ": could not find version: " + workflow.getWorkflowPath());
             throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
 
         }
@@ -850,7 +850,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         if (workflow.getMode() == WorkflowMode.STUB) {
             String msg =
-                "The workflow \'" + workflow.getPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files";
+                "The workflow \'" + workflow.getWorkflowPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -859,7 +859,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             .findFirst();
 
         if (!potentialWorfklowVersion.isPresent()) {
-            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.";
+            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -867,7 +867,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
 
         if (!workflowVersion.isValid()) {
-            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.";
+            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -899,18 +899,18 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             .findFirst();
 
         if (!potentialWorfklowVersion.isPresent()) {
-            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.");
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.");
             throw new CustomWebApplicationException(
-                    "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' does not exist.",
+                    "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.",
                     HttpStatus.SC_BAD_REQUEST);
         }
 
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
 
         if (!workflowVersion.isValid()) {
-            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.");
+            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.");
             throw new CustomWebApplicationException(
-                    "The version \'" + version + "\' for workflow \'" + workflow.getPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
+                    "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.", HttpStatus.SC_BAD_REQUEST);
         }
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
@@ -1176,7 +1176,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
 
-        starEntryHelper(workflow, user, "workflow", workflow.getPath());
+        starEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
     }
 
@@ -1188,7 +1188,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
-        unstarEntryHelper(workflow, user, "workflow", workflow.getPath());
+        unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
     }
 

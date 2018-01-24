@@ -93,7 +93,7 @@ public class MetadataResource {
 
     private String createWorkflowURL(Workflow workflow) {
         return config.getScheme() + "://" + config.getHostname() + (config.getUiPort() == null ? "" : ":" + config.getUiPort()) + "/workflows/"
-                + workflow.getPath();
+                + workflow.getWorkflowPath();
     }
 
     private String createToolURL(Tool tool) {
@@ -134,7 +134,7 @@ public class MetadataResource {
             RSSEntry entry = new RSSEntry();
             if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
-                entry.setTitle(workflow.getPath());
+                entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);

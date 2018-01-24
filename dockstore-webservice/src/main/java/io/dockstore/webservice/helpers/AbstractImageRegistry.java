@@ -202,7 +202,7 @@ public abstract class AbstractImageRegistry {
 
         // Grab updated tool from the database
         final List<Tool> newDBTools = new ArrayList<>();
-        newDBTools.add(toolDAO.findById(toolId));
+        newDBTools.add(toolDAO.findById(tool.getId()));
 
         // Get tags and update for each tool
         List<Tag> toolTags = getTags(tool);

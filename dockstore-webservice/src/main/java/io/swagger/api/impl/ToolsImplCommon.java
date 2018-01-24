@@ -136,7 +136,7 @@ public final class ToolsImplCommon {
             if (container instanceof io.dockstore.webservice.core.Tool) {
                 newID = ((io.dockstore.webservice.core.Tool)container).getToolPath();
             } else if (container instanceof Workflow) {
-                newID = "#workflow/" + ((Workflow)container).getPath();
+                newID = "#workflow/" + ((Workflow)container).getWorkflowPath();
             } else {
                 LOG.error("Could not construct URL for our container with id: " + container.getId());
                 return null;

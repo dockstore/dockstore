@@ -4169,13 +4169,13 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
-      path:
-        type: "string"
       descriptorType:
         type: "array"
         readOnly: true
         items:
           type: "string"
+      path:
+        type: "string"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -5023,6 +5023,8 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
+      workflowPath:
+        type: "string"
       path:
         type: "string"
       is_published:

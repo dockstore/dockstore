@@ -222,9 +222,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.repository = repository;
     }
 
+    public String getWorkflowPath() {
+        return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
+    }
+
     public String getPath() {
-        String constructedPath = getSourceControl().toString() + '/' + organization + '/' + repository + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
-        return constructedPath;
+        return getSourceControl().toString() + '/' + organization + '/' + repository;
     }
 
     public void setDescriptorType(String descriptorType) {
