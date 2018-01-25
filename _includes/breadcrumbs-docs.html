@@ -24,9 +24,9 @@
     {% if forloop.last == true %}
       <li class="active">{{title}}</li>
     {% elsif forloop.index0 == 1 %}
-      <li><a href="{{ url }}">{{parentTitle}}</a></li>
+      <li><a href="{{ url | relative_url }}">{{parentTitle}}</a></li>
     {% else %}
-      <li><a href="{{ url }}">Documentation</a></li>
+      <li><a href="{{ url | relative_url }}">Documentation</a></li>
     {% endif %}
   {% endfor %}
 </ol>

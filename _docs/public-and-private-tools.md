@@ -14,4 +14,4 @@ It is important to note that descriptor files and tool metadata will be visible 
 
 ## Next Steps
 
-Read up on background information on the Dockstore project at [About](/docs) page or see our [full list of documentation](/docs).
+Read up on background information on the Dockstore project at [About]({{"/docs" | relative_url }}) page or see our [full list of documentation]({{"/docs" | relative_url }}).

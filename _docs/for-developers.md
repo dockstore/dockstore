@@ -42,8 +42,8 @@ Amazon ECR images are treated in Dockstore as a custom Docker registry path and 
 
 The following images demonstrate registering a tool with a registry-id and an empty namespace, represented as `_`.
 
-![Add ECR tool](/assets/images/docs/ecr-1.png)
-![Add ECR tool version](/assets/images/docs/ecr-2.png)
+![Add ECR tool]({{"/assets/images/docs/ecr-1.png" | relative_url }})
+![Add ECR tool version]({{"/assets/images/docs/ecr-2.png" | relative_url }})
 
 
 Amazon ECR images have an associated file containing the `Repository Policies`. When a tool user requests access to an Amazon ECR image, the tool maintainer should add them to the list of users with pull access. More information can be found on this [Amazon ECR](http://docs.aws.amazon.com/AmazonECR/latest/userguide/RepositoryPolicyExamples.html#IAM_allow_other_accounts) page.

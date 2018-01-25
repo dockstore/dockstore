@@ -8,7 +8,7 @@ permalink: /docs/publisher-tutorials/azure-batch/
 
 Azure Batch also provides a client-side tool called [Batch Shipyard](https://github.com/Azure/batch-shipyard) which provides a number of features including a simple command-line interface for submitting batch jobs.
 
-Of course, keep in mind that if you have a knowledge of CWL and/or do not need the Dockstore command-line to do file provisioning, you can decompose the underlying command-line invocation for the tool and use that as the command for your jobs, gaining a bit of performance. This tutorial focuses on using cwltool and using the Dockstore command-line to provide an experience that is more akin to running Dockstore or cwltool [on the command-line](/docs/launch#dockstore-cli) out of the box.
+Of course, keep in mind that if you have a knowledge of CWL and/or do not need the Dockstore command-line to do file provisioning, you can decompose the underlying command-line invocation for the tool and use that as the command for your jobs, gaining a bit of performance. This tutorial focuses on using cwltool and using the Dockstore command-line to provide an experience that is more akin to running Dockstore or cwltool [on the command-line]({{"/docs/launch#dockstore-cli" | relative_url }}) out of the box.
 
 1. Run through Azure Shipyard's [Linux Installation Guide](https://github.com/Azure/batch-shipyard/blob/master/docs/01-batch-shipyard-installation.md#step-2a-linux-run-the-installsh-script) and then the [Quickstart](https://github.com/Azure/batch-shipyard/blob/master/docs/02-batch-shipyard-quickstart.md) guide with one of the sample tools such as Torch-CPU.
 1. With the shipyyard CLI setup, get the md5sum sample recipes from GitHub

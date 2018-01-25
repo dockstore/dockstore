@@ -89,11 +89,11 @@ Dockstore tools and workflows can also be run through a number of online service
 
 ### AWS Batch
 
-[AWS Batch](https://aws.amazon.com/batch/) is built by Amazon Web Services. Look [here](/docs/aws-batch) for a tutorial on how to run a few sample tools via AWS.
+[AWS Batch](https://aws.amazon.com/batch/) is built by Amazon Web Services. Look [here]({{"/docs/aws-batch" | relative_url }}) for a tutorial on how to run a few sample tools via AWS.
 
 ### Azure Batch
 
-[Azure Batch](https://azure.microsoft.com/en-us/services/batch/) and the associated [batch-shipyard](https://github.com/Azure/batch-shipyard) is built by Microsoft. Look [here](/docs/azure-batch) for a tutorial on how to run a few sample tools via Azure.
+[Azure Batch](https://azure.microsoft.com/en-us/services/batch/) and the associated [batch-shipyard](https://github.com/Azure/batch-shipyard) is built by Microsoft. Look [here]({{"/docs/azure-batch" | relative_url }}) for a tutorial on how to run a few sample tools via Azure.
 
 ### Google Pipelines
 
@@ -115,6 +115,39 @@ Consonance's strategy is to provision either on-demand VMs or spot priced VMs de
 consonance run --tool-dockstore-id quay.io/collaboratory/dockstore-tool-bamstats:1.25-6_1.0 --run-descriptor Dockstore.json --flavour <AWS instance-type>
 ```
 
+## Notifications
+The Dockstore CLI has the ability to provide notifications via an HTTP post to a user-defined endpoint for the following steps:
+- The beginning of input files provisioning
+- The beginning of tool/workflow execution
+- The beginning of output files provisioning
+- Final launch completion
+
+Additionally, it will also provide notifications when any of these steps have failed.
+
+### Usage
+- Define a webhook URL in the Dockstore config file like:
+```
+...
+notifications: https://hooks.slack.com/services/aaa/bbb/ccc
+...
+```
+- UUID can be generated or user-defined uuid in the dockstore launch command like:
+```bash
+dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUUID
+```
+- An HTTP post with a JSON payload will be sent to the url defined earlier that looks like:
+```json
+{
+  "text": "someTextBasedOnMilestoneAndStatus",
+  "username": "your linux username",
+  "platform": "Dockstore CLI 1.4",
+  "uuid": "someUserDefinedOrGeneratedUUID"
+}
+```
+
+### Notes
+- To disable notifications, simply remove the webhook URL from the Dockstore config file
+- If the UUID is generated, the generated UUID will be displayed in beginning of the launch stdout
 
 ## Next Steps
 

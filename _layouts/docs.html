@@ -21,7 +21,7 @@ layout: default
       <!-- Panels for each tutorial grouping -->
       {% for section in site.data.docs %}
       <div class="panel panel-default">
-        <div class="panel-heading header-text"><h4><a class="link-no-color" href="/docs/{{ section.link }}">{{ section.title }}</a></h4></div>
+        <div class="panel-heading header-text"><h4><a class="link-no-color" href="{{"/docs/" | append: section.link | relative_url}}">{{ section.title }}</a></h4></div>
         {% include docs_list.html items=section.docs parent=section.link %}
       </div>
       {% endfor %}
