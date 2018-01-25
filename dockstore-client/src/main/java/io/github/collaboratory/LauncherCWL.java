@@ -50,6 +50,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
+import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.client.cwlrunner.CWLRunnerInterface;
 import io.dockstore.common.FileProvisioning;
@@ -84,14 +85,15 @@ public class LauncherCWL {
     private final String configFilePath;
     private final String imageDescriptorPath;
     private final String runtimeDescriptorPath;
+    private final String notificationsUUID;
     private final OutputStream stdoutStream;
     private final OutputStream stderrStream;
-    private INIConfiguration config;
-    private String globalWorkingDir;
     private final Yaml yaml = new Yaml(new SafeConstructor());
     private final Gson gson;
     private final FileProvisioning fileProvisioning;
     private final String originalTestParameterFilePath;
+    private INIConfiguration config;
+    private String globalWorkingDir;
 
     /**
      * Constructor for shell-based launch
@@ -106,6 +108,7 @@ public class LauncherCWL {
         configFilePath = line.getOptionValue("config");
         imageDescriptorPath = line.getOptionValue("descriptor");
         runtimeDescriptorPath = line.getOptionValue("job");
+        notificationsUUID = line.getOptionValue("notificationsUUID");
         originalTestParameterFilePath = "";
         this.stdoutStream = null;
         this.stderrStream = null;
@@ -121,12 +124,14 @@ public class LauncherCWL {
      * @param runtimeDescriptorPath descriptor for this run of the tool
      * @param stdoutStream          pass a stream in order to capture stdout from the run tool
      * @param stderrStream          pass a stream in order to capture stderr from the run tool
+     * @param uuid
      */
     public LauncherCWL(String configFilePath, String imageDescriptorPath, String runtimeDescriptorPath, OutputStream stdoutStream,
-            OutputStream stderrStream, String originalTestParameterFilePath) {
+            OutputStream stderrStream, String originalTestParameterFilePath, String uuid) {
         this.configFilePath = configFilePath;
         this.imageDescriptorPath = imageDescriptorPath;
         this.runtimeDescriptorPath = runtimeDescriptorPath;
+        this.notificationsUUID = uuid;
         this.originalTestParameterFilePath = originalTestParameterFilePath;
         fileProvisioning = new FileProvisioning(configFilePath);
         this.stdoutStream = stdoutStream;
@@ -163,6 +168,8 @@ public class LauncherCWL {
 
         // parse the CWL tool definition without validation
         CWLRunnerFactory.setConfig(config);
+        String notificationsWebHookURL = config.getString("notifications", "");
+        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
         String cwlRunner = CWLRunnerFactory.getCWLRunner();
         CWL cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
@@ -193,45 +200,64 @@ public class LauncherCWL {
 
         Map<String, FileProvisioning.FileInfo> inputsId2dockerMountMap;
         Map<String, List<FileProvisioning.FileInfo>> outputMap;
-
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
+        Map<String, Object> outputObj;
+        String newJsonPath;
         System.out.println("Provisioning your input files to your local machine");
-        if (cwlObject instanceof Workflow) {
-            Workflow workflow = (Workflow)cwlObject;
-            if (!"bunny".equals(cwlRunner)) {
-                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
-                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+        try {
+            if (cwlObject instanceof Workflow) {
+                Workflow workflow = (Workflow)cwlObject;
+                if (!"bunny".equals(cwlRunner)) {
+                    SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
+                    secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+                }
+                // pull input files
+                inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
+
+                // prep outputs, just creates output dir and records what the local output path will be
+                outputMap = prepUploadsWorkflow(workflow, inputsAndOutputsJson);
+
+            } else if (cwlObject instanceof CommandLineTool) {
+                CommandLineTool commandLineTool = (CommandLineTool)cwlObject;
+                // pull input files
+                inputsId2dockerMountMap = pullFiles(commandLineTool, inputsAndOutputsJson);
+
+                // prep outputs, just creates output dir and records what the local output path will be
+                outputMap = prepUploadsTool(commandLineTool, inputsAndOutputsJson);
+            } else {
+                throw new UnsupportedOperationException("CWL target type not supported yet");
             }
-            // pull input files
-            inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
+            // create updated JSON inputs document
+            newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
 
-            // prep outputs, just creates output dir and records what the local output path will be
-            outputMap = prepUploadsWorkflow(workflow, inputsAndOutputsJson);
-
-        } else if (cwlObject instanceof CommandLineTool) {
-            CommandLineTool commandLineTool = (CommandLineTool)cwlObject;
-            // pull input files
-            inputsId2dockerMountMap = pullFiles(commandLineTool, inputsAndOutputsJson);
-
-            // prep outputs, just creates output dir and records what the local output path will be
-            outputMap = prepUploadsTool(commandLineTool, inputsAndOutputsJson);
-        } else {
-            throw new UnsupportedOperationException("CWL target type not supported yet");
+            // run command
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
+            throw e;
         }
-        // create updated JSON inputs document
-        String newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
-
-        // run command
-        System.out.println("Calling out to a cwl-runner to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
-        Map<String, Object> outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
-                globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
-        System.out.println();
-
+        notificationsClient.sendMessage(NotificationsClient.RUN, true);
+        try {
+            System.out.println("Calling out to a cwl-runner to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
+            outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
+                    globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
+            System.out.println();
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.RUN, false);
+            throw e;
+        }
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
         // push output files
-        if (outputMap.size() > 0) {
-            System.out.println("Provisioning your output files to their final destinations");
-            List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, outputObj);
-            this.fileProvisioning.uploadFiles(outputList);
+        try {
+            if (outputMap.size() > 0) {
+                System.out.println("Provisioning your output files to their final destinations");
+                List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, outputObj);
+                this.fileProvisioning.uploadFiles(outputList);
+            }
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
+            throw e;
         }
+        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
     }
 
     /**
@@ -364,9 +390,10 @@ public class LauncherCWL {
 
     /**
      * This function modifies the current parameter object's secondary files to use absolute paths instead of relative paths
-     * @param param         The current parameter object than contains the class, path, and secondary files
-     * @param fileMap       The map that contains the absolute paths
-     * @param paramName     The parameter name
+     *
+     * @param param     The current parameter object than contains the class, path, and secondary files
+     * @param fileMap   The map that contains the absolute paths
+     * @param paramName The parameter name
      */
     private void modifySecondaryFiles(Map<String, Object> param, Map<String, FileProvisioning.FileInfo> fileMap, String paramName) {
         Gson googleJson = new Gson();
@@ -584,13 +611,13 @@ public class LauncherCWL {
         }
 
         // Trim the input
-        extraFlags = extraFlags.stream().map(string -> string.split(",")).flatMap(Arrays::stream).map(this::trimAndPrintInput).collect(Collectors.toList());
+        extraFlags = extraFlags.stream().map(string -> string.split(",")).flatMap(Arrays::stream).map(this::trimAndPrintInput)
+                .collect(Collectors.toList());
 
         // Create cwltool command
         CWLRunnerInterface cwlRunner = CWLRunnerFactory.createCWLRunner();
         List<String> command = cwlRunner.getExecutionCommand(outputDir, tmpDir, workingDir, cwlFile, jsonSettings);
         command.addAll(1, extraFlags);
-
 
         final String joined = Joiner.on(" ").join(command);
         System.out.println("Executing: " + joined);
@@ -613,7 +640,7 @@ public class LauncherCWL {
      * @param outputObject provides information on the output files from cwltool
      */
     List<ImmutablePair<String, FileProvisioning.FileInfo>> registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap,
-        Map<String, Object> outputObject) {
+            Map<String, Object> outputObject) {
 
         LOG.info("UPLOADING FILES...");
         List<ImmutablePair<String, FileProvisioning.FileInfo>> outputSet = new ArrayList<>();
@@ -650,7 +677,8 @@ public class LauncherCWL {
         return outputSet;
     }
 
-    private List<ImmutablePair<String, FileProvisioning.FileInfo>> handleOutputFileEntry(String key, FileProvisioning.FileInfo file, Object currentEntry) {
+    private List<ImmutablePair<String, FileProvisioning.FileInfo>> handleOutputFileEntry(String key, FileProvisioning.FileInfo file,
+            Object currentEntry) {
         List<ImmutablePair<String, FileProvisioning.FileInfo>> outputSet = new ArrayList<>();
         if (currentEntry instanceof Map) {
             Map<String, Object> map = (Map)currentEntry;
@@ -675,7 +703,8 @@ public class LauncherCWL {
      * @param file                 information on the final resting place for the output file
      * @param fileMapDataStructure the CWLtool output which contains the path to the file after cwltool is done with it
      */
-    private List<ImmutablePair<String, FileProvisioning.FileInfo>> provisionOutputFile(final String key, FileProvisioning.FileInfo file, final Map<String, Object> fileMapDataStructure) {
+    private List<ImmutablePair<String, FileProvisioning.FileInfo>> provisionOutputFile(final String key, FileProvisioning.FileInfo file,
+            final Map<String, Object> fileMapDataStructure) {
 
         List<ImmutablePair<String, FileProvisioning.FileInfo>> outputSet = new ArrayList<>();
 
@@ -782,8 +811,8 @@ public class LauncherCWL {
      * @param cwlInputFileID the file id from the CWL file
      * @param secondaryFiles a record of secondary files that were identified
      */
-    private List<Pair<String, Path>> pullFilesHelper(Map<String, Object> inputsOutputs, Map<String, FileProvisioning.FileInfo> fileMap, String cwlInputFileID,
-            List<String> secondaryFiles) {
+    private List<Pair<String, Path>> pullFilesHelper(Map<String, Object> inputsOutputs, Map<String, FileProvisioning.FileInfo> fileMap,
+            String cwlInputFileID, List<String> secondaryFiles) {
 
         List<Pair<String, Path>> inputSet = new ArrayList<>();
 
@@ -802,7 +831,8 @@ public class LauncherCWL {
                             String path = getPathOrLocation(lhm);
                             // notice I'm putting key:path together so they are unique in the hash
                             if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                                inputSet.addAll(doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles));
+                                inputSet.addAll(doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap,
+                                        secondaryFiles));
                             }
                         }
                     } else if (entry instanceof ArrayList) {
@@ -821,8 +851,8 @@ public class LauncherCWL {
         return inputSet;
     }
 
-    private List<Pair<String, Path>> processArrayofArrayOfFiles(Object entry, Entry<String, Object> stringObjectEntry, String cwlInputFileID,
-            Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles) {
+    private List<Pair<String, Path>> processArrayofArrayOfFiles(Object entry, Entry<String, Object> stringObjectEntry,
+            String cwlInputFileID, Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles) {
         List<Pair<String, Path>> inputSet = new ArrayList<>();
         try {
             ArrayList<Map> filesArray = (ArrayList)entry;
@@ -833,7 +863,8 @@ public class LauncherCWL {
                     String path = getPathOrLocation(lhm);
                     // notice I'm putting key:path together so they are unique in the hash
                     if (stringObjectEntry.getKey().equals(cwlInputFileID)) {
-                        inputSet.addAll(doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles));
+                        inputSet.addAll(
+                                doProcessFile(stringObjectEntry.getKey() + ":" + path, path, cwlInputFileID, fileMap, secondaryFiles));
                     }
                 }
             }
@@ -866,7 +897,8 @@ public class LauncherCWL {
 
         // set up output paths
         String downloadDirectory = globalWorkingDir + "/inputs/" + UUID.randomUUID();
-        System.out.println("Preparing download location for: #" + cwlInputFileID + " from " + path + " into directory: " + downloadDirectory);
+        System.out
+                .println("Preparing download location for: #" + cwlInputFileID + " from " + path + " into directory: " + downloadDirectory);
         Utilities.executeCommand("mkdir -p " + downloadDirectory);
         File downloadDirFileObj = new File(downloadDirectory);
 
@@ -899,8 +931,8 @@ public class LauncherCWL {
      * @param downloadDirFileObj
      * @param record             add a record to the fileMap
      */
-    private Pair<String, Path> copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap, File downloadDirFileObj,
-            boolean record) {
+    private Pair<String, Path> copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap,
+            File downloadDirFileObj, boolean record) {
         String shortfileName = Paths.get(path).getFileName().toString();
         final Path targetFilePath = Paths.get(downloadDirFileObj.getAbsolutePath(), shortfileName);
         // now add this info to a hash so I can later reconstruct a docker -v command
