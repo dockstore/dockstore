@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
@@ -64,7 +65,8 @@ import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
  */
 public final class ToolsImplCommon {
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
-    private static ToolsImplCommon instance = null;
+    private static final String GITHUB_PREFIX = "git@github.com:";
+    private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
 
     private ToolsImplCommon() { }
 
@@ -74,7 +76,7 @@ public final class ToolsImplCommon {
      * @param url  url to set for the descriptor
      * @param file a file with content for the descriptor
      */
-    public static ToolDescriptor buildSourceFile(String url, SourceFile file) {
+    private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
         ToolDescriptor descriptor = new ToolDescriptor();
         if (file.getType() == DOCKSTORE_CWL) {
             descriptor.setType(ToolDescriptor.TypeEnum.CWL);
@@ -94,13 +96,22 @@ public final class ToolsImplCommon {
 
     /**
      * This converts a Dockstore's SourceFile to a GA4GH ToolDescriptor
+     *
      * @param sourceFile The Dockstore SourceFile
      * @return The converted GA4GH ToolDescriptor
      */
-    public static ToolDescriptor sourceFileToToolDescriptor(SourceFile sourceFile) {
+    static ToolDescriptor sourceFileToToolDescriptor(SourceFile sourceFile) {
         ToolDescriptor toolDescriptor = new ToolDescriptor();
         toolDescriptor.setDescriptor(sourceFile.getContent());
         toolDescriptor.setUrl(sourceFile.getPath());
+        if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+            toolDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+        } else if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_WDL)) {
+            toolDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+        } else {
+            LOG.error("This source file is not a recognized descriptor.");
+            return null;
+        }
         return toolDescriptor;
     }
 
@@ -125,206 +136,275 @@ public final class ToolsImplCommon {
      * @param container our data object
      * @return standardised data object
      */
-    public static Pair<Tool, Table<String, SourceFile.FileType, Object>> convertContainer2Tool(Entry container,
+    public static Pair<Tool, Table<String, SourceFile.FileType, Object>> convertEntryToTool(Entry container,
             DockstoreWebserviceConfiguration config) {
         Table<String, SourceFile.FileType, Object> fileTable = HashBasedTable.create();
-        String globalId;
-        // TODO: properly pass this information
-        String newID;
-        try {
-            // construct escaped ID
-            if (container instanceof io.dockstore.webservice.core.Tool) {
-                newID = ((io.dockstore.webservice.core.Tool)container).getToolPath();
-            } else if (container instanceof Workflow) {
-                newID = "#workflow/" + ((Workflow)container).getPath();
-            } else {
+        String url;
+        String newID = getNewId(container);
+        if (newID == null) {
+            return null;
+        } else {
+            try {
+                String baseURL = baseURL(config);
+                url = getUrl(newID, baseURL);
+            } catch (URISyntaxException | UnsupportedEncodingException e) {
                 LOG.error("Could not construct URL for our container with id: " + container.getId());
                 return null;
             }
+        }
+        // TODO: hook this up to a type field in our DB?
+        io.swagger.model.Tool tool = new io.swagger.model.Tool();
+        tool = setGeneralToolInfo(tool, container);
+        tool.setId(newID);
+        tool.setUrl(url);
 
-            String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
-            URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
-                    DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
-            globalId = uri.toString() + escapedID;
-        } catch (URISyntaxException | UnsupportedEncodingException e) {
+        Set inputVersions;
+        // tool specific
+        if (container instanceof io.dockstore.webservice.core.Tool) {
+            io.dockstore.webservice.core.Tool dockstoreTool = (io.dockstore.webservice.core.Tool)container;
+
+            // The name is composed of the repository name and then the optional toolname split with a '/'
+            String name = dockstoreTool.getName();
+            String toolName = dockstoreTool.getToolname();
+            String returnName = constructName(Arrays.asList(name, toolName));
+            tool.setToolname(returnName);
+            tool.setOrganization(dockstoreTool.getNamespace());
+            inputVersions = ((io.dockstore.webservice.core.Tool)container).getTags();
+        } else if (container instanceof Workflow) {
+            // workflow specific
+            Workflow workflow = (Workflow)container;
+
+            // The name is composed of the repository name and then the optional toolname split with a '/'
+            String name = workflow.getRepository();
+            String workflowName = workflow.getWorkflowName();
+            String returnName = constructName(Arrays.asList(name, workflowName));
+            tool.setToolname(returnName);
+            tool.setOrganization(workflow.getOrganization());
+            inputVersions = ((Workflow)container).getWorkflowVersions();
+        } else {
+            LOG.error("Unrecognized container type - neither tool or workflow: " + container.getId());
+            return null;
+        }
+
+        // handle verified information
+        tool = setVerified(tool, inputVersions);
+        for (Version version : (Set<Version>)inputVersions) {
+            // tags with no names make no sense here
+            // also hide hidden tags
+            if (version.getName() == null || version.isHidden()) {
+                continue;
+            }
+            if (version instanceof Tag && ((Tag)version).getImageId() == null) {
+                continue;
+            }
+
+            ToolVersion toolVersion = new ToolVersion();
+            try {
+                toolVersion = setGeneralToolVersionInfo(url, toolVersion, version);
+            } catch (UnsupportedEncodingException e) {
+                LOG.error("Could not construct URL for our container with id: " + container.getId());
+                return null;
+            }
+            toolVersion.setId(tool.getId() + ":" + version.getName());
+            String urlBuilt;
+            String gitUrl = container.getGitUrl();
+            if (gitUrl.startsWith(GITHUB_PREFIX)) {
+                urlBuilt = extractHTTPPrefix(gitUrl, version.getReference(), GITHUB_PREFIX, "https://raw.githubusercontent.com/");
+            } else if (gitUrl.startsWith(BITBUCKET_PREFIX)) {
+                urlBuilt = extractHTTPPrefix(gitUrl, version.getReference(), BITBUCKET_PREFIX, "https://bitbucket.org/");
+            } else {
+                LOG.error("Found a git url neither from BitBucket or GitHub " + gitUrl);
+                urlBuilt = null;
+            }
+
+            final Set<SourceFile> sourceFiles = version.getSourceFiles();
+            for (SourceFile file : sourceFiles) {
+                if (version instanceof Tag) {
+                    switch (file.getType()) {
+                    case DOCKERFILE:
+                        ToolDockerfile dockerfile = new ToolDockerfile();
+                        dockerfile.setDockerfile(file.getContent());
+                        dockerfile.setUrl(urlBuilt + ((Tag)version).getDockerfilePath());
+                        toolVersion.setDockerfile(true);
+                        fileTable.put(version.getName(), DOCKERFILE, dockerfile);
+                        break;
+                    case DOCKSTORE_CWL:
+                        if (((Tag)version).getCwlPath().equalsIgnoreCase(file.getPath())) {
+                            toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                            fileTable.put(version.getName(), DOCKSTORE_CWL, buildSourceFile(urlBuilt + ((Tag)version).getCwlPath(), file));
+                        }
+                        break;
+                    case DOCKSTORE_WDL:
+                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.WDL);
+                        fileTable.put(version.getName(), DOCKSTORE_WDL, buildSourceFile(urlBuilt + ((Tag)version).getWdlPath(), file));
+                        break;
+                    default:
+                        // Unhandled file type is apparently ignored
+                        break;
+                    }
+                } else if (version instanceof WorkflowVersion) {
+                    switch (file.getType()) {
+                    case DOCKSTORE_CWL:
+                        // get the "main" workflow file
+                        if (((WorkflowVersion)version).getWorkflowPath().equalsIgnoreCase(file.getPath())) {
+                            toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                            fileTable.put(version.getName(), DOCKSTORE_CWL,
+                                    buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
+                        }
+                        break;
+                    case DOCKSTORE_WDL:
+                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.WDL);
+                        fileTable.put(version.getName(), DOCKSTORE_WDL,
+                                buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
+                        break;
+                    default:
+                        // Unhandled file type is apparently ignored
+                        break;
+                    }
+                }
+            }
+
+            // ensure that descriptor is non-null before adding to list
+            if (!toolVersion.getDescriptorType().isEmpty()) {
+                // do some clean-up
+                toolVersion.setMetaVersion(String.valueOf(version.getLastModified() != null ? version.getLastModified() : new Date(0)));
+                final List<ToolVersion.DescriptorTypeEnum> descriptorType = toolVersion.getDescriptorType();
+                if (!descriptorType.isEmpty()) {
+                    EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
+                    toolVersion.setDescriptorType(Lists.newArrayList(set));
+                }
+                tool.getVersions().add(toolVersion);
+            }
+        }
+        return new ImmutablePair<>(tool, fileTable);
+    }
+
+    /**
+     * Construct escaped ID and then the URL of the Tool
+     *
+     * @param newID  The ID of the Tool
+     * @param baseURL The base URL for the tools endpoint
+     * @return The URL of the Tool
+     * @throws UnsupportedEncodingException When URL encoding has failed
+     */
+    private static String getUrl(String newID, String baseURL)
+            throws UnsupportedEncodingException {
+        String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
+        return baseURL + escapedID;
+    }
+
+    /**
+     * Get baseURL from DockstoreWebServiceConfiguration
+     * @param config    The DockstoreWebServiceConfiguration
+     * @return          The baseURL for GA4GH tools endpoint
+     * @throws URISyntaxException   When URI building goes wrong
+     */
+    private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
+        URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
+                DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
+        return uri.toString();
+    }
+
+    /**
+     * Sets whether the Tool is verified or not based on the version from Dockstore (Tags or WorkflowVersions)
+     *
+     * @param tool     The Tool to be modified
+     * @param versions The Dockstore versions (Tags or WorkflowVersions)
+     * @return The modified Tool with verified set
+     */
+    private static Tool setVerified(Tool tool, Set<Version> versions) {
+        tool.setVerified(versions.stream().anyMatch(Version::isVerified));
+        final List<String> collect = versions.stream().filter(Version::isVerified).map(Version::getVerifiedSource)
+                .collect(Collectors.toList());
+        Gson gson = new Gson();
+        Collections.sort(collect);
+        tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
+        return tool;
+    }
+
+    /**
+     * Gets the new ID of the Tool
+     *
+     * @param container The Dockstore Entry (Tool or Workflow)
+     * @return The new ID of the Tool
+     */
+    private static String getNewId(Entry container) {
+        if (container instanceof io.dockstore.webservice.core.Tool) {
+            return ((io.dockstore.webservice.core.Tool)container).getToolPath();
+        } else if (container instanceof Workflow) {
+            return "#workflow/" + ((Workflow)container).getPath();
+        } else {
             LOG.error("Could not construct URL for our container with id: " + container.getId());
             return null;
         }
-        // TODO: hook this up to a type field in our DB?
-        ToolClass type = container instanceof io.dockstore.webservice.core.Tool ? ToolClassesApiServiceImpl.getCommandLineToolClass()
-                : ToolClassesApiServiceImpl.getWorkflowClass();
+    }
 
-        io.swagger.model.Tool tool = new io.swagger.model.Tool();
+    /**
+     * Set most of the GA4GH's ToolVersion information that is not based on the Dockstore source files
+     *
+     * @param url         Base URL of the tool
+     * @param toolVersion The ToolVersion that will be modified
+     * @param version     The Dockstore Version (Tag or WorkflowVersion)
+     * @return The modified ToolVersion
+     * @throws UnsupportedEncodingException When URL encoding has failed
+     */
+    private static ToolVersion setGeneralToolVersionInfo(String url, ToolVersion toolVersion, Version version)
+            throws UnsupportedEncodingException {
+        String globalVersionId;
+        globalVersionId = url + "/versions/" + URLEncoder.encode(version.getName(), StandardCharsets.UTF_8.displayName());
+        toolVersion.setUrl(globalVersionId);
+        toolVersion.setName(version.getName());
+        toolVersion.setVerified(version.isVerified());
+        toolVersion.setVerifiedSource(Strings.nullToEmpty(version.getVerifiedSource()));
+        toolVersion.setDockerfile(false);
+
+        // Set image if it's a DockstoreTool, otherwise make it empty string (for now)
+        if (version instanceof Tag) {
+            Tag tag = (Tag)version;
+            toolVersion.setImage(tag.getImageId());
+        } else {
+            // TODO: Modify mapper to ignore null-value properties during serialization for specific endpoint(s)
+            toolVersion.setImage("");
+        }
+        return toolVersion;
+    }
+
+    /**
+     * Set most of the GA4GH's Tool information that is not dependant on Dockstore's Tags or WorkflowVersions
+     *
+     * @param tool      The GA4GH Tool that will be modified
+     * @param container The Dockstore Tool or Workflow
+     * @return The modified Tool
+     */
+    private static Tool setGeneralToolInfo(Tool tool, Entry container) {
+        // Set author
         if (container.getAuthor() == null) {
             tool.setAuthor("Unknown author");
         } else {
             tool.setAuthor(container.getAuthor());
         }
 
-        tool.setDescription(container.getDescription());
+        // Set meta-version
         tool.setMetaVersion(container.getLastUpdated() != null ? container.getLastUpdated().toString() : new Date(0).toString());
+
+        // Set type
+        ToolClass type = container instanceof io.dockstore.webservice.core.Tool ? ToolClassesApiServiceImpl.getCommandLineToolClass()
+                : ToolClassesApiServiceImpl.getWorkflowClass();
         tool.setToolclass(type);
-        tool.setId(newID);
-        tool.setUrl(globalId);
 
-        // tool specific
-        if (container instanceof io.dockstore.webservice.core.Tool) {
-            io.dockstore.webservice.core.Tool inputTool = (io.dockstore.webservice.core.Tool)container;
-
-            // The name is composed of the repository name and then the optional toolname split with a '/'
-            String name = inputTool.getName();
-            String toolName = inputTool.getToolname();
-            String returnName = constructName(Arrays.asList(name, toolName));
-            tool.setToolname(returnName);
-            tool.setOrganization(inputTool.getNamespace());
-        }
-        // workflow specific
-        if (container instanceof Workflow) {
-            Workflow inputTool = (Workflow)container;
-
-            // The name is composed of the repository name and then the optional toolname split with a '/'
-            String name = inputTool.getRepository();
-            String workflowName = inputTool.getWorkflowName();
-            String returnName = constructName(Arrays.asList(name, workflowName));
-            tool.setToolname(returnName);
-            tool.setOrganization(inputTool.getOrganization());
-        }
-
-        // TODO: contains has no counterpart in our DB
-        // setup versions as well
-        Set inputVersions;
-        if (container instanceof io.dockstore.webservice.core.Tool) {
-            inputVersions = ((io.dockstore.webservice.core.Tool)container).getTags();
-        } else {
-            inputVersions = ((Workflow)container).getWorkflowVersions();
-        }
-
-        // handle verified information
-        tool.setVerified(((Set<Version>)inputVersions).stream().anyMatch(Version::isVerified));
-        final List<String> collect = ((Set<Version>)inputVersions).stream().filter(Version::isVerified).map(Version::getVerifiedSource)
-                .collect(Collectors.toList());
-        Gson gson = new Gson();
-        tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
-
-        // Signed is currently not supported
+        // Set signed.  Signed is currently not supported
         tool.setSigned(false);
+
+        // Set description
         tool.setDescription(container.getDescription() != null ? container.getDescription() : "");
-        for (Version inputVersion : (Set<Version>)inputVersions) {
-
-            // tags with no names make no sense here
-            // also hide hidden tags
-            if (inputVersion.getName() == null || inputVersion.isHidden()) {
-                continue;
-            }
-            if (inputVersion instanceof Tag && ((Tag)inputVersion).getImageId() == null) {
-                continue;
-            }
-
-            ToolVersion version = new ToolVersion();
-            // version id
-            String globalVersionId;
-            try {
-                globalVersionId = globalId + "/versions/" + URLEncoder.encode(inputVersion.getName(), StandardCharsets.UTF_8.displayName());
-            } catch (UnsupportedEncodingException e) {
-                LOG.error("Could not construct URL for our container with id: " + container.getId());
-                return null;
-            }
-            version.setUrl(globalVersionId);
-
-            version.setId(tool.getId() + ":" + inputVersion.getName());
-
-            version.setName(inputVersion.getName());
-            version.setVerified(inputVersion.isVerified());
-            version.setVerifiedSource(Strings.nullToEmpty(inputVersion.getVerifiedSource()));
-            version.setDockerfile(false);
-
-            /**
-             * Set image if it's a DockstoreTool, otherwise make it empty string (for now)
-             */
-            if (inputVersion instanceof Tag) {
-                Tag tag = (Tag)inputVersion;
-                version.setImage(tag.getImageId());
-            } else {
-                // TODO: Modify mapper to ignore null-value properties during serialization for specific endpoint(s)
-                // version.setImage(null);
-                version.setImage("");
-            }
-
-            String urlBuilt;
-            final String githubPrefix = "git@github.com:";
-            final String bitbucketPrefix = "git@bitbucket.org:";
-            if (container.getGitUrl().startsWith(githubPrefix)) {
-                urlBuilt = extractHTTPPrefix(container.getGitUrl(), inputVersion.getReference(), githubPrefix,
-                        "https://raw.githubusercontent.com/");
-            } else if (container.getGitUrl().startsWith(bitbucketPrefix)) {
-                urlBuilt = extractHTTPPrefix(container.getGitUrl(), inputVersion.getReference(), bitbucketPrefix, "https://bitbucket.org/");
-            } else {
-                LOG.error("Found a git url neither from bitbucket or github " + container.getGitUrl());
-                urlBuilt = null;
-            }
-
-            final Set<SourceFile> sourceFiles = inputVersion.getSourceFiles();
-            for (SourceFile file : sourceFiles) {
-                if (inputVersion instanceof Tag) {
-                    switch (file.getType()) {
-                    case DOCKERFILE:
-                        ToolDockerfile dockerfile = new ToolDockerfile();
-                        dockerfile.setDockerfile(file.getContent());
-                        dockerfile.setUrl(urlBuilt + ((Tag)inputVersion).getDockerfilePath());
-                        version.setDockerfile(true);
-                        fileTable.put(inputVersion.getName(), DOCKERFILE, dockerfile);
-                        break;
-                    case DOCKSTORE_CWL:
-                        if (((Tag)inputVersion).getCwlPath().equalsIgnoreCase(file.getPath())) {
-                            version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                            fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
-                                    buildSourceFile(urlBuilt + ((Tag)inputVersion).getCwlPath(), file));
-                        }
-                        break;
-                    case DOCKSTORE_WDL:
-                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
-                                buildSourceFile(urlBuilt + ((Tag)inputVersion).getWdlPath(), file));
-                        break;
-                    }
-                } else if (inputVersion instanceof WorkflowVersion) {
-                    switch (file.getType()) {
-                    case DOCKSTORE_CWL:
-                        // get the "main" workflow file
-                        if (((WorkflowVersion)inputVersion).getWorkflowPath().equalsIgnoreCase(file.getPath())) {
-                            version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                            fileTable.put(inputVersion.getName(), DOCKSTORE_CWL,
-                                    buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
-                        }
-                        break;
-                    case DOCKSTORE_WDL:
-                        version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
-                        fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
-                                buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
-                        break;
-                    }
-                }
-            }
-            if (container instanceof io.dockstore.webservice.core.Tool) {
-                version.setImage(((io.dockstore.webservice.core.Tool)container).getPath() + ":" + inputVersion.getName());
-            }
-            // ensure that descriptor is non-null before adding to list
-            if (!version.getDescriptorType().isEmpty()) {
-                // do some clean-up
-                version.setMetaVersion(
-                        String.valueOf(inputVersion.getLastModified() != null ? inputVersion.getLastModified() : new Date(0)));
-                final List<ToolVersion.DescriptorTypeEnum> descriptorType = version.getDescriptorType();
-                if (!descriptorType.isEmpty()) {
-                    EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
-                    version.setDescriptorType(Lists.newArrayList(set));
-                }
-                tool.getVersions().add(version);
-            }
-
-        }
-        return new ImmutablePair<>(tool, fileTable);
+        return tool;
     }
 
+    /**
+     * Construct the workflow/tool full name
+     * @param strings   The components that make up the full name (repository name + optional workflow/tool name)
+     * @return  The full workflow/tool name
+     */
     private static String constructName(List<String> strings) {
         // The name is composed of the repository name and then the optional workflowname split with a '/'
         StringJoiner joiner = new StringJoiner("/");
@@ -336,10 +416,19 @@ public final class ToolsImplCommon {
         return joiner.toString();
     }
 
-    public static ToolTests sourceFileToToolTests(SourceFile file) {
+    /**
+     * Converts a Dockstore SourceFile to GA4GH ToolTests
+     * @param sourceFile  The Dockstore SourceFile to convert
+     * @return      The resulting GA4GH ToolTests
+     */
+    static ToolTests sourceFileToToolTests(SourceFile sourceFile) {
+        SourceFile.FileType type = sourceFile.getType();
+        if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON)) {
+            LOG.error("This source file is not a recognized test file.");
+        }
         ToolTests toolTests = new ToolTests();
-        toolTests.setUrl(file.getPath());
-        toolTests.setTest(file.getContent());
+        toolTests.setUrl(sourceFile.getPath());
+        toolTests.setTest(sourceFile.getContent());
         return toolTests;
     }
 }

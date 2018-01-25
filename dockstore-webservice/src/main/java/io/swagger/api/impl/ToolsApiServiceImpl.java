@@ -119,7 +119,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             // check whether this is registered
             response = Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
-            io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(container, config).getLeft();
+            io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(container, config).getLeft();
             assert (tool != null);
             // filter out other versions if we're narrowing to a specific version
             if (version != null) {
@@ -301,7 +301,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                 }
             }
             // if passing, for each container that matches the criteria, convert to standardised format and return
-            io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(c, config).getLeft();
+            io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config).getLeft();
             if (tool != null) {
                 results.add(tool);
             }
@@ -383,7 +383,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         }
 
         final Pair<io.swagger.model.Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = ToolsImplCommon
-                .convertContainer2Tool(entry, config);
+                .convertEntryToTool(entry, config);
 
         String finalVersionId = versionId;
         if (toolTablePair == null || toolTablePair.getKey().getVersions() == null) {
@@ -449,11 +449,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
                         ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
-                        if (entity.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-                            toolDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
-                        } else {
-                            toolDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
-                        }
                         return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                                 .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
                     }
