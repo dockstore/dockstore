@@ -58,7 +58,7 @@ public class GA4GHV2IT extends GA4GHIT {
     }
 
     private void toolsIdWorkflow() throws Exception {
-        Response response = checkedResponse(basePath + "tools/%23workflow%2FG%2FA%2Fl");
+        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FA%2Fl");
         ToolV2 responseObject = response.readEntity(ToolV2.class);
         assertTool(MAPPER.writeValueAsString(responseObject), false);
     }

@@ -5023,8 +5023,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
-      workflowPath:
-        type: "string"
       path:
         type: "string"
       is_published:
@@ -5042,6 +5040,9 @@ definitions:
         type: "string"
         description: "This indicates for the associated git repository, the default\
           \ path to the test parameter file"
+      full_workflow_path:
+        type: "string"
+        readOnly: true
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"

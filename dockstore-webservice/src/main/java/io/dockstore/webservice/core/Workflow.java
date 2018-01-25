@@ -222,6 +222,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.repository = repository;
     }
 
+    @JsonProperty("full_workflow_path")
     public String getWorkflowPath() {
         return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
