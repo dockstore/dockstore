@@ -31,6 +31,14 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         super(factory);
     }
 
+    /**
+     * Finds all workflows with the given path (ignores workflow name)
+     * When findPublished is true, will only look at published workflows
+     *
+     * @param path
+     * @param findPublished
+     * @return A list of workflows with the given path
+     */
     public List<Workflow> findAllByPath(String path, boolean findPublished) {
         Object[] splitPath = Workflow.splitPath(path, false);
 
@@ -62,6 +70,14 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return list(query);
     }
 
+    /**
+     * Finds the workflow matching the given workflow path
+     * When findPublished is true, will only look at published workflows
+     *
+     * @param path
+     * @param findPublished
+     * @return Workflow matching the path
+     */
     public Workflow findByPath(String path, boolean findPublished) {
         Object[] splitPath = Workflow.splitPath(path, false);
 

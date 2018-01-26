@@ -37,6 +37,14 @@ public class ToolDAO extends EntryDAO<Tool> {
         return list(namedQuery("io.dockstore.webservice.core.Tool.findByMode").setParameter("mode", mode));
     }
 
+    /**
+     * Finds all tools with the given path (ignores tool name)
+     * When findPublished is true, will only look at published tools
+     *
+     * @param path
+     * @param findPublished
+     * @return A list of tools with the given path
+     */
     public List<Tool> findAllByPath(String path, boolean findPublished) {
         Object[] splitPath = Tool.splitPath(path, true);
 
@@ -68,6 +76,14 @@ public class ToolDAO extends EntryDAO<Tool> {
         return list(query);
     }
 
+    /**
+     * Finds the tool matching the given tool path
+     * When findPublished is true, will only look at published tools
+     *
+     * @param path
+     * @param findPublished
+     * @return Tool matching the path
+     */
     public Tool findByPath(String path, boolean findPublished) {
         Object[] splitPath = Tool.splitPath(path, true);
 

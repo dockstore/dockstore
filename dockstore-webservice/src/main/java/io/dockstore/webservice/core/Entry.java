@@ -290,6 +290,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
         return false;
     }
 
+    /**
+     * Given a path (A/B/C/D), splits it into parts and returns it
+     * Note that B, C, and D are all strings, however A is either a registry or sourcecontrol enum
+     *
+     * @param path
+     * @param isTool
+     * @return An array of fields used to identify an entry
+     */
     public static Object[] splitPath(String path, boolean isTool) {
         final int firstIndex = 0;
         final int secondIndex = 1;
@@ -318,6 +326,13 @@ public abstract class Entry<S extends Entry, T extends Version> {
                     firstPosition = val;
                     break;
                 }
+            }
+
+            if (isTool && firstPosition == null) {
+                // If first position is null, then assume Amazon ECR since it is the only custom Docker Registry
+                // This is a temporary solution
+                firstPosition = Registry.AMAZON_ECR;
+
             }
 
             secondPosition = splitPath[secondIndex];
