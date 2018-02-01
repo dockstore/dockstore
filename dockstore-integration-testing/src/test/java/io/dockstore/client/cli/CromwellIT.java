@@ -65,7 +65,7 @@ public class CromwellIT {
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
         // run a workflow
-        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, parameterFile.getAbsolutePath(), null);
+        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, parameterFile.getAbsolutePath(), null, null);
         Assert.assertTrue(run == 0);
     }
 
@@ -77,7 +77,7 @@ public class CromwellIT {
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl_wrong.json"));
         // run a workflow
-        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, parameterFile.getAbsolutePath(), null);
+        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, parameterFile.getAbsolutePath(), null, null);
         Assert.assertTrue(run != 0);
     }
 
@@ -106,7 +106,7 @@ public class CromwellIT {
 
         String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
         // run a workflow
-        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, newJsonPath, tempDir.getAbsolutePath());
+        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, newJsonPath, tempDir.getAbsolutePath(), null);
         Assert.assertTrue(run == 0);
         // let's check that provisioning out occured
         final Collection<File> files = FileUtils.listFiles(tempDir, null, true);

@@ -5,7 +5,6 @@ notifications:
     rooms:
     - oicr:S9k4EowgQv9AnbCfEZHSzCsg
 sudo: required
-group: deprecated-2017Q4
 services:
 - docker
 

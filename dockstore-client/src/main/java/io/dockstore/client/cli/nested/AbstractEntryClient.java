@@ -54,6 +54,7 @@ import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
+import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.client.cwlrunner.CWLRunnerFactory;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
@@ -62,6 +63,7 @@ import io.github.collaboratory.LauncherCWL;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -886,8 +888,8 @@ public abstract class AbstractEntryClient {
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
     Type checkFileExtension(String path) {
-        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING) || FilenameUtils.getExtension(path).toLowerCase().equals("yaml")
-            || FilenameUtils.getExtension(path).toLowerCase().equals("yml")) {
+        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING) || FilenameUtils.getExtension(path).toLowerCase()
+                .equals("yaml") || FilenameUtils.getExtension(path).toLowerCase().equals("yml")) {
             return Type.CWL;
         } else if (FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)) {
             return Type.WDL;
@@ -1065,12 +1067,13 @@ public abstract class AbstractEntryClient {
         final String yamlRun = optVal(args, "--yaml", null);
         String jsonRun = optVal(args, "--json", null);
         final String csvRuns = optVal(args, "--tsv", null);
+        final String uuid = optVal(args, "--uuid", null);
 
         if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)) {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
 
-        handleCWLLaunch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, null);
+        handleCWLLaunch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, null, uuid);
 
     }
 
@@ -1080,11 +1083,13 @@ public abstract class AbstractEntryClient {
      * @param yamlRun      runtime descriptor, one of these is required
      * @param jsonRun      runtime descriptor, one of these is required
      * @param csvRuns      runtime descriptor, one of these is required
+     * @param uuid         uuid that was optional specified for notifications
      * @throws IOException
      * @throws ApiException
      */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     void handleCWLLaunch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, OutputStream stdoutStream,
-            OutputStream stderrStream) throws IOException, ApiException {
+            OutputStream stderrStream, String uuid) throws IOException, ApiException {
         String originalTestParameterFilePath = getOriginalTestParameterFilePath(yamlRun, jsonRun, csvRuns);
         if (!SCRIPT.get()) {
             getClient().checkForCWLDependencies();
@@ -1133,7 +1138,7 @@ public abstract class AbstractEntryClient {
                         final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                         FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
                         final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(),
-                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath);
+                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath, uuid);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -1142,7 +1147,7 @@ public abstract class AbstractEntryClient {
                     }
                 } else {
                     final LauncherCWL cwlLauncher = new LauncherCWL(getConfigFile(), tempCWL.getAbsolutePath(), jsonRun, stdoutStream,
-                            stderrStream, originalTestParameterFilePath);
+                            stderrStream, originalTestParameterFilePath, uuid);
                     if (this instanceof WorkflowClient) {
                         cwlLauncher.run(Workflow.class);
                     } else {
@@ -1186,7 +1191,7 @@ public abstract class AbstractEntryClient {
                         // final String stringMapAsString = gson.toJson(stringMap);
                         // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
                         final LauncherCWL cwlLauncher = new LauncherCWL(this.getConfigFile(), tempCWL.getAbsolutePath(),
-                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath);
+                                tempJson.getAbsolutePath(), stdoutStream, stderrStream, originalTestParameterFilePath, uuid);
                         if (this instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
@@ -1245,22 +1250,11 @@ public abstract class AbstractEntryClient {
     private void launchWdl(String entry, final List<String> args, boolean isLocalEntry) throws IOException, ApiException {
         final String json = reqVal(args, "--json");
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
-
-        launchWdlInternal(entry, isLocalEntry, json, wdlOutputTarget);
+        final String uuid = optVal(args, "--uuid", null);
+        launchWdlInternal(entry, isLocalEntry, json, wdlOutputTarget, uuid);
     }
 
-    /**
-     * @param entry           file path for the wdl file or a dockstore id
-     * @param isLocalEntry
-     * @param json            file path for the json parameter file
-     * @param wdlOutputTarget
-     * @return an exit code for the run
-     */
-    public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget)
-            throws IOException, ApiException {
-
-        File parameterFile = new File(json);
-
+    private File getCromwellTargetFile() {
         // grab the cromwell jar
         String libraryLocation =
                 System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
@@ -1281,8 +1275,28 @@ public abstract class AbstractEntryClient {
                 throw new RuntimeException("Could not download cromwell location", e);
             }
         }
+        return cromwellTargetFile;
+    }
+
+    /**
+     * @param entry           file path for the wdl file or a dockstore id
+     * @param isLocalEntry
+     * @param json            file path for the json parameter file
+     * @param wdlOutputTarget
+     * @param uuid
+     * @return an exit code for the run
+     */
+    public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget, String uuid)
+            throws IOException, ApiException {
+
+        File parameterFile = new File(json);
+
+        File cromwellTargetFile = getCromwellTargetFile();
 
         final SourceFile wdlFromServer;
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        String notificationsWebHookURL = config.getString("notifications", "");
+        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
         try {
             // Grab WDL from server and store to file
             final File tempDir = Files.createTempDir();
@@ -1307,18 +1321,22 @@ public abstract class AbstractEntryClient {
             Gson gson = new Gson();
             String jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
-
+            final List<String> wdlRun;
             // Download files and change to local location
             // Make a new map of the inputs with updated locations
             final String workingDir = Paths.get(".").toAbsolutePath().normalize().toString();
             System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
-            Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
-
-            // Make new json file
-            String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-
-            final List<String> wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), "--inputs", newJsonPath);
-
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
+            try {
+                Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+                // Make new json file
+                String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+                wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), "--inputs", newJsonPath);
+            } catch (Exception e) {
+                notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
+                throw e;
+            }
+            notificationsClient.sendMessage(NotificationsClient.RUN, true);
             // run a workflow
             System.out.println("Calling out to Cromwell to run your workflow");
 
@@ -1345,44 +1363,47 @@ public abstract class AbstractEntryClient {
                 if (e.getCause() instanceof ExecuteException) {
                     return ((ExecuteException)e.getCause()).getExitValue();
                 }
+                notificationsClient.sendMessage(NotificationsClient.RUN, false);
                 throw new RuntimeException("Could not run Cromwell", e);
             }
-
             System.out.println("Cromwell exit code: " + exitCode);
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
+            try {
+                LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"),
+                        stderr.replaceAll("\n", "\t"), "Cromwell");
+                // capture the output and provision it
+                if (wdlOutputTarget != null) {
+                    // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
+                    String outputPrefix = "Final Outputs:";
+                    int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
+                    int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
+                    String bracketContents = stdout.substring(startIndex, endIndex).trim();
+                    if (bracketContents.isEmpty()) {
+                        throw new RuntimeException("No cromwell output");
+                    }
 
-            LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"),
-                    stderr.replaceAll("\n", "\t"), "Cromwell");
-
-            // capture the output and provision it
-            if (wdlOutputTarget != null) {
-                // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
-                String outputPrefix = "Final Outputs:";
-                int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
-                int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
-                String bracketContents = stdout.substring(startIndex, endIndex).trim();
-                if (bracketContents.isEmpty()) {
-                    throw new RuntimeException("No cromwell output");
+                    // grab values from output JSON
+                    Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
+                    System.out.println("Provisioning your output files to their final destinations");
+                    final List<String> outputFiles = bridge.getOutputFiles(tmp);
+                    FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
+                    List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
+                    for (String outFile : outputFiles) {
+                        // find file path from output
+                        final File resultFile = new File(outputJson.get(outFile));
+                        FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
+                        new1.setUrl(wdlOutputTarget + "/" + outFile);
+                        new1.setLocalPath(resultFile.getAbsolutePath());
+                        System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
+                        outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
+                    }
+                    fileProvisioning.uploadFiles(outputList);
+                } else {
+                    System.out.println("Output files left in place");
                 }
-
-                // grab values from output JSON
-                Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
-                System.out.println("Provisioning your output files to their final destinations");
-                final List<String> outputFiles = bridge.getOutputFiles(tmp);
-                FileProvisioning fileProvisioning = new FileProvisioning(this.getConfigFile());
-                List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
-                for (String outFile : outputFiles) {
-                    // find file path from output
-                    final File resultFile = new File(outputJson.get(outFile));
-                    FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
-
-                    new1.setUrl(wdlOutputTarget + "/" + outFile);
-                    new1.setLocalPath(resultFile.getAbsolutePath());
-                    System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
-                    outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
-                }
-                fileProvisioning.uploadFiles(outputList);
-            } else {
-                System.out.println("Output files left in place");
+            } catch (Exception e) {
+                notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
+                throw e;
             }
         } catch (ApiException ex) {
             if (getEntryType().toLowerCase().equals("tool")) {
@@ -1394,6 +1415,7 @@ public abstract class AbstractEntryClient {
         } catch (IOException ex) {
             exceptionMessage(ex, "", IO_ERROR);
         }
+        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
         return 0;
     }
 
@@ -1770,6 +1792,7 @@ public abstract class AbstractEntryClient {
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
         out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
         out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
+        out("  --uuid                              Allows you to specify a uuid for 3rd party notifications");
         printHelpFooter();
     }
 
