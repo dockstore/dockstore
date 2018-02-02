@@ -818,7 +818,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.getFriendlyName() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and author is null and email is null and description is null",
+                "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.name() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and author is null and email is null and description is null",
                 new ScalarHandler<>());
         Assert.assertTrue("The given workflow shouldn't have any contact info", count6 == 1);
 
