@@ -55,12 +55,6 @@ public class RefreshByOrgIT {
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
 
-    @BeforeClass
-    public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
-        SUPPORT.before();
-    }
-
     @AfterClass
     public static void afterClass(){
         SUPPORT.after();
@@ -83,7 +77,7 @@ public class RefreshByOrgIT {
 
     @BeforeClass
     public static void clearDBandSetup() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        SUPPORT.before();
         CommonTestUtilities.cleanStatePrivate2(SUPPORT);
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());

@@ -48,9 +48,9 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         }
 
         // Valid path
-        SourceControl sourcecontrol = (SourceControl)splitPath[firstIndex];
-        String organization = (String)splitPath[secondIndex];
-        String repository = (String)splitPath[thirdIndex];
+        SourceControl sourcecontrol = (SourceControl)splitPath[registryIndex];
+        String organization = (String)splitPath[orgIndex];
+        String repository = (String)splitPath[repoIndex];
 
         // Create full query name
         String fullQueryName = "io.dockstore.webservice.core.Workflow.";
@@ -87,16 +87,16 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         }
 
         // Valid path
-        SourceControl sourcecontrol = (SourceControl)splitPath[firstIndex];
-        String organization = (String)splitPath[secondIndex];
-        String repository = (String)splitPath[thirdIndex];
-        String workflowname = (String)splitPath[fourthIndex];
+        SourceControl sourcecontrol = (SourceControl)splitPath[registryIndex];
+        String organization = (String)splitPath[orgIndex];
+        String repository = (String)splitPath[repoIndex];
+        String workflowname = (String)splitPath[entryNameIndex];
 
 
         // Create full query name
         String fullQueryName = "io.dockstore.webservice.core.Workflow.";
 
-        if (splitPath[fourthIndex] == null) {
+        if (splitPath[entryNameIndex] == null) {
             if (findPublished) {
                 fullQueryName += "findPublishedByWorkflowPathNullWorkflowName";
             } else {
@@ -117,7 +117,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             .setParameter("organization", organization)
             .setParameter("repository", repository);
 
-        if (splitPath[fourthIndex] != null) {
+        if (splitPath[entryNameIndex] != null) {
             query.setParameter("workflowname", workflowname);
         }
 

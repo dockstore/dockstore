@@ -278,7 +278,7 @@
             <column name="descriptortype" value="cwl"/>
             <column name="mode" value="FULL"/>
             <column name="organization" value="A"/>
-            <column name="sourcecontrol" value="GITHUB"/>
+            <!--<column name="sourcecontrol" value="GITHUB"/>-->
             <column name="repository" value="l"/>
             <column name="workflowname"/>
         </insert>
@@ -298,7 +298,7 @@
             <column name="mode" value="FULL"/>
             <column name="organization" value="fakeOrganization"/>
             <column name="path" value="github.com/fakeOrganization/fakeRepository"/>
-            <column name="sourcecontrol" value="GITHUB"/>
+            <!--<column name="sourcecontrol" value="GITHUB"/>-->
             <column name="repository" value="fakeRepository"/>
             <column name="workflowname"/>
         </insert>
@@ -318,7 +318,7 @@
             <column name="mode" value="FULL"/>
             <column name="organization" value="fakeOrganization"/>
             <column name="path" value="bitbucket.org/fakeOrganization/fakeRepository"/>
-            <column name="sourcecontrol" value="BITBUCKET"/>
+            <!--<column name="sourcecontrol" value="BITBUCKET"/>-->
             <column name="repository" value="fakeRepository"/>
             <column name="workflowname"/>
         </insert>
@@ -338,7 +338,7 @@
             <column name="mode" value="FULL"/>
             <column name="organization" value="fakeOrganization"/>
             <column name="path" value="github.com/fakeOrganization/fakeRepository/Potato"/>
-            <column name="sourcecontrol" value="GITHUB"/>
+            <!--<column name="sourcecontrol" value="GITHUB"/>-->
             <column name="repository" value="fakeRepository"/>
             <column name="workflowname" value="Potato"/>
         </insert>
@@ -358,7 +358,7 @@
             <column name="mode" value="FULL"/>
             <column name="organization" value="fakeOrganization"/>
             <column name="path" value="bitbucket.org/fakeOrganization/fakeRepository/Potato"/>
-            <column name="sourcecontrol" value="BITBUCKET"/>
+            <!--<column name="sourcecontrol" value="BITBUCKET"/>-->
             <column name="repository" value="fakeRepository"/>
             <column name="workflowname" value="Potato"/>
         </insert>

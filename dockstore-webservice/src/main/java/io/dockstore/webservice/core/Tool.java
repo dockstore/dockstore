@@ -143,7 +143,7 @@ public class Tool extends Entry<Tool, Tag> {
     private Date lastBuild;
 
     @Column
-    @JsonProperty("customdockerregistrypath")
+    @JsonProperty("custom_docker_registry_path")
     @ApiModelProperty(value = "Only used for docker registries that allow for custom paths")
     private String customDockerRegistryPath = null;
 

@@ -90,6 +90,18 @@
         <sql>alter sequence tag_id_seq increment by 50</sql>
     </changeSet>
 
+    <changeSet id="addCustomDockerRegistryPath" author="agduncan">
+        <addColumn tableName="tool">
+            <column name="customdockerregistrypath" type="text"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="updateAmazonCustomDockerRegistryPath" author="agduncan">
+        <sql dbms="postgresql">
+            UPDATE tool SET "customdockerregistrypath" = split_part(path,'/',1) WHERE registry = 'AMAZON_ECR'
+        </sql>
+    </changeSet>
+
     <changeSet id="dropWorkflowPath" author="agduncan">
         <dropColumn tableName="workflow" columnName="path"></dropColumn>
     </changeSet>
@@ -98,9 +110,4 @@
         <dropColumn tableName="tool" columnName="path"></dropColumn>
     </changeSet>
 
-    <changeSet id="addCustomDockerRegistryPath" author="agduncan">
-        <addColumn tableName="tool">
-            <column name="customdockerregistrypath" type="text"></column>
-        </addColumn>
-    </changeSet>
 </databaseChangeLog>

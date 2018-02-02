@@ -300,20 +300,20 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     public static Object[] splitPath(String path, boolean isTool) {
         // Used for accessing index of path
-        final int firstIndex = 0;
-        final int secondIndex = 1;
-        final int thirdIndex = 2;
-        final int fourthIndex = 3;
+        final int registryIndex = 0;
+        final int orgIndex = 1;
+        final int repoIndex = 2;
+        final int entryNameIndex = 3;
 
         // Lengths of paths
         final int pathNoNameLength = 3;
         final int pathWithNameLength = 4;
 
         // Used for storing values at path locations
-        Object firstPosition = null;
-        String secondPosition;
-        String thirdPosition;
-        String fourthPosition = null;
+        Object registry = null;
+        String org;
+        String repo;
+        String entryName = null;
 
         // Split path by slash
         String[] splitPath = path.split("/");
@@ -330,28 +330,28 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
             // Find corresponding enum
             for (Object val : values) {
-                if (splitPath[firstIndex].equals(val.toString())) {
-                    firstPosition = val;
+                if (splitPath[registryIndex].equals(val.toString())) {
+                    registry = val;
                     break;
                 }
             }
 
             // Deal with amazon
-            if (isTool && firstPosition == null) {
+            if (isTool && registry == null) {
                 // If first position is null, then assume Amazon ECR since it is the only custom Docker Registry
                 // TODO: This is a temporary solution
-                firstPosition = Registry.AMAZON_ECR;
+                registry = Registry.AMAZON_ECR;
             }
 
             // Get remaining positions
-            secondPosition = splitPath[secondIndex];
-            thirdPosition = splitPath[thirdIndex];
+            org = splitPath[orgIndex];
+            repo = splitPath[repoIndex];
             if (splitPath.length == pathWithNameLength) {
-                fourthPosition = splitPath[fourthIndex];
+                entryName = splitPath[entryNameIndex];
             }
 
             // Return an array of the form [A,B,C,D]
-            return new Object[]{firstPosition, secondPosition, thirdPosition, fourthPosition};
+            return new Object[]{registry, org, repo, entryName};
         } else {
             return null;
         }

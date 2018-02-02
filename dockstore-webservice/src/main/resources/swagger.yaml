@@ -4210,7 +4210,7 @@ definitions:
       private_access:
         type: "boolean"
         description: "Is the docker image private or not."
-      customdockerregistrypath:
+      custom_docker_registry_path:
         type: "string"
         description: "Only used for docker registries that allow for custom paths"
       tool_path:

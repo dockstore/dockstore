@@ -45,21 +45,44 @@ public final class CommonTestUtilities {
 
     }
 
+    /**
+     * Drops the database and recreates from migrations, not including any test data
+     * @param support
+     * @throws Exception
+     */
     public static void dropAndRecreate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.4.0");
     }
 
+    /**
+     * Drops the database and recreates from migrations for non-confidential tests
+     * @param support
+     * @throws Exception
+     */
     public static void cleanState(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        getTestingPostgres().clearDatabase();
+        support.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
+        support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
         support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "test");
+        support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
     }
 
+    /**
+     * Wrapper for dropping and recreating database from migrations for test confidential 1
+     * @param support
+     * @throws Exception
+     */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         cleanStatePrivate1(support, CONFIG_PATH);
     }
 
+    /**
+     * Drops and recreates database from migrations for test confidential 1
+     * @param support
+     * @param configPath
+     * @throws Exception
+     */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
@@ -68,11 +91,22 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "1.4.0");
     }
 
+    /**
+     * Wrapper fir dropping and recreating database from migrations for test confidential 2
+     * @param support
+     * @throws Exception
+     */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         cleanStatePrivate2(support, CONFIG_PATH);
 
     }
 
+    /**
+     * Drops and recreates database from migrations for test confidential 2
+     * @param support
+     * @param configPath
+     * @throws Exception
+     */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
