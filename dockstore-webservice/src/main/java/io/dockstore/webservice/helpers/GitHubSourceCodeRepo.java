@@ -47,6 +47,12 @@ import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
+import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHContent;
+import org.kohsuke.github.GHRelease;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +68,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final RepositoryService service;
     private final OrganizationService oService;
     private final UserService uService;
+    private final GitHub github;
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
@@ -74,6 +81,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         this.uService = new UserService(githubClient);
         this.gitUsername = gitUsername;
         this.gitRepository = gitRepository;
+        try {
+            this.github = GitHub.connectUsingOAuth(githubTokenContent);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -188,10 +201,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             Map<String, WorkflowVersion> existingDefaults) {
         RepositoryId id = RepositoryId.createFromId(repositoryId);
 
+
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<String> references = new ArrayList<>();
+        List<Date> referenceDates = new ArrayList<>();
         try {
-            service.getBranches(id).forEach(branch -> references.add(branch.getName()));
+            GHRepository repository = github.getRepository(repositoryId);
+            service.getBranches(id).forEach(branch ->
+                references.add(branch.getName())
+                repository.getBranch(branch.getName());
+            );
             service.getTags(id).forEach(tag -> references.add(tag.getName()));
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
@@ -201,6 +220,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (String ref : references) {
             LOG.info(gitUsername + ": Looking at reference: " + ref);
+
+
+
 
             // Initialize the workflow version
             WorkflowVersion version = initializeWorkflowVersion(ref, existingWorkflow, existingDefaults);
@@ -216,6 +238,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     String content = extractGitHubContents(descriptorContents);
 
                     boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(content);
+                    GHBranch branch = repository.getBranch(ref);
+                    GHContent fileContent = repository.getFileContent(calculatedPath, ref);
+                    GHRelease latestRelease = repository.getLatestRelease();
+                    Date createdAt = latestRelease.getCreatedAt();
+                    String branchSha = branch.getSHA1();
+                    GHCommit commit = repository.getCommit(branchSha);
+                    Date commitDate = commit.getCommitDate();
 
                     if (validWorkflow) {
                         // if we have a valid workflow document
