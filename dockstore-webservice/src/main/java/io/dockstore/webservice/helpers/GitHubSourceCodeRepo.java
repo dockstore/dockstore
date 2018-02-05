@@ -36,6 +36,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -49,8 +50,6 @@ import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
 import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
-import org.kohsuke.github.GHContent;
-import org.kohsuke.github.GHRelease;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
@@ -203,29 +202,42 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
 
         // when getting a full workflow, look for versions and check each version for valid workflows
-        List<String> references = new ArrayList<>();
-        List<Date> referenceDates = new ArrayList<>();
+        List<Pair<String, Date>> references = new ArrayList<>();
         try {
             GHRepository repository = github.getRepository(repositoryId);
-            service.getBranches(id).forEach(branch ->
-                references.add(branch.getName())
-                repository.getBranch(branch.getName());
-            );
-            service.getTags(id).forEach(tag -> references.add(tag.getName()));
+
+            service.getBranches(id).forEach(branch -> {
+                Date branchDate = new Date(Long.MIN_VALUE);
+                try {
+                    GHBranch githubBranch = repository.getBranch(branch.getName());
+                    GHCommit commit = repository.getCommit(githubBranch.getSHA1());
+                    branchDate = commit.getCommitDate();
+                } catch (IOException e) {
+                    LOG.info("unable to retrieve commit date for branch " + branch.getName());
+                }
+                references.add(Pair.of(branch.getName(), branchDate));
+            });
+            service.getTags(id).forEach(tag -> {
+                Date branchDate = new Date(Long.MIN_VALUE);
+                try {
+                    GHCommit commit = repository.getCommit(tag.getCommit().getSha());
+                    branchDate = commit.getCommitDate();
+                } catch (IOException e) {
+                    LOG.info("unable to retrieve commit date for tag " + tag.getName());
+                }
+                references.add(Pair.of(tag.getName(), branchDate));
+            });
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
-        for (String ref : references) {
-            LOG.info(gitUsername + ": Looking at reference: " + ref);
-
-
-
-
+        for (Pair<String, Date> ref : references) {
+            LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
             // Initialize the workflow version
-            WorkflowVersion version = initializeWorkflowVersion(ref, existingWorkflow, existingDefaults);
+            WorkflowVersion version = initializeWorkflowVersion(ref.getKey(), existingWorkflow, existingDefaults);
+            version.setLastModified(ref.getRight());
             String calculatedPath = version.getWorkflowPath();
 
             SourceFile.FileType identifiedType = workflow.getFileType();
@@ -233,18 +245,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Grab workflow file from github
             try {
                 // Get contents of descriptor file and store
-                final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref);
+                final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref.getKey());
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
 
                     boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(content);
-                    GHBranch branch = repository.getBranch(ref);
-                    GHContent fileContent = repository.getFileContent(calculatedPath, ref);
-                    GHRelease latestRelease = repository.getLatestRelease();
-                    Date createdAt = latestRelease.getCreatedAt();
-                    String branchSha = branch.getSHA1();
-                    GHCommit commit = repository.getCommit(branchSha);
-                    Date commitDate = commit.getCommitDate();
 
                     if (validWorkflow) {
                         // if we have a valid workflow document
@@ -259,7 +264,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref);
+                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref.getKey());
                         if (testJsonFile != null && testJsonFile.size() > 0) {
                             String testJsonContent = extractGitHubContents(testJsonFile);
                             SourceFile testJson = new SourceFile();

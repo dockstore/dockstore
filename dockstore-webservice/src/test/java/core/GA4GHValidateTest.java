@@ -42,7 +42,7 @@ public class GA4GHValidateTest {
             DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
 
     @Test
-    public void validateGA4GH() throws IOException {
+    public void validateGA4GH() {
         final int localPort = RULE.getLocalPort();
 
         final ImmutablePair<String, String> output = Utilities
