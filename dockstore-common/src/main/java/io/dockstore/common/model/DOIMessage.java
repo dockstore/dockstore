@@ -15,9 +15,23 @@
  */
 package io.dockstore.common.model;
 
+/**
+ * A message that indicates a request for the creation of a DOI.
+ *
+ */
 public class DOIMessage extends BasicMessage {
+    /**
+     * The type of entry that we should generate a DOI for (tool or workflow).
+     * This can probably be cleaner
+     */
     private String targetEntry;
+    /**
+     * The database id for the tool or workflow
+     */
     private long entryId;
+    /**
+     * The database id for the version of the tool or workflow
+     */
     private long entryVersionId;
 
     public DOIMessage() {
