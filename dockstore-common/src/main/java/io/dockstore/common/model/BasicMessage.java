@@ -15,6 +15,9 @@
  */
 package io.dockstore.common.model;
 
+/**
+ * A base class for all Dockstore messages
+ */
 public abstract class BasicMessage {
 
 }
