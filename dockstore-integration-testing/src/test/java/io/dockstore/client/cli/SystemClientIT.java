@@ -304,7 +304,7 @@ public class SystemClientIT {
         containersApi.registerManual(c);
 
         List<io.swagger.client.model.ToolV1> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
-        assertEquals(7, tools.size());
+        assertEquals(3, tools.size());
 
         // test a few constraints
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
