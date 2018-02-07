@@ -27,7 +27,7 @@ import org.junit.Test;
 public class SourceCodeRepoFactoryTest {
 
     @Test
-    public void parseGitUrl() throws Exception {
+    public void parseGitUrl() {
         // test format 1
         final Map<String, String> stringStringMap1 = SourceCodeRepoFactory.parseGitUrl("git@github.com:ga4gh/dockstore-ui.git");
         Assert.assertTrue("values not found",

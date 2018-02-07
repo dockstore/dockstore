@@ -23,7 +23,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <jetty-servlet.version>9.4.6.v20170531</jetty-servlet.version>
+        <jetty-servlet.version>9.4.8.v20171121</jetty-servlet.version>
     </properties>
 
     <parent>
@@ -308,12 +308,12 @@
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-annotation</artifactId>
-            <version>3.2.2</version>
+            <version>3.2.5</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-healthchecks</artifactId>
-            <version>3.2.2</version>
+            <version>3.2.5</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
@@ -577,6 +577,13 @@
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy</artifactId>
             <version>2.4.7</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.kohsuke/github-api -->
+        <dependency>
+            <groupId>org.kohsuke</groupId>
+            <artifactId>github-api</artifactId>
+            <version>1.92</version>
         </dependency>
 
     </dependencies>

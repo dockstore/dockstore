@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
@@ -47,6 +49,10 @@ import org.eclipse.egit.github.core.service.ContentsService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
+import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +68,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final RepositoryService service;
     private final OrganizationService oService;
     private final UserService uService;
+    private final GitHub github;
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
@@ -74,6 +81,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         this.uService = new UserService(githubClient);
         this.gitUsername = gitUsername;
         this.gitRepository = gitRepository;
+        try {
+            this.github = GitHub.connectUsingOAuth(githubTokenContent);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -189,21 +202,45 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         RepositoryId id = RepositoryId.createFromId(repositoryId);
 
         // when getting a full workflow, look for versions and check each version for valid workflows
-        List<String> references = new ArrayList<>();
+        List<Pair<String, Date>> references = new ArrayList<>();
         try {
-            service.getBranches(id).forEach(branch -> references.add(branch.getName()));
-            service.getTags(id).forEach(tag -> references.add(tag.getName()));
+            GHRepository repository = github.getRepository(repositoryId);
+
+            service.getBranches(id).forEach(branch -> {
+                Date branchDate = new Date(Long.MIN_VALUE);
+                try {
+                    GHBranch githubBranch = repository.getBranch(branch.getName());
+                    GHCommit commit = repository.getCommit(githubBranch.getSHA1());
+                    branchDate = commit.getCommitDate();
+                } catch (IOException e) {
+                    LOG.info("unable to retrieve commit date for branch " + branch.getName());
+                }
+                references.add(Pair.of(branch.getName(), branchDate));
+            });
+            service.getTags(id).forEach(tag -> {
+                Date branchDate = new Date(Long.MIN_VALUE);
+                try {
+                    GHCommit commit = repository.getCommit(tag.getCommit().getSha());
+                    branchDate = commit.getCommitDate();
+                } catch (IOException e) {
+                    LOG.info("unable to retrieve commit date for tag " + tag.getName());
+                }
+                references.add(Pair.of(tag.getName(), branchDate));
+            });
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
+        Optional<Date> max = references.stream().map(Pair::getRight).max(Comparator.naturalOrder());
+        // TODO: this conversion is lossy
+        max.ifPresent(date -> workflow.setLastModified((int)max.get().getTime()));
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
-        for (String ref : references) {
-            LOG.info(gitUsername + ": Looking at reference: " + ref);
-
+        for (Pair<String, Date> ref : references) {
+            LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
             // Initialize the workflow version
-            WorkflowVersion version = initializeWorkflowVersion(ref, existingWorkflow, existingDefaults);
+            WorkflowVersion version = initializeWorkflowVersion(ref.getKey(), existingWorkflow, existingDefaults);
+            version.setLastModified(ref.getRight());
             String calculatedPath = version.getWorkflowPath();
 
             SourceFile.FileType identifiedType = workflow.getFileType();
@@ -211,7 +248,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Grab workflow file from github
             try {
                 // Get contents of descriptor file and store
-                final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref);
+                final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref.getKey());
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
 
@@ -230,7 +267,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref);
+                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref.getKey());
                         if (testJsonFile != null && testJsonFile.size() > 0) {
                             String testJsonContent = extractGitHubContents(testJsonFile);
                             SourceFile testJson = new SourceFile();

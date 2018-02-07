@@ -141,7 +141,20 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @ApiOperation(value = "Refresh all workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata. ADMIN ONLY", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
         List<User> users = userDAO.findAll();
-        users.forEach(user -> refreshStubWorkflowsForUser(user, null));
+        users.forEach(user -> {
+            try {
+                LOG.info("refreshing user: " + user.getUsername());
+                // why does a specific user have an issue?
+                if (user.getUsername().equals("chapmanb")) {
+                    return;
+                }
+                refreshStubWorkflowsForUser(user, null);
+            } catch (Exception e) {
+                // continue past users that have issues
+                LOG.debug("could not refresh user: " + user.getUsername(), e);
+                LOG.error("could not refresh user: " + user.getUsername(), e);
+            }
+        });
         return workflowDAO.findAll();
     }
 
