@@ -701,6 +701,8 @@ public class LauncherCWL {
                     // when the provision target is a specific file, trim that off
                     splitPathList.remove(splitPathList.size() - 1);
                     splitPathList.add(mutatedSecondaryFile);
+                } else {
+                    splitPathList.add((String)secondaryFile.get("basename"));
                 }
                 final String join = Joiner.on("/").join(splitPathList);
                 fileInfo.setUrl(join);
