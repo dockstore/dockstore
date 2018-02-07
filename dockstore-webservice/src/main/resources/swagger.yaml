@@ -3159,7 +3159,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a workflow by path"
+      summary: "Get a published workflow by path"
       description: "Lists info of workflow. Enter full path."
       operationId: "getPublishedWorkflowByPath"
       produces:

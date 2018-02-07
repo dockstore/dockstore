@@ -117,6 +117,17 @@ public final class CommonTestUtilities {
     }
 
     /**
+     * Loads up a specific set of workflows into the database
+     * Specifically for tests toolsIdGet4Workflows() in GA4GHV1IT.java and toolsIdGet4Workflows() in GA4GHV2IT.java
+     * @param support
+     * @throws Exception
+     */
+    public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        application.run("db", "migrate", CONFIG_PATH, "--include", "samepaths");
+    }
+
+    /**
      * Allows tests to clear the database completely
      **/
     private static void clearState() {

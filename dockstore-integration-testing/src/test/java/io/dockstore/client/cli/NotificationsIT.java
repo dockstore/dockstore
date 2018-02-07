@@ -45,7 +45,6 @@ public class NotificationsIT extends BaseIT {
     @Override
     @Before
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanState(SUPPORT);
         clearLogs();
     }
 

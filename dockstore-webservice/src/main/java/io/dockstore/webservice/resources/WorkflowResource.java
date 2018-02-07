@@ -666,7 +666,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/published")
-    @ApiOperation(value = "Get a workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
+    @ApiOperation(value = "Get a published workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, true);
         checkEntry(workflow);
