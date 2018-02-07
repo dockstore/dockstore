@@ -102,7 +102,7 @@ public class SystemClientIT {
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
     }
 
@@ -113,7 +113,7 @@ public class SystemClientIT {
 
     @Before
     public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.cleanState(SUPPORT);
+        CommonTestUtilities.cleanStateWithTestData(SUPPORT);
     }
 
     private static ApiClient getWebClient() throws IOException, TimeoutException {

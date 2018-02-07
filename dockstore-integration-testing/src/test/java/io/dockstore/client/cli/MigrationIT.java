@@ -49,7 +49,7 @@ public class MigrationIT {
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
     }
 
@@ -75,7 +75,7 @@ public class MigrationIT {
      */
     @Test
     public void testDB1WithNormalDatabase() throws Exception {
-        CommonTestUtilities.cleanState(SUPPORT);
+        CommonTestUtilities.cleanStateWithTestData(SUPPORT);
         SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test");
     }
 

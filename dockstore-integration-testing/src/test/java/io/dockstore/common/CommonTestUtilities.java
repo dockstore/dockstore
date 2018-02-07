@@ -46,26 +46,39 @@ public final class CommonTestUtilities {
     }
 
     /**
-     * Drops the database and recreates from migrations, not including any test data
+     * Drops the database and recreates from migrations, not including any test data, using new application
      * @param support
      * @throws Exception
      */
-    public static void dropAndRecreate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.4.0");
     }
 
     /**
-     * Drops the database and recreates from migrations for non-confidential tests
+     * Drops the database and recreates from migrations for non-confidential tests, using existing application
      * @param support
      * @throws Exception
      */
-    public static void cleanState(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void cleanStateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         support.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
         support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
         support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "test");
         support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
+    }
+
+    /**
+     * Drops the database and recreates from migrations for non-confidential tests, using new application
+     * @param support
+     * @throws Exception
+     */
+    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "test");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
     }
 
     /**

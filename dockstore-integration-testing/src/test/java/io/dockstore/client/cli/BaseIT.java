@@ -49,7 +49,7 @@ public class BaseIT {
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
     }
 
@@ -60,7 +60,7 @@ public class BaseIT {
 
     @Before
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanState(SUPPORT);
+        CommonTestUtilities.cleanStateWithTestData(SUPPORT);
     }
 
     /**

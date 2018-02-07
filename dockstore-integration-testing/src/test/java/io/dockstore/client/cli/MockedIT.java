@@ -79,7 +79,7 @@ public class MockedIT {
 //    @Before
 //    @Override
 //    public void resetDBBetweenTests() throws Exception {
-//        CommonTestUtilities.cleanState(SUPPORT);
+//        CommonTestUtilities.cleanStateWithTestData(SUPPORT);
 //    }
 
     @Before
