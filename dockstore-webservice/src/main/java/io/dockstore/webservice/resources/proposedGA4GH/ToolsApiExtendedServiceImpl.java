@@ -106,12 +106,12 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
 
     private List<io.swagger.model.Tool> workflowOrgGetList(String organization) {
         List<Workflow> published = workflowDAO.findPublishedByOrganization(organization);
-        return published.stream().map(c -> ToolsImplCommon.convertContainer2Tool(c, config).getLeft()).collect(Collectors.toList());
+        return published.stream().map(c -> ToolsImplCommon.convertEntryToTool(c, config).getLeft()).collect(Collectors.toList());
     }
 
     private List<io.swagger.model.Tool> entriesOrgGetList(String organization) {
         List<Tool> published = toolDAO.findPublishedByNamespace(organization);
-        return published.stream().map(c -> ToolsImplCommon.convertContainer2Tool(c, config).getLeft()).collect(Collectors.toList());
+        return published.stream().map(c -> ToolsImplCommon.convertEntryToTool(c, config).getLeft()).collect(Collectors.toList());
     }
 
     @Override

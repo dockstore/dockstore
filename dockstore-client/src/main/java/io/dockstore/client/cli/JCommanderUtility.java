@@ -53,7 +53,8 @@ public final class JCommanderUtility {
                 + "  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs\n"
                 + "  --yaml <yaml file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs\n"
                 + "  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)\n"
-                + "  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/\n");
+                + "  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/\n"
+                + "  --uuid                              Allows you to specify a uuid for 3rd party notifications\n");
         printJCommanderHelpFooter();
     }
 

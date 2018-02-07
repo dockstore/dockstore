@@ -143,7 +143,20 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @ApiOperation(value = "Refresh all workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata. ADMIN ONLY", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
         List<User> users = userDAO.findAll();
-        users.forEach(user -> refreshStubWorkflowsForUser(user, null));
+        users.forEach(user -> {
+            try {
+                LOG.info("refreshing user: " + user.getUsername());
+                // why does a specific user have an issue?
+                if (user.getUsername().equals("chapmanb")) {
+                    return;
+                }
+                refreshStubWorkflowsForUser(user, null);
+            } catch (Exception e) {
+                // continue past users that have issues
+                LOG.debug("could not refresh user: " + user.getUsername(), e);
+                LOG.error("could not refresh user: " + user.getUsername(), e);
+            }
+        });
         return workflowDAO.findAll();
     }
 
@@ -228,20 +241,25 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             gitLabSourceCodeRepo = new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null);
             gitLabSourceCodeRepo.checkSourceCodeValidity();
         }
-
+        // Update bitbucket workflows if token exists
+        boolean hasBitbucketToken = bitbucketToken != null && bitbucketToken.getContent() != null;
+        boolean hasGitHubToken = githubToken != null && githubToken.getContent() != null;
+        boolean hasGitLabToken = gitlabToken != null && gitlabToken.getContent() != null;
+        if (!hasBitbucketToken && !hasGitHubToken && !hasGitLabToken) {
+            throw new CustomWebApplicationException("No source control repository token found.  Please link at least one source control repository token to your account.", HttpStatus.SC_BAD_REQUEST);
+        }
         try {
-            // Update bitbucket workflows if token exists
-            if (bitbucketToken != null && bitbucketToken.getContent() != null) {
+            if (hasBitbucketToken) {
                 // get workflows from bitbucket for a user and updates db
                 refreshHelper(bitBucketSourceCodeRepo, user, organization);
             }
             // Update github workflows if token exists
-            if (githubToken != null && githubToken.getContent() != null) {
+            if (hasGitHubToken) {
                 // get workflows from github for a user and updates db
                 refreshHelper(gitHubSourceCodeRepo, user, organization);
             }
             // Update gitlab workflows if token exists
-            if (gitlabToken != null && gitlabToken.getContent() != null) {
+            if (hasGitLabToken) {
                 // get workflows from gitlab for a user and updates db
                 refreshHelper(gitLabSourceCodeRepo, user, organization);
             }
