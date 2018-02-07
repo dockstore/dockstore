@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -200,7 +201,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             Map<String, WorkflowVersion> existingDefaults) {
         RepositoryId id = RepositoryId.createFromId(repositoryId);
 
-
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<Pair<String, Date>> references = new ArrayList<>();
         try {
@@ -231,6 +231,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
+        Optional<Date> max = references.stream().map(Pair::getRight).max(Comparator.naturalOrder());
+        // TODO: this conversion is lossy
+        max.ifPresent(date -> workflow.setLastModified((int)max.get().getTime()));
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Pair<String, Date> ref : references) {
