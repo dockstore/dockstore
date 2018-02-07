@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
@@ -694,16 +695,32 @@ public class LauncherCWL {
                 FileProvisioning.FileInfo fileInfo = new FileProvisioning.FileInfo();
                 fileInfo.setLocalPath(file.getLocalPath());
                 List<String> splitPathList = Lists.newArrayList(file.getUrl().split("/"));
+
+                String mutatedSecondaryFile = mutateSecondaryFileName(splitPathList.get(splitPathList.size() -1), (String)fileMapDataStructure.get("basename"), (String)secondaryFile.get("basename"));
+
                 if (!file.isDirectory()) {
                     // when the provision target is a specific file, trim that off
                     splitPathList.remove(splitPathList.size() - 1);
                 }
-                splitPathList.add((String)secondaryFile.get("basename"));
+                splitPathList.add(mutatedSecondaryFile);
                 final String join = Joiner.on("/").join(splitPathList);
                 fileInfo.setUrl(join);
                 provisionOutputFile(key, fileInfo, secondaryFile);
             }
         }
+    }
+
+    /**
+     *
+     * @param outputParameterFile the name of the base file in the parameter json
+     * @param originalBaseName the name of the base file as output by the cwlrunner
+     * @param renamedBaseName the name of the secondary associated with the base file as output by the cwlrunner
+     * @return the name of the secondary file in the parameter json, mutated correctly to match outputParameterFile
+     */
+    private String mutateSecondaryFileName(String outputParameterFile, String originalBaseName, String renamedBaseName) {
+        String commonSuffix = Strings.commonSuffix(outputParameterFile, originalBaseName);
+        String fileWithoutSuffix = outputParameterFile.substring(0, outputParameterFile.length()-commonSuffix.length());
+        return fileWithoutSuffix + renamedBaseName.substring(renamedBaseName.length() - commonSuffix.length());
     }
 
     private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject, Map<String, Object> inputsOutputs) {

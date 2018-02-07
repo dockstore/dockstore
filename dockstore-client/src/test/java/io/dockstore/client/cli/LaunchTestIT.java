@@ -16,6 +16,13 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Map;
+
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
@@ -32,13 +39,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Map;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
@@ -154,6 +154,24 @@ public class LaunchTestIT {
         assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files/test.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    @Test
+    public void runToolWithSecondaryFilesRenamedOnOutput() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files_renamed"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.renamed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files_renamed/renamed.a" + y;
             checkFileAndThenDeleteIt(filename);
         }
     }
