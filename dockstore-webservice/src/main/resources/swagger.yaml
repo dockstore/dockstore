@@ -3175,6 +3175,30 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
+  /workflows/path/{repository}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get a list of workflows by path"
+      description: "Lists info of workflow. Enter full path."
+      operationId: "getAllWorkflowByPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/published:
     get:
       tags:
