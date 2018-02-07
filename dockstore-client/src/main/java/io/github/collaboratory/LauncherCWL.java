@@ -696,13 +696,12 @@ public class LauncherCWL {
                 fileInfo.setLocalPath(file.getLocalPath());
                 List<String> splitPathList = Lists.newArrayList(file.getUrl().split("/"));
 
-                String mutatedSecondaryFile = mutateSecondaryFileName(splitPathList.get(splitPathList.size() - 1), (String)fileMapDataStructure.get("basename"), (String)secondaryFile.get("basename"));
-
                 if (!file.isDirectory()) {
+                    String mutatedSecondaryFile = mutateSecondaryFileName(splitPathList.get(splitPathList.size() - 1), (String)fileMapDataStructure.get("basename"), (String)secondaryFile.get("basename"));
                     // when the provision target is a specific file, trim that off
                     splitPathList.remove(splitPathList.size() - 1);
+                    splitPathList.add(mutatedSecondaryFile);
                 }
-                splitPathList.add(mutatedSecondaryFile);
                 final String join = Joiner.on("/").join(splitPathList);
                 fileInfo.setUrl(join);
                 provisionOutputFile(key, fileInfo, secondaryFile);
