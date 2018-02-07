@@ -45,7 +45,7 @@ public final class EventConsumer {
     /**
      * the maximum wait time allowed
      */
-    private static final int MAX_WAITTIME_SECONDS = 20;
+    private static final int MAX_WAIT_TIME_SECONDS = 20;
     private PropertiesConfiguration config;
 
     private EventConsumer() {
@@ -78,7 +78,7 @@ public final class EventConsumer {
         EventConsumer consumer = new EventConsumer();
         String sqsURL = consumer.getConsumerConfiguration().getString("sqsURL");
         String dockstoreToken = consumer.getConsumerConfiguration().getString("dockstoreToken");
-        String dockstoreURl = consumer.getConsumerConfiguration().getString("dockstoreURL");
+        String dockstoreURL = consumer.getConsumerConfiguration().getString("dockstoreURL");
         String zenodoToken = consumer.getConsumerConfiguration().getString("zenodoToken");
         String zenodoURL = consumer.getConsumerConfiguration().getString("zenodoURL");
 
@@ -88,11 +88,11 @@ public final class EventConsumer {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest(sqsURL);
         // there's no indefinite wait
         receiveMessageRequest.setMessageAttributeNames(Lists.newArrayList(".*"));
-        receiveMessageRequest.setWaitTimeSeconds(MAX_WAITTIME_SECONDS);
+        receiveMessageRequest.setWaitTimeSeconds(MAX_WAIT_TIME_SECONDS);
         receiveMessageRequest.setMaxNumberOfMessages(1);
         Gson gson = new Gson();
 
-        DOIHandler doiHandler = new DOIHandler(dockstoreURl, dockstoreToken, zenodoURL, zenodoToken);
+        DOIHandler doiHandler = new DOIHandler(dockstoreURL, dockstoreToken, zenodoURL, zenodoToken);
         Map<String, MessageHandler> messageHandlers = new HashMap<>();
         messageHandlers.put(doiHandler.messageTypeHandled(), doiHandler);
 
