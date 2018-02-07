@@ -181,8 +181,9 @@ public class FileImporter {
             Map<String, ?> map) {
         for (Map.Entry<String, ?> e : map.entrySet()) {
             final Object mapValue = e.getValue();
-            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include") || e.getKey().equalsIgnoreCase("import")
-                    || e.getKey().equalsIgnoreCase("include")) {
+            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include") || e.getKey().equalsIgnoreCase("$mixin")
+                || e.getKey().equalsIgnoreCase("import") || e.getKey().equalsIgnoreCase("include") || e.getKey()
+                .equalsIgnoreCase("mixin")) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
                     handleImport(fileType, version, imports, (String)mapValue);
