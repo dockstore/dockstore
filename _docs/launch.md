@@ -125,11 +125,11 @@ The Dockstore CLI has the ability to provide notifications via an HTTP post to a
 Additionally, it will also provide notifications when any of these steps have failed.
 
 ### Usage
-- Define a webhook URL in the Dockstore config file like:
+- Define a webhook URL in the Dockstore config file with the "notifications" property like:
 ```
-...
+token: iamafakedockstoretoken
+server-url: https://dockstore.org:8443
 notifications: https://hooks.slack.com/services/aaa/bbb/ccc
-...
 ```
 - UUID can be generated or user-defined uuid in the dockstore launch command like:
 ```bash
