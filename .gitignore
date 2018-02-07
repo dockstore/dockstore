@@ -30,6 +30,7 @@ swagger-java-client/target/
 swagger-java-quay-client/target/
 dockstore-webservice/nbactions.xml
 dockstore-common/target/
+dockstore-file-plugin-parent/target/
 dockstore-integration-testing/target/
 dockstore-integration-testing/cromwell-executions/
 dockstore-integration-testing/cromwell-input/

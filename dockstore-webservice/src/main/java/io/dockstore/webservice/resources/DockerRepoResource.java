@@ -54,6 +54,8 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
@@ -710,7 +712,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         checkEntry(tool);
 
         Set<String> verifiedSourcesArray = new HashSet<>();
-        tool.getTags().stream().filter((Tag u) -> u.isVerified()).forEach((Tag v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
+        tool.getTags().stream().filter(Version::isVerified).forEach((Tag v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
 
         JSONArray jsonArray;
         try {
@@ -732,7 +734,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile cwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
-
         return getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL);
     }
 
@@ -744,7 +745,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile wdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
-
         return getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL);
     }
 
@@ -756,7 +756,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryCwlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
-
         return getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_CWL, path);
     }
 
@@ -768,7 +767,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             "containers" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryWdlPath(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
-
         return getSourceFileByPath(containerId, tag, FileType.DOCKSTORE_WDL, path);
     }
 
@@ -780,7 +778,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryCwl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
-
         return getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_CWL);
     }
 
@@ -792,7 +789,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> secondaryWdl(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag) {
-
         return getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL);
     }
 
@@ -804,16 +800,13 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             "containers" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
     public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
             @QueryParam("tag") String tag,
-            @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
-        if (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.WDL.toString())) {
-            return getAllSourceFiles(containerId, tag, FileType.WDL_TEST_JSON);
-        } else {
-            return getAllSourceFiles(containerId, tag, FileType.CWL_TEST_JSON);
-        }
+            @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL, NFL") @QueryParam("descriptorType") String descriptorType) {
+        return getAllSourceFiles(containerId, tag, Workflow.getTestParameterType(descriptorType));
     }
 
-    // TODO: This endpoint has been moved to metadata, though it still exists here to deal with the case of
-    // users trying to interact with this endpoint.
+    /*
+     * TODO: This endpoint has been moved to metadata, though it still exists here to deal with the case of users trying to interact with this endpoint.
+     */
     @GET
     @Timed
     @UnitOfWork
@@ -835,7 +828,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
-            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.", defaultValue = "") String emptyBody,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody,
             @QueryParam("tagName") String tagName,
             @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
@@ -888,11 +881,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
                 : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
-            if (sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType).count() > 0) {
-                SourceFile toRemove = sourceFiles.stream().filter((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType)
-                        .findFirst().get();
-                sourceFiles.remove(toRemove);
-            }
+            sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);
         }
 
         return tag.getSourceFiles();

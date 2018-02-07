@@ -89,4 +89,33 @@
     <changeSet author="dyuen" id="custom_tag_sequence2">
         <sql>alter sequence tag_id_seq increment by 50</sql>
     </changeSet>
+
+    <!-- adding support for storing and requesting DOIs -->
+    <changeSet author="dyuen (generated)" id="1516219456530-1">
+        <addColumn tableName="tag">
+            <column defaultValue="NOT_REQUESTED" name="doistatus" type="text"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516219456530-2">
+        <addColumn tableName="workflowversion">
+            <column defaultValue="NOT_REQUESTED" name="doistatus" type="text"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516219456530-3">
+        <addColumn tableName="tag">
+            <column name="doiurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516219456530-4">
+        <addColumn tableName="workflowversion">
+            <column name="doiurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516220040864-6">
+        <addNotNullConstraint columnDataType="clob" columnName="doistatus" tableName="tag"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516220040864-7">
+        <addNotNullConstraint columnDataType="clob" columnName="doistatus" tableName="workflowversion"/>
+    </changeSet>
+
 </databaseChangeLog>

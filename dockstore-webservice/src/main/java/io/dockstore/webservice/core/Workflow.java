@@ -39,8 +39,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
 
 /**
  * This describes one workflow in the dockstore, extending Entry with the fields necessary to describe workflows.
@@ -264,26 +266,38 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @JsonIgnore
     public SourceFile.FileType getFileType() {
+        return getFileType(this.descriptorType);
+    }
+
+    public static SourceFile.FileType getFileType(String descriptorType) {
         SourceFile.FileType fileType;
-        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+        if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
             fileType = SourceFile.FileType.DOCKSTORE_WDL;
-        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+        } else if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
             fileType = SourceFile.FileType.DOCKSTORE_CWL;
-        } else {
+        } else if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.NEXTFLOW.toString())) {
             fileType = SourceFile.FileType.NEXTFLOW_CONFIG;
+        } else {
+            throw new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST);
         }
         return fileType;
     }
 
     @JsonIgnore
     public SourceFile.FileType getTestParameterType() {
+        return getTestParameterType(this.descriptorType);
+    }
+
+    public static SourceFile.FileType getTestParameterType(String descriptorType) {
         SourceFile.FileType fileType;
-        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+        if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
             fileType = SourceFile.FileType.WDL_TEST_JSON;
-        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+        } else if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
             fileType = SourceFile.FileType.CWL_TEST_JSON;
-        } else {
+        } else if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.NEXTFLOW.toString())) {
             fileType = SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
+        } else {
+            throw new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST);
         }
         return fileType;
     }

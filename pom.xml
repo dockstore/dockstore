@@ -37,7 +37,7 @@
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
-        <aws.version>1.11.86</aws.version>
+        <aws.version>1.11.264</aws.version>
         <powermock.version>1.6.5</powermock.version>
         <postgresql.version>42.1.4</postgresql.version>
         <mockito.version>1.10.19</mockito.version>
@@ -50,6 +50,11 @@
         <httpcomponents.version>4.4.5</httpcomponents.version>
         <jackson-datatype-jsr310.version>2.9.3</jackson-datatype-jsr310.version>
     </properties>
+
+    <!-- deprecated, but needed by Versions Maven Plugin -->
+    <prerequisites>
+        <maven>3.3.9</maven>
+    </prerequisites>
 
     <organization>
         <name>Dockstore</name>
@@ -145,6 +150,7 @@
         <module>swagger-java-quay-client</module>
         <module>dockstore-client</module>
         <module>dockstore-integration-testing</module>
+        <module>dockstore-event-consumer</module>
     </modules>
 
 
@@ -319,6 +325,11 @@
                 <artifactId>jersey-media-multipart</artifactId>
                 <version>${jersey-version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-json-jackson</artifactId>
+                <version>2.25.1</version>
+            </dependency>
 
             <dependency>
                 <groupId>io.swagger</groupId>
@@ -374,7 +385,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.1</version>
+                <version>2.2</version>
             </dependency>
 
             <dependency>
@@ -620,7 +631,7 @@
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.9.2</version>
+                <version>1.9.3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -661,6 +672,21 @@
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
                 <version>${jackson-datatype-jsr310.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dockstore</groupId>
+                <artifactId>zenodo-client-generated</artifactId>
+                <version>0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>5.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>5.0.3</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -704,7 +730,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.5.1</version>
+                    <version>3.7.0</version>
                     <configuration>
                         <source>1.8</source>
                         <target>1.8</target>
@@ -852,7 +878,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>2.4.3</version>
+                    <version>3.1.0</version>
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -905,6 +931,12 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>1.5.0</version>
                 </plugin>
+                <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/versions-maven-plugin -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>2.5</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -930,7 +962,7 @@
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
                                 <requireMavenVersion>
-                                    <version>3.2.2</version>
+                                    <version>3.3.9</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <version>1.8.0</version>

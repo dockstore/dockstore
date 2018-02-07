@@ -58,6 +58,8 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.doi.DOIGeneratorFactory;
+import io.dockstore.webservice.doi.DOIGeneratorInterface;
 import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
@@ -537,6 +539,39 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         } else {
             workflowVersion.updateVerified(false, null);
         }
+
+        Workflow result = workflowDAO.findById(workflowId);
+        checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        return result.getWorkflowVersions();
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/requestDOI/{workflowVersionId}")
+    @ApiOperation(value = "Request a DOI for this version of a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkUser(user, workflow);
+
+        WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
+        if (workflowVersion == null) {
+            LOG.error(user.getUsername() + ": could not find version: " + workflow.getPath());
+            throw new CustomWebApplicationException("Version not found.", HttpStatus.SC_BAD_REQUEST);
+
+        }
+
+        if (workflowVersion.getDoiStatus() != Version.DOIStatus.CREATED) {
+            DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
+            generator.createDOIForWorkflow(workflowId, workflowVersionId);
+            workflowVersion.setDoiStatus(Version.DOIStatus.REQUESTED);
+        }
+
+
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
