@@ -92,7 +92,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // may need to account for symbolic links to directories
             List<String> folders = Arrays.asList(fileName.split("/"));
             List<String> start = new ArrayList<>();
-            for(int i = 0; i < folders.size() -1; i++){
+            for (int i = 0; i < folders.size() - 1; i++) {
                 // ignore leading slash
                 if (i == 0 && folders.get(i).isEmpty()) {
                     continue;
