@@ -145,7 +145,7 @@ public class ToolsApi {
     }
 
     @GET
-    @Path("/{id}/versions/{version_id}/{type}/descriptor/{relative_path}")
+    @Path("/{id}/versions/{version_id}/{type}/descriptor/{relative_path : .+}")
     @UnitOfWork
     @Produces({ "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = ToolDescriptor.class, tags = {
