@@ -19,6 +19,7 @@ package io.dockstore.client.cli;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -31,8 +32,10 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Workflow;
@@ -74,6 +77,8 @@ public class WorkflowIT {
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = "dockstore_testuser2/dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = "DockstoreTestUser2/dockstore-whalesay-imports";
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = "DockstoreTestUser2/dockstore_workflow_cnv";
+
+    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = "DockstoreTestUser2/dockstore-cgpmap";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -272,6 +277,37 @@ public class WorkflowIT {
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
         assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 6);
+    }
+
+
+    /**
+     * Tests manual registration of a tool and check that descriptors are downloaded properly
+     *
+     * @throws IOException
+     * @throws TimeoutException
+     * @throws ApiException
+     */
+    @Test
+    public void testManualRegisterToolWithMixins() throws IOException, TimeoutException, ApiException {
+        final ApiClient webClient = getWebClient();
+        ContainersApi toolApi = new ContainersApi(webClient);
+
+        DockstoreTool tool = new DockstoreTool();
+        tool.setDefaultCwlPath("/cwls/cgpmap-bamOut.cwl");
+        tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
+        tool.setNamespace("dockstoretestuser2");
+        tool.setName("dockstore-cgpmap");
+        tool.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
+
+        DockstoreTool registeredTool = toolApi.registerManual(tool);
+        registeredTool = toolApi.refresh(registeredTool.getId());
+
+        // Make publish request (true)
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        toolApi.publish(registeredTool.getId(), publishRequest);
+
+        assertTrue("did not import mixin and includes properly", registeredTool.getTags().stream().filter(tag -> Objects
+            .equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles().size() == 5);
     }
 
     /**
