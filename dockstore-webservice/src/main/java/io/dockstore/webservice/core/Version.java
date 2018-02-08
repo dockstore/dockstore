@@ -24,6 +24,8 @@ import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -96,8 +98,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty("Verified source for the version")
     private String verifiedSource;
 
+    @Column
+    @ApiModelProperty("This is a URL for the DOI for the version of the entry")
+    private String doiURL;
+
+    @Column(columnDefinition = "text default 'NOT_REQUESTED'", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty("This indicates the DOI status")
+    private DOIStatus doiStatus;
+
     public Version() {
         sourceFiles = new HashSet<>(0);
+        doiStatus = DOIStatus.NOT_REQUESTED;
     }
 
     public boolean isVerified() {
@@ -124,7 +136,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.dirtyBit = dirtyBit;
     }
 
-    public void updateByUser(final Version version) {
+    void updateByUser(final Version version) {
         reference = version.reference;
         hidden = version.hidden;
     }
@@ -231,4 +243,23 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.verified = newVerified;
         this.verifiedSource = newVerifiedSource;
     }
+
+    @JsonProperty
+    public String getDoiURL() {
+        return doiURL;
+    }
+
+    public void setDoiURL(String doiURL) {
+        this.doiURL = doiURL;
+    }
+
+    public DOIStatus getDoiStatus() {
+        return doiStatus;
+    }
+
+    public void setDoiStatus(DOIStatus doiStatus) {
+        this.doiStatus = doiStatus;
+    }
+
+    public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
 }

@@ -34,6 +34,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
@@ -240,10 +241,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 configuration.getGitlabRedirectURI());
         environment.jersey().register(resource5);
 
-        environment.jersey().register(
-                new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
-                        configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), configuration.getGitlabClientID(),
-                        configuration.getGitlabClientSecret(), configuration.getGitlabRedirectURI(), httpClient, cachingAuthenticator));
+        environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO,
                 workflowVersionDAO, labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
@@ -260,6 +258,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setToolDAO(toolDAO);
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
+
+        DOIGeneratorFactory.setConfig(configuration);
 
         environment.jersey().register(new ToolsApi());
         environment.jersey().register(new ToolsExtendedApi());

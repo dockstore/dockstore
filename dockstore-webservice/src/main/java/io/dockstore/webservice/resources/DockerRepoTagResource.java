@@ -39,6 +39,9 @@ import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.doi.DOIGeneratorFactory;
+import io.dockstore.webservice.doi.DOIGeneratorInterface;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -226,6 +229,36 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             tag.updateVerified(true, verifyRequest.getVerifiedSource());
         } else {
             tag.updateVerified(false, null);
+        }
+
+        Tool result = toolDAO.findById(containerId);
+        checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        return result.getTags();
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{containerId}/requestDOI/{tagId}")
+    @ApiOperation(value = "Request a DOI for this version of a tool", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
+    public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
+        @ApiParam(value = "Tag to verify.", required = true) @PathParam("tagId") Long tagId) {
+        Tool tool = toolDAO.findById(containerId);
+        checkEntry(tool);
+        checkUser(user, tool);
+
+        Tag tag = tagDAO.findById(tagId);
+        if (tag == null) {
+            LOG.error(user.getUsername() + ": could not find tag: " + tool.getToolPath());
+            throw new CustomWebApplicationException("Tag not found.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (tag.getDoiStatus() != Version.DOIStatus.CREATED) {
+            DOIGeneratorInterface generator = DOIGeneratorFactory.createDOIGenerator();
+            generator.createDOIForTool(containerId, tagId);
+            tag.setDoiStatus(Version.DOIStatus.REQUESTED);
         }
 
         Tool result = toolDAO.findById(containerId);
