@@ -27,11 +27,15 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author xliu
  */
 public final class CommonTestUtilities {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
 
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
@@ -51,6 +55,7 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.4.0");
@@ -62,6 +67,7 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+        LOG.info("Dropping and Recreating the database with non-confidential test data");
         Application<DockstoreWebserviceConfiguration> application;
         if (isNewApplication) {
             application = support.newApplication();
@@ -80,6 +86,7 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIG_PATH);
     }
 
@@ -103,8 +110,8 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+        LOG.info("Dropping and Recreating the database with confidential 2 test data");
         cleanStatePrivate2(support, CONFIG_PATH, isNewApplication);
-
     }
 
     /**
@@ -134,6 +141,7 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        LOG.info("Migrating samepaths migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "migrate", CONFIG_PATH, "--include", "samepaths");
     }
