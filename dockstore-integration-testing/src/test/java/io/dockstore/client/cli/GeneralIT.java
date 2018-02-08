@@ -79,7 +79,7 @@ public class GeneralIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
     /**

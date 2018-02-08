@@ -77,8 +77,8 @@ public class RefreshByOrgIT {
 
     @BeforeClass
     public static void clearDBandSetup() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, true);
         SUPPORT.before();
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());
         Environment environment = SUPPORT.getEnvironment();

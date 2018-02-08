@@ -75,7 +75,7 @@ public class MigrationIT {
      */
     @Test
     public void testDB1WithNormalDatabase() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestDataExistingApplication(SUPPORT);
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
         SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test");
     }
 
@@ -87,7 +87,7 @@ public class MigrationIT {
 
     @Test
     public void testDB2WithStandardMigration() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential2");
     }
 
@@ -116,7 +116,7 @@ public class MigrationIT {
 
     @Test
     public void testDB2WithFunkyMigration() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         checkOnMigration();
     }
 }

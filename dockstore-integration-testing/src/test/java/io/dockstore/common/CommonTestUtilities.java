@@ -57,31 +57,17 @@ public final class CommonTestUtilities {
     }
 
     /**
-     * Drops the database and recreates from migrations for non-confidential tests, using existing application
+     * Drops the database and recreates from migrations for non-confidential tests
      * @param support
      * @throws Exception
      */
-    public static void dropAndCreateWithTestDataExistingApplication(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        dropAndCreateWithTestDataHelper(application);
-    }
-
-    /**
-     * Drops the database and recreates from migrations for non-confidential tests, using new application
-     * @param support
-     * @throws Exception
-     */
-    public static void dropAndCreateWithTestDataNewApplication(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        dropAndCreateWithTestDataHelper(application);
-    }
-
-    /**
-     * A helper for dropping and recreating database from migrations, including non-confidential test data
-     * @param application
-     * @throws Exception
-     */
-    private static void dropAndCreateWithTestDataHelper(Application<DockstoreWebserviceConfiguration> application) throws Exception {
+    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application;
+        if (isNewApplication) {
+            application = support.newApplication();
+        } else {
+            application= support.getApplication();
+        }
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
         application.run("db", "migrate", CONFIG_PATH, "--include", "test");
@@ -116,8 +102,8 @@ public final class CommonTestUtilities {
      * @param support
      * @throws Exception
      */
-    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        cleanStatePrivate2(support, CONFIG_PATH);
+    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+        cleanStatePrivate2(support, CONFIG_PATH, isNewApplication);
 
     }
 
@@ -127,8 +113,13 @@ public final class CommonTestUtilities {
      * @param configPath
      * @throws Exception
      */
-    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
-        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath, boolean isNewApplication) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application;
+        if (isNewApplication) {
+            application = support.newApplication();
+        } else {
+            application= support.getApplication();
+        }
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
         application.run("db", "migrate", configPath, "--include", "1.3.0.generated");
         application.run("db", "migrate", configPath, "--include", "test.confidential2");

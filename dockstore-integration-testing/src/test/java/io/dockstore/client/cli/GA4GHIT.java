@@ -36,7 +36,7 @@ public abstract class GA4GHIT {
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestDataNewApplication(SUPPORT);
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, true);
         SUPPORT.before();
         client = new JerseyClientBuilder(SUPPORT.getEnvironment()).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
     }

@@ -60,7 +60,7 @@ public class BaseIT {
 
     @Before
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestDataExistingApplication(SUPPORT);
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
     /**

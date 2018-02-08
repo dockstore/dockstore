@@ -113,7 +113,7 @@ public class SystemClientIT {
 
     @Before
     public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestDataExistingApplication(SUPPORT);
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
     private static ApiClient getWebClient() throws IOException, TimeoutException {
