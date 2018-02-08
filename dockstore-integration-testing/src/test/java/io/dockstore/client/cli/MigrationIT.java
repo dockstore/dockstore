@@ -75,7 +75,7 @@ public class MigrationIT {
      */
     @Test
     public void testDB1WithNormalDatabase() throws Exception {
-        CommonTestUtilities.cleanStateWithTestData(SUPPORT);
+        CommonTestUtilities.dropAndCreateWithTestDataExistingApplication(SUPPORT);
         SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test");
     }
 

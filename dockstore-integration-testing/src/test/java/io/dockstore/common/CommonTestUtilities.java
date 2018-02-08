@@ -61,11 +61,9 @@ public final class CommonTestUtilities {
      * @param support
      * @throws Exception
      */
-    public static void cleanStateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        support.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-        support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
-        support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "test");
-        support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
+    public static void dropAndCreateWithTestDataExistingApplication(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        dropAndCreateWithTestDataHelper(application);
     }
 
     /**
@@ -73,8 +71,17 @@ public final class CommonTestUtilities {
      * @param support
      * @throws Exception
      */
-    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void dropAndCreateWithTestDataNewApplication(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        dropAndCreateWithTestDataHelper(application);
+    }
+
+    /**
+     * A helper for dropping and recreating database from migrations, including non-confidential test data
+     * @param application
+     * @throws Exception
+     */
+    private static void dropAndCreateWithTestDataHelper(Application<DockstoreWebserviceConfiguration> application) throws Exception {
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
         application.run("db", "migrate", CONFIG_PATH, "--include", "test");
