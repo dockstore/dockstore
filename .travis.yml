@@ -51,6 +51,9 @@ before_script:
 
 script: ./scripts/run-tests.sh
 
+after_install:
+- rm -rf /home/travis/.m2/repository/io/dockstore/dockstore
+
 notifications:
   webhooks:
     urls:
