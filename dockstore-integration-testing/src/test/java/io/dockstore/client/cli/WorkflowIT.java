@@ -288,7 +288,7 @@ public class WorkflowIT {
      * @throws ApiException
      */
     @Test
-    public void testManualRegisterToolWithMixins() throws IOException, TimeoutException, ApiException {
+    public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws IOException, TimeoutException, ApiException {
         final ApiClient webClient = getWebClient();
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -308,6 +308,8 @@ public class WorkflowIT {
 
         assertTrue("did not import mixin and includes properly", registeredTool.getTags().stream().filter(tag -> Objects
             .equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles().size() == 5);
+        assertTrue("did not import symbolic links to folders properly", registeredTool.getTags().stream().filter(tag -> Objects
+            .equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles().size() == 5);
     }
 
     /**
