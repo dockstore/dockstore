@@ -281,7 +281,8 @@ public class WorkflowIT {
 
 
     /**
-     * Tests manual registration of a tool and check that descriptors are downloaded properly
+     * Tests manual registration of a tool and check that descriptors are downloaded properly.
+     * Description is pulled properly from an $include.
      *
      * @throws IOException
      * @throws TimeoutException
@@ -298,6 +299,7 @@ public class WorkflowIT {
         tool.setNamespace("dockstoretestuser2");
         tool.setName("dockstore-cgpmap");
         tool.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
+        tool.setDefaultVersion("symbolic.v1");
 
         DockstoreTool registeredTool = toolApi.registerManual(tool);
         registeredTool = toolApi.refresh(registeredTool.getId());
@@ -306,6 +308,7 @@ public class WorkflowIT {
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         toolApi.publish(registeredTool.getId(), publishRequest);
 
+        assertTrue("did not pick up description from $include", registeredTool.getDescription().contains("A Docker container for PCAP-core."));
         assertTrue("did not import mixin and includes properly", registeredTool.getTags().stream().filter(tag -> Objects
             .equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles().size() == 5);
         assertTrue("did not import symbolic links to folders properly", registeredTool.getTags().stream().filter(tag -> Objects

@@ -25,11 +25,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -86,9 +86,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public String readFile(String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
+        Repository repo;
+        try {
+            repo = service.getRepository(gitUsername, gitRepository);
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
+            return null;
+        }
+        return readFileFromRepo(fileName, reference, repo);
+    }
+
+    private String readFileFromRepo(String fileName, String reference, Repository repo) {
         try {
             // may need to pass owner from git url, as this may differ from the git username
-            Repository repo = service.getRepository(gitUsername, gitRepository);
             // may need to account for symbolic links to directories
             List<String> folders = Arrays.asList(fileName.split("/"));
             List<String> start = new ArrayList<>();
@@ -141,6 +151,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public String getFileContents(String filePath, String branch, String repositoryId) {
+        Repository repo;
+        try {
+            repo = service.getRepository(gitUsername, repositoryId);
+        } catch (IOException ex) {
+            LOG.info(gitUsername + ": Repo: has no descriptor file ");
+            return null;
+        }
+        return readFileFromRepo(filePath, branch, repo);
     }
 
     @Override
@@ -358,23 +380,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return mainBranch;
-    }
-
-    @Override
-    public String getFileContents(String filePath, String branch, String repositoryId) {
-        String content = null;
-
-        try {
-            Repository repository = service.getRepository(gitUsername, repositoryId);
-            List<RepositoryContents> contents = cService.getContents(repository, filePath, branch);
-            if (!(contents == null || contents.isEmpty())) {
-                content = extractGitHubContents(contents);
-            }
-
-        } catch (IOException ex) {
-            LOG.info(gitUsername + ": Repo: has no descriptor file ");
-        }
-        return content;
     }
 
     /**

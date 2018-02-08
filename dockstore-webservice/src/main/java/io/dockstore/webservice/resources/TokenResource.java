@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 
 import javax.annotation.security.RolesAllowed;
@@ -46,7 +47,6 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.common.base.Charsets;
-import com.google.common.base.Optional;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
