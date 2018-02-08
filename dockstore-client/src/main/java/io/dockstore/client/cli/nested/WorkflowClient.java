@@ -47,6 +47,7 @@ import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.HttpStatus;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -835,9 +836,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 workflow.setDefaultTestParameterFilePath(defaultTestJsonPath);
 
 
-                if (workflow.getSourceControl() != Workflow.SourceControlEnum.GITHUB
-                    && workflow.getSourceControl() != Workflow.SourceControlEnum.GITLAB
-                    && workflow.getSourceControl() != Workflow.SourceControlEnum.BITBUCKET) {
+                if (!EnumUtils.isValidEnum(Workflow.SourceControlEnum.class, workflow.getSourceControl().name())) {
                     errorMessage("The source control type is not valid.", Client.CLIENT_ERROR);
                 }
 
