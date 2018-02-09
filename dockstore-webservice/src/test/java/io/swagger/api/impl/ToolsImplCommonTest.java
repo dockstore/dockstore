@@ -8,7 +8,6 @@ import com.google.common.collect.Table;
 import com.google.gson.Gson;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
-import io.dockstore.common.UnitTest;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -24,7 +23,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertEquals;
 
@@ -32,7 +30,6 @@ import static org.junit.Assert.assertEquals;
  * @author gluu
  * @since 17/01/18
  */
-@Category(UnitTest.class)
 public class ToolsImplCommonTest {
     static final Gson gson = new Gson();
     static final String PLACEHOLDER_CONTENT = "potato";

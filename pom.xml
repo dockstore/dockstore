@@ -1182,16 +1182,16 @@
         </profile>
         <profile>
             <id>unit-tests</id>
-            <!-- run all non-integration tests -->
+            <!-- run all non-integration tests and non-slow tests -->
             <properties>
-                <excludeGroups>io.dockstore.common.IntegrationTest, io.dockstore.common.SlowTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.IntegrationTest</excludeGroups>
             </properties>
         </profile>
         <profile>
             <id>integration-tests</id>
-            <!-- run all non-unit tests -->
+            <!-- run all integration tests -->
             <properties>
-                <excludeGroups>io.dockstore.common.UnitTest, io.dockstore.common.SlowTest</excludeGroups>
+                <groups>io.dockstore.common.IntegrationTest</groups>
             </properties>
         </profile>
     </profiles>

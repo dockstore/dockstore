@@ -18,12 +18,9 @@ package io.dockstore.consumer;
 import cloud.localstack.TestUtils;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
-import io.dockstore.common.UnitTest;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
-@Category(UnitTest.class)
 public class ConsumerIT {
     @Test
     public void testLocalstackFunctional() {

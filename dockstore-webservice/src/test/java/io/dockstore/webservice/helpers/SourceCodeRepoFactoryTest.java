@@ -18,15 +18,12 @@ package io.dockstore.webservice.helpers;
 
 import java.util.Map;
 
-import io.dockstore.common.UnitTest;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 /**
  * @author dyuen
  */
-@Category(UnitTest.class)
 public class SourceCodeRepoFactoryTest {
 
     @Test
