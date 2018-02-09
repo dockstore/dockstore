@@ -8,6 +8,7 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.swagger.client.model.MetadataV2;
 import io.swagger.client.model.ToolClass;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolV2;
 import io.swagger.client.model.ToolVersionV2;
 import io.swagger.model.ToolFile;
@@ -97,6 +98,15 @@ public class GA4GHV2IT extends GA4GHIT {
     public void toolsIdVersionsVersionIdTypeFile() throws Exception {
         toolsIdVersionsVersionIdTypeFileCWL();
         toolsIdVersionsVersionIdTypeFileWDL();
+    }
+
+    @Test
+    public void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
+        Response response = checkedResponse(
+                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertDescriptor(MAPPER.writeValueAsString(responseObject));
     }
 
     private void toolsIdVersionsVersionIdTypeFileCWL() throws Exception {
