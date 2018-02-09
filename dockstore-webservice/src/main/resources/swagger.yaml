@@ -835,6 +835,7 @@ paths:
           \ as the main descriptor"
         required: true
         type: "string"
+        pattern: ".+"
       responses:
         200:
           description: "The tool descriptor."
