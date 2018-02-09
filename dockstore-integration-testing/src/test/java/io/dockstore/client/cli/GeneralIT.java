@@ -25,6 +25,7 @@ import java.util.concurrent.TimeoutException;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -57,7 +58,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author aduncan
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, IntegrationTest.class})
 public class GeneralIT extends BaseIT {
 
     @Rule

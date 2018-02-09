@@ -17,9 +17,11 @@
 package core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dockstore.common.UnitTest;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.jackson.Jackson;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author xliu
  */
+@Category(UnitTest.class)
 public class UserTest {
     private static final ObjectMapper MAPPER = Jackson.newObjectMapper();
 

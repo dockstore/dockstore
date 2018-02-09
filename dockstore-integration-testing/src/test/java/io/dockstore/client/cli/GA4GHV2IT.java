@@ -7,12 +7,14 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.IntegrationTest;
 import io.swagger.client.model.MetadataV2;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolV2;
 import io.swagger.client.model.ToolVersionV2;
 import io.swagger.model.ToolFile;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author gluu
  * @since 02/01/18
  */
+@Category(IntegrationTest.class)
 public class GA4GHV2IT extends GA4GHIT {
     private static final String apiVersion = "api/ga4gh/v2/";
 

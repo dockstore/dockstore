@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.io.Resources;
 import io.dockstore.common.Registry;
+import io.dockstore.common.UnitTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.SourceFile;
@@ -54,11 +55,13 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author dyuen
  */
 @Ignore("Has not been working since at least 1.3.0")
+@Category(UnitTest.class)
 public class CRUDTest {
 
     private static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");

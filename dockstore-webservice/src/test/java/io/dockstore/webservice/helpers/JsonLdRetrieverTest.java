@@ -19,11 +19,13 @@ import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.dockstore.common.UnitTest;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.File;
 
@@ -33,6 +35,7 @@ import static org.junit.Assert.*;
 /**
  * Created by kcao on 21/03/17.
  */
+@Category(UnitTest.class)
 public class JsonLdRetrieverTest {
     private void getSchema(String cwl, String json) throws Exception {
         Tool tool = new Tool();

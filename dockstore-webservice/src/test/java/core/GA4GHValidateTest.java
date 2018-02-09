@@ -19,6 +19,7 @@ package core;
 import java.io.IOException;
 
 import io.dockstore.common.SlowTest;
+import io.dockstore.common.UnitTest;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -34,7 +35,7 @@ import org.junit.experimental.categories.Category;
  *
  * @author dyuen
  */
-@Category(SlowTest.class)
+@Category({SlowTest.class, UnitTest.class})
 public class GA4GHValidateTest {
 
     @ClassRule
