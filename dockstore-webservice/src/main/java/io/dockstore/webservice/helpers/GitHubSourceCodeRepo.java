@@ -159,7 +159,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repo = service.getRepository(gitUsername, repositoryId);
         } catch (IOException ex) {
-            LOG.info(gitUsername + ": Repo: has no descriptor file ");
+            LOG.info(gitUsername + ": Repo " + repositoryId + " does not contain " + filePath + " on " + branch);
             return null;
         }
         return readFileFromRepo(filePath, branch, repo);
