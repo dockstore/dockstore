@@ -15,7 +15,6 @@ cache:
   directories:
   - $HOME/.m2
   - /tmp/localstack_install_dir
-  - $HOME/.cache/pip
 
 language: java
 jdk:

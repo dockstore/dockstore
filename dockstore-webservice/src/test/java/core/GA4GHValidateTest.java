@@ -16,8 +16,6 @@
 
 package core;
 
-import java.io.IOException;
-
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -25,12 +23,9 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
 import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.hibernate.Session;
-import org.hibernate.context.internal.ManagedSessionContext;
 
 
 /**
@@ -40,33 +35,14 @@ import org.hibernate.context.internal.ManagedSessionContext;
  */
 @Category(SlowTest.class)
 public class GA4GHValidateTest {
-    
+
     private static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
 
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
             DockstoreWebserviceApplication.class, CONFIG_PATH);
 
-    private DockstoreWebserviceApplication application;
-    private Session session;
 
-    @Before
-    public void clearDB() throws Exception {
-        clearState();
-        application = RULE.getApplication();
-
-        this.session = application.getHibernate().getSessionFactory().openSession();
-        ManagedSessionContext.bind(session);
-    }
-    
-    /**
-     * Clears database state and known queues for testing.
-     **/
-    private static void clearState() throws Exception {
-        RULE.getApplication().run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-        RULE.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.4.0");
-    }
-    
     @Test
     public void validateGA4GH() {
         final int localPort = RULE.getLocalPort();
