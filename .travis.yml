@@ -15,6 +15,7 @@ cache:
   directories:
   - $HOME/.m2
   - /tmp/localstack_install_dir
+  - $HOME/.cache/pip
 
 language: java
 jdk:
@@ -53,7 +54,7 @@ before_script:
 
 script: ./scripts/run-tests.sh
 
-after_install:
+after_script:
 - rm -rf /home/travis/.m2/repository/io/dockstore
 
 notifications:
