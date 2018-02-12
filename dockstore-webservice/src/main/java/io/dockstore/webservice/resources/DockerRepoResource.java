@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.security.RolesAllowed;
@@ -39,7 +40,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;

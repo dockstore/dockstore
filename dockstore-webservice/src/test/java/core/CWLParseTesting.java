@@ -19,8 +19,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Optional;
 
-import com.google.common.base.Optional;
+import com.google.common.collect.Sets;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
@@ -65,7 +66,7 @@ public class CWLParseTesting {
 
         public Entry parseContent(String content){
             Tool tool = new Tool();
-            return super.parseCWLContent(tool, content);
+            return super.parseCWLContent(tool, content, Sets.newHashSet());
         }
 
         @Override

@@ -23,12 +23,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -179,10 +181,12 @@ public class FileImporter {
 
     private void handleMap(Entry entry, SourceFile.FileType fileType, Version version, Map<String, SourceFile> imports,
             Map<String, ?> map) {
+        Set<String> importKeywords = Sets.newHashSet("$import", "$include", "$mixin", "import", "include", "mixin");
+
         for (Map.Entry<String, ?> e : map.entrySet()) {
             final Object mapValue = e.getValue();
-            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include") || e.getKey().equalsIgnoreCase("import")
-                    || e.getKey().equalsIgnoreCase("include")) {
+
+            if (importKeywords.contains(e.getKey().toLowerCase())) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
                     handleImport(fileType, version, imports, (String)mapValue);
