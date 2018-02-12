@@ -90,6 +90,26 @@
         <sql>alter sequence tag_id_seq increment by 50</sql>
     </changeSet>
 
+    <changeSet id="addCustomDockerRegistryPath" author="agduncan">
+        <addColumn tableName="tool">
+            <column name="customdockerregistrypath" type="text"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="updateAmazonCustomDockerRegistryPath" author="agduncan">
+        <sql dbms="postgresql">
+            UPDATE tool SET "customdockerregistrypath" = split_part(path,'/',1) WHERE registry = 'AMAZON_ECR'
+        </sql>
+    </changeSet>
+
+    <changeSet id="dropWorkflowPath" author="agduncan">
+        <dropColumn tableName="workflow" columnName="path"></dropColumn>
+    </changeSet>
+
+    <changeSet id="dropToolPath" author="agduncan">
+        <dropColumn tableName="tool" columnName="path"></dropColumn>
+    </changeSet>
+
     <!-- adding support for storing and requesting DOIs -->
     <changeSet author="dyuen (generated)" id="1516219456530-1">
         <addColumn tableName="tag">

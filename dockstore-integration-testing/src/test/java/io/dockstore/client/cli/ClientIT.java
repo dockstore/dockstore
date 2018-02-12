@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.CommonTestUtilities.TestingPostgres;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
@@ -35,12 +36,14 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * @author dyuen
  */
+@Category(IntegrationTest.class)
 public class ClientIT extends BaseIT {
 
     final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");

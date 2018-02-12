@@ -50,6 +50,7 @@ import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -57,7 +58,8 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 /**
  * @author dyuen
  */
-public class CRUDTesting {
+@Ignore("Has not been working since at least 1.3.0")
+public class CRUDTest {
 
     private static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
     @ClassRule
@@ -172,7 +174,6 @@ public class CRUDTesting {
         tool.setName("name");
         tool.setToolname("toolname");
         tool.setIsPublished(true);
-        tool.setPath("quay.io/namespace/name");
 
         final VersionDAO<Tag> toolVersionDAO = new VersionDAO<>(application.getHibernate().getSessionFactory());
         Tag toolVersion = new Tag();

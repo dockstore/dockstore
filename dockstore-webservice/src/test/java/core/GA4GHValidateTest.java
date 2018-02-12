@@ -16,8 +16,6 @@
 
 package core;
 
-import java.io.IOException;
-
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -29,6 +27,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+
 /**
  * This is used to run the Python GA4GH tool registry validator to ensure that our implementation is compliant.
  *
@@ -37,9 +36,12 @@ import org.junit.experimental.categories.Category;
 @Category(SlowTest.class)
 public class GA4GHValidateTest {
 
+    private static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
+
     @ClassRule
     public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
+            DockstoreWebserviceApplication.class, CONFIG_PATH);
+
 
     @Test
     public void validateGA4GH() {

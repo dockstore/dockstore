@@ -163,7 +163,8 @@ public abstract class AbstractImageRegistry {
         // Find a tool with the given tool's path and is not manual
         // This looks like we wanted to refresh tool information when not manually entered as to not destroy manually entered information
         Tool duplicatePath = null;
-        List<Tool> toolList = toolDAO.findByPath(tool.getPath());
+
+        List<Tool> toolList = toolDAO.findAllByPath(tool.getPath(), false);
         for (Tool t : toolList) {
             if (t.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 duplicatePath = t;
@@ -410,7 +411,7 @@ public abstract class AbstractImageRegistry {
 
         // when a container from the registry (ex: quay.io) has newer content, update it from
         for (Tool newTool : apiToolList) {
-            String path = newTool.getPath();
+            String path = newTool.getToolPath();
             boolean exists = false;
 
             // Find if user already has the container
@@ -425,7 +426,7 @@ public abstract class AbstractImageRegistry {
 
             // Find if container already exists, but does not belong to user
             if (!exists) {
-                Tool oldTool = toolDAO.findByToolPath(path, newTool.getToolname());
+                Tool oldTool = toolDAO.findByPath(path, false);
                 if (oldTool != null) {
                     exists = true;
                     oldTool.update(newTool);
@@ -436,7 +437,6 @@ public abstract class AbstractImageRegistry {
             // Tool does not already exist
             if (!exists) {
                 // newTool.setUserId(userId);
-                newTool.setPath(newTool.getPath());
 
                 dbToolList.add(newTool);
             }

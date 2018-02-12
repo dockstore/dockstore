@@ -34,6 +34,7 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Token;
@@ -63,7 +64,7 @@ import static junit.framework.TestCase.assertTrue;
  *
  * @author gluu
  */
-@Category(BenchmarkTest.class)
+@Category({BenchmarkTest.class, IntegrationTest.class})
 public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     @Rule
@@ -280,7 +281,6 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         tool.setDefaultCwlPath(randomIdentifier());
         tool.setDefaultWdlPath(randomIdentifier());
         tool.setPrivateAccess(RAND.nextBoolean());
-        tool.setPath(randomIdentifier());
         tool.setToolname(randomIdentifier());
         return tool;
     }

@@ -220,7 +220,7 @@ public interface LanguageHandlerInterface {
         // TODO: How to deal with multiple entries of a tool? For now just grab the first
         // TODO: How do we check that the URL is valid? If not then the entry is likely a local docker build
         if (dockerEntry.startsWith("quay.io/")) {
-            List<Tool> byPath = toolDAO.findPublishedByPath(dockerEntry);
+            List<Tool> byPath = toolDAO.findAllByPath(dockerEntry, true);
             if (byPath == null || byPath.isEmpty()) {
                 // when we cannot find a published tool on Dockstore, link to quay.io
                 url = dockerEntry.replaceFirst("quay\\.io/", quayIOPath);
@@ -232,7 +232,7 @@ public interface LanguageHandlerInterface {
             String[] parts = dockerEntry.split("/");
             if (parts.length == 2) {
                 // if the path looks like pancancer/pcawg-oxog-tools
-                List<Tool> publishedByPath = toolDAO.findPublishedByPath("registry.hub.docker.com/" + dockerEntry);
+                List<Tool> publishedByPath = toolDAO.findAllByPath("registry.hub.docker.com/" + dockerEntry, true);
                 if (publishedByPath == null || publishedByPath.isEmpty()) {
                     // when we cannot find a published tool on Dockstore, link to docker hub
                     url = dockerHubPathR + dockerEntry;

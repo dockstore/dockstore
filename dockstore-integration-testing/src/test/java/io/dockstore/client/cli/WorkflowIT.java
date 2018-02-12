@@ -21,6 +21,7 @@ import java.util.List;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -49,7 +50,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author dyuen
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, IntegrationTest.class})
 public class WorkflowIT extends BaseIT {
 
     private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
@@ -69,7 +70,7 @@ public class WorkflowIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
     @Test

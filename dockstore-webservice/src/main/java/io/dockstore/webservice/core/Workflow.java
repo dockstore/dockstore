@@ -53,18 +53,20 @@ import org.apache.http.HttpStatus;
  */
 @ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore")
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "sourcecontrol", "organization", "repository", "workflowName" }))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "sourceControl", "organization", "repository", "workflowName" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c FROM Workflow c WHERE c.isPublished = true ORDER BY size(c.starredUsers) DESC"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAll", query = "SELECT c FROM Workflow c"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.workflowName = :name AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.path = :path AND c.workflowName IS NULL AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByWorkflowPathNullWorkflowName", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName IS NULL AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByGitUrl", query = "SELECT c FROM Workflow c WHERE c.gitUrl = :gitUrl ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (c.path LIKE :pattern)) AND c.isPublished = true") })
+        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (CONCAT(c.sourceControl, '/', c.organization, '/', c.repository, '/', c.workflowName) LIKE :pattern)) AND c.isPublished = true") })
 @DiscriminatorValue("workflow")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
@@ -89,10 +91,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true)
     private SourceControl sourceControl;
-
-    @Column
-    @ApiModelProperty(value = "This is a generated full workflow path including organization, repository name, and workflow name")
-    private String path;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true)
@@ -140,7 +138,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         super.update(workflow);
         this.setMode(workflow.getMode());
         this.setWorkflowName(workflow.getWorkflowName());
-        this.setPath(workflow.getPath());
     }
 
     /**
@@ -152,7 +149,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
      */
     @Deprecated
     public void copyWorkflow(Workflow targetWorkflow) {
-        targetWorkflow.setPath(getPath());
         targetWorkflow.setIsPublished(getIsPublished());
         targetWorkflow.setWorkflowName(getWorkflowName());
         targetWorkflow.setAuthor(getAuthor());
@@ -228,20 +224,13 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.repository = repository;
     }
 
-    @JsonProperty
-    public String getPath() {
-        String constructedPath;
-        if (path == null) {
-            constructedPath = getSourceControl().toString() + '/' + organization + '/' + repository + (workflowName == null ? "" : '/' + workflowName);
-            path = constructedPath;
-        } else {
-            constructedPath = path;
-        }
-        return constructedPath;
+    @JsonProperty("full_workflow_path")
+    public String getWorkflowPath() {
+        return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public String getPath() {
+        return getSourceControl().toString() + '/' + organization + '/' + repository;
     }
 
     public void setDescriptorType(String descriptorType) {
@@ -316,5 +305,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void setSourceControl(SourceControl sourceControl) {
         this.sourceControl = sourceControl;
     }
+
 
 }

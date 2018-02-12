@@ -1204,8 +1204,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a container by tool path"
-      description: "Lists info of container. Enter full path (include quay.io in path)."
+      summary: "Get a tool by the specific tool path"
+      description: "Lists info of tool. Enter full path (include quay.io in path)."
       operationId: "getContainerByToolPath"
       produces:
       - "application/json"
@@ -1226,8 +1226,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published container by tool path"
-      description: "Lists info of container. Enter full path (include quay.io in path)."
+      summary: "Get a published tool by the specific tool path"
+      description: "Lists info of tool. Enter full path (include quay.io in path)."
       operationId: "getPublishedContainerByToolPath"
       produces:
       - "application/json"
@@ -1273,8 +1273,8 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a list of containers by path"
-      description: "Lists info of container. Enter full path (include quay.io in path)."
+      summary: "Get a list of tools by path"
+      description: "Lists info of tool. Enter full path (include quay.io in path)."
       operationId: "getContainerByPath"
       produces:
       - "application/json"
@@ -1297,7 +1297,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published container by path"
+      summary: "Get a list of published tools by path"
       description: "NO authentication"
       operationId: "getPublishedContainerByPath"
       produces:
@@ -1312,9 +1312,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/DockstoreTool"
+            $ref: "#/definitions/DockstoreTool"
   /containers/published:
     get:
       tags:
@@ -3193,7 +3191,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a workflow by path"
+      summary: "Get a published workflow by path"
       description: "Lists info of workflow. Enter full path."
       operationId: "getPublishedWorkflowByPath"
       produces:
@@ -3209,6 +3207,30 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
+  /workflows/path/{repository}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get a list of workflows by path"
+      description: "Lists info of workflow. Enter full path."
+      operationId: "getAllWorkflowByPath"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/published:
     get:
       tags:
@@ -4239,6 +4261,8 @@ definitions:
         readOnly: true
         items:
           type: "string"
+      path:
+        type: "string"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -4273,10 +4297,9 @@ definitions:
       private_access:
         type: "boolean"
         description: "Is the docker image private or not."
-      path:
+      custom_docker_registry_path:
         type: "string"
-        description: "This is a generated full docker path including registry and\
-          \ namespace, used for docker pull commands"
+        description: "Only used for docker registries that allow for custom paths"
       tool_path:
         type: "string"
         readOnly: true
@@ -5086,10 +5109,6 @@ definitions:
         - "GITHUB"
         - "BITBUCKET"
         - "GITLAB"
-      path:
-        type: "string"
-        description: "This is a generated full workflow path including organization,\
-          \ repository name, and workflow name"
       descriptorType:
         type: "string"
         description: "This is a descriptor type for the workflow, either CWL or WDL\
@@ -5101,6 +5120,8 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
+      path:
+        type: "string"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -5116,6 +5137,9 @@ definitions:
         type: "string"
         description: "This indicates for the associated git repository, the default\
           \ path to the test parameter file"
+      full_workflow_path:
+        type: "string"
+        readOnly: true
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"

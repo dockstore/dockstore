@@ -15,14 +15,17 @@ cache:
   directories:
   - $HOME/.m2
   - /tmp/localstack_install_dir
+  - $HOME/.cache/pip
 
 language: java
 jdk:
 - oraclejdk8
 
 env:
-   - EXTRA_MAVEN_VAR=""
-   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report"
+   - EXTRA_MAVEN_VAR="" TESTING_PROFILE="unit-tests"
+   - EXTRA_MAVEN_VAR="" TESTING_PROFILE="integration-tests"
+   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="unit-tests"
+   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="integration-tests"
 
 # build lifecycle is before_install, install, before_script, script, after_script
 
@@ -50,6 +53,9 @@ before_script:
 - export PATH=$PATH:$PWD/dockstore-client/target
 
 script: ./scripts/run-tests.sh
+
+after_script:
+- rm -rf /home/travis/.m2/repository/io/dockstore
 
 notifications:
   webhooks:

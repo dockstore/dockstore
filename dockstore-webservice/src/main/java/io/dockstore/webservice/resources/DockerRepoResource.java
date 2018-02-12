@@ -38,7 +38,6 @@ import javax.ws.rs.core.Response;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
-import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
@@ -234,7 +233,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         checkUser(user, c);
 
-        Tool duplicate = toolDAO.findByToolPath(tool.getPath(), tool.getToolname());
+        Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
 
         if (duplicate != null && duplicate.getId() != containerId) {
             LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
@@ -384,8 +383,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         if (!Helper.isGit(tool.getGitUrl())) {
             tool.setGitUrl(Helper.convertHttpsToSsh(tool.getGitUrl()));
         }
-        tool.setPath(tool.getPath());
-        Tool duplicate = toolDAO.findByToolPath(tool.getPath(), tool.getToolname());
+        Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
 
         if (duplicate != null) {
             LOG.info(user.getUsername() + ": duplicate tool found: {}" + tool.getToolPath());
@@ -528,52 +526,38 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @Path("/path/{repository}/published")
-    @ApiOperation(value = "Get a published container by path", notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of published tools by path", notes = "NO authentication", response = Tool.class)
     public List<Tool> getPublishedContainerByPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        List<Tool> containers = toolDAO.findPublishedByPath(path);
-        filterContainersForHiddenTags(containers);
-        checkEntry(containers);
-        return containers;
+        List<Tool> tools = toolDAO.findAllByPath(path, true);
+        filterContainersForHiddenTags(tools);
+        checkEntry(tools);
+        return tools;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/path/{repository}")
-    @ApiOperation(value = "Get a list of containers by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of tools by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of tool. Enter full path (include quay.io in path).", response = Tool.class, responseContainer = "List")
     public List<Tool> getContainerByPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        List<Tool> tool = toolDAO.findByPath(path);
-
-        checkEntry(tool);
-
-        AuthenticatedResourceInterface.checkUser(user, tool);
-
-        return tool;
+        List<Tool> tools = toolDAO.findAllByPath(path, false);
+        checkEntry(tools);
+        AuthenticatedResourceInterface.checkUser(user, tools);
+        return tools;
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}")
-    @ApiOperation(value = "Get a container by tool path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    @ApiOperation(value = "Get a tool by the specific tool path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of tool. Enter full path (include quay.io in path).", response = Tool.class)
     public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        final String[] split = path.split("/");
-        // check that this is a tool path
-        final int toolPathLength = 4;
-        String toolname = "";
-        if (split.length == toolPathLength) {
-            toolname = split[toolPathLength - 1];
-        }
-
-        Tool tool = toolDAO.findByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
-
+        Tool tool = toolDAO.findByPath(path, false);
         checkEntry(tool);
-
         checkUser(user, tool);
-
         return tool;
     }
 
@@ -581,19 +565,11 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}/published")
-    @ApiOperation(value = "Get a published container by tool path", notes = "Lists info of container. Enter full path (include quay.io in path).", response = Tool.class)
+    @ApiOperation(value = "Get a published tool by the specific tool path", notes = "Lists info of tool. Enter full path (include quay.io in path).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        final String[] split = path.split("/");
-        // check that this is a tool path
-        final int toolPathLength = 4;
-        String toolname = "";
-        if (split.length == toolPathLength) {
-            toolname = split[toolPathLength - 1];
-        }
-
         try {
-            Tool tool = toolDAO.findPublishedByToolPath(Joiner.on("/").join(split[0], split[1], split[2]), toolname);
+            Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -896,7 +872,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Tool to star.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Tool tool = toolDAO.findById(containerId);
-        starEntryHelper(tool, user, "tool", tool.getPath());
+        starEntryHelper(tool, user, "tool", tool.getToolPath());
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
     }
 
@@ -908,7 +884,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to unstar.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
-        unstarEntryHelper(tool, user, "tool", tool.getPath());
+        unstarEntryHelper(tool, user, "tool", tool.getToolPath());
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
     }
 

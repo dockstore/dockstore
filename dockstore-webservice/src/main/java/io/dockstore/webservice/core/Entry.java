@@ -40,6 +40,8 @@ import javax.persistence.SequenceGenerator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -286,5 +288,72 @@ public abstract class Entry<S extends Entry, T extends Version> {
             }
         }
         return false;
+    }
+
+    /**
+     * Given a path (A/B/C/D), splits it into parts and returns it
+     * Note that B, C, and D are all strings, however A is either a registry or sourcecontrol enum
+     *
+     * @param path
+     * @param isTool
+     * @return An array of fields used to identify an entry
+     */
+    public static Object[] splitPath(String path, boolean isTool) {
+        // Used for accessing index of path
+        final int registryIndex = 0;
+        final int orgIndex = 1;
+        final int repoIndex = 2;
+        final int entryNameIndex = 3;
+
+        // Lengths of paths
+        final int pathNoNameLength = 3;
+        final int pathWithNameLength = 4;
+
+        // Used for storing values at path locations
+        Object registry = null;
+        String org;
+        String repo;
+        String entryName = null;
+
+        // Split path by slash
+        String[] splitPath = path.split("/");
+
+        // Only split if it is the correct length
+        if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
+            // Get enum values
+            Object[] values;
+            if (isTool) {
+                values = Registry.values();
+            } else {
+                values = SourceControl.values();
+            }
+
+            // Find corresponding enum
+            for (Object val : values) {
+                if (splitPath[registryIndex].equals(val.toString())) {
+                    registry = val;
+                    break;
+                }
+            }
+
+            // Deal with amazon
+            if (isTool && registry == null) {
+                // If first position is null, then assume Amazon ECR since it is the only custom Docker Registry
+                // TODO: This is a temporary solution
+                registry = Registry.AMAZON_ECR;
+            }
+
+            // Get remaining positions
+            org = splitPath[orgIndex];
+            repo = splitPath[repoIndex];
+            if (splitPath.length == pathWithNameLength) {
+                entryName = splitPath[entryNameIndex];
+            }
+
+            // Return an array of the form [A,B,C,D]
+            return new Object[]{registry, org, repo, entryName};
+        } else {
+            return null;
+        }
     }
 }

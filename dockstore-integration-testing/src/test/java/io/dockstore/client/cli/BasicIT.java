@@ -19,6 +19,7 @@ package io.dockstore.client.cli;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
@@ -42,7 +43,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  *
  * @author aduncan
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, IntegrationTest.class})
 public class BasicIT extends BaseIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -181,7 +182,7 @@ public class BasicIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'regular'",
+                "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '"+ Registry.QUAY_IO.name() +"' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'regular'",
                 new ScalarHandler<>());
         Assert.assertTrue("the tool should be Auto", count == 1);
     }
@@ -198,7 +199,7 @@ public class BasicIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where mode = 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'alternate'",
+                "select count(*) from tool where mode = 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.name() + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'alternate'",
                 new ScalarHandler<>());
         Assert.assertTrue("the tool should be Manual still", count == 1);
     }
@@ -219,7 +220,7 @@ public class BasicIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and path = 'quay.io/dockstoretestuser/quayandgithub' and toolname = 'testtool'",
+                "select count(*) from tool where mode != 'MANUAL_IMAGE_PATH' and registry = '" + Registry.QUAY_IO.name() + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and toolname = 'testtool'",
                 new ScalarHandler<>());
         Assert.assertTrue("the tool should be Auto", count == 1);
     }
@@ -262,7 +263,7 @@ public class BasicIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser/noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
+                "select count(*) from tool where registry = '" + Registry.QUAY_IO.name() + "' and namespace = 'dockstoretestuser' and name = 'noautobuild' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
                 new ScalarHandler<>());
         Assert.assertTrue("the tool should now have an associated git repo", count == 1);
 
@@ -272,7 +273,7 @@ public class BasicIT extends BaseIT {
                         "--script" });
 
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser/nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
+                "select count(*) from tool where registry = '" + Registry.QUAY_IO.name() + "' and namespace = 'dockstoretestuser' and name = 'nobuildsatall' and giturl = 'git@github.com:DockstoreTestUser/dockstore-whalesay.git'",
                 new ScalarHandler<>());
         Assert.assertTrue("the tool should now have an associated git repo", count2 == 1);
 
@@ -341,7 +342,7 @@ public class BasicIT extends BaseIT {
     public void testQuayGithubAutoRegistration() {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@github.com%'",
+                "select count(*) from tool where  registry = '" + Registry.QUAY_IO.name() + "' and giturl like 'git@github.com%'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 5 registered from Quay and Github, there are " + count, count == 5);
     }
@@ -430,7 +431,7 @@ public class BasicIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and ispublished = 't'",
+                "select count(*) from tool where registry = '" + Registry.QUAY_IO.name() + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and ispublished = 't'",
                 new ScalarHandler<>());
         Assert.assertTrue("the given entry should be published", count == 1);
     }
@@ -447,7 +448,7 @@ public class BasicIT extends BaseIT {
     public void testQuayBitbucketAutoRegistration() {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@bitbucket.org%'",
+                "select count(*) from tool where registry = '" + Registry.QUAY_IO.name() + "' and giturl like 'git@bitbucket.org%'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 2 registered from Quay and Bitbucket", count == 2);
     }
@@ -538,7 +539,7 @@ public class BasicIT extends BaseIT {
         // Need to add these to the db dump (db dump 1)
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path like \'" + Registry.QUAY_IO.toString() + "%\' and giturl like 'git@gitlab.com%'",
+                "select count(*) from tool where  registry = '" + Registry.QUAY_IO.name() + "' and giturl like 'git@gitlab.com%'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 2 registered from Quay and Gitlab", count == 2);
     }
@@ -953,12 +954,12 @@ public class BasicIT extends BaseIT {
                         "quay.io/dockstoretestuser/quayandgithub", "--default-version", "master", "--script" });
 
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and defaultversion = 'master'",
+                "select count(*) from tool where registry = '" + Registry.QUAY_IO.name() + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master'",
                 new ScalarHandler<>());
         Assert.assertTrue("the tool should have a default version set", count == 1);
 
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser/quayandgithub' and defaultversion = 'master' and author = 'Dockstore Test User'",
+                "select count(*) from tool where registry = '" + Registry.QUAY_IO.name() + "' and namespace = 'dockstoretestuser' and name = 'quayandgithub' and defaultversion = 'master' and author = 'Dockstore Test User'",
                 new ScalarHandler<>());
         Assert.assertTrue("the tool should have any metadata set (author)", count2 == 1);
 
@@ -1328,7 +1329,7 @@ public class BasicIT extends BaseIT {
                         "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "amazon.registry", "--script" });
 
                 // Check that tool is published and has correct values
-                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and path='amazon.registry/notarealnamespace/notarealname' and registry='" + Registry.AMAZON_ECR.name() +"'", new ScalarHandler<>());
+                final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='" + Registry.AMAZON_ECR.name() +"' and namespace = 'notarealnamespace' and name = 'notarealname' and customDockerRegistryPath = 'amazon.registry'", new ScalarHandler<>());
                 Assert.assertTrue("one tool should be private, published and from amazon, there are " + count, count == 1);
 
                 // Update tool to public (shouldn't work)

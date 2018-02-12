@@ -27,11 +27,15 @@ import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author xliu
  */
 public final class CommonTestUtilities {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
 
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
@@ -45,34 +49,101 @@ public final class CommonTestUtilities {
 
     }
 
-    public static void dropAndRecreate(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    /**
+     * Drops the database and recreates from migrations, not including any test data, using new application
+     * @param support
+     * @throws Exception
+     */
+    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.4.0");
     }
 
-    public static void cleanState(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        getTestingPostgres().clearDatabase();
-        support.getApplication().run("db", "migrate", CONFIG_PATH, "--include", "test");
+    /**
+     * Drops the database and recreates from migrations for non-confidential tests
+     * @param support
+     * @throws Exception
+     */
+    public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+        LOG.info("Dropping and Recreating the database with non-confidential test data");
+        Application<DockstoreWebserviceConfiguration> application;
+        if (isNewApplication) {
+            application = support.newApplication();
+        } else {
+            application= support.getApplication();
+        }
+        application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "test");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
     }
 
+    /**
+     * Wrapper for dropping and recreating database from migrations for test confidential 1
+     * @param support
+     * @throws Exception
+     */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIG_PATH);
     }
 
+    /**
+     * Drops and recreates database from migrations for test confidential 1
+     * @param support
+     * @param configPath
+     * @throws Exception
+     */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
-        clearState();
-        support.getApplication().run("db", "migrate", configPath, "--include", "test.confidential1");
+        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        application.run("db", "drop-all", "--confirm-delete-everything", configPath);
+        application.run("db", "migrate", configPath, "--include", "1.3.0.generated");
+        application.run("db", "migrate", configPath, "--include", "test.confidential1");
+        application.run("db", "migrate", configPath, "--include", "1.4.0");
     }
 
-    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        cleanStatePrivate2(support, CONFIG_PATH);
+    /**
+     * Wrapper fir dropping and recreating database from migrations for test confidential 2
+     * @param support
+     * @throws Exception
+     */
+    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+        LOG.info("Dropping and Recreating the database with confidential 2 test data");
+        cleanStatePrivate2(support, CONFIG_PATH, isNewApplication);
+    }
+
+    /**
+     * Drops and recreates database from migrations for test confidential 2
+     * @param support
+     * @param configPath
+     * @throws Exception
+     */
+    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath, boolean isNewApplication) throws Exception {
+        Application<DockstoreWebserviceConfiguration> application;
+        if (isNewApplication) {
+            application = support.newApplication();
+        } else {
+            application= support.getApplication();
+        }
+        application.run("db", "drop-all", "--confirm-delete-everything", configPath);
+        application.run("db", "migrate", configPath, "--include", "1.3.0.generated");
+        application.run("db", "migrate", configPath, "--include", "test.confidential2");
+        application.run("db", "migrate", configPath, "--include", "1.4.0");
 
     }
 
-    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
-        clearState();
-        support.getApplication().run("db", "migrate", configPath, "--include", "test.confidential2");
+    /**
+     * Loads up a specific set of workflows into the database
+     * Specifically for tests toolsIdGet4Workflows() in GA4GHV1IT.java and toolsIdGet4Workflows() in GA4GHV2IT.java
+     * @param support
+     * @throws Exception
+     */
+    public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        LOG.info("Migrating samepaths migrations");
+        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        application.run("db", "migrate", CONFIG_PATH, "--include", "samepaths");
     }
 
     /**

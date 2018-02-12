@@ -25,6 +25,7 @@ import java.util.concurrent.TimeoutException;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Registry;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -57,7 +58,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author aduncan
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, IntegrationTest.class})
 public class GeneralIT extends BaseIT {
 
     @Rule
@@ -79,7 +80,7 @@ public class GeneralIT extends BaseIT {
     @Before
     @Override
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
     /**
@@ -234,7 +235,7 @@ public class GeneralIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.path = 'quay.io/dockstoretestuser2/quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.name() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("there should now be an invalid tag, found " + count, count == 1);
 
@@ -247,7 +248,7 @@ public class GeneralIT extends BaseIT {
                 "quay.io/dockstoretestuser2/quayandgithub", "--script" });
 
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.path = 'quay.io/dockstoretestuser2/quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.name() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("the invalid tag should now be valid, found " + count2, count2 == 0);
     }
@@ -333,7 +334,7 @@ public class GeneralIT extends BaseIT {
         // should now be invalid
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.name() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
 
         assertTrue("there should now be 1 invalid tag, found " + count, count == 1);
@@ -343,7 +344,7 @@ public class GeneralIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/Dockstore.wdl", "--script" });
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.name() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("the tag should now be valid", count2 == 0);
 
@@ -407,7 +408,7 @@ public class GeneralIT extends BaseIT {
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         boolean published = testingPostgres
-                .runSelectStatement("select ispublished from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl';",
+                .runSelectStatement("select ispublished from tool where registry = '"+ Registry.QUAY_IO.name() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
                         new ScalarHandler<>());
         assertTrue("tool not published", published);
 
@@ -415,7 +416,7 @@ public class GeneralIT extends BaseIT {
                 "quay.io/dockstoretestuser2/quayandgithubwdl", "--entryname", "foo" });
 
         long count = testingPostgres
-                .runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl';",
+                .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.name() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
                         new ScalarHandler<>());
         assertTrue("should be two after republishing", count == 2);
 
@@ -424,7 +425,7 @@ public class GeneralIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithubwdl" });
 
         published = testingPostgres.runSelectStatement(
-                "select ispublished from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and toolname = '';",
+                "select ispublished from tool where registry = '"+ Registry.QUAY_IO.name() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname = '';",
                 new ScalarHandler<>());
         assertTrue("tool not unpublished", !published);
     }
@@ -482,7 +483,7 @@ public class GeneralIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'alternate'",
+                "select count(*) from tool where registry = '"+ Registry.QUAY_IO.name() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'alternate'",
                 new ScalarHandler<>());
         assertTrue("there should only be one instance of the container with the toolname set to alternate", count == 1);
 
@@ -491,7 +492,7 @@ public class GeneralIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithubalternate", "--toolname", "toolnameTest", "--script" });
 
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'toolnameTest'",
+                "select count(*) from tool where registry = '"+ Registry.QUAY_IO.name() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'toolnameTest'",
                 new ScalarHandler<>());
         assertTrue("there should only be one instance of the container with the toolname set to toolnameTest", count2 == 1);
 
@@ -510,7 +511,7 @@ public class GeneralIT extends BaseIT {
                 "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "testTool",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithub' and toolname = 'testTool'",
+                "select count(*) from tool where registry = '"+ Registry.QUAY_IO.name() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithub' and toolname = 'testTool'",
                 new ScalarHandler<>());
         assertTrue("the container should exist", count == 1);
 
@@ -520,7 +521,7 @@ public class GeneralIT extends BaseIT {
                 "git@github.com:dockstoretestuser2/quayandgithub.git", "--git-reference", "master", "--toolname", "testOrg", "--cwl-path",
                 "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from tool where path = 'quay.io/dockstore2/testrepo2' and toolname = 'testOrg'",
+                .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.name() +"' and namespace = 'dockstore2' and name = 'testrepo2' and toolname = 'testOrg'",
                         new ScalarHandler<>());
         assertTrue("the container should exist", count2 == 1);
 

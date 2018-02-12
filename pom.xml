@@ -1180,5 +1180,19 @@
                 <excludeGroups />
             </properties>
         </profile>
+        <profile>
+            <id>unit-tests</id>
+            <!-- run all non-integration tests and non-slow tests -->
+            <properties>
+                <excludeGroups>io.dockstore.common.IntegrationTest</excludeGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>integration-tests</id>
+            <!-- run all integration tests -->
+            <properties>
+                <groups>io.dockstore.common.IntegrationTest</groups>
+            </properties>
+        </profile>
     </profiles>
 </project>

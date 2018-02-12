@@ -213,7 +213,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         final String gitUrl = BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX;
         workflow.setGitUrl(gitUrl);
         workflow.setLastUpdated(new Date());
-        workflow.setPath(workflow.getPath());
 
         return workflow;
     }

@@ -29,6 +29,11 @@ import org.hibernate.SessionFactory;
  */
 public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
+    public final int registryIndex = 0;
+    public final int orgIndex = 1;
+    public final int repoIndex = 2;
+    public final int entryNameIndex = 3;
+
     private Class<T> typeOfT;
 
     public EntryDAO(SessionFactory factory) {

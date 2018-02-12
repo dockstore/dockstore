@@ -31,6 +31,7 @@ import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -83,7 +84,7 @@ import static org.junit.Assert.fail;
  *
  * @author xliu
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, IntegrationTest.class})
 public class SystemClientIT {
 
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
@@ -102,7 +103,7 @@ public class SystemClientIT {
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
     }
 
@@ -113,7 +114,7 @@ public class SystemClientIT {
 
     @Before
     public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.cleanState(SUPPORT);
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
     private static ApiClient getWebClient() throws IOException, TimeoutException {
@@ -221,7 +222,6 @@ public class SystemClientIT {
         c.setIsPublished(true);
         c.setNamespace("seqware");
         c.setToolname("test5");
-        c.setPath("registry.hub.docker.com/seqware/seqware");
         c.setPrivateAccess(false);
         //c.setToolPath("registry.hub.docker.com/seqware/seqware/test5");
         Tag tag = new Tag();
@@ -305,7 +305,7 @@ public class SystemClientIT {
         containersApi.registerManual(c);
 
         List<io.swagger.client.model.ToolV1> tools = toolApi.toolsGet(null, null, null, null, null, null, null, null, null);
-        assertEquals(7, tools.size());
+        assertEquals(3, tools.size());
 
         // test a few constraints
         tools = toolApi.toolsGet(QUAY_IO_TEST_ORG_TEST6, null, null, null, null, null, null, null, null);
@@ -497,7 +497,7 @@ public class SystemClientIT {
         assertTrue(containers.size() == 1);
         assertTrue(containers.get(0).getPath().equals(QUAY_IO_TEST_ORG_TEST6));
 
-        containers = containersApi.search("test5");
+        containers = containersApi.search("test52");
         assertTrue(containers.isEmpty());
     }
 

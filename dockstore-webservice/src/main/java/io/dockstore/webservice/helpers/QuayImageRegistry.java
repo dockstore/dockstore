@@ -168,8 +168,6 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         for (Tool tool : apiTools) {
             // Set path information (not sure why we have to do this here)
             final String repo = tool.getNamespace() + '/' + tool.getName();
-            final String path = quayToken.getTokenSource() + '/' + repo;
-            tool.setPath(path);
 
             LOG.info("Grabbing tool information for " + tool.getPath());
 

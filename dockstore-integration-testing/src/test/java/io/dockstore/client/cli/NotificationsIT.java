@@ -3,22 +3,26 @@ package io.dockstore.client.cli;
 import java.io.IOException;
 
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.Assertion;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author gluu
  * @since 16/01/18
  */
+@Category(IntegrationTest.class)
 public class NotificationsIT extends BaseIT {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -44,7 +48,6 @@ public class NotificationsIT extends BaseIT {
     @Override
     @Before
     public void resetDBBetweenTests() throws Exception {
-        CommonTestUtilities.cleanState(SUPPORT);
         clearLogs();
     }
 

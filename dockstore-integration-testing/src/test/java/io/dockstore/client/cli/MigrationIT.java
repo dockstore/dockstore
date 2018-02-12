@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -40,7 +41,7 @@ import org.junit.runner.Description;
  *
  * @author dyuen
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, IntegrationTest.class})
 public class MigrationIT {
 
 
@@ -49,7 +50,7 @@ public class MigrationIT {
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
+        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
     }
 
@@ -75,7 +76,7 @@ public class MigrationIT {
      */
     @Test
     public void testDB1WithNormalDatabase() throws Exception {
-        CommonTestUtilities.cleanState(SUPPORT);
+        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
         SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test");
     }
 
@@ -87,7 +88,7 @@ public class MigrationIT {
 
     @Test
     public void testDB2WithStandardMigration() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential2");
     }
 
@@ -116,7 +117,7 @@ public class MigrationIT {
 
     @Test
     public void testDB2WithFunkyMigration() throws Exception {
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
         checkOnMigration();
     }
 }

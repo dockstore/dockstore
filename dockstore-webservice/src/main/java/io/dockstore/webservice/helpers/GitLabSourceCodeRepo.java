@@ -153,7 +153,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         final String gitUrl = GITLAB_GIT_URL_PREFIX + repositoryId + GITLAB_GIT_URL_SUFFIX;
         workflow.setGitUrl(gitUrl);
         workflow.setLastUpdated(new Date());
-        workflow.setPath(workflow.getPath());
 
         return workflow;
     }

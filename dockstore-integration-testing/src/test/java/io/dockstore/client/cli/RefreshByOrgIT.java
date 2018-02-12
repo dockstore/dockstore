@@ -28,6 +28,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.IntegrationTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Tool;
@@ -49,17 +50,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author gluu
  * @since 25/09/17
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, IntegrationTest.class})
 public class RefreshByOrgIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
-
-    @BeforeClass
-    public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
-        SUPPORT.before();
-    }
 
     @AfterClass
     public static void afterClass(){
@@ -83,8 +78,8 @@ public class RefreshByOrgIT {
 
     @BeforeClass
     public static void clearDBandSetup() throws Exception {
-        CommonTestUtilities.dropAndRecreate(SUPPORT);
-        CommonTestUtilities.cleanStatePrivate2(SUPPORT);
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, true);
+        SUPPORT.before();
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());
         Environment environment = SUPPORT.getEnvironment();

@@ -1,0 +1,81 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd" context="samepaths">
+    <changeSet author="aduncan" id="503475349057345-1">
+        <insert tableName="workflow">
+            <column name="id" valueNumeric="12"/>
+            <column name="author" value="author1"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@github.com:fakeOrganization/fakeRepository.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated" valueDate="2016-11-28 15:00:57.688"/>
+            <column name="defaulttestparameterfilepath" value=""/>
+            <column name="defaultworkflowpath" value="/1st-workflow.cwl"/>
+            <column name="descriptortype" value="cwl"/>
+            <column name="mode" value="FULL"/>
+            <column name="organization" value="fakeOrganization"/>
+            <column name="sourcecontrol" value="GITHUB"/>
+            <column name="repository" value="fakeRepository"/>
+            <column name="workflowname"/>
+        </insert>
+        <insert tableName="workflow">
+            <column name="id" valueNumeric="13"/>
+            <column name="author" value="author2"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@bitbucket.org:fakeOrganization/fakeRepository.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated" valueDate="2016-11-28 15:00:57.688"/>
+            <column name="defaulttestparameterfilepath" value=""/>
+            <column name="defaultworkflowpath" value="/1st-workflow.cwl"/>
+            <column name="descriptortype" value="cwl"/>
+            <column name="mode" value="FULL"/>
+            <column name="organization" value="fakeOrganization"/>
+            <column name="sourcecontrol" value="BITBUCKET"/>
+            <column name="repository" value="fakeRepository"/>
+            <column name="workflowname"/>
+        </insert>
+        <insert tableName="workflow">
+            <column name="id" valueNumeric="14"/>
+            <column name="author" value="author3"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@github.com:fakeOrganization/fakeRepository.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated" valueDate="2016-11-28 15:00:57.688"/>
+            <column name="defaulttestparameterfilepath" value=""/>
+            <column name="defaultworkflowpath" value="/1st-workflow.cwl"/>
+            <column name="descriptortype" value="cwl"/>
+            <column name="mode" value="FULL"/>
+            <column name="organization" value="fakeOrganization"/>
+            <column name="sourcecontrol" value="GITHUB"/>
+            <column name="repository" value="fakeRepository"/>
+            <column name="workflowname" value="Potato"/>
+        </insert>
+        <insert tableName="workflow">
+            <column name="id" valueNumeric="15"/>
+            <column name="author" value="author4"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@bitbucket.org:fakeOrganization/fakeRepository.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated" valueDate="2016-11-28 15:00:57.688"/>
+            <column name="defaulttestparameterfilepath" value=""/>
+            <column name="defaultworkflowpath" value="/1st-workflow.cwl"/>
+            <column name="descriptortype" value="cwl"/>
+            <column name="mode" value="FULL"/>
+            <column name="organization" value="fakeOrganization"/>
+            <column name="sourcecontrol" value="BITBUCKET"/>
+            <column name="repository" value="fakeRepository"/>
+            <column name="workflowname" value="Potato"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

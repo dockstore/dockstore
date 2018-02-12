@@ -139,6 +139,7 @@ public final class ToolsImplCommon {
     public static Pair<Tool, Table<String, SourceFile.FileType, Object>> convertEntryToTool(Entry container,
             DockstoreWebserviceConfiguration config) {
         Table<String, SourceFile.FileType, Object> fileTable = HashBasedTable.create();
+
         String url;
         String newID = getNewId(container);
         if (newID == null) {

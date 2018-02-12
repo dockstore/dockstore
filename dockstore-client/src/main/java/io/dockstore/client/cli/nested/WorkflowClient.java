@@ -35,7 +35,6 @@ import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
 import io.dockstore.client.cli.SwaggerUtility;
-import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -48,6 +47,7 @@ import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.HttpStatus;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -836,20 +836,9 @@ public class WorkflowClient extends AbstractEntryClient {
                 workflow.setDefaultTestParameterFilePath(defaultTestJsonPath);
 
 
-                String sourceControlPath = null;
-                if (workflow.getSourceControl() == Workflow.SourceControlEnum.GITHUB) {
-                    sourceControlPath = SourceControl.GITHUB.toString();
-                } else if (workflow.getSourceControl() == Workflow.SourceControlEnum.GITLAB) {
-                    sourceControlPath = SourceControl.GITLAB.toString();
-                } else if (workflow.getSourceControl() == Workflow.SourceControlEnum.BITBUCKET) {
-                    sourceControlPath = SourceControl.BITBUCKET.toString();
-                } else {
+                if (!EnumUtils.isValidEnum(Workflow.SourceControlEnum.class, workflow.getSourceControl().name())) {
                     errorMessage("The source control type is not valid.", Client.CLIENT_ERROR);
                 }
-
-                String path = Joiner.on("/").skipNulls()
-                        .join(sourceControlPath, workflow.getOrganization(), workflow.getRepository(), workflow.getWorkflowName());
-                workflow.setPath(path);
 
                 // If valid version
                 boolean updateVersionSuccess = false;
