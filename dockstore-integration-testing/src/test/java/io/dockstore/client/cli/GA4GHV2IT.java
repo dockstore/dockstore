@@ -192,7 +192,7 @@ public class GA4GHV2IT extends GA4GHIT {
      */
     @Test
     public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles() throws Exception {
-        CommonTestUtilities.setupSamePathsTest(SUPPORT);
+        CommonTestUtilities.setupTestWorkflow(SUPPORT);
         String command = "cwl-runner";
         String descriptorPath = basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
         String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
