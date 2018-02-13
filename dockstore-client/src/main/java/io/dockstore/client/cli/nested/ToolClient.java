@@ -372,7 +372,7 @@ public class ToolClient extends AbstractEntryClient {
             final String gitReference = reqVal(args, "--git-reference");
             final String toolname = optVal(args, "--toolname", null);
             final String toolMaintainerEmail = optVal(args, "--tool-maintainer-email", null);
-            final String registry = optVal(args, "--registry", DockstoreTool.RegistryEnum.DOCKER_HUB.name());
+            final String registry = optVal(args, "--registry", Registry.DOCKER_HUB.name());
             final String privateAccess = optVal(args, "--private", "false");
             final String customDockerPath = optVal(args, "--custom-docker-path", null);
 
@@ -429,7 +429,7 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             // Swagger does not fully copy the enum (leaves out properties), so we need to map Registry enum to RegistryEnum in DockstoreTool
-            Optional<DockstoreTool.RegistryEnum> regEnum = getRegistryEnum(registry);
+            Optional<Registry> regEnum = getRegistryEnum(registry);
 
             if (!regEnum.isPresent()) {
                 errorMessage("The registry that you entered does not exist. Run \'dockstore tool manual_publish\' to see valid registries.",
@@ -440,7 +440,7 @@ public class ToolClient extends AbstractEntryClient {
             tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
             tool.setName(name);
             tool.setNamespace(namespace);
-            tool.setRegistry(regEnum.get());
+            tool.setRegistry(regEnum.get().toString());
 
             // Registry path used (ex. quay.io)
             Optional<String> registryPath;
@@ -534,8 +534,8 @@ public class ToolClient extends AbstractEntryClient {
      * @param registry
      * @return An optional value of the registry enum
      */
-    private Optional<DockstoreTool.RegistryEnum> getRegistryEnum(String registry) {
-        for (DockstoreTool.RegistryEnum reg : DockstoreTool.RegistryEnum.values()) {
+    private Optional<Registry> getRegistryEnum(String registry) {
+        for (Registry reg : Registry.values()) {
             if (registry.equals(reg.name())) {
                 return Optional.of(reg);
             }
@@ -940,12 +940,12 @@ public class ToolClient extends AbstractEntryClient {
                     }
 
                     boolean isPrivateRegistry = Stream.of(Registry.values())
-                            .anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
+                            .anyMatch(r -> r.name().equals(tool.getRegistry()) && r.isPrivateOnly());
 
                     // Cannot set private only registry tools to public
                     if (isPrivateRegistry) {
                         if (!setPrivateAccess) {
-                            errorMessage(tool.getRegistry().name()
+                            errorMessage(tool.getRegistry()
                                             + " is a private only Docker registry, which means that the tool cannot be set to public.",
                                     Client.CLIENT_ERROR);
                         }

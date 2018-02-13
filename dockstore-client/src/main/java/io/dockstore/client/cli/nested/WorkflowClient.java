@@ -35,6 +35,7 @@ import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
 import io.dockstore.client.cli.SwaggerUtility;
+import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -836,7 +837,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 workflow.setDefaultTestParameterFilePath(defaultTestJsonPath);
 
 
-                if (!EnumUtils.isValidEnum(Workflow.SourceControlEnum.class, workflow.getSourceControl().name())) {
+                if (!EnumUtils.isValidEnum(SourceControl.class, workflow.getSourceControlProvider().name())) {
                     errorMessage("The source control type is not valid.", Client.CLIENT_ERROR);
                 }
 

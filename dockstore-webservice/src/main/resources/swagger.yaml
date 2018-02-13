@@ -4240,11 +4240,6 @@ definitions:
         type: "string"
         description: "This is a specific docker provider like quay.io or dockerhub\
           \ or n/a?, required: GA4GH"
-        enum:
-        - "QUAY_IO"
-        - "DOCKER_HUB"
-        - "GITLAB"
-        - "AMAZON_ECR"
       lastBuild:
         type: "string"
         format: "date-time"
@@ -4303,6 +4298,14 @@ definitions:
       tool_path:
         type: "string"
         readOnly: true
+      registry_provider:
+        type: "string"
+        readOnly: true
+        enum:
+        - "QUAY_IO"
+        - "DOCKER_HUB"
+        - "GITLAB"
+        - "AMAZON_ECR"
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
       \ name, and toolname which can be\n * associated with CWL and Dockerfile documents"
@@ -5105,10 +5108,6 @@ definitions:
         type: "string"
         description: "This is a specific source control provider like github or bitbucket\
           \ or n/a?, required: GA4GH"
-        enum:
-        - "GITHUB"
-        - "BITBUCKET"
-        - "GITLAB"
       descriptorType:
         type: "string"
         description: "This is a descriptor type for the workflow, either CWL or WDL\
@@ -5140,6 +5139,13 @@ definitions:
       full_workflow_path:
         type: "string"
         readOnly: true
+      source_control_provider:
+        type: "string"
+        readOnly: true
+        enum:
+        - "GITHUB"
+        - "BITBUCKET"
+        - "GITLAB"
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"

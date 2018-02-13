@@ -89,7 +89,7 @@ public class ToolsImplCommonTest {
         tool.setPrivateAccess(false);
         tool.setToolname("potato");
         tool.setNamespace("test_org");
-        tool.setRegistry(Registry.QUAY_IO);
+        tool.setRegistry(Registry.QUAY_IO.toString());
         tool.setAuthor("sampleAuthor");
         tool.setGitUrl("git@github.com:test_org/test6.git");
 
@@ -203,7 +203,7 @@ public class ToolsImplCommonTest {
         workflow.setWorkflowName(null);
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
-        workflow.setSourceControl(SourceControl.GITHUB);
+        workflow.setSourceControl(SourceControl.GITHUB.toString());
         workflow.setDescriptorType("wdl");
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);

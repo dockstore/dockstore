@@ -134,9 +134,8 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH", required = true)
     private String namespace;
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true)
-    private Registry registry;
+    private String registry;
 
     @Column
     @ApiModelProperty("Implementation specific timestamp for last built")
@@ -207,11 +206,11 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty
-    public Registry getRegistry() {
+    public String getRegistry() {
         return registry;
     }
 
-    public void setRegistry(Registry registry) {
+    public void setRegistry(String registry) {
         this.registry = registry;
     }
 
@@ -319,6 +318,23 @@ public class Tool extends Entry<Tool, Tag> {
     @JsonProperty("tool_path")
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
+    }
+
+    @Enumerated(EnumType.STRING)
+    @JsonProperty("registry_provider")
+    public Registry getRegistryProvider() {
+        for (Registry r : Registry.values()) {
+            if (r.toString().equals(this.registry)) {
+                return r;
+            }
+        }
+
+        // Deal with Amazon ECR
+        if (registry.toString().startsWith("amazonecr")) {
+            return Registry.AMAZON_ECR;
+        } else {
+            return null;
+        }
     }
 
     public String getToolMaintainerEmail() {

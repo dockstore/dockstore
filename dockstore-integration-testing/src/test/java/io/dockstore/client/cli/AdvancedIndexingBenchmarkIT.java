@@ -273,7 +273,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         tool.setName(randomIdentifier());
         tool.setToolname(randomIdentifier());
         tool.setNamespace(randomOrganization());
-        tool.setRegistry(randomlyGeneratedRegistry());
+        tool.setRegistry(randomlyGeneratedRegistry().toString());
         tool.setLastBuild(new Date());
         // Setting it always true because otherwise the build index won't do anything
         tool.setIsPublished(true);

@@ -429,7 +429,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         Token gitLabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
         Token quayioToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
         Set<Registry> uniqueRegistry = new HashSet<>();
-        tools.forEach(tool -> uniqueRegistry.add(tool.getRegistry()));
+        tools.forEach(tool -> uniqueRegistry.add(tool.getRegistryProvider()));
         if (uniqueRegistry.size() == 0 && quayioToken == null) {
             throw new CustomWebApplicationException("You have no tools and no Quay.io token to automatically add tools. Please add a Quay.io token.", HttpStatus.SC_BAD_REQUEST);
         }

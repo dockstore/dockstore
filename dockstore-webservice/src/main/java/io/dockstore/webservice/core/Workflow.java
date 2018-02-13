@@ -88,9 +88,8 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     private String repository;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true)
-    private SourceControl sourceControl;
+    private String sourceControl;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true)
@@ -230,7 +229,18 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     public String getPath() {
-        return getSourceControl().toString() + '/' + organization + '/' + repository;
+        return getSourceControl() + '/' + organization + '/' + repository;
+    }
+
+    @Enumerated(EnumType.STRING)
+    @JsonProperty("source_control_provider")
+    public SourceControl getSourceControlProvider() {
+        for (SourceControl sc : SourceControl.values()) {
+            if (sc.toString().equals(this.sourceControl)) {
+                return sc;
+            }
+        }
+        return null;
     }
 
     public void setDescriptorType(String descriptorType) {
@@ -298,11 +308,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
         this.defaultTestParameterFilePath = defaultTestParameterFilePath;
     }
-    public SourceControl getSourceControl() {
+    public String getSourceControl() {
         return sourceControl;
     }
 
-    public void setSourceControl(SourceControl sourceControl) {
+    public void setSourceControl(String sourceControl) {
         this.sourceControl = sourceControl;
     }
 

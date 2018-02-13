@@ -138,4 +138,39 @@
         <addNotNullConstraint columnDataType="clob" columnName="doistatus" tableName="workflowversion"/>
     </changeSet>
 
+    <!-- Convert source control and registry to paths -->
+    <changeSet author="aduncan" id="3424324325r3r3g45g-8">
+        <!-- Update tool registry to be a path -->
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'quay.io' WHERE registry =  'QUAY_IO'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'registry.hub.docker.com' WHERE registry =  'DOCKER_HUB'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'registry.gitlab.com' WHERE registry =  'GITLAB'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = customdockerregistrypath WHERE registry =  'AMAZON_ECR'
+        </sql>
+
+        <!-- Update workflow source control to be a path -->
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'github.com' WHERE registry =  'GITHUB'
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'gitlab.com' WHERE registry =  'GITLAB'
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'bitbucket.org' WHERE registry =  'BITBUCKET'
+        </sql>
+
+        <!-- drop custom docker path -->
+        <dropColumn tableName="tool" columnName="customdockerregistrypath">
+        </dropColumn>
+
+    </changeSet>
+
 </databaseChangeLog>

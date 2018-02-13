@@ -184,7 +184,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             final Repository repository = service.getRepository(id);
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
-            workflow.setSourceControl(SourceControl.GITHUB);
+            workflow.setSourceControl(SourceControl.GITHUB.toString());
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
             // Why is the path not set here?
