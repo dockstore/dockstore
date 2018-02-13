@@ -183,11 +183,16 @@ public class GA4GHV2IT extends GA4GHIT {
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author4");
     }
 
+    /**
+     * This tests cwl-runner with a workflow from GA4GH V2 relative-path endpoint (without encoding) that contains 2 more additional files
+     * that will reference the GA4GH V2 endpoint
+     * @throws Exception
+     */
     @Test
-    public void cwlrunner() throws Exception {
+    public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles() throws Exception {
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
         ProcessBuilder pb = new ProcessBuilder("cwl-runner",
-                basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor/%2FDockstore.cwl",
+                basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl",
                 ResourceHelpers.resourceFilePath("testWorkflow.json"));
         pb.redirectErrorStream(true);
         Process p = pb.start();
