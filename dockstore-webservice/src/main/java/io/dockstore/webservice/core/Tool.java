@@ -320,6 +320,7 @@ public class Tool extends Entry<Tool, Tag> {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 
+
     @Enumerated(EnumType.STRING)
     @JsonProperty("registry_provider")
     public Registry getRegistryProvider() {
@@ -330,7 +331,7 @@ public class Tool extends Entry<Tool, Tag> {
         }
 
         // Deal with Amazon ECR
-        if (registry.toString().startsWith("amazonecr")) {
+        if (registry.toString().matches(".*\\.dkr\\.ecr\\..*\\.amazonaws\\.com")) {
             return Registry.AMAZON_ECR;
         } else {
             return null;
