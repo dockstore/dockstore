@@ -10,6 +10,7 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.IntegrationTest;
+import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.model.MetadataV2;
 import io.swagger.client.model.ToolClass;
@@ -17,6 +18,7 @@ import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolV2;
 import io.swagger.client.model.ToolVersionV2;
 import io.swagger.model.ToolFile;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -191,17 +193,11 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles() throws Exception {
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
-        ProcessBuilder pb = new ProcessBuilder("cwl-runner",
-                basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl",
-                ResourceHelpers.resourceFilePath("testWorkflow.json"));
-        pb.redirectErrorStream(true);
-        Process p = pb.start();
-        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        String line;
-        while ((line = br.readLine()) != null) {
-            System.out.println(line);
-        }
-        p.waitFor();
-        Assert.assertEquals(p.exitValue(), 0);
+        String command = "cwl-runner";
+        String descriptorPath = basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
+        String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
+        ImmutablePair<String, String> stringStringImmutablePair = Utilities
+                .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath);
+        Assert.assertTrue(stringStringImmutablePair.getRight().contains("Final process status is success"));
     }
 }
