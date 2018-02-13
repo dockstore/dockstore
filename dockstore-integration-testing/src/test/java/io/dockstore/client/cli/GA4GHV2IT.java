@@ -1,5 +1,7 @@
 package io.dockstore.client.cli;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.List;
 
 import javax.ws.rs.core.GenericType;
@@ -8,12 +10,14 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.IntegrationTest;
+import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.model.MetadataV2;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolV2;
 import io.swagger.client.model.ToolVersionV2;
 import io.swagger.model.ToolFile;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -96,6 +100,7 @@ public class GA4GHV2IT extends GA4GHIT {
 
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/files endpoint
+     *
      * @throws Exception
      */
     @Test
@@ -106,8 +111,7 @@ public class GA4GHV2IT extends GA4GHIT {
 
     @Test
     public void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
-        Response response = checkedResponse(
-                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertDescriptor(MAPPER.writeValueAsString(responseObject));
@@ -177,5 +181,22 @@ public class GA4GHV2IT extends GA4GHIT {
         response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(ToolV2.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author4");
+    }
+
+    @Test
+    public void cwlrunner() throws Exception {
+        CommonTestUtilities.setupSamePathsTest(SUPPORT);
+        ProcessBuilder pb = new ProcessBuilder("cwl-runner",
+                basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor/%2FDockstore.cwl",
+                ResourceHelpers.resourceFilePath("testWorkflow.json"));
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        String line;
+        while ((line = br.readLine()) != null) {
+            System.out.println(line);
+        }
+        p.waitFor();
+        Assert.assertEquals(p.exitValue(), 0);
     }
 }
