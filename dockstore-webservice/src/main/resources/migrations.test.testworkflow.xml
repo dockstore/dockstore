@@ -1,0 +1,80 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd" context="testworkflow">
+    <changeSet author="gluu (generated)" id="1518537418938-107">
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="32"/>
+            <column name="content" value="cwlVersion: v1.0&#10;class: Workflow&#10;inputs:&#10;  inp: File&#10;  ex: string&#10;&#10;outputs:&#10;  classout:&#10;    type: File&#10;    outputSource: &quot;#compile/classfile&quot;&#10;&#10;steps:&#10;  untar:&#10;    run: cwl/tar-param.cwl&#10;    in:&#10;      tarfile: inp&#10;      extractfile: ex&#10;    out: [example_out]&#10;&#10;  compile:&#10;    run: cwl/arguments.cwl&#10;    in:&#10;      src: untar/example_out&#10;    out: [classfile]&#10;"/>
+            <column name="path" value="/Dockstore.cwl"/>
+            <column name="type" value="DOCKSTORE_CWL"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="33"/>
+            <column name="content" value="cwlVersion: v1.0&#10;class: CommandLineTool&#10;baseCommand: javac&#10;hints:&#10;  - class: DockerRequirement&#10;    dockerPull: java:7&#10;baseCommand: javac&#10;arguments:&#10;  - prefix: &quot;-d&quot;&#10;    valueFrom: $(runtime.outdir)&#10;inputs:&#10;  - id: src&#10;    type: File&#10;    inputBinding:&#10;      position: 1&#10;outputs:&#10;  - id: classfile&#10;    type: File&#10;    outputBinding:&#10;      glob: &quot;*.class&quot;&#10;"/>
+            <column name="path" value="cwl/arguments.cwl"/>
+            <column name="type" value="DOCKSTORE_CWL"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="34"/>
+            <column name="content" value="cwlVersion: v1.0&#10;class: CommandLineTool&#10;baseCommand: [tar, xf]&#10;inputs:&#10;  tarfile:&#10;    type: File&#10;    inputBinding:&#10;      position: 1&#10;  extractfile:&#10;    type: string&#10;    inputBinding:&#10;      position: 2&#10;outputs:&#10;  example_out:&#10;    type: File&#10;    outputBinding:&#10;      glob: $(inputs.extractfile)&#10;&#10;"/>
+            <column name="path" value="cwl/tar-param.cwl"/>
+            <column name="type" value="DOCKSTORE_CWL"/>
+        </insert>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="1518537418938-110">
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="32"/>
+            <column name="sourcefileid" valueNumeric="32"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="32"/>
+            <column name="sourcefileid" valueNumeric="33"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="32"/>
+            <column name="sourcefileid" valueNumeric="34"/>
+        </insert>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="1518537418938-111">
+        <insert tableName="workflow">
+            <column name="id" valueNumeric="32"/>
+            <column name="author"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@github.com:garyluu/testWorkflow.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified" valueNumeric="-1886401784"/>
+            <column name="lastupdated" valueDate="2018-02-13 10:42:52.608"/>
+            <column name="defaulttestparameterfilepath"/>
+            <column name="defaultworkflowpath" value="/Dockstore.cwl"/>
+            <column name="descriptortype" value="cwl"/>
+            <column name="mode" value="FULL"/>
+            <column name="organization" value="garyluu"/>
+            <column name="repository" value="testWorkflow"/>
+            <column name="sourcecontrol" value="GITHUB"/>
+            <column name="workflowname"/>
+        </insert>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="1518537418938-113">
+        <insert tableName="workflowversion">
+            <column name="id" valueNumeric="32"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="doistatus" value="NOT_REQUESTED"/>
+            <column name="doiurl"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="lastmodified" valueDate="2018-02-13 09:27:01.0"/>
+            <column name="name" value="master"/>
+            <column name="reference" value="master"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="workflowpath" value="/Dockstore.cwl"/>
+        </insert>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="1518537418938-112">
+        <insert tableName="workflow_workflowversion">
+            <column name="workflowid" valueNumeric="32"/>
+            <column name="workflowversionid" valueNumeric="32"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

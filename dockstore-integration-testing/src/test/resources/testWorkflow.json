@@ -1,0 +1,7 @@
+{
+  "inp": {
+    "class": "File",
+    "path": "https://github.com/ga4gh/dockstore/raw/4e470b048df61eedcab40398c386dbc40d313bda/dockstore-client/src/test/resources/hello.tar"
+  },
+  "ex": "Hello.java"
+}

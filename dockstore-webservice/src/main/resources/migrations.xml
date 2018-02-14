@@ -8,6 +8,7 @@
     <include file="migrations.1.4.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.samepaths.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.testworkflow.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential1.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential2.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

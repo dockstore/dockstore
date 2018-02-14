@@ -146,6 +146,19 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", CONFIG_PATH, "--include", "samepaths");
     }
 
+
+    /**
+     * Loads up a specific set of workflows into the database
+     * Specifically for tests cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles in GA4GHV2IT.java
+     * @param support
+     * @throws Exception
+     */
+    public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+        LOG.info("Migrating testworkflow migrations");
+        Application<DockstoreWebserviceConfiguration> application = support.getApplication();
+        application.run("db", "migrate", CONFIG_PATH, "--include", "testworkflow");
+    }
+
     /**
      * Allows tests to clear the database completely
      **/
