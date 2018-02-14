@@ -141,11 +141,6 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty("Implementation specific timestamp for last built")
     private Date lastBuild;
 
-    @Column
-    @JsonProperty("custom_docker_registry_path")
-    @ApiModelProperty(value = "Only used for docker registries that allow for custom paths")
-    private String customDockerRegistryPath = null;
-
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
@@ -218,15 +213,6 @@ public class Tool extends Entry<Tool, Tag> {
         String repositoryPath = registry.toString() + '/' + namespace + '/' + name;
         return repositoryPath;
     }
-
-    public String getCustomDockerRegistryPath() {
-        return customDockerRegistryPath;
-    }
-
-    public void setCustomDockerRegistryPath(String customDockerRegistryPath) {
-        this.customDockerRegistryPath = customDockerRegistryPath;
-    }
-
 
     /**
      * Calculated property for demonstrating search by language, inefficient

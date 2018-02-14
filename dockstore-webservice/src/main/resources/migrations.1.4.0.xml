@@ -156,15 +156,15 @@
 
         <!-- Update workflow source control to be a path -->
         <sql dbms="postgresql">
-            UPDATE workflow SET sourcecontrol = 'github.com' WHERE registry =  'GITHUB'
+            UPDATE workflow SET sourcecontrol = 'github.com' WHERE sourcecontrol =  'GITHUB'
         </sql>
 
         <sql dbms="postgresql">
-            UPDATE workflow SET sourcecontrol = 'gitlab.com' WHERE registry =  'GITLAB'
+            UPDATE workflow SET sourcecontrol = 'gitlab.com' WHERE sourcecontrol =  'GITLAB'
         </sql>
 
         <sql dbms="postgresql">
-            UPDATE workflow SET sourcecontrol = 'bitbucket.org' WHERE registry =  'BITBUCKET'
+            UPDATE workflow SET sourcecontrol = 'bitbucket.org' WHERE sourcecontrol =  'BITBUCKET'
         </sql>
 
         <!-- drop custom docker path -->
