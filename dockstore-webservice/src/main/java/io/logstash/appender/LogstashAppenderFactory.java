@@ -18,6 +18,10 @@ import io.dropwizard.logging.layout.LayoutFactory;
 import net.logstash.logback.appender.LogstashTcpSocketAppender;
 import net.logstash.logback.encoder.LogstashEncoder;
 
+/**
+ * Custom log appender that pushes the logs to logstash.
+ * Specify the host and optional port in the application configuration file.
+ */
 @JsonTypeName("logstash")
 public class LogstashAppenderFactory extends AbstractAppenderFactory {
     private static final int MAX_PORT = 65535;
