@@ -939,7 +939,7 @@ public class ToolClient extends AbstractEntryClient {
                     }
 
                     boolean isPrivateRegistry = Stream.of(Registry.values())
-                            .anyMatch(r -> r.name().equals(tool.getRegistry()) && r.isPrivateOnly());
+                            .anyMatch(r -> r.name().equals(tool.getRegistryProvider().name()) && r.isPrivateOnly());
 
                     // Cannot set private only registry tools to public
                     if (isPrivateRegistry) {

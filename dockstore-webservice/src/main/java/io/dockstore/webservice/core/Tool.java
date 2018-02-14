@@ -210,7 +210,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     public String getPath() {
-        String repositoryPath = registry.toString() + '/' + namespace + '/' + name;
+        String repositoryPath = registry + '/' + namespace + '/' + name;
         return repositoryPath;
     }
 
@@ -307,17 +307,17 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
 
-    @Enumerated(EnumType.STRING)
+//    @Enumerated(EnumType.STRING)
     @JsonProperty("registry_provider")
     public Registry getRegistryProvider() {
         for (Registry r : Registry.values()) {
-            if (r.toString().equals(this.registry)) {
+            if (r.toString() != null && r.toString().equals(this.registry)) {
                 return r;
             }
         }
 
         // Deal with Amazon ECR
-        if (registry.toString().matches(".*\\.dkr\\.ecr\\..*\\.amazonaws\\.com")) {
+        if (registry.matches(".*\\.dkr\\.ecr\\..*\\.amazonaws\\.com")) {
             return Registry.AMAZON_ECR;
         } else {
             return null;
