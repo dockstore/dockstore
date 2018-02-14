@@ -307,7 +307,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
 
-//    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     @JsonProperty("registry_provider")
     public Registry getRegistryProvider() {
         for (Registry r : Registry.values()) {
