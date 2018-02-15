@@ -273,7 +273,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         tool.setName(randomIdentifier());
         tool.setToolname(randomIdentifier());
         tool.setNamespace(randomOrganization());
-        tool.setRegistry(randomlyGeneratedRegistry().toString());
+        tool.setRegistry(randomlyGeneratedRegistry());
         tool.setLastBuild(new Date());
         // Setting it always true because otherwise the build index won't do anything
         tool.setIsPublished(true);
@@ -285,13 +285,17 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         return tool;
     }
 
-    private Registry randomlyGeneratedRegistry() {
+    private String randomlyGeneratedRegistry() {
         // Can't use Quay.io or else tool creation will fail
         Registry[] registries = { Registry.AMAZON_ECR, Registry.DOCKER_HUB, Registry.GITLAB };
         int length = registries.length;
         int random = RAND.nextInt(length);
         assertTrue(random >= 0 && random < length);
-        return registries[random];
+        if (random == 0) {
+            return "test.dkr.ecr.test.amazonaws.com";
+        } else {
+            return registries[random].toString();
+        }
     }
 }
 
