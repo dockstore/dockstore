@@ -4264,6 +4264,8 @@ definitions:
           type: "string"
       path:
         type: "string"
+      checker:
+        type: "boolean"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -4271,6 +4273,13 @@ definitions:
         type: "integer"
         format: "int32"
         description: "Implementation specific timestamp for last modified"
+      checker_id:
+        type: "integer"
+        format: "int64"
+        description: "The id of the associated checker workflow"
+      is_checker:
+        type: "boolean"
+        description: "Whether or not the entry is a checker"
       default_dockerfile_path:
         type: "string"
         description: "This indicates for the associated git repository, the default\
@@ -4358,6 +4367,8 @@ definitions:
         type: "string"
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
+      checker:
+        type: "boolean"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -4365,6 +4376,13 @@ definitions:
         type: "integer"
         format: "int32"
         description: "Implementation specific timestamp for last modified"
+      checker_id:
+        type: "integer"
+        format: "int64"
+        description: "The id of the associated checker workflow"
+      is_checker:
+        type: "boolean"
+        description: "Whether or not the entry is a checker"
   GitHubComAuthenticationResource:
     type: "object"
     properties:
@@ -5123,6 +5141,8 @@ definitions:
           $ref: "#/definitions/WorkflowVersion"
       path:
         type: "string"
+      checker:
+        type: "boolean"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -5130,6 +5150,13 @@ definitions:
         type: "integer"
         format: "int32"
         description: "Implementation specific timestamp for last modified"
+      checker_id:
+        type: "integer"
+        format: "int64"
+        description: "The id of the associated checker workflow"
+      is_checker:
+        type: "boolean"
+        description: "Whether or not the entry is a checker"
       workflow_path:
         type: "string"
         description: "This indicates for the associated git repository, the default\
