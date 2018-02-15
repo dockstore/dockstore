@@ -107,6 +107,16 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
     private String gitUrl;
 
+    @Column
+    @JsonProperty("checker_id")
+    @ApiModelProperty("The id of the associated checker workflow")
+    private long checkerId;
+
+    @Column
+    @JsonProperty("is_checker")
+    @ApiModelProperty("Whether or not the entry is a checker")
+    private boolean isChecker = false;
+
     public Entry() {
         users = new HashSet<>(0);
         starredUsers = new HashSet<>(0);
@@ -130,6 +140,22 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public long getCheckerId() {
+        return checkerId;
+    }
+
+    public void setCheckerId(long checkerId) {
+        this.checkerId = checkerId;
+    }
+
+    public boolean isChecker() {
+        return isChecker;
+    }
+
+    public void setChecker(boolean checker) {
+        isChecker = checker;
     }
 
     @JsonProperty
