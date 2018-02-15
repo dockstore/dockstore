@@ -5133,6 +5133,9 @@ definitions:
         type: "string"
         description: "This indicates for the associated git repository, the default\
           \ path to the test parameter file"
+      full_workflow_path:
+        type: "string"
+        readOnly: true
       source_control_provider:
         type: "string"
         readOnly: true
@@ -5140,9 +5143,6 @@ definitions:
         - "GITHUB"
         - "BITBUCKET"
         - "GITLAB"
-      full_workflow_path:
-        type: "string"
-        readOnly: true
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"
