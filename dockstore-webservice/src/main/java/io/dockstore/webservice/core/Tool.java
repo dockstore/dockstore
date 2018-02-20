@@ -352,4 +352,5 @@ public class Tool extends Entry<Tool, Tag> {
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
         this.defaultTestCwlParameterFile = defaultTestCwlParameterFile;
     }
+
 }

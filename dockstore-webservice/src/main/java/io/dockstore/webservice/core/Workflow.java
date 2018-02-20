@@ -113,6 +113,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @OrderBy("id")
     private final SortedSet<WorkflowVersion> workflowVersions;
 
+    @Column
+    @JsonProperty("is_checker")
+    @ApiModelProperty("Whether or not the entry is a checker")
+    private boolean isChecker = false;
+
     public Workflow() {
         workflowVersions = new TreeSet<>();
     }
@@ -306,5 +311,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.sourceControl = sourceControl;
     }
 
+    public boolean isChecker() {
+        return isChecker;
+    }
 
+    public void setChecker(boolean checker) {
+        isChecker = checker;
+    }
 }

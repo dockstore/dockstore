@@ -139,12 +139,9 @@
     </changeSet>
 
     <changeSet id="n4io234ni23o4nio33r-1" author="agduncan">
-        <!-- Add columns for tool checker -->
+        <!-- Add column for tool checker -->
         <addColumn tableName="tool">
             <column name="checkerid" type="bigint" defaultValue="null"/>
-        </addColumn>
-        <addColumn tableName="tool">
-            <column name="ischecker" type="boolean" defaultValueBoolean="false"/>
         </addColumn>
         <!-- Add columns for workflow checker -->
         <addColumn tableName="workflow">

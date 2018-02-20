@@ -4257,15 +4257,13 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
+      path:
+        type: "string"
       descriptorType:
         type: "array"
         readOnly: true
         items:
           type: "string"
-      path:
-        type: "string"
-      checker:
-        type: "boolean"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -4277,9 +4275,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The id of the associated checker workflow"
-      is_checker:
-        type: "boolean"
-        description: "Whether or not the entry is a checker"
       default_dockerfile_path:
         type: "string"
         description: "This indicates for the associated git repository, the default\
@@ -4367,8 +4362,6 @@ definitions:
         type: "string"
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
-      checker:
-        type: "boolean"
       is_published:
         type: "boolean"
         description: "Implementation specific visibility in this web service"
@@ -4380,9 +4373,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The id of the associated checker workflow"
-      is_checker:
-        type: "boolean"
-        description: "Whether or not the entry is a checker"
   GitHubComAuthenticationResource:
     type: "object"
     properties:
@@ -5154,9 +5144,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "The id of the associated checker workflow"
-      is_checker:
-        type: "boolean"
-        description: "Whether or not the entry is a checker"
       workflow_path:
         type: "string"
         description: "This indicates for the associated git repository, the default\
@@ -5165,6 +5152,9 @@ definitions:
         type: "string"
         description: "This indicates for the associated git repository, the default\
           \ path to the test parameter file"
+      is_checker:
+        type: "boolean"
+        description: "Whether or not the entry is a checker"
       full_workflow_path:
         type: "string"
         readOnly: true
