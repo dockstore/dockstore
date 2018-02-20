@@ -176,6 +176,25 @@ public class LaunchTestIT {
         }
     }
 
+    @Test
+    public void runToolWithSecondaryFilesRenamedOnOutputNoCaret() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files_renamed"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.nocaret.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.renamed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.orig");
+        for (char y = 'b'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files_renamed/renamed.orig.a" + y + "extra";
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
     private void checkFileAndThenDeleteIt(String filename) {
         assertTrue("output should provision out to correct locations",
                 systemOutRule.getLog().contains(filename));
