@@ -24,6 +24,8 @@ outputs:
       - .adextra
       - .aeextra
       - .afextra
+      - .funky.extra.stuff
+      - .groovyextrastuff
 
 baseCommand: ["bash"]
-arguments: ["-c", "cp $(inputs.bam_input.path) test.orig; split --bytes=15000000 --additional-suffix=extra $(inputs.bam_input.path) test.orig."]
+arguments: ["-c", "cp $(inputs.bam_input.path) test.orig; dmesg &> test.orig.funky.extra.stuff ; dmesg &> test.orig.groovyextrastuff ; split --bytes=15000000 --additional-suffix=extra $(inputs.bam_input.path) test.orig."]
