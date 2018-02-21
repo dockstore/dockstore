@@ -216,7 +216,12 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     public String getPath() {
-        String repositoryPath = registry.toString() + '/' + namespace + '/' + name;
+        String repositoryPath;
+        if (registry == Registry.AMAZON_ECR) {
+            repositoryPath = customDockerRegistryPath + '/' + namespace + '/' + name;
+        } else {
+            repositoryPath = registry.toString() + '/' + namespace + '/' + name;
+        }
         return repositoryPath;
     }
 
