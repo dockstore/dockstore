@@ -62,6 +62,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.simple.JSONArray;
@@ -723,6 +724,10 @@ public class LauncherCWL {
         String mutationSuffixStart = originalBaseName.substring(commonPrefix.length());
         String mutationSuffixTarget = renamedBaseName.substring(commonPrefix.length());
         int replacementIndex = outputParameterFile.lastIndexOf(mutationSuffixStart);
+        if (replacementIndex == -1) {
+            // all extensions should be removed before adding on the target
+            return FilenameUtils.removeExtension(outputParameterFile) + "." + mutationSuffixTarget;
+        }
         return outputParameterFile.substring(0, replacementIndex) + mutationSuffixTarget;
     }
 
