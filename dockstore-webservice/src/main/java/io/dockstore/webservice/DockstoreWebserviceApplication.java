@@ -22,6 +22,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,6 +87,12 @@ import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
+import io.swagger.v3.oas.integration.SwaggerConfiguration;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
@@ -186,6 +194,17 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setBasePath("/");
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
+
+        OpenAPI oas = new OpenAPI();
+        Info info = new Info()
+                .title("Swagger Sample App")
+                .description("Description")
+                .termsOfService("termsOfService")
+                .contact(new Contact().email("email"))
+                .license(new License().name("Apache 2.0").url("http://www.apache.org/licenses/LICENSE-2.0.html"));
+        oas.info(info);
+        SwaggerConfiguration oasConfig = new SwaggerConfiguration().openAPI(oas).prettyPrint(true)
+                .resourcePackages(Stream.of("io.webservice.resources", "io.swagger.api").collect(Collectors.toSet()));
         ElasticManager.setConfig(configuration);
         final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getQuayClientID(),
                 configuration.getQuayRedirectURI());
@@ -278,6 +297,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // swagger stuff
 
         // Swagger providers
+        environment.jersey().register(new OpenApiResource().openApiConfiguration(oasConfig));
+        environment.jersey().register(io.swagger.v3.jaxrs2.SwaggerSerializers.class);
         environment.jersey().register(ApiListingResource.class);
         environment.jersey().register(SwaggerSerializers.class);
 
