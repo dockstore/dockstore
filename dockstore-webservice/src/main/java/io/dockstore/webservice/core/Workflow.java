@@ -226,10 +226,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @JsonProperty("full_workflow_path")
+    @ApiModelProperty(position = 10)
     public String getWorkflowPath() {
         return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
 
+    @ApiModelProperty(position = 11)
     public String getPath() {
         return getSourceControl().toString() + '/' + organization + '/' + repository;
     }

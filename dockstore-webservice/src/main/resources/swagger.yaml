@@ -4179,16 +4179,11 @@ definitions:
         - "AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"
         - "AUTO_DETECT_QUAY_TAGS_WITH_MIXED"
         - "MANUAL_IMAGE_PATH"
-      path:
-        type: "string"
       descriptorType:
         type: "array"
         readOnly: true
         items:
           type: "string"
-      tool_path:
-        type: "string"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -4297,6 +4292,9 @@ definitions:
         type: "string"
         position: 10
         description: "This is a docker namespace for the container, required: GA4GH"
+      path:
+        type: "string"
+        position: 10
       gitUrl:
         type: "string"
         position: 11
@@ -4312,6 +4310,10 @@ definitions:
         - "DOCKER_HUB"
         - "GITLAB"
         - "AMAZON_ECR"
+      tool_path:
+        type: "string"
+        position: 11
+        readOnly: true
       lastBuild:
         type: "string"
         format: "date-time"
@@ -5118,11 +5120,6 @@ definitions:
         enum:
         - "FULL"
         - "STUB"
-      path:
-        type: "string"
-      full_workflow_path:
-        type: "string"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5223,11 +5220,18 @@ definitions:
         format: "date-time"
         position: 10
         description: "Implementation specific timestamp for last updated on webservice"
+      full_workflow_path:
+        type: "string"
+        position: 10
+        readOnly: true
       gitUrl:
         type: "string"
         position: 11
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
+      path:
+        type: "string"
+        position: 11
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"

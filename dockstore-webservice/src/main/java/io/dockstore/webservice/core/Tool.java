@@ -216,6 +216,7 @@ public class Tool extends Entry<Tool, Tag> {
         this.registry = registry;
     }
 
+    @ApiModelProperty(position = 10)
     public String getPath() {
         String repositoryPath;
         if (registry == Registry.AMAZON_ECR) {
@@ -323,6 +324,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty("tool_path")
+    @ApiModelProperty(position = 11)
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
