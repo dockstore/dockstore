@@ -52,6 +52,7 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@SuppressWarnings("checkstyle:magicnumber")
 public abstract class Entry<S extends Entry, T extends Version> {
 
     /**
@@ -60,51 +61,51 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "container_id_seq")
     @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq")
-    @ApiModelProperty("Implementation specific ID for the container in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
     @Column
-    @ApiModelProperty("This is the name of the author stated in the Dockstore.cwl")
+    @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl", position = 1)
     private String author;
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty("This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
+    @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
     private String description;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
-    @ApiModelProperty("Labels (i.e. meta tags) for describing the purpose and contents of containers")
+    @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
     @OrderBy("id")
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
+    @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
     private Set<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false)
+    @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
     private Set<User> starredUsers;
 
     @Column
-    @ApiModelProperty("This is the email of the git organization")
+    @ApiModelProperty(value = "This is the email of the git organization", position = 6)
     private String email;
     @Column
-    @ApiModelProperty("This is the default version of the entry")
+    @ApiModelProperty(value = "This is the default version of the entry", position = 7)
     private String defaultVersion;
     @Column
     @JsonProperty("is_published")
-    @ApiModelProperty("Implementation specific visibility in this web service")
+    @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
     private boolean isPublished;
     @Column
-    @ApiModelProperty("Implementation specific timestamp for last modified")
+    @ApiModelProperty(value = "Implementation specific timestamp for last modified", position = 9)
     private Integer lastModified;
     @Column
-    @ApiModelProperty("Implementation specific timestamp for last updated on webservice")
+    @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice", position = 10)
     private Date lastUpdated;
     @Column
-    @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
+    @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
     public Entry() {
