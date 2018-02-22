@@ -68,48 +68,49 @@ import org.apache.http.HttpStatus;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (CONCAT(c.sourceControl, '/', c.organization, '/', c.repository, '/', c.workflowName) LIKE :pattern)) AND c.isPublished = true") })
 @DiscriminatorValue("workflow")
+@SuppressWarnings("checkstyle:magicnumber")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 12)
     private WorkflowMode mode = WorkflowMode.STUB;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo")
+    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 13)
     private String workflowName;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a git organization for the workflow", required = true)
+    @ApiModelProperty(value = "This is a git organization for the workflow", required = true, position = 14)
     private String organization;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a git repository name", required = true)
+    @ApiModelProperty(value = "This is a git repository name", required = true, position = 15)
     private String repository;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true)
+    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 16)
     private SourceControl sourceControl;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true)
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 17)
     private String descriptorType;
 
     // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 18)
     private String defaultWorkflowPath = "/Dockstore.cwl";
 
     @Column(columnDefinition = "text")
     @JsonProperty("defaultTestParameterFilePath")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 19)
     private String defaultTestParameterFilePath = "/test.json";
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container")
+    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 20)
     @OrderBy("id")
     private final SortedSet<WorkflowVersion> workflowVersions;
 
@@ -225,10 +226,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @JsonProperty("full_workflow_path")
+    @ApiModelProperty(position = 21)
     public String getWorkflowPath() {
         return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
 
+    @ApiModelProperty(position = 22)
     public String getPath() {
         return getSourceControl().toString() + '/' + organization + '/' + repository;
     }

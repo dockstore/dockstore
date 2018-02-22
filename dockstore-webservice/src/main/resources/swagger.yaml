@@ -4173,13 +4173,16 @@ definitions:
         description: "Implementation specific ID for the container in this web service"
       author:
         type: "string"
+        position: 1
         description: "This is the name of the author stated in the Dockstore.cwl"
       description:
         type: "string"
+        position: 2
         description: "This is a human-readable description of this container and what\
           \ it is trying to accomplish, required GA4GH"
       labels:
         type: "array"
+        position: 3
         description: "Labels (i.e. meta tags) for describing the purpose and contents\
           \ of containers"
         uniqueItems: true
@@ -4187,6 +4190,7 @@ definitions:
           $ref: "#/definitions/Label"
       users:
         type: "array"
+        position: 4
         description: "This indicates the users that have control over this entry,\
           \ dockstore specific"
         uniqueItems: true
@@ -4194,6 +4198,7 @@ definitions:
           $ref: "#/definitions/User"
       starredUsers:
         type: "array"
+        position: 5
         description: "This indicates the users that have starred this entry, dockstore\
           \ specific"
         uniqueItems: true
@@ -4201,20 +4206,34 @@ definitions:
           $ref: "#/definitions/User"
       email:
         type: "string"
+        position: 6
         description: "This is the email of the git organization"
       defaultVersion:
         type: "string"
+        position: 7
         description: "This is the default version of the entry"
+      is_published:
+        type: "boolean"
+        position: 8
+        description: "Implementation specific visibility in this web service"
+      last_modified:
+        type: "integer"
+        format: "int32"
+        position: 9
+        description: "Implementation specific timestamp for last modified"
       lastUpdated:
         type: "string"
         format: "date-time"
+        position: 10
         description: "Implementation specific timestamp for last updated on webservice"
       gitUrl:
         type: "string"
+        position: 11
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
       mode:
         type: "string"
+        position: 12
         description: "This indicates what mode this is in which informs how we do\
           \ things like refresh, dockstore specific"
         enum:
@@ -4223,9 +4242,45 @@ definitions:
         - "MANUAL_IMAGE_PATH"
       name:
         type: "string"
+        position: 13
         description: "This is the name of the container, required: GA4GH"
+      default_dockerfile_path:
+        type: "string"
+        position: 14
+        description: "This indicates for the associated git repository, the default\
+          \ path to the Dockerfile, required: GA4GH"
+      default_cwl_path:
+        type: "string"
+        position: 15
+        description: "This indicates for the associated git repository, the default\
+          \ path to the CWL document, required: GA4GH"
+      default_wdl_path:
+        type: "string"
+        position: 16
+        description: "This indicates for the associated git repository, the default\
+          \ path to the WDL document"
+      defaultCWLTestParameterFile:
+        type: "string"
+        position: 17
+        description: "This indicates for the associated git repository, the default\
+          \ path to the CWL test parameter file"
+      defaultWDLTestParameterFile:
+        type: "string"
+        position: 18
+        description: "This indicates for the associated git repository, the default\
+          \ path to the WDL test parameter file"
+      tool_maintainer_email:
+        type: "string"
+        position: 19
+        description: "The email address of the tool maintainer. Required for private\
+          \ repositories"
+      private_access:
+        type: "boolean"
+        position: 20
+        description: "Is the docker image private or not."
       toolname:
         type: "string"
+        position: 21
         description: "This is the tool name of the container, when not-present this\
           \ will function just like 0.1 dockstorewhen present, this can be used to\
           \ distinguish between two containers based on the same image, but associated\
@@ -4236,9 +4291,11 @@ definitions:
           \ the same image, required: GA4GH"
       namespace:
         type: "string"
+        position: 22
         description: "This is a docker namespace for the container, required: GA4GH"
       registry:
         type: "string"
+        position: 23
         description: "This is a specific docker provider like quay.io or dockerhub\
           \ or n/a?, required: GA4GH"
         enum:
@@ -4249,60 +4306,32 @@ definitions:
       lastBuild:
         type: "string"
         format: "date-time"
+        position: 24
         description: "Implementation specific timestamp for last built"
+      custom_docker_registry_path:
+        type: "string"
+        position: 25
+        description: "Only used for docker registries that allow for custom paths"
       tags:
         type: "array"
+        position: 26
         description: "Implementation specific tracking of valid build tags for the\
           \ docker container"
         uniqueItems: true
         items:
           $ref: "#/definitions/Tag"
+      path:
+        type: "string"
+        position: 27
       descriptorType:
         type: "array"
+        position: 28
         readOnly: true
         items:
           type: "string"
-      path:
-        type: "string"
-      is_published:
-        type: "boolean"
-        description: "Implementation specific visibility in this web service"
-      last_modified:
-        type: "integer"
-        format: "int32"
-        description: "Implementation specific timestamp for last modified"
-      default_dockerfile_path:
-        type: "string"
-        description: "This indicates for the associated git repository, the default\
-          \ path to the Dockerfile, required: GA4GH"
-      default_cwl_path:
-        type: "string"
-        description: "This indicates for the associated git repository, the default\
-          \ path to the CWL document, required: GA4GH"
-      default_wdl_path:
-        type: "string"
-        description: "This indicates for the associated git repository, the default\
-          \ path to the WDL document"
-      defaultCWLTestParameterFile:
-        type: "string"
-        description: "This indicates for the associated git repository, the default\
-          \ path to the CWL test parameter file"
-      defaultWDLTestParameterFile:
-        type: "string"
-        description: "This indicates for the associated git repository, the default\
-          \ path to the WDL test parameter file"
-      tool_maintainer_email:
-        type: "string"
-        description: "The email address of the tool maintainer. Required for private\
-          \ repositories"
-      private_access:
-        type: "boolean"
-        description: "Is the docker image private or not."
-      custom_docker_registry_path:
-        type: "string"
-        description: "Only used for docker registries that allow for custom paths"
       tool_path:
         type: "string"
+        position: 29
         readOnly: true
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
@@ -4318,13 +4347,16 @@ definitions:
         description: "Implementation specific ID for the container in this web service"
       author:
         type: "string"
+        position: 1
         description: "This is the name of the author stated in the Dockstore.cwl"
       description:
         type: "string"
+        position: 2
         description: "This is a human-readable description of this container and what\
           \ it is trying to accomplish, required GA4GH"
       labels:
         type: "array"
+        position: 3
         description: "Labels (i.e. meta tags) for describing the purpose and contents\
           \ of containers"
         uniqueItems: true
@@ -4332,6 +4364,7 @@ definitions:
           $ref: "#/definitions/Label"
       users:
         type: "array"
+        position: 4
         description: "This indicates the users that have control over this entry,\
           \ dockstore specific"
         uniqueItems: true
@@ -4339,6 +4372,7 @@ definitions:
           $ref: "#/definitions/User"
       starredUsers:
         type: "array"
+        position: 5
         description: "This indicates the users that have starred this entry, dockstore\
           \ specific"
         uniqueItems: true
@@ -4346,25 +4380,31 @@ definitions:
           $ref: "#/definitions/User"
       email:
         type: "string"
+        position: 6
         description: "This is the email of the git organization"
       defaultVersion:
         type: "string"
+        position: 7
         description: "This is the default version of the entry"
-      lastUpdated:
-        type: "string"
-        format: "date-time"
-        description: "Implementation specific timestamp for last updated on webservice"
-      gitUrl:
-        type: "string"
-        description: "This is a link to the associated repo with a descriptor, required\
-          \ GA4GH"
       is_published:
         type: "boolean"
+        position: 8
         description: "Implementation specific visibility in this web service"
       last_modified:
         type: "integer"
         format: "int32"
+        position: 9
         description: "Implementation specific timestamp for last modified"
+      lastUpdated:
+        type: "string"
+        format: "date-time"
+        position: 10
+        description: "Implementation specific timestamp for last updated on webservice"
+      gitUrl:
+        type: "string"
+        position: 11
+        description: "This is a link to the associated repo with a descriptor, required\
+          \ GA4GH"
   GitHubComAuthenticationResource:
     type: "object"
     properties:
@@ -4421,6 +4461,7 @@ definitions:
         readOnly: true
       value:
         type: "string"
+        position: 1
         description: "String representation of the tag"
     description: "This describes a descriptive label that can be placed on an entry\
       \ in the dockstore"
@@ -4520,6 +4561,7 @@ definitions:
         description: "Implementation specific ID for the source file in this web service"
       type:
         type: "string"
+        position: 1
         description: "Enumerates the type of file"
         enum:
         - "DOCKSTORE_CWL"
@@ -4532,9 +4574,11 @@ definitions:
         - "NEXTFLOW_TEST_PARAMS"
       content:
         type: "string"
+        position: 2
         description: "Cache for the contents of the target file"
       path:
         type: "string"
+        position: 3
         description: "Path to source file in git repo"
   StarRequest:
     type: "object"
@@ -4545,7 +4589,6 @@ definitions:
   Tag:
     type: "object"
     required:
-    - "image_id"
     - "name"
     - "reference"
     properties:
@@ -4554,11 +4597,18 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      last_modified:
+        type: "string"
+        format: "date-time"
+        position: 1
+        description: "The last time this image was modified in the image registry"
       reference:
         type: "string"
+        position: 2
         description: "git commit/tag/branch"
       sourceFiles:
         type: "array"
+        position: 3
         description: "Cached files for each version. Includes Dockerfile and Descriptor\
           \ files"
         uniqueItems: true
@@ -4566,30 +4616,38 @@ definitions:
           $ref: "#/definitions/SourceFile"
       hidden:
         type: "boolean"
+        position: 4
         description: "Implementation specific, whether this row is visible to other\
           \ users aside from the owner"
       valid:
         type: "boolean"
+        position: 5
         description: "Implementation specific, whether this tag has valid files from\
           \ source code repo"
       name:
         type: "string"
+        position: 6
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"
       dirtyBit:
         type: "boolean"
+        position: 7
         description: "True if user has altered the tag"
       verified:
         type: "boolean"
+        position: 8
         description: "Whether this version has been verified or not"
       verifiedSource:
         type: "string"
+        position: 9
         description: "Verified source for the version"
       doiURL:
         type: "string"
+        position: 10
         description: "This is a URL for the DOI for the version of the entry"
       doiStatus:
         type: "string"
+        position: 11
         description: "This indicates the DOI status"
         enum:
         - "NOT_REQUESTED"
@@ -4598,29 +4656,31 @@ definitions:
       size:
         type: "integer"
         format: "int64"
+        position: 13
         description: "Size of the image"
+      dockerfile_path:
+        type: "string"
+        position: 14
+        description: "Path for the Dockerfile"
+      cwl_path:
+        type: "string"
+        position: 15
+        description: "Path for the CWL document"
+      wdl_path:
+        type: "string"
+        position: 16
+        description: "Path for the WDL document"
       automated:
         type: "boolean"
+        position: 17
         description: "Implementation specific, indicates whether this is an automated\
           \ build on quay.io"
       workingDirectory:
         type: "string"
-      last_modified:
-        type: "string"
-        format: "date-time"
-        description: "The last time this image was modified in the image registry"
+        position: 18
       image_id:
         type: "string"
-        description: "Tag for this image in quay.ui/docker hub"
-      dockerfile_path:
-        type: "string"
-        description: "Path for the Dockerfile"
-      cwl_path:
-        type: "string"
-        description: "Path for the CWL document"
-      wdl_path:
-        type: "string"
-        description: "Path for the WDL document"
+        position: 19
     description: "This describes one tag associated with a container."
   Token:
     type: "object"
@@ -4632,21 +4692,27 @@ definitions:
         readOnly: true
       tokenSource:
         type: "string"
+        position: 1
         description: "Source website for this token"
       content:
         type: "string"
+        position: 2
         description: "Contents of the access token"
       username:
         type: "string"
+        position: 3
         description: "When an integrated service is not aware of the username, we\
           \ store it"
       refreshToken:
         type: "string"
+        position: 4
       userId:
         type: "integer"
         format: "int64"
+        position: 5
       token:
         type: "string"
+        position: 6
         description: "Contents of the access token"
         readOnly: true
     description: "Access tokens for this web service and integrated services like\
@@ -4996,27 +5062,35 @@ definitions:
         readOnly: true
       username:
         type: "string"
+        position: 1
         description: "Username on dockstore"
       isAdmin:
         type: "boolean"
+        position: 2
         description: "Indicates whether this user is an admin"
       company:
         type: "string"
+        position: 3
         description: "Company of user"
       bio:
         type: "string"
+        position: 4
         description: "Bio of user"
       location:
         type: "string"
+        position: 5
         description: "Location of user"
       email:
         type: "string"
+        position: 6
         description: "Email of user"
       avatarUrl:
         type: "string"
+        position: 7
         description: "URL of user avatar on Github."
       name:
         type: "string"
+        position: 8
     description: "End users for the dockstore"
   VerifyRequest:
     type: "object"
@@ -5045,13 +5119,16 @@ definitions:
         description: "Implementation specific ID for the container in this web service"
       author:
         type: "string"
+        position: 1
         description: "This is the name of the author stated in the Dockstore.cwl"
       description:
         type: "string"
+        position: 2
         description: "This is a human-readable description of this container and what\
           \ it is trying to accomplish, required GA4GH"
       labels:
         type: "array"
+        position: 3
         description: "Labels (i.e. meta tags) for describing the purpose and contents\
           \ of containers"
         uniqueItems: true
@@ -5059,6 +5136,7 @@ definitions:
           $ref: "#/definitions/Label"
       users:
         type: "array"
+        position: 4
         description: "This indicates the users that have control over this entry,\
           \ dockstore specific"
         uniqueItems: true
@@ -5066,6 +5144,7 @@ definitions:
           $ref: "#/definitions/User"
       starredUsers:
         type: "array"
+        position: 5
         description: "This indicates the users that have starred this entry, dockstore\
           \ specific"
         uniqueItems: true
@@ -5073,20 +5152,34 @@ definitions:
           $ref: "#/definitions/User"
       email:
         type: "string"
+        position: 6
         description: "This is the email of the git organization"
       defaultVersion:
         type: "string"
+        position: 7
         description: "This is the default version of the entry"
+      is_published:
+        type: "boolean"
+        position: 8
+        description: "Implementation specific visibility in this web service"
+      last_modified:
+        type: "integer"
+        format: "int32"
+        position: 9
+        description: "Implementation specific timestamp for last modified"
       lastUpdated:
         type: "string"
         format: "date-time"
+        position: 10
         description: "Implementation specific timestamp for last updated on webservice"
       gitUrl:
         type: "string"
+        position: 11
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
       mode:
         type: "string"
+        position: 12
         description: "This indicates what mode this is in which informs how we do\
           \ things like refresh, dockstore specific"
         enum:
@@ -5094,16 +5187,20 @@ definitions:
         - "STUB"
       workflowName:
         type: "string"
+        position: 13
         description: "This is the name of the workflow, not needed when only one workflow\
           \ in a repo"
       organization:
         type: "string"
+        position: 14
         description: "This is a git organization for the workflow"
       repository:
         type: "string"
+        position: 15
         description: "This is a git repository name"
       sourceControl:
         type: "string"
+        position: 16
         description: "This is a specific source control provider like github or bitbucket\
           \ or n/a?, required: GA4GH"
         enum:
@@ -5112,35 +5209,34 @@ definitions:
         - "GITLAB"
       descriptorType:
         type: "string"
+        position: 17
         description: "This is a descriptor type for the workflow, either CWL or WDL\
           \ (Defaults to CWL)"
+      workflow_path:
+        type: "string"
+        position: 18
+        description: "This indicates for the associated git repository, the default\
+          \ path to the CWL document"
+      defaultTestParameterFilePath:
+        type: "string"
+        position: 19
+        description: "This indicates for the associated git repository, the default\
+          \ path to the test parameter file"
       workflowVersions:
         type: "array"
+        position: 20
         description: "Implementation specific tracking of valid build workflowVersions\
           \ for the docker container"
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
-      path:
-        type: "string"
-      is_published:
-        type: "boolean"
-        description: "Implementation specific visibility in this web service"
-      last_modified:
-        type: "integer"
-        format: "int32"
-        description: "Implementation specific timestamp for last modified"
-      workflow_path:
-        type: "string"
-        description: "This indicates for the associated git repository, the default\
-          \ path to the CWL document"
-      defaultTestParameterFilePath:
-        type: "string"
-        description: "This indicates for the associated git repository, the default\
-          \ path to the test parameter file"
       full_workflow_path:
         type: "string"
+        position: 21
         readOnly: true
+      path:
+        type: "string"
+        position: 22
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"
@@ -5153,11 +5249,20 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      workingDirectory:
+        type: "string"
+      last_modified:
+        type: "string"
+        format: "date-time"
+        position: 1
+        description: "The last time this image was modified in the image registry"
       reference:
         type: "string"
+        position: 2
         description: "git commit/tag/branch"
       sourceFiles:
         type: "array"
+        position: 3
         description: "Cached files for each version. Includes Dockerfile and Descriptor\
           \ files"
         uniqueItems: true
@@ -5165,42 +5270,45 @@ definitions:
           $ref: "#/definitions/SourceFile"
       hidden:
         type: "boolean"
+        position: 4
         description: "Implementation specific, whether this row is visible to other\
           \ users aside from the owner"
       valid:
         type: "boolean"
+        position: 5
         description: "Implementation specific, whether this tag has valid files from\
           \ source code repo"
       name:
         type: "string"
+        position: 6
         description: "Implementation specific, can be a quay.io or docker hub tag\
           \ name"
       dirtyBit:
         type: "boolean"
+        position: 7
         description: "True if user has altered the tag"
       verified:
         type: "boolean"
+        position: 8
         description: "Whether this version has been verified or not"
       verifiedSource:
         type: "string"
+        position: 9
         description: "Verified source for the version"
       doiURL:
         type: "string"
+        position: 10
         description: "This is a URL for the DOI for the version of the entry"
       doiStatus:
         type: "string"
+        position: 11
         description: "This indicates the DOI status"
         enum:
         - "NOT_REQUESTED"
         - "REQUESTED"
         - "CREATED"
-      workingDirectory:
-        type: "string"
-      last_modified:
-        type: "string"
-        format: "date-time"
-        description: "The last time this image was modified in the image registry"
       workflow_path:
         type: "string"
+        position: 12
         description: "Path for the workflow"
     description: "This describes one workflow version associated with a workflow."

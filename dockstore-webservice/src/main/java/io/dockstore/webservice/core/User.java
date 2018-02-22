@@ -57,56 +57,57 @@ import org.apache.http.HttpStatus;
 @Table(name = "enduser")
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
+@SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
-    @ApiModelProperty("Implementation specific ID for the container in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
     @Column(nullable = false, unique = true)
-    @ApiModelProperty("Username on dockstore")
+    @ApiModelProperty(value = "Username on dockstore", position = 1)
     private String username;
 
     @Column
-    @ApiModelProperty(value = "Indicates whether this user is an admin", required = true)
+    @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
     private boolean isAdmin;
 
     @Column
-    @ApiModelProperty(value = "Company of user", required = false)
+    @ApiModelProperty(value = "Company of user", position = 3)
     private String company;
 
     @Column
-    @ApiModelProperty(value = "Bio of user", required = false)
+    @ApiModelProperty(value = "Bio of user", position = 4)
     private String bio;
 
     @Column
-    @ApiModelProperty(value = "Location of user", required = false)
+    @ApiModelProperty(value = "Location of user", position = 5)
     private String location;
 
     @Column
-    @ApiModelProperty(value = "Email of user", required = false)
+    @ApiModelProperty(value = "Email of user", position = 6)
     private String email;
 
     @Column
-    @ApiModelProperty(value = "URL of user avatar on Github.", required = false)
+    @ApiModelProperty(value = "URL of user avatar on Github.", position = 7)
     private String avatarUrl;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty("Groups that this user belongs to")
+    @ApiModelProperty(value = "Groups that this user belongs to", position = 8)
     @JsonIgnore
     private final Set<Group> groups;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty("Entries in the dockstore that this user manages")
+    @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
     @JsonIgnore
     private final Set<Entry> entries;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty("Entries in the dockstore that this user starred")
+    @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
     @OrderBy("id")
     @JsonIgnore
     private final Set<Entry> starredEntries;
@@ -205,6 +206,7 @@ public class User implements Principal {
     }
 
     @Override
+    @ApiModelProperty(position = 8)
     public String getName() {
         return getUsername();
     }
