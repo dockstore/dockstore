@@ -35,11 +35,12 @@ import org.apache.commons.io.FilenameUtils;
  */
 @ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
 @Entity
+@SuppressWarnings("checkstyle:magicnumber")
 public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion> {
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("workflow_path")
-    @ApiModelProperty("Path for the workflow")
+    @ApiModelProperty(value = "Path for the workflow", position = 12)
     private String workflowPath;
 
     public WorkflowVersion() {

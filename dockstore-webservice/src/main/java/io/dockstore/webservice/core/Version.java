@@ -51,6 +51,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Entity
 @ApiModel(value = "Base class for versions of entries in the Dockstore")
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@SuppressWarnings("checkstyle:magicnumber")
 public abstract class Version<T extends Version> implements Comparable<T> {
     /**
      * re-use existing generator for backwards compatibility
@@ -58,53 +59,53 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tag_id_seq")
     @SequenceGenerator(name = "tag_id_seq", sequenceName = "tag_id_seq")
-    @ApiModelProperty("Implementation specific ID for the tag in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the tag in this web service", position = 0)
     private long id;
 
     @Column
     @JsonProperty("last_modified")
-    @ApiModelProperty("The last time this image was modified in the image registry")
+    @ApiModelProperty(value = "The last time this image was modified in the image registry", position = 1)
     private Date lastModified;
 
     @Column
-    @ApiModelProperty(value = "git commit/tag/branch", required = true)
+    @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 2)
     private String reference;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
-    @ApiModelProperty("Cached files for each version. Includes Dockerfile and Descriptor files")
+    @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 3)
     private final Set<SourceFile> sourceFiles;
 
     @Column
-    @ApiModelProperty("Implementation specific, whether this row is visible to other users aside from the owner")
+    @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 4)
     private boolean hidden;
 
     @Column
-    @ApiModelProperty("Implementation specific, whether this tag has valid files from source code repo")
+    @ApiModelProperty(value = "Implementation specific, whether this tag has valid files from source code repo", position = 5)
     private boolean valid;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true)
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 6)
     private String name;
 
     @Column(columnDefinition = "boolean default false")
-    @ApiModelProperty(value = "True if user has altered the tag")
+    @ApiModelProperty(value = "True if user has altered the tag", position = 7)
     private boolean dirtyBit = false;
 
     @Column(columnDefinition =  "boolean default false")
-    @ApiModelProperty("Whether this version has been verified or not")
+    @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)
     private boolean verified;
     @Column
-    @ApiModelProperty("Verified source for the version")
+    @ApiModelProperty(value = "Verified source for the version", position = 9)
     private String verifiedSource;
 
     @Column
-    @ApiModelProperty("This is a URL for the DOI for the version of the entry")
+    @ApiModelProperty(value = "This is a URL for the DOI for the version of the entry", position = 10)
     private String doiURL;
 
     @Column(columnDefinition = "text default 'NOT_REQUESTED'", nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty("This indicates the DOI status")
+    @ApiModelProperty(value = "This indicates the DOI status", position = 11)
     private DOIStatus doiStatus;
 
     public Version() {
