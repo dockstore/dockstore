@@ -155,7 +155,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setAuthor(getAuthor());
         targetWorkflow.setEmail(getEmail());
         targetWorkflow.setDescription(getDescription());
-        targetWorkflow.setLastModified(getLastModified());
+        targetWorkflow.setLastModified(getLastModifiedDate());
         targetWorkflow.setOrganization(getOrganization());
         targetWorkflow.setRepository(getRepository());
         targetWorkflow.setGitUrl(getGitUrl());
