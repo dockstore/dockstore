@@ -42,31 +42,31 @@ public class Tag extends Version<Tag> {
 
     @Column
     @JsonProperty("image_id")
-    @ApiModelProperty(value = "Tag for this image in quay.ui/docker hub", required = true, position = 12)
+    @ApiModelProperty(value = "Tag for this image in quay.ui/docker hub", required = true, position = 0)
     private String imageId;
 
     @Column
-    @ApiModelProperty(value = "Size of the image", position = 13)
+    @ApiModelProperty(value = "Size of the image", position = 1)
     private long size;
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("dockerfile_path")
-    @ApiModelProperty(value = "Path for the Dockerfile", position = 14)
+    @ApiModelProperty(value = "Path for the Dockerfile", position = 2)
     private String dockerfilePath = "/Dockerfile";
 
     // Add for new descriptor types
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("cwl_path")
-    @ApiModelProperty(value = "Path for the CWL document", position = 15)
+    @ApiModelProperty(value = "Path for the CWL document", position = 3)
     private String cwlPath = "/Dockstore.cwl";
 
     @Column(columnDefinition = "text default '/Dockstore.wdl'", nullable = false)
     @JsonProperty("wdl_path")
-    @ApiModelProperty(value = "Path for the WDL document", position = 16)
+    @ApiModelProperty(value = "Path for the WDL document", position = 4)
     private String wdlPath = "/Dockstore.wdl";
 
     @Column
-    @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io", position = 17)
+    @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io", position = 5)
     private boolean automated;
 
     public Tag() {

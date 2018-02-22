@@ -73,44 +73,44 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 12)
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 0)
     private WorkflowMode mode = WorkflowMode.STUB;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 13)
+    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 1)
     private String workflowName;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a git organization for the workflow", required = true, position = 14)
+    @ApiModelProperty(value = "This is a git organization for the workflow", required = true, position = 2)
     private String organization;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a git repository name", required = true, position = 15)
+    @ApiModelProperty(value = "This is a git repository name", required = true, position = 3)
     private String repository;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 16)
+    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 4)
     private SourceControl sourceControl;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 17)
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 5)
     private String descriptorType;
 
     // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 18)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 6)
     private String defaultWorkflowPath = "/Dockstore.cwl";
 
     @Column(columnDefinition = "text")
     @JsonProperty("defaultTestParameterFilePath")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 19)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 7)
     private String defaultTestParameterFilePath = "/test.json";
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 20)
+    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 8)
     @OrderBy("id")
     private final SortedSet<WorkflowVersion> workflowVersions;
 

@@ -40,7 +40,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "Path for the workflow", position = 12)
+    @ApiModelProperty(value = "Path for the workflow", position = 0)
     private String workflowPath;
 
     public WorkflowVersion() {
