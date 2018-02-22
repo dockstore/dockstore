@@ -110,7 +110,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     @Column
     @JsonProperty("checker_id")
-    @ApiModelProperty("The id of the associated checker workflow")
+    @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
     private long checkerId;
 
     public Entry() {
