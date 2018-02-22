@@ -249,7 +249,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
             // Initialize the workflow version
             WorkflowVersion version = initializeWorkflowVersion(ref.getKey(), existingWorkflow, existingDefaults);
-//            version.setLastModified(ref.getRight());
+            version.setLastModified(ref.getRight());
             String calculatedPath = version.getWorkflowPath();
 
             SourceFile.FileType identifiedType = workflow.getFileType();
