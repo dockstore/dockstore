@@ -75,6 +75,7 @@ public class Token {
 
     // TODO: tokens will need to be associated with a particular user
     @Column
+    @ApiModelProperty(position = 5)
     private long userId;
 
     public Token() {
@@ -95,7 +96,7 @@ public class Token {
     }
 
     @JsonProperty
-    @ApiModelProperty(value = "Contents of the access token", position = 5)
+    @ApiModelProperty(value = "Contents of the access token", position = 6)
     public String getToken() {
         return content;
     }

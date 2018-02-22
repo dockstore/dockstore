@@ -206,6 +206,7 @@ public class User implements Principal {
     }
 
     @Override
+    @ApiModelProperty(position = 8)
     public String getName() {
         return getUsername();
     }
