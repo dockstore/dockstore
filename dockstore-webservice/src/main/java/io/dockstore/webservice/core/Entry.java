@@ -229,7 +229,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @JsonProperty("last_modified")
     public Integer getLastModified() {
         // this is lossy, but needed for backwards compatibility
-        return (int)lastModified.getTime();
+        return lastModified == null ? null : (int)lastModified.getTime();
     }
 
     @JsonProperty("last_modified_date")
