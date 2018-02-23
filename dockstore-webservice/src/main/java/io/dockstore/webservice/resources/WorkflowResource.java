@@ -286,14 +286,20 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
      * @param organization            if specified, only refresh if workflow belongs to the organization
      */
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization, Set<Long> alreadyProcessed) {
-        // Mapping of git url to repository name (owner/repo)
-        List<Workflow> workflows = userDAO.findById(user.getId()).getEntries().stream().filter(entry -> entry instanceof Workflow).map(obj -> (Workflow)obj).collect(Collectors.toList());
-        Map<String, String> workflowGitUrl2Name = new HashMap<>();
-        for (Workflow workflow : workflows) {
-            workflowGitUrl2Name.put(workflow.getGitUrl(), workflow.getOrganization() + "/" + workflow.getRepository());
+        /** helpful code for testing, this was used to refresh a users existing workflows
+         *  with a fixed github token for all users
+         */
+        boolean statsCollection = false;
+        if (statsCollection) {
+            List<Workflow> workflows = userDAO.findById(user.getId()).getEntries().stream().filter(entry -> entry instanceof Workflow).map(obj -> (Workflow)obj).collect(Collectors.toList());
+            Map<String, String> workflowGitUrl2Name = new HashMap<>();
+            for (Workflow workflow : workflows) {
+                workflowGitUrl2Name.put(workflow.getGitUrl(), workflow.getOrganization() + "/" + workflow.getRepository());
+            }
         }
 
-        // final Map<String, String> oldWorkflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
+        // Mapping of git url to repository name (owner/repo)
+        final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
         LOG.info("found giturl to workflow name map" + Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
         if (organization != null) {
             workflowGitUrl2Name.entrySet().removeIf(thing -> !(thing.getValue().split("/"))[0].equals(organization));
