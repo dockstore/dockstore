@@ -317,7 +317,7 @@ public class Tool extends Entry<Tool, Tag> {
         }
 
         // Deal with Amazon ECR
-        if (registry.matches(".*\\.dkr\\.ecr\\..*\\.amazonaws\\.com")) {
+        if (registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
             return Registry.AMAZON_ECR;
         } else {
             return null;

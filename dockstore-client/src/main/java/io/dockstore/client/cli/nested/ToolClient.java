@@ -394,6 +394,8 @@ public class ToolClient extends AbstractEntryClient {
                 // TODO: add validity checker for given path
                 if (Strings.isNullOrEmpty(customDockerPath)) {
                     errorMessage(registry + " requires a custom Docker path to be set.", Client.CLIENT_ERROR);
+                } else if ("AMAZON_ECR".equals(registry) && !customDockerPath.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+                    errorMessage(registry + " must be of the form *.dkr.ecr.*.amazonaws.com, where * can be any alphanumeric character.", Client.CLIENT_ERROR);
                 }
             }
 
