@@ -31,9 +31,6 @@ env:
 
 before_install:
 - pip install --upgrade pip
-- mvn --batch-mode dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
-- openssl aes-256-cbc -K $encrypted_c42a0604a544_key -iv $encrypted_c42a0604a544_iv -in secrets.tar.enc -out secrets.tar -d
-- tar xvf secrets.tar
 # pre-build to check dependencies and look for out-of-sync swagger
 - mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
 # start local stack in the background
