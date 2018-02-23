@@ -49,6 +49,9 @@
         <maven-failsafe.version>2.19.1</maven-failsafe.version>
         <httpcomponents.version>4.4.5</httpcomponents.version>
         <jackson-datatype-jsr310.version>2.9.3</jackson-datatype-jsr310.version>
+
+        <skipTests>false</skipTests>
+        <skipITs>true</skipITs>
     </properties>
 
     <!-- deprecated, but needed by Versions Maven Plugin -->
@@ -842,6 +845,7 @@
                     <version>${maven-surefire.version}</version>
                     <configuration>
                         <excludedGroups>${excludeGroups}</excludedGroups>
+                        <skipTests>${skipTests}</skipTests>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -850,6 +854,7 @@
                     <version>${maven-failsafe.version}</version>
                     <configuration>
                         <excludedGroups>${excludeGroups}</excludedGroups>
+                        <skipTests>${skipITs}</skipTests>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1167,31 +1172,19 @@
             </properties>
         </profile>
         <profile>
-            <id>travis-tests</id>
-            <!-- travis has access to our confidential data bundle -->
-            <properties>
-                <excludeGroups>io.dockstore.common.SlowTest</excludeGroups>
-            </properties>
-        </profile>
-        <profile>
-            <id>jenkins-tests</id>
-            <!-- run all tests in-house -->
-            <properties>
-                <excludeGroups />
-            </properties>
-        </profile>
-        <profile>
             <id>unit-tests</id>
-            <!-- run all non-integration tests and non-slow tests -->
+            <!-- run all non-integration tests -->
             <properties>
-                <excludeGroups>io.dockstore.common.IntegrationTest</excludeGroups>
+                <skipTests>false</skipTests>
+                <skipITs>true</skipITs>
             </properties>
         </profile>
         <profile>
             <id>integration-tests</id>
-            <!-- run all integration tests -->
+            <!-- run all non-integration tests -->
             <properties>
-                <groups>io.dockstore.common.IntegrationTest</groups>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
             </properties>
         </profile>
     </profiles>

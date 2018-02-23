@@ -26,7 +26,6 @@ import java.util.concurrent.TimeoutException;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.IntegrationTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -47,7 +46,7 @@ import org.junit.experimental.categories.Category;
 /**
  * @author jpatricia on 04/07/16.
  */
-@Category({ConfidentialTest.class, IntegrationTest.class})
+@Category(ConfidentialTest.class)
 public class ToolsWorkflowTestIT extends BaseIT {
 
     @Before
