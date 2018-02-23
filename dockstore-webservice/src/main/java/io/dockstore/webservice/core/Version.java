@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Objects;
@@ -42,6 +43,8 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * This describes one version of either a workflow or a tool.
@@ -107,6 +110,15 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates the DOI status", position = 11)
     private DOIStatus doiStatus;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     public Version() {
         sourceFiles = new HashSet<>(0);

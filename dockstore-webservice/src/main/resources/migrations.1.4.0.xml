@@ -138,4 +138,64 @@
         <addNotNullConstraint columnDataType="clob" columnName="doistatus" tableName="workflowversion"/>
     </changeSet>
 
+    <changeSet author="dyuen (generated)" id="workflow-jpa-dbcreate">
+        <addColumn tableName="workflow">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="workflow-jpa-dbupdate">
+        <addColumn tableName="workflow">
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="tool-jpa-dbcreate">
+        <addColumn tableName="tool">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="tool-jpa-dbupdate">
+        <addColumn tableName="tool">
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="more-dates">
+        <addColumn tableName="usergroup">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="label">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="sourcefile">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="token">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="tag">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen" id="mutate-tool-modified-timestamp">
+        <sql>alter table tool alter column lastModified type timestamp without time zone USING to_timestamp(lastModified/1000)</sql>
+    </changeSet>
+    <changeSet author="dyuen" id="mutate-workflow-modified-timestamp">
+        <sql>alter table workflow alter column lastModified type timestamp without time zone USING to_timestamp(lastModified/1000)</sql>
+    </changeSet>
+
 </databaseChangeLog>

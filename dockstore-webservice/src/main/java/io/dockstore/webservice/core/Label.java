@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -28,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * This describes a descriptive label that can be placed on an entry in the dockstore, implementation specific.
@@ -49,6 +53,15 @@ public class Label implements Comparable<Label> {
     @Column(unique = true)
     @ApiModelProperty(value = "String representation of the tag", required = true, position = 1)
     private String value;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     @JsonProperty
     public long getId() {
