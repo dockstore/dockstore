@@ -49,28 +49,33 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findGitlabByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'gitlab.com'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'") })
+@SuppressWarnings("checkstyle:magicnumber")
 public class Token {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty("Implementation specific ID for the token in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0)
     private long id;
+
     @Column(nullable = false)
-    @ApiModelProperty("Source website for this token")
+    @ApiModelProperty(value = "Source website for this token", position = 1)
     private String tokenSource;
 
     @Column(nullable = false)
-    @ApiModelProperty("Contents of the access token")
+    @ApiModelProperty(value = "Contents of the access token", position = 2)
     private String content;
+
     @Column(nullable = false)
-    @ApiModelProperty("When an integrated service is not aware of the username, we store it")
+    @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it", position = 3)
     private String username;
+
     @Column
-    @ApiModelProperty("")
+    @ApiModelProperty(position = 4)
     private String refreshToken;
 
     // TODO: tokens will need to be associated with a particular user
     @Column
+    @ApiModelProperty(position = 5)
     private long userId;
 
     public Token() {
@@ -91,7 +96,7 @@ public class Token {
     }
 
     @JsonProperty
-    @ApiModelProperty("Contents of the access token")
+    @ApiModelProperty(value = "Contents of the access token", position = 6)
     public String getToken() {
         return content;
     }

@@ -38,15 +38,16 @@ import io.swagger.annotations.ApiModelProperty;
 @Entity
 @Table(name = "label")
 @NamedQuery(name = "io.dockstore.webservice.core.Label.findByLabelValue", query = "SELECT l FROM Label l WHERE l.value = :labelValue")
+@SuppressWarnings("checkstyle:magicnumber")
 public class Label implements Comparable<Label> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty("Implementation specific ID for the container in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
     @Column(unique = true)
-    @ApiModelProperty(value = "String representation of the tag", required = true)
+    @ApiModelProperty(value = "String representation of the tag", required = true, position = 1)
     private String value;
 
     @JsonProperty

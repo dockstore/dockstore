@@ -38,6 +38,7 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel("SourceFile")
 @Entity
 @Table(name = "sourcefile")
+@SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile {
     /**
      * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
@@ -50,19 +51,19 @@ public class SourceFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty("Implementation specific ID for the source file in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", position = 0)
     private long id;
 
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "Enumerates the type of file", required = true)
+    @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
     private FileType type;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty("Cache for the contents of the target file")
+    @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
     private String content;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Path to source file in git repo", required = true)
+    @ApiModelProperty(value = "Path to source file in git repo", required = true, position = 3)
     private String path;
 
     public long getId() {
