@@ -110,6 +110,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
+    @Column
+    @JsonProperty("checker_id")
+    @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
+    private Long checkerId;
+
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -118,7 +123,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
-
 
     public Entry() {
         users = new HashSet<>(0);
@@ -143,6 +147,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public Long getCheckerId() {
+        return checkerId;
+    }
+
+    public void setCheckerId(Long checkerId) {
+        this.checkerId = checkerId;
     }
 
     @JsonProperty
