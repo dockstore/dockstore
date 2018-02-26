@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Objects;
@@ -44,6 +45,8 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Base class for all entries in the dockstore
@@ -98,9 +101,10 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @JsonProperty("is_published")
     @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
     private boolean isPublished;
+
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last modified", position = 9)
-    private Integer lastModified;
+    private Date lastModified;
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice", position = 10)
     private Date lastUpdated;
@@ -112,6 +116,15 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
     private Long checkerId;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     public Entry() {
         users = new HashSet<>(0);
@@ -213,7 +226,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     /**
      * @param lastModified the lastModified to set
      */
-    public void setLastModified(Integer lastModified) {
+    public void setLastModified(Date lastModified) {
         this.lastModified = lastModified;
     }
 
@@ -227,6 +240,12 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     @JsonProperty("last_modified")
     public Integer getLastModified() {
+        // this is lossy, but needed for backwards compatibility
+        return lastModified == null ? null : (int)lastModified.getTime();
+    }
+
+    @JsonProperty("last_modified_date")
+    public Date getLastModifiedDate() {
         return lastModified;
     }
 
@@ -270,7 +289,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.setDescription(entry.getDescription());
         // this causes an issue when newly refreshed tools that are not published overwrite publish settings for existing containers
         // isPublished = entry.getIsPublished();
-        lastModified = entry.getLastModified();
+        lastModified = entry.getLastModifiedDate();
         this.setAuthor(entry.getAuthor());
         this.setEmail(entry.getEmail());
 

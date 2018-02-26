@@ -43,7 +43,7 @@
             <column name="email"/>
             <column name="giturl" value="git@github.com:garyluu/testWorkflow.git"/>
             <column name="ispublished" valueBoolean="true"/>
-            <column name="lastmodified" valueNumeric="-1886401784"/>
+            <column name="lastmodified"/>
             <column name="lastupdated" valueDate="2018-02-13 10:42:52.608"/>
             <column name="defaulttestparameterfilepath"/>
             <column name="defaultworkflowpath" value="/Dockstore.cwl"/>
@@ -62,7 +62,7 @@
             <column name="doistatus" value="NOT_REQUESTED"/>
             <column name="doiurl"/>
             <column name="hidden" valueBoolean="false"/>
-            <column name="lastmodified" valueDate="2018-02-13 09:27:01.0"/>
+            <column name="lastmodified"/>
             <column name="name" value="master"/>
             <column name="reference" value="master"/>
             <column name="valid" valueBoolean="true"/>
