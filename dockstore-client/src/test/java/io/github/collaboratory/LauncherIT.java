@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author dyuen
  */
-public abstract class LauncherTest {
+public abstract class LauncherIT {
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();

@@ -30,7 +30,6 @@ import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
@@ -46,7 +45,6 @@ import scala.collection.immutable.List;
  *
  * @author dyuen
  */
-@Category(IntegrationTest.class)
 public class CromwellIT {
 
     @Test

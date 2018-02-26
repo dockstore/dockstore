@@ -22,7 +22,6 @@ import java.util.concurrent.TimeoutException;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
-import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -42,7 +41,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  * Base integration test class
  * A default configuration that cleans the database between tests
  */
-@Category({ConfidentialTest.class, IntegrationTest.class})
+@Category(ConfidentialTest.class)
 public class BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(

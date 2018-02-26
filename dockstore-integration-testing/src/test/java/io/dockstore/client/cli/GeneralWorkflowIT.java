@@ -21,7 +21,6 @@ import java.util.concurrent.TimeoutException;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dropwizard.testing.ResourceHelpers;
@@ -48,7 +47,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  * This test suite will have tests for the workflow mode of the Dockstore Client.
  * Created by aduncan on 05/04/16.
  */
-@Category({ConfidentialTest.class, IntegrationTest.class})
+@Category({ConfidentialTest.class})
 public class GeneralWorkflowIT extends BaseIT {
 
     @Rule
