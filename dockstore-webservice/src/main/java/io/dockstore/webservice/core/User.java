@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.security.Principal;
+import java.sql.Timestamp;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,6 +47,8 @@ import io.dockstore.webservice.jdbi.TokenDAO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Stores end user information
@@ -92,6 +95,15 @@ public class User implements Principal {
     @Column
     @ApiModelProperty(value = "URL of user avatar on Github.", position = 7)
     private String avatarUrl;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))

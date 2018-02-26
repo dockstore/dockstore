@@ -205,23 +205,29 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         List<Pair<String, Date>> references = new ArrayList<>();
         try {
             GHRepository repository = github.getRepository(repositoryId);
-
+            final Date epochStart = new Date(0);
             service.getBranches(id).forEach(branch -> {
-                Date branchDate = new Date(Long.MIN_VALUE);
+                Date branchDate = new Date(0);
                 try {
                     GHBranch githubBranch = repository.getBranch(branch.getName());
                     GHCommit commit = repository.getCommit(githubBranch.getSHA1());
                     branchDate = commit.getCommitDate();
+                    if (branchDate.before(epochStart)) {
+                        branchDate = epochStart;
+                    }
                 } catch (IOException e) {
                     LOG.info("unable to retrieve commit date for branch " + branch.getName());
                 }
                 references.add(Pair.of(branch.getName(), branchDate));
             });
             service.getTags(id).forEach(tag -> {
-                Date branchDate = new Date(Long.MIN_VALUE);
+                Date branchDate = new Date(0);
                 try {
                     GHCommit commit = repository.getCommit(tag.getCommit().getSha());
                     branchDate = commit.getCommitDate();
+                    if (branchDate.before(epochStart)) {
+                        branchDate = epochStart;
+                    }
                 } catch (IOException e) {
                     LOG.info("unable to retrieve commit date for tag " + tag.getName());
                 }
@@ -233,7 +239,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
         Optional<Date> max = references.stream().map(Pair::getRight).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
-        max.ifPresent(date -> workflow.setLastModified((int)max.get().getTime()));
+        max.ifPresent(date -> {
+            long time = max.get().getTime();
+            workflow.setLastModified(new Date(Math.max(time, 0L)));
+        });
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Pair<String, Date> ref : references) {

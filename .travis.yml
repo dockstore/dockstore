@@ -54,7 +54,7 @@ before_script:
 
 script: ./scripts/run-tests.sh
 
-after_script:
+before_cache:
 - rm -rf /home/travis/.m2/repository/io/dockstore
 
 notifications:
