@@ -43,6 +43,7 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.Check;
 
 /**
@@ -54,6 +55,8 @@ import org.hibernate.annotations.Check;
  * @author xliu
  * @author dyuen
  */
+@Schema(name = "DockstoreTool", description = "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
+        + " * associated with CWL and Dockerfile documents")
 @ApiModel(value = "DockstoreTool", description =
         "This describes one entry in the dockstore. Logically, this currently means one tuple of registry (either quay or docker hub), organization, image name, and toolname which can be\n"
                 + " * associated with CWL and Dockerfile documents")
@@ -79,50 +82,64 @@ public class Tool extends Entry<Tool, Tag> {
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
+    @Schema(description = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
     @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true)
     private ToolMode mode = ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS;
 
     @Column(nullable = false)
+    @Schema(description = "This is the name of the container, required: GA4GH", required = true)
     @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true)
     private String name;
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("default_dockerfile_path")
+    @Schema(description = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true)
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true)
     private String defaultDockerfilePath = "/Dockerfile";
 
     // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("default_cwl_path")
+    @Schema(description = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true)
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true)
     private String defaultCwlPath = "/Dockstore.cwl";
 
     @Column(columnDefinition = "text default '/Dockstore.wdl'")
     @JsonProperty("default_wdl_path")
+    @Schema(description = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true)
     private String defaultWdlPath = "/Dockstore.wdl";
 
     @Column(columnDefinition = "text")
     @JsonProperty("defaultCWLTestParameterFile")
+    @Schema(description = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true)
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true)
     private String defaultTestCwlParameterFile = "/test.json";
 
     @Column(columnDefinition = "text")
     @JsonProperty("defaultWDLTestParameterFile")
+    @Schema(description = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true)
     @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true)
     private String defaultTestWdlParameterFile = "/test.json";
 
     @Column
     @JsonProperty("tool_maintainer_email")
+    @Schema(description = "The email address of the tool maintainer. Required for private repositories", required = false)
     @ApiModelProperty(value = "The email address of the tool maintainer. Required for private repositories", required = false)
     private String toolMaintainerEmail = "";
 
     @Column(columnDefinition = "boolean default false")
     @JsonProperty("private_access")
+    @Schema(description = "Is the docker image private or not.", required = true)
     @ApiModelProperty(value = "Is the docker image private or not.", required = true)
     private boolean privateAccess = false;
 
     @Column(nullable = false, columnDefinition = "Text default ''")
+    @Schema(description = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
+            + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
+            + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
+            + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
+            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", required = true)
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
@@ -131,24 +148,29 @@ public class Tool extends Entry<Tool, Tag> {
     private String toolname = "";
 
     @Column
+    @Schema(description = "This is a docker namespace for the container, required: GA4GH", required = true)
     @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH", required = true)
     private String namespace;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @Schema(description = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true)
     @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true)
     private Registry registry;
 
     @Column
+    @Schema(description = "Implementation specific timestamp for last built")
     @ApiModelProperty("Implementation specific timestamp for last built")
     private Date lastBuild;
 
     @Column
     @JsonProperty("custom_docker_registry_path")
+    @Schema(description = "Only used for docker registries that allow for custom paths")
     @ApiModelProperty(value = "Only used for docker registries that allow for custom paths")
     private String customDockerRegistryPath = null;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
+    @Schema(description = "Implementation specific tracking of valid build tags for the docker container")
     @ApiModelProperty("Implementation specific tracking of valid build tags for the docker container")
     @OrderBy("id")
     private final SortedSet<Tag> tags;

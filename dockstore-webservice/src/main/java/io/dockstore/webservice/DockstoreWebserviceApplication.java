@@ -200,7 +200,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 .title("Swagger Sample App")
                 .description("Description")
                 .termsOfService("termsOfService")
-                .contact(new Contact().email("email"))
+                .contact(new Contact().email("theglobalalliance@genomicsandhealth.org"))
+                .version("1.3.0")
                 .license(new License().name("Apache 2.0").url("http://www.apache.org/licenses/LICENSE-2.0.html"));
         oas.info(info);
         SwaggerConfiguration oasConfig = new SwaggerConfiguration().openAPI(oas).prettyPrint(true)
