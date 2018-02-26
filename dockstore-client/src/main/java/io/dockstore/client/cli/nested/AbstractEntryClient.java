@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -116,15 +117,7 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  */
 public abstract class AbstractEntryClient {
 
-    {
-        // initialize cromwell location from ~/.dockstore/config
-        INIConfiguration config = Utilities.parseConfig(getConfigFile());
-        String DEFAULT_CROMWELL_VERSION = config.getString("cromwell-version", "29");
-        CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/"+ DEFAULT_CROMWELL_VERSION
-            +"/cromwell-"+ DEFAULT_CROMWELL_VERSION +".jar";
-    }
-
-    private static String CROMWELL_LOCATION;
+    private static final String DEFAULT_CROMWELL_VERSION = "29";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     boolean isAdmin = false;
 
@@ -1264,13 +1257,22 @@ public abstract class AbstractEntryClient {
     }
 
     private File getCromwellTargetFile() {
-        // grab the cromwell jar
+        // initialize cromwell location from ~/.dockstore/config
+        INIConfiguration config = Utilities.parseConfig(getConfigFile());
+        String cromwellVersion = config.getString("cromwell-version", DEFAULT_CROMWELL_VERSION);
+        String cromwellLocation =
+            "https://github.com/broadinstitute/cromwell/releases/download/" + cromwellVersion + "/cromwell-" + cromwellVersion + ".jar";
+        if (!Objects.equals(DEFAULT_CROMWELL_VERSION, cromwellVersion)) {
+            LOG.warn("Running with Cromwell " + cromwellVersion + " , Dockstore tests with " + DEFAULT_CROMWELL_VERSION);
+        }
+
+        // grab the cromwell jar if needed
         String libraryLocation =
                 System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
         URL cromwellURL;
         String cromwellFileName;
         try {
-            cromwellURL = new URL(CROMWELL_LOCATION);
+            cromwellURL = new URL(cromwellLocation);
             cromwellFileName = new File(cromwellURL.toURI().getPath()).getName();
         } catch (MalformedURLException | URISyntaxException e) {
             throw new RuntimeException("Could not create cromwell location", e);
