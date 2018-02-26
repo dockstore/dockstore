@@ -242,7 +242,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Enumerated(EnumType.STRING)
     @JsonProperty("source_control_provider")
-    @ApiModelProperty(position = 23)
+    @ApiModelProperty(position = 25)
     public SourceControl getSourceControlProvider() {
         for (SourceControl sc : SourceControl.values()) {
             if (sc.toString().equals(this.sourceControl)) {

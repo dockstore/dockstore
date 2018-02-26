@@ -5261,17 +5261,17 @@ definitions:
         type: "string"
         position: 23
         readOnly: true
+      path:
+        type: "string"
+        position: 24
       source_control_provider:
         type: "string"
-        position: 23
+        position: 25
         readOnly: true
         enum:
         - "GITHUB"
         - "BITBUCKET"
         - "GITLAB"
-      path:
-        type: "string"
-        position: 24
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"
