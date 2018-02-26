@@ -80,47 +80,47 @@ public class Tool extends Entry<Tool, Tag> {
 
     @Column(nullable = false, columnDefinition = "Text default 'AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS'")
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 12)
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 13)
     private ToolMode mode = ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true, position = 13)
+    @ApiModelProperty(value = "This is the name of the container, required: GA4GH", required = true, position = 14)
     private String name;
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("default_dockerfile_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true, position = 14)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the Dockerfile, required: GA4GH", required = true, position = 15)
     private String defaultDockerfilePath = "/Dockerfile";
 
     // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("default_cwl_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true, position = 15)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document, required: GA4GH", required = true, position = 16)
     private String defaultCwlPath = "/Dockstore.cwl";
 
     @Column(columnDefinition = "text default '/Dockstore.wdl'")
     @JsonProperty("default_wdl_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true, position = 16)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL document", required = true, position = 17)
     private String defaultWdlPath = "/Dockstore.wdl";
 
     @Column(columnDefinition = "text")
     @JsonProperty("defaultCWLTestParameterFile")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true, position = 17)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL test parameter file", required = true, position = 18)
     private String defaultTestCwlParameterFile = "/test.json";
 
     @Column(columnDefinition = "text")
     @JsonProperty("defaultWDLTestParameterFile")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true, position = 18)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the WDL test parameter file", required = true, position = 19)
     private String defaultTestWdlParameterFile = "/test.json";
 
     @Column
     @JsonProperty("tool_maintainer_email")
-    @ApiModelProperty(value = "The email address of the tool maintainer. Required for private repositories", position = 19)
+    @ApiModelProperty(value = "The email address of the tool maintainer. Required for private repositories", position = 20)
     private String toolMaintainerEmail = "";
 
     @Column(columnDefinition = "boolean default false")
     @JsonProperty("private_access")
-    @ApiModelProperty(value = "Is the docker image private or not.", required = true, position = 20)
+    @ApiModelProperty(value = "Is the docker image private or not.", required = true, position = 21)
     private boolean privateAccess = false;
 
     @Column(nullable = false, columnDefinition = "Text default ''")
@@ -128,29 +128,29 @@ public class Tool extends Entry<Tool, Tag> {
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
             + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
-            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", required = true, position = 21)
+            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", required = true, position = 22)
     private String toolname = "";
 
     @Column
-    @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH", required = true, position = 22)
+    @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH", required = true, position = 23)
     private String namespace;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true, position = 23)
+    @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true, position = 24)
     private Registry registry;
 
     @Column
-    @ApiModelProperty(value = "Implementation specific timestamp for last built", position = 24)
+    @ApiModelProperty(value = "Implementation specific timestamp for last built", position = 25)
     private Date lastBuild;
 
     @Column
     @JsonProperty("custom_docker_registry_path")
-    @ApiModelProperty(value = "Only used for docker registries that allow for custom paths", position = 25)
+    @ApiModelProperty(value = "Only used for docker registries that allow for custom paths", position = 26)
     private String customDockerRegistryPath = null;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
+    @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 27)
     @OrderBy("id")
     private final SortedSet<Tag> tags;
 
@@ -216,7 +216,7 @@ public class Tool extends Entry<Tool, Tag> {
         this.registry = registry;
     }
 
-    @ApiModelProperty(position = 27)
+    @ApiModelProperty(position = 28)
     public String getPath() {
         String repositoryPath;
         if (registry == Registry.AMAZON_ECR) {
@@ -241,7 +241,7 @@ public class Tool extends Entry<Tool, Tag> {
      * @return the languages that this tool supports
      */
     @JsonProperty
-    @ApiModelProperty(position = 28)
+    @ApiModelProperty(position = 29)
     public List<String> getDescriptorType() {
         Set<SourceFile.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType)
             .distinct().collect(Collectors.toSet());
@@ -325,7 +325,7 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty("tool_path")
-    @ApiModelProperty(position = 29)
+    @ApiModelProperty(position = 30)
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
@@ -361,4 +361,5 @@ public class Tool extends Entry<Tool, Tag> {
     public void setDefaultTestCwlParameterFile(String defaultTestCwlParameterFile) {
         this.defaultTestCwlParameterFile = defaultTestCwlParameterFile;
     }
+
 }

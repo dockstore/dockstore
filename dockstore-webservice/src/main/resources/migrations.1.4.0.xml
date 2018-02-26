@@ -138,6 +138,20 @@
         <addNotNullConstraint columnDataType="clob" columnName="doistatus" tableName="workflowversion"/>
     </changeSet>
 
+    <changeSet id="n4io234ni23o4nio33r-1" author="agduncan">
+        <!-- Add column for tool checker -->
+        <addColumn tableName="tool">
+            <column name="checkerid" type="bigint" defaultValue="null"/>
+        </addColumn>
+        <!-- Add columns for workflow checker -->
+        <addColumn tableName="workflow">
+            <column name="checkerid" type="bigint" defaultValue="null"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="ischecker" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+
     <changeSet author="dyuen (generated)" id="workflow-jpa-dbcreate">
         <addColumn tableName="workflow">
             <column name="dbcreatedate" type="timestamp without time zone"/>
