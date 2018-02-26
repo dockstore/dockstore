@@ -5135,8 +5135,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      checker:
-        type: "boolean"
       last_modified_date:
         type: "string"
         format: "date-time"

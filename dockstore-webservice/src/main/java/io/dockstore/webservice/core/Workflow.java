@@ -314,11 +314,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.sourceControl = sourceControl;
     }
 
-    public boolean isChecker() {
+    public boolean isIsChecker() {
         return isChecker;
     }
 
-    public void setChecker(boolean checker) {
-        isChecker = checker;
+    public void setIsChecker(boolean isChecker) {
+        this.isChecker = isChecker;
     }
 }
