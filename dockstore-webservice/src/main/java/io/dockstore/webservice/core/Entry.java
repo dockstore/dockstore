@@ -111,7 +111,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @Column
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
-    private long checkerId;
+    private Long checkerId;
 
     public Entry() {
         users = new HashSet<>(0);
@@ -138,11 +138,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.id = id;
     }
 
-    public long getCheckerId() {
+    public Long getCheckerId() {
         return checkerId;
     }
 
-    public void setCheckerId(long checkerId) {
+    public void setCheckerId(Long checkerId) {
         this.checkerId = checkerId;
     }
 
