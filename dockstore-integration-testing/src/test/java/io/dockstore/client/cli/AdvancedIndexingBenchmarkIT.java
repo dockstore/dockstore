@@ -34,7 +34,6 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
-import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Token;
@@ -49,6 +48,7 @@ import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -64,7 +64,8 @@ import static junit.framework.TestCase.assertTrue;
  *
  * @author gluu
  */
-@Category({BenchmarkTest.class, IntegrationTest.class})
+@Category(BenchmarkTest.class)
+@Ignore("more like benchmarking than a test per say")
 public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     @Rule

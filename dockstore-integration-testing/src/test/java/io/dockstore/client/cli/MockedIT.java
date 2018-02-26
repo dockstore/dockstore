@@ -24,7 +24,6 @@ import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
@@ -63,7 +62,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PowerMockIgnore({ "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*" })
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Client.class, ToolClient.class, UsersApi.class })
-@Category({ConfidentialTest.class, IntegrationTest.class})
+@Category(ConfidentialTest.class)
 public class MockedIT {
 
     @Rule
