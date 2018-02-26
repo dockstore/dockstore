@@ -62,6 +62,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -629,8 +630,7 @@ public class LauncherCWL {
         String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
         String stderr = execute.getRight().replaceAll("(?m)^", "\t");
 
-        final String cwltool = "cwltool";
-        outputIntegrationOutput(outputDir, execute, stdout, stderr, cwltool);
+        outputIntegrationOutput(outputDir, execute, stdout, stderr, FilenameUtils.getName(command.get(0)));
         Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
         return obj;
     }

@@ -1263,7 +1263,7 @@ public abstract class AbstractEntryClient {
         String cromwellLocation =
             "https://github.com/broadinstitute/cromwell/releases/download/" + cromwellVersion + "/cromwell-" + cromwellVersion + ".jar";
         if (!Objects.equals(DEFAULT_CROMWELL_VERSION, cromwellVersion)) {
-            LOG.warn("Running with Cromwell " + cromwellVersion + " , Dockstore tests with " + DEFAULT_CROMWELL_VERSION);
+            System.out.println("Running with Cromwell " + cromwellVersion + " , Dockstore tests with " + DEFAULT_CROMWELL_VERSION);
         }
 
         // grab the cromwell jar if needed
@@ -1298,7 +1298,7 @@ public abstract class AbstractEntryClient {
      * @return an exit code for the run
      */
     public long launchWdlInternal(String entry, boolean isLocalEntry, String json, String wdlOutputTarget, String uuid)
-            throws IOException, ApiException {
+            throws ApiException {
 
         File parameterFile = new File(json);
 

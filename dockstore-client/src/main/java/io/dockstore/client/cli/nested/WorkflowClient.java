@@ -336,7 +336,7 @@ public class WorkflowClient extends AbstractEntryClient {
                             } else {
                                 try {
                                     launchWdlInternal(entry, false, jsonRun, wdlOutputTarget, uuid);
-                                } catch (IOException e) {
+                                } catch (Exception e) {
                                     errorMessage("Could not launch entry", IO_ERROR);
                                 }
                             }
