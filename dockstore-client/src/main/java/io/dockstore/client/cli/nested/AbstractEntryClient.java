@@ -134,7 +134,7 @@ public abstract class AbstractEntryClient {
 
     private CWL getCwlUtil() {
         String cwlrunner = CWLRunnerFactory.getCWLRunner();
-        return new CWL(cwlrunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
+        return new CWL(cwlrunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()), Utilities.parseConfig(getConfigFile()));
     }
 
     public abstract String getConfigFile();

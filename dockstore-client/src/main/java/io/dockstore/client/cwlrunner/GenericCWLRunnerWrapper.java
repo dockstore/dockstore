@@ -15,32 +15,33 @@
  */
 package io.dockstore.client.cwlrunner;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import io.cwl.avro.CWL;
-import org.apache.commons.configuration2.INIConfiguration;
+import com.google.common.base.Joiner;
+import io.dockstore.client.cli.ArgumentUtility;
+import io.dockstore.client.cli.Client;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
-public class BunnyWrapper implements CWLRunnerInterface {
-    private final String localBunnyPath;
-
-    BunnyWrapper(INIConfiguration config) {
-        CWL cwl = new CWL(true, config);
-        localBunnyPath = cwl.getLocalBunnyPath();
-    }
-
+public class GenericCWLRunnerWrapper implements CWLRunnerInterface {
     @Override
     public void checkForCWLDependencies() {
+        final String[] s1 = { "cwl-runner", "--version" };
+        final ImmutablePair<String, String> pair1 = io.cwl.avro.Utilities
+                .executeCommand(Joiner.on(" ").join(Arrays.asList(s1)), false, com.google.common.base.Optional.absent(),
+                        com.google.common.base.Optional.absent());
+
+        if (pair1.getLeft().isEmpty() && pair1.getRight().isEmpty()) {
+            ArgumentUtility.errorMessage("cwl-runner seems to be missing", Client.COMMAND_ERROR);
+        }
 
     }
 
     @Override
     public List<String> getExecutionCommand(String outputDir, String tmpDir, String workingDir, String cwlFile, String jsonSettings) {
-        Path path = Paths.get(System.getProperty("user.home"), localBunnyPath);
-        return new ArrayList<>(Arrays.asList(path.toAbsolutePath().toString(), "--basedir", workingDir, cwlFile, jsonSettings));
+        return new ArrayList<>(Arrays
+            .asList("cwl-runner", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix",
+                workingDir, cwlFile, jsonSettings));
     }
-
 }

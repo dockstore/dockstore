@@ -171,7 +171,7 @@ public class LauncherCWL {
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
         String cwlRunner = CWLRunnerFactory.getCWLRunner();
-        CWL cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()));
+        CWL cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()), config);
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
         Object cwlObject;
         try {
@@ -607,7 +607,7 @@ public class LauncherCWL {
 
         if (extraFlags.size() > 0) {
             System.out.println("########### WARNING ###########");
-            System.out.println("You are using extra flags for CWLtool which may not be supported. Use at your own risk.");
+            System.out.println("You are using extra flags for your cwl runner which may not be supported. Use at your own risk.");
         }
 
         // Trim the input

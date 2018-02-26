@@ -19,7 +19,7 @@ import org.apache.commons.configuration2.INIConfiguration;
 
 public final class CWLRunnerFactory {
 
-    public enum CWLRunner { BUNNY, CWLTOOL }
+    public enum CWLRunner { BUNNY, CWLTOOL, TOIL }
 
     private static INIConfiguration config = null;
 
@@ -35,7 +35,11 @@ public final class CWLRunnerFactory {
         if (CWLRunner.CWLTOOL.toString().equalsIgnoreCase(string)) {
             return new CWLToolWrapper();
         } else if (CWLRunner.BUNNY.toString().equalsIgnoreCase(string)) {
-            return new BunnyWrapper();
+            return new BunnyWrapper(config);
+        } else if (CWLRunner.TOIL.toString().equalsIgnoreCase(string)) {
+            return new ToilWrapper();
+        } else if ("cwl-runner".equalsIgnoreCase(string)) {
+            return new GenericCWLRunnerWrapper();
         } else {
             throw new UnsupportedOperationException("Improper CWL-runner specified");
         }
