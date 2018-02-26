@@ -115,7 +115,16 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  * @author dyuen
  */
 public abstract class AbstractEntryClient {
-    private static final String CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/29/cromwell-29.jar";
+
+    {
+        // initialize cromwell location from ~/.dockstore/config
+        INIConfiguration config = Utilities.parseConfig(getConfigFile());
+        String DEFAULT_CROMWELL_VERSION = config.getString("cromwell-version", "29");
+        CROMWELL_LOCATION = "https://github.com/broadinstitute/cromwell/releases/download/"+ DEFAULT_CROMWELL_VERSION
+            +"/cromwell-"+ DEFAULT_CROMWELL_VERSION +".jar";
+    }
+
+    private static String CROMWELL_LOCATION;
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     boolean isAdmin = false;
 
@@ -589,7 +598,7 @@ public abstract class AbstractEntryClient {
         }
     }
 
-    private void wdl2json(final List<String> args) throws ApiException, IOException {
+    private void wdl2json(final List<String> args) throws ApiException {
         if (args.isEmpty() || containsHelpRequest(args)) {
             wdl2jsonHelp();
         } else {
@@ -819,7 +828,7 @@ public abstract class AbstractEntryClient {
         if (isAdmin) {
             if (containsHelpRequest(args) || args.isEmpty()) {
                 verifyHelp();
-            } else if (!args.isEmpty()) {
+            } else {
                 String entry = reqVal(args, "--entry");
                 String version = reqVal(args, "--version");
                 String verifySource = optVal(args, "--verified-source", null);
@@ -836,7 +845,7 @@ public abstract class AbstractEntryClient {
     private void testParameter(List<String> args) {
         if (containsHelpRequest(args) || args.isEmpty()) {
             testParameterHelp();
-        } else if (!args.isEmpty()) {
+        } else {
             String entry = reqVal(args, "--entry");
             String version = reqVal(args, "--version");
             String descriptorType = null;
@@ -1425,7 +1434,7 @@ public abstract class AbstractEntryClient {
      * @return
      * @throws IOException
      */
-    File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
+    private File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
         File tmp;
         Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
         File file = new File(tempDescriptor.getAbsolutePath());
