@@ -243,7 +243,7 @@ public final class ToolsImplCommon {
                             }
                             break;
                         case DOCKSTORE_WDL:
-                            version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                            version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.WDL);
                             fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
                                     buildSourceFile(urlBuilt + ((Tag)inputVersion).getWdlPath(), file));
                             break;
@@ -259,7 +259,7 @@ public final class ToolsImplCommon {
                             }
                             break;
                         case DOCKSTORE_WDL:
-                            version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                            version.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.WDL);
                             fileTable.put(inputVersion.getName(), DOCKSTORE_WDL,
                                     buildSourceFile(urlBuilt + ((WorkflowVersion)inputVersion).getWorkflowPath(), file));
                             break;

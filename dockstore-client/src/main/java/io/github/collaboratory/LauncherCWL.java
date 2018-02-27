@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
@@ -61,6 +62,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.simple.JSONArray;
@@ -694,16 +696,39 @@ public class LauncherCWL {
                 FileProvisioning.FileInfo fileInfo = new FileProvisioning.FileInfo();
                 fileInfo.setLocalPath(file.getLocalPath());
                 List<String> splitPathList = Lists.newArrayList(file.getUrl().split("/"));
+
                 if (!file.isDirectory()) {
+                    String mutatedSecondaryFile = mutateSecondaryFileName(splitPathList.get(splitPathList.size() - 1), (String)fileMapDataStructure.get("basename"), (String)secondaryFile.get("basename"));
                     // when the provision target is a specific file, trim that off
                     splitPathList.remove(splitPathList.size() - 1);
+                    splitPathList.add(mutatedSecondaryFile);
+                } else {
+                    splitPathList.add((String)secondaryFile.get("basename"));
                 }
-                splitPathList.add((String)secondaryFile.get("basename"));
                 final String join = Joiner.on("/").join(splitPathList);
                 fileInfo.setUrl(join);
                 provisionOutputFile(key, fileInfo, secondaryFile);
             }
         }
+    }
+
+    /**
+     *
+     * @param outputParameterFile the name of the base file in the parameter json
+     * @param originalBaseName the name of the base file as output by the cwlrunner
+     * @param renamedBaseName the name of the secondary associated with the base file as output by the cwlrunner
+     * @return the name of the secondary file in the parameter json, mutated correctly to match outputParameterFile
+     */
+    private String mutateSecondaryFileName(String outputParameterFile, String originalBaseName, String renamedBaseName) {
+        String commonPrefix = Strings.commonPrefix(originalBaseName, renamedBaseName);
+        String mutationSuffixStart = originalBaseName.substring(commonPrefix.length());
+        String mutationSuffixTarget = renamedBaseName.substring(commonPrefix.length());
+        int replacementIndex = outputParameterFile.lastIndexOf(mutationSuffixStart);
+        if (replacementIndex == -1) {
+            // all extensions should be removed before adding on the target
+            return FilenameUtils.removeExtension(outputParameterFile) + "." + mutationSuffixTarget;
+        }
+        return outputParameterFile.substring(0, replacementIndex) + mutationSuffixTarget;
     }
 
     private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject, Map<String, Object> inputsOutputs) {

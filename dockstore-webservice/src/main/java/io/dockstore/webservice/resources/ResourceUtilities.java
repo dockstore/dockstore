@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Optional;
 
-import com.google.common.base.Optional;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
@@ -81,7 +81,7 @@ public final class ResourceUtilities {
 
     // Todo: Implement a backoff algorithm for below HTTP calls
     public static Optional<String> getResponseAsString(HttpRequestBase httpRequest, HttpClient client) {
-        Optional<String> result = Optional.absent();
+        Optional<String> result = Optional.empty();
         final int waitTime = 60000;
         try {
             ResponseHandler<String> responseHandler = new BasicResponseHandler();

@@ -21,12 +21,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
-import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
@@ -113,9 +113,10 @@ public abstract class SourceCodeRepoInterface {
      *
      * @param entry   an entry to be updated
      * @param content a cwl document
+     * @param sourceFiles a set of secondary files that may be imported, included, mixin'ed from
      * @return the updated entry
      */
-    protected Entry parseCWLContent(Entry entry, String content) {
+    protected Entry parseCWLContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
@@ -126,7 +127,20 @@ public abstract class SourceCodeRepoInterface {
                 String description = (String)map.get("description");
                 // changed for CWL 1.0
                 if (map.containsKey("doc")) {
-                    description = (String)map.get("doc");
+                    Object doc = map.get("doc");
+                    if (doc instanceof String) {
+                        description = (String)doc;
+                    } else if (doc instanceof Map) {
+                        Map docMap = (Map)doc;
+                        if (docMap.containsKey("$include")) {
+                            String enclosingFile = (String)docMap.get("$include");
+                            Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFile))
+                                .findFirst();
+                            if (first.isPresent()) {
+                                description = first.get().getContent();
+                            }
+                        }
+                    }
                 }
                 if (description != null) {
                     entry.setDescription(description);
@@ -185,7 +199,7 @@ public abstract class SourceCodeRepoInterface {
      * @param content the actual wdl content
      * @return the tool that was given
      */
-    Entry parseWDLContent(Entry entry, String content) {
+    Entry parseWDLContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
         try {
@@ -352,6 +366,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Determine the file path of the descriptor
         String filePath = null;
+        Set<SourceFile> sourceFiles = null;
 
         // If entry is a tool
         if (entry.getClass().equals(Tool.class)) {
@@ -363,6 +378,7 @@ public abstract class SourceCodeRepoInterface {
             // Find filepath to parse
             for (Tag tag : ((Tool)entry).getVersions()) {
                 if (tag.getReference() != null && tag.getReference().equals(branch)) {
+                    sourceFiles = tag.getSourceFiles();
                     if (type == AbstractEntryClient.Type.CWL) {
                         filePath = tag.getCwlPath();
                     } else {
@@ -378,6 +394,7 @@ public abstract class SourceCodeRepoInterface {
             for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
                 if (workflowVersion.getReference().equals(branch)) {
                     filePath = workflowVersion.getWorkflowPath();
+                    sourceFiles = workflowVersion.getSourceFiles();
                 }
             }
         }
@@ -387,26 +404,26 @@ public abstract class SourceCodeRepoInterface {
             return entry;
         }
 
-        // Why is this needed?
-        if (filePath.startsWith("/")) {
-            filePath = filePath.substring(1);
+        if (sourceFiles == null || sourceFiles.isEmpty()) {
+            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
+            return entry;
         }
 
-        // Get file contents
-        // Does this need to be an API call? can't we just use the files we have in the database?
-        String content = getFileContents(filePath, branch, repositoryId);
-
-        if (content == null) {
-            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
+        String firstFileContent;
+        String finalFilePath = filePath;
+        Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(finalFilePath)).findFirst();
+        if (first.isPresent()) {
+            firstFileContent = first.get().getContent();
+        } else {
             return entry;
         }
 
         // Parse file content and update
         if (type == AbstractEntryClient.Type.CWL) {
-            entry = parseCWLContent(entry, content);
+            entry = parseCWLContent(entry, firstFileContent, sourceFiles);
         }
         if (type == AbstractEntryClient.Type.WDL) {
-            entry = parseWDLContent(entry, content);
+            entry = parseWDLContent(entry, firstFileContent, sourceFiles);
         }
 
         return entry;

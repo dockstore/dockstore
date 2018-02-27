@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 
@@ -41,7 +42,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.base.Optional;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -287,7 +287,7 @@ public class WorkflowResource {
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
-                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.absent());
+                final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.empty());
 
                 // The workflow was successfully created
                 if (newWorkflow != null) {
@@ -968,7 +968,7 @@ public class WorkflowResource {
         final SourceCodeRepoInterface sourceCodeRepo = getSourceCodeRepoInterface(gitURL, user);
 
         // Create workflow
-        Workflow newWorkflow = sourceCodeRepo.getWorkflow(completeWorkflowPath, Optional.absent());
+        Workflow newWorkflow = sourceCodeRepo.getWorkflow(completeWorkflowPath, Optional.empty());
 
         if (newWorkflow == null) {
             throw new CustomWebApplicationException("Please enter a valid repository.", HttpStatus.SC_BAD_REQUEST);

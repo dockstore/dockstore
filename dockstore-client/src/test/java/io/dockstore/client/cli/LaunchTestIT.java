@@ -16,6 +16,13 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Map;
+
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
@@ -32,13 +39,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Map;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
@@ -158,8 +158,66 @@ public class LaunchTestIT {
         }
     }
 
+    @Test
+    public void runToolWithSecondaryFilesRenamedOnOutput() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files_renamed"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.renamed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files_renamed/renamed.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
+    @Test
+    public void runToolWithSecondaryFilesOfVariousKinds() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files_renamed"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.nocaret.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.renamed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 8);
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.aa");
+        for (char y = 'b'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files_renamed/renamed.aa.a" + y + "extra";
+            checkFileAndThenDeleteIt(filename);
+        }
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.aa.funky.extra.stuff");
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.aa.groovyextrastuff");
+    }
+
+    @Test
+    public void runToolWithSecondaryFilesOfEvenStrangerKinds() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files_renamed"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.more.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.extra.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'e'; y++) {
+            String filename = "/tmp/provision_out_with_files_renamed/renamed.txt.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.extra");
+    }
+
     private void checkFileAndThenDeleteIt(String filename) {
-        assertTrue("output should provision out to correct locations",
+        assertTrue("output should provision out to correct locations, could not find " + filename + " in log",
                 systemOutRule.getLog().contains(filename));
         assertTrue("file does not actually exist", Files.exists(Paths.get(filename)));
         // cleanup
