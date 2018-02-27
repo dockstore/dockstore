@@ -32,8 +32,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class NextFlowFacade {
+    private static final String DEFAULT_NEXTFLOW_VERSION = "0.27.6";
     private final String nextflowVersion;
-    private String DEFAULT_NEXTFLOW_VERSION = "0.27.6";
 
     public NextFlowFacade(INIConfiguration configuration) {
         this.nextflowVersion = configuration.getString("nextflow-version", DEFAULT_NEXTFLOW_VERSION);
@@ -41,7 +41,7 @@ public class NextFlowFacade {
 
     private File getNextFlowTargetFile() {
         String nextflowExec =
-            "https://github.com/nextflow-io/nextflow/releases/download/v"+nextflowVersion+"/nextflow-"+nextflowVersion+"-all";
+            "https://github.com/nextflow-io/nextflow/releases/download/v" + nextflowVersion + "/nextflow-" + nextflowVersion + "-all";
         if (!Objects.equals(DEFAULT_NEXTFLOW_VERSION, nextflowVersion)) {
             System.out.println("Running with Nextflow " + nextflowVersion + " , Dockstore tests with " + DEFAULT_NEXTFLOW_VERSION);
         }
