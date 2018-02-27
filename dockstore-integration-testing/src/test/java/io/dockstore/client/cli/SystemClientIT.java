@@ -217,7 +217,7 @@ public class SystemClientIT {
         c.setGitUrl("https://github.com/denis-yuen/test1");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistry(DockstoreTool.RegistryEnum.DOCKER_HUB);
+        c.setRegistry(Registry.DOCKER_HUB.toString());
         c.setIsPublished(true);
         c.setNamespace("seqware");
         c.setToolname("test5");

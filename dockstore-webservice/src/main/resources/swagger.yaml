@@ -4307,23 +4307,14 @@ definitions:
         position: 24
         description: "This is a specific docker provider like quay.io or dockerhub\
           \ or n/a?, required: GA4GH"
-        enum:
-        - "QUAY_IO"
-        - "DOCKER_HUB"
-        - "GITLAB"
-        - "AMAZON_ECR"
       lastBuild:
         type: "string"
         format: "date-time"
         position: 25
         description: "Implementation specific timestamp for last built"
-      custom_docker_registry_path:
-        type: "string"
-        position: 26
-        description: "Only used for docker registries that allow for custom paths"
       tags:
         type: "array"
-        position: 27
+        position: 26
         description: "Implementation specific tracking of valid build tags for the\
           \ docker container"
         uniqueItems: true
@@ -4331,17 +4322,26 @@ definitions:
           $ref: "#/definitions/Tag"
       path:
         type: "string"
-        position: 28
+        position: 27
       descriptorType:
         type: "array"
-        position: 29
+        position: 28
         readOnly: true
         items:
           type: "string"
       tool_path:
         type: "string"
+        position: 29
+        readOnly: true
+      registry_provider:
+        type: "string"
         position: 30
         readOnly: true
+        enum:
+        - "QUAY_IO"
+        - "DOCKER_HUB"
+        - "GITLAB"
+        - "AMAZON_ECR"
     description: "This describes one entry in the dockstore. Logically, this currently\
       \ means one tuple of registry (either quay or docker hub), organization, image\
       \ name, and toolname which can be\n * associated with CWL and Dockerfile documents"
@@ -5230,10 +5230,6 @@ definitions:
         position: 17
         description: "This is a specific source control provider like github or bitbucket\
           \ or n/a?, required: GA4GH"
-        enum:
-        - "GITHUB"
-        - "BITBUCKET"
-        - "GITLAB"
       descriptorType:
         type: "string"
         position: 18
@@ -5268,6 +5264,14 @@ definitions:
       path:
         type: "string"
         position: 24
+      source_control_provider:
+        type: "string"
+        position: 25
+        readOnly: true
+        enum:
+        - "GITHUB"
+        - "BITBUCKET"
+        - "GITLAB"
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"

@@ -235,7 +235,7 @@ public final class Helper {
 
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
-        final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistry());
+        final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
 
         if (abstractImageRegistry == null) {
             throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
@@ -294,7 +294,7 @@ public final class Helper {
         // get quay token
         Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
 
-        if (tool.getRegistry() == Registry.QUAY_IO && quayToken == null) {
+        if (tool.getRegistry() == Registry.QUAY_IO.toString() && quayToken == null) {
             LOG.info("WARNING: QUAY.IO token not found!");
             throw new CustomWebApplicationException("A valid Quay.io token is required to add this tool.", HttpStatus.SC_BAD_REQUEST);
         }

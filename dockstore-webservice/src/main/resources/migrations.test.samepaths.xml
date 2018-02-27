@@ -16,7 +16,7 @@
             <column name="descriptortype" value="cwl"/>
             <column name="mode" value="FULL"/>
             <column name="organization" value="fakeOrganization"/>
-            <column name="sourcecontrol" value="GITHUB"/>
+            <column name="sourcecontrol" value="github.com"/>
             <column name="repository" value="fakeRepository"/>
             <column name="workflowname"/>
         </insert>
@@ -35,7 +35,7 @@
             <column name="descriptortype" value="cwl"/>
             <column name="mode" value="FULL"/>
             <column name="organization" value="fakeOrganization"/>
-            <column name="sourcecontrol" value="BITBUCKET"/>
+            <column name="sourcecontrol" value="bitbucket.org"/>
             <column name="repository" value="fakeRepository"/>
             <column name="workflowname"/>
         </insert>
@@ -54,7 +54,7 @@
             <column name="descriptortype" value="cwl"/>
             <column name="mode" value="FULL"/>
             <column name="organization" value="fakeOrganization"/>
-            <column name="sourcecontrol" value="GITHUB"/>
+            <column name="sourcecontrol" value="github.com"/>
             <column name="repository" value="fakeRepository"/>
             <column name="workflowname" value="Potato"/>
         </insert>
@@ -73,7 +73,7 @@
             <column name="descriptortype" value="cwl"/>
             <column name="mode" value="FULL"/>
             <column name="organization" value="fakeOrganization"/>
-            <column name="sourcecontrol" value="BITBUCKET"/>
+            <column name="sourcecontrol" value="bitbucket.org"/>
             <column name="repository" value="fakeRepository"/>
             <column name="workflowname" value="Potato"/>
         </insert>

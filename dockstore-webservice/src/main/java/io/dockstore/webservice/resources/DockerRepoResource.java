@@ -391,14 +391,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
 
         // Check if tool has tags
-        if (tool.getRegistry() == Registry.QUAY_IO && !checkContainerForTags(tool, user.getId())) {
+        if (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkContainerForTags(tool, user.getId())) {
             LOG.info(user.getUsername() + ": tool has no tags.");
             throw new CustomWebApplicationException(
                     "Tool " + tool.getToolPath() + " has no tags. Quay containers must have at least one tag.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Check if user owns repo, or if user is in the organization which owns the tool
-        if (tool.getRegistry() == Registry.QUAY_IO && !Helper.checkIfUserOwns(tool, client, objectMapper, tokenDAO, user.getId())) {
+        if (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && !Helper.checkIfUserOwns(tool, client, objectMapper, tokenDAO, user.getId())) {
             LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
             throw new CustomWebApplicationException("User does not own the tool " + tool.getPath()
                     + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
@@ -426,7 +426,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 
-        final AbstractImageRegistry imageRegistry = factory.createImageRegistry(tool.getRegistry());
+        final AbstractImageRegistry imageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
         final List<Tag> tags = imageRegistry.getTags(tool);
 
         return !tags.isEmpty();

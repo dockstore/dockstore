@@ -138,6 +138,39 @@
         <addNotNullConstraint columnDataType="clob" columnName="doistatus" tableName="workflowversion"/>
     </changeSet>
 
+    <!-- Convert source control and registry to paths -->
+    <changeSet author="aduncan" id="3424324325r3r3g45g-8">
+        <!-- Update tool registry to be a path -->
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'quay.io' WHERE registry =  'QUAY_IO'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'registry.hub.docker.com' WHERE registry =  'DOCKER_HUB'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'registry.gitlab.com' WHERE registry =  'GITLAB'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = customdockerregistrypath WHERE registry =  'AMAZON_ECR'
+        </sql>
+
+        <!-- Update workflow source control to be a path -->
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'github.com' WHERE sourcecontrol =  'GITHUB'
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'gitlab.com' WHERE sourcecontrol =  'GITLAB'
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'bitbucket.org' WHERE sourcecontrol =  'BITBUCKET'
+        </sql>
+
+        <!-- drop custom docker path -->
+        <dropColumn tableName="tool" columnName="customdockerregistrypath">
+        </dropColumn>
+    </changeSet>
     <changeSet id="n4io234ni23o4nio33r-1" author="agduncan">
         <!-- Add column for tool checker -->
         <addColumn tableName="tool">
@@ -151,7 +184,6 @@
             <column name="ischecker" type="boolean" defaultValueBoolean="false"/>
         </addColumn>
     </changeSet>
-
     <changeSet author="dyuen (generated)" id="workflow-jpa-dbcreate">
         <addColumn tableName="workflow">
             <column name="dbcreatedate" type="timestamp without time zone"/>

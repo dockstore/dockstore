@@ -51,7 +51,7 @@
             <column name="mode" value="FULL"/>
             <column name="organization" value="garyluu"/>
             <column name="repository" value="testWorkflow"/>
-            <column name="sourcecontrol" value="GITHUB"/>
+            <column name="sourcecontrol" value="github.com"/>
             <column name="workflowname"/>
         </insert>
     </changeSet>

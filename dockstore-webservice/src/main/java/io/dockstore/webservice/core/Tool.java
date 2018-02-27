@@ -134,23 +134,18 @@ public class Tool extends Entry<Tool, Tag> {
     @Column
     @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH", required = true, position = 23)
     private String namespace;
+
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This is a specific docker provider like quay.io or dockerhub or n/a?, required: GA4GH", required = true, position = 24)
-    private Registry registry;
+    private String registry;
 
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last built", position = 25)
     private Date lastBuild;
 
-    @Column
-    @JsonProperty("custom_docker_registry_path")
-    @ApiModelProperty(value = "Only used for docker registries that allow for custom paths", position = 26)
-    private String customDockerRegistryPath = null;
-
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 27)
+    @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
     @OrderBy("id")
     private final SortedSet<Tag> tags;
 
@@ -208,40 +203,26 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty
-    public Registry getRegistry() {
+    public String getRegistry() {
         return registry;
     }
 
-    public void setRegistry(Registry registry) {
+    public void setRegistry(String registry) {
         this.registry = registry;
     }
 
-    @ApiModelProperty(position = 28)
+    @ApiModelProperty(position = 27)
     public String getPath() {
-        String repositoryPath;
-        if (registry == Registry.AMAZON_ECR) {
-            repositoryPath = customDockerRegistryPath + '/' + namespace + '/' + name;
-        } else {
-            repositoryPath = registry.toString() + '/' + namespace + '/' + name;
-        }
+        String repositoryPath = registry + '/' + namespace + '/' + name;
         return repositoryPath;
     }
-
-    public String getCustomDockerRegistryPath() {
-        return customDockerRegistryPath;
-    }
-
-    public void setCustomDockerRegistryPath(String customDockerRegistryPath) {
-        this.customDockerRegistryPath = customDockerRegistryPath;
-    }
-
 
     /**
      * Calculated property for demonstrating search by language, inefficient
      * @return the languages that this tool supports
      */
     @JsonProperty
-    @ApiModelProperty(position = 29)
+    @ApiModelProperty(position = 28)
     public List<String> getDescriptorType() {
         Set<SourceFile.FileType> set = this.getTags().stream().flatMap(tag -> tag.getSourceFiles().stream()).map(SourceFile::getType)
             .distinct().collect(Collectors.toSet());
@@ -325,9 +306,28 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @JsonProperty("tool_path")
-    @ApiModelProperty(position = 30)
+    @ApiModelProperty(position = 29)
     public String getToolPath() {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
+    }
+
+
+    @Enumerated(EnumType.STRING)
+    @JsonProperty("registry_provider")
+    @ApiModelProperty(position = 30)
+    public Registry getRegistryProvider() {
+        for (Registry r : Registry.values()) {
+            if (r.toString() != null && r.toString().equals(this.registry)) {
+                return r;
+            }
+        }
+
+        // Deal with Amazon ECR
+        if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
+            return Registry.AMAZON_ECR;
+        } else {
+            return null;
+        }
     }
 
     public String getToolMaintainerEmail() {

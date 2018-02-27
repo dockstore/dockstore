@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.jdbi;
 
-import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.core.Workflow;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -40,7 +39,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      * @return A list of workflows with the given path
      */
     public List<Workflow> findAllByPath(String path, boolean findPublished) {
-        Object[] splitPath = Workflow.splitPath(path, false);
+        String[] splitPath = Workflow.splitPath(path);
 
         // Not a valid path
         if (splitPath == null) {
@@ -48,9 +47,9 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         }
 
         // Valid path
-        SourceControl sourcecontrol = (SourceControl)splitPath[registryIndex];
-        String organization = (String)splitPath[orgIndex];
-        String repository = (String)splitPath[repoIndex];
+        String sourcecontrol = splitPath[registryIndex];
+        String organization = splitPath[orgIndex];
+        String repository = splitPath[repoIndex];
 
         // Create full query name
         String fullQueryName = "io.dockstore.webservice.core.Workflow.";
@@ -79,7 +78,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
      * @return Workflow matching the path
      */
     public Workflow findByPath(String path, boolean findPublished) {
-        Object[] splitPath = Workflow.splitPath(path, false);
+        String[] splitPath = Workflow.splitPath(path);
 
         // Not a valid path
         if (splitPath == null) {
@@ -87,10 +86,10 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         }
 
         // Valid path
-        SourceControl sourcecontrol = (SourceControl)splitPath[registryIndex];
-        String organization = (String)splitPath[orgIndex];
-        String repository = (String)splitPath[repoIndex];
-        String workflowname = (String)splitPath[entryNameIndex];
+        String sourcecontrol = splitPath[registryIndex];
+        String organization = splitPath[orgIndex];
+        String repository = splitPath[repoIndex];
+        String workflowname = splitPath[entryNameIndex];
 
 
         // Create full query name

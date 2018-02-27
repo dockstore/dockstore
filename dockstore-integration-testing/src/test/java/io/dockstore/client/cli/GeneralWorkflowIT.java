@@ -770,7 +770,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Check a few things
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.name() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
+                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 1 workflow, there are " + count, count == 1);
 
@@ -784,7 +784,7 @@ public class GeneralWorkflowIT extends BaseIT {
                         SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--workflow-name", "newname", "--script" });
 
         final long count3 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.name() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname'",
+                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 1 workflow, there are " + count3, count3 == 1);
 
@@ -792,7 +792,7 @@ public class GeneralWorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
                 SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--script" });
         final long count4 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.name() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and ispublished='t'",
+                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and ispublished='t'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 1 published workflow, there are " + count4, count4 == 1);
 
@@ -808,13 +808,13 @@ public class GeneralWorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
                 SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--unpub", "--script" });
         final long count5 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.name() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and ispublished='t'",
+                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and ispublished='t'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 0 published workflows, there are " + count5, count5 == 0);
 
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.name() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and author is null and email is null and description is null",
+                "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and author is null and email is null and description is null",
                 new ScalarHandler<>());
         Assert.assertTrue("The given workflow shouldn't have any contact info", count6 == 1);
 
@@ -831,7 +831,7 @@ public class GeneralWorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
                 SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--script" });
         final long count8 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.name() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname'",
+                "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname'",
                 new ScalarHandler<>());
         Assert.assertTrue("The workflow should now be a stub", count8 == 1);
 
