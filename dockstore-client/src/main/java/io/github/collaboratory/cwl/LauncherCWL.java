@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package io.github.collaboratory;
+package io.github.collaboratory.cwl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,8 +51,8 @@ import io.cwl.avro.CommandOutputParameter;
 import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
-import io.dockstore.client.cwlrunner.CWLRunnerFactory;
-import io.dockstore.client.cwlrunner.CWLRunnerInterface;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import org.apache.commons.cli.CommandLine;

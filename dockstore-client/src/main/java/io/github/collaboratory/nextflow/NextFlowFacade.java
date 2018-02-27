@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client;
+package io.github.collaboratory.nextflow;
 
 import java.io.File;
 import java.io.IOException;

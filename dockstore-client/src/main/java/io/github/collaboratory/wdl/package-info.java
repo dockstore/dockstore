@@ -13,21 +13,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
-
-import org.apache.commons.io.FileUtils;
-
 /**
+ * Supporting files for demoing how to execute wdl workflows
+ *
  * @author dyuen
  */
-public class CWLToolLauncherTest extends LauncherTest {
-
-    public String getConfigFile() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.cwltool.ini").getAbsolutePath();
-    }
-
-    @Override
-    public String getConfigFileWithExtraParameters() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.cwltool.extra.ini").getAbsolutePath();
-    }
-}
+package io.github.collaboratory.wdl;

@@ -13,24 +13,21 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client.cwlrunner;
+package io.github.collaboratory.cwl;
 
-import java.util.List;
+import org.apache.commons.io.FileUtils;
 
 /**
- * Abstracts out the interaction with cwlrunners (for example, cwltool or bunny)
+ * @author dyuen
  */
-public interface CWLRunnerInterface {
+public class BunnyLauncherTest extends LauncherTest {
 
-    /**
-     * Checks that the environment is properly setup
-     */
-    void checkForCWLDependencies();
+    public String getConfigFile() {
+        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.ini").getAbsolutePath();
+    }
 
-    /**
-     *
-     * @return an array representing the command to invoke a particular cwl-runner
-     */
-    List<String> getExecutionCommand(String outputDir, String tmpDir, String workingDir, String cwlFile, String jsonSettings);
-
+    @Override
+    public String getConfigFileWithExtraParameters() {
+        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.extra.ini").getAbsolutePath();
+    }
 }

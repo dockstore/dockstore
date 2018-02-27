@@ -20,4 +20,4 @@
  *
  * @author dyuen
  */
-package io.github.collaboratory;
+package io.github.collaboratory.cwl;

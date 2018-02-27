@@ -18,7 +18,7 @@ package io.github.collaboratory;
 import java.util.List;
 
 import com.google.common.base.Joiner;
-import io.dockstore.client.NextFlowFacade;
+import io.github.collaboratory.nextflow.NextFlowFacade;
 import io.dockstore.common.Utilities;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;

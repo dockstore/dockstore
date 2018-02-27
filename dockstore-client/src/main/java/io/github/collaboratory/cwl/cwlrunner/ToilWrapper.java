@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client.cwlrunner;
+package io.github.collaboratory.cwl.cwlrunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,24 +24,26 @@ import io.dockstore.client.cli.ArgumentUtility;
 import io.dockstore.client.cli.Client;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
-public class GenericCWLRunnerWrapper implements CWLRunnerInterface {
+public class ToilWrapper implements CWLRunnerInterface {
     @Override
     public void checkForCWLDependencies() {
-        final String[] s1 = { "cwl-runner", "--version" };
+        final String[] s1 = { "toil-cwl-runner", "--version" };
         final ImmutablePair<String, String> pair1 = io.cwl.avro.Utilities
                 .executeCommand(Joiner.on(" ").join(Arrays.asList(s1)), false, com.google.common.base.Optional.absent(),
                         com.google.common.base.Optional.absent());
+        final String toilVersion = pair1.getValue().trim();
 
-        if (pair1.getLeft().isEmpty() && pair1.getRight().isEmpty()) {
-            ArgumentUtility.errorMessage("cwl-runner seems to be missing", Client.COMMAND_ERROR);
+        final String expectedToilVersion = "3.14.0";
+        if (!toilVersion.equals(expectedToilVersion)) {
+            ArgumentUtility.errorMessage("toil version is " + toilVersion + " , Dockstore is tested with " + expectedToilVersion
+                    + "\nOverride and run with `--script`", Client.COMMAND_ERROR);
         }
-
     }
 
     @Override
     public List<String> getExecutionCommand(String outputDir, String tmpDir, String workingDir, String cwlFile, String jsonSettings) {
         return new ArrayList<>(Arrays
-            .asList("cwl-runner", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix",
+            .asList("toil-cwl-runner", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix",
                 workingDir, cwlFile, jsonSettings));
     }
 }

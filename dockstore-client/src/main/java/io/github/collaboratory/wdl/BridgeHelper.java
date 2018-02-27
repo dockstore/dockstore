@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package io.dockstore.client;
+package io.github.collaboratory.wdl;
 
 import java.io.BufferedReader;
 import java.io.File;

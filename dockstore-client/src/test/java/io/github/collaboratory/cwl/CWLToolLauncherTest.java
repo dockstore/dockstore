@@ -13,23 +13,21 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
+package io.github.collaboratory.cwl;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Ignore;
 
 /**
  * @author dyuen
  */
-@Ignore("toil seems to have non-standard disk issues and conflicting cwltool version")
-public class ToilLauncherTest extends LauncherTest {
+public class CWLToolLauncherTest extends LauncherTest {
 
     public String getConfigFile() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.toil.ini").getAbsolutePath();
+        return FileUtils.getFile("src", "test", "resources", "launcher.cwltool.ini").getAbsolutePath();
     }
 
     @Override
     public String getConfigFileWithExtraParameters() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.toil.extra.ini").getAbsolutePath();
+        return FileUtils.getFile("src", "test", "resources", "launcher.cwltool.extra.ini").getAbsolutePath();
     }
 }

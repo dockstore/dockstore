@@ -13,5 +13,21 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+package io.github.collaboratory.cwl;
 
-package io.dockstore.client.cwlrunner;
+import org.apache.commons.io.FileUtils;
+
+/**
+ * @author dyuen
+ */
+public class GenericCWLLauncherTest extends LauncherTest {
+
+    public String getConfigFile() {
+        return FileUtils.getFile("src", "test", "resources", "launcher.cwl-runner.ini").getAbsolutePath();
+    }
+
+    @Override
+    public String getConfigFileWithExtraParameters() {
+        return FileUtils.getFile("src", "test", "resources", "launcher.cwl-runner.extra.ini").getAbsolutePath();
+    }
+}
