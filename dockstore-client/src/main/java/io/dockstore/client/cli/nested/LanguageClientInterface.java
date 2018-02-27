@@ -27,24 +27,27 @@ public interface LanguageClientInterface {
 
     /**
      * Check for valid content of the particular language
-     * @param content
-     * @return
+     * @param content the content of the main descriptor
+     * @return true if the file in in the language handled by this
      */
     Boolean check(File content);
 
     /**
      * Download secondary files for an entry
-     * @param entry
-     * @param json
+     * @param entry the path to the downloaded primary file
+     * @param json return in json? retained from before refactoring, but this parameter seems pointless
      * @return
      * @throws ApiException
      * @throws IOException
      */
-    String downloadAndReturnDescriptors(String entry, boolean json) throws ApiException, IOException;
+    String generateInputJson(String entry, boolean json) throws ApiException, IOException;
 
     /**
-     * Merged launch interface, definitely needs cleanup
-     * @param entry        either a dockstore.cwl or a local file
+     * Merged launch interface, definitely needs cleanup.
+     * wdlOutputTarget is obviously only applicable to Cromwell
+     * yamlRun and csvRuns only implemented for CWL
+     *
+     * @param entry        either a dockstore entry or a local file
      * @param isLocalEntry is the descriptor a local file
      * @param yamlRun      runtime descriptor, one of these is required
      * @param jsonRun      runtime descriptor, one of these is required

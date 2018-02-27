@@ -951,7 +951,7 @@ public abstract class AbstractEntryClient {
         final File primaryFile = downloadDescriptorFiles(entry, descriptor, tempDir);
 
         LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
-        return languageCLient.downloadAndReturnDescriptors(primaryFile.getAbsolutePath(), json);
+        return languageCLient.generateInputJson(primaryFile.getAbsolutePath(), json);
     }
 
     LanguageClientInterface convertCLIStringToEnum(String descriptor) {

@@ -363,7 +363,7 @@ public class WDLClient implements LanguageClientInterface {
      * @throws ApiException
      * @throws IOException
      */
-    public String downloadAndReturnDescriptors(String entry, final boolean json) throws ApiException, IOException {
+    public String generateInputJson(String entry, final boolean json) throws ApiException, IOException {
         final File tempDir = Files.createTempDir();
         final File primaryFile = abstractEntryClient.downloadDescriptorFiles(entry, WDL_STRING, tempDir);
 

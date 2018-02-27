@@ -67,7 +67,7 @@ public class NextFlowClient implements LanguageClientInterface {
     }
 
     @Override
-    public String downloadAndReturnDescriptors(String entry, boolean json) throws ApiException, IOException {
+    public String generateInputJson(String entry, boolean json) throws ApiException, IOException {
         System.out.println("nextflow facade placeholder!");
         return "";
     }
