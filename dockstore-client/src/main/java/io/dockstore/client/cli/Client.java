@@ -760,6 +760,8 @@ public class Client {
         String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
+        String cliVersion = Client.class.getPackage().getImplementationVersion();
+        defaultApiClient.setUserAgent("Dockstore-CLI/" + cliVersion + "/java");
 
         ApiKeyAuth bearer = (ApiKeyAuth)defaultApiClient.getAuthentication("BEARER");
         bearer.setApiKeyPrefix("BEARER");
