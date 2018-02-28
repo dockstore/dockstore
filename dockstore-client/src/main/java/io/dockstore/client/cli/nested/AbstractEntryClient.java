@@ -672,9 +672,11 @@ public abstract class AbstractEntryClient {
     Type checkFileContent(File content) {
         for (Type type : Type.values()) {
             LanguageClientInterface languageCLient = LanguageClientFactory.createLanguageCLient(this, type);
-            Boolean check = languageCLient.check(content);
-            if (check) {
-                return type;
+            if (languageCLient != null) {
+                Boolean check = languageCLient.check(content);
+                if (check) {
+                    return type;
+                }
             }
         }
         return Type.NONE;

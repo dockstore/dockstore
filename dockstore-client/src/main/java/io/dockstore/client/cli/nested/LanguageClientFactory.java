@@ -28,6 +28,8 @@ public final class LanguageClientFactory {
             return new WDLClient(client);
         } else if (type == AbstractEntryClient.Type.NEXTFLOW) {
             return new WDLClient(client);
+        } else if (type == AbstractEntryClient.Type.NONE) {
+            return null;
         } else {
             throw new UnsupportedOperationException("language client does not exist for " + type);
         }

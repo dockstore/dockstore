@@ -42,6 +42,7 @@ public class ToilWrapper implements CWLRunnerInterface {
 
     @Override
     public List<String> getExecutionCommand(String outputDir, String tmpDir, String workingDir, String cwlFile, String jsonSettings) {
+        //TODO: this doesn't quite work yet, seeing "toil.batchSystems.abstractBatchSystem.InsufficientSystemResources: Requesting more disk than either physically available, or enforced by --maxDisk. Requested: 537944653824, Available: 134853001216" on trivial workflows like md5sum
         return new ArrayList<>(Arrays
             .asList("toil-cwl-runner", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix",
                 workingDir, cwlFile, jsonSettings));
