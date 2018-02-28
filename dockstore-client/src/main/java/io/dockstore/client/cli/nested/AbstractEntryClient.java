@@ -940,15 +940,9 @@ public abstract class AbstractEntryClient {
         client.launch(entry, isLocalEntry, null, json, null, wdlOutputTarget, uuid);
     }
 
-    /**
-     * @param entry      Full path of the tool/workflow
-     * @param descriptor Descriptor type
-     * @param json       Whether to return json or not
-     * @return The json or tsv output
-     * @throws ApiException
-     * @throws IOException
-     */
-    String convertEntry2Json(String entry, String descriptor, final boolean json) throws ApiException, IOException {
+    private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {
+        final String entry = reqVal(args, "--entry");
+        final String descriptor = optVal(args, "--descriptor", CWL_STRING);
         LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
         return languageCLient.generateInputJson(entry, json);
     }
@@ -991,13 +985,6 @@ public abstract class AbstractEntryClient {
     }
 
     public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
-
-    private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {
-        final String entry = reqVal(args, "--entry");
-        final String descriptor = optVal(args, "--descriptor", CWL_STRING);
-        LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
-        return languageCLient.generateInputJson(entry, json);
-    }
 
     /**
      * help text output
