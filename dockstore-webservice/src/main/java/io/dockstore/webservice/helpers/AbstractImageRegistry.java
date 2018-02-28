@@ -173,8 +173,8 @@ public abstract class AbstractImageRegistry {
         }
 
         // If exists, check conditions to see if it should be changed to auto (in sync with quay tags and git repo)
-        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null && tool.getRegistry().name()
-                .equals(Registry.QUAY_IO.name()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null && tool.getRegistry()
+                .equals(Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
         }
 
@@ -230,7 +230,7 @@ public abstract class AbstractImageRegistry {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
 
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry() == Registry.QUAY_IO && existingTags.isEmpty())) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
                 LOG.info(githubToken.getUsername() + " : Tags for tool {} did not get updated because new tags were not found",

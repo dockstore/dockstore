@@ -30,6 +30,7 @@ import io.cwl.avro.Workflow;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
+import io.github.collaboratory.cwl.LauncherCWL;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -45,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author dyuen
  */
-public abstract class LauncherTest {
+public abstract class LauncherIT {
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();

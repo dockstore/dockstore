@@ -19,10 +19,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import com.esotericsoftware.yamlbeans.YamlException;
 import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
@@ -54,7 +57,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String content) {
+    public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
@@ -65,7 +68,20 @@ public class CWLHandler implements LanguageHandlerInterface {
                 String description = (String)map.get("description");
                 // changed for CWL 1.0
                 if (map.containsKey("doc")) {
-                    description = (String)map.get("doc");
+                    Object doc = map.get("doc");
+                    if (doc instanceof String) {
+                        description = (String)doc;
+                    } else if (doc instanceof Map) {
+                        Map docMap = (Map)doc;
+                        if (docMap.containsKey("$include")) {
+                            String enclosingFile = (String)docMap.get("$include");
+                            Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFile))
+                                .findFirst();
+                            if (first.isPresent()) {
+                                description = first.get().getContent();
+                            }
+                        }
+                    }
                 }
                 if (description != null) {
                     entry.setDescription(description);
@@ -344,10 +360,10 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     private void handleMap(Version version, Map<String, SourceFile> imports, Map<String, ?> map, SourceCodeRepoInterface sourceCodeRepoInterface) {
+        Set<String> importKeywords = Sets.newHashSet("$import", "$include", "$mixin", "import", "include", "mixin");
         for (Map.Entry<String, ?> e : map.entrySet()) {
             final Object mapValue = e.getValue();
-            if (e.getKey().equalsIgnoreCase("$import") || e.getKey().equalsIgnoreCase("$include") || e.getKey().equalsIgnoreCase("import")
-                || e.getKey().equalsIgnoreCase("include")) {
+            if (importKeywords.contains(e.getKey().toLowerCase())) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
                     handleImport(version, imports, (String)mapValue, sourceCodeRepoInterface);

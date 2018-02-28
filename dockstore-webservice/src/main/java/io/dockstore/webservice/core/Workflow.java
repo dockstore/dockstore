@@ -73,46 +73,50 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @Column(nullable = false, columnDefinition = "Text default 'STUB'")
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 12)
+    @ApiModelProperty(value = "This indicates what mode this is in which informs how we do things like refresh, dockstore specific", required = true, position = 13)
     private WorkflowMode mode = WorkflowMode.STUB;
 
     @Column(columnDefinition = "text")
-    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 13)
+    @ApiModelProperty(value = "This is the name of the workflow, not needed when only one workflow in a repo", position = 14)
     private String workflowName;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a git organization for the workflow", required = true, position = 14)
+    @ApiModelProperty(value = "This is a git organization for the workflow", required = true, position = 15)
     private String organization;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a git repository name", required = true, position = 15)
+    @ApiModelProperty(value = "This is a git repository name", required = true, position = 16)
     private String repository;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 16)
-    private SourceControl sourceControl;
+    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 17)
+    private String sourceControl;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 17)
+    @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 18)
     private String descriptorType;
 
     // Add for new descriptor types
     @Column(columnDefinition = "text")
     @JsonProperty("workflow_path")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 18)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the CWL document", required = true, position = 19)
     private String defaultWorkflowPath = "/Dockstore.cwl";
 
     @Column(columnDefinition = "text")
     @JsonProperty("defaultTestParameterFilePath")
-    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 19)
+    @ApiModelProperty(value = "This indicates for the associated git repository, the default path to the test parameter file", required = true, position = 20)
     private String defaultTestParameterFilePath = "/test.json";
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true)
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 20)
+    @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
     private final SortedSet<WorkflowVersion> workflowVersions;
+
+    @Column
+    @JsonProperty("is_checker")
+    @ApiModelProperty(value = "Whether or not the entry is a checker", position = 22)
+    private boolean isChecker = false;
 
     public Workflow() {
         workflowVersions = new TreeSet<>();
@@ -155,7 +159,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setAuthor(getAuthor());
         targetWorkflow.setEmail(getEmail());
         targetWorkflow.setDescription(getDescription());
-        targetWorkflow.setLastModified(getLastModified());
+        targetWorkflow.setLastModified(getLastModifiedDate());
         targetWorkflow.setOrganization(getOrganization());
         targetWorkflow.setRepository(getRepository());
         targetWorkflow.setGitUrl(getGitUrl());
@@ -226,14 +230,26 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @JsonProperty("full_workflow_path")
-    @ApiModelProperty(position = 21)
+    @ApiModelProperty(position = 23)
     public String getWorkflowPath() {
         return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
 
-    @ApiModelProperty(position = 22)
+    @ApiModelProperty(position = 24)
     public String getPath() {
-        return getSourceControl().toString() + '/' + organization + '/' + repository;
+        return getSourceControl() + '/' + organization + '/' + repository;
+    }
+
+    @Enumerated(EnumType.STRING)
+    @JsonProperty("source_control_provider")
+    @ApiModelProperty(position = 25)
+    public SourceControl getSourceControlProvider() {
+        for (SourceControl sc : SourceControl.values()) {
+            if (sc.toString().equals(this.sourceControl)) {
+                return sc;
+            }
+        }
+        return null;
     }
 
     public void setDescriptorType(String descriptorType) {
@@ -301,13 +317,19 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
         this.defaultTestParameterFilePath = defaultTestParameterFilePath;
     }
-    public SourceControl getSourceControl() {
+    public String getSourceControl() {
         return sourceControl;
     }
 
-    public void setSourceControl(SourceControl sourceControl) {
+    public void setSourceControl(String sourceControl) {
         this.sourceControl = sourceControl;
     }
 
+    public boolean isIsChecker() {
+        return isChecker;
+    }
 
+    public void setIsChecker(boolean isChecker) {
+        this.isChecker = isChecker;
+    }
 }

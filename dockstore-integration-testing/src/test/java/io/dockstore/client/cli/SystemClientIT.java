@@ -31,7 +31,6 @@ import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
-import io.dockstore.common.IntegrationTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -84,7 +83,7 @@ import static org.junit.Assert.fail;
  *
  * @author xliu
  */
-@Category({ConfidentialTest.class, IntegrationTest.class})
+@Category(ConfidentialTest.class)
 public class SystemClientIT {
 
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
@@ -218,7 +217,7 @@ public class SystemClientIT {
         c.setGitUrl("https://github.com/denis-yuen/test1");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistry(DockstoreTool.RegistryEnum.DOCKER_HUB);
+        c.setRegistry(Registry.DOCKER_HUB.toString());
         c.setIsPublished(true);
         c.setNamespace("seqware");
         c.setToolname("test5");

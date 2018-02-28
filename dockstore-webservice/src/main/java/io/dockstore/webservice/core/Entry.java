@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Objects;
@@ -40,10 +41,10 @@ import javax.persistence.SequenceGenerator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.dockstore.common.Registry;
-import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Base class for all entries in the dockstore
@@ -98,15 +99,30 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @JsonProperty("is_published")
     @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
     private boolean isPublished;
+
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last modified", position = 9)
-    private Integer lastModified;
+    private Date lastModified;
     @Column
     @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice", position = 10)
     private Date lastUpdated;
     @Column
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
+
+    @Column
+    @JsonProperty("checker_id")
+    @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
+    private Long checkerId;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     public Entry() {
         users = new HashSet<>(0);
@@ -131,6 +147,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public void setId(long id) {
         this.id = id;
+    }
+
+    public Long getCheckerId() {
+        return checkerId;
+    }
+
+    public void setCheckerId(Long checkerId) {
+        this.checkerId = checkerId;
     }
 
     @JsonProperty
@@ -200,7 +224,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     /**
      * @param lastModified the lastModified to set
      */
-    public void setLastModified(Integer lastModified) {
+    public void setLastModified(Date lastModified) {
         this.lastModified = lastModified;
     }
 
@@ -214,6 +238,12 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     @JsonProperty("last_modified")
     public Integer getLastModified() {
+        // this is lossy, but needed for backwards compatibility
+        return lastModified == null ? null : (int)lastModified.getTime();
+    }
+
+    @JsonProperty("last_modified_date")
+    public Date getLastModifiedDate() {
         return lastModified;
     }
 
@@ -257,7 +287,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.setDescription(entry.getDescription());
         // this causes an issue when newly refreshed tools that are not published overwrite publish settings for existing containers
         // isPublished = entry.getIsPublished();
-        lastModified = entry.getLastModified();
+        lastModified = entry.getLastModifiedDate();
         this.setAuthor(entry.getAuthor());
         this.setEmail(entry.getEmail());
 
@@ -293,13 +323,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     /**
      * Given a path (A/B/C/D), splits it into parts and returns it
-     * Note that B, C, and D are all strings, however A is either a registry or sourcecontrol enum
      *
      * @param path
-     * @param isTool
      * @return An array of fields used to identify an entry
      */
-    public static Object[] splitPath(String path, boolean isTool) {
+    public static String[] splitPath(String path) {
         // Used for accessing index of path
         final int registryIndex = 0;
         final int orgIndex = 1;
@@ -311,7 +339,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
         final int pathWithNameLength = 4;
 
         // Used for storing values at path locations
-        Object registry = null;
+        String registry;
         String org;
         String repo;
         String entryName = null;
@@ -321,30 +349,8 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
         // Only split if it is the correct length
         if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
-            // Get enum values
-            Object[] values;
-            if (isTool) {
-                values = Registry.values();
-            } else {
-                values = SourceControl.values();
-            }
-
-            // Find corresponding enum
-            for (Object val : values) {
-                if (splitPath[registryIndex].equals(val.toString())) {
-                    registry = val;
-                    break;
-                }
-            }
-
-            // Deal with amazon
-            if (isTool && registry == null) {
-                // If first position is null, then assume Amazon ECR since it is the only custom Docker Registry
-                // TODO: This is a temporary solution
-                registry = Registry.AMAZON_ECR;
-            }
-
             // Get remaining positions
+            registry = splitPath[registryIndex];
             org = splitPath[orgIndex];
             repo = splitPath[repoIndex];
             if (splitPath.length == pathWithNameLength) {
@@ -352,7 +358,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
             }
 
             // Return an array of the form [A,B,C,D]
-            return new Object[]{registry, org, repo, entryName};
+            return new String[]{registry, org, repo, entryName};
         } else {
             return null;
         }

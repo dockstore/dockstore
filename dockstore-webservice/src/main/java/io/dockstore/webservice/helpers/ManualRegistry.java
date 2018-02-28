@@ -50,9 +50,6 @@ public class ManualRegistry extends AbstractImageRegistry {
 
     @Override
     public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
-        for (Tool tool : apiTools) {
-            tool.setRegistry(registry);
-        }
     }
 
     @Override

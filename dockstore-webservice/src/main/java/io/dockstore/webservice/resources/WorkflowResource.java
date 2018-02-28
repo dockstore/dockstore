@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
@@ -143,14 +145,17 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @ApiOperation(value = "Refresh all workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata. ADMIN ONLY", response = Workflow.class, responseContainer = "List")
     public List<Workflow> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
         List<User> users = userDAO.findAll();
+        LOG.info("# users to process: " + users.size());
+        Set<Long> alreadyProcessedWorkflows = new HashSet<>();
+        AtomicInteger integer = new AtomicInteger();
         users.forEach(user -> {
             try {
-                LOG.info("refreshing user: " + user.getUsername());
+                LOG.info("refreshing user " + integer.getAndAdd(1) + ": " + user.getUsername());
                 // why does a specific user have an issue?
                 if (user.getUsername().equals("chapmanb")) {
                     return;
                 }
-                refreshStubWorkflowsForUser(user, null);
+                refreshStubWorkflowsForUser(user, null, alreadyProcessedWorkflows);
             } catch (Exception e) {
                 // continue past users that have issues
                 LOG.debug("could not refresh user: " + user.getUsername(), e);
@@ -206,12 +211,17 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     }
 
+    void refreshStubWorkflowsForUser(User user, String organization) {
+        refreshStubWorkflowsForUser(user, organization, new HashSet<>());
+    }
+
     /**
      * For each valid token for a git hosting service, refresh all workflows
      *
      * @param user a user to refresh workflows for
+     * @param organization limit the refresh to particular organizations if given
      */
-    void refreshStubWorkflowsForUser(User user, String organization) {
+    private void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
 
         List<Token> tokens = checkOnBitbucketToken(user);
         // Check if tokens for git hosting services are valid and refresh corresponding workflows
@@ -250,17 +260,17 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         try {
             if (hasBitbucketToken) {
                 // get workflows from bitbucket for a user and updates db
-                refreshHelper(bitBucketSourceCodeRepo, user, organization);
+                refreshHelper(bitBucketSourceCodeRepo, user, organization, alreadyProcessed);
             }
             // Update github workflows if token exists
             if (hasGitHubToken) {
                 // get workflows from github for a user and updates db
-                refreshHelper(gitHubSourceCodeRepo, user, organization);
+                refreshHelper(gitHubSourceCodeRepo, user, organization, alreadyProcessed);
             }
             // Update gitlab workflows if token exists
             if (hasGitLabToken) {
                 // get workflows from gitlab for a user and updates db
-                refreshHelper(gitLabSourceCodeRepo, user, organization);
+                refreshHelper(gitLabSourceCodeRepo, user, organization, alreadyProcessed);
             }
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
@@ -275,7 +285,19 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
      * @param user the user that made the request to refresh
      * @param organization            if specified, only refresh if workflow belongs to the organization
      */
-    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization) {
+    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization, Set<Long> alreadyProcessed) {
+        /** helpful code for testing, this was used to refresh a users existing workflows
+         *  with a fixed github token for all users
+         */
+        boolean statsCollection = false;
+        if (statsCollection) {
+            List<Workflow> workflows = userDAO.findById(user.getId()).getEntries().stream().filter(entry -> entry instanceof Workflow).map(obj -> (Workflow)obj).collect(Collectors.toList());
+            Map<String, String> workflowGitUrl2Name = new HashMap<>();
+            for (Workflow workflow : workflows) {
+                workflowGitUrl2Name.put(workflow.getGitUrl(), workflow.getOrganization() + "/" + workflow.getRepository());
+            }
+        }
+
         // Mapping of git url to repository name (owner/repo)
         final Map<String, String> workflowGitUrl2Name = sourceCodeRepoInterface.getWorkflowGitUrl2RepositoryId();
         LOG.info("found giturl to workflow name map" + Arrays.toString(workflowGitUrl2Name.entrySet().toArray()));
@@ -293,6 +315,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             if (byGitUrl.size() > 0) {
                 // Workflows exist with the given git url
                 for (Workflow workflow : byGitUrl) {
+                    // check whitelist for already processed workflows
+                    if (alreadyProcessed.contains(workflow.getId())) {
+                        continue;
+                    }
+
                     // Update existing workflows with new information from the repository
                     // Note we pass the existing workflow as a base for the updated version of the workflow
                     final Workflow newWorkflow = sourceCodeRepoInterface.getWorkflow(entry.getValue(), Optional.of(workflow));
@@ -302,6 +329,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
                     // Update the existing matching workflows based off of the new information
                     updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
+                    alreadyProcessed.add(workflow.getId());
                 }
             } else {
                 // Workflows are not registered for the given git url, add one
@@ -317,6 +345,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
                     // Update newly created template workflow (workflowFromDB) with found data from the repository
                     updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
+                    alreadyProcessed.add(workflowFromDB.getId());
                 }
             }
         }

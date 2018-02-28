@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.jdbi;
 
-import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
@@ -46,7 +45,7 @@ public class ToolDAO extends EntryDAO<Tool> {
      * @return A list of tools with the given path
      */
     public List<Tool> findAllByPath(String path, boolean findPublished) {
-        Object[] splitPath = Tool.splitPath(path, true);
+        String[] splitPath = Tool.splitPath(path);
 
         // Not a valid path
         if (splitPath == null) {
@@ -54,9 +53,9 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
 
         // Valid path
-        Registry registry = (Registry)splitPath[registryIndex];
-        String namespace = (String)splitPath[orgIndex];
-        String name = (String)splitPath[repoIndex];
+        String registry = splitPath[registryIndex];
+        String namespace = splitPath[orgIndex];
+        String name = splitPath[repoIndex];
 
         // Create full query name
         String fullQueryName = "io.dockstore.webservice.core.Tool.";
@@ -85,7 +84,7 @@ public class ToolDAO extends EntryDAO<Tool> {
      * @return Tool matching the path
      */
     public Tool findByPath(String path, boolean findPublished) {
-        Object[] splitPath = Tool.splitPath(path, true);
+        String[] splitPath = Tool.splitPath(path);
 
         // Not a valid path
         if (splitPath == null) {
@@ -93,10 +92,10 @@ public class ToolDAO extends EntryDAO<Tool> {
         }
 
         // Valid path
-        Registry registry = (Registry)splitPath[registryIndex];
-        String namespace = (String)splitPath[orgIndex];
-        String name = (String)splitPath[repoIndex];
-        String toolname = (String)splitPath[entryNameIndex];
+        String registry = splitPath[registryIndex];
+        String namespace = splitPath[orgIndex];
+        String name = splitPath[repoIndex];
+        String toolname = splitPath[entryNameIndex];
 
 
         // Create full query name

@@ -20,7 +20,7 @@ import org.apache.commons.io.FileUtils;
 /**
  * @author dyuen
  */
-public class GenericCWLLauncherTest extends LauncherTest {
+public class GenericCWLLauncherTest extends LauncherIT {
 
     public String getConfigFile() {
         return FileUtils.getFile("src", "test", "resources", "launcher.cwl-runner.ini").getAbsolutePath();

@@ -169,7 +169,7 @@ public class CRUDTest {
     private void createTestDataStructure() {
         final ToolDAO toolDAO = new ToolDAO(application.getHibernate().getSessionFactory());
         Tool tool = new Tool();
-        tool.setRegistry(Registry.QUAY_IO);
+        tool.setRegistry(Registry.QUAY_IO.toString());
         tool.setNamespace("namespace");
         tool.setName("name");
         tool.setToolname("toolname");

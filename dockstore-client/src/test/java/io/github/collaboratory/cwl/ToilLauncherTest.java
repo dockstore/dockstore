@@ -22,7 +22,7 @@ import org.junit.Ignore;
  * @author dyuen
  */
 @Ignore("toil seems to have non-standard disk issues and conflicting cwltool version")
-public class ToilLauncherTest extends LauncherTest {
+public class ToilLauncherTest extends LauncherIT {
 
     public String getConfigFile() {
         return FileUtils.getFile("src", "test", "resources", "launcher.toil.ini").getAbsolutePath();
