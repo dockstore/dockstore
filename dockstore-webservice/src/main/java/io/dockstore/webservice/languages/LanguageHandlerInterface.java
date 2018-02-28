@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -48,7 +49,7 @@ public interface LanguageHandlerInterface {
      * @param content a cwl document
      * @return the updated entry
      */
-    Entry parseWorkflowContent(Entry entry, String content);
+    Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles);
 
     /**
      * Confirms whether the content of a descriptor contains a valid workflow

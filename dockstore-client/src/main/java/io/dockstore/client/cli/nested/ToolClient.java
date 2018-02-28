@@ -1038,7 +1038,9 @@ public class ToolClient extends AbstractEntryClient {
                 if (descriptor.toLowerCase().equals("cwl")) {
                     List<SourceFile> files = containersApi.secondaryCwl(tool.getId(), version);
                     for (SourceFile sourceFile : files) {
-                        File tempDescriptor = new File(tempDir.getAbsolutePath() + sourceFile.getPath());
+                        File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
+                        // ensure that the parent directory exists
+                        tempDescriptor.getParentFile().mkdirs();
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                         result.add(sourceFile);
                     }
@@ -1047,6 +1049,8 @@ public class ToolClient extends AbstractEntryClient {
                     for (SourceFile sourceFile : files) {
                         File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()),
                                 FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
+                        // ensure that the parent directory exists
+                        tempDescriptor.getParentFile().mkdirs();
                         Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
                         result.add(sourceFile);
                     }

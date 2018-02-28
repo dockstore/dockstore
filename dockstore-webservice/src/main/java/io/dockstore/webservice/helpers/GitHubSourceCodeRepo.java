@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.Date;
@@ -29,6 +30,8 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -39,6 +42,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
+import org.eclipse.egit.github.core.Blob;
 import org.eclipse.egit.github.core.Repository;
 import org.eclipse.egit.github.core.RepositoryContents;
 import org.eclipse.egit.github.core.RepositoryId;
@@ -46,6 +50,7 @@ import org.eclipse.egit.github.core.User;
 import org.eclipse.egit.github.core.client.GitHubClient;
 import org.eclipse.egit.github.core.client.RequestException;
 import org.eclipse.egit.github.core.service.ContentsService;
+import org.eclipse.egit.github.core.service.DataService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
@@ -69,6 +74,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final OrganizationService oService;
     private final UserService uService;
     private final GitHub github;
+    private final DataService dService;
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
@@ -79,6 +85,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         this.cService = new ContentsService(githubClient);
         this.oService = new OrganizationService(githubClient);
         this.uService = new UserService(githubClient);
+        this.dService = new DataService(githubClient);
         this.gitUsername = gitUsername;
         this.gitRepository = gitRepository;
         try {
@@ -92,9 +99,47 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public String readFile(String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
+        Repository repo;
+        try {
+            repo = service.getRepository(gitUsername, gitRepository);
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
+            return null;
+        }
+        return readFileFromRepo(fileName, reference, repo);
+    }
+
+    private String readFileFromRepo(String fileName, String reference, Repository repo) {
         try {
             // may need to pass owner from git url, as this may differ from the git username
-            Repository repo = service.getRepository(gitUsername, gitRepository);
+            // may need to account for symbolic links to directories
+            List<String> folders = Arrays.asList(fileName.split("/"));
+            List<String> start = new ArrayList<>();
+            for (int i = 0; i < folders.size() - 1; i++) {
+                // ignore leading slash
+                if (i == 0 && folders.get(i).isEmpty()) {
+                    continue;
+                }
+                start.add(folders.get(i));
+                String partialPath = Joiner.on("/").join(start);
+                List<RepositoryContents> contents = cService.getContents(repo, partialPath, reference);
+                if (!contents.isEmpty()) {
+                    if (contents.get(0).getType().equals("symlink")) {
+                        Blob blob = dService.getBlob(repo, contents.get(0).getSha());
+                        String content = extractGitHubContents(blob.getContent());
+                        // restart the loop to look for symbolic links pointed to by symbolic links
+                        List<String> newfolders = Lists.newArrayList(content.split("/"));
+                        List<String> sublist = folders.subList(i + 1, folders.size());
+                        newfolders.addAll(sublist);
+                        folders = newfolders;
+                        start = new ArrayList<>();
+                        i = -1;
+                    }
+                }
+            }
+
+            fileName = Joiner.on("/").join(folders);
+
             List<RepositoryContents> contents;
             try {
                 contents = cService.getContents(repo, fileName, reference);
@@ -118,6 +163,18 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
         }
         return null;
+    }
+
+    @Override
+    public String getFileContents(String filePath, String branch, String repositoryId) {
+        Repository repo;
+        try {
+            repo = service.getRepository(gitUsername, repositoryId);
+        } catch (IOException ex) {
+            LOG.info(gitUsername + ": Repo " + repositoryId + " does not contain " + filePath + " on " + branch);
+            return null;
+        }
+        return readFileFromRepo(filePath, branch, repo);
     }
 
     @Override
@@ -167,8 +224,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     private String extractGitHubContents(List<RepositoryContents> cwlContents) {
-        String encoded = cwlContents.get(0).getContent().replace("\n", "");
-        byte[] decode = Base64.getDecoder().decode(encoded);
+        String encoded = cwlContents.get(0).getContent();
+        return extractGitHubContents(encoded);
+    }
+
+    private String extractGitHubContents(String contents) {
+        byte[] decode = Base64.getDecoder().decode(contents.replace("\n", ""));
         return new String(decode, StandardCharsets.UTF_8);
     }
 
@@ -359,23 +420,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return mainBranch;
-    }
-
-    @Override
-    public String getFileContents(String filePath, String branch, String repositoryId) {
-        String content = null;
-
-        try {
-            Repository repository = service.getRepository(gitUsername, repositoryId);
-            List<RepositoryContents> contents = cService.getContents(repository, filePath, branch);
-            if (!(contents == null || contents.isEmpty())) {
-                content = extractGitHubContents(contents);
-            }
-
-        } catch (IOException ex) {
-            LOG.info(gitUsername + ": Repo: has no descriptor file ");
-        }
-        return content;
     }
 
     @Override

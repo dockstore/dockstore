@@ -68,7 +68,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.3.3</tag>
+        <tag>1.3.4</tag>
     </scm>
 
     <repositories>
