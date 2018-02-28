@@ -399,9 +399,6 @@ public class GeneralIT extends BaseIT {
         // TODO: Test that output is the expected WDL file
     }
 
-    /**
-     * @throws IOException
-     */
     @Test
     public void registerUnregisterAndCopy() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",

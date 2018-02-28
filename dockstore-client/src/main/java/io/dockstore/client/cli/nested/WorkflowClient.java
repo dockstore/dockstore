@@ -247,7 +247,7 @@ public class WorkflowClient extends AbstractEntryClient {
             if (commandEntry2json.help) {
                 printJCommanderHelp(jc, "dockstore workflow convert", commandName);
             } else {
-                final String runString = runString(commandEntry2json.entry, true);
+                final String runString = convertWorkflow2Json(commandEntry2json.entry, true);
                 out(runString);
             }
         } catch (ParameterException e1) {
@@ -271,7 +271,7 @@ public class WorkflowClient extends AbstractEntryClient {
             if (commandEntry2tsv.help) {
                 printJCommanderHelp(jc, "dockstore workflow convert", commandName);
             } else {
-                final String runString = runString(commandEntry2tsv.entry, false);
+                final String runString = convertWorkflow2Json(commandEntry2tsv.entry, false);
                 out(runString);
             }
         } catch (ParameterException e1) {
@@ -280,13 +280,14 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    private String runString(String entry, final boolean json) throws ApiException, IOException {
+    private String convertWorkflow2Json(String entry, final boolean json) throws ApiException, IOException {
         // User may enter the version, so we have to extract the path
         String[] parts = entry.split(":");
         String path = parts[0];
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
         String descriptor = workflow.getDescriptorType();
-        return downloadAndReturnDescriptors(entry, descriptor, json);
+        LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
+        return languageCLient.generateInputJson(entry, json);
     }
 
     /**

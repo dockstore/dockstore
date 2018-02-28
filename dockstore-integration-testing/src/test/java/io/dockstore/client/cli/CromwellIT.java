@@ -112,7 +112,7 @@ public class CromwellIT {
 
         String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
         // run a workflow
-        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, newJsonPath, tempDir.getAbsolutePath(), null, null);
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, newJsonPath, null, tempDir.getAbsolutePath(), null);
         Assert.assertTrue(run == 0);
         // let's check that provisioning out occured
         final Collection<File> files = FileUtils.listFiles(tempDir, null, true);

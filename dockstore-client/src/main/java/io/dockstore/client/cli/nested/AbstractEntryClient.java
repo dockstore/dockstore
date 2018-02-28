@@ -580,7 +580,7 @@ public abstract class AbstractEntryClient {
         if (args.isEmpty() || containsHelpRequest(args)) {
             entry2jsonHelp();
         } else {
-            final String runString = runString(args, true);
+            final String runString = convertEntry2Json(args, true);
             out(runString);
         }
     }
@@ -589,7 +589,7 @@ public abstract class AbstractEntryClient {
         if (args.isEmpty() || containsHelpRequest(args)) {
             entry2tsvHelp();
         } else {
-            final String runString = runString(args, false);
+            final String runString = convertEntry2Json(args, false);
             out(runString);
         }
     }
@@ -948,23 +948,24 @@ public abstract class AbstractEntryClient {
      * @throws ApiException
      * @throws IOException
      */
-    String downloadAndReturnDescriptors(String entry, String descriptor, final boolean json) throws ApiException, IOException {
-        final File tempDir = Files.createTempDir();
-        final File primaryFile = downloadDescriptorFiles(entry, descriptor, tempDir);
-
+    String convertEntry2Json(String entry, String descriptor, final boolean json) throws ApiException, IOException {
         LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
-        return languageCLient.generateInputJson(primaryFile.getAbsolutePath(), json);
+        return languageCLient.generateInputJson(entry, json);
     }
 
     LanguageClientInterface convertCLIStringToEnum(String descriptor) {
         // TODO: ugly mapping, need to refactor
         LanguageClientInterface languageCLient;
-        if (descriptor.equals(CWL_STRING)) {
+        switch (descriptor) {
+        case CWL_STRING:
             languageCLient = LanguageClientFactory.createLanguageCLient(this, Type.CWL);
-        } else if (descriptor.equals(WDL_STRING)) {
+            break;
+        case WDL_STRING:
             languageCLient = LanguageClientFactory.createLanguageCLient(this, Type.WDL);
-        } else {
+            break;
+        default:
             languageCLient = LanguageClientFactory.createLanguageCLient(this, Type.NEXTFLOW);
+            break;
         }
         return languageCLient;
     }
@@ -991,10 +992,11 @@ public abstract class AbstractEntryClient {
 
     public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
 
-    private String runString(List<String> args, final boolean json) throws ApiException, IOException {
+    private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
-        return downloadAndReturnDescriptors(entry, descriptor, json);
+        LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
+        return languageCLient.generateInputJson(entry, json);
     }
 
     /**
