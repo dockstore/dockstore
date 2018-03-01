@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client.cli.nested;
+package io.github.collaboratory.wdl;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,6 +37,8 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.Bridge;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
@@ -69,7 +71,7 @@ public class WDLClient implements LanguageClientInterface {
 
     private final AbstractEntryClient abstractEntryClient;
 
-    WDLClient(AbstractEntryClient abstractEntryClient) {
+    public WDLClient(AbstractEntryClient abstractEntryClient) {
         this.abstractEntryClient = abstractEntryClient;
     }
 

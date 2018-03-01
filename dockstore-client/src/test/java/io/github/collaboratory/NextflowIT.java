@@ -17,6 +17,8 @@ package io.github.collaboratory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,7 +26,6 @@ import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
-import org.assertj.core.util.Files;
 import org.assertj.core.util.Lists;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -56,7 +57,9 @@ public class NextflowIT {
 
         for(File file : FileUtils.listFiles(testFileDirectory, null, true)) {
             String name = file.getName();
-            Files.delete(new File(name));
+            Files.deleteIfExists(Paths.get(name));
         }
+        Files.deleteIfExists(Paths.get("NextFlow.stderr.txt"));
+        Files.deleteIfExists(Paths.get("NextFlow.stdout.txt"));
     }
 }

@@ -17,7 +17,6 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
@@ -40,14 +39,15 @@ import io.cwl.avro.CWL;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.Client;
 import io.dockstore.common.Utilities;
+import io.github.collaboratory.cwl.CWLClient;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
+import io.github.collaboratory.nextflow.NextFlowClient;
+import io.github.collaboratory.wdl.WDLClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -104,7 +104,7 @@ public abstract class AbstractEntryClient {
         return description;
     }
 
-    protected CWL getCwlUtil() {
+    public CWL getCwlUtil() {
         String cwlrunner = CWLRunnerFactory.getCWLRunner();
         return new CWL(cwlrunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()), Utilities.parseConfig(getConfigFile()));
     }
@@ -172,7 +172,7 @@ public abstract class AbstractEntryClient {
      *
      * @return string to use in descriptions and help output
      */
-    protected abstract String getEntryType();
+    public abstract String getEntryType();
 
     /**
      * A default implementation to process the commands that are common between types of entries. (i.e. both workflows and tools need to be
@@ -894,8 +894,6 @@ public abstract class AbstractEntryClient {
         client.launch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, uuid);
     }
 
-
-
     /**
      * Returns the first path that is not null and is not remote
      *
@@ -922,21 +920,6 @@ public abstract class AbstractEntryClient {
             Files.asCharSink(tempDescriptor, StandardCharsets.UTF_8).write(sourceFile.getContent());
             result.add(sourceFile);
         }
-    }
-
-    protected String convertYamlToJson(String yamlRun, String jsonRun) throws IOException {
-        // if we have a yaml parameter file, convert it into a json
-        if (yamlRun != null) {
-            final File tempFile = File.createTempFile("temp", "json");
-            Yaml yaml = new Yaml();
-            final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
-            Map<String, Object> map = (Map<String, Object>)yaml.load(fileInputStream);
-            JSONObject jsonObject = new JSONObject(map);
-            final String jsonContent = jsonObject.toString();
-            FileUtils.write(tempFile, jsonContent, StandardCharsets.UTF_8);
-            jsonRun = tempFile.getAbsolutePath();
-        }
-        return jsonRun;
     }
 
     private void launchWdl(final List<String> args, boolean isLocalEntry) throws IOException, ApiException {

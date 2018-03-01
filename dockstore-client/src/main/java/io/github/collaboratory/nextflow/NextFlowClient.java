@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client.cli.nested;
+package io.github.collaboratory.nextflow;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +30,8 @@ import java.util.Objects;
 import com.google.common.base.Joiner;
 import groovy.util.ConfigObject;
 import groovy.util.ConfigSlurper;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.LauncherCWL;
@@ -47,11 +49,9 @@ import org.slf4j.LoggerFactory;
 public class NextFlowClient implements LanguageClientInterface {
     private static final String DEFAULT_NEXTFLOW_VERSION = "0.27.6";
     private static final Logger LOG = LoggerFactory.getLogger(NextFlowClient.class);
-    private final AbstractEntryClient abstractEntryClient;
     private final INIConfiguration iniConfiguration;
 
-    NextFlowClient(AbstractEntryClient abstractEntryClient) {
-        this.abstractEntryClient = abstractEntryClient;
+    public NextFlowClient(AbstractEntryClient abstractEntryClient) {
         this.iniConfiguration = Utilities.parseConfig(abstractEntryClient.getConfigFile());
     }
 
@@ -127,7 +127,7 @@ public class NextFlowClient implements LanguageClientInterface {
     }
 
     @Override
-    public String generateInputJson(String entry, boolean json) throws ApiException, IOException {
+    public String generateInputJson(String entry, boolean json) throws ApiException {
         LOG.error("nextflow facade placeholder!");
         return "";
     }

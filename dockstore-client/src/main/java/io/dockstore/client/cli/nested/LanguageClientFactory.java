@@ -17,6 +17,10 @@ package io.dockstore.client.cli.nested;
 
 import java.util.Optional;
 
+import io.github.collaboratory.cwl.CWLClient;
+import io.github.collaboratory.nextflow.NextFlowClient;
+import io.github.collaboratory.wdl.WDLClient;
+
 public final class LanguageClientFactory {
 
     private LanguageClientFactory() {

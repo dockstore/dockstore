@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client.cli.nested;
+package io.github.collaboratory.cwl;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,8 +39,10 @@ import com.google.gson.JsonParser;
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
+import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.LanguageClientInterface;
+import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.FileProvisioning;
-import io.github.collaboratory.cwl.LauncherCWL;
 import io.swagger.client.ApiException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -49,6 +51,8 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.json.JSONObject;
+import org.yaml.snakeyaml.Yaml;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
@@ -66,7 +70,7 @@ public class CWLClient implements LanguageClientInterface {
 
     private final AbstractEntryClient abstractEntryClient;
 
-    CWLClient(AbstractEntryClient abstractEntryClient) {
+    public CWLClient(AbstractEntryClient abstractEntryClient) {
         this.abstractEntryClient = abstractEntryClient;
     }
 
@@ -106,7 +110,7 @@ public class CWLClient implements LanguageClientInterface {
         } else {
             tempCWL = new File(entry);
         }
-        jsonRun = abstractEntryClient.convertYamlToJson(yamlRun, jsonRun);
+        jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
         try {
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
@@ -359,5 +363,20 @@ public class CWLClient implements LanguageClientInterface {
             return buffer.toString();
         }
         return null;
+    }
+
+    private String convertYamlToJson(String yamlRun, String jsonRun) throws IOException {
+        // if we have a yaml parameter file, convert it into a json
+        if (yamlRun != null) {
+            final File tempFile = File.createTempFile("temp", "json");
+            Yaml yaml = new Yaml();
+            final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
+            Map<String, Object> map = (Map<String, Object>)yaml.load(fileInputStream);
+            JSONObject jsonObject = new JSONObject(map);
+            final String jsonContent = jsonObject.toString();
+            FileUtils.write(tempFile, jsonContent, StandardCharsets.UTF_8);
+            jsonRun = tempFile.getAbsolutePath();
+        }
+        return jsonRun;
     }
 }
