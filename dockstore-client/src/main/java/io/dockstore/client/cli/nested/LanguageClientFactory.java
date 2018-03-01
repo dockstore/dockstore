@@ -15,21 +15,23 @@
  */
 package io.dockstore.client.cli.nested;
 
+import java.util.Optional;
+
 public final class LanguageClientFactory {
 
     private LanguageClientFactory() {
         // suppress constructor
     }
 
-    public static LanguageClientInterface createLanguageCLient(AbstractEntryClient client, AbstractEntryClient.Type type) {
+    public static Optional<LanguageClientInterface> createLanguageCLient(AbstractEntryClient client, AbstractEntryClient.Type type) {
         if (type == AbstractEntryClient.Type.CWL) {
-            return new CWLClient(client);
+            return Optional.of(new CWLClient(client));
         } else if (type == AbstractEntryClient.Type.WDL) {
-            return new WDLClient(client);
+            return Optional.of(new WDLClient(client));
         } else if (type == AbstractEntryClient.Type.NEXTFLOW) {
-            return new WDLClient(client);
+            return Optional.of(new NextFlowClient(client));
         } else if (type == AbstractEntryClient.Type.NONE) {
-            return null;
+            return Optional.empty();
         } else {
             throw new UnsupportedOperationException("language client does not exist for " + type);
         }

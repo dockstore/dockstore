@@ -18,7 +18,6 @@ package io.dockstore.client.cli.nested;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,7 +30,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import com.google.common.base.Joiner;
-import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
 import io.dockstore.client.cli.SwaggerUtility;
@@ -386,7 +384,8 @@ public class WorkflowClient extends AbstractEntryClient {
             errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow?",
                     ENTRY_NOT_FOUND);
         }
-        LanguageClientInterface languageCLient = LanguageClientFactory.createLanguageCLient(this, ext);
+        Optional<LanguageClientInterface> languageCLientOptional = LanguageClientFactory.createLanguageCLient(this, ext);
+        LanguageClientInterface languageCLient = languageCLientOptional.orElseThrow(() -> new UnsupportedOperationException("language not supported yet"));
         // TODO: limitations of merged but non-cleaned up interface are apparent here
         try {
             switch (ext) {
@@ -1055,7 +1054,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 } else {
                     files = workflowsApi.secondaryWdl(workflow.getId(), version);
                 }
-                writeSourceFiles(tempDir, result, files);
+                writeSourceFilesToDisk(tempDir, result, files);
             } catch (ApiException e) {
                 exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
             } catch (IOException e) {
@@ -1063,22 +1062,6 @@ public class WorkflowClient extends AbstractEntryClient {
             }
         }
         return result;
-    }
-
-    /**
-     *
-     * @param tempDir directory where to create file structures
-     * @param files files from the webservice
-     * @param result files that we have tracked so far
-     * @throws IOException
-     */
-    private void writeSourceFiles(File tempDir, List<SourceFile> result, List<SourceFile> files) throws IOException {
-        for (SourceFile sourceFile : files) {
-            File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
-            tempDescriptor.getParentFile().mkdirs();
-            Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-            result.add(sourceFile);
-        }
     }
 
     @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry.")

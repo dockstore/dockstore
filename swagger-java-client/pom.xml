@@ -43,7 +43,7 @@
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
-                                <dateLibrary>legacy</dateLibrary>
+                                <dateLibrary>java8</dateLibrary>
                                 <java8>true</java8>
                                 <hideGenerationTimestamp>true</hideGenerationTimestamp>
                                 <useRuntimeException>true</useRuntimeException>

@@ -69,7 +69,7 @@ public class WDLClient implements LanguageClientInterface {
 
     private final AbstractEntryClient abstractEntryClient;
 
-    public WDLClient(AbstractEntryClient abstractEntryClient) {
+    WDLClient(AbstractEntryClient abstractEntryClient) {
         this.abstractEntryClient = abstractEntryClient;
     }
 
@@ -135,7 +135,7 @@ public class WDLClient implements LanguageClientInterface {
             if (!isLocalEntry) {
                 wdlFromServer = abstractEntryClient.getDescriptorFromServer(entry, "wdl");
                 File tempDescriptor = File.createTempFile("temp", ".wdl", tempDir);
-                Files.write(wdlFromServer.getContent(), tempDescriptor, StandardCharsets.UTF_8);
+                Files.asCharSink(tempDescriptor, StandardCharsets.UTF_8).write(wdlFromServer.getContent());
                 abstractEntryClient.downloadDescriptors(entry, "wdl", tempDir);
 
                 tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);

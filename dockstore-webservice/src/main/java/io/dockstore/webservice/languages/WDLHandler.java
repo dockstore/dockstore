@@ -101,7 +101,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         final File tempDesc;
         try {
             tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
-            Files.write(content, tempDesc, StandardCharsets.UTF_8);
+            Files.asCharSink(tempDesc, StandardCharsets.UTF_8).write(content);
 
             // Use matcher to get imports
             List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
@@ -172,7 +172,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         File tempMainDescriptor;
         try {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
-            Files.write(mainDescriptor, tempMainDescriptor, StandardCharsets.UTF_8);
+            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
         } catch (IOException e) {
             throw new CustomWebApplicationException("could not process wdl into DAG", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }

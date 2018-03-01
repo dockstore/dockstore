@@ -66,7 +66,7 @@ public class CWLClient implements LanguageClientInterface {
 
     private final AbstractEntryClient abstractEntryClient;
 
-    public CWLClient(AbstractEntryClient abstractEntryClient) {
+    CWLClient(AbstractEntryClient abstractEntryClient) {
         this.abstractEntryClient = abstractEntryClient;
     }
 

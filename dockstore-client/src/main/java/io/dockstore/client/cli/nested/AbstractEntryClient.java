@@ -25,11 +25,13 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -603,7 +605,7 @@ public abstract class AbstractEntryClient {
     private boolean validateCWL(String cwlFilePath) {
         final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
         try {
-            io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false, Optional.absent(), Optional.absent());
+            io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  com.google.common.base.Optional.absent(),  com.google.common.base.Optional.absent());
             return true;
         } catch (RuntimeException e) {
             // when invalid, executeCommand will throw a RuntimeException
@@ -671,9 +673,9 @@ public abstract class AbstractEntryClient {
      */
     Type checkFileContent(File content) {
         for (Type type : Type.values()) {
-            LanguageClientInterface languageCLient = LanguageClientFactory.createLanguageCLient(this, type);
-            if (languageCLient != null) {
-                Boolean check = languageCLient.check(content);
+            Optional<LanguageClientInterface> languageCLient = LanguageClientFactory.createLanguageCLient(this, type);
+            if (languageCLient.isPresent()) {
+                Boolean check = languageCLient.get().check(content);
                 if (check) {
                     return type;
                 }
@@ -790,7 +792,7 @@ public abstract class AbstractEntryClient {
             // TODO: better error handling as with CWL and WDL
             if (content.equals(Type.NEXTFLOW)) {
                 try {
-                    launchWdl(localFilePath, argsList, true);
+                    launchNextFlow(localFilePath, argsList, true);
                 } catch (ApiException e) {
                     exceptionMessage(e, "API error launching entry", Client.API_ERROR);
                 } catch (IOException e) {
@@ -903,12 +905,22 @@ public abstract class AbstractEntryClient {
      * @return
      */
     public String getOriginalTestParameterFilePath(String yamlRun, String jsonRun, String csvRun) {
-        java.util.Optional<String> s = Arrays.asList(yamlRun, jsonRun, csvRun).stream().filter(o -> o != null).findFirst();
+        java.util.Optional<String> s = Stream.of(yamlRun, jsonRun, csvRun).filter(Objects::nonNull).findFirst();
         if (s.isPresent() && Paths.get(s.get()).toFile().exists()) {
             // convert relative path to absolute path
             return s.get();
         } else {
             return "";
+        }
+    }
+
+    void writeSourceFilesToDisk(File tempDir, List<SourceFile> result, List<SourceFile> files) throws IOException {
+        for (SourceFile sourceFile : files) {
+            File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
+            // ensure that the parent directory exists
+            tempDescriptor.getParentFile().mkdirs();
+            Files.asCharSink(tempDescriptor, StandardCharsets.UTF_8).write(sourceFile.getContent());
+            result.add(sourceFile);
         }
     }
 
@@ -940,6 +952,13 @@ public abstract class AbstractEntryClient {
         client.launch(entry, isLocalEntry, null, json, null, wdlOutputTarget, uuid);
     }
 
+    private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws IOException, ApiException {
+        final String json = reqVal(args, "--json");
+        final String uuid = optVal(args, "--uuid", null);
+        NextFlowClient client = new NextFlowClient(this);
+        client.launch(entry, isLocalEntry, null, json, null, null, uuid);
+    }
+
     private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {
         final String entry = reqVal(args, "--entry");
         final String descriptor = optVal(args, "--descriptor", CWL_STRING);
@@ -949,7 +968,7 @@ public abstract class AbstractEntryClient {
 
     LanguageClientInterface convertCLIStringToEnum(String descriptor) {
         // TODO: ugly mapping, need to refactor
-        LanguageClientInterface languageCLient;
+        Optional<LanguageClientInterface> languageCLient;
         switch (descriptor) {
         case CWL_STRING:
             languageCLient = LanguageClientFactory.createLanguageCLient(this, Type.CWL);
@@ -961,7 +980,10 @@ public abstract class AbstractEntryClient {
             languageCLient = LanguageClientFactory.createLanguageCLient(this, Type.NEXTFLOW);
             break;
         }
-        return languageCLient;
+        if (languageCLient.isPresent()) {
+            return languageCLient.get();
+        }
+        throw new UnsupportedOperationException("language not supported yet");
     }
 
     public abstract Client getClient();
@@ -978,7 +1000,7 @@ public abstract class AbstractEntryClient {
         final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
         final File primaryFile = new File(tempDir, descriptorFromServer.getPath());
         primaryFile.getParentFile().mkdirs();
-        Files.write(descriptorFromServer.getContent(), primaryFile, StandardCharsets.UTF_8);
+        Files.asCharSink(primaryFile, StandardCharsets.UTF_8).write(descriptorFromServer.getContent());
         // Download imported descriptors (secondary descriptors)
         downloadDescriptors(entry, descriptor, primaryFile.getParentFile());
         return primaryFile;

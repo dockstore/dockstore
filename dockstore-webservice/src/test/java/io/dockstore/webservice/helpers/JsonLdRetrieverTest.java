@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.helpers;
 
+import java.io.File;
+
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -25,10 +27,8 @@ import io.dockstore.webservice.core.Tool;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Test;
 
-import java.io.File;
-
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by kcao on 21/03/17.
@@ -40,7 +40,8 @@ public class JsonLdRetrieverTest {
         SourceFile file = new SourceFile();
 
         File cwlFile = new File(ResourceHelpers.resourceFilePath(cwl));
-        String cwlContent = Files.toString(cwlFile, Charsets.UTF_8);
+
+        String cwlContent = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
 
         file.setContent(cwlContent);
         file.setType(DOCKSTORE_CWL);
@@ -53,7 +54,7 @@ public class JsonLdRetrieverTest {
         String schemaJson = gson.toJson(JsonLdRetriever.getSchema(tool));
 
         File expected = new File(ResourceHelpers.resourceFilePath(json));
-        String expectedJson = Files.toString(expected, Charsets.UTF_8);
+        String expectedJson = Files.asCharSource(expected, Charsets.UTF_8).read();
 
         assertEquals(schemaJson, expectedJson);
     }

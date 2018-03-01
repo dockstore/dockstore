@@ -15,31 +15,48 @@
  */
 package io.github.collaboratory;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
-import com.google.common.base.Joiner;
-import io.github.collaboratory.nextflow.NextFlowFacade;
-import io.dockstore.common.Utilities;
-import org.apache.commons.configuration2.INIConfiguration;
+import io.dockstore.client.cli.Client;
+import io.dockstore.client.cli.nested.WorkflowClient;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.assertj.core.util.Files;
+import org.assertj.core.util.Lists;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 
 public class NextflowIT {
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
     @Test
-    public void demoNextFlowLaunch() {
-        String nextflowFile = FileUtils.getFile("src", "test", "resources", "nextflow_rnatoy", "main.nf").getAbsolutePath();
-        String nextflowParamsFile = FileUtils.getFile("src", "test", "resources", "nextflow_rnatoy", "test.json").getAbsolutePath();
+    public void demoNextFlowLaunch() throws IOException, ConfigurationException {
+        // looks like this has to run from the current working directory, which sucks
+        File userDir = new File(System.getProperty("user.dir"));
+        File testFileDirectory = FileUtils.getFile("src", "test", "resources", "nextflow_rnatoy");
 
 
-        String absolutePath = FileUtils.getFile("src", "test", "resources", "launcher.nextflow.ini").getAbsolutePath();
-        INIConfiguration iniConfiguration = Utilities.parseConfig(absolutePath);
-        NextFlowFacade nextFlowFacade = new NextFlowFacade(iniConfiguration);
-        List<String> executionCommand = nextFlowFacade
-            .getExecutionCommand("./datastore/outdir", "./datastore/test", nextflowFile, nextflowParamsFile);
-        final String join = Joiner.on(" ").join(executionCommand);
-        ImmutablePair<String, String> stringStringImmutablePair = Utilities.executeCommand(join);
-        Assert.assertTrue("could not find completion message", stringStringImmutablePair.left.contains("results world!"));
+        FileUtils.copyDirectory(testFileDirectory, userDir);
+        Client client = new Client();
+        client.setupClientEnvironment(Lists.newArrayList());
+        WorkflowClient workflowClient = client.getWorkflowClient();
+        List<String> strings = Arrays.asList("--local-entry", "nextflow.config", "--json",  "test.json");
+        workflowClient.launch(strings);
+        Assert.assertTrue("nextflow workflow did not run correctly", systemOutRule.getLog().contains("results world!"));
+
+        for(File file : FileUtils.listFiles(testFileDirectory, null, true)) {
+            String name = file.getName();
+            Files.delete(new File(name));
+        }
     }
 }
