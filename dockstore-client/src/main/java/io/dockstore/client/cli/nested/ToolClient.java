@@ -442,6 +442,7 @@ public class ToolClient extends AbstractEntryClient {
             tool.setName(name);
             tool.setNamespace(namespace);
             tool.setRegistry(regEnum.get().toString());
+            tool.setCheckerId(null);
 
             // Registry path used (ex. quay.io)
             Optional<String> registryPath;

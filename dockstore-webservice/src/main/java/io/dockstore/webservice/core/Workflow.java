@@ -143,6 +143,8 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         super.update(workflow);
         this.setMode(workflow.getMode());
         this.setWorkflowName(workflow.getWorkflowName());
+        this.setIsChecker(workflow.isIsChecker());
+        this.setCheckerId(workflow.getCheckerId());
     }
 
     /**
@@ -166,6 +168,8 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setDescriptorType(getDescriptorType());
         targetWorkflow.setDefaultVersion(getDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
+        targetWorkflow.setCheckerId(getCheckerId());
+        targetWorkflow.setIsChecker(isIsChecker());
     }
 
     @JsonProperty

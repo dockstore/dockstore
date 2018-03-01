@@ -519,7 +519,7 @@ public class GeneralWorkflowIT extends BaseIT {
         usersApi.refreshWorkflows(userId);
 
         Workflow githubWorkflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl", "/test.json");
+                .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl", "/test.json", false);
 
         // Publish github workflow
         Workflow workflow = workflowApi.refresh(githubWorkflow.getId());

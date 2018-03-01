@@ -3137,6 +3137,11 @@ paths:
         description: "Default test parameter file path"
         required: false
         type: "string"
+      - name: "isChecker"
+        in: "query"
+        description: "Whether or not the workflow will be a checker workflow."
+        required: false
+        type: "boolean"
       responses:
         200:
           description: "successful operation"
