@@ -273,8 +273,8 @@ public class ToolVersion {
      */
     public enum DescriptorTypeEnum {
         CWL("CWL"),
-
-        WDL("WDL");
+        WDL("WDL"),
+        NXT("NXT");
 
         private String value;
 
