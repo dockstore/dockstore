@@ -77,17 +77,23 @@ public class ToolsImplCommonTest {
      * The Dockstore Tool has with 3 WorkflowVersions
      * One workflow version is hidden and not verified
      * This tests all properties including the verified and verified sources but not meta-version.
+     * Tests a tool with/without a toolname
      * @throws Exception
      */
     @Test
     public void convertDockstoreToolToTool() throws Exception {
+        convertDockstoreToolToTool("potato");
+        convertDockstoreToolToTool(null);
+    }
+
+    public void convertDockstoreToolToTool(String toolname) throws Exception {
         io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
         tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         tool.setName("test6");
         tool.setDefaultDockerfilePath("/Dockerfile");
         tool.setDefaultCwlPath("/Dockstore.cwl");
         tool.setPrivateAccess(false);
-        tool.setToolname("potato");
+        tool.setToolname(toolname);
         tool.setNamespace("test_org");
         tool.setRegistry(Registry.QUAY_IO.toString());
         tool.setAuthor("sampleAuthor");
@@ -116,10 +122,16 @@ public class ToolsImplCommonTest {
         tag.addSourceFile(sourceFile2);
         tool.addTag(tag);
         Tool expectedTool = new Tool();
-        expectedTool.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6%2Fpotato");
-        expectedTool.setId("quay.io/test_org/test6/potato");
+        if (toolname != null) {
+            expectedTool.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6%2Fpotato");
+            expectedTool.setId("quay.io/test_org/test6/potato");
+            expectedTool.setToolname("test6/potato");
+        } else {
+            expectedTool.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6");
+            expectedTool.setId("quay.io/test_org/test6");
+            expectedTool.setToolname("test6");
+        }
         expectedTool.setOrganization("test_org");
-        expectedTool.setToolname("test6/potato");
         expectedTool.setToolclass(ToolClassesApiServiceImpl.getCommandLineToolClass());
         expectedTool.setDescription("");
         expectedTool.setAuthor("sampleAuthor");
@@ -131,8 +143,13 @@ public class ToolsImplCommonTest {
         expectedTool.setVerifiedSource("[]");
         ToolVersion expectedToolVersion = new ToolVersion();
         expectedToolVersion.setName("sampleTag");
-        expectedToolVersion.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6%2Fpotato/versions/sampleTag");
-        expectedToolVersion.setId("quay.io/test_org/test6/potato:sampleTag");
+        if (toolname != null) {
+            expectedToolVersion.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6%2Fpotato/versions/sampleTag");
+            expectedToolVersion.setId("quay.io/test_org/test6/potato:sampleTag");
+        } else {
+            expectedToolVersion.setUrl("http://localhost:8080/api/ga4gh/v2/tools/quay.io%2Ftest_org%2Ftest6/versions/sampleTag");
+            expectedToolVersion.setId("quay.io/test_org/test6:sampleTag");
+        }
         expectedToolVersion.setImage("sampleImageId");
         List<ToolVersion.DescriptorTypeEnum> descriptorTypeList = new ArrayList<>();
         descriptorTypeList.add(ToolVersion.DescriptorTypeEnum.CWL);
@@ -159,10 +176,17 @@ public class ToolsImplCommonTest {
      * The other two versions are verified and not hidden
      * Those two versions are verified by separate groups
      * This tests all properties including the verified and verified sources but not meta-version.
+     * Tests a workflow with/without a workflowname
      * @throws Exception
      */
     @Test
     public void convertDockstoreWorkflowToTool() throws Exception {
+        convertDockstoreWorkflowToTool("potato");
+        convertDockstoreWorkflowToTool(null);
+    }
+
+    private void convertDockstoreWorkflowToTool(String toolname) throws Exception {
+        final String TOOLNAME = toolname;
         final String REFERENCE1 = "aaa";
         final String REFERENCE2 = "bbb";
         final String REFERENCE3 = "ccc";
@@ -200,7 +224,7 @@ public class ToolsImplCommonTest {
         workflow.addWorkflowVersion(actualWorkflowVersion2);
         workflow.addWorkflowVersion(actualWorkflowVersion3);
         workflow.setMode(WorkflowMode.FULL);
-        workflow.setWorkflowName(null);
+        workflow.setWorkflowName(TOOLNAME);
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
         workflow.setSourceControl(SourceControl.GITHUB.toString());
@@ -222,9 +246,15 @@ public class ToolsImplCommonTest {
         Tool actualTool = toolTablePair.getLeft();
         ToolVersion expectedToolVersion1 = new ToolVersion();
         expectedToolVersion1.setName(REFERENCE2);
-        expectedToolVersion1
-                .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/"+ REFERENCE2);
-        expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
+        if (toolname != null) {
+            expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                    + TOOLNAME + "/versions/" + REFERENCE2);
+            expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME + ":" + REFERENCE2);
+        } else {
+            expectedToolVersion1.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE2);
+            expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
+        }
+
         List<ToolVersion.DescriptorTypeEnum> descriptorTypeList = new ArrayList<>();
         descriptorTypeList.add(ToolVersion.DescriptorTypeEnum.WDL);
         expectedToolVersion1.setImage("");
@@ -238,17 +268,32 @@ public class ToolsImplCommonTest {
         ToolVersion expectedToolVersion2 = gson.fromJson(json, ToolVersion.class);
         expectedToolVersion2.setName(REFERENCE3);
         expectedToolVersion2.setVerifiedSource("chickenTesterSource");
-        expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE3);
-        expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:"+ REFERENCE3);
+        if (toolname != null) {
+            expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
+                    + TOOLNAME + "/versions/" + REFERENCE3);
+            expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME + ":" + REFERENCE3);
+        } else {
+            expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow/versions/" + REFERENCE3);
+            expectedToolVersion2.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE3);
+        }
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion1);
         expectedToolVersions.add(expectedToolVersion2);
         Tool expectedTool = new Tool();
-        expectedTool
-                .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
-        expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
+
         expectedTool.setOrganization("ICGC-TCGA-PanCancer");
-        expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow");
+        if (toolname != null) {
+            expectedTool
+                    .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"+ TOOLNAME);
+            expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow/"+ TOOLNAME);
+            expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow/" + TOOLNAME);
+        } else {
+            expectedTool
+                    .setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow");
+            expectedTool.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow");
+            expectedTool.setToolname("wdl-pcawg-sanger-cgp-workflow");
+        }
+
         expectedTool.setToolclass(ToolClassesApiServiceImpl.getWorkflowClass());
         expectedTool.setDescription("");
         expectedTool.setAuthor("Unknown author");
