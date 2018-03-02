@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
+package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,8 +22,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.util.Lists;
@@ -49,6 +49,7 @@ public class NextflowIT {
 
         FileUtils.copyDirectory(testFileDirectory, userDir);
         Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         client.setupClientEnvironment(Lists.newArrayList());
         WorkflowClient workflowClient = client.getWorkflowClient();
         List<String> strings = Arrays.asList("--local-entry", "nextflow.config", "--json",  "test.json");
