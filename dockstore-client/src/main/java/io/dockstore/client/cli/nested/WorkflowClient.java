@@ -748,6 +748,10 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String workflowname = optVal(args, "--workflow-name", null);
 
+            if (workflowname != null && workflowname.startsWith("_")) {
+                errorMessage("Workflow names cannot start with an underscore.", Client.CLIENT_ERROR);
+            }
+
             // Make new workflow object
             String path = Joiner.on("/").skipNulls().join(organization, repository, workflowname);
 

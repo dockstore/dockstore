@@ -375,6 +375,10 @@ public class ToolClient extends AbstractEntryClient {
             final String privateAccess = optVal(args, "--private", "false");
             final String customDockerPath = optVal(args, "--custom-docker-path", null);
 
+            if (toolname != null && toolname.startsWith("_")) {
+                errorMessage("Tool names cannot start with an underscore.", Client.CLIENT_ERROR);
+            }
+
             // Check that registry is valid
             boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry));
 
