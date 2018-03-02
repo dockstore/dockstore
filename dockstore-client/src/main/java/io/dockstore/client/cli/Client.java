@@ -788,7 +788,10 @@ public class Client {
 
     private INIConfiguration getIniConfiguration(List<String> args) {
         String userHome = System.getProperty("user.home");
-        this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+        String commandLineConfigFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
+        if (this.configFile == null) {
+            this.configFile = commandLineConfigFile;
+        }
 
         return Utilities.parseConfig(configFile);
     }
