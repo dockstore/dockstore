@@ -111,9 +111,14 @@ public class NextFlowClient implements LanguageClientInterface {
     @Override
     public Boolean check(File content) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
-        ConfigObject parse = grabConfig(content);
-        ConfigObject manifest = (ConfigObject)parse.get("manifest");
-        return manifest != null;
+        try {
+            ConfigObject parse = grabConfig(content);
+            ConfigObject manifest = (ConfigObject)parse.get("manifest");
+            return manifest != null;
+        } catch (Exception e) {
+            // intentionally leaving blank, this check is used blind and should not throw exceptions, just return false
+            return false;
+        }
     }
 
     private ConfigObject grabConfig(File content) {
