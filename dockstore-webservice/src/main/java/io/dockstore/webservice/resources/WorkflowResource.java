@@ -19,14 +19,18 @@ package io.dockstore.webservice.resources;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -56,6 +60,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
@@ -88,6 +93,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import javafx.util.Pair;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.json.JSONArray;
@@ -990,6 +997,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath,
         @ApiParam(value = "Whether or not the workflow will be a checker workflow.") @QueryParam("isChecker") boolean isChecker) {
 
+        return manualRegisterHelper(user, workflowRegistry, workflowPath, defaultWorkflowPath, workflowName, descriptorType, defaultTestParameterFilePath, isChecker);
+
+    }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public Workflow manualRegisterHelper(User user, String workflowRegistry, String workflowPath, String defaultWorkflowPath, String workflowName, String descriptorType, String defaultTestParameterFilePath, boolean isChecker) {
         // Set up source code interface and ensure token is set up
         // construct git url like git@github.com:ga4gh/dockstore-ui.git
         String registryURLPrefix;
@@ -1048,7 +1061,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         workflowFromDB.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
         return workflowDAO.findById(workflowID);
-
     }
 
     private SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
@@ -1254,17 +1266,122 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         return workflow.getStarredUsers();
     }
 
+        @POST
+        @Timed
+        @UnitOfWork
+        @Path("/{entryId}/registerCheckerWorkflow")
+        @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+        public Workflow registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) String checkerWorkflowPath, @PathParam("entryId") Long entryId) {
+            // Find the entry
+            Pair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
 
-//    @POST
-//    @Timed
-//    @UnitOfWork
-//    @Path("/{entryId}/registerCheckerWorkflow")
-//    @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-//    public Workflow registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) String checkerWorkflowPath, @PathParam("entryId") Long entryId) {
-//
-//        return workflowDAO.findById((long)1);
-//
-//    }
+            if (entryPair.getValue() == null) {
+                throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
+            }
+
+            if (entryPair.getValue().getCheckerId() != null) {
+                throw new CustomWebApplicationException("The given entry already has a checker workflow.", HttpStatus.SC_BAD_REQUEST);
+            }
+
+
+            // Checker workflow variables
+            String defaultTestParameterPath;
+            String organization;
+            String repository;
+            String sourceControl;
+            boolean isPublished;
+            String gitUrl;
+            Date lastUpdated;
+            String workflowName;
+            String descriptorType;
+
+            // Grab information if tool
+            if (Objects.equals(entryPair.getKey(), "tool")) {
+                // Get tool
+                Tool tool = (Tool)entryPair.getValue();
+
+                // Get default test parameter path, toolname, descriptor type
+                String ext = FilenameUtils.getExtension(checkerWorkflowPath);
+                if (Objects.equals(ext, "wdl")) {
+                    workflowName = tool.getToolname() + "_checker_wdl";
+                    descriptorType = "wdl";
+                    defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
+                } else {
+                    workflowName = tool.getToolname() + "_checker_cwl";
+                    descriptorType = "cwl";
+                    defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
+                }
+
+                // Determine gitUrl
+                gitUrl = tool.getGitUrl();
+
+                // Determine source control
+                Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+                Matcher m = p.matcher(tool.getGitUrl());
+                if (m.find()) {
+                    sourceControl = m.group(1);
+                    organization = m.group(2);
+                    repository = m.group(3);
+                } else {
+                    throw new CustomWebApplicationException("Problem parsing git url.", HttpStatus.SC_BAD_REQUEST);
+                }
+
+                // Determine publish information
+                isPublished = tool.getIsPublished();
+
+                // Determine last updated
+                lastUpdated = tool.getLastUpdated();
+
+            } else if (Objects.equals(entryPair.getKey(), "workflow")) {
+                // Get workflow
+                Workflow workflow = (Workflow)entryPair.getValue();
+
+                // Copy over common attributes
+                defaultTestParameterPath = workflow.getDefaultTestParameterFilePath();
+                organization = workflow.getOrganization();
+                repository = workflow.getRepository();
+                sourceControl = workflow.getSourceControl();
+                isPublished = workflow.getIsPublished();
+                gitUrl = workflow.getGitUrl();
+                lastUpdated = workflow.getLastUpdated();
+                descriptorType = workflow.getDescriptorType();
+
+                workflowName = workflow.getWorkflowName();
+                if (workflowName == null) {
+                    workflowName = "";
+                }
+                if (Objects.equals(workflow.getDescriptorType().toLowerCase(), "cwl")){
+                    workflowName += "_cwl_checker";
+                } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), "wdl")){
+                    workflowName += "_wdl_checker";
+                }
+            } else {
+                throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
+            }
+
+            Workflow checkerWorkflow = new Workflow();
+
+            checkerWorkflow.setMode(WorkflowMode.FULL);
+            checkerWorkflow.setDefaultWorkflowPath(checkerWorkflowPath);
+            checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
+            checkerWorkflow.setOrganization(organization);
+            checkerWorkflow.setRepository(repository);
+            checkerWorkflow.setSourceControl(sourceControl);
+            checkerWorkflow.setIsPublished(isPublished);
+            checkerWorkflow.setGitUrl(gitUrl);
+            checkerWorkflow.setLastUpdated(lastUpdated);
+            checkerWorkflow.setWorkflowName(workflowName);
+            checkerWorkflow.setDescriptorType(descriptorType);
+            checkerWorkflow.setIsChecker(true);
+
+            // now should just be a stub
+            long id = workflowDAO.create(checkerWorkflow);
+            checkerWorkflow.addUser(user);
+            checkerWorkflow = workflowDAO.findById(id);
+            elasticManager.handleIndexUpdate(checkerWorkflow, ElasticMode.DELETE);
+            return checkerWorkflow;
+
+        }
 
 
     @Override
