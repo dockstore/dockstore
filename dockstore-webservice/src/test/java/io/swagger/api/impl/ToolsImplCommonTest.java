@@ -47,9 +47,9 @@ import static org.junit.Assert.assertEquals;
  * @since 17/01/18
  */
 public class ToolsImplCommonTest {
-    static final Gson gson = new Gson();
-    static final String PLACEHOLDER_CONTENT = "potato";
-    static DockstoreWebserviceConfiguration  actualConfig = new DockstoreWebserviceConfiguration();
+    private static final Gson gson = new Gson();
+    private static final String PLACEHOLDER_CONTENT = "potato";
+    private static DockstoreWebserviceConfiguration  actualConfig = new DockstoreWebserviceConfiguration();
 
     @BeforeClass
     public static void setup() {
@@ -59,7 +59,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void wdlSourceFileToToolDescriptor() throws Exception {
+    public void wdlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
         sourceFile.setPath("/Dockstore.wdl");
@@ -74,7 +74,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void cwlSourceFileToToolDescriptor() throws Exception {
+    public void cwlSourceFileToToolDescriptor() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.FileType.DOCKSTORE_CWL);
         sourceFile.setPath("/Dockstore.cwl");
@@ -102,7 +102,7 @@ public class ToolsImplCommonTest {
         convertDockstoreToolToTool(null);
     }
 
-    public void convertDockstoreToolToTool(String toolname) throws Exception {
+    public void convertDockstoreToolToTool(String toolname) {
         io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
         tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         tool.setName("test6");
@@ -196,12 +196,12 @@ public class ToolsImplCommonTest {
      * @throws Exception
      */
     @Test
-    public void convertDockstoreWorkflowToTool() throws Exception {
+    public void convertDockstoreWorkflowToTool() {
         convertDockstoreWorkflowToTool("potato");
         convertDockstoreWorkflowToTool(null);
     }
 
-    private void convertDockstoreWorkflowToTool(String toolname) throws Exception {
+    private void convertDockstoreWorkflowToTool(String toolname) {
         final String TOOLNAME = toolname;
         final String REFERENCE1 = "aaa";
         final String REFERENCE2 = "bbb";
@@ -330,7 +330,7 @@ public class ToolsImplCommonTest {
     }
 
     @Test
-    public void sourceFileToToolTests() throws Exception {
+    public void sourceFileToToolTests() {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.FileType.CWL_TEST_JSON);
         sourceFile.setPath("/test.cwl.json");

@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -187,6 +188,7 @@ public final class ToolsImplCommon {
             LOG.error("Unrecognized container type - neither tool or workflow: " + container.getId());
             return null;
         }
+        tool.setContains(new ArrayList<>());
 
         // handle verified information
         tool = setVerified(tool, inputVersions);
