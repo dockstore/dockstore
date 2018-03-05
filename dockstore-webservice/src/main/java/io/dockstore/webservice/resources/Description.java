@@ -44,7 +44,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
         @Tag(name = "containers", description = "List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile))"),
         @Tag(name = "containertags", description = "List and modify tags for containers"),
         @Tag(name = "GA4GHV1", description = "A curated subset of resources proposed as a common standard for tool repositories"),
-        @Tag(name = "GA4GHV2", description = "A curated subset of resources proposed as a common standard for tool repositories"),
+        @Tag(name = "GA4GH", description = "A curated subset of resources proposed as a common standard for tool repositories"),
         @Tag(name = "extendedGA4GH", description = "Optional experimental extensions of the GA4GH API"),
         @Tag(name = "github.repo", description = "List source code repositories (should be generalized from github)"),
         @Tag(name = "integration.bitbucket.org", description = "stop-gap allowing developers to associate with bitbucket"),

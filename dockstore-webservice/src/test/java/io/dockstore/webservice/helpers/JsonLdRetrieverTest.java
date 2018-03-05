@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.helpers;
 
+import java.io.File;
+
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -25,10 +27,8 @@ import io.dockstore.webservice.core.Tool;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Test;
 
-import java.io.File;
-
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by kcao on 21/03/17.

@@ -19,30 +19,30 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-03-05T20:18:38.928Z")
 public abstract class ToolsApiService {
     public abstract Response toolsGet(String id, String registry, String organization, String name, String toolname, String description,
-            String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
+        String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
 
     public abstract Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
 
     public abstract Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
 
-    public abstract Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext,
-            ContainerRequestContext value)
-            throws NotFoundException;
+    public abstract Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
+        throws NotFoundException;
 
     public abstract Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
-            throws NotFoundException;
+        throws NotFoundException;
 
     public abstract Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId,
-            SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
+        SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
 
     public abstract Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId,
-            String relativePath, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
+        String relativePath, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException;
 
-    public abstract Response toolsIdVersionsVersionIdTypeFilesGet(String type,String id,String versionId,SecurityContext securityContext) throws NotFoundException;
+    public abstract Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
+        throws NotFoundException;
 
     public abstract Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
-            throws NotFoundException;
+        throws NotFoundException;
 }

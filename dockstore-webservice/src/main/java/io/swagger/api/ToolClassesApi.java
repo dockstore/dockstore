@@ -29,19 +29,19 @@ import io.swagger.model.ToolClass;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH + "/toolClasses")
 
-@Produces({ "application/json", "text/plain" })
-@io.swagger.annotations.Api(description = "the tool-classes API")
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@Produces( { "application/json", "text/plain" })
+@io.swagger.annotations.Api(description = "the toolClasses API")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-03-05T20:18:38.928Z")
 public class ToolClassesApi {
     private final ToolClassesApiService delegate = ToolClassesApiServiceFactory.getToolClassesApi();
 
     @GET
     @UnitOfWork
-    @Produces({ "application/json", "text/plain" })
+    @Produces( { "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
-            "GA4GHV2", })
+        "GA4GH", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = 200, message = "A list of potential tool classes.", response = ToolClass.class, responseContainer = "List") })
     public Response toolClassesGet(@Context SecurityContext securityContext) throws NotFoundException {
         return delegate.toolClassesGet(securityContext);
     }

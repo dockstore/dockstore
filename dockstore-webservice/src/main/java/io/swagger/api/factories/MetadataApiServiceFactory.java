@@ -18,7 +18,7 @@ package io.swagger.api.factories;
 import io.swagger.api.MetadataApiService;
 import io.swagger.api.impl.MetadataApiServiceImpl;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-03-05T20:18:38.928Z")
 public class MetadataApiServiceFactory {
     private final static MetadataApiService service = new MetadataApiServiceImpl();
 

@@ -77,7 +77,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
-import io.swagger.model.ToolDescriptor;
+import io.swagger.model.DescriptorType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.json.JSONArray;
@@ -822,7 +822,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Add new test parameter files
-        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
+        FileType fileType = (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? FileType.CWL_TEST_JSON
                 : FileType.WDL_TEST_JSON;
         createTestParameters(testParameterPaths, tag, sourceFiles, fileType, fileDAO);
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
@@ -854,7 +854,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
 
         // Remove test parameter files
-        FileType fileType = (descriptorType.toUpperCase().equals(ToolDescriptor.TypeEnum.CWL.toString())) ? FileType.CWL_TEST_JSON
+        FileType fileType = (descriptorType.toUpperCase().equals(DescriptorType.CWL.toString())) ? FileType.CWL_TEST_JSON
                 : FileType.WDL_TEST_JSON;
         for (String path : testParameterPaths) {
             sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == fileType);

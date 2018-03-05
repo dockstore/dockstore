@@ -507,10 +507,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-json-provider</artifactId>
         </dependency>
@@ -602,7 +598,11 @@
             <artifactId>github-api</artifactId>
             <version>1.92</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-joda</artifactId>
+            <version>2.9.3</version>
+        </dependency>
     </dependencies>
 
 

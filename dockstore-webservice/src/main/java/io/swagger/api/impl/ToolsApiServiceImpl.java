@@ -58,6 +58,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
+import io.swagger.model.DescriptorType;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolFile;
@@ -142,7 +143,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
     @Override
     public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
-            throws NotFoundException {
+        throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         try {
             versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
@@ -171,18 +172,18 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
-            ContainerRequestContext value) throws NotFoundException {
+        ContainerRequestContext value) throws NotFoundException {
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, null,
-                value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
-            SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
+        SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -191,12 +192,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, relativePath,
-                value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext,
-            ContainerRequestContext value) throws NotFoundException {
+        ContainerRequestContext value) throws NotFoundException {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -207,7 +208,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
         boolean plainTextResponse =
-                value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.toLowerCase().contains("plain");
+            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.toLowerCase().contains("plain");
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
@@ -237,16 +238,16 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext,
-            ContainerRequestContext value) throws NotFoundException {
+    public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
+        ContainerRequestContext value) throws NotFoundException {
         return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
     }
 
     @SuppressWarnings("CheckStyle")
     @Override
     public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
-            String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value)
-            throws NotFoundException {
+        String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value)
+        throws NotFoundException {
         final List<Entry> all = new ArrayList<>();
         all.addAll(toolDAO.findAllPublished());
         all.addAll(workflowDAO.findAllPublished());
@@ -255,7 +256,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Entry c : all) {
             if (c instanceof Workflow && (registryId != null || registry != null || organization != null || name != null
-                    || toolname != null)) {
+                || toolname != null)) {
                 continue;
             }
 
@@ -335,13 +336,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
-                        DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
-                        Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
+                    DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
+                    Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
-                    DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
-                    Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
+                DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
+                Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
@@ -366,7 +367,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
      * @return a specific file wrapped in a response
      */
     private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath,
-            boolean unwrap) {
+        boolean unwrap) {
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
@@ -381,7 +382,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         }
 
         final Pair<io.swagger.model.Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = ToolsImplCommon
-                .convertEntryToTool(entry, config);
+            .convertEntryToTool(entry, config);
 
         String finalVersionId = versionId;
         if (toolTablePair == null || toolTablePair.getKey().getVersions() == null) {
@@ -389,17 +390,17 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         }
         io.swagger.model.Tool convertedTool = toolTablePair.getKey();
         final Optional<ToolVersion> first = convertedTool.getVersions().stream()
-                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+            .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
         Optional<? extends Version> oldFirst;
         EntryVersionHelper<Tool> entryVersionHelper;
         if (entry instanceof Tool) {
             Tool toolEntry = (Tool)entry;
             oldFirst = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
-                    .findFirst();
+                .findFirst();
         } else {
             Workflow workflowEntry = (Workflow)entry;
             oldFirst = workflowEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
-                    .findFirst();
+                .findFirst();
         }
 
         final Table<String, SourceFile.FileType, Object> table = toolTablePair.getValue();
@@ -415,40 +416,42 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                     ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
                     toolTestsList.add(toolTests);
                 }
-                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull)
-                                .collect(Collectors.joining("\n")) : toolTestsList).build();
+                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
+                    unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull).collect(Collectors.joining("\n"))
+                        : toolTestsList).build();
             case DOCKERFILE:
                 final ToolDockerfile dockerfile = (ToolDockerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
+                    .entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
             default:
                 if (relativePath == null) {
                     if ((type == DOCKSTORE_WDL) && (
-                            ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
-                                    == ToolDescriptor.TypeEnum.WDL)) {
+                        ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
+                            == DescriptorType.WDL)) {
                         final ToolDescriptor descriptor = (ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL);
                         return Response.status(Response.Status.OK).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
                     } else if (type == DOCKSTORE_CWL && (
-                            ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL)).getType()
-                                    == ToolDescriptor.TypeEnum.CWL)) {
+                        ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL)).getType()
+                            == DescriptorType.CWL)) {
                         final ToolDescriptor descriptor = (ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL);
                         return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                                .entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
+                            .entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
                     }
                     return Response.status(Response.Status.NOT_FOUND).build();
                 } else {
                     final Set<SourceFile> sourceFiles = oldFirst.get().getSourceFiles();
                     Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
-                            .findFirst();
+                        .findFirst();
                     if (!first1.isPresent()) {
-                        first1 = sourceFiles.stream().filter(file -> (cleanRelativePath(file.getPath()).equalsIgnoreCase(cleanRelativePath(relativePath)))).findFirst();
+                        first1 = sourceFiles.stream()
+                            .filter(file -> (cleanRelativePath(file.getPath()).equalsIgnoreCase(cleanRelativePath(relativePath))))
+                            .findFirst();
                     }
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
                         ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
                         return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                                .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
+                            .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
                     }
                 }
             }
@@ -462,7 +465,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext containerRequestContext)
+        throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         List<String> primaryDescriptorPaths = new ArrayList<>();
@@ -470,7 +474,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             Workflow workflow = (Workflow)entry;
             Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
             Optional<WorkflowVersion> first = workflowVersions.stream()
-                    .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
+                .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
             if (first.isPresent()) {
                 WorkflowVersion workflowVersion = first.get();
                 // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
@@ -503,8 +507,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
     /**
      * Converts SourceFile.FileType to ToolFile.FileTypeEnum
-     * @param fileType  The SourceFile.FileType
-     * @return          The ToolFile.FileTypeEnum
+     *
+     * @param fileType The SourceFile.FileType
+     * @return The ToolFile.FileTypeEnum
      */
     private ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(SourceFile.FileType fileType) {
         switch (fileType) {
@@ -513,7 +518,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         case WDL_TEST_JSON:
             return ToolFile.FileTypeEnum.TEST_FILE;
         case DOCKERFILE:
-            return ToolFile.FileTypeEnum.DOCKERFILE;
+            return ToolFile.FileTypeEnum.CONTAINERFILE;
         case DOCKSTORE_WDL:
         case DOCKSTORE_CWL:
             return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
@@ -528,9 +533,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
     /**
      * Converts a list of SourceFile to a list of ToolFile.
-     * @param sourceFiles   The list of SourceFile to convert
-     * @param mainDescriptor    The main descriptor path, used to determine if the file is a primary or secondary descriptor
-     * @return  A list of ToolFile for the Tool
+     *
+     * @param sourceFiles    The list of SourceFile to convert
+     * @param mainDescriptor The main descriptor path, used to determine if the file is a primary or secondary descriptor
+     * @return A list of ToolFile for the Tool
      */
     private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type) {
         List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
@@ -550,8 +556,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
     /**
      * Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL)
+     *
      * @param sourceFiles The original source files for the Tool
-     * @param type The type (CWL or WDL), nextflow is not currently handled
+     * @param type        The type (CWL or WDL), nextflow is not currently handled
      * @return A list of source files that are possibly relevant to the type (CWL or WDL)
      */
     private List<SourceFile> filterSourcefiles(Set<SourceFile> sourceFiles, String type) {
@@ -567,24 +574,28 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
 
     /**
      * This checks whether the sourcefile is CWL
+     *
      * @param sourceFile the sourcefile to check
      * @return true if the sourcefile is CWL-related, false otherwise
      */
     private boolean isCWL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
-        return Stream.of(SourceFile.FileType.CWL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_CWL).anyMatch(type::equals);
+        return Stream.of(SourceFile.FileType.CWL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_CWL)
+            .anyMatch(type::equals);
     }
 
     /**
      * This checks whether the sourcefile is WDL
+     *
      * @param sourceFile the sourcefile to check
      * @return true if the sourcefile is WDL-related, false otherwise
      */
     private boolean isWDL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
-        return Stream.of(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL).anyMatch(type::equals);
+        return Stream.of(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL)
+            .anyMatch(type::equals);
     }
-    
+
     private String cleanRelativePath(String relativePath) {
         String cleanRelativePath = StringUtils.stripStart(relativePath, "./");
         return StringUtils.stripStart(cleanRelativePath, "/");

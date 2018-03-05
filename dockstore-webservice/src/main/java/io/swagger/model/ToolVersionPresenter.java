@@ -36,12 +36,12 @@ public abstract class ToolVersionPresenter extends ToolVersion {
         return this.toolVersion.getImage();
     }
 
-    public List<DescriptorTypeEnum> getDescriptorType() {
+    public List<DescriptorType> getDescriptorType() {
         return this.toolVersion.getDescriptorType();
     }
 
     public Boolean getDockerfile() {
-        return this.toolVersion.getDockerfile();
+        return this.toolVersion.getContainerfile();
     }
 
     public String getMetaVersion() {

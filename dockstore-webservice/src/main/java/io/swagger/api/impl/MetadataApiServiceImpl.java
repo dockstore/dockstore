@@ -29,7 +29,7 @@ public class MetadataApiServiceImpl extends MetadataApiService {
     public Response metadataGet(SecurityContext securityContext) throws NotFoundException {
         Metadata metadata = new Metadata();
         metadata.setCountry("CAN");
-        metadata.setApiVersion("1.0.0");
+        metadata.setApiVersion("2.0.0");
         metadata.setFriendlyName("Dockstore");
         String implVersion = ToolsApiServiceImpl.class.getPackage().getImplementationVersion();
         implVersion = implVersion == null ? "development-build" : implVersion;

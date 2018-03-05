@@ -30,59 +30,63 @@ package io.swagger.model;
 
 import java.util.Objects;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import javax.validation.constraints.NotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
 /**
- * ToolFile
+ * A containerfile is a document that describes how to build a particular container image. Examples include Dockerfiles for creating Docker images and Singularity recipes for Singularity images
  */
+@ApiModel(description = "A containerfile is a document that describes how to build a particular container image. Examples include Dockerfiles for creating Docker images and Singularity recipes for Singularity images")
 @javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-03-05T20:18:38.928Z")
-public class ToolFile {
-    @JsonProperty("path")
-    private String path = null;
-    @JsonProperty("file_type")
-    private FileTypeEnum fileType = null;
+public class ToolContainerfile {
+    @JsonProperty("containerfile")
+    private String containerfile = null;
 
-    public ToolFile path(String path) {
-        this.path = path;
+    @JsonProperty("url")
+    private String url = null;
+
+    public ToolContainerfile containerfile(String containerfile) {
+        this.containerfile = containerfile;
         return this;
     }
 
     /**
-     * Relative path of the file.  A descriptor&#39;s path can be used with the GA4GH .../{type}/descriptor/{relative_path} endpoint
+     * The container specification for this tool.
      *
-     * @return path
+     * @return containerfile
      **/
-    @JsonProperty("path")
-    @ApiModelProperty(value = "Relative path of the file.  A descriptor's path can be used with the GA4GH .../{type}/descriptor/{relative_path} endpoint")
-    public String getPath() {
-        return path;
+    @JsonProperty("containerfile")
+    @ApiModelProperty(required = true, value = "The container specification for this tool.")
+    @NotNull
+    public String getContainerfile() {
+        return containerfile;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setContainerfile(String containerfile) {
+        this.containerfile = containerfile;
     }
 
-    public ToolFile fileType(FileTypeEnum fileType) {
-        this.fileType = fileType;
+    public ToolContainerfile url(String url) {
+        this.url = url;
         return this;
     }
 
     /**
-     * Get fileType
+     * Optional url to the file used to build this image, should include version information, and can include a git hash
      *
-     * @return fileType
+     * @return url
      **/
-    @JsonProperty("file_type")
-    @ApiModelProperty(value = "")
-    public FileTypeEnum getFileType() {
-        return fileType;
+    @JsonProperty("url")
+    @ApiModelProperty(example = "https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile", value = "Optional url to the file used to build this image, should include version information, and can include a git hash")
+    public String getUrl() {
+        return url;
     }
 
-    public void setFileType(FileTypeEnum fileType) {
-        this.fileType = fileType;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     @Override
@@ -93,22 +97,22 @@ public class ToolFile {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ToolFile toolFile = (ToolFile)o;
-        return Objects.equals(this.path, toolFile.path) && Objects.equals(this.fileType, toolFile.fileType);
+        ToolContainerfile toolContainerfile = (ToolContainerfile)o;
+        return Objects.equals(this.containerfile, toolContainerfile.containerfile) && Objects.equals(this.url, toolContainerfile.url);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(path, fileType);
+        return Objects.hash(containerfile, url);
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("class ToolFile {\n");
+        sb.append("class ToolContainerfile {\n");
 
-        sb.append("    path: ").append(toIndentedString(path)).append("\n");
-        sb.append("    fileType: ").append(toIndentedString(fileType)).append("\n");
+        sb.append("    containerfile: ").append(toIndentedString(containerfile)).append("\n");
+        sb.append("    url: ").append(toIndentedString(url)).append("\n");
         sb.append("}");
         return sb.toString();
     }
@@ -122,43 +126,6 @@ public class ToolFile {
             return "null";
         }
         return o.toString().replace("\n", "\n    ");
-    }
-
-    /**
-     * Gets or Sets fileType
-     */
-    public enum FileTypeEnum {
-        TEST_FILE("TEST_FILE"),
-
-        PRIMARY_DESCRIPTOR("PRIMARY_DESCRIPTOR"),
-
-        SECONDARY_DESCRIPTOR("SECONDARY_DESCRIPTOR"),
-
-        CONTAINERFILE("CONTAINERFILE"),
-
-        OTHER("OTHER");
-
-        private String value;
-
-        FileTypeEnum(String value) {
-            this.value = value;
-        }
-
-        @JsonCreator
-        public static FileTypeEnum fromValue(String text) {
-            for (FileTypeEnum b : FileTypeEnum.values()) {
-                if (String.valueOf(b.value).equals(text)) {
-                    return b;
-                }
-            }
-            return null;
-        }
-
-        @Override
-        @JsonValue
-        public String toString() {
-            return String.valueOf(value);
-        }
     }
 }
 

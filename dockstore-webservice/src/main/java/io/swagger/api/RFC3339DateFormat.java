@@ -13,16 +13,22 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.swagger.api.factories;
+package io.swagger.api;
 
-import io.swagger.api.ToolsApiService;
-import io.swagger.api.impl.ToolsApiServiceImpl;
+import java.text.FieldPosition;
+import java.util.Date;
 
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-03-05T20:18:38.928Z")
-public class ToolsApiServiceFactory {
-    private final static ToolsApiService service = new ToolsApiServiceImpl();
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
+import com.fasterxml.jackson.databind.util.ISO8601Utils;
 
-    public static ToolsApiService getToolsApi() {
-        return service;
+public class RFC3339DateFormat extends ISO8601DateFormat {
+
+    // Same as ISO8601DateFormat but serializing milliseconds.
+    @Override
+    public StringBuffer format(Date date, StringBuffer toAppendTo, FieldPosition fieldPosition) {
+        String value = ISO8601Utils.format(date, true);
+        toAppendTo.append(value);
+        return toAppendTo;
     }
+
 }

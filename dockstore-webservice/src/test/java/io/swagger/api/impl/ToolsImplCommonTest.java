@@ -1,3 +1,18 @@
+/*
+ *    Copyright 2017 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 package io.swagger.api.impl;
 
 import java.util.ArrayList;
@@ -15,6 +30,7 @@ import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.swagger.model.DescriptorType;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolTests;
@@ -51,7 +67,7 @@ public class ToolsImplCommonTest {
         sourceFile.setId(9001);
         ToolDescriptor actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFile);
         ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
-        expectedToolDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+        expectedToolDescriptor.setType(DescriptorType.WDL);
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
         expectedToolDescriptor.setDescriptor(PLACEHOLDER_CONTENT);
         assertEquals(expectedToolDescriptor, actualToolDescriptor);
@@ -66,7 +82,7 @@ public class ToolsImplCommonTest {
         sourceFile.setId(9001);
         ToolDescriptor actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFile);
         ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
-        expectedToolDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+        expectedToolDescriptor.setType(DescriptorType.CWL);
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
         expectedToolDescriptor.setDescriptor(PLACEHOLDER_CONTENT);
         assertEquals(expectedToolDescriptor, actualToolDescriptor);
@@ -151,10 +167,10 @@ public class ToolsImplCommonTest {
             expectedToolVersion.setId("quay.io/test_org/test6:sampleTag");
         }
         expectedToolVersion.setImage("sampleImageId");
-        List<ToolVersion.DescriptorTypeEnum> descriptorTypeList = new ArrayList<>();
-        descriptorTypeList.add(ToolVersion.DescriptorTypeEnum.CWL);
+        List<DescriptorType> descriptorTypeList = new ArrayList<>();
+        descriptorTypeList.add(DescriptorType.CWL);
         expectedToolVersion.setDescriptorType(descriptorTypeList);
-        expectedToolVersion.setDockerfile(true);
+        expectedToolVersion.setContainerfile(true);
         expectedToolVersion.setMetaVersion(null);
         expectedToolVersion.setVerified(false);
         expectedToolVersion.setVerifiedSource("");
@@ -255,11 +271,11 @@ public class ToolsImplCommonTest {
             expectedToolVersion1.setId("#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow:" + REFERENCE2);
         }
 
-        List<ToolVersion.DescriptorTypeEnum> descriptorTypeList = new ArrayList<>();
-        descriptorTypeList.add(ToolVersion.DescriptorTypeEnum.WDL);
+        List<DescriptorType> descriptorTypeList = new ArrayList<>();
+        descriptorTypeList.add(DescriptorType.WDL);
         expectedToolVersion1.setImage("");
         expectedToolVersion1.setDescriptorType(descriptorTypeList);
-        expectedToolVersion1.setDockerfile(false);
+        expectedToolVersion1.setContainerfile(false);
         // Meta-version dates are currently dependant on the environment, disabling for now
         expectedToolVersion1.setMetaVersion(null);
         expectedToolVersion1.setVerified(true);
