@@ -231,7 +231,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             type = DOCKSTORE_CWL;
         } else if (StringUtils.containsIgnoreCase(format, "WDL")) {
             type = DOCKSTORE_WDL;
-        } else if (StringUtils.containsIgnoreCase(format, "NXT")) {
+        } else if (StringUtils.containsIgnoreCase(format, "NFL")) {
             type = SourceFile.FileType.NEXTFLOW_CONFIG;
         } else if (Objects.equals("JSON", format)) {
             // if JSON is specified
@@ -575,8 +575,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return sourceFiles.stream().filter(this::isCWL).collect(Collectors.toList());
         case "WDL":
             return sourceFiles.stream().filter(this::isWDL).collect(Collectors.toList());
-        case "NXT":
-            return sourceFiles.stream().filter(this::isNXT).collect(Collectors.toList());
+        case "NFL":
+            return sourceFiles.stream().filter(this::isNFL).collect(Collectors.toList());
         default:
             throw new CustomWebApplicationException("Unknown descriptor type.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -607,7 +607,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * @param sourceFile the sourcefile to check
      * @return true if the sourcefile is WDL-related, false otherwise
      */
-    private boolean isNXT(SourceFile sourceFile) {
+    private boolean isNFL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
         return Stream.of(SourceFile.FileType.NEXTFLOW_CONFIG, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.NEXTFLOW, SourceFile.FileType.NEXTFLOW_TEST_PARAMS).anyMatch(type::equals);
     }

@@ -141,7 +141,7 @@ public class ToolDescriptor {
     public enum TypeEnum {
         CWL("CWL"),
         WDL("WDL"),
-        NXT("NXT");
+        NFL("NFL");
 
         private String value;
 

@@ -53,7 +53,7 @@ import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
-import static io.dockstore.client.cli.ArgumentUtility.NXT_STRING;
+import static io.dockstore.client.cli.ArgumentUtility.NFL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 import static io.dockstore.client.cli.ArgumentUtility.columnWidthsWorkflow;
@@ -335,7 +335,7 @@ public class WorkflowClient extends AbstractEntryClient {
                             }
                             break;
                         case WDL_STRING:
-                        case NXT_STRING:
+                        case NFL_STRING:
                             if (jsonRun == null) {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {

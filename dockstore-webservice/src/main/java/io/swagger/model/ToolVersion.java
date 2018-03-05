@@ -274,7 +274,7 @@ public class ToolVersion {
     public enum DescriptorTypeEnum {
         CWL("CWL"),
         WDL("WDL"),
-        NXT("NXT");
+        NFL("NFL");
 
         private String value;
 

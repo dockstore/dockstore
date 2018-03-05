@@ -83,9 +83,9 @@ public final class ToolsImplCommon {
         } else if (file.getType() == DOCKSTORE_WDL) {
             descriptor.setType(ToolDescriptor.TypeEnum.WDL);
         }  else if (file.getType() == SourceFile.FileType.NEXTFLOW) {
-            descriptor.setType(ToolDescriptor.TypeEnum.NXT);
+            descriptor.setType(ToolDescriptor.TypeEnum.NFL);
         }  else if (file.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
-            descriptor.setType(ToolDescriptor.TypeEnum.NXT);
+            descriptor.setType(ToolDescriptor.TypeEnum.NFL);
         }
         descriptor.setDescriptor(file.getContent());
 
@@ -263,12 +263,12 @@ public final class ToolsImplCommon {
                                 buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
                         break;
                     case NEXTFLOW:
-                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.NXT);
+                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.NFL);
                         fileTable.put(version.getName(), SourceFile.FileType.NEXTFLOW,
                             buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
                         break;
                     case NEXTFLOW_CONFIG:
-                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.NXT);
+                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.NFL);
                         fileTable.put(version.getName(), SourceFile.FileType.NEXTFLOW_CONFIG,
                             buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
                         break;
