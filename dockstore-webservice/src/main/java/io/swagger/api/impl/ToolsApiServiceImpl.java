@@ -212,14 +212,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
-            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
+            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, plainTextResponse);
         case WDL_TEST_JSON:
         case DOCKSTORE_WDL:
-            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, false);
+            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, plainTextResponse);
         case NEXTFLOW:
         case NEXTFLOW_CONFIG:
         case NEXTFLOW_TEST_PARAMS:
-            return getFileByToolVersionID(id, versionId, SourceFile.FileType.NEXTFLOW_TEST_PARAMS, null, false);
+            return getFileByToolVersionID(id, versionId, SourceFile.FileType.NEXTFLOW_TEST_PARAMS, null, plainTextResponse);
         default:
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -382,6 +382,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
         Entry entry = getEntry(parsedID);
         // check whether this is registered
+        if (entry == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
         if (!entry.getIsPublished()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
