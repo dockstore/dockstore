@@ -81,7 +81,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
             throws IOException, TimeoutException, ApiException {
         final String TEST_WORKFLOW_NAME = "test-workflow";
         WorkflowsApi workflowApi = setupWebService();
-        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json", false);
+        Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
         Assert.assertTrue(githubWorkflow.getWorkflowName().equals(TEST_WORKFLOW_NAME));

@@ -3137,11 +3137,6 @@ paths:
         description: "Default test parameter file path"
         required: false
         type: "string"
-      - name: "isChecker"
-        in: "query"
-        description: "Whether or not the workflow will be a checker workflow."
-        required: false
-        type: "boolean"
       responses:
         200:
           description: "successful operation"
@@ -3315,7 +3310,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Workflow"
-  /workflows/{entryId}/registerCheckerWorkflow:
+  /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
     post:
       tags:
       - "workflows"
@@ -3332,16 +3327,27 @@ paths:
         required: true
         schema:
           type: "string"
+      - in: "body"
+        name: "body"
+        description: "Default path to test parameter files for the checker workflow.\
+          \ If not specified will use that of the entry."
+        required: true
+        schema:
+          type: "string"
       - name: "entryId"
         in: "path"
         required: true
         type: "integer"
         format: "int64"
+      - name: "descriptorType"
+        in: "path"
+        required: true
+        type: "string"
       responses:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Workflow"
+            $ref: "#/definitions/Entry"
       security:
       - BEARER: []
   /workflows/{workflowId}:
@@ -3578,7 +3584,7 @@ paths:
       parameters:
       - name: "workflowId"
         in: "path"
-        description: "Tool id to publish/unpublish"
+        description: "Workflow id to publish/unpublish"
         required: true
         type: "integer"
         format: "int64"
@@ -3599,7 +3605,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Refresh one particular workflow. Always do a full refresh when targetted"
+      summary: "Refresh one particular workflow. Always do a full refresh when targeted"
       description: ""
       operationId: "refresh"
       produces:

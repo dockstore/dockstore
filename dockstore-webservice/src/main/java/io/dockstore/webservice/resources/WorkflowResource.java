@@ -94,7 +94,6 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import javafx.util.Pair;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.json.JSONArray;
@@ -377,7 +376,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targetted", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targeted", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
@@ -397,6 +396,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
         Workflow finalWorkflow = workflowDAO.findById(workflowId);
+
+        // Refresh checker workflow
+        if (!finalWorkflow.isIsChecker() && finalWorkflow.getCheckerId() != null) {
+            refresh(user, finalWorkflow.getCheckerId());
+        }
+
         elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
         return finalWorkflow;
     }
@@ -674,12 +679,19 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/publish")
     @ApiOperation(value = "Publish or unpublish a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
-    public Workflow publish(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Tool id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
+    public Workflow publish(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
 
         checkUser(user, c);
+
+        Workflow checker = null;
+
+        // Get checker workflow
+        if (c.getCheckerId() != null) {
+            checker = workflowDAO.findById(c.getCheckerId());
+        }
 
         if (request.getPublish()) {
             boolean validTag = false;
@@ -693,11 +705,17 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
             if (validTag && !c.getGitUrl().isEmpty()) {
                 c.setIsPublished(true);
+                if (checker != null) {
+                    checker.setIsPublished(true);
+                }
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
             c.setIsPublished(false);
+            if (checker != null) {
+                checker.setIsPublished(false);
+            }
         }
 
         long id = workflowDAO.create(c);
@@ -997,8 +1015,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Workflow manualRegister(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
         @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath, @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
         @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName, @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
-        @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath,
-        @ApiParam(value = "Whether or not the workflow will be a checker workflow.") @QueryParam("isChecker") boolean isChecker) {
+        @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 
 
         // Set up source code interface and ensure token is set up
@@ -1050,7 +1067,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
-        newWorkflow.setIsChecker(isChecker);
+        newWorkflow.setIsChecker(false);
         newWorkflow.setCheckerId(null);
 
         final long workflowID = workflowDAO.create(newWorkflow);
@@ -1269,8 +1286,13 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{entryId}/registerCheckerWorkflow/{descriptorType}")
-    @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) String checkerWorkflowPath, @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.", required = true) String testParameterPath, @PathParam("entryId") Long entryId, @PathParam("descriptorType") String descriptorType) {
+    @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
+    @SuppressWarnings("checkstyle:MagicNumber")
+    public Entry registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) @QueryParam("checkerWorkflowPath") String checkerWorkflowPath,
+        @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.") @QueryParam("testParameterPath")  String testParameterPath,
+        @ApiParam(value = "Entry Id.", required = true) @PathParam("entryId") Long entryId,
+        @ApiParam(value = "Descriptor type.", required = true) @PathParam("descriptorType") String descriptorType) {
         // Find the entry
         Pair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
 
@@ -1355,9 +1377,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             if (workflowName == null) {
                 workflowName = "";
             }
-            if (Objects.equals(workflow.getDescriptorType().toLowerCase(), "cwl")){
+            if (Objects.equals(workflow.getDescriptorType().toLowerCase(), "cwl")) {
                 workflowName += "_cwl_checker";
-            } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), "wdl")){
+            } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), "wdl")) {
                 workflowName += "_wdl_checker";
             }
         } else {
@@ -1390,12 +1412,15 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         long id = workflowDAO.create(checkerWorkflow);
         checkerWorkflow.addUser(user);
         checkerWorkflow = workflowDAO.findById(id);
-        elasticManager.handleIndexUpdate(checkerWorkflow, ElasticMode.DELETE);
+        elasticManager.handleIndexUpdate(checkerWorkflow, ElasticMode.UPDATE);
 
         // Update original entry with checker id
         entryPair.getValue().setCheckerId(id);
 
-        return checkerWorkflow;
+        // Return the original entry
+        Pair<String, Entry> originalEntryPair = toolDAO.findEntryById(entryId);
+
+        return originalEntryPair.getValue();
 
     }
 

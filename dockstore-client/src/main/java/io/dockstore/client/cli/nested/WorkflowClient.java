@@ -530,7 +530,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
                     newWorkflow = workflowsApi
                             .manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(),
-                                    workflow.getDescriptorType(), workflow.getDefaultTestParameterFilePath(), false);
+                                    workflow.getDescriptorType(), workflow.getDefaultTestParameterFilePath());
 
                     if (newWorkflow != null) {
                         out("Successfully registered " + entryPath + "/" + newName);
@@ -764,7 +764,7 @@ public class WorkflowClient extends AbstractEntryClient {
             // Try and register
             try {
                 workflow = workflowsApi
-                        .manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType, testParameterFile, false);
+                        .manualRegister(gitVersionControl, organization + "/" + repository, workflowPath, workflowname, descriptorType, testParameterFile);
                 if (workflow != null) {
                     workflow = workflowsApi.refresh(workflow.getId());
                 } else {

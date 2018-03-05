@@ -225,7 +225,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
-                labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
+                labelDAO, fileDAO, workflowDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
         environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new GitHubRepoResource(tokenDAO));
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));

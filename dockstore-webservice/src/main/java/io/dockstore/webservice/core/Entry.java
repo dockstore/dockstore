@@ -16,12 +16,9 @@
 
 package io.dockstore.webservice.core;
 
-import java.sql.ResultSet;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
@@ -58,10 +55,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
-@NamedNativeQuery(
-    name="Entry.getEntryById"
-    , query="SELECT 'tool' as type, id from tool where id = :id union select 'workflow' as type, id from workflow where id = :id"
-)
+@NamedNativeQuery(name = "Entry.getEntryById", query = "SELECT 'tool' as type, id from tool where id = :id union select 'workflow' as type, id from workflow where id = :id")
 public abstract class Entry<S extends Entry, T extends Version> {
 
     /**

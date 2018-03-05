@@ -285,11 +285,11 @@ public class WorkflowIT extends BaseIT {
 
         // Manually register workflow github
         Workflow githubWorkflow = workflowApi
-                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl", "/test.json", false);
+                .manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "altname", "wdl", "/test.json");
 
         // Manually register workflow bitbucket
         Workflow bitbucketWorkflow = workflowApi
-                .manualRegister("bitbucket", "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "altname", "cwl", "/test.json", false);
+                .manualRegister("bitbucket", "dockstore_testuser2/dockstore-workflow", "/Dockstore.cwl", "altname", "cwl", "/test.json");
 
         // Assert some things
         final long count = testingPostgres
@@ -337,7 +337,7 @@ public class WorkflowIT extends BaseIT {
         // Manually register workflow
         boolean success = true;
         try {
-            workflowApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "", "wdl", "/test.json", false);
+            workflowApi.manualRegister("github", "DockstoreTestUser2/hello-dockstore-workflow", "/Dockstore.wdl", "", "wdl", "/test.json");
         } catch (ApiException c) {
             success = false;
         } finally {
@@ -346,7 +346,7 @@ public class WorkflowIT extends BaseIT {
 
         success = true;
         try {
-            workflowApi.manualRegister("github", "dasn/iodnasiodnasio", "/Dockstore.wdl", "", "wdl", "/test.json", false);
+            workflowApi.manualRegister("github", "dasn/iodnasiodnasio", "/Dockstore.wdl", "", "wdl", "/test.json");
         } catch (ApiException c) {
             success = false;
         } finally {
@@ -359,7 +359,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json", false);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW);
 
         // This checks if a workflow whose default name was manually registered as an empty string would become null
@@ -385,7 +385,7 @@ public class WorkflowIT extends BaseIT {
     public void testRelativeSecondaryFileOperations() throws ApiException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json", false);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
 
         // This checks if a workflow whose default name was manually registered as an empty string would become null
