@@ -176,7 +176,7 @@ public class Tool extends Entry<Tool, Tag> {
         lastBuild = tool.getLastBuild();
         this.toolMaintainerEmail = tool.getToolMaintainerEmail();
         this.privateAccess = tool.isPrivateAccess();
-        this.setCheckerId(tool.getCheckerId());
+//        this.setCheckerId(tool.getCheckerId());
     }
 
     @JsonProperty

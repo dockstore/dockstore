@@ -111,10 +111,11 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private final String bitbucketClientSecret;
     private final ObjectMapper objectMapper;
     private final ElasticManager elasticManager;
+    private final WorkflowResource workflowResource;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
-            LabelDAO labelDAO, FileDAO fileDAO, WorkflowDAO workflowDAO, String bitbucketClientID, String bitbucketClientSecret) {
+            LabelDAO labelDAO, FileDAO fileDAO, WorkflowDAO workflowDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
         objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
@@ -126,6 +127,8 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
+
+        this.workflowResource = workflowResource;
 
         this.toolDAO = toolDAO;
         elasticManager = new ElasticManager();
@@ -182,7 +185,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         // Refresh checker workflow
         if (tool.getCheckerId() != null) {
-            refresh(user, tool.getCheckerId());
+            workflowResource.refresh(user, tool.getCheckerId());
         }
 
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);

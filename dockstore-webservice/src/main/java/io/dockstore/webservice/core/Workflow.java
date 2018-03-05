@@ -135,7 +135,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     /**
-     * Used during refresh to update containers
+     * Used during refresh to update containers with information from remote
      *
      * @param workflow workflow to update from
      */
@@ -143,8 +143,8 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         super.update(workflow);
         this.setMode(workflow.getMode());
         this.setWorkflowName(workflow.getWorkflowName());
-        this.setIsChecker(workflow.isIsChecker());
-        this.setCheckerId(workflow.getCheckerId());
+//        this.setIsChecker(workflow.isIsChecker());
+//        this.setCheckerId(workflow.getCheckerId());
     }
 
     /**

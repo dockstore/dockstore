@@ -1296,6 +1296,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         // Find the entry
         Pair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
 
+        // Check if valid descriptor type
+        if (!Objects.equals(descriptorType, "cwl") && !Objects.equals(descriptorType, "wdl")) {
+            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only cwl and wdl are valid.", HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Check if the entry exists
         if (entryPair.getValue() == null) {
             throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
@@ -1332,10 +1337,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
             // Get default test parameter path, toolname, descriptor type
             if (Objects.equals(descriptorType.toLowerCase(), "wdl")) {
-                workflowName = tool.getToolname() + "_checker_wdl";
+                workflowName = tool.getToolname() + "_wdl_checker";
                 defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
             } else {
-                workflowName = tool.getToolname() + "_checker_cwl";
+                workflowName = tool.getToolname() + "_cwl_checker";
                 defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
             }
 
@@ -1408,7 +1413,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
         }
 
-        // now should just be a stub
+        // Persist checker workflow
         long id = workflowDAO.create(checkerWorkflow);
         checkerWorkflow.addUser(user);
         checkerWorkflow = workflowDAO.findById(id);

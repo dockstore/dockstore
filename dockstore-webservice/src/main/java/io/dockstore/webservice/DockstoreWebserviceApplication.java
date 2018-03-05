@@ -224,8 +224,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 //        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
+
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO,
+            workflowVersionDAO, labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
+        environment.jersey().register(workflowResource);
+
+        // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
-                labelDAO, fileDAO, workflowDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
+                labelDAO, fileDAO, workflowDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource);
         environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new GitHubRepoResource(tokenDAO));
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
@@ -242,10 +248,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(resource5);
 
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
-
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO,
-                workflowVersionDAO, labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
-        environment.jersey().register(workflowResource);
 
         environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
