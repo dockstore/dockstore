@@ -411,7 +411,7 @@ public class SystemClientIT {
                 .build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.get(0).contains("testparameterstuff"));
-        assertTrue(strings.get(0).contains("moretestparameterstuff"));
+        assertTrue(strings.get(1).contains("moretestparameterstuff"));
     }
 
     @Test
