@@ -93,7 +93,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.json.JSONArray;
@@ -1287,7 +1287,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "Entry Id.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "Descriptor type.", required = true) @PathParam("descriptorType") String descriptorType) {
         // Find the entry
-        Pair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
+        MutablePair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
 
         // Check if valid descriptor type
         if (!Objects.equals(descriptorType, "cwl") && !Objects.equals(descriptorType, "wdl")) {
@@ -1415,7 +1415,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         entryPair.getValue().setCheckerWorkflow(checkerWorkflow);
 
         // Return the original entry
-        Pair<String, Entry> originalEntryPair = toolDAO.findEntryById(entryId);
+        MutablePair<String, Entry> originalEntryPair = toolDAO.findEntryById(entryId);
 
         return originalEntryPair.getValue();
 

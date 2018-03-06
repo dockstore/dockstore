@@ -5177,9 +5177,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      is_checker:
-        type: "boolean"
-        readOnly: true
       parent_id:
         type: "integer"
         format: "int64"
@@ -5318,6 +5315,10 @@ definitions:
         - "GITHUB"
         - "BITBUCKET"
         - "GITLAB"
+      is_checker:
+        type: "boolean"
+        position: 26
+        readOnly: true
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"

@@ -346,6 +346,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @JsonProperty("is_checker")
+    @ApiModelProperty(position = 26)
     public boolean isChecker() {
         // Null parent ID implies not a checker
         return getParentEntry() != null;

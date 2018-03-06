@@ -24,7 +24,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.hibernate.AbstractDAO;
-import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -53,16 +53,16 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
         return get(id);
     }
 
-    public Pair<String, Entry> findEntryById(Long id) {
+    public MutablePair<String, Entry> findEntryById(Long id) {
         Query query = super.namedQuery("Entry.getEntryById");
         query.setParameter("id", id);
         List<Object[]> pair = list(query);
-        Pair<String, Entry> results;
+        MutablePair<String, Entry> results;
         String type = (String)(pair.get(0))[0];
         if ("workflow".equals(type)) {
-            results = new Pair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(id)));
+            results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(id)));
         } else {
-            results = new Pair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(id)));
+            results = new MutablePair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(id)));
         }
         return results;
     }
