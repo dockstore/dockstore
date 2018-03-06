@@ -246,7 +246,7 @@
 
     <changeSet id="remove-is-checker-add-parent-id" author="agduncan">
         <addColumn tableName="workflow">
-            <column name="parentid" type="long" defaultValue="null"/>
+            <column name="parentid" type="bigint" defaultValue="null"/>
         </addColumn>
         <dropColumn tableName="workflow" columnName="ischecker">
         </dropColumn>
