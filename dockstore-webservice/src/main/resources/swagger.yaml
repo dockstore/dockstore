@@ -4276,9 +4276,11 @@ definitions:
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
       checker_id:
+        type: "integer"
+        format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
-        $ref: "#/definitions/Workflow"
+        readOnly: true
       mode:
         type: "string"
         position: 13
@@ -4458,9 +4460,11 @@ definitions:
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
       checker_id:
+        type: "integer"
+        format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
-        $ref: "#/definitions/Workflow"
+        readOnly: true
   GitHubComAuthenticationResource:
     type: "object"
     properties:
@@ -5245,9 +5249,11 @@ definitions:
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
       checker_id:
+        type: "integer"
+        format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
-        $ref: "#/definitions/Workflow"
+        readOnly: true
       mode:
         type: "string"
         position: 13

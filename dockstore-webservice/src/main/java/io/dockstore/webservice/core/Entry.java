@@ -113,12 +113,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
-    @JsonProperty("checker_id")
+    @JsonIgnore
     @JoinColumn(name = "checker_id")
     @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
     private Workflow checkerWorkflow;
-
 
     // database timestamps
     @Column(updatable = false)
@@ -139,6 +138,18 @@ public abstract class Entry<S extends Entry, T extends Version> {
         users = new HashSet<>(0);
         starredUsers = new HashSet<>(0);
     }
+
+
+    @JsonProperty("checker_id")
+    @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
+    public Long getCheckerId() {
+        if (checkerWorkflow == null) {
+            return null;
+        } else {
+            return checkerWorkflow.getId();
+        }
+    }
+
 
     public Workflow getCheckerWorkflow() {
         return checkerWorkflow;
