@@ -818,6 +818,10 @@ public class WorkflowClient extends AbstractEntryClient {
                 String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
                 String defaultTestJsonPath = optVal(args, "--default-test-parameter-path", workflow.getDefaultTestParameterFilePath());
 
+                if (workflowName != null && workflowName.startsWith("_")) {
+                    errorMessage("Workflow names cannot start with an underscore.", Client.CLIENT_ERROR);
+                }
+
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
                     // Check if valid input

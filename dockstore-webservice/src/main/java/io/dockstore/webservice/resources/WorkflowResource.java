@@ -201,7 +201,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         newWorkflow.setDescriptorType(workflow.getDescriptorType());
 
         // Do we maintain the checker workflow association? For now we won't
-        //newWorkflow.setCheckerId(workflow.getCheckerId());
+        //newWorkflow.setCheckerWorkflow(workflow.getCheckerWorkflow());
 
         // Copy Labels
         SortedSet<Label> labels = (SortedSet<Label>)workflow.getLabels();
@@ -398,8 +398,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow finalWorkflow = workflowDAO.findById(workflowId);
 
         // Refresh checker workflow
-        if (!finalWorkflow.isChecker() && finalWorkflow.getCheckerId() != null) {
-            refresh(user, finalWorkflow.getCheckerId());
+        if (!finalWorkflow.isChecker() && finalWorkflow.getCheckerWorkflow() != null) {
+            refresh(user, finalWorkflow.getCheckerWorkflow().getId());
         }
 
         elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
@@ -686,12 +686,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         checkUser(user, c);
 
-        Workflow checker = null;
-
-        // Get checker workflow
-        if (c.getCheckerId() != null) {
-            checker = workflowDAO.findById(c.getCheckerId());
-        }
+        Workflow checker = c.getCheckerWorkflow();
 
         if (request.getPublish()) {
             boolean validTag = false;
@@ -1067,8 +1062,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
-        newWorkflow.setParentId(null);
-        newWorkflow.setCheckerId(null);
 
         final long workflowID = workflowDAO.create(newWorkflow);
         // need to create nested data models
@@ -1290,7 +1283,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @SuppressWarnings("checkstyle:MagicNumber")
     public Entry registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) @QueryParam("checkerWorkflowPath") String checkerWorkflowPath,
-        @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.") @QueryParam("testParameterPath")  String testParameterPath,
+        @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.") @QueryParam("testParameterPath") String testParameterPath,
         @ApiParam(value = "Entry Id.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "Descriptor type.", required = true) @PathParam("descriptorType") String descriptorType) {
         // Find the entry
@@ -1315,7 +1308,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
 
         // Ensure that the entry has no checker workflows already
-        if (entryPair.getValue().getCheckerId() != null) {
+        if (entryPair.getValue().getCheckerWorkflow() != null) {
             throw new CustomWebApplicationException("The given entry already has a checker workflow.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1404,7 +1397,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkerWorkflow.setLastUpdated(lastUpdated);
         checkerWorkflow.setWorkflowName(workflowName);
         checkerWorkflow.setDescriptorType(descriptorType);
-        checkerWorkflow.setParentId(entryId);
 
         // Deal with possible custom default test parameter file
         if (testParameterPath != null) {
@@ -1420,7 +1412,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         elasticManager.handleIndexUpdate(checkerWorkflow, ElasticMode.UPDATE);
 
         // Update original entry with checker id
-        entryPair.getValue().setCheckerId(id);
+        entryPair.getValue().setCheckerWorkflow(checkerWorkflow);
 
         // Return the original entry
         Pair<String, Entry> originalEntryPair = toolDAO.findEntryById(entryId);

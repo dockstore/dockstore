@@ -36,6 +36,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedNativeQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
@@ -112,10 +113,12 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
-    @Column
     @JsonProperty("checker_id")
+    @JoinColumn(name = "checker_id")
+    @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
-    private Long checkerId;
+    private Workflow checkerWorkflow;
+
 
     // database timestamps
     @Column(updatable = false)
@@ -137,6 +140,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
         starredUsers = new HashSet<>(0);
     }
 
+    public Workflow getCheckerWorkflow() {
+        return checkerWorkflow;
+    }
+
+    public void setCheckerWorkflow(Workflow checkerWorkflow) {
+        this.checkerWorkflow = checkerWorkflow;
+    }
+
     @JsonProperty
     public String getAuthor() {
         return author;
@@ -149,14 +160,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public Long getCheckerId() {
-        return checkerId;
-    }
-
-    public void setCheckerId(Long checkerId) {
-        this.checkerId = checkerId;
     }
 
     @JsonProperty

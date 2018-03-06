@@ -4276,10 +4276,9 @@ definitions:
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
       checker_id:
-        type: "integer"
-        format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
+        $ref: "#/definitions/Workflow"
       mode:
         type: "string"
         position: 13
@@ -4459,10 +4458,9 @@ definitions:
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
       checker_id:
-        type: "integer"
-        format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
+        $ref: "#/definitions/Workflow"
   GitHubComAuthenticationResource:
     type: "object"
     properties:
@@ -5178,6 +5176,10 @@ definitions:
       is_checker:
         type: "boolean"
         readOnly: true
+      parent_id:
+        type: "integer"
+        format: "int64"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
@@ -5243,10 +5245,9 @@ definitions:
         description: "This is a link to the associated repo with a descriptor, required\
           \ GA4GH"
       checker_id:
-        type: "integer"
-        format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
+        $ref: "#/definitions/Workflow"
       mode:
         type: "string"
         position: 13
@@ -5296,12 +5297,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
-      parent_id:
-        type: "integer"
-        format: "int64"
-        position: 22
-        description: "The parent ID of a checker workflow. Null if not a checker workflow.\
-          \ Required for checker workflows"
       full_workflow_path:
         type: "string"
         position: 23

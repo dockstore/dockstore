@@ -184,8 +184,8 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
 
         // Refresh checker workflow
-        if (tool.getCheckerId() != null) {
-            workflowResource.refresh(user, tool.getCheckerId());
+        if (tool.getCheckerWorkflow() != null) {
+            workflowResource.refresh(user, tool.getCheckerWorkflow().getId());
         }
 
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
@@ -482,12 +482,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         checkUser(user, c);
 
-        Workflow checker = null;
-
-        // Get checker workflow
-        if (c.getCheckerId() != null) {
-            checker = workflowDAO.findById(c.getCheckerId());
-        }
+        Workflow checker = c.getCheckerWorkflow();
 
 
         if (request.getPublish()) {

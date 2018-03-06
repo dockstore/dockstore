@@ -31,6 +31,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -113,10 +114,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @OrderBy("id")
     private final SortedSet<WorkflowVersion> workflowVersions;
 
-    @Column
-    @JsonProperty("parent_id")
-    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows", position = 22)
-    private Long parentId;
+
+    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
+    @JsonIgnore
+    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
+    private Entry parentEntry;
 
     public Workflow() {
         workflowVersions = new TreeSet<>();
@@ -129,9 +131,26 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowVersions = new TreeSet<>();
     }
 
+    @JsonProperty("parent_id")
+    public Long getParentId() {
+        if (parentEntry != null) {
+            return parentEntry.getId();
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public Set<WorkflowVersion> getVersions() {
         return workflowVersions;
+    }
+
+    public Entry getParentEntry() {
+        return parentEntry;
+    }
+
+    public void setParentEntry(Entry parentEntry) {
+        this.parentEntry = parentEntry;
     }
 
     /**
@@ -166,8 +185,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setDescriptorType(getDescriptorType());
         targetWorkflow.setDefaultVersion(getDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
-        targetWorkflow.setCheckerId(getCheckerId());
-        targetWorkflow.setParentId(getParentId());
+        targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
     }
 
     @JsonProperty
@@ -330,14 +348,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JsonProperty("is_checker")
     public boolean isChecker() {
         // Null parent ID implies not a checker
-        return getParentId() != null;
-    }
-
-    public Long getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
+        return getParentEntry() != null;
     }
 }
