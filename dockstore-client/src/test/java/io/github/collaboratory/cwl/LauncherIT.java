@@ -30,7 +30,8 @@ import io.cwl.avro.Workflow;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
-import io.github.collaboratory.cwl.LauncherCWL;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -161,6 +162,13 @@ public abstract class LauncherIT {
         fileMap.put("variants__calls", simulatedList);
         fileMap.put("variants__gvcf", simulatedList);
         launcherCWL.registerOutputFiles(fileMap, outputObject);
+    }
+
+    @Test
+    public void testCheckingSystemDependencies() {
+        CWLRunnerFactory.setConfig(Utilities.parseConfig(getConfigFile()));
+        CWLRunnerInterface cwlrunner = CWLRunnerFactory.createCWLRunner();
+        cwlrunner.checkForCWLDependencies();
     }
 
 }
