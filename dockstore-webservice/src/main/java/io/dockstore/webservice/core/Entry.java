@@ -114,7 +114,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     private String gitUrl;
 
     @JsonIgnore
-    @JoinColumn(name = "checker_id")
+    @JoinColumn(name = "checkerid")
     @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
     private Workflow checkerWorkflow;
