@@ -398,7 +398,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow finalWorkflow = workflowDAO.findById(workflowId);
 
         // Refresh checker workflow
-        if (!finalWorkflow.isIsChecker() && finalWorkflow.getCheckerId() != null) {
+        if (!finalWorkflow.isChecker() && finalWorkflow.getCheckerId() != null) {
             refresh(user, finalWorkflow.getCheckerId());
         }
 
@@ -1067,7 +1067,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         newWorkflow.setWorkflowName(workflowName);
         newWorkflow.setDescriptorType(descriptorType);
         newWorkflow.setDefaultTestParameterFilePath(defaultTestParameterFilePath);
-        newWorkflow.setIsChecker(false);
+        newWorkflow.setParentId(null);
         newWorkflow.setCheckerId(null);
 
         final long workflowID = workflowDAO.create(newWorkflow);
@@ -1404,7 +1404,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkerWorkflow.setLastUpdated(lastUpdated);
         checkerWorkflow.setWorkflowName(workflowName);
         checkerWorkflow.setDescriptorType(descriptorType);
-        checkerWorkflow.setIsChecker(true);
+        checkerWorkflow.setParentId(entryId);
 
         // Deal with possible custom default test parameter file
         if (testParameterPath != null) {

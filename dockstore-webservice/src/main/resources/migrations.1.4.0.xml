@@ -244,4 +244,12 @@
         <sql>alter table workflow alter column lastModified type timestamp without time zone USING to_timestamp(lastModified/1000)</sql>
     </changeSet>
 
+    <changeSet id="remove-is-checker-add-parent-id" author="agduncan">
+        <addColumn tableName="workflow">
+            <column name="parentid" type="long" defaultValue="null"/>
+        </addColumn>
+        <dropColumn tableName="workflow" columnName="ischecker">
+        </dropColumn>
+    </changeSet>
+
 </databaseChangeLog>

@@ -114,9 +114,9 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     private final SortedSet<WorkflowVersion> workflowVersions;
 
     @Column
-    @JsonProperty("is_checker")
-    @ApiModelProperty(value = "Whether or not the entry is a checker", position = 22)
-    private boolean isChecker = false;
+    @JsonProperty("parent_id")
+    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows", position = 22)
+    private Long parentId;
 
     public Workflow() {
         workflowVersions = new TreeSet<>();
@@ -143,8 +143,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         super.update(workflow);
         this.setMode(workflow.getMode());
         this.setWorkflowName(workflow.getWorkflowName());
-//        this.setIsChecker(workflow.isIsChecker());
-//        this.setCheckerId(workflow.getCheckerId());
     }
 
     /**
@@ -169,7 +167,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setDefaultVersion(getDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
         targetWorkflow.setCheckerId(getCheckerId());
-        targetWorkflow.setIsChecker(isIsChecker());
+        targetWorkflow.setParentId(getParentId());
     }
 
     @JsonProperty
@@ -329,11 +327,17 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         this.sourceControl = sourceControl;
     }
 
-    public boolean isIsChecker() {
-        return isChecker;
+    @JsonProperty("is_checker")
+    public boolean isChecker() {
+        // Null parent ID implies not a checker
+        return getParentId() != null;
     }
 
-    public void setIsChecker(boolean isChecker) {
-        this.isChecker = isChecker;
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
     }
 }

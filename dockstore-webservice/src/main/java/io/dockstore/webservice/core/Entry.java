@@ -287,8 +287,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     public void update(S entry) {
         this.setDescription(entry.getDescription());
-        // this causes an issue when newly refreshed tools that are not published overwrite publish settings for existing containers
-        // isPublished = entry.getIsPublished();
         lastModified = entry.getLastModifiedDate();
         this.setAuthor(entry.getAuthor());
         this.setEmail(entry.getEmail());

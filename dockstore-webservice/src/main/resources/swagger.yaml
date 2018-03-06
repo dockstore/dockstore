@@ -3320,27 +3320,27 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - in: "body"
-        name: "body"
+      - name: "checkerWorkflowPath"
+        in: "query"
         description: "Path of the main descriptor of the checker workflow (located\
           \ in associated tool/workflow repository)"
         required: true
-        schema:
-          type: "string"
-      - in: "body"
-        name: "body"
+        type: "string"
+      - name: "testParameterPath"
+        in: "query"
         description: "Default path to test parameter files for the checker workflow.\
           \ If not specified will use that of the entry."
-        required: true
-        schema:
-          type: "string"
+        required: false
+        type: "string"
       - name: "entryId"
         in: "path"
+        description: "Entry Id."
         required: true
         type: "integer"
         format: "int64"
       - name: "descriptorType"
         in: "path"
+        description: "Descriptor type."
         required: true
         type: "string"
       responses:
@@ -5175,6 +5175,9 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      is_checker:
+        type: "boolean"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
@@ -5293,10 +5296,12 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
-      is_checker:
-        type: "boolean"
+      parent_id:
+        type: "integer"
+        format: "int64"
         position: 22
-        description: "Whether or not the entry is a checker"
+        description: "The parent ID of a checker workflow. Null if not a checker workflow.\
+          \ Required for checker workflows"
       full_workflow_path:
         type: "string"
         position: 23
