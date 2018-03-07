@@ -1312,7 +1312,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             throw new CustomWebApplicationException("The given entry already has a checker workflow.", HttpStatus.SC_BAD_REQUEST);
         }
 
-
         // Checker workflow variables
         String defaultTestParameterPath;
         String organization;
@@ -1328,7 +1327,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             // Get tool
             Tool tool = (Tool)entryPair.getValue();
 
-            // Get default test parameter path, toolname, descriptor type
+            // Get default test parameter path and toolname
             if (Objects.equals(descriptorType.toLowerCase(), "wdl")) {
                 workflowName = tool.getToolname() + "_wdl_checker";
                 defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
@@ -1340,7 +1339,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             // Determine gitUrl
             gitUrl = tool.getGitUrl();
 
-            // Determine source control
+            // Determine source control, org, and repo
             Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
             Matcher m = p.matcher(tool.getGitUrl());
             if (m.find()) {
@@ -1416,7 +1415,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         // Return the original entry
         MutablePair<String, Entry> originalEntryPair = toolDAO.findEntryById(entryId);
-
         return originalEntryPair.getValue();
 
     }
