@@ -19,10 +19,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+@JsonNaming(SuperKebabCaseStrategy.class)
 public class ToolV1 extends ToolPresenter {
     public ToolV1(Tool tool) {
         this.tool = tool;

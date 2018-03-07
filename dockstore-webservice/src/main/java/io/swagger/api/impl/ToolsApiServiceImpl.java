@@ -59,8 +59,8 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.DescriptorType;
+import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolFile;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
@@ -420,9 +420,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                     unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull).collect(Collectors.joining("\n"))
                         : toolTestsList).build();
             case DOCKERFILE:
-                final ToolDockerfile dockerfile = (ToolDockerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
+                final ToolContainerfile dockerfile = (ToolContainerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                    .entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
+                    .entity(unwrap ? dockerfile.getContainerfile() : dockerfile).build();
             default:
                 if (relativePath == null) {
                     if ((type == DOCKSTORE_WDL) && (

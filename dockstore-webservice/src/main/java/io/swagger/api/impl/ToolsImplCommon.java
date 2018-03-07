@@ -47,8 +47,8 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
+import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -226,8 +226,8 @@ public final class ToolsImplCommon {
                 if (version instanceof Tag) {
                     switch (file.getType()) {
                     case DOCKERFILE:
-                        ToolDockerfile dockerfile = new ToolDockerfile();
-                        dockerfile.setDockerfile(file.getContent());
+                        ToolContainerfile dockerfile = new ToolContainerfile();
+                        dockerfile.setContainerfile(file.getContent());
                         dockerfile.setUrl(urlBuilt + ((Tag)version).getDockerfilePath());
                         toolVersion.setContainerfile(true);
                         fileTable.put(version.getName(), DOCKERFILE, dockerfile);

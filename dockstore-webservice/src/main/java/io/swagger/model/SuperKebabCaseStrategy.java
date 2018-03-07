@@ -13,16 +13,16 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.swagger.api.factories;
+package io.swagger.model;
 
-import io.swagger.api.ToolsApiService;
-import io.swagger.api.impl.ToolsApiServiceImpl;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2018-03-05T20:18:38.928Z")
-public class ToolsApiServiceFactory {
-    private final static ToolsApiService service = new ToolsApiServiceImpl();
-
-    public static ToolsApiService getToolsApi() {
-        return service;
+/**
+ * Translates from something that is already in snake case to kebab case
+ */
+public class SuperKebabCaseStrategy extends PropertyNamingStrategy.PropertyNamingStrategyBase {
+    @Override
+    public String translate(String input) {
+        return input.replace('_', '-');
     }
 }

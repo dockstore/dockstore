@@ -15,10 +15,9 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+@JsonNaming(SuperKebabCaseStrategy.class)
 public class ToolVersionV1 extends ToolVersionPresenter {
     public ToolVersionV1(ToolVersion newToolVersion) {
         this.toolVersion = newToolVersion;

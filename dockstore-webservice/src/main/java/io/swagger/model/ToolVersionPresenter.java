@@ -17,7 +17,7 @@ package io.swagger.model;
 
 import java.util.List;
 
-public abstract class ToolVersionPresenter extends ToolVersion {
+public abstract class ToolVersionPresenter extends ToolVersion{
     protected ToolVersion toolVersion;
 
     public String getName() {
@@ -41,7 +41,7 @@ public abstract class ToolVersionPresenter extends ToolVersion {
     }
 
     public Boolean getDockerfile() {
-        return this.toolVersion.getContainerfile();
+        return this.toolVersion.isContainerfile();
     }
 
     public String getMetaVersion() {
@@ -49,7 +49,7 @@ public abstract class ToolVersionPresenter extends ToolVersion {
     }
 
     public Boolean getVerified() {
-        return this.toolVersion.getVerified();
+        return this.toolVersion.isVerified();
     }
 
     public String getVerifiedSource() {

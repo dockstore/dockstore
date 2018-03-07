@@ -15,11 +15,10 @@
  */
 package io.swagger.model;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 
-@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+@JsonNaming(SuperKebabCaseStrategy.class)
 @ApiModel(description = "Describes this registry to better allow for mirroring and indexing.")
 public class MetadataV1 extends MetadataPresenter {
     public MetadataV1(Metadata metadata) {

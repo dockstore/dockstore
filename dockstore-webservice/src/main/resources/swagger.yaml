@@ -664,7 +664,7 @@ paths:
         404:
           description: "The tool can not be found."
           schema:
-            $ref: "#/definitions/Tool"
+            $ref: "#/definitions/Error"
   /api/ga4gh/v2/tools/{id}/versions:
     get:
       tags:
@@ -720,7 +720,7 @@ paths:
         404:
           description: "The tool can not be found."
           schema:
-            $ref: "#/definitions/ToolVersion"
+            $ref: "#/definitions/Error"
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile:
     get:
       tags:
@@ -757,9 +757,7 @@ paths:
         404:
           description: "There are no container specifications for this tool"
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/ToolContainerfile"
+            $ref: "#/definitions/Error"
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor:
     get:
       tags:
@@ -801,7 +799,7 @@ paths:
         404:
           description: "The tool descriptor can not be found."
           schema:
-            $ref: "#/definitions/ToolDescriptor"
+            $ref: "#/definitions/Error"
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}:
     get:
       tags:
@@ -854,7 +852,7 @@ paths:
         404:
           description: "The tool can not be output in the specified type."
           schema:
-            $ref: "#/definitions/ToolDescriptor"
+            $ref: "#/definitions/Error"
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files:
     get:
       tags:
@@ -896,9 +894,7 @@ paths:
         404:
           description: "The tool can not be output in the specified type."
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/ToolFile"
+            $ref: "#/definitions/Error"
   /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests:
     get:
       tags:
@@ -941,9 +937,7 @@ paths:
         404:
           description: "The tool can not be output in the specified type."
           schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/ToolTests"
+            $ref: "#/definitions/Error"
   /auth/tokens:
     get:
       tags:
@@ -4423,6 +4417,16 @@ definitions:
         format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
+  Error:
+    type: "object"
+    required:
+    - "code"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+      message:
+        type: "string"
   GitHubComAuthenticationResource:
     type: "object"
     properties:

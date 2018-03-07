@@ -18,6 +18,7 @@ package io.swagger.api;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -42,7 +43,7 @@ public class ToolClassesApiV1 {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
-    public Response toolClassesGet(@Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolClassesGet(securityContext);
+    public Response toolClassesGet(@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
+        return delegate.toolClassesGet(securityContext, containerContext);
     }
 }

@@ -26,10 +26,10 @@ import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolDescriptor;
-import io.swagger.model.MetadataV2;
+import io.swagger.model.Metadata;
 import io.swagger.model.ToolFile;
-import io.swagger.model.ToolV2;
-import io.swagger.model.ToolVersionV2;
+import io.swagger.model.Tool;
+import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Assert;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void metadata() throws Exception {
         Response response = checkedResponse(basePath + "metadata");
-        MetadataV2 responseObject = response.readEntity(MetadataV2.class);
+        Metadata responseObject = response.readEntity(Metadata.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("api_version");
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("friendly_name");
         assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("api-version");
@@ -61,7 +61,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void tools() throws Exception {
         Response response = checkedResponse(basePath + "tools");
-        List<ToolV2> responseObject = response.readEntity(new GenericType<List<ToolV2>>() {
+        List<Tool> responseObject = response.readEntity(new GenericType<List<Tool>>() {
         });
         assertTool(MAPPER.writeValueAsString(responseObject), true);
     }
@@ -74,20 +74,20 @@ public class GA4GHV2IT extends GA4GHIT {
 
     private void toolsIdTool() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6");
-        ToolV2 responseObject = response.readEntity(ToolV2.class);
+        Tool responseObject = response.readEntity(Tool.class);
         assertTool(MAPPER.writeValueAsString(responseObject), true);
     }
 
     private void toolsIdWorkflow() throws Exception {
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FA%2Fl");
-        ToolV2 responseObject = response.readEntity(ToolV2.class);
+        Tool responseObject = response.readEntity(Tool.class);
         assertTool(MAPPER.writeValueAsString(responseObject), false);
     }
 
     @Test
     public void toolsIdVersions() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions");
-        List<ToolVersionV2> responseObject = response.readEntity(new GenericType<List<ToolVersionV2>>() {
+        List<ToolVersion> responseObject = response.readEntity(new GenericType<List<ToolVersion>>() {
         });
         assertVersion(MAPPER.writeValueAsString(responseObject));
     }
@@ -106,7 +106,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void toolsIdVersionsVersionId() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
-        ToolVersionV2 responseObject = response.readEntity(ToolVersionV2.class);
+        ToolVersion responseObject = response.readEntity(ToolVersion.class);
         assertVersion(MAPPER.writeValueAsString(responseObject));
     }
 
@@ -182,16 +182,16 @@ public class GA4GHV2IT extends GA4GHIT {
 
         // Check responses
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
-        ToolV2 responseObject = response.readEntity(ToolV2.class);
+        Tool responseObject = response.readEntity(Tool.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author1");
         response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
-        responseObject = response.readEntity(ToolV2.class);
+        responseObject = response.readEntity(Tool.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author2");
         response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
-        responseObject = response.readEntity(ToolV2.class);
+        responseObject = response.readEntity(Tool.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author3");
         response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
-        responseObject = response.readEntity(ToolV2.class);
+        responseObject = response.readEntity(Tool.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author4");
     }
 

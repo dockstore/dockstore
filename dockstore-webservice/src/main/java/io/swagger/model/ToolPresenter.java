@@ -21,7 +21,7 @@ import java.util.List;
  * @author gluu
  * @since 21/12/17
  */
-public abstract class ToolPresenter extends Tool {
+public abstract class ToolPresenter extends Tool{
     Tool tool;
 
     public String getUrl() {
@@ -61,7 +61,7 @@ public abstract class ToolPresenter extends Tool {
     }
 
     public Boolean getVerified() {
-        return this.tool.getVerified();
+        return this.tool.isVerified();
     }
 
     public String getVerifiedSource() {
@@ -69,7 +69,7 @@ public abstract class ToolPresenter extends Tool {
     }
 
     public Boolean getSigned() {
-        return this.tool.getSigned();
+        return this.tool.isSigned();
     }
 
     public List<ToolVersion> getVersions() {

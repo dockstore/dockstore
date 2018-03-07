@@ -719,6 +719,8 @@
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
                                 <usedDependency>org.apache.httpcomponents:httpcore-nio</usedDependency>
+                                <usedDependency>io.swagger:swagger-core</usedDependency>
+                                <usedDepdenency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</usedDepdenency>
                             </usedDependencies>
                         </configuration>
                     </execution>
@@ -812,6 +814,7 @@
                             <springmvc>false</springmvc>
                             <locations>
                                 <location>io.swagger.api</location>
+                                <location>io.swagger.model</location>
                                 <location>io.dockstore.webservice.resources</location>
                                 <location>io.dockstore.webservice.resources.rss</location>
                                 <location>io.dockstore.webservice.resources.proposedGA4GH</location>
@@ -838,6 +841,81 @@
                         <goals>
                             <goal>generate</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-codegen-maven-plugin</artifactId>
+                <configuration>
+                    <inputSpec>https://raw.githubusercontent.com/ga4gh/tool-registry-service-schemas/2.0.0-alpha.0/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
+                    <language>jaxrs</language>
+                    <configOptions>
+			    <!-- <sourceFolder>src/gen/java/main</sourceFolder> -->
+                        <dateLibrary>legacy</dateLibrary>
+                        <java8>true</java8>
+                        <useRuntimeException>true</useRuntimeException>
+                        <modelPackage>io.swagger.model</modelPackage>
+                    </configOptions>
+                    <generateApis>true</generateApis>
+                    <generateApiTests>false</generateApiTests>
+                    <generateApiDocumentation>false</generateApiDocumentation>
+                    <generateModels>true</generateModels>
+                    <generateModelTests>false</generateModelTests>
+                    <generateModelDocumentation>false</generateModelDocumentation>
+                    <generateSupportingFiles>true</generateSupportingFiles>
+                    <ignoreFileOverride>${pom.basedir}/src/main/resources/swagger-templates/swagger-codegen-ignore</ignoreFileOverride>
+                    <withXml>true</withXml>
+                    <library>jersey2</library>
+                    <templateDirectory>${pom.basedir}/src/main/resources/swagger-templates</templateDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>test</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${basedir}/target/generated-sources</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add_sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/main/java</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add_test_sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/test/java</source>
+                            </sources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
