@@ -1197,6 +1197,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
+                <excludeGroups>io.dockstore.common.ToilOnlyTest</excludeGroups>
             </properties>
         </profile>
     </profiles>
