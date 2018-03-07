@@ -94,7 +94,7 @@ import static org.junit.Assert.fail;
  * @author xliu
  */
 @Category(ConfidentialTest.class)
-public class SystemClientIT {
+public class SwaggerClientIT {
 
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";

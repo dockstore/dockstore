@@ -26,6 +26,7 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
+import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -436,6 +437,7 @@ public class GeneralIT extends BaseIT {
     }
 
     @Test
+    @Category(ToilCompatibleTest.class)
     public void testCWL2JSON() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2json", "--cwl",
@@ -444,6 +446,7 @@ public class GeneralIT extends BaseIT {
     }
 
     @Test
+    @Category(ToilCompatibleTest.class)
     public void testCWL2YAML() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2yaml", "--cwl",
@@ -569,6 +572,7 @@ public class GeneralIT extends BaseIT {
      * Tests that a developer can launch a CWL Tool locally, instead of getting files from Dockstore
      */
     @Test
+    @Category(ToilCompatibleTest.class)
     public void testLocalLaunchCWL() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
                 ResourceHelpers.resourceFilePath("arrays.cwl"), "--json",

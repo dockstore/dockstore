@@ -13,24 +13,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory.cwl;
-
-import io.dockstore.common.ToilOnlyTest;
-import org.apache.commons.io.FileUtils;
-import org.junit.experimental.categories.Category;
+package io.dockstore.common;
 
 /**
- * @author dyuen
+ * These tests can only be run using toil.
+ * Toil installs a completely different version of cwltool, cwltest, etc. then what we are normally used to
  */
-@Category(ToilOnlyTest.class)
-public class ToilLauncherTest extends LauncherIT {
-
-    public String getConfigFile() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.toil.ini").getAbsolutePath();
-    }
-
-    @Override
-    public String getConfigFileWithExtraParameters() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.toil.extra.ini").getAbsolutePath();
-    }
+public interface ToilOnlyTest {
 }

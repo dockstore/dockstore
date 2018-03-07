@@ -15,11 +15,14 @@
  */
 package io.github.collaboratory.cwl;
 
+import io.dockstore.common.ToilCompatibleTest;
 import org.apache.commons.io.FileUtils;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author dyuen
  */
+@Category(ToilCompatibleTest.class)
 public class GenericCWLLauncherTest extends LauncherIT {
 
     public String getConfigFile() {
