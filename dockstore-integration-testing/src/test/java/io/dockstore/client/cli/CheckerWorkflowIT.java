@@ -28,6 +28,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,6 +62,13 @@ public class CheckerWorkflowIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
+    /**
+     * This tests the process of adding a checker workflow to a tool entry and that some calls to the tool will also trigger the calls to the checker
+     * - Refresh tool should refresh checker
+     * - Publish tool should publish checker
+     * - Unpublish tool should unpublish checker
+     * @throws ApiException
+     */
     @Test
     public void testToolAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
@@ -91,7 +99,7 @@ public class CheckerWorkflowIT extends BaseIT {
         containersApi.refresh(githubTool.getId());
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("checker_workflow_wrapping_workflow.cwl", githubTool.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow("/checker_workflow_wrapping_tool.cwl", githubTool.getId(), "cwl", null);
 
         // Refresh workflow
         containersApi.refresh(githubTool.getId());
@@ -178,7 +186,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertTrue("One workflow should be full, there are " + count2, count2 == 1);
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("checker_workflow_wrapping_workflow.cwl", githubWorkflow.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow("/checker_workflow_wrapping_workflow.cwl", githubWorkflow.getId(), "cwl", null);
 
         // Refresh workflow
         workflowApi.refresh(githubWorkflow.getId());
@@ -216,6 +224,30 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count8 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
         assertTrue("No workflows should be published, there are " + count8, count8 == 0);
+    }
+
+    /**
+     * Should not be able to add a checker workflow to a stub workflow (Should fail)
+     * @throws ApiException
+     */
+    @Test(expected = ApiException.class)
+    public void testAddCheckerToStub() throws ApiException {
+        // Setup for test
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manually register a workflow
+        Workflow githubWorkflow = workflowApi
+            .manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "altname", "cwl", "/testcwl.json");
+
+        final long count = testingPostgres
+            .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertTrue("No workflows are in full mode, there are " + count, count == 0);
+
+        // Add checker workflow
+        workflowApi.registerCheckerWorkflow("checker_workflow_wrapping_workflow.cwl", githubWorkflow.getId(), "cwl", null);
     }
 
 }
