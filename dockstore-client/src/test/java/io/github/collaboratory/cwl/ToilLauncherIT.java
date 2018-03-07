@@ -23,7 +23,7 @@ import org.junit.experimental.categories.Category;
  * @author dyuen
  */
 @Category(ToilOnlyTest.class)
-public class ToilLauncherTest extends LauncherIT {
+public class ToilLauncherIT extends LauncherIT {
 
     public String getConfigFile() {
         return FileUtils.getFile("src", "test", "resources", "launcher.toil.ini").getAbsolutePath();

@@ -23,7 +23,7 @@ import org.junit.experimental.categories.Category;
  * @author dyuen
  */
 @Category(ToilCompatibleTest.class)
-public class GenericCWLLauncherTest extends LauncherIT {
+public class GenericCWLLauncherIT extends LauncherIT {
 
     public String getConfigFile() {
         return FileUtils.getFile("src", "test", "resources", "launcher.cwl-runner.ini").getAbsolutePath();
