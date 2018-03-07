@@ -1386,7 +1386,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         // Create checker workflow
         Workflow checkerWorkflow = new Workflow();
-        checkerWorkflow.setMode(WorkflowMode.FULL);
+        checkerWorkflow.setMode(WorkflowMode.STUB);
         checkerWorkflow.setDefaultWorkflowPath(checkerWorkflowPath);
         checkerWorkflow.setDefaultTestParameterFilePath(defaultTestParameterPath);
         checkerWorkflow.setOrganization(organization);
