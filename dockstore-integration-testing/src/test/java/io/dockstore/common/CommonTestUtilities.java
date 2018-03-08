@@ -17,6 +17,9 @@
 package io.dockstore.common;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
@@ -24,7 +27,9 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
+import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,6 +185,13 @@ public final class CommonTestUtilities {
         return new TestingPostgres(parseConfig);
     }
 
+    public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws ExecuteException, RuntimeException {
+        List commandList = new ArrayList<String>();
+        commandList.add(dockstore.getAbsolutePath());
+        commandList.addAll(Arrays.asList(commandArray));
+        String commandString = String.join(" ", commandList);
+        return Utilities.executeCommand(commandString);
+    }
 
     public static class TestingPostgres extends BasicPostgreSQL {
 
