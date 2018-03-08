@@ -18,7 +18,6 @@ package io.dockstore.client.cli.nested;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,7 +30,6 @@ import java.util.stream.Stream;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
-import com.google.common.io.Files;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.Registry;
@@ -47,7 +45,6 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
@@ -1035,26 +1032,15 @@ public class ToolClient extends AbstractEntryClient {
         List<SourceFile> result = new ArrayList<>();
         if (tool != null) {
             try {
+                List<SourceFile> files;
                 if (descriptor.toLowerCase().equals("cwl")) {
-                    List<SourceFile> files = containersApi.secondaryCwl(tool.getId(), version);
-                    for (SourceFile sourceFile : files) {
-                        File tempDescriptor = new File(tempDir.getAbsolutePath(), sourceFile.getPath());
-                        // ensure that the parent directory exists
-                        tempDescriptor.getParentFile().mkdirs();
-                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-                        result.add(sourceFile);
-                    }
+                    files = containersApi.secondaryCwl(tool.getId(), version);
+                } else if (descriptor.toLowerCase().equals("wdl")) {
+                    files = containersApi.secondaryWdl(tool.getId(), version);
                 } else {
-                    List<SourceFile> files = containersApi.secondaryWdl(tool.getId(), version);
-                    for (SourceFile sourceFile : files) {
-                        File tempDescriptor = File.createTempFile(FilenameUtils.removeExtension(sourceFile.getPath()),
-                                FilenameUtils.getExtension(sourceFile.getPath()), tempDir);
-                        // ensure that the parent directory exists
-                        tempDescriptor.getParentFile().mkdirs();
-                        Files.write(sourceFile.getContent(), tempDescriptor, StandardCharsets.UTF_8);
-                        result.add(sourceFile);
-                    }
+                    throw new UnsupportedOperationException("other languages not supported yet");
                 }
+                writeSourceFilesToDisk(tempDir, result, files);
             } catch (ApiException e) {
                 exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
             } catch (IOException e) {

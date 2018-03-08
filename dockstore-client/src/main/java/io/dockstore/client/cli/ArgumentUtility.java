@@ -38,6 +38,7 @@ public final class ArgumentUtility {
     public static final String LAUNCH = "launch";
     public static final String CWL_STRING = "cwl";
     public static final String WDL_STRING = "wdl";
+    public static final String NFL_STRING = "nfl";
     public static final String NAME_HEADER = "NAME";
     public static final String DESCRIPTION_HEADER = "DESCRIPTION";
     public static final String GIT_HEADER = "Git Repo";

@@ -1,5 +1,10 @@
-#!/bin/bash
-set -ev
+#!/usr/bin/env bash
+# Bash3 Boilerplate. Copyright (c) 2014, kvz.io
+
+set -o errexit
+set -o pipefail
+set -o nounset
+set -o xtrace
 
 echo "${TRAVIS_BRANCH}"
 echo "${TRAVIS_PULL_REQUEST}"
@@ -7,7 +12,7 @@ echo "${TRAVIS_PULL_REQUEST_BRANCH}"
 echo "${TRAVIS_PULL_REQUEST_SHA}"
 
 if [ "${TESTING_PROFILE}" = "integration-tests" ]; then
-    openssl aes-256-cbc -K $encrypted_c42a0604a544_key -iv $encrypted_c42a0604a544_iv -in secrets.tar.enc -out secrets.tar -d
+    openssl aes-256-cbc -K $encrypted_4235c77db5dc_key -iv $encrypted_4235c77db5dc_iv -in secrets.tar.enc -out secrets.tar -d
     tar xvf secrets.tar
 fi
 

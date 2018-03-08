@@ -28,6 +28,8 @@ import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.LanguageClientFactory;
+import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WDLFileProvisioning;
@@ -62,10 +64,12 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, AbstractEntryClient.Type.WDL)
+            .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
         // run a workflow
-        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, parameterFile.getAbsolutePath(), null, null);
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null, null);
         Assert.assertTrue(run == 0);
     }
 
@@ -74,10 +78,12 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, AbstractEntryClient.Type.WDL)
+            .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl_wrong.json"));
         // run a workflow
-        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, parameterFile.getAbsolutePath(), null, null);
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null, null);
         Assert.assertTrue(run != 0);
     }
 
@@ -87,7 +93,8 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
-
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, AbstractEntryClient.Type.WDL)
+            .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));
         Bridge bridge = new Bridge();
@@ -106,7 +113,7 @@ public class CromwellIT {
 
         String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
         // run a workflow
-        final long run = main.launchWdlInternal(workflowFile.getAbsolutePath(), true, newJsonPath, tempDir.getAbsolutePath(), null);
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, newJsonPath, null, tempDir.getAbsolutePath(), null);
         Assert.assertTrue(run == 0);
         // let's check that provisioning out occured
         final Collection<File> files = FileUtils.listFiles(tempDir, null, true);

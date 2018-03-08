@@ -260,6 +260,9 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     @JsonProperty
     public Date getLastUpdated() {
+        if (lastUpdated == null) {
+            return new Date(0L);
+        }
         return lastUpdated;
     }
 

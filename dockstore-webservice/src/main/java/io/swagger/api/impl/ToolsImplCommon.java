@@ -82,6 +82,10 @@ public final class ToolsImplCommon {
             descriptor.setType(ToolDescriptor.TypeEnum.CWL);
         } else if (file.getType() == DOCKSTORE_WDL) {
             descriptor.setType(ToolDescriptor.TypeEnum.WDL);
+        }  else if (file.getType() == SourceFile.FileType.NEXTFLOW) {
+            descriptor.setType(ToolDescriptor.TypeEnum.NFL);
+        }  else if (file.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
+            descriptor.setType(ToolDescriptor.TypeEnum.NFL);
         }
         descriptor.setDescriptor(file.getContent());
 
@@ -258,6 +262,16 @@ public final class ToolsImplCommon {
                         fileTable.put(version.getName(), DOCKSTORE_WDL,
                                 buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
                         break;
+                    case NEXTFLOW:
+                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.NFL);
+                        fileTable.put(version.getName(), SourceFile.FileType.NEXTFLOW,
+                            buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
+                        break;
+                    case NEXTFLOW_CONFIG:
+                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.NFL);
+                        fileTable.put(version.getName(), SourceFile.FileType.NEXTFLOW_CONFIG,
+                            buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
+                        break;
                     default:
                         // Unhandled file type is apparently ignored
                         break;
@@ -424,7 +438,7 @@ public final class ToolsImplCommon {
      */
     static ToolTests sourceFileToToolTests(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
-        if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON)) {
+        if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
             LOG.error("This source file is not a recognized test file.");
         }
         ToolTests toolTests = new ToolTests();

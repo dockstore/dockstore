@@ -13,24 +13,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client.cwlrunner;
-
-import java.util.List;
+package io.dockstore.common;
 
 /**
- * Abstracts out the interaction with cwlrunners (for example, cwltool or bunny)
+ * These tests can also use Toil instead of cwltool as an alternative
+ * Toil installs a completely different version of cwltool, cwltest, etc. then what we are normally used to
  */
-public interface CWLRunnerInterface {
-
-    /**
-     * Checks that the environment is properly setup
-     */
-    void checkForCWLDependencies();
-
-    /**
-     *
-     * @return an array representing the command to invoke a particular cwl-runner
-     */
-    List<String> getExecutionCommand(String outputDir, String tmpDir, String workingDir, String cwlFile, String jsonSettings);
-
+public interface ToilCompatibleTest {
 }

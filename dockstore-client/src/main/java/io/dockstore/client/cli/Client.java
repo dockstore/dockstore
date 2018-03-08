@@ -47,8 +47,8 @@ import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
-import io.dockstore.client.cwlrunner.CWLRunnerFactory;
-import io.dockstore.client.cwlrunner.CWLRunnerInterface;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import io.dockstore.common.Utilities;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -788,7 +788,10 @@ public class Client {
 
     private INIConfiguration getIniConfiguration(List<String> args) {
         String userHome = System.getProperty("user.home");
-        this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+        String commandLineConfigFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
+        if (this.configFile == null) {
+            this.configFile = commandLineConfigFile;
+        }
 
         return Utilities.parseConfig(configFile);
     }

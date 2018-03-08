@@ -347,6 +347,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                                 testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
                             } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
                                 testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
+                            } else if (identifiedType.equals(SourceFile.FileType.NEXTFLOW_CONFIG)) {
+                                testJson.setType(SourceFile.FileType.NEXTFLOW_TEST_PARAMS);
                             }
 
                             testJson.setPath(workflow.getDefaultTestParameterFilePath());
