@@ -18,14 +18,19 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 import javax.ws.rs.core.UriBuilder;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
@@ -41,6 +46,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.Ga4Ghv1Api;
+import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
@@ -61,8 +67,10 @@ import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -72,6 +80,8 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -84,7 +94,7 @@ import static org.junit.Assert.fail;
  * @author xliu
  */
 @Category(ConfidentialTest.class)
-public class SystemClientIT {
+public class SwaggerClientIT {
 
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
@@ -411,7 +421,7 @@ public class SystemClientIT {
                 .build().toURL();
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         assertTrue(strings.get(0).contains("testparameterstuff"));
-        assertTrue(strings.get(0).contains("moretestparameterstuff"));
+        assertTrue(strings.get(1).contains("moretestparameterstuff"));
     }
 
     @Test
@@ -662,6 +672,26 @@ public class SystemClientIT {
         starring(containerIds2, containersApi, usersApi);
         starring(containerIds3, containersApi, usersApi);
         starring(containerIds4, containersApi, usersApi);
+    }
+
+    @Test
+    public void testRSSPlusSiteMap() throws ApiException, IOException, TimeoutException, ParserConfigurationException, SAXException {
+        ApiClient apiClient = getWebClient();
+        MetadataApi metadataApi = new MetadataApi(apiClient);
+        String rssFeed = metadataApi.rssFeed();
+        String sitemap = metadataApi.sitemap();
+        Assert.assertTrue("rss feed should be valid xml with at least 2 entries", rssFeed.contains("http://localhost/containers/quay.io/test_org/test6") && rssFeed.contains("http://localhost/workflows/github.com/A/l"));
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setValidating(true);
+        factory.setIgnoringElementContentWhitespace(true);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        try (InputStream stream = IOUtils.toInputStream(rssFeed, StandardCharsets.UTF_8)) {
+            Document doc = builder.parse(stream);
+            Assert.assertTrue("XML is not valid", doc.getStrictErrorChecking());
+        }
+
+        Assert.assertTrue("sitemap with testing data should have at least 2 entries", sitemap.split("\n").length >= 2 && sitemap.contains("http://localhost/containers/quay.io/test_org/test6") && sitemap.contains("http://localhost/workflows/github.com/A/l"));
     }
 
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi)

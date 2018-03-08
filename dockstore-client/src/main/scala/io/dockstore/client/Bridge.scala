@@ -19,6 +19,7 @@ package io.dockstore.client
 import java.io.{File => JFile}
 import java.util
 
+import io.github.collaboratory.wdl.BridgeHelper
 import spray.json._
 import wdl4s._
 import wdl4s.types.{WdlArrayType, WdlFileType}

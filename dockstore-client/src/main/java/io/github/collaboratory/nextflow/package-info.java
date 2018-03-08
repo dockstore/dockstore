@@ -13,22 +13,9 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
-
-import io.github.collaboratory.cwl.LauncherIT;
-import org.apache.commons.io.FileUtils;
-
 /**
+ * Supporting files for demoing how to execute nextflow workflows
+ *
  * @author dyuen
  */
-public class BunnyLauncherIT extends LauncherIT {
-
-    public String getConfigFile() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.ini").getAbsolutePath();
-    }
-
-    @Override
-    public String getConfigFileWithExtraParameters() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.extra.ini").getAbsolutePath();
-    }
-}
+package io.github.collaboratory.nextflow;

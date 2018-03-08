@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package io.dockstore.client;
+package io.github.collaboratory.wdl;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -113,7 +113,7 @@ public class BridgeHelper {
 
         // Get content of importPath
         try {
-            content = Files.toString(new File(importPath), Charsets.UTF_8);
+            content = Files.asCharSource(new File(importPath), Charsets.UTF_8).read();
         } catch (IOException ex) {
             LOG.debug("Invalid filepath: " + importPath);
         }

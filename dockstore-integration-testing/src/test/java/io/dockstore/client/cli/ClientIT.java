@@ -24,6 +24,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestUtility;
+import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -35,6 +36,7 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
@@ -184,6 +186,7 @@ public class ClientIT extends BaseIT {
     }
 
     @Test
+    @Category(ToilCompatibleTest.class)
     public void launchingCWLWorkflow() throws IOException {
         final String firstWorkflowCWL = ResourceHelpers.resourceFilePath("1st-workflow.cwl");
         final String firstWorkflowJSON = ResourceHelpers.resourceFilePath("1st-workflow-job.json");
@@ -193,6 +196,7 @@ public class ClientIT extends BaseIT {
     }
 
     @Test
+    @Category(ToilCompatibleTest.class)
     public void launchingCWLToolWithRemoteParameters() throws IOException {
         Client.main(
                 new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",

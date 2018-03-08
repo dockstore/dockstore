@@ -1056,7 +1056,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             workflowName = null;
         }
 
-        if (!defaultWorkflowPath.endsWith(descriptorType)) {
+        if ("nextflow".equals(descriptorType) && !defaultWorkflowPath.endsWith("nextflow.config")) {
+            throw new CustomWebApplicationException(
+                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+                    + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
+        } else if (!"nextflow".equals(descriptorType) && !defaultWorkflowPath.endsWith(descriptorType)) {
             throw new CustomWebApplicationException(
                     "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
                             + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);

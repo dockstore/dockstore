@@ -762,7 +762,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.")));
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }
@@ -789,7 +789,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.")));
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }

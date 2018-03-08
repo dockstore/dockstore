@@ -13,22 +13,24 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
+package io.github.collaboratory.cwl;
 
-import io.github.collaboratory.cwl.LauncherIT;
+import io.dockstore.common.ToilOnlyTest;
 import org.apache.commons.io.FileUtils;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author dyuen
  */
-public class BunnyLauncherIT extends LauncherIT {
+@Category(ToilOnlyTest.class)
+public class ToilLauncherIT extends LauncherIT {
 
     public String getConfigFile() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.ini").getAbsolutePath();
+        return FileUtils.getFile("src", "test", "resources", "launcher.toil.ini").getAbsolutePath();
     }
 
     @Override
     public String getConfigFileWithExtraParameters() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.extra.ini").getAbsolutePath();
+        return FileUtils.getFile("src", "test", "resources", "launcher.toil.extra.ini").getAbsolutePath();
     }
 }

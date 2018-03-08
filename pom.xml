@@ -41,7 +41,7 @@
         <powermock.version>1.6.5</powermock.version>
         <postgresql.version>42.1.4</postgresql.version>
         <mockito.version>1.10.19</mockito.version>
-        <cwlavro.version>2.0.3</cwlavro.version>
+        <cwlavro.version>2.0.4</cwlavro.version>
         <okhttp.version>3.2.0</okhttp.version>
         <slf4j.version>1.7.25</slf4j.version>
         <swagger-ui.version>3.1.7</swagger-ui.version>
@@ -691,6 +691,11 @@
                 <artifactId>asm-tree</artifactId>
                 <version>5.0.3</version>
             </dependency>
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>2.4.7</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1168,7 +1173,14 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <excludeGroups>io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest, io.dockstore.common.BenchmarkTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest, io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest</excludeGroups>
+            </properties>
+        </profile>
+        <profile>
+            <id>toil-integration-tests</id>
+            <!-- run only tests that are relevant for toil (tests that use cwltool, cwlrunner, toil -->
+            <properties>
+                <groups>io.dockstore.common.ToilCompatibleTest,io.dockstore.common.ToilOnlyTest</groups>
             </properties>
         </profile>
         <profile>
@@ -1185,6 +1197,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
+                <excludeGroups>io.dockstore.common.ToilOnlyTest</excludeGroups>
             </properties>
         </profile>
     </profiles>

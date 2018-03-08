@@ -13,22 +13,24 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
+package io.github.collaboratory.cwl;
 
-import io.github.collaboratory.cwl.LauncherIT;
+import io.dockstore.common.ToilCompatibleTest;
 import org.apache.commons.io.FileUtils;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author dyuen
  */
-public class BunnyLauncherIT extends LauncherIT {
+@Category(ToilCompatibleTest.class)
+public class GenericCWLLauncherIT extends LauncherIT {
 
     public String getConfigFile() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.ini").getAbsolutePath();
+        return FileUtils.getFile("src", "test", "resources", "launcher.cwl-runner.ini").getAbsolutePath();
     }
 
     @Override
     public String getConfigFileWithExtraParameters() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.extra.ini").getAbsolutePath();
+        return FileUtils.getFile("src", "test", "resources", "launcher.cwl-runner.extra.ini").getAbsolutePath();
     }
 }

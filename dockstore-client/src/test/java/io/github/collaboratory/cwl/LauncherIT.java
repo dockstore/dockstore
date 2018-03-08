@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
+package io.github.collaboratory.cwl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,6 +30,8 @@ import io.cwl.avro.Workflow;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -160,6 +162,13 @@ public abstract class LauncherIT {
         fileMap.put("variants__calls", simulatedList);
         fileMap.put("variants__gvcf", simulatedList);
         launcherCWL.registerOutputFiles(fileMap, outputObject);
+    }
+
+    @Test
+    public void testCheckingSystemDependencies() {
+        CWLRunnerFactory.setConfig(Utilities.parseConfig(getConfigFile()));
+        CWLRunnerInterface cwlrunner = CWLRunnerFactory.createCWLRunner();
+        cwlrunner.checkForCWLDependencies();
     }
 
 }

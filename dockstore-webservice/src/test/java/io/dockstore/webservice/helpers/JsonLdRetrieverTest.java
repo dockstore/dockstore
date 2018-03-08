@@ -40,7 +40,8 @@ public class JsonLdRetrieverTest {
         SourceFile file = new SourceFile();
 
         File cwlFile = new File(ResourceHelpers.resourceFilePath(cwl));
-        String cwlContent = Files.toString(cwlFile, Charsets.UTF_8);
+
+        String cwlContent = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
 
         file.setContent(cwlContent);
         file.setType(DOCKSTORE_CWL);
@@ -53,7 +54,7 @@ public class JsonLdRetrieverTest {
         String schemaJson = gson.toJson(JsonLdRetriever.getSchema(tool));
 
         File expected = new File(ResourceHelpers.resourceFilePath(json));
-        String expectedJson = Files.toString(expected, Charsets.UTF_8);
+        String expectedJson = Files.asCharSource(expected, Charsets.UTF_8).read();
 
         assertEquals(schemaJson, expectedJson);
     }
