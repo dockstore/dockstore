@@ -217,6 +217,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Determine the file path of the descriptor
         String filePath = null;
+        Set<SourceFile> sourceFiles = null;
 
         // If entry is a tool
         if (entry.getClass().equals(Tool.class)) {
@@ -228,6 +229,7 @@ public abstract class SourceCodeRepoInterface {
             // Find filepath to parse
             for (Tag tag : ((Tool)entry).getVersions()) {
                 if (tag.getReference() != null && tag.getReference().equals(branch)) {
+                    sourceFiles = tag.getSourceFiles();
                     if (type == AbstractEntryClient.Type.CWL) {
                         filePath = tag.getCwlPath();
                     } else if (type == AbstractEntryClient.Type.WDL) {
@@ -245,6 +247,7 @@ public abstract class SourceCodeRepoInterface {
             for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
                 if (workflowVersion.getReference().equals(branch)) {
                     filePath = workflowVersion.getWorkflowPath();
+                    sourceFiles = workflowVersion.getSourceFiles();
                 }
             }
         }
@@ -254,23 +257,23 @@ public abstract class SourceCodeRepoInterface {
             return entry;
         }
 
-        // Why is this needed?
-        if (filePath.startsWith("/")) {
-            filePath = filePath.substring(1);
+        if (sourceFiles == null || sourceFiles.isEmpty()) {
+            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
+            return entry;
         }
 
-        // Get file contents
-        // Does this need to be an API call? can't we just use the files we have in the database?
-        String content = getFileContents(filePath, branch, repositoryId);
-
-        if (content == null) {
-            LOG.info(repositoryId + " : Error getting descriptor for " + branch + " with path " + filePath);
+        String firstFileContent;
+        String finalFilePath = filePath;
+        Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(finalFilePath)).findFirst();
+        if (first.isPresent()) {
+            firstFileContent = first.get().getContent();
+        } else {
             return entry;
         }
 
         // Parse file content and update
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        entry = anInterface.parseWorkflowContent(entry, content);
+        entry = anInterface.parseWorkflowContent(entry, firstFileContent, sourceFiles);
         return entry;
     }
 

@@ -22,6 +22,8 @@ import java.nio.charset.StandardCharsets;
 
 import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
 
@@ -29,6 +31,9 @@ import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
  * @author jpatricia
  */
 public final class TestUtility {
+
+    @Rule
+    public TemporaryFolder folder= new TemporaryFolder();
 
     private TestUtility() {
         // utility class

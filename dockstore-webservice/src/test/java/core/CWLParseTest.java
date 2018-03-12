@@ -18,6 +18,7 @@ package core;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -36,7 +37,7 @@ public class CWLParseTest {
     public void testOldMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8));
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         Assert.assertTrue("incorrect author", entry.getAuthor().equals("Keiran Raine"));
         Assert.assertTrue("incorrect email", entry.getEmail().equals("keiranmraine@gmail.com"));
     }
@@ -45,7 +46,7 @@ public class CWLParseTest {
     public void testNewMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8));
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         Assert.assertTrue("incorrect author", entry.getAuthor().equals("Denis Yuen"));
         Assert.assertTrue("incorrect email", entry.getEmail().equals("dyuen@oicr.on.ca"));
     }
@@ -54,7 +55,7 @@ public class CWLParseTest {
     public void testCombinedMetadataExample() throws IOException {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
-        Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8));
+        Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         Assert.assertTrue("incorrect author", entry.getAuthor().equals("Denis Yuen"));
         Assert.assertTrue("incorrect email", entry.getEmail().equals("dyuen@oicr.on.ca"));
     }

@@ -16,18 +16,26 @@
 
 package io.dockstore.client.cli;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.Ga4Ghv2Api;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.ToolV2;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -63,6 +71,8 @@ public class WorkflowIT extends BaseIT {
 
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = "DockstoreTestUser2/dockstore-cgpmap";
+
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
@@ -214,6 +224,13 @@ public class WorkflowIT extends BaseIT {
         mtaNf.setDescriptorType(SourceFile.TypeEnum.NEXTFLOW.toString());
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
         workflowApi.refresh(mtaNf.getId());
+        // publish this way? (why is the auto-generated variable private?)
+        workflowApi.publish(mtaNf.getId(), new PublishRequest(){
+            @Override
+            public Boolean isPublish() {
+                return true;
+            }
+        });
         mtaNf = workflowApi.getWorkflow(mtaNf.getId());
         assertTrue("Nextflow workflow not found after update", mtaNf != null);
         assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
@@ -225,6 +242,14 @@ public class WorkflowIT extends BaseIT {
             .mapToLong(version -> version.getSourceFiles().stream().filter(file -> file.getType() == SourceFile.TypeEnum.NEXTFLOW_CONFIG).count()).sum();
         assertTrue("nextflow workflow should have at least one config file and one script file", scriptCount >= 1 && configCount >= 1);
 
+        // check that we can pull down the nextflow workflow via the ga4gh TRS API
+        Ga4Ghv2Api ga4Ghv2Api = new Ga4Ghv2Api(webClient);
+        List<ToolV2> toolV2s = ga4Ghv2Api.toolsGet(null, null, null, null, null, null, null, null, null);
+        String mtaWorkflowID = "#workflow/github.com/DockstoreTestUser2/mta-nf";
+        ToolV2 toolV2 = ga4Ghv2Api.toolsIdGet(mtaWorkflowID);
+        assertTrue("could get mta as part of list", toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects
+            .equals(tool.getId(), mtaWorkflowID)));
+        assertTrue("could get mta as a specific tool", toolV2 != null);
     }
 
     /**
@@ -316,6 +341,42 @@ public class WorkflowIT extends BaseIT {
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
         assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 6);
+    }
+
+
+    /**
+     * Tests manual registration of a tool and check that descriptors are downloaded properly.
+     * Description is pulled properly from an $include.
+     *
+     * @throws IOException
+     * @throws TimeoutException
+     * @throws ApiException
+     */
+    @Test
+    public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException {
+        final ApiClient webClient = getWebClient();
+        ContainersApi toolApi = new ContainersApi(webClient);
+
+        DockstoreTool tool = new DockstoreTool();
+        tool.setDefaultCwlPath("/cwls/cgpmap-bamOut.cwl");
+        tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
+        tool.setNamespace("dockstoretestuser2");
+        tool.setName("dockstore-cgpmap");
+        tool.setRegistry(Registry.QUAY_IO.toString());
+        tool.setDefaultVersion("symbolic.v1");
+
+        DockstoreTool registeredTool = toolApi.registerManual(tool);
+        registeredTool = toolApi.refresh(registeredTool.getId());
+
+        // Make publish request (true)
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        toolApi.publish(registeredTool.getId(), publishRequest);
+
+        assertTrue("did not pick up description from $include", registeredTool.getDescription().contains("A Docker container for PCAP-core."));
+        assertTrue("did not import mixin and includes properly", registeredTool.getTags().stream().filter(tag -> Objects
+            .equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles().size() == 5);
+        assertTrue("did not import symbolic links to folders properly", registeredTool.getTags().stream().filter(tag -> Objects
+            .equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles().size() == 5);
     }
 
     /**

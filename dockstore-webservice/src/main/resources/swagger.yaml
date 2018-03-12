@@ -4802,6 +4802,7 @@ definitions:
         enum:
         - "CWL"
         - "WDL"
+        - "NFL"
       descriptor:
         type: "string"
         description: "The descriptor that represents this version of the tool. (CWL\
@@ -5034,6 +5035,7 @@ definitions:
           enum:
           - "CWL"
           - "WDL"
+          - "NFL"
       dockerfile:
         type: "boolean"
         position: 6
@@ -5089,6 +5091,7 @@ definitions:
           enum:
           - "CWL"
           - "WDL"
+          - "NFL"
       dockerfile:
         type: "boolean"
         position: 6

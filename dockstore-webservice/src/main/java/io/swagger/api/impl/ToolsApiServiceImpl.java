@@ -23,7 +23,6 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -53,7 +52,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
@@ -75,22 +73,26 @@ import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
 import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 
-public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersionHelper<Tool> {
+public class ToolsApiServiceImpl extends ToolsApiService {
 
-    public static final int SEGMENTS_IN_ID = 3;
-    public static final int DEFAULT_PAGE_SIZE = 1000;
+    private static final int SEGMENTS_IN_ID = 3;
+    private static final int DEFAULT_PAGE_SIZE = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
+    private static EntryVersionHelper<Tool> toolHelper;
+    private static EntryVersionHelper<Workflow> workflowHelper;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
+        ToolsApiServiceImpl.toolHelper = () -> toolDAO;
     }
 
     public static void setWorkflowDAO(WorkflowDAO workflowDAO) {
         ToolsApiServiceImpl.workflowDAO = workflowDAO;
+        ToolsApiServiceImpl.workflowHelper = () -> workflowDAO;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -164,7 +166,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             entry = toolDAO.findByPath(entryPath, true);
         } else {
             entry = workflowDAO.findByPath(entryPath, true);
-
         }
         return entry;
     }
@@ -211,10 +212,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
-            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, false);
+            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, plainTextResponse);
         case WDL_TEST_JSON:
         case DOCKSTORE_WDL:
-            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, false);
+            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, plainTextResponse);
+        case NEXTFLOW:
+        case NEXTFLOW_CONFIG:
+        case NEXTFLOW_TEST_PARAMS:
+            return getFileByToolVersionID(id, versionId, SourceFile.FileType.NEXTFLOW_TEST_PARAMS, null, plainTextResponse);
         default:
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -226,6 +231,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             type = DOCKSTORE_CWL;
         } else if (StringUtils.containsIgnoreCase(format, "WDL")) {
             type = DOCKSTORE_WDL;
+        } else if (StringUtils.containsIgnoreCase(format, "NFL")) {
+            type = SourceFile.FileType.NEXTFLOW_CONFIG;
         } else if (Objects.equals("JSON", format)) {
             // if JSON is specified
             type = DOCKSTORE_CWL;
@@ -268,7 +275,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
                     }
                 }
                 if (registry != null && tool.getRegistry() != null) {
-                    if (!tool.getRegistry().toString().contains(registry)) {
+                    if (!tool.getRegistry().contains(registry)) {
                         continue;
                     }
                 }
@@ -347,8 +354,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         } catch (URISyntaxException | MalformedURLException e) {
             throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
-        Response response = responseBuilder.build();
-        return response;
+        return responseBuilder.build();
     }
 
     private void handleParameter(String parameter, String queryName, List<String> filters) {
@@ -376,6 +382,9 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         }
         Entry entry = getEntry(parsedID);
         // check whether this is registered
+        if (entry == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
         if (!entry.getIsPublished()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
@@ -391,7 +400,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
         final Optional<ToolVersion> first = convertedTool.getVersions().stream()
                 .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
         Optional<? extends Version> oldFirst;
-        EntryVersionHelper<Tool> entryVersionHelper;
         if (entry instanceof Tool) {
             Tool toolEntry = (Tool)entry;
             oldFirst = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
@@ -409,7 +417,20 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             switch (type) {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
-                List<SourceFile> testSourceFiles = getAllSourceFiles(entry.getId(), versionId, type);
+            case NEXTFLOW_TEST_PARAMS:
+                // this only works for test parameters associated with tools
+                List<SourceFile> testSourceFiles = new ArrayList<>();
+                try {
+                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type));
+                } catch (CustomWebApplicationException e){
+
+                }
+                try {
+                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type));
+                } catch (CustomWebApplicationException e) {
+
+                }
+
                 List<ToolTests> toolTestsList = new ArrayList<>();
                 for (SourceFile file : testSourceFiles) {
                     ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
@@ -454,11 +475,6 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             }
         }
         return Response.status(Response.Status.NOT_FOUND).build();
-    }
-
-    @Override
-    public EntryDAO getDAO() {
-        return this.toolDAO;
     }
 
     @Override
@@ -543,8 +559,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
             }
             toolFile.setFileType(fileTypeEnum);
             return toolFile;
-        }).filter(Objects::nonNull).collect(Collectors.toList());
-        Collections.sort(toolFiles, Comparator.comparing(ToolFile::getPath));
+        }).filter(Objects::nonNull).sorted(Comparator.comparing(ToolFile::getPath)).collect(Collectors.toList());
         return toolFiles;
     }
 
@@ -557,9 +572,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     private List<SourceFile> filterSourcefiles(Set<SourceFile> sourceFiles, String type) {
         switch (type) {
         case "CWL":
-            return sourceFiles.stream().filter(sourceFile -> isCWL(sourceFile)).collect(Collectors.toList());
+            return sourceFiles.stream().filter(this::isCWL).collect(Collectors.toList());
         case "WDL":
-            return sourceFiles.stream().filter(sourceFile -> isWDL(sourceFile)).collect(Collectors.toList());
+            return sourceFiles.stream().filter(this::isWDL).collect(Collectors.toList());
+        case "NFL":
+            return sourceFiles.stream().filter(this::isNFL).collect(Collectors.toList());
         default:
             throw new CustomWebApplicationException("Unknown descriptor type.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -583,6 +600,16 @@ public class ToolsApiServiceImpl extends ToolsApiService implements EntryVersion
     private boolean isWDL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
         return Stream.of(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL).anyMatch(type::equals);
+    }
+
+    /**
+     * This checks whether the sourcefile is Nextflow
+     * @param sourceFile the sourcefile to check
+     * @return true if the sourcefile is WDL-related, false otherwise
+     */
+    private boolean isNFL(SourceFile sourceFile) {
+        SourceFile.FileType type = sourceFile.getType();
+        return Stream.of(SourceFile.FileType.NEXTFLOW_CONFIG, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.NEXTFLOW, SourceFile.FileType.NEXTFLOW_TEST_PARAMS).anyMatch(type::equals);
     }
     
     private String cleanRelativePath(String relativePath) {

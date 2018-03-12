@@ -17,6 +17,7 @@ package io.dockstore.webservice.languages;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import groovy.util.ConfigObject;
 import groovy.util.ConfigSlurper;
@@ -34,7 +35,7 @@ import org.apache.http.HttpStatus;
 public class NextFlowHandler implements LanguageHandlerInterface {
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String content) {
+    public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         ConfigSlurper slurper = new ConfigSlurper();
         ConfigObject parse = slurper.parse(content);

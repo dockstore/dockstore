@@ -13,11 +13,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+package io.dockstore.common;
 
 /**
- * This is the prototype implementation for a launcher that can integrate with Consonance
- * to interpret CWL or our descriptor.
- *
- * @author dyuen
+ * These tests can only be run using toil.
+ * Toil installs a completely different version of cwltool, cwltest, etc. then what we are normally used to
  */
-package io.github.collaboratory;
+public interface ToilOnlyTest {
+}

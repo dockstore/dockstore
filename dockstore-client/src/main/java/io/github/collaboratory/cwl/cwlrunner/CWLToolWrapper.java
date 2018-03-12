@@ -13,7 +13,7 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client.cwlrunner;
+package io.github.collaboratory.cwl.cwlrunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;

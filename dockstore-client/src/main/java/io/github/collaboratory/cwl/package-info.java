@@ -14,4 +14,10 @@
  *    limitations under the License.
  */
 
-package io.dockstore.client.cwlrunner;
+/**
+ * This is the prototype implementation for a launcher that can integrate with Consonance
+ * to interpret CWL or our descriptor.
+ *
+ * @author dyuen
+ */
+package io.github.collaboratory.cwl;

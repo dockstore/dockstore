@@ -123,14 +123,19 @@ and setup with the database user specified in [.travis.yml](https://github.com/g
 If you maven build in the root directory this will build not only the web service but the client tool:
 
     mvn clean install
+    # or
+    mvn clean install -Punit-tests
     
 If you're running tests on Travis-CI (or otherwise have access to the confidential data bundle) Run them via:
 
-    mvn clean install -Ptravis-tests
+    mvn clean install -Pintegration-tests
     
-If you're running in an environment that can run our slower tests, run them in addition to the confidential tests with: 
+There are also certain categories for tests that they can be added to when writing new tests. 
+Categories include:
 
-    mvn clean install -Pjenkins-tests
+1. `ToilOnlyTest` are tests that can only be run by Toil (which also installs a different version of cwltool)
+2. `ToilCompatibleTest` are tests that can be run with our default cwltool and with Toil
+3. `ConfidentialTest` are tests that require access to our confidential testing bundle (ask a member of the development team if you're on the team)
 
 ### Running Locally
 

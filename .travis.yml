@@ -26,6 +26,7 @@ env:
    - EXTRA_MAVEN_VAR="" TESTING_PROFILE="integration-tests"
    - EXTRA_MAVEN_VAR="cobertura:cobertura coveralls:report" TESTING_PROFILE="unit-tests"
    - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="integration-tests"
+   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="toil-integration-tests"
 
 # build lifecycle is before_install, install, before_script, script, after_script
 
@@ -40,8 +41,7 @@ before_install:
 
 install:
 - docker version
-- pip2.7 install --user setuptools==36.5.0
-- pip2.7 install --user cwl-runner cwltool==1.0.20170828135420 schema-salad==2.6.20170806163416 avro==1.8.1 ruamel.yaml==0.14.12 requests==2.18.4
+- ./scripts/install-tests.sh
 
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres

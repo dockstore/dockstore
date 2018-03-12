@@ -175,6 +175,24 @@ public class LaunchTestIT {
         }
     }
 
+    @Test
+    public void runToolWithSecondaryFilesRenamedOnOutput() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files_renamed"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.renamed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files_renamed/renamed.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+    }
+
     private void checkFileAndThenDeleteIt(String filename) {
         assertTrue("output should provision out to correct locations",
                 systemOutRule.getLog().contains(filename));
@@ -744,7 +762,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.")));
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }
@@ -771,7 +789,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.")));
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }

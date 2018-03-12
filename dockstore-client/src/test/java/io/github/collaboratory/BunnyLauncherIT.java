@@ -15,6 +15,7 @@
  */
 package io.github.collaboratory;
 
+import io.github.collaboratory.cwl.LauncherIT;
 import org.apache.commons.io.FileUtils;
 
 /**

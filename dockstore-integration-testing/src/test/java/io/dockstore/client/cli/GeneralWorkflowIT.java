@@ -23,6 +23,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -376,6 +377,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * Tests that convert with valid imports will work, but convert without valid imports will throw an error (for CWL)
      */
     @Test
+    @Category(ToilCompatibleTest.class)
     public void testRefreshAndConvertWithImportsCWL() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
@@ -385,9 +387,9 @@ public class GeneralWorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
                 "--entry", SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow:testBoth", "--script" });
 
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+        systemExit.expectSystemExitWithStatus(Client.GENERIC_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
-                "--entry", SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow:testCwl", "--script" });
+                "--entry", SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow:testCWL", "--script" });
 
     }
 
@@ -447,6 +449,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests that attempting to launch a workflow remotely, where no file exists, an APIError will occur
      */
     @Test
+    @Category(ToilCompatibleTest.class)
     public void testRemoteLaunchCWLNoFile() {
         systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry",
