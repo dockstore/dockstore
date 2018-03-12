@@ -7,7 +7,7 @@ echo "${TRAVIS_PULL_REQUEST_BRANCH}"
 echo "${TRAVIS_PULL_REQUEST_SHA}"
 
 if [ "${TESTING_PROFILE}" = "integration-tests" ]; then
-    openssl aes-256-cbc -K $encrypted_c42a0604a544_key -iv $encrypted_c42a0604a544_iv -in secrets.tar.enc -out secrets.tar -d
+    openssl aes-256-cbc -K $encrypted_7e2d6ff95e70_key -iv $encrypted_7e2d6ff95e70_iv -in secrets.tar.enc -out secrets.tar -d
     tar xvf secrets.tar
 fi
 
