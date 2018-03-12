@@ -79,7 +79,7 @@ public class ToolsExtendedApi {
     @Path("/tools/index")
     @UnitOfWork
     @RolesAllowed("admin")
-    @Produces( { "text/plain" })
+    @Produces({ "text/plain" })
     @ApiOperation(value = "Update the index of tools", notes = "This endpoint updates the index for all published tools and workflows. ", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Integer.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.") })

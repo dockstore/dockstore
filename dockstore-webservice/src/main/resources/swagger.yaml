@@ -487,6 +487,8 @@ paths:
           schema:
             type: "integer"
             format: "int32"
+      security:
+      - BEARER: []
   /api/ga4gh/v2/extended/tools/{organization}:
     get:
       tags:
