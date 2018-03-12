@@ -3334,13 +3334,13 @@ paths:
         type: "string"
       - name: "entryId"
         in: "path"
-        description: "Entry Id."
+        description: "Entry Id of parent tool/workflow."
         required: true
         type: "integer"
         format: "int64"
       - name: "descriptorType"
         in: "path"
-        description: "Descriptor type."
+        description: "Descriptor type of the workflow, either cwl or wdl."
         required: true
         type: "string"
       responses:
@@ -5300,25 +5300,24 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/WorkflowVersion"
+      is_checker:
+        type: "boolean"
+        position: 23
       full_workflow_path:
         type: "string"
-        position: 23
+        position: 24
         readOnly: true
       path:
         type: "string"
-        position: 24
+        position: 25
       source_control_provider:
         type: "string"
-        position: 25
+        position: 26
         readOnly: true
         enum:
         - "GITHUB"
         - "BITBUCKET"
         - "GITLAB"
-      is_checker:
-        type: "boolean"
-        position: 26
-        readOnly: true
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"

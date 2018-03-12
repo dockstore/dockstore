@@ -248,4 +248,48 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow("checker_workflow_wrapping_workflow.cwl", githubWorkflow.getId(), "cwl", null);
     }
 
+    /**
+     * Tests that you cannot register a tool with an underscore
+     * @throws ApiException
+     */
+    @Test(expected = ApiException.class)
+    public void testRegisteringToolWithUnderscoreInName() throws ApiException {
+        // Setup for test
+        final ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Make tool
+        DockstoreTool newTool = new DockstoreTool();
+        newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        newTool.setName("md5sum");
+        newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
+        newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
+        newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
+        newTool.setRegistry(Registry.QUAY_IO.toString());
+        newTool.setNamespace("dockstoretestuser2");
+        newTool.setToolname("_altname");
+        newTool.setPrivateAccess(false);
+        newTool.setDefaultCWLTestParameterFile("/testcwl.json");
+
+        // Register the tool
+        DockstoreTool githubTool = containersApi.registerManual(newTool);
+    }
+
+    /**
+     * Tests that you cannot register a workflow with an underscore
+     * @throws ApiException
+     */
+    @Test(expected = ApiException.class)
+    public void testRegisteringWorkflowWithUnderscoreInName() throws ApiException {
+        // Setup for test
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        // Manually register a workflow
+        Workflow githubWorkflow = workflowApi
+            .manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "_altname", "cwl", "/testcwl.json");
+
+    }
+
 }

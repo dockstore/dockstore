@@ -93,6 +93,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -398,7 +399,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow finalWorkflow = workflowDAO.findById(workflowId);
 
         // Refresh checker workflow
-        if (!finalWorkflow.isChecker() && finalWorkflow.getCheckerWorkflow() != null) {
+        if (!finalWorkflow.isIsChecker() && finalWorkflow.getCheckerWorkflow() != null) {
             refresh(user, finalWorkflow.getCheckerWorkflow().getId());
         }
 
@@ -1284,13 +1285,13 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Entry registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) @QueryParam("checkerWorkflowPath") String checkerWorkflowPath,
         @ApiParam(value = "Default path to test parameter files for the checker workflow. If not specified will use that of the entry.") @QueryParam("testParameterPath") String testParameterPath,
-        @ApiParam(value = "Entry Id.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Descriptor type.", required = true) @PathParam("descriptorType") String descriptorType) {
+        @ApiParam(value = "Entry Id of parent tool/workflow.", required = true) @PathParam("entryId") Long entryId,
+        @ApiParam(value = "Descriptor type of the workflow, either cwl or wdl.", required = true) @PathParam("descriptorType") String descriptorType) {
         // Find the entry
         MutablePair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
 
         // Check if valid descriptor type
-        if (!Objects.equals(descriptorType, "cwl") && !Objects.equals(descriptorType, "wdl")) {
+        if (!Objects.equals(descriptorType, ToolVersion.DescriptorTypeEnum.CWL.toString().toLowerCase()) && !Objects.equals(descriptorType, ToolVersion.DescriptorTypeEnum.WDL.toString().toLowerCase())) {
             throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only cwl and wdl are valid.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1302,7 +1303,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         // Don't allow workflow stubs
         if (Objects.equals(entryPair.getKey(), "workflow")) {
             Workflow workflow = (Workflow) entryPair.getValue();
-            if (Objects.equals(workflow.getMode().name(), "STUB")) {
+            if (Objects.equals(workflow.getMode().name(), WorkflowMode.STUB.toString())) {
                 throw new CustomWebApplicationException("Checker workflows cannot be added to workflow stubs.", HttpStatus.SC_BAD_REQUEST);
             }
         }
@@ -1328,12 +1329,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             Tool tool = (Tool)entryPair.getValue();
 
             // Get default test parameter path and toolname
-            if (Objects.equals(descriptorType.toLowerCase(), "wdl")) {
+            if (Objects.equals(descriptorType.toLowerCase(), ToolVersion.DescriptorTypeEnum.WDL.toString().toLowerCase())) {
                 workflowName = tool.getToolname() + "_wdl_checker";
                 defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
-            } else {
+            } else if (Objects.equals(descriptorType.toLowerCase(), ToolVersion.DescriptorTypeEnum.CWL.toString().toLowerCase())) {
                 workflowName = tool.getToolname() + "_cwl_checker";
                 defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
+            } else {
+                throw new UnsupportedOperationException("The descriptor type " + descriptorType + " is not valid.\nSupported types include cwl and wdl.");
             }
 
             // Determine gitUrl
@@ -1374,10 +1377,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             if (workflowName == null) {
                 workflowName = "";
             }
-            if (Objects.equals(workflow.getDescriptorType().toLowerCase(), "cwl")) {
+            if (Objects.equals(workflow.getDescriptorType().toLowerCase(), ToolVersion.DescriptorTypeEnum.CWL.toString().toLowerCase())) {
                 workflowName += "_cwl_checker";
-            } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), "wdl")) {
+            } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), ToolVersion.DescriptorTypeEnum.WDL.toString().toLowerCase())) {
                 workflowName += "_wdl_checker";
+            } else {
+                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().toLowerCase() + " is not valid.\nSupported types include cwl and wdl.");
             }
         } else {
             throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
@@ -1396,6 +1401,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkerWorkflow.setLastUpdated(lastUpdated);
         checkerWorkflow.setWorkflowName(workflowName);
         checkerWorkflow.setDescriptorType(descriptorType);
+        checkerWorkflow.setIsChecker(true);
 
         // Deal with possible custom default test parameter file
         if (testParameterPath != null) {
