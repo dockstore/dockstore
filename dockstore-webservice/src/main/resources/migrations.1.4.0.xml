@@ -253,6 +253,9 @@
 
     <changeSet id="constraint-for-underscore-workflow-and-tool-names" author="agduncan">
         <sql dbms="postgresql">
+            ALTER TABLE tool DROP CONSTRAINT tool_check
+        </sql>
+        <sql dbms="postgresql">
             ALTER TABLE tool ADD CHECK ((defaultwdlpath IS NOT NULL OR defaultcwlpath IS NOT NULL) AND toolname !~~ '\_%'::text)
         </sql>
         <sql dbms="postgresql">
