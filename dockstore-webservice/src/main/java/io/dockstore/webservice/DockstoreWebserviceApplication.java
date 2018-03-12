@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
@@ -136,11 +137,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
 
-        bootstrap.getObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-        bootstrap.getObjectMapper().enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
-        bootstrap.getObjectMapper().enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
-        // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
-        bootstrap.getObjectMapper().enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
+        configureMapper(bootstrap.getObjectMapper());
 
 
         // setup hibernate+postgres
@@ -186,6 +183,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
     }
 
+    public static void configureMapper(ObjectMapper objectMapper) {
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
+        objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+        // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
+        objectMapper.enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
+    }
+
     @Override
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
@@ -226,9 +231,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
 
-        // For when we want to globally ignore all json properties with null value during serialization
-//        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
                 labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
@@ -267,7 +269,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         DOIGeneratorFactory.setConfig(configuration);
 
-        environment.jersey().register(new ToolsApi(null));
+        //TODO: this is terrible, don't do this at home kids (needed to re-implement #1172 since swagger 2.0 doesn't support path regular expressions like Jersey. might be fixable in OpenApi3
+        // https://github.com/swagger-api/swagger-core/issues/68
+        ToolsApi toolsApi = new ToolsApi(null);
+
+        environment.jersey().register(toolsApi);
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi(null));
         environment.jersey().register(new ToolClassesApi(null));

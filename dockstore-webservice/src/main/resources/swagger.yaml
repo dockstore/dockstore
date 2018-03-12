@@ -4510,24 +4510,15 @@ definitions:
     description: "Describes this registry to better allow for mirroring and indexing."
   MetadataV1:
     type: "object"
-    required:
-    - "api_version"
-    - "version"
     properties:
       version:
         type: "string"
-        description: "The version of this registry"
-      api_version:
+      api-version:
         type: "string"
-        description: "The version of the GA4GH tool-registry API supported by this\
-          \ registry"
       country:
         type: "string"
-        description: "A country code for the registry (ISO 3166-1 alpha-3)"
-      friendly_name:
+      friendly-name:
         type: "string"
-        description: "A friendly name that can be used in addition to the hostname\
-          \ to describe a registry"
     description: "Describes this registry to better allow for mirroring and indexing."
   PublishRequest:
     type: "object"
@@ -4904,66 +4895,40 @@ definitions:
       \ test JSON."
   ToolV1:
     type: "object"
-    required:
-    - "author"
-    - "id"
-    - "meta_version"
-    - "organization"
-    - "toolclass"
-    - "url"
     properties:
       url:
         type: "string"
-        example: "http://agora.broadinstitute.org/tools/123456"
-        description: "The URL for this tool in this registry"
       id:
         type: "string"
-        example: "123456"
-        description: "A unique identifier of the tool, scoped to this registry"
       organization:
         type: "string"
-        description: "The organization that published the image."
       toolname:
         type: "string"
-        description: "The name of the tool."
       toolclass:
         $ref: "#/definitions/ToolClass"
       description:
         type: "string"
-        description: "The description of the tool."
       author:
         type: "string"
-        description: "Contact information for the author of this tool entry in the\
-          \ registry. (More complex authorship information is handled by the descriptor)"
-      meta_version:
+      meta-version:
         type: "string"
-        description: "The version of this tool in the registry. Iterates when fields\
-          \ like the description, author, etc. are updated."
       contains:
         type: "array"
-        example: "\"https://bio.tools/tool/mytum.de/SNAP2/1\""
-        description: "An array of IDs for the applications that are stored inside\
-          \ this tool"
         items:
           type: "string"
       verified:
         type: "boolean"
-        description: "Reports whether this tool has been verified by a specific organization\
-          \ or individual"
-      verified_source:
+      verified-source:
         type: "string"
-        description: "Source of metadata that can support a verified tool, such as\
-          \ an email or URL"
       signed:
         type: "boolean"
-        description: "Reports whether this tool has been signed."
       versions:
         type: "array"
         items:
           $ref: "#/definitions/ToolVersionV1"
-    description: "A tool (or described tool) is defined as a tuple of a descriptor\
-      \ file (which potentially consists of multiple files), a set of container images,\
-      \ and a set of instructions for creating those images."
+    description: "A tool (or described tool) describes one pairing of a tool as described\
+      \ in a descriptor file (which potentially describes multiple tools) and a Docker\
+      \ image."
   ToolVersion:
     type: "object"
     required:
@@ -5024,64 +4989,32 @@ definitions:
       \ by a reference to a specific image and/or documents."
   ToolVersionV1:
     type: "object"
-    required:
-    - "id"
-    - "meta_version"
-    - "url"
     properties:
-      dockerfile:
-        type: "boolean"
       name:
         type: "string"
-        description: "The name of the version."
       url:
         type: "string"
-        example: "http://agora.broadinstitute.org/tools/123456/1"
-        description: "The URL for this tool in this registry"
       id:
         type: "string"
-        example: "v1"
-        description: "An identifier of the version of this tool for this particular\
-          \ tool registry"
       image:
         type: "string"
-        example: "quay.io/seqware/seqware_full/1.1"
-        description: "The docker path to the image (and version) for this tool"
-      registry_url:
-        type: "string"
-        description: "A URL to a Singularity registry is provided when a specific\
-          \ type of image does not use ids in the Docker format. Used along with image_name\
-          \ to locate a specific image."
-      image_name:
-        type: "string"
-        description: "Used in conjunction with a registry_url if provided to locate\
-          \ images"
-      descriptor_type:
+      descriptor-type:
         type: "array"
-        description: "The type (or types) of descriptors available."
         items:
           type: "string"
           enum:
           - "CWL"
           - "WDL"
-          - "NFL"
-      containerfile:
+      dockerfile:
         type: "boolean"
-        description: "Reports if this tool has a containerfile available."
-      meta_version:
+      meta-version:
         type: "string"
-        description: "The version of this tool version in the registry. Iterates when\
-          \ fields like the description, author, etc. are updated."
       verified:
         type: "boolean"
-        description: "Reports whether this tool has been verified by a specific organization\
-          \ or individual"
-      verified_source:
+      verified-source:
         type: "string"
-        description: "Source of metadata that can support a verified tool, such as\
-          \ an email or URL"
     description: "A tool version describes a particular iteration of a tool as described\
-      \ by a reference to a specific image and/or documents."
+      \ by a reference to a specific image and dockerfile."
   User:
     type: "object"
     required:

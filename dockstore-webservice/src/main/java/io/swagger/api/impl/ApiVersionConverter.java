@@ -24,6 +24,8 @@ import javax.ws.rs.core.Response;
 import io.swagger.model.Metadata;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.Tool;
+import io.swagger.model.ToolContainerfile;
+import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersion;
 import io.swagger.model.ToolVersionV1;
@@ -43,11 +45,11 @@ public final class ApiVersionConverter {
             for (Object innerObject : arrayList) {
                 if (innerObject instanceof Tool) {
                     Tool tool = (Tool)innerObject;
-                    newArrayList.add(getToolV1(tool));
+                    newArrayList.add( new ToolV1(tool));
                 } else {
-                    if (innerObject instanceof io.swagger.model.ToolVersion) {
+                    if (innerObject instanceof ToolVersion) {
                         ToolVersion toolVersion = (ToolVersion)innerObject;
-                        newArrayList.add(getToolVersionV1(toolVersion));
+                        newArrayList.add(new ToolVersionV1(toolVersion));
                     } else {
                         return getResponse(object, response.getHeaders());
                     }
@@ -56,27 +58,22 @@ public final class ApiVersionConverter {
             return getResponse(newArrayList, response.getHeaders());
         } else if (object instanceof ToolVersion) {
             ToolVersion toolVersion = (ToolVersion)object;
-            ToolVersionV1 toolVersionV1 = getToolVersionV1(toolVersion);
+            ToolVersionV1 toolVersionV1 =  new ToolVersionV1(toolVersion);
             return getResponse(toolVersionV1, response.getHeaders());
         } else if (object instanceof Tool) {
             Tool tool = (Tool)object;
-            ToolV1 toolV1 = getToolV1(tool);
+            ToolV1 toolV1 = new ToolV1(tool);
             return getResponse(toolV1, response.getHeaders());
-
         } else if (object instanceof Metadata) {
             Metadata metadata = (Metadata)object;
-            MetadataV1 metadataV1 = getMetadataV1(metadata);
+            MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
+        } else if (object instanceof ToolContainerfile) {
+            ToolContainerfile containerfile = (ToolContainerfile)object;
+            ToolDockerfile dockerfile = new ToolDockerfile(containerfile);
+            return getResponse(dockerfile, response.getHeaders());
         }
         return response;
-    }
-
-    private static ToolV1 getToolV1(Tool tool) {
-        return new ToolV1(tool);
-    }
-
-    private static ToolVersionV1 getToolVersionV1(ToolVersion toolVersion) {
-        return new ToolVersionV1(toolVersion);
     }
 
     private static Response getResponse(Object object, MultivaluedMap<String, Object> headers) {
@@ -107,10 +104,6 @@ public final class ApiVersionConverter {
             }
         }
         return responseBuilder.build();
-    }
-
-    private static MetadataV1 getMetadataV1(Metadata metadata) {
-        return new MetadataV1(metadata);
     }
 
 }

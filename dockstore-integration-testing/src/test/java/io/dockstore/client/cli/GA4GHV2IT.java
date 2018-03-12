@@ -27,8 +27,9 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.model.Metadata;
-import io.swagger.model.ToolFile;
 import io.swagger.model.Tool;
+import io.swagger.model.ToolContainerfile;
+import io.swagger.model.ToolFile;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Assert;
@@ -108,6 +109,13 @@ public class GA4GHV2IT extends GA4GHIT {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersion responseObject = response.readEntity(ToolVersion.class);
         assertVersion(MAPPER.writeValueAsString(responseObject));
+    }
+
+    @Override
+    public void toolsIdVersionsVersionIdTypeDockerfile() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/containerfile");
+        ToolContainerfile responseObject = response.readEntity(ToolContainerfile.class);
+        assertThat(MAPPER.writeValueAsString(responseObject).contains("containerfile"));
     }
 
     /**
@@ -207,7 +215,7 @@ public class GA4GHV2IT extends GA4GHIT {
         String descriptorPath = basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
         String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
         ImmutablePair<String, String> stringStringImmutablePair = Utilities
-                .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath);
-        Assert.assertTrue(stringStringImmutablePair.getRight().contains("Final process status is success"));
+                .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath, System.out, System.err);
+        Assert.assertTrue("failure message" + stringStringImmutablePair.left, stringStringImmutablePair.getRight().contains("Final process status is success"));
     }
 }

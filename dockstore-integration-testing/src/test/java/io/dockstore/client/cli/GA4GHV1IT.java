@@ -26,6 +26,7 @@ import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolV1;
 import io.swagger.client.model.ToolVersionV1;
+import io.swagger.model.ToolDockerfile;
 import org.junit.Test;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
@@ -102,6 +103,13 @@ public class GA4GHV1IT extends GA4GHIT {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersionV1 responseObject = response.readEntity(ToolVersionV1.class);
         assertVersion(MAPPER.writeValueAsString(responseObject));
+    }
+
+    @Override
+    public void toolsIdVersionsVersionIdTypeDockerfile() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile");
+        ToolDockerfile responseObject = response.readEntity(ToolDockerfile.class);
+        assertThat(MAPPER.writeValueAsString(responseObject).contains("dockerfile"));
     }
 
     protected void assertVersion(String version) {

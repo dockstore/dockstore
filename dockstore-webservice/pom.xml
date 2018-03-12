@@ -601,6 +601,10 @@
             <artifactId>github-api</artifactId>
             <version>1.92</version>
         </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+        </dependency>
     </dependencies>
 
 

@@ -28,7 +28,6 @@ import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.model.ToolDescriptor;
-import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolTests;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
@@ -45,9 +44,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
-    protected static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+    static final ObjectMapper MAPPER = Jackson.newObjectMapper();
+    static {
+        DockstoreWebserviceApplication.configureMapper(MAPPER);
+    }
     protected static javax.ws.rs.client.Client client;
-    protected final String basePath = String.format("http://localhost:%d/" + getApiVersion(), SUPPORT.getLocalPort());
+    final String basePath = String.format("http://localhost:%d/" + getApiVersion(), SUPPORT.getLocalPort());
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
@@ -169,28 +171,18 @@ public abstract class GA4GHIT {
         assertThat(response.getStatus()).isEqualTo(200);
     }
 
-    /**
-     * /tools/{id}/versions/{version_id}/dockerfile
-     *
-     * @throws Exception
-     */
-    @Test
-    public void toolsIdVersionsVersionIdTypeDockerfile() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile");
-        ToolDockerfile responseObject = response.readEntity(ToolDockerfile.class);
-        assertThat(MAPPER.writeValueAsString(responseObject).contains("dockerfile"));
-    }
-
-    protected void assertDescriptor(String descriptor) {
+    void assertDescriptor(String descriptor) {
         assertThat(descriptor).contains("type");
         assertThat(descriptor).contains("descriptor");
     }
 
     protected abstract void assertTool(String tool, boolean isTool);
 
+    public abstract void toolsIdVersionsVersionIdTypeDockerfile() throws Exception;
+
     protected abstract void assertVersion(String toolVersion);
 
-    protected Response checkedResponse(String path) {
+    Response checkedResponse(String path) {
         Response response = client.target(path).request().get();
         assertThat(response.getStatus()).isEqualTo(200);
         return response;
