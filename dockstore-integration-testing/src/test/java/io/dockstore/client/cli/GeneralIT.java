@@ -252,14 +252,14 @@ public class GeneralIT extends BaseIT {
     @Test
     public void testAddEditRemoveLabelOldClient() throws ExecuteException {
         // Test adding/removing labels for different containers
-        runOldDockstoreClient(dockstore ,new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
+        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithub", "--add", "quay", "--add", "github", "--remove", "dockerhub", "--script" });
-        runOldDockstoreClient(dockstore ,new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
+        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithub", "--add", "github", "--add", "dockerhub", "--remove", "quay", "--script" });
 
-        runOldDockstoreClient(dockstore ,new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
+        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubalternate", "--add", "alternate", "--add", "github", "--script" });
-        runOldDockstoreClient(dockstore ,new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
+        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubalternate", "--remove", "github", "--script" });
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
