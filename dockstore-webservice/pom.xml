@@ -918,18 +918,6 @@
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>test</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${basedir}/target/generated-sources</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>add_sources</id>
                         <phase>generate-sources</phase>
                         <goals>
@@ -937,7 +925,9 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>src/main/java</source>
+                                <source>${basedir}/target/generated-sources/swagger/src/gen/java</source>
+                                <source>${basedir}/target/generated-sources/swagger/src/main/java</source>
+                                <source>${basedir}/src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
