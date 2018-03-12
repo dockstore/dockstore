@@ -854,7 +854,6 @@
                     <inputSpec>https://raw.githubusercontent.com/ga4gh/tool-registry-service-schemas/2.0.0-alpha.0/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>
-			    <!-- <sourceFolder>src/gen/java/main</sourceFolder> -->
                         <dateLibrary>legacy</dateLibrary>
                         <java8>true</java8>
                         <useRuntimeException>true</useRuntimeException>
@@ -879,6 +878,40 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <!-- this is terrible and due to https://github.com/OAI/OpenAPI-Specification/issues/892 -->
+                <!-- revisit when swagger-codegen supports Handlebars or Swagger handles path parameters with slashes -->
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>replacer</artifactId>
+                <version>1.5.3</version>
+                <executions>
+                    <execution>
+                        <id>replace1</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                    <!-- not sure why swagger-codegen-maven-plugin runs in two phases -->
+                    <execution>
+                        <id>replace2</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <file>${pom.basedir}/target/generated-sources/swagger/src/gen/java/io/swagger/api/ToolsApi.java</file>
+                    <regex>false</regex>
+                    <replacements>
+                        <replacement>
+                            <token>{relative_path}</token>
+                            <value>{relative_path : .+}</value>
+                        </replacement>
+                    </replacements>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

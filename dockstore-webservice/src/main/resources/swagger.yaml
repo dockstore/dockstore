@@ -844,6 +844,7 @@ paths:
           \  from a nested subdirectory"
         required: true
         type: "string"
+        pattern: ".+"
       responses:
         200:
           description: "The tool descriptor."
@@ -859,8 +860,8 @@ paths:
       - "GA4GH"
       summary: "Get a list of objects that contain the relative path and file type"
       description: "Get a list of objects that contain the relative path and file\
-        \ type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}\
-        \ endpoint."
+        \ type. The descriptors are intended for use with the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path\
+        \ : .+} endpoint."
       operationId: "toolsIdVersionsVersionIdTypeFilesGet"
       produces:
       - "application/json"

@@ -269,10 +269,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         DOIGeneratorFactory.setConfig(configuration);
 
-        //TODO: this is terrible, don't do this at home kids (needed to re-implement #1172 since swagger 2.0 doesn't support path regular expressions like Jersey. might be fixable in OpenApi3
-        // https://github.com/swagger-api/swagger-core/issues/68
         ToolsApi toolsApi = new ToolsApi(null);
-
         environment.jersey().register(toolsApi);
         environment.jersey().register(new ToolsExtendedApi());
         environment.jersey().register(new MetadataApi(null));
