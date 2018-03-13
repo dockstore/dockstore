@@ -16,9 +16,7 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 
 import com.google.common.collect.Lists;
@@ -30,13 +28,8 @@ import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -44,7 +37,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
@@ -52,21 +44,16 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  * @author dyuen
  */
 public class ClientIT extends BaseIT {
-    static URL url;
-    final static String version = "1.3.1";
-    static File dockstore;
+
     final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Before
     @Override
@@ -75,57 +62,26 @@ public class ClientIT extends BaseIT {
         Client.DEBUG.set(false);
     }
 
-    @BeforeClass
-    public static void getOldDockstoreClient() throws IOException {
-        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + version +"/dockstore");
-        dockstore = temporaryFolder.newFile("dockstore");
-        FileUtils.copyURLToFile(url, dockstore);
-        dockstore.setExecutable(true);
-        String[] commandArray = new String[] { "--version" };
-//        This has problem executing for some reason
-//        ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(commandArray);
-//        Assert.assertTrue(stringStringImmutablePair.getLeft().contains(version));
-    }
-
     @Test
     public void testListEntries() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list" };
-        Client.main(commandArray);
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-    }
-
-    @Test
-    public void testListEntriesOld() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list" };
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list" });
     }
 
     @Test
     public void testDebugModeListEntries() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list" };
-        Client.main(commandArray);
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-    }
-
-    @Test
-    public void testDebugModeListEntriesOld() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list" };
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
+        Client.main(new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list" });
     }
 
     @Test
     public void testListEntriesWithoutCreds() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(false), "tool", "list" };
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(commandArray);
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(false), "tool", "list" });
     }
-
 
     @Test
     public void testListEntriesOnWrongPort() throws IOException, ApiException {
-        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true, false, false), "tool", "list" };
         systemExit.expectSystemExitWithStatus(Client.CONNECTION_ERROR);
-        Client.main(commandArray);
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true, false, false), "tool", "list" });
     }
 
     // Won't work as entry must be valid
@@ -150,18 +106,6 @@ public class ClientIT extends BaseIT {
     }
 
     @Test
-    public void testPluginEnableOldClient() throws ExecuteException {
-        String[] commandArray1 = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin", "download" };
-        ImmutablePair<String, String> stringStringImmutablePair1 = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray1);
-        String[] commandArray2 = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin", "list" };
-        ImmutablePair<String, String> stringStringImmutablePair2 = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray2);
-        String stdout = stringStringImmutablePair2.getLeft();
-        Assert.assertTrue(stdout.contains("dockstore-file-synapse-plugin"));
-        Assert.assertTrue(stdout.contains("dockstore-file-s3-plugin"));
-        Assert.assertFalse(stdout.contains("dockstore-icgc-storage-client-plugin"));
-    }
-
-    @Test
     public void testPluginDisable() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "download" });
         systemOutRule.clearLog();
@@ -169,18 +113,6 @@ public class ClientIT extends BaseIT {
         Assert.assertFalse(systemOutRule.getLog().contains("dockstore-file-synapse-plugin"));
         Assert.assertFalse(systemOutRule.getLog().contains("dockstore-file-s3-plugin"));
         Assert.assertTrue(systemOutRule.getLog().contains("dockstore-file-icgc-storage-client-plugin"));
-    }
-
-    @Test
-    public void testPluginDisableOldClient() throws ExecuteException {
-        String[] commandArray = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "download" };
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-        commandArray = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "list" };
-        stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-        String stdout = stringStringImmutablePair.getLeft();
-        Assert.assertFalse(stdout.contains("dockstore-file-synapse-plugin"));
-        Assert.assertFalse(stdout.contains("dockstore-file-s3-plugin"));
-        Assert.assertTrue(stdout.contains("dockstore-file-icgc-storage-client-plugin"));
     }
 
     @Ignore
@@ -265,17 +197,6 @@ public class ClientIT extends BaseIT {
 
     @Test
     @Category(ToilCompatibleTest.class)
-    public void launchingCWLWorkflowOldClient() throws IOException {
-        final String firstWorkflowCWL = ResourceHelpers.resourceFilePath("1st-workflow.cwl");
-        final String firstWorkflowJSON = ResourceHelpers.resourceFilePath("1st-workflow-job.json");
-        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "workflow", "launch", "--local-entry", firstWorkflowCWL,
-                        "--json", firstWorkflowJSON };
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-    }
-
-
-    @Test
-    @Category(ToilCompatibleTest.class)
     public void launchingCWLToolWithRemoteParameters() throws IOException {
         Client.main(
                 new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
@@ -293,43 +214,14 @@ public class ClientIT extends BaseIT {
     }
 
     @Test
-    public void testMetadataMethodsOldClient() throws IOException {
-        String commandArray[] = new String[] { "--config", TestUtility.getConfigFileLocation(true), "--version" };
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-        Assert.assertTrue(stringStringImmutablePair.getLeft().contains("Dockstore version"));
-        commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "--server-metadata" };
-        stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-        Assert.assertTrue(stringStringImmutablePair.getLeft().contains("version"));
-        systemOutRule.clearLog();
-    }
-
-    @Test
     public void testCacheCleaning() throws IOException {
-        Client.main(cacheCleaningCommand());
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "--clean-cache" });
         systemOutRule.clearLog();
-    }
-
-    @Test
-    public void testCacheCleaningOldClient() throws IOException {
-        String[] commandArray = cacheCleaningCommand();
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-        systemOutRule.clearLog();
-    }
-
-    private static String[] cacheCleaningCommand() throws IOException {
-         return new String[] { "--config", TestUtility.getConfigFileLocation(true), "--clean-cache" };
     }
 
     @Test
     public void pluginDownload() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" });
-    }
-
-    @Test
-    public void pluginDownloadOldClient() throws IOException {
-        String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" };
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, commandArray);
-        systemOutRule.clearLog();
     }
 
     @Test
@@ -435,8 +327,6 @@ public class ClientIT extends BaseIT {
         Client.main(strings.toArray(new String[strings.size()]));
         Assert.assertTrue(systemOutRule.getLog().contains("Usage: dockstore"));
         systemOutRule.clearLog();
-        ImmutablePair<String, String> stringStringImmutablePair = CommonTestUtilities.runOldDockstoreClient(dockstore, strings.toArray(new String[strings.size()]));
-        Assert.assertTrue(stringStringImmutablePair.getLeft().contains("Usage: dockstore"));
     }
 
 }
