@@ -3307,6 +3307,49 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Workflow"
+  /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
+    post:
+      tags:
+      - "workflows"
+      summary: "Register a checker workflow and associates it with the given tool/workflow"
+      description: ""
+      operationId: "registerCheckerWorkflow"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "checkerWorkflowPath"
+        in: "query"
+        description: "Path of the main descriptor of the checker workflow (located\
+          \ in associated tool/workflow repository)"
+        required: true
+        type: "string"
+      - name: "testParameterPath"
+        in: "query"
+        description: "Default path to test parameter files for the checker workflow.\
+          \ If not specified will use that of the entry."
+        required: false
+        type: "string"
+      - name: "entryId"
+        in: "path"
+        description: "Entry Id of parent tool/workflow."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "descriptorType"
+        in: "path"
+        description: "Descriptor type of the workflow, either cwl or wdl."
+        required: true
+        type: "string"
+        enum:
+        - "cwl"
+        - "wdl"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /workflows/{workflowId}:
     get:
       tags:
@@ -3541,7 +3584,7 @@ paths:
       parameters:
       - name: "workflowId"
         in: "path"
-        description: "Tool id to publish/unpublish"
+        description: "Workflow id to publish/unpublish"
         required: true
         type: "integer"
         format: "int64"
@@ -3562,7 +3605,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Refresh one particular workflow. Always do a full refresh when targetted"
+      summary: "Refresh one particular workflow. Always do a full refresh when targeted"
       description: ""
       operationId: "refresh"
       produces:
@@ -4237,6 +4280,7 @@ definitions:
         format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
+        readOnly: true
       mode:
         type: "string"
         position: 13
@@ -4420,6 +4464,7 @@ definitions:
         format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
+        readOnly: true
   Error:
     type: "object"
     required:
@@ -5085,6 +5130,10 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      parent_id:
+        type: "integer"
+        format: "int64"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
@@ -5154,6 +5203,7 @@ definitions:
         format: "int64"
         position: 12
         description: "The id of the associated checker workflow"
+        readOnly: true
       mode:
         type: "string"
         position: 13
@@ -5205,18 +5255,17 @@ definitions:
           $ref: "#/definitions/WorkflowVersion"
       is_checker:
         type: "boolean"
-        position: 22
-        description: "Whether or not the entry is a checker"
+        position: 23
       full_workflow_path:
         type: "string"
-        position: 23
+        position: 24
         readOnly: true
       path:
         type: "string"
-        position: 24
+        position: 25
       source_control_provider:
         type: "string"
-        position: 25
+        position: 26
         readOnly: true
         enum:
         - "GITHUB"

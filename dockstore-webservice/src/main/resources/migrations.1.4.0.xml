@@ -246,4 +246,24 @@
         <sql>alter table workflow alter column lastModified type timestamp without time zone USING to_timestamp(lastModified/1000)</sql>
     </changeSet>
 
+    <changeSet author="aduncan (generated)" id="1520436537629-2">
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="workflow" constraintName="fk_checkerid_with_workflow" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1520436537629-3">
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="tool" constraintName="fk_checkerid_with_tool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+
+    <changeSet id="constraint-for-underscore-workflow-and-tool-names" author="agduncan">
+        <sql dbms="postgresql">
+            ALTER TABLE tool DROP CONSTRAINT tool_check
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE tool ADD CHECK ((defaultwdlpath IS NOT NULL OR defaultcwlpath IS NOT NULL) AND toolname !~~ '\_%'::text)
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow ADD CHECK ((ischecker IS TRUE) OR (ischecker IS FALSE AND workflowname !~~ '\_%'::text))
+        </sql>
+    </changeSet>
+
+
 </databaseChangeLog>

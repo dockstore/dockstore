@@ -69,6 +69,7 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -102,6 +103,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
+    private final WorkflowDAO workflowDAO;
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
     private final HttpClient client;
@@ -109,20 +111,24 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private final String bitbucketClientSecret;
     private final ObjectMapper objectMapper;
     private final ElasticManager elasticManager;
+    private final WorkflowResource workflowResource;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
-            LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
+            LabelDAO labelDAO, FileDAO fileDAO, WorkflowDAO workflowDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
         objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
         this.labelDAO = labelDAO;
         this.fileDAO = fileDAO;
+        this.workflowDAO = workflowDAO;
         this.client = client;
 
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
+
+        this.workflowResource = workflowResource;
 
         this.toolDAO = toolDAO;
         elasticManager = new ElasticManager();
@@ -176,6 +182,12 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
         Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
+
+        // Refresh checker workflow
+        if (tool.getCheckerWorkflow() != null) {
+            workflowResource.refresh(user, tool.getCheckerWorkflow().getId());
+        }
+
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
     }
@@ -470,6 +482,9 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         checkUser(user, c);
 
+        Workflow checker = c.getCheckerWorkflow();
+
+
         if (request.getPublish()) {
             boolean validTag = false;
 
@@ -493,11 +508,17 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             // Can publish a tool IF it has at least one valid tag (or is manual) and a git url
             if (validTag && !c.getGitUrl().isEmpty()) {
                 c.setIsPublished(true);
+                if (checker != null) {
+                    checker.setIsPublished(true);
+                }
             } else {
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
             c.setIsPublished(false);
+            if (checker != null) {
+                checker.setIsPublished(false);
+            }
         }
 
         long id = toolDAO.create(c);

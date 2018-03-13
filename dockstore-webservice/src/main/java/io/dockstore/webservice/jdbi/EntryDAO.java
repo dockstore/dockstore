@@ -18,16 +18,21 @@ package io.dockstore.webservice.jdbi;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
+import java.util.Objects;
 
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.hibernate.AbstractDAO;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 
 /**
  * @author dyuen
  */
-public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
+public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
     public final int registryIndex = 0;
     public final int orgIndex = 1;
@@ -46,6 +51,20 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
     public T findById(Long id) {
         return get(id);
+    }
+
+    public MutablePair<String, Entry> findEntryById(Long id) {
+        Query query = super.namedQuery("Entry.getEntryById");
+        query.setParameter("id", id);
+        List<Object[]> pair = list(query);
+        MutablePair<String, Entry> results;
+        String type = (String)(pair.get(0))[0];
+        if ("workflow".equals(type)) {
+            results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(id)));
+        } else {
+            results = new MutablePair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(id)));
+        }
+        return results;
     }
 
     public long create(T entry) {

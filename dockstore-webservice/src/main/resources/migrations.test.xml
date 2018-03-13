@@ -104,11 +104,11 @@
             <column name="ispublished" valueBoolean="false"/>
             <column name="lastmodified"/>
             <column name="lastupdated"/>
-            <column name="defaultcwlpath"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
             <column name="defaultdockerfilepath" value="/Dockerfile"/>
             <column name="defaulttestcwlparameterfile"/>
             <column name="defaulttestwdlparameterfile"/>
-            <column name="defaultwdlpath"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
             <column name="lastbuild"/>
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test1"/>
@@ -129,11 +129,11 @@
             <column name="ispublished" valueBoolean="false"/>
             <column name="lastmodified"/>
             <column name="lastupdated"/>
-            <column name="defaultcwlpath"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
             <column name="defaultdockerfilepath" value="/Dockerfile"/>
             <column name="defaulttestcwlparameterfile"/>
             <column name="defaulttestwdlparameterfile"/>
-            <column name="defaultwdlpath"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
             <column name="lastbuild"/>
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test2"/>
@@ -153,11 +153,11 @@
             <column name="ispublished" valueBoolean="false"/>
             <column name="lastmodified"/>
             <column name="lastupdated"/>
-            <column name="defaultcwlpath"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
             <column name="defaultdockerfilepath" value="/Dockerfile"/>
             <column name="defaulttestcwlparameterfile"/>
             <column name="defaulttestwdlparameterfile"/>
-            <column name="defaultwdlpath"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
             <column name="lastbuild"/>
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test3"/>
@@ -177,11 +177,11 @@
             <column name="ispublished" valueBoolean="false"/>
             <column name="lastmodified"/>
             <column name="lastupdated"/>
-            <column name="defaultcwlpath"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
             <column name="defaultdockerfilepath" value="/Dockerfile"/>
             <column name="defaulttestcwlparameterfile"/>
             <column name="defaulttestwdlparameterfile"/>
-            <column name="defaultwdlpath"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
             <column name="lastbuild"/>
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test4"/>
@@ -201,11 +201,11 @@
             <column name="ispublished" valueBoolean="false"/>
             <column name="lastmodified"/>
             <column name="lastupdated"/>
-            <column name="defaultcwlpath"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
             <column name="defaultdockerfilepath" value="/Dockerfile"/>
             <column name="defaulttestcwlparameterfile"/>
             <column name="defaulttestwdlparameterfile"/>
-            <column name="defaultwdlpath"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
             <column name="lastbuild"/>
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test5"/>
@@ -225,11 +225,11 @@
             <column name="ispublished" valueBoolean="true"/>
             <column name="lastmodified"/>
             <column name="lastupdated"/>
-            <column name="defaultcwlpath"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
             <column name="defaultdockerfilepath" value="/Dockerfile"/>
             <column name="defaulttestcwlparameterfile"/>
             <column name="defaulttestwdlparameterfile"/>
-            <column name="defaultwdlpath"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
             <column name="lastbuild"/>
             <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
             <column name="name" value="test6"/>
