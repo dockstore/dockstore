@@ -122,7 +122,7 @@ public class GeneralIT extends BaseIT {
         c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistry(Registry.DOCKER_HUB.toString());
+        c.setRegistryString(Registry.DOCKER_HUB.toString());
         c.setIsPublished(false);
         c.setNamespace("testPath");
         c.setToolname("test5");

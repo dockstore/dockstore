@@ -204,7 +204,7 @@ public class Tool extends Entry<Tool, Tag> {
         this.namespace = namespace;
     }
 
-    @JsonProperty
+    @JsonProperty("registry_string")
     public String getRegistry() {
         return registry;
     }
@@ -315,7 +315,7 @@ public class Tool extends Entry<Tool, Tag> {
 
 
     @Enumerated(EnumType.STRING)
-    @JsonProperty("registry_provider")
+    @JsonProperty("registry")
     @ApiModelProperty(position = 30)
     public Registry getRegistryProvider() {
         for (Registry r : Registry.values()) {
@@ -330,6 +330,37 @@ public class Tool extends Entry<Tool, Tag> {
         } else {
             return null;
         }
+    }
+
+    public void setRegistryProvider(Registry registryThing) {
+        switch (registryThing) {
+        case GITLAB:
+            this.setRegistry("registry.gitlab.com");
+            break;
+        case QUAY_IO:
+            this.setRegistry("quay.io");
+            break;
+        case AMAZON_ECR:
+            break;
+        case DOCKER_HUB:
+            this.setRegistry("registry.hub.docker.com");
+            break;
+        default:
+            break;
+        }
+
+    }
+
+
+    public void setCustomerDockerRegistryPath(String newCustomDockerRegistryString) {
+        if (newCustomDockerRegistryString != null) {
+            this.setRegistry(newCustomDockerRegistryString);
+        }
+    }
+
+    @JsonProperty("custom_docker_registry_path")
+    public String getCustomDockerRegistryPath() {
+        return "potato";
     }
 
     public String getToolMaintainerEmail() {
