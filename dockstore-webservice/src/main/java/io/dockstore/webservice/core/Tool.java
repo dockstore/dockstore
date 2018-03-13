@@ -360,7 +360,7 @@ public class Tool extends Entry<Tool, Tag> {
 
     @JsonProperty("custom_docker_registry_path")
     public String getCustomDockerRegistryPath() {
-        return "potato";
+        return this.registry;
     }
 
     public String getToolMaintainerEmail() {
