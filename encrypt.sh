@@ -24,10 +24,10 @@ if [[ $ENCRYPT_FILE_CONTENTS =~ $regex ]]
     then
         name="${BASH_REMATCH[1]}"
         echo "name: ${name}" &> data.yml
-	    mustache data.yml run-tests.template.mustache > run-tests.sh
+	mustache data.yml run-tests.template.mustache > run-tests.sh
     else
         echo "uh oh, could not find encrypted variable name" 
-	    exit
+	exit
 fi
 
 # copy the new file and run-script
