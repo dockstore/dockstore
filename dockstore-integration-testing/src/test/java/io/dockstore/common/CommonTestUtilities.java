@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
+    public final static String version = "1.3.1";
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
 
     // Travis is slow, need to wait up to 1 min for webservice to return

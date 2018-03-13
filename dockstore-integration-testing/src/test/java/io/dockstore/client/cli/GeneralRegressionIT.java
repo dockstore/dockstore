@@ -56,6 +56,7 @@ import org.junit.runner.Description;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
+import static io.dockstore.common.CommonTestUtilities.version;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -79,7 +80,6 @@ public class GeneralRegressionIT extends BaseIT {
             System.out.println("Starting test: " + description.getMethodName());
         }
     };
-    final static String version = "1.3.1";
     static URL url;
     static File dockstore;
 

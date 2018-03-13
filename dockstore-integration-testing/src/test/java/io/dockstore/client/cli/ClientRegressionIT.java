@@ -23,14 +23,11 @@ import java.util.ArrayList;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.CommonTestUtilities.TestingPostgres;
-import io.dockstore.common.Registry;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
-import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -38,7 +35,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -47,7 +43,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
-import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 
 /**
@@ -56,10 +51,9 @@ import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 @Category({ RegressionTest.class })
 public class ClientRegressionIT extends BaseIT {
     static URL url;
-    final static String version = "1.3.1";
     static File dockstore;
     static File testJson;
-    final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
@@ -81,7 +75,7 @@ public class ClientRegressionIT extends BaseIT {
 
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
-        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + version +"/dockstore");
+        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + CommonTestUtilities.version +"/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         dockstore.setExecutable(true);

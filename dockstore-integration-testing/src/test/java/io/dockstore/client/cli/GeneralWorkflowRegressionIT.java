@@ -51,6 +51,7 @@ import org.junit.rules.TemporaryFolder;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClientWithSpaces;
+import static io.dockstore.common.CommonTestUtilities.version;
 
 /**
  * This test suite will have tests for the workflow mode of the Dockstore Client.
@@ -66,7 +67,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     public final SystemOutRule systemOutRule = new SystemOutRule().muteForSuccessfulTests();
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().muteForSuccessfulTests();
-    final static String version = "1.3.1";
+
     static URL url;
     static File dockstore;
     static File md5sumJson;
