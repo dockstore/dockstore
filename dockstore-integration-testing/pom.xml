@@ -182,6 +182,9 @@
                             <filesets>
                                 <fileset>
                                     <directory>cromwell-workflow-logs</directory>
+                                    <directory>datastore</directory>
+                                    <directory>cromwell-input</directory>
+                                    <directory>cromwell-executions</directory>
                                 </fileset>
                                 <fileset>
                                     <includes>

@@ -16,6 +16,7 @@
 
 package io.swagger.api.impl;
 
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
@@ -23,13 +24,12 @@ import io.swagger.api.MetadataApiService;
 import io.swagger.api.NotFoundException;
 import io.swagger.model.Metadata;
 
-@javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-06-07T18:19:37.276Z")
 public class MetadataApiServiceImpl extends MetadataApiService {
     @Override
-    public Response metadataGet(SecurityContext securityContext) throws NotFoundException {
+    public Response metadataGet(SecurityContext securityContext, ContainerRequestContext containerContext) throws NotFoundException {
         Metadata metadata = new Metadata();
         metadata.setCountry("CAN");
-        metadata.setApiVersion("1.0.0");
+        metadata.setApiVersion("2.0.0");
         metadata.setFriendlyName("Dockstore");
         String implVersion = ToolsApiServiceImpl.class.getPackage().getImplementationVersion();
         implVersion = implVersion == null ? "development-build" : implVersion;

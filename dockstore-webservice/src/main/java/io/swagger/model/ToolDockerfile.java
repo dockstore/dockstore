@@ -22,12 +22,10 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-/**
- * A tool dockerfile is a document that describes how to build a particular Docker image.
- **/
 
 /**
  * A tool dockerfile is a document that describes how to build a particular Docker image.
+ * Now used only by TRS V1
  */
 @ApiModel(description = "A tool dockerfile is a document that describes how to build a particular Docker image.")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
@@ -36,6 +34,11 @@ public class ToolDockerfile {
     private String dockerfile = null;
 
     private String url = null;
+
+    public ToolDockerfile(ToolContainerfile containerfile) {
+        this.dockerfile = containerfile.getContainerfile();
+        this.url = containerfile.getUrl();
+    }
 
     public ToolDockerfile dockerfile(String dockerfile) {
         this.dockerfile = dockerfile;

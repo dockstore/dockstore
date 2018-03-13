@@ -29,13 +29,13 @@ import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.Ga4Ghv2Api;
+import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
-import io.swagger.client.model.ToolV2;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -243,10 +243,10 @@ public class WorkflowIT extends BaseIT {
         assertTrue("nextflow workflow should have at least one config file and one script file", scriptCount >= 1 && configCount >= 1);
 
         // check that we can pull down the nextflow workflow via the ga4gh TRS API
-        Ga4Ghv2Api ga4Ghv2Api = new Ga4Ghv2Api(webClient);
-        List<ToolV2> toolV2s = ga4Ghv2Api.toolsGet(null, null, null, null, null, null, null, null, null);
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        List<Tool> toolV2s = ga4Ghv2Api.toolsGet(null, null, null, null, null, null, null, null, null);
         String mtaWorkflowID = "#workflow/github.com/DockstoreTestUser2/mta-nf";
-        ToolV2 toolV2 = ga4Ghv2Api.toolsIdGet(mtaWorkflowID);
+        Tool toolV2 = ga4Ghv2Api.toolsIdGet(mtaWorkflowID);
         assertTrue("could get mta as part of list", toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects
             .equals(tool.getId(), mtaWorkflowID)));
         assertTrue("could get mta as a specific tool", toolV2 != null);
