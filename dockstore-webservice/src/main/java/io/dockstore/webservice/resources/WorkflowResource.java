@@ -93,7 +93,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import io.swagger.model.ToolVersion;
+import io.swagger.model.DescriptorType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -1295,7 +1295,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         MutablePair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
 
         // Check if valid descriptor type
-        if (!Objects.equals(descriptorType, ToolVersion.DescriptorTypeEnum.CWL.toString().toLowerCase()) && !Objects.equals(descriptorType, ToolVersion.DescriptorTypeEnum.WDL.toString().toLowerCase())) {
+        if (!Objects.equals(descriptorType, DescriptorType.CWL.toString().toLowerCase()) && !Objects.equals(descriptorType, DescriptorType.WDL.toString().toLowerCase())) {
             throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only cwl and wdl are valid.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1333,10 +1333,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             Tool tool = (Tool)entryPair.getValue();
 
             // Get default test parameter path and toolname
-            if (Objects.equals(descriptorType.toLowerCase(), ToolVersion.DescriptorTypeEnum.WDL.toString().toLowerCase())) {
+            if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
                 workflowName = tool.getToolname() + "_wdl_checker";
                 defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
-            } else if (Objects.equals(descriptorType.toLowerCase(), ToolVersion.DescriptorTypeEnum.CWL.toString().toLowerCase())) {
+            } else if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
                 workflowName = tool.getToolname() + "_cwl_checker";
                 defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
             } else {
@@ -1381,9 +1381,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             if (workflowName == null) {
                 workflowName = "";
             }
-            if (Objects.equals(workflow.getDescriptorType().toLowerCase(), ToolVersion.DescriptorTypeEnum.CWL.toString().toLowerCase())) {
+            if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
                 workflowName += "_cwl_checker";
-            } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), ToolVersion.DescriptorTypeEnum.WDL.toString().toLowerCase())) {
+            } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
                 workflowName += "_wdl_checker";
             } else {
                 throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().toLowerCase() + " is not valid.\nSupported types include cwl and wdl.");
