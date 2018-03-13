@@ -17,6 +17,7 @@
 package io.dockstore.common;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -27,7 +28,10 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -191,6 +195,30 @@ public final class CommonTestUtilities {
         commandList.addAll(Arrays.asList(commandArray));
         String commandString = String.join(" ", commandList);
         return Utilities.executeCommand(commandString);
+    }
+
+    /**
+     * For running the old dockstore client when spaces are involved
+     * @param dockstore
+     * @param commandArray
+     * @throws ExecuteException
+     * @throws RuntimeException
+     */
+    public static void runOldDockstoreClientWithSpaces(File dockstore, String[] commandArray) throws ExecuteException, RuntimeException {
+        List<String> commandList;
+        CommandLine commandLine = new CommandLine(dockstore.getAbsoluteFile());
+
+        commandList = Arrays.asList(commandArray);
+        commandList.forEach(command -> {
+            commandLine.addArgument(command, false);
+        });
+        Executor executor = new DefaultExecutor();
+        try {
+            executor.execute(commandLine);
+        } catch (IOException e) {
+            LOG.error("Could not execute command. " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public static class TestingPostgres extends BasicPostgreSQL {

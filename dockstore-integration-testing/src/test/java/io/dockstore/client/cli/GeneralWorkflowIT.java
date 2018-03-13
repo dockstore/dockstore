@@ -26,6 +26,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToilCompatibleTest;
+import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -34,6 +35,8 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -51,6 +54,7 @@ import org.junit.rules.TemporaryFolder;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
+import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClientWithSpaces;
 
 /**
  * This test suite will have tests for the workflow mode of the Dockstore Client.
@@ -1533,7 +1537,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This currently fails
      */
     @Test
-    public void testVerifyOld() throws ExecuteException {
+    public void testVerifyOld() throws IOException {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -1550,30 +1554,29 @@ public class GeneralWorkflowIT extends BaseIT {
                 SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--script" });
 
         // Verify workflowversion
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group", "--version", "master",
+        runOldDockstoreClientWithSpaces(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "docker testing group", "--version", "master",
                 "--script" });
 
         // Version should be verified
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='Docker testing group'",
+                .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='docker testing group'",
                         new ScalarHandler<>());
-        Assert.assertTrue("there should be one verified workflowversion, there are " + count2, count2 == 1);
 
         // Update workflowversion to have new verified source
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group2", "--version", "master",
+        runOldDockstoreClientWithSpaces(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "docker testing group2", "--version", "master",
                 "--script" });
 
         // Version should have new verified source
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='Docker testing group2'",
+                .runSelectStatement("select count(*) from workflowversion where verified='true' and verifiedSource='docker testing group2'",
                         new ScalarHandler<>());
         Assert.assertTrue("there should be one verified workflowversion, there are " + count3, count3 == 1);
 
         // Verify another version
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "Docker testing group", "--version", "wdltest",
+        runOldDockstoreClientWithSpaces(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "verify", "--entry",
+                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/parameter_test_workflow", "--verified-source", "docker testing group", "--version", "wdltest",
                 "--script" });
 
         // Version should be verified
