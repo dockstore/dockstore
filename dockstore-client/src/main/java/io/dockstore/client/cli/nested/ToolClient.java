@@ -372,6 +372,10 @@ public class ToolClient extends AbstractEntryClient {
             final String privateAccess = optVal(args, "--private", "false");
             final String customDockerPath = optVal(args, "--custom-docker-path", null);
 
+            if (toolname != null && toolname.startsWith("_")) {
+                errorMessage("Tool names cannot start with an underscore.", Client.CLIENT_ERROR);
+            }
+
             // Check that registry is valid
             boolean validRegistry = Stream.of(Registry.values()).anyMatch(r -> r.name().equals(registry));
 
@@ -882,6 +886,10 @@ public class ToolClient extends AbstractEntryClient {
                 final String toolname = optVal(args, "--toolname", tool.getToolname());
                 final String gitUrl = optVal(args, "--git-url", tool.getGitUrl());
                 final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
+
+                if (toolname != null && toolname.startsWith("_")) {
+                    errorMessage("Tool names cannot start with an underscore.", Client.CLIENT_ERROR);
+                }
 
                 // Check that user did not use manual only attributes for an auto tool
                 if (tool.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && (args.contains("--private") || args

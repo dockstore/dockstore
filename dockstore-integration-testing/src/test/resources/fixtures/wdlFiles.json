@@ -1,7 +1,7 @@
 [
   {
     "path": "\/Dockerfile",
-    "file_type": "DOCKERFILE"
+    "file_type": "CONTAINERFILE"
   },
   {
     "path": "\/Dockstore.wdl",

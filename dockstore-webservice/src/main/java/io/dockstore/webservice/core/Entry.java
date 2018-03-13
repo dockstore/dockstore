@@ -35,6 +35,8 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.NamedNativeQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
@@ -54,6 +56,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
+// TODO: Replace this with JPA when possible
+@NamedNativeQuery(name = "Entry.getEntryById", query = "SELECT 'tool' as type, id from tool where id = :id union select 'workflow' as type, id from workflow where id = :id")
 public abstract class Entry<S extends Entry, T extends Version> {
 
     /**
@@ -110,10 +114,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
-    @Column
-    @JsonProperty("checker_id")
-    @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
-    private Long checkerId;
+    @JsonIgnore
+    @JoinColumn(name = "checkerid")
+    @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
+    @ApiModelProperty(value = "The id of the associated checker workflow")
+    private Workflow checkerWorkflow;
 
     // database timestamps
     @Column(updatable = false)
@@ -135,6 +140,26 @@ public abstract class Entry<S extends Entry, T extends Version> {
         starredUsers = new HashSet<>(0);
     }
 
+
+    @JsonProperty("checker_id")
+    @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
+    public Long getCheckerId() {
+        if (checkerWorkflow == null) {
+            return null;
+        } else {
+            return checkerWorkflow.getId();
+        }
+    }
+
+
+    public Workflow getCheckerWorkflow() {
+        return checkerWorkflow;
+    }
+
+    public void setCheckerWorkflow(Workflow checkerWorkflow) {
+        this.checkerWorkflow = checkerWorkflow;
+    }
+
     @JsonProperty
     public String getAuthor() {
         return author;
@@ -147,14 +172,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public Long getCheckerId() {
-        return checkerId;
-    }
-
-    public void setCheckerId(Long checkerId) {
-        this.checkerId = checkerId;
     }
 
     @JsonProperty
@@ -288,8 +305,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     public void update(S entry) {
         this.setDescription(entry.getDescription());
-        // this causes an issue when newly refreshed tools that are not published overwrite publish settings for existing containers
-        // isPublished = entry.getIsPublished();
         lastModified = entry.getLastModifiedDate();
         this.setAuthor(entry.getAuthor());
         this.setEmail(entry.getEmail());

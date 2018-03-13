@@ -31,6 +31,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -43,6 +44,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
+import org.hibernate.annotations.Check;
 
 /**
  * This describes one workflow in the dockstore, extending Entry with the fields necessary to describe workflows.
@@ -68,6 +70,7 @@ import org.apache.http.HttpStatus;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (CONCAT(c.sourceControl, '/', c.organization, '/', c.repository, '/', c.workflowName) LIKE :pattern)) AND c.isPublished = true") })
 @DiscriminatorValue("workflow")
+@Check(constraints = " ((ischecker IS TRUE and workflowname LIKE '\\_%') or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
 @SuppressWarnings("checkstyle:magicnumber")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
@@ -113,9 +116,15 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @OrderBy("id")
     private final SortedSet<WorkflowVersion> workflowVersions;
 
-    @Column
+
+    @OneToOne(mappedBy = "checkerWorkflow", targetEntity = Entry.class, fetch = FetchType.EAGER)
+    @JsonIgnore
+    @ApiModelProperty(value = "The parent ID of a checker workflow. Null if not a checker workflow. Required for checker workflows.", position = 22)
+    private Entry parentEntry;
+
+    @Column(columnDefinition = "boolean")
     @JsonProperty("is_checker")
-    @ApiModelProperty(value = "Whether or not the entry is a checker", position = 22)
+    @ApiModelProperty(position = 23)
     private boolean isChecker = false;
 
     public Workflow() {
@@ -129,13 +138,30 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowVersions = new TreeSet<>();
     }
 
+    @JsonProperty("parent_id")
+    public Long getParentId() {
+        if (parentEntry != null) {
+            return parentEntry.getId();
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public Set<WorkflowVersion> getVersions() {
         return workflowVersions;
     }
 
+    public Entry getParentEntry() {
+        return parentEntry;
+    }
+
+    public void setParentEntry(Entry parentEntry) {
+        this.parentEntry = parentEntry;
+    }
+
     /**
-     * Used during refresh to update containers
+     * Used during refresh to update containers with information from remote
      *
      * @param workflow workflow to update from
      */
@@ -166,6 +192,8 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         targetWorkflow.setDescriptorType(getDescriptorType());
         targetWorkflow.setDefaultVersion(getDefaultVersion());
         targetWorkflow.setDefaultTestParameterFilePath(getDefaultTestParameterFilePath());
+        targetWorkflow.setCheckerWorkflow(getCheckerWorkflow());
+        targetWorkflow.setIsChecker(isIsChecker());
     }
 
     @JsonProperty
@@ -230,19 +258,19 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     @JsonProperty("full_workflow_path")
-    @ApiModelProperty(position = 23)
+    @ApiModelProperty(position = 24)
     public String getWorkflowPath() {
         return getPath() + (workflowName == null || "".equals(workflowName) ? "" : '/' + workflowName);
     }
 
-    @ApiModelProperty(position = 24)
+    @ApiModelProperty(position = 25)
     public String getPath() {
         return getSourceControl() + '/' + organization + '/' + repository;
     }
 
     @Enumerated(EnumType.STRING)
     @JsonProperty("source_control_provider")
-    @ApiModelProperty(position = 25)
+    @ApiModelProperty(position = 26)
     public SourceControl getSourceControlProvider() {
         for (SourceControl sc : SourceControl.values()) {
             if (sc.toString().equals(this.sourceControl)) {
@@ -326,7 +354,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     public boolean isIsChecker() {
-        return isChecker;
+        return this.isChecker;
     }
 
     public void setIsChecker(boolean isChecker) {

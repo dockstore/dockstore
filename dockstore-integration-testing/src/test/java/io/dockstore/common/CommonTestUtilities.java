@@ -56,7 +56,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.4.0");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0");
     }
 
     /**
@@ -74,6 +74,7 @@ public final class CommonTestUtilities {
         }
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.1.consistency");
         application.run("db", "migrate", CONFIG_PATH, "--include", "test");
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
     }
@@ -98,6 +99,7 @@ public final class CommonTestUtilities {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
         application.run("db", "migrate", configPath, "--include", "1.3.0.generated");
+        application.run("db", "migrate", configPath, "--include", "1.3.1.consistency");
         application.run("db", "migrate", configPath, "--include", "test.confidential1");
         application.run("db", "migrate", configPath, "--include", "1.4.0");
     }
@@ -127,6 +129,7 @@ public final class CommonTestUtilities {
         }
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
         application.run("db", "migrate", configPath, "--include", "1.3.0.generated");
+        application.run("db", "migrate", configPath, "--include", "1.3.1.consistency");
         application.run("db", "migrate", configPath, "--include", "test.confidential2");
         application.run("db", "migrate", configPath, "--include", "1.4.0");
 

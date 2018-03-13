@@ -18,6 +18,7 @@ package io.swagger.api;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -29,7 +30,7 @@ import io.swagger.model.ToolClass;
 
 @Path(DockstoreWebserviceApplication.GA4GH_API_PATH_V1 + "/tool-classes")
 
-@Produces({ "application/json", "text/plain" })
+@Produces( { "application/json", "text/plain" })
 @io.swagger.annotations.Api(description = "the tool-classes API")
 @javax.annotation.Generated(value = "class io.swagger.codegen.languages.JavaJerseyServerCodegen", date = "2016-09-12T21:34:41.980Z")
 public class ToolClassesApiV1 {
@@ -37,12 +38,12 @@ public class ToolClassesApiV1 {
 
     @GET
     @UnitOfWork
-    @Produces({ "application/json", "text/plain" })
+    @Produces( { "application/json", "text/plain" })
     @io.swagger.annotations.ApiOperation(value = "List all tool types", notes = "This endpoint returns all tool-classes available ", response = ToolClass.class, responseContainer = "List", tags = {
-            "GA4GHV1", })
+        "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
-            @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
-    public Response toolClassesGet(@Context SecurityContext securityContext) throws NotFoundException {
-        return delegate.toolClassesGet(securityContext);
+        @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
+    public Response toolClassesGet(@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
+        return delegate.toolClassesGet(securityContext, containerContext);
     }
 }

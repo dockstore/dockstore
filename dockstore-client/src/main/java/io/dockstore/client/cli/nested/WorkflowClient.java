@@ -766,6 +766,10 @@ public class WorkflowClient extends AbstractEntryClient {
 
             String workflowname = optVal(args, "--workflow-name", null);
 
+            if (workflowname != null && workflowname.startsWith("_")) {
+                errorMessage("Workflow names cannot start with an underscore.", Client.CLIENT_ERROR);
+            }
+
             // Make new workflow object
             String path = Joiner.on("/").skipNulls().join(organization, repository, workflowname);
 
@@ -831,6 +835,10 @@ public class WorkflowClient extends AbstractEntryClient {
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
                 String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
                 String defaultTestJsonPath = optVal(args, "--default-test-parameter-path", workflow.getDefaultTestParameterFilePath());
+
+                if (workflowName != null && workflowName.startsWith("_")) {
+                    errorMessage("Workflow names cannot start with an underscore.", Client.CLIENT_ERROR);
+                }
 
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
