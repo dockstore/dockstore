@@ -1,3 +1,18 @@
+/*
+ *    Copyright 2017 OICR
+ *
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *
+ *        http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 package io.dockstore.client.cli;
 
 import java.util.List;
@@ -9,12 +24,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.model.MetadataV2;
 import io.swagger.client.model.ToolClass;
 import io.swagger.client.model.ToolDescriptor;
-import io.swagger.client.model.ToolV2;
-import io.swagger.client.model.ToolVersionV2;
+import io.swagger.model.Metadata;
+import io.swagger.model.Tool;
+import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolFile;
+import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Assert;
 import org.junit.Test;
@@ -36,7 +52,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void metadata() throws Exception {
         Response response = checkedResponse(basePath + "metadata");
-        MetadataV2 responseObject = response.readEntity(MetadataV2.class);
+        Metadata responseObject = response.readEntity(Metadata.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("api_version");
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("friendly_name");
         assertThat(MAPPER.writeValueAsString(responseObject)).doesNotContain("api-version");
@@ -46,7 +62,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void tools() throws Exception {
         Response response = checkedResponse(basePath + "tools");
-        List<ToolV2> responseObject = response.readEntity(new GenericType<List<ToolV2>>() {
+        List<Tool> responseObject = response.readEntity(new GenericType<List<Tool>>() {
         });
         assertTool(MAPPER.writeValueAsString(responseObject), true);
     }
@@ -59,20 +75,20 @@ public class GA4GHV2IT extends GA4GHIT {
 
     private void toolsIdTool() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6");
-        ToolV2 responseObject = response.readEntity(ToolV2.class);
+        Tool responseObject = response.readEntity(Tool.class);
         assertTool(MAPPER.writeValueAsString(responseObject), true);
     }
 
     private void toolsIdWorkflow() throws Exception {
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FA%2Fl");
-        ToolV2 responseObject = response.readEntity(ToolV2.class);
+        Tool responseObject = response.readEntity(Tool.class);
         assertTool(MAPPER.writeValueAsString(responseObject), false);
     }
 
     @Test
     public void toolsIdVersions() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions");
-        List<ToolVersionV2> responseObject = response.readEntity(new GenericType<List<ToolVersionV2>>() {
+        List<ToolVersion> responseObject = response.readEntity(new GenericType<List<ToolVersion>>() {
         });
         assertVersion(MAPPER.writeValueAsString(responseObject));
     }
@@ -91,8 +107,15 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void toolsIdVersionsVersionId() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
-        ToolVersionV2 responseObject = response.readEntity(ToolVersionV2.class);
+        ToolVersion responseObject = response.readEntity(ToolVersion.class);
         assertVersion(MAPPER.writeValueAsString(responseObject));
+    }
+
+    @Override
+    public void toolsIdVersionsVersionIdTypeDockerfile() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/containerfile");
+        ToolContainerfile responseObject = response.readEntity(ToolContainerfile.class);
+        assertThat(MAPPER.writeValueAsString(responseObject).contains("containerfile"));
     }
 
     /**
@@ -167,16 +190,16 @@ public class GA4GHV2IT extends GA4GHIT {
 
         // Check responses
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
-        ToolV2 responseObject = response.readEntity(ToolV2.class);
+        Tool responseObject = response.readEntity(Tool.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author1");
         response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
-        responseObject = response.readEntity(ToolV2.class);
+        responseObject = response.readEntity(Tool.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author2");
         response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
-        responseObject = response.readEntity(ToolV2.class);
+        responseObject = response.readEntity(Tool.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author3");
         response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
-        responseObject = response.readEntity(ToolV2.class);
+        responseObject = response.readEntity(Tool.class);
         assertThat(MAPPER.writeValueAsString(responseObject)).contains("author4");
     }
 
@@ -192,7 +215,7 @@ public class GA4GHV2IT extends GA4GHIT {
         String descriptorPath = basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
         String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
         ImmutablePair<String, String> stringStringImmutablePair = Utilities
-                .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath);
-        Assert.assertTrue(stringStringImmutablePair.getRight().contains("Final process status is success"));
+                .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath, System.out, System.err);
+        Assert.assertTrue("failure message" + stringStringImmutablePair.left, stringStringImmutablePair.getRight().contains("Final process status is success"));
     }
 }

@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -26,15 +27,20 @@ import javax.ws.rs.core.SecurityContext;
 import javax.ws.rs.core.UriInfo;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.User;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Authorization;
 import io.swagger.api.NotFoundException;
 import io.swagger.model.ToolV1;
 import org.apache.http.HttpStatus;
+
+import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * GET methods for organization related information on path: /api/ga4gh/v2/tools
@@ -64,18 +70,21 @@ public class ToolsExtendedApi {
     @Produces({ "application/json" })
     @ApiOperation(value = "Search the index of tools", notes = "This endpoint searches the index for all published tools and workflows. Used by utilities that expect to talk to an elastic search endpoint", response = String.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An elastic search result.", response = String.class) })
-    public Response toolsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query, @Context UriInfo uriInfo, @Context SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIndexSearch(@ApiParam(value = "elastic search query", required = true) String query, @Context UriInfo uriInfo,
+        @Context SecurityContext securityContext) {
         return delegate.toolsIndexSearch(query, uriInfo.getQueryParameters(), securityContext);
     }
-
 
     @POST
     @Path("/tools/index")
     @UnitOfWork
+    @RolesAllowed("admin")
     @Produces({ "text/plain" })
-    @ApiOperation(value = "Update the index of tools", notes = "This endpoint updates the index for all published tools and workflows. ", response = Integer.class)
+    @ApiOperation(value = "Update the index of tools", notes = "This endpoint updates the index for all published tools and workflows. ", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Integer.class)
     @ApiResponses(value = { @ApiResponse(code = HttpStatus.SC_OK, message = "An array of Tools of the input organization.") })
-    public Response toolsIndexGet(@Context SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIndexGet(@ApiParam(hidden = true) @Auth User user, @Context SecurityContext securityContext)
+        throws NotFoundException {
         return delegate.toolsIndexGet(securityContext);
     }
 

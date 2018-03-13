@@ -16,11 +16,11 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
+
 import io.dockstore.webservice.core.Workflow;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
-
-import java.util.List;
 
 /**
  * @author dyuen

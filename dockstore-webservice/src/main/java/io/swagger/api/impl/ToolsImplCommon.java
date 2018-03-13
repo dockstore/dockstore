@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -43,10 +44,11 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.swagger.model.DescriptorType;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
+import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -79,13 +81,13 @@ public final class ToolsImplCommon {
     private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
         ToolDescriptor descriptor = new ToolDescriptor();
         if (file.getType() == DOCKSTORE_CWL) {
-            descriptor.setType(ToolDescriptor.TypeEnum.CWL);
+            descriptor.setType(DescriptorType.CWL);
         } else if (file.getType() == DOCKSTORE_WDL) {
-            descriptor.setType(ToolDescriptor.TypeEnum.WDL);
+            descriptor.setType(DescriptorType.WDL);
         }  else if (file.getType() == SourceFile.FileType.NEXTFLOW) {
-            descriptor.setType(ToolDescriptor.TypeEnum.NFL);
+            descriptor.setType(DescriptorType.NFL);
         }  else if (file.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
-            descriptor.setType(ToolDescriptor.TypeEnum.NFL);
+            descriptor.setType(DescriptorType.NFL);
         }
         descriptor.setDescriptor(file.getContent());
 
@@ -109,9 +111,9 @@ public final class ToolsImplCommon {
         toolDescriptor.setDescriptor(sourceFile.getContent());
         toolDescriptor.setUrl(sourceFile.getPath());
         if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-            toolDescriptor.setType(ToolDescriptor.TypeEnum.CWL);
+            toolDescriptor.setType(DescriptorType.CWL);
         } else if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_WDL)) {
-            toolDescriptor.setType(ToolDescriptor.TypeEnum.WDL);
+            toolDescriptor.setType(DescriptorType.WDL);
         } else {
             LOG.error("This source file is not a recognized descriptor.");
             return null;
@@ -141,7 +143,7 @@ public final class ToolsImplCommon {
      * @return standardised data object
      */
     public static Pair<Tool, Table<String, SourceFile.FileType, Object>> convertEntryToTool(Entry container,
-            DockstoreWebserviceConfiguration config) {
+        DockstoreWebserviceConfiguration config) {
         Table<String, SourceFile.FileType, Object> fileTable = HashBasedTable.create();
 
         String url;
@@ -190,6 +192,7 @@ public final class ToolsImplCommon {
             LOG.error("Unrecognized container type - neither tool or workflow: " + container.getId());
             return null;
         }
+        tool.setContains(new ArrayList<>());
 
         // handle verified information
         tool = setVerified(tool, inputVersions);
@@ -227,20 +230,20 @@ public final class ToolsImplCommon {
                 if (version instanceof Tag) {
                     switch (file.getType()) {
                     case DOCKERFILE:
-                        ToolDockerfile dockerfile = new ToolDockerfile();
-                        dockerfile.setDockerfile(file.getContent());
+                        ToolContainerfile dockerfile = new ToolContainerfile();
+                        dockerfile.setContainerfile(file.getContent());
                         dockerfile.setUrl(urlBuilt + ((Tag)version).getDockerfilePath());
-                        toolVersion.setDockerfile(true);
+                        toolVersion.setContainerfile(true);
                         fileTable.put(version.getName(), DOCKERFILE, dockerfile);
                         break;
                     case DOCKSTORE_CWL:
                         if (((Tag)version).getCwlPath().equalsIgnoreCase(file.getPath())) {
-                            toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                            toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
                             fileTable.put(version.getName(), DOCKSTORE_CWL, buildSourceFile(urlBuilt + ((Tag)version).getCwlPath(), file));
                         }
                         break;
                     case DOCKSTORE_WDL:
-                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.WDL);
+                        toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
                         fileTable.put(version.getName(), DOCKSTORE_WDL, buildSourceFile(urlBuilt + ((Tag)version).getWdlPath(), file));
                         break;
                     default:
@@ -252,23 +255,23 @@ public final class ToolsImplCommon {
                     case DOCKSTORE_CWL:
                         // get the "main" workflow file
                         if (((WorkflowVersion)version).getWorkflowPath().equalsIgnoreCase(file.getPath())) {
-                            toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.CWL);
+                            toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
                             fileTable.put(version.getName(), DOCKSTORE_CWL,
-                                    buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
+                                buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
                         }
                         break;
                     case DOCKSTORE_WDL:
-                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.WDL);
+                        toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
                         fileTable.put(version.getName(), DOCKSTORE_WDL,
-                                buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
+                            buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
                         break;
                     case NEXTFLOW:
-                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.NFL);
+                        toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
                         fileTable.put(version.getName(), SourceFile.FileType.NEXTFLOW,
                             buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
                         break;
                     case NEXTFLOW_CONFIG:
-                        toolVersion.addDescriptorTypeItem(ToolVersion.DescriptorTypeEnum.NFL);
+                        toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
                         fileTable.put(version.getName(), SourceFile.FileType.NEXTFLOW_CONFIG,
                             buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
                         break;
@@ -283,9 +286,9 @@ public final class ToolsImplCommon {
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
                 toolVersion.setMetaVersion(String.valueOf(version.getLastModified() != null ? version.getLastModified() : new Date(0)));
-                final List<ToolVersion.DescriptorTypeEnum> descriptorType = toolVersion.getDescriptorType();
+                final List<DescriptorType> descriptorType = toolVersion.getDescriptorType();
                 if (!descriptorType.isEmpty()) {
-                    EnumSet<ToolVersion.DescriptorTypeEnum> set = EnumSet.copyOf(descriptorType);
+                    EnumSet<DescriptorType> set = EnumSet.copyOf(descriptorType);
                     toolVersion.setDescriptorType(Lists.newArrayList(set));
                 }
                 tool.getVersions().add(toolVersion);
@@ -297,26 +300,26 @@ public final class ToolsImplCommon {
     /**
      * Construct escaped ID and then the URL of the Tool
      *
-     * @param newID  The ID of the Tool
+     * @param newID   The ID of the Tool
      * @param baseURL The base URL for the tools endpoint
      * @return The URL of the Tool
      * @throws UnsupportedEncodingException When URL encoding has failed
      */
-    private static String getUrl(String newID, String baseURL)
-            throws UnsupportedEncodingException {
+    private static String getUrl(String newID, String baseURL) throws UnsupportedEncodingException {
         String escapedID = URLEncoder.encode(newID, StandardCharsets.UTF_8.displayName());
         return baseURL + escapedID;
     }
 
     /**
      * Get baseURL from DockstoreWebServiceConfiguration
-     * @param config    The DockstoreWebServiceConfiguration
-     * @return          The baseURL for GA4GH tools endpoint
-     * @throws URISyntaxException   When URI building goes wrong
+     *
+     * @param config The DockstoreWebServiceConfiguration
+     * @return The baseURL for GA4GH tools endpoint
+     * @throws URISyntaxException When URI building goes wrong
      */
     private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
         URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
-                DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
+            DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
         return uri.toString();
     }
 
@@ -330,7 +333,7 @@ public final class ToolsImplCommon {
     private static Tool setVerified(Tool tool, Set<Version> versions) {
         tool.setVerified(versions.stream().anyMatch(Version::isVerified));
         final List<String> collect = versions.stream().filter(Version::isVerified).map(Version::getVerifiedSource)
-                .collect(Collectors.toList());
+            .collect(Collectors.toList());
         Gson gson = new Gson();
         Collections.sort(collect);
         tool.setVerifiedSource(Strings.nullToEmpty(gson.toJson(collect)));
@@ -364,14 +367,14 @@ public final class ToolsImplCommon {
      * @throws UnsupportedEncodingException When URL encoding has failed
      */
     private static ToolVersion setGeneralToolVersionInfo(String url, ToolVersion toolVersion, Version version)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException {
         String globalVersionId;
         globalVersionId = url + "/versions/" + URLEncoder.encode(version.getName(), StandardCharsets.UTF_8.displayName());
         toolVersion.setUrl(globalVersionId);
         toolVersion.setName(version.getName());
         toolVersion.setVerified(version.isVerified());
         toolVersion.setVerifiedSource(Strings.nullToEmpty(version.getVerifiedSource()));
-        toolVersion.setDockerfile(false);
+        toolVersion.setContainerfile(false);
 
         // Set image if it's a DockstoreTool, otherwise make it empty string (for now)
         if (version instanceof Tag) {
@@ -404,7 +407,7 @@ public final class ToolsImplCommon {
 
         // Set type
         ToolClass type = container instanceof io.dockstore.webservice.core.Tool ? ToolClassesApiServiceImpl.getCommandLineToolClass()
-                : ToolClassesApiServiceImpl.getWorkflowClass();
+            : ToolClassesApiServiceImpl.getWorkflowClass();
         tool.setToolclass(type);
 
         // Set signed.  Signed is currently not supported
@@ -417,8 +420,9 @@ public final class ToolsImplCommon {
 
     /**
      * Construct the workflow/tool full name
-     * @param strings   The components that make up the full name (repository name + optional workflow/tool name)
-     * @return  The full workflow/tool name
+     *
+     * @param strings The components that make up the full name (repository name + optional workflow/tool name)
+     * @return The full workflow/tool name
      */
     private static String constructName(List<String> strings) {
         // The name is composed of the repository name and then the optional workflowname split with a '/'
@@ -433,8 +437,9 @@ public final class ToolsImplCommon {
 
     /**
      * Converts a Dockstore SourceFile to GA4GH ToolTests
-     * @param sourceFile  The Dockstore SourceFile to convert
-     * @return      The resulting GA4GH ToolTests
+     *
+     * @param sourceFile The Dockstore SourceFile to convert
+     * @return The resulting GA4GH ToolTests
      */
     static ToolTests sourceFileToToolTests(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
