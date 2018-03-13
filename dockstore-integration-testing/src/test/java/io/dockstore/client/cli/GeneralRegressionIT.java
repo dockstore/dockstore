@@ -25,8 +25,8 @@ import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
+import io.dockstore.common.RegressionTest;
 import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -40,11 +40,9 @@ import io.swagger.client.model.Tag;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -65,33 +63,29 @@ import static org.junit.Assert.assertTrue;
  *
  * @author aduncan
  */
-@Category({ConfidentialTest.class})
+@Category({ RegressionTest.class })
 public class GeneralRegressionIT extends BaseIT {
-    static URL url;
-    final static String version = "1.3.1";
-    static File dockstore;
+    @ClassRule
+    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
+    @Rule
+    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
     @Rule
     public TestRule watcher = new TestWatcher() {
         protected void starting(Description description) {
             System.out.println("Starting test: " + description.getMethodName());
         }
     };
-
-    @Rule
-    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-
-    @ClassRule
-    public static TemporaryFolder temporaryFolder = new TemporaryFolder();
+    final static String version = "1.3.1";
+    static URL url;
+    static File dockstore;
 
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
-        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + version +"/dockstore");
+        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + version + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         dockstore.setExecutable(true);
@@ -195,15 +189,21 @@ public class GeneralRegressionIT extends BaseIT {
     @Test
     public void testAddEditRemoveLabelOldClient() throws ExecuteException {
         // Test adding/removing labels for different containers
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--add", "quay", "--add", "github", "--remove", "dockerhub", "--script" });
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--add", "github", "--add", "dockerhub", "--remove", "quay", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithub", "--add", "quay", "--add", "github", "--remove", "dockerhub",
+                        "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithub", "--add", "github", "--add", "dockerhub", "--remove", "quay",
+                        "--script" });
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubalternate", "--add", "alternate", "--add", "github", "--script" });
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubalternate", "--remove", "github", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithubalternate", "--add", "alternate", "--add", "github", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "label", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithubalternate", "--remove", "github", "--script" });
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres
@@ -221,25 +221,30 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     public void testVersionTagWDLCWLAndDockerfilePathsAlterationOldClient() throws ExecuteException {
-        runOldDockstoreClient(dockstore , new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--cwl-path", "/testDir/Dockstore.cwl",
                         "--wdl-path", "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+                        + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("there should now be an invalid tag, found " + count, count == 1);
 
-        runOldDockstoreClient(dockstore , new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--cwl-path", "/Dockstore.cwl", "--wdl-path",
                         "/Dockstore.wdl", "--dockerfile-path", "/Dockerfile", "--script" });
 
-        runOldDockstoreClient(dockstore , new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "refresh", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "refresh", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithub", "--script" });
 
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+                        + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("the invalid tag should now be valid, found " + count2, count2 == 0);
     }
@@ -249,11 +254,14 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     public void testAddVersionTagManualContainerOldClient() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
-                "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
-                "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                        Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
+                        "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname",
+                        "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "add", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "add", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--image-id",
                         "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
 
@@ -272,14 +280,16 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     public void testVersionTagHideOld() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "true", "--script" });
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
         assertTrue("there should be 1 hidden tag", count == 1);
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "false", "--script" });
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
@@ -291,22 +301,26 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     public void testVersionTagWDLOldClient() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/randomDir/Dockstore.wdl",
                         "--script" });
         // should now be invalid
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+                        + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
 
         assertTrue("there should now be 1 invalid tag, found " + count, count == 1);
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/Dockstore.wdl", "--script" });
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
+                        + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("the tag should now be valid", count2 == 0);
 
@@ -317,16 +331,20 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     public void testVersionTagDeleteOldClient() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
-                "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
-                "--cwl-path", "/testDir/Dockstore.cwl", "--wdl-path", "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile",
-                "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                        Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
+                        "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname",
+                        "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--wdl-path", "/testDir/Dockstore.wdl", "--dockerfile-path",
+                        "/testDir/Dockerfile", "--script" });
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "add", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "add", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--image-id",
                         "4728f8f5ce1709ec8b8a5282e274e63de3c67b95f03a519191e6ea675c5d34e8", "--git-reference", "master", "--script" });
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "remove", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "remove", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub/alternate", "--name", "masterTest", "--script" });
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -334,44 +352,46 @@ public class GeneralRegressionIT extends BaseIT {
         assertTrue("there should be no tags with the name masterTest", count == 0);
     }
 
-
     /**
      * Tests that tool2JSON works for entries on Dockstore
      */
     @Test
     public void testTool2JSONWDLOldClient() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithubwdl" });
         // need to publish before converting
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "entry2json", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "entry2json", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--descriptor", "wdl", "--script" });
         // TODO: Test that output is the expected WDL file
     }
 
     @Test
     public void registerUnregisterAndCopyOldClient() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithubwdl" });
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        boolean published = testingPostgres
-                .runSelectStatement("select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
-                        new ScalarHandler<>());
+        boolean published = testingPostgres.runSelectStatement(
+                "select ispublished from tool where registry = '" + Registry.QUAY_IO.toString()
+                        + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';", new ScalarHandler<>());
         assertTrue("tool not published", published);
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl", "--entryname", "foo" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithubwdl", "--entryname", "foo" });
 
-        long count = testingPostgres
-                .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
-                        new ScalarHandler<>());
+        long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+                + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';", new ScalarHandler<>());
         assertTrue("should be two after republishing", count == 2);
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--unpub", "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--unpub", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl" });
 
-        published = testingPostgres.runSelectStatement(
-                "select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname = '';",
-                new ScalarHandler<>());
+        published = testingPostgres.runSelectStatement("select ispublished from tool where registry = '" + Registry.QUAY_IO.toString()
+                + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname = '';", new ScalarHandler<>());
         assertTrue("tool not unpublished", !published);
     }
 
@@ -381,8 +401,9 @@ public class GeneralRegressionIT extends BaseIT {
     @Test
     public void testWDL2JSONOld() throws ExecuteException {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "wdl2json", "--wdl",
-                sourceFile.getAbsolutePath(), "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "wdl2json", "--wdl",
+                        sourceFile.getAbsolutePath(), "--script" });
         // TODO: Test that output is the expected WDL file
     }
 
@@ -390,8 +411,9 @@ public class GeneralRegressionIT extends BaseIT {
     @Category(ToilCompatibleTest.class)
     public void testCWL2JSONOld() throws ExecuteException {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2json", "--cwl",
-                sourceFile.getAbsolutePath(), "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2json", "--cwl",
+                        sourceFile.getAbsolutePath(), "--script" });
         // TODO: Test that output is the expected JSON file
     }
 
@@ -399,8 +421,9 @@ public class GeneralRegressionIT extends BaseIT {
     @Category(ToilCompatibleTest.class)
     public void testCWL2YAMLOld() throws ExecuteException {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2yaml", "--cwl",
-                sourceFile.getAbsolutePath(), "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2yaml", "--cwl",
+                        sourceFile.getAbsolutePath(), "--script" });
         // TODO: Test that output is the expected yaml file
     }
 
@@ -409,24 +432,28 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     public void testChangeToolnameOld() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithubalternate", "--git-url",
-                "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
-                "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
+                        Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithubalternate", "--git-url",
+                        "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname",
+                        "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubalternate/alternate", "--toolname", "alternate", "--script" });
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'alternate'",
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+                        + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'alternate'",
                 new ScalarHandler<>());
         assertTrue("there should only be one instance of the container with the toolname set to alternate", count == 1);
 
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubalternate", "--toolname", "toolnameTest", "--script" });
 
-        final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'toolnameTest'",
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
+                        + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'toolnameTest'",
                 new ScalarHandler<>());
         assertTrue("there should only be one instance of the container with the toolname set to toolnameTest", count2 == 1);
 
@@ -437,14 +464,18 @@ public class GeneralRegressionIT extends BaseIT {
      */
     @Test
     public void testGetWdlAndCwlOld() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl" });
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "wdl", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithubwdl", "--script" });
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub" });
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "cwl", "--entry",
-                "quay.io/dockstoretestuser2/quayandgithub", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithubwdl" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "wdl", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithubwdl", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithub" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "cwl", "--entry",
+                        "quay.io/dockstoretestuser2/quayandgithub", "--script" });
     }
 
     /**
@@ -453,9 +484,10 @@ public class GeneralRegressionIT extends BaseIT {
     @Test
     @Category(ToilCompatibleTest.class)
     public void testLocalLaunchCWLOld() throws ExecuteException {
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
-                ResourceHelpers.resourceFilePath("arrays.cwl"), "--json",
-                ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
+                        ResourceHelpers.resourceFilePath("arrays.cwl"), "--json",
+                        ResourceHelpers.resourceFilePath("testArrayHttpInputLocalOutput.json"), "--script" });
     }
 
     /**

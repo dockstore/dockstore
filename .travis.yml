@@ -27,6 +27,7 @@ env:
    - EXTRA_MAVEN_VAR="cobertura:cobertura coveralls:report" TESTING_PROFILE="unit-tests"
    - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="integration-tests"
    - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="toil-integration-tests"
+   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="regression-integration-tests"
 
 # build lifecycle is before_install, install, before_script, script, after_script
 

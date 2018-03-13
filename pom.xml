@@ -1173,7 +1173,7 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <excludeGroups>io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest, io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest, io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest</excludeGroups>
             </properties>
         </profile>
         <profile>
@@ -1181,6 +1181,13 @@
             <!-- run only tests that are relevant for toil (tests that use cwltool, cwlrunner, toil -->
             <properties>
                 <groups>io.dockstore.common.ToilCompatibleTest,io.dockstore.common.ToilOnlyTest</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>regression-integration-tests</id>
+            <!-- run only tests that are relevant for toil (tests that use cwltool, cwlrunner, toil -->
+            <properties>
+                <groups>io.dockstore.common.RegressionTest</groups>
             </properties>
         </profile>
         <profile>

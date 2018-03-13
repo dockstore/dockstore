@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.Registry;
+import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
@@ -51,6 +52,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 /**
  * @author dyuen
  */
+@Category({ RegressionTest.class })
 public class ClientRegressionIT extends BaseIT {
     static URL url;
     final static String version = "1.3.1";
