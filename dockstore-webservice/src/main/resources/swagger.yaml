@@ -3343,6 +3343,9 @@ paths:
         description: "Descriptor type of the workflow, either cwl or wdl."
         required: true
         type: "string"
+        enum:
+        - "cwl"
+        - "wdl"
       responses:
         200:
           description: "successful operation"
