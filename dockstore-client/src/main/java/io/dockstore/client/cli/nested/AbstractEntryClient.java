@@ -65,9 +65,11 @@ import static io.dockstore.client.cli.ArgumentUtility.invalid;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.optVals;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.ArgumentUtility.printFlagHelp;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
+import static io.dockstore.client.cli.ArgumentUtility.printUsageHelp;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
@@ -91,7 +93,7 @@ import static io.dockstore.client.cli.Client.SCRIPT;
 public abstract class AbstractEntryClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
-    boolean isAdmin = false;
+    protected boolean isAdmin = false;
 
     static String getCleanedDescription(String description) {
         if (description != null) {
@@ -116,8 +118,7 @@ public abstract class AbstractEntryClient {
      */
     public void printGeneralHelp() {
         printHelpHeader();
-        out("Usage: dockstore " + getEntryType().toLowerCase() + " [flags] [command] [command parameters]");
-        out("");
+        printUsageHelp(getEntryType().toLowerCase());
         out("Commands:");
         out("");
         out("  list             :  lists all the " + getEntryType() + "s published by the user");
@@ -149,16 +150,7 @@ public abstract class AbstractEntryClient {
             printAdminHelp();
         }
         printLineBreak();
-        out("");
-        out("Flags:");
-        out("  --help               Print help information");
-        out("                       Default: false");
-        out("  --debug              Print debugging information");
-        out("                       Default: false");
-        out("  --config <file>      Override config file");
-        out("                       Default: ~/.dockstore/config");
-        out("  --script             For usage with scripts. Will not check for updates to Dockstore CLI.");
-        out("                       Default: false");
+        printFlagHelp();
         printHelpFooter();
     }
 
@@ -182,7 +174,7 @@ public abstract class AbstractEntryClient {
      * @param activeCommand the current command that we're interested in
      * @return whether this interface handled the active command
      */
-    public final boolean processEntryCommands(List<String> args, String activeCommand) throws IOException, ApiException {
+    public boolean processEntryCommands(List<String> args, String activeCommand) throws IOException, ApiException {
         if (null != activeCommand) {
             // see if it is a command specific to this kind of Entry
             boolean processed = processEntrySpecificCommands(args, activeCommand);
@@ -1256,7 +1248,7 @@ public abstract class AbstractEntryClient {
         printHelpFooter();
     }
 
-    private void printAdminHelp() {
+    protected void printAdminHelp() {
         out("Admin Only Commands:");
         out("");
         out("  verify           :  Verify/unverify a version");

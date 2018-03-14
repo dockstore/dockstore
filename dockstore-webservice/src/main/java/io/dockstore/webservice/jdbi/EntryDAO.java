@@ -67,6 +67,40 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
         return results;
     }
 
+    public MutablePair<String, Entry> findEntryByPath(String path) {
+        Query query = super.namedQuery("Entry.getEntryByPath");
+
+        // split path
+        String[] splitPath = Tool.splitPath(path);
+
+        // Not a valid path
+        if (splitPath == null) {
+            return null;
+        }
+
+        // Valid path
+        String one = splitPath[registryIndex];
+        String two = splitPath[orgIndex];
+        String three = splitPath[repoIndex];
+        String four = splitPath[entryNameIndex];
+
+        query.setParameter("one", one);
+        query.setParameter("two", two);
+        query.setParameter("three", three);
+        query.setParameter("four", four);
+
+        List<Object[]> pair = list(query);
+        MutablePair<String, Entry> results;
+        String type = (String)(pair.get(0))[0];
+        Entry entry = (Entry)(pair.get(0))[1];
+        if ("workflow".equals(type)) {
+            results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(entry.getId())));
+        } else {
+            results = new MutablePair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(entry.getId())));
+        }
+        return results;
+    }
+
     public long create(T entry) {
         return persist(entry).getId();
     }

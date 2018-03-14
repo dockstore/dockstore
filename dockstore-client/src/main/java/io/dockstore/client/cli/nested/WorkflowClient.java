@@ -82,12 +82,12 @@ import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
  */
 public class WorkflowClient extends AbstractEntryClient {
 
-    private static final String UPDATE_WORKFLOW = "update_workflow";
-    private final WorkflowsApi workflowsApi;
-    private final UsersApi usersApi;
-    private final Client client;
-    private JCommander jCommander;
-    private CommandLaunch commandLaunch;
+    protected static final String UPDATE_WORKFLOW = "update_workflow";
+    protected final WorkflowsApi workflowsApi;
+    protected final UsersApi usersApi;
+    protected final Client client;
+    protected JCommander jCommander;
+    protected CommandLaunch commandLaunch;
 
     public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.workflowsApi = workflowApi;

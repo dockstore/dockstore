@@ -112,6 +112,7 @@ public class Client {
     private boolean isAdmin = false;
     private ToolClient toolClient;
     private WorkflowClient workflowClient;
+    private CheckerClient checkerClient;
 
     /*
      * Dockstore Client Functions for CLI
@@ -681,6 +682,8 @@ public class Client {
                         handled = PluginClient.handleCommand(args, Utilities.parseConfig(configFile));
                     } else if ("search".equals(mode)) {
                         handled = SearchClient.handleCommand(args, this.extendedGA4GHApi);
+                    } else if ("checker".equals(mode)) {
+                        targetClient = getCheckerClient();
                     }
 
                     if (targetClient != null) {
@@ -783,6 +786,7 @@ public class Client {
         }
         this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), usersApi, this, isAdmin);
         this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
+        this.checkerClient = new CheckerClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
 
         defaultApiClient.setDebugging(DEBUG.get());
         CWLRunnerFactory.setConfig(config);
@@ -824,5 +828,15 @@ public class Client {
     @SuppressWarnings("WeakerAccess")
     public WorkflowClient getWorkflowClient() {
         return workflowClient;
+    }
+
+    /**
+     * Setup method called by Consonance
+     *
+     * @return
+     */
+    @SuppressWarnings("WeakerAccess")
+    public CheckerClient getCheckerClient() {
+        return checkerClient;
     }
 }
