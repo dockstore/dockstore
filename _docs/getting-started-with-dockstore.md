@@ -273,6 +273,65 @@ Optional parameters:
 ------------------
 ```
 
+## Additional Information on Build Modes
+
+#### [Fully-Automated](#Fully-Automated)
+
+How to create it:
+
+Create by using the "Refresh All Tools" button.  This will scan through your Quay.io repositories and automatically register the tool on Dockstore.
+
+Requirements:
+
+- Using a Quay.io registry with Quay.io linked to Dockstore.
+
+Benefits:
+
+This build mode automatically adds versions to your tool with Quay tags and Git reference using the Quay.io build trigger.
+
+Limitations:
+
+- Unable to easily deregister the tool
+- Unable to manually add versions
+- Cannot uniquely name the tool
+- Currently only works with Quay.io image registry
+
+When to use:  
+
+Recommended when you are using a Quay.io registry, want a quick and easy way to register the tool, and want to avoid manually adding new versions to the tool.  Generally recommended for most tools.
+
+#### [Manual](#Manual)
+
+How to create it:
+
+- Click Add Tool, fill in details
+
+Requirements:
+
+- Registry that has at least one tag
+- Token to the corresponding registry (if using Quay.io)
+
+Limitations:
+
+- Have to manually the tool and also manually add each version (refresh will not work)
+
+When to use:
+
+Recommended when you're not using Quay.io or if someone else has the same tool name already and you want your own tool instead.  Also if you are not using build triggers.
+
+### Converting Between Build Modes
+
+Manual -> Fully-Automated:
+
+1. Deregister the manual tool
+2. Create a new Fully-Automated one (simply click "Refresh All Tools")
+
+Fully-Automated -> Manual:
+
+1. Delete Quay.io repository
+2. "Refresh All Tools" (this will remove the tool from Dockstore)
+3. Create a new Manual tool (will have to recreate the Quay.io repository)
+
 ## Sharing the Tool
 
 This is the simple part.  Now that we've successfully registered the tool on Dockstore you can just send around a link, for example to the BAMStat tool I just registered:
