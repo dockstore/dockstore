@@ -117,7 +117,7 @@
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
-            <column name="toolname" value=""/>
+            <column name="toolname"/>
         </insert>
         <insert tableName="tool">
             <column name="id" valueNumeric="2"/>
@@ -141,7 +141,7 @@
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
-            <column name="toolname" value=""/>
+            <column name="toolname"/>
         </insert>
         <insert tableName="tool">
             <column name="id" valueNumeric="3"/>
@@ -165,7 +165,7 @@
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
-            <column name="toolname" value=""/>
+            <column name="toolname"/>
         </insert>
         <insert tableName="tool">
             <column name="id" valueNumeric="4"/>
@@ -189,7 +189,7 @@
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
-            <column name="toolname" value=""/>
+            <column name="toolname"/>
         </insert>
         <insert tableName="tool">
             <column name="id" valueNumeric="5"/>
@@ -213,7 +213,7 @@
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
-            <column name="toolname" value=""/>
+            <column name="toolname"/>
         </insert>
         <insert tableName="tool">
             <column name="id" valueNumeric="6"/>
@@ -237,7 +237,7 @@
             <column name="privateaccess" valueBoolean="false"/>
             <column name="registry" value="QUAY_IO"/>
             <column name="toolmaintaineremail"/>
-            <column name="toolname" value=""/>
+            <column name="toolname"/>
         </insert>
     </changeSet>
     <changeSet author="dyuen (generated)" id="1511389821166-7">
