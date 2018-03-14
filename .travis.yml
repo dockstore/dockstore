@@ -37,7 +37,7 @@ before_install:
 # start local stack in the background
 - pip install --user localstack
 - localstack start &
-- git diff --exit-code
+- ./scripts/check-swagger.sh
 
 install:
 - docker version
