@@ -265,5 +265,10 @@
         </sql>
     </changeSet>
 
-
+    <changeSet author="dyuen" id="fix_rogue_git_urls">
+        <!-- Update tool registry to be a path -->
+         <sql dbms="postgresql">
+             UPDATE workflow SET giturl = 'git@github.com:' || substring(giturl, 16) where giturl like 'git@github.com/%'
+        </sql>
+    </changeSet>
 </databaseChangeLog>
