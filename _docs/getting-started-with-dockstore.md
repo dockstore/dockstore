@@ -59,6 +59,26 @@ You can also click on the "Versions" tab and should notice `1.25-6` is present a
 
 Next, pick a version of your tool that you wish to present to the world by clicking on the radio selector in the Git Reference or Version column. This will determine which version of your CWL/WDL file will be used to find the author, email, and description in the case that it changes between versions. This also allows you to pre-select a version of your tool to present to users in the "Launch With" section, and the Dockerfile and Descriptor tabs.
 
+### Quick Registration of Alternate Tools
+
+Outside of this tutorial, you may wish to re-register a pre-existing tool with a new name. This can occur when you've quick registered a tool, but wish to create a new tool with a different descriptor based on the same Docker image when your Docker image supports a number of different commands.
+
+Consider the linked [repository](https://github.com/CancerCollaboratory/dockstore-tool-bamstats). If you've followed the tutorial, you will have this as a published tool. But wait, there's a `Dockstore2.cwl` in the same repo with a different command.
+
+To register this, follow the procedure below:
+
+First, make note of the GitHub repository that stores the descriptors for the tool.  
+
+![Existing tool](/assets/images/docs/alternate1.png)
+
+Second, hit the plus button under the organization and ensure that the GitHub repository and image registry match your previous tool. Note that we changed the default CWL Descriptor Path to `Dockstore2.cwl` to simulate an alternate descriptor for the same Docker image. Last but not least, change the tool name to distinguish the tool from the intial tool.
+
+![Add alternate tool](/assets/images/docs/alternate2.png)
+
+After clicking on "Add Tool" you should now see a new "Fully-Automated" tool that shared a GitHub and quay.io repo with an existing tool. Note that the description and launch-with commands should reflect the new tool and the ID will have an additional part (up from three) identifying the new alternate tool.
+
+![Newly created alternate tool](/assets/images/docs/alternate3.png)
+
 
 #### Manual Registration of Tools
 
