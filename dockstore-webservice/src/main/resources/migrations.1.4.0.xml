@@ -282,7 +282,7 @@
         </sql>
 
         <sql dbms="postgresql">
-            ALTER TABLE tool add constraint tool_toolname_notempty check (workflowname &lt;&gt; '')
+            ALTER TABLE tool add constraint tool_toolname_notempty check (toolname &lt;&gt; '')
         </sql>
     </changeSet>
 
