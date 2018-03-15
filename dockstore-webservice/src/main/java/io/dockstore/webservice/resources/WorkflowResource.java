@@ -1378,9 +1378,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
             // Generate workflow name
             workflowName = workflow.getWorkflowName();
-            if (workflowName == null) {
-                workflowName = "";
-            }
+
             if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
                 workflowName += "_cwl_checker";
             } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {

@@ -255,7 +255,7 @@
 
     <changeSet id="constraint-for-underscore-workflow-and-tool-names" author="agduncan">
         <sql dbms="postgresql">
-            ALTER TABLE tool DROP CONSTRAINT tool_check
+            ALTER TABLE tool DROP CONSTRAINT IF EXISTS tool_check
         </sql>
         <sql dbms="postgresql">
             ALTER TABLE tool ADD CHECK ((defaultwdlpath IS NOT NULL OR defaultcwlpath IS NOT NULL) AND toolname !~~ '\_%'::text)
@@ -271,4 +271,19 @@
              UPDATE workflow SET giturl = 'git@github.com:' || substring(giturl, 16) where giturl like 'git@github.com/%'
         </sql>
     </changeSet>
+
+    <changeSet id="drop-toolname-null-constraint-update-check-constraint" author="agduncan">
+        <dropNotNullConstraint tableName="tool" columnName="toolname"></dropNotNullConstraint>
+
+        <dropDefaultValue tableName="tool" columnName="toolname"></dropDefaultValue>
+
+        <sql dbms="postgresql">
+            UPDATE tool SET toolname = NULL WHERE toolname = ''
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE tool add constraint tool_toolname_notempty check (toolname &lt;&gt; '')
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
