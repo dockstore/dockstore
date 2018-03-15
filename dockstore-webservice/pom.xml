@@ -955,8 +955,7 @@
                         <goals>
                             <goal>exec</goal>
                         </goals>
-                        <!--So it executes after the swagger.yaml's compile-->
-                        <phase>test</phase>
+                        <phase>compile</phase>
                         <configuration>
                             <executable>swagger2openapi</executable>
                             <arguments>
