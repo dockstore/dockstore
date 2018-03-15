@@ -66,13 +66,13 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAll", query = "SELECT c FROM Tool c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByNamespace", query = "SELECT c FROM Tool c WHERE lower(c.namespace) = lower(:namespace) AND c.isPublished = true ORDER BY gitUrl"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE (CONCAT(c.registry, '/', c.namespace, '/', c.name, '/', c.toolname) LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE (CONCAT(c.registry, '/', c.namespace, '/', c.name, '/', c.toolname) LIKE :pattern) OR (CONCAT(c.registry, '/', c.namespace, '/', c.name) LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPath", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = :toolname AND c.isPublished = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = ''"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname = '' AND c.isPublished = true") })
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true") })
 // @formatter:off
 @Check(constraints = "(defaultwdlpath is not null or defaultcwlpath is not null) "
     + "and (toolname NOT LIKE '\\_%')")
@@ -125,13 +125,13 @@ public class Tool extends Entry<Tool, Tag> {
     @ApiModelProperty(value = "Is the docker image private or not.", required = true, position = 21)
     private boolean privateAccess = false;
 
-    @Column(nullable = false, columnDefinition = "Text default ''")
+    @Column(columnDefinition = "Text")
     @ApiModelProperty(value = "This is the tool name of the container, when not-present this will function just like 0.1 dockstore"
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
             + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
-            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", required = true, position = 22)
-    private String toolname = "";
+            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", position = 22)
+    private String toolname;
 
     @Column
     @ApiModelProperty(value = "This is a docker namespace for the container, required: GA4GH", required = true, position = 23)
