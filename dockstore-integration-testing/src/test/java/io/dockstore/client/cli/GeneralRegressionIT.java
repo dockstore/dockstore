@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2018 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -60,9 +60,7 @@ import static io.dockstore.common.CommonTestUtilities.version;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Extra confidential integration tests, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
- *
- * @author aduncan
+ * Extra confidential integration tests with old dockstore client, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
  */
 @Category({ RegressionTest.class })
 public class GeneralRegressionIT extends BaseIT {

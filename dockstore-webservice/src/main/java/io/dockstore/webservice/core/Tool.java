@@ -313,7 +313,10 @@ public class Tool extends Entry<Tool, Tag> {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 
-
+    /**
+     * Change name of JsonProperty back to "registry_provider" once users no longer use the old client (1.3.6)
+     * @return
+     */
     @Enumerated(EnumType.STRING)
     @JsonProperty("registry")
     @ApiModelProperty(position = 30)
@@ -332,6 +335,10 @@ public class Tool extends Entry<Tool, Tag> {
         }
     }
 
+    /**
+     * Remove this once users no longer use the old client (1.3.6)
+     * @param registryThing
+     */
     public void setRegistryProvider(Registry registryThing) {
         switch (registryThing) {
         case GITLAB:
@@ -351,13 +358,20 @@ public class Tool extends Entry<Tool, Tag> {
 
     }
 
-
+    /**
+     * Remove this once users no longer use the old client (1.3.6)
+     * @param newCustomDockerRegistryString
+     */
     public void setCustomerDockerRegistryPath(String newCustomDockerRegistryString) {
         if (newCustomDockerRegistryString != null) {
             this.setRegistry(newCustomDockerRegistryString);
         }
     }
 
+    /**
+     * Remove this once users no longer use the old client (1.3.6)
+     * @return
+     */
     @JsonProperty("custom_docker_registry_path")
     public String getCustomDockerRegistryPath() {
         return this.registry;

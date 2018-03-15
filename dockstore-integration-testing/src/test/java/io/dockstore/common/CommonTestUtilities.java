@@ -34,6 +34,7 @@ import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
-    public final static String version = "1.3.1";
+    public final static String version = "1.3.6";
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
 
     // Travis is slow, need to wait up to 1 min for webservice to return
@@ -220,6 +221,12 @@ public final class CommonTestUtilities {
             LOG.error("Could not execute command. " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public static void checkToolList(String log) {
+        Assert.assertTrue(log.contains("NAME"));
+        Assert.assertTrue(log.contains("DESCRIPTION"));
+        Assert.assertTrue(log.contains("Git Repo"));
     }
 
     public static class TestingPostgres extends BasicPostgreSQL {

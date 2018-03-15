@@ -54,8 +54,7 @@ import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClientWithS
 import static io.dockstore.common.CommonTestUtilities.version;
 
 /**
- * This test suite will have tests for the workflow mode of the Dockstore Client.
- * Created by aduncan on 05/04/16.
+ * This test suite will have tests for the workflow mode of the old Dockstore Client.
  */
 @Category({ RegressionTest.class })
 public class GeneralWorkflowRegressionIT extends BaseIT {
