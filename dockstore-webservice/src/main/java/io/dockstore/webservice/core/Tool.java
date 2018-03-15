@@ -130,7 +130,7 @@ public class Tool extends Entry<Tool, Tag> {
             + "when present, this can be used to distinguish between two containers based on the same image, but associated with different "
             + "CWL and Dockerfile documents. i.e. two containers with the same registry+namespace+name but different toolnames "
             + "will be two different entries in the dockstore registry/namespace/name/tool, different options to edit tags, and "
-            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", required = true, position = 22)
+            + "only the same insofar as they would \"docker pull\" the same image, required: GA4GH", position = 22)
     private String toolname;
 
     @Column
