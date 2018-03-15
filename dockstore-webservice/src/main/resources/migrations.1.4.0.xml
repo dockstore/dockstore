@@ -282,17 +282,7 @@
         </sql>
 
         <sql dbms="postgresql">
-            ALTER TABLE tool DROP CONSTRAINT IF EXISTS tool_check
-        </sql>
-        <sql dbms="postgresql">
-            ALTER TABLE tool ADD CHECK ((defaultwdlpath IS NOT NULL OR defaultcwlpath IS NOT NULL) AND toolname !~~ '\_%'::text AND toolname !~~ ''::text)
-        </sql>
-
-        <sql dbms="postgresql">
-            ALTER TABLE workflow DROP CONSTRAINT IF EXISTS workflow_check
-        </sql>
-        <sql dbms="postgresql">
-            ALTER TABLE workflow ADD CHECK ((ischecker IS TRUE AND workflowname ~~ '\_%'::text OR ischecker IS FALSE AND workflowname !~~ '\_%'::text) AND workflowname !~~ ''::text)
+            ALTER TABLE tool add constraint tool_toolname_notempty check (workflowname &lt;&gt; '')
         </sql>
     </changeSet>
 
