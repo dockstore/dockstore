@@ -16,7 +16,7 @@
 package io.dockstore.common;
 
 /**
- * Setting aside tests that require our confidential data bundles
+ * Tests with older dockstore client with new webservice
  */
 public interface RegressionTest {
 }
