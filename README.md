@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/ga4gh/dockstore) [![Coverage Status](https://coveralls.io/repos/github/ga4gh/dockstore/badge.svg?branch=develop)](https://coveralls.io/github/ga4gh/dockstore?branch=develop)
 [![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ga4gh/dockstore?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)  
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.168593.svg)](https://doi.org/10.5281/zenodo.168593)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1183288.svg)](https://doi.org/10.5281/zenodo.1183288)
 [![Uptime Robot status](https://img.shields.io/uptimerobot/status/m779655940-a297af07d1cac2d6ad40c491.svg)]()
 [![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
 
@@ -180,22 +180,15 @@ server-url: http://www.dockstore.org:8080
 
 If you are working with a custom-built or updated dockstore client you will need to update the jar in: `~/.dockstore/config/self-installs`.
 
-### Swagger Web Service Components for GA4GH Tool Registry Schema
+### Swagger Client Generation 
 
-Background:
+We use the swagger-codegen-maven-plugin to generate several sections of code which are not checked in. 
+These include
+1. All of swagger-java-client (talks to our webservice for the CLI)
+2. All of swagger-java-quay-client (talks to Quay.io for our webservice)
+3. The Tool Registry Server components (serves up the TRS endpoints)
 
- * The [tool-registry-schema](https://github.com/ga4gh/tool-registry-schemas) are intended on allowing different tool registries to exchange and compare data
- * Defined in swagger yaml
- * We use the online swagger editor to generate a JAX-RS skeleton for implementation
- * Unlike the above components, this is a server component rather than client component, thus we cannot use swagger-codegen (client-only for now?)
- 
- To regenerate the swagger client:
- 
-1. Open up the yaml document for the specification in the editor.swagger.io
-2. Hit Generate Server and select JAX-RS
-3. Replace the appropriate classes in dockstore-webservice
-4. Unlike the client classes, we cannot separate quite as cleanly. Classes to watch out for are io.swagger.api.ToolsApi (includes DropWizard specific UnitOfWork annotations and a custom path) and io.swagger.api.impl.ToolsApiServiceImpl (includes our implementation).
-5. Customizations include, `@Path(DockstoreWebserviceApplication.GA4GH_API_PATH + <depends on api class>)` for Api classes, `@UnitOfWork` added to resources, and `@JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)` added to model classes for GA4GH.
+To update these, you will need to point at a new version of the swagger.yaml provided by a service. For example, update the equivalent of [inputSpec](https://github.com/ga4gh/dockstore/blob/0afe35682bdfb6fa7285b2acab8f80648346e835/dockstore-webservice/pom.xml#L854) in your branch.  
 
 ### HubFlow Operations
 
@@ -227,11 +220,7 @@ As with the unstable release, document the release and attach the new Dockstore 
 Encrypted documents necessary for confidential testing are handled as indicated in the documents at Travis-CI for  
 [files](https://docs.travis-ci.com/user/encrypting-files/#Encrypting-multiple-files) and [environment variables](https://docs.travis-ci.com/user/encryption-keys).
 
-A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. 
-
-To dump a new copy of the encrypted database from one that you have setup, use the following (or similar):
-
-    pg_dump --data-only --column-inserts   webservice_test &> dockstore-integration-testing/src/test/resources/db_confidential_dump_full.sql
+A convenience script is provided as encrypt.sh which will compress confidential files, encrypt them, and then update an encrypted archive on GitHub. Confidential files should also be added to .gitignore to prevent accidental check-in. The unencrypted secrets.tar should be privately distributed among members of the team that need to work with confidential data. When using this script you will likely want to alter the [CUSTOM\_DIR\_NAME](https://github.com/ga4gh/dockstore/blob/0b59791440af6e3d383d1aede1774c0675b50404/encrypt.sh#L13). This is necessary since running the script will overwrite the existing encryption keys, instantly breaking existing builds using that key. Our current workaround is to use a new directory when providing a new bundle. 
 
 ### Adding Copyright header to all files with IntelliJ
 
