@@ -75,7 +75,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByToolPathNullToolName", query = "SELECT c FROM Tool c WHERE c.registry = :registry AND c.namespace = :namespace AND c.name = :name AND c.toolname IS NULL AND c.isPublished = true") })
 // @formatter:off
 @Check(constraints = "(defaultwdlpath is not null or defaultcwlpath is not null) "
-    + "and (toolname NOT LIKE '\\_%')")
+    + "and (toolname NOT LIKE '\\_%' and toolname NOT LIKE '')")
 // @formatter:on
 @SuppressWarnings("checkstyle:magicnumber")
 public class Tool extends Entry<Tool, Tag> {

@@ -272,13 +272,27 @@
         </sql>
     </changeSet>
 
-    <changeSet id="drop-toolname-null-constraint" author="agduncan">
+    <changeSet id="drop-toolname-null-constraint-update-check-constraint" author="agduncan">
         <dropNotNullConstraint tableName="tool" columnName="toolname"></dropNotNullConstraint>
 
         <dropDefaultValue tableName="tool" columnName="toolname"></dropDefaultValue>
 
         <sql dbms="postgresql">
             UPDATE tool SET toolname = NULL WHERE toolname = ''
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE tool DROP CONSTRAINT IF EXISTS tool_check
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE tool ADD CHECK ((defaultwdlpath IS NOT NULL OR defaultcwlpath IS NOT NULL) AND toolname !~~ '\_%'::text AND toolname !~~ ''::text)
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE workflow DROP CONSTRAINT IF EXISTS workflow_check
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow ADD CHECK ((ischecker IS TRUE AND workflowname ~~ '\_%'::text OR ischecker IS FALSE AND workflowname !~~ '\_%'::text) AND workflowname !~~ ''::text)
         </sql>
     </changeSet>
 
