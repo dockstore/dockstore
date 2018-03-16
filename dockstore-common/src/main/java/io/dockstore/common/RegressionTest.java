@@ -16,7 +16,8 @@
 package io.dockstore.common;
 
 /**
- * Tests with older dockstore client with new webservice
+ * Tests with an older dockstore client with the current webservice
+ * Check CommonTestUtilities.OLD_DOCKSTORE_VERSION to see which old dockstore client is being tested
  */
 public interface RegressionTest {
 }

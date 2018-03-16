@@ -314,8 +314,8 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     /**
-     * Change name of JsonProperty back to "registry_provider" once users no longer use the old client (1.3.6)
-     * @return
+     * Change name of JsonProperty back to "registry_provider" once users no longer use the older client (CommonTestUtilities.OLD_DOCKSTORE_VERSION)
+     * @return the registry as an enum
      */
     @Enumerated(EnumType.STRING)
     @JsonProperty("registry")

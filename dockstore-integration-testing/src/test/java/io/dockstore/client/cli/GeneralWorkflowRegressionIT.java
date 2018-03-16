@@ -48,10 +48,10 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
+import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClientWithSpaces;
-import static io.dockstore.common.CommonTestUtilities.version;
 
 /**
  * This test suite will have tests for the workflow mode of the old Dockstore Client.
@@ -70,16 +70,13 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     static URL url;
     static File dockstore;
     static File md5sumJson;
+
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
-        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + version + "/dockstore");
+        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         dockstore.setExecutable(true);
-        String[] commandArray = new String[] { "--version" };
-        //        This has problem executing for some reason
-        //        ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(commandArray);
-        //        Assert.assertTrue(stringStringImmutablePair.getLeft().contains(version));
         url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/master/md5sum-wrapper-tool.json");
         md5sumJson = temporaryFolder.newFile("md5sum-wrapper-tool.json");
         FileUtils.copyURLToFile(url, md5sumJson);
@@ -159,8 +156,9 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
                         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
-        runOldDockstoreClient(dockstore, new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry",
-                SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
+        runOldDockstoreClient(dockstore,
+                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry",
+                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
     }
 
     /**
@@ -777,6 +775,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
 
     /**
      * Tests that the workflow can be manually registered (and published) and then launched once the json and input file is attained
+     *
      * @throws ExecuteException
      */
     @Test
@@ -784,15 +783,17 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         // manual publish the workflow
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                        "--repository", "md5sum-checker", "--organization", "DockstoreTestUser2", "--git-version-control",
-                        "github", "--workflow-name", "testname", "--workflow-path", "/checker_workflow_wrapping_tool.cwl", "--descriptor-type", "cwl",
+                        "--repository", "md5sum-checker", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
+                        "--workflow-name", "testname", "--workflow-path", "/checker_workflow_wrapping_tool.cwl", "--descriptor-type", "cwl",
                         "--script" });
         // launch the workflow
         String[] commandArray = { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry",
                 "github.com/DockstoreTestUser2/md5sum-checker/testname", "--json", md5sumJson.getAbsolutePath(), "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
-        Assert.assertTrue("Final process status was not a success", (stringStringImmutablePair.getLeft().contains("Final process status is success")));
-        Assert.assertTrue("Final process status was not a success", (stringStringImmutablePair.getRight().contains("Final process status is success")));
+        Assert.assertTrue("Final process status was not a success",
+                (stringStringImmutablePair.getLeft().contains("Final process status is success")));
+        Assert.assertTrue("Final process status was not a success",
+                (stringStringImmutablePair.getRight().contains("Final process status is success")));
 
     }
 }

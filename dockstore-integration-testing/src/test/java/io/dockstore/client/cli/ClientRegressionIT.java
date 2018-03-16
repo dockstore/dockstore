@@ -40,12 +40,13 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 
+import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.checkToolList;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
-import static io.dockstore.common.CommonTestUtilities.version;
 
 /**
- *
+ * Tests a variety of basic dockstore CLI commands along with some tool commands
+ * using an older (CommonTestUtilities.OLD_DOCKSTORE_VERSION) dockstore client
  */
 @Category({ RegressionTest.class })
 public class ClientRegressionIT extends BaseIT {
@@ -63,17 +64,13 @@ public class ClientRegressionIT extends BaseIT {
 
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
-        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + CommonTestUtilities.version + "/dockstore");
+        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         dockstore.setExecutable(true);
-        String[] commandArray = new String[] { "--version" };
         url = new URL("https://raw.githubusercontent.com/DockstoreTestUser/dockstore_parameter_test/master/test.cwl.json");
         testJson = temporaryFolder.newFile("test.cwl.json");
         FileUtils.copyURLToFile(url, testJson);
-        // The below sometimes has a problem executing because of GitHub rate limit.  Disabling till fixed
-//        ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
-//        Assert.assertTrue(stringStringImmutablePair.getLeft().contains(version));
     }
 
     @Before

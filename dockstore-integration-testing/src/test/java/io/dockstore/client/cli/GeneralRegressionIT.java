@@ -54,9 +54,9 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
-import static io.dockstore.common.CommonTestUtilities.version;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -83,14 +83,10 @@ public class GeneralRegressionIT extends BaseIT {
 
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
-        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + version + "/dockstore");
+        url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         dockstore.setExecutable(true);
-        String[] commandArray = new String[] { "--version" };
-        //        This has problem executing for some reason
-        //        ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(commandArray);
-        //        Assert.assertTrue(stringStringImmutablePair.getLeft().contains(version));
     }
 
     @Before
