@@ -63,6 +63,10 @@ public class ToolV1 {
     public ToolV1(Tool tool) {
         try {
             BeanUtils.copyProperties(this, tool);
+            // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
+            this.verified = tool.isVerified().booleanValue();
+            this.signed = tool.isSigned().booleanValue();
+
             // convert versions now
             versions = new ArrayList<>();
             for(ToolVersion version : tool.getVersions()) {
