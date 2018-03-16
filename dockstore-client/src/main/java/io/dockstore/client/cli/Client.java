@@ -568,6 +568,7 @@ public class Client {
         out("Modes:");
         out("   tool                Puts dockstore into tool mode.");
         out("   workflow            Puts dockstore into workflow mode.");
+        out("   checker             Puts dockstore into checker mode.");
         out("   plugin              Configure and debug plugins.");
         out("");
         printLineBreak();

@@ -1348,12 +1348,18 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             // Get tool
             Tool tool = (Tool)entryPair.getValue();
 
+            workflowName = tool.getToolname();
+
+            if (workflowName == null) {
+                workflowName = "";
+            }
+
             // Get default test parameter path and toolname
             if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
-                workflowName = tool.getToolname() + "_wdl_checker";
+                workflowName += "_wdl_checker";
                 defaultTestParameterPath = tool.getDefaultTestWdlParameterFile();
             } else if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
-                workflowName = tool.getToolname() + "_cwl_checker";
+                workflowName += "_cwl_checker";
                 defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
             } else {
                 throw new UnsupportedOperationException("The descriptor type " + descriptorType + " is not valid.\nSupported types include cwl and wdl.");
@@ -1395,10 +1401,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             // Generate workflow name
             workflowName = workflow.getWorkflowName();
 
+            if (workflowName == null) {
+                workflowName = "";
+            }
+
             if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
                 workflowName += "_cwl_checker";
             } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
-                workflowName += "_wdl_checker";
+                workflowName +=  "_wdl_checker";
             } else {
                 throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().toLowerCase() + " is not valid.\nSupported types include cwl and wdl.");
             }

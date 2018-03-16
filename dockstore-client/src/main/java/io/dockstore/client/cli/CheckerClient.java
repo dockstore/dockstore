@@ -8,11 +8,13 @@ import io.dockstore.client.cli.nested.WorkflowClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.Entry;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
+import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.printFlagHelp;
@@ -37,9 +39,16 @@ public class CheckerClient extends WorkflowClient {
         printHelpHeader();
         printUsageHelp(getEntryType().toLowerCase());
 
+        // Checker client help
+        out("Commands:");
+        out("");
+        out("  add   :  Adds a checker workflow to and existing tool/workflow.");
+        out("");
+
         if (isAdmin) {
             printAdminHelp();
         }
+
         printLineBreak();
         printFlagHelp();
         printHelpFooter();
@@ -70,23 +79,47 @@ public class CheckerClient extends WorkflowClient {
             addCheckerHelp();
         } else {
             // Retrieve arguments
-            String entry = reqVal(args, "--entry");
+            String entryPath = reqVal(args, "--entry");
             String descriptorType = optVal(args, "--descriptor-type", "cwl");
             String descriptorPath = reqVal(args, "--descriptor-path");
             String inputParameterPath = optVal(args, "--input-parameter-path", null);
 
-            // Check that input is valid
+            // Check that descriptor type is valid
             descriptorType = descriptorType.toLowerCase();
             if (!Objects.equals(descriptorType, CWL_STRING) && !Objects.equals(descriptorType, WDL_STRING)) {
                 errorMessage("The given descriptor type " + descriptorType + " is not valid.",
                     Client.CLIENT_ERROR);
             }
 
+            // Check that descriptor path is valid
+            if (!descriptorPath.startsWith("/")) {
+                errorMessage("Descriptor paths must be absolute paths.",
+                    Client.CLIENT_ERROR);
+            }
+
+            // Check that input parameter path is valid
+            if (inputParameterPath != null && !inputParameterPath.startsWith("/")) {
+                errorMessage("Input parameter path paths must be absolute paths.",
+                    Client.CLIENT_ERROR);
+            }
+
             // Get entry from path
-            //Entry entry = workflowsApi.
+            Entry entry = null;
+            try {
+                entry = workflowsApi.getEntryByPath(entryPath);
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
+            }
 
-            //workflowsApi.registerCheckerWorkflow(descriptorPath, entryId, descriptorType, inputParameterPath);
-
+            // Register the checker workflow
+            if (entry != null) {
+                try {
+                    workflowsApi.registerCheckerWorkflow(descriptorPath, entry.getId(), descriptorType, inputParameterPath);
+                    out("A checker workflow has been successfully added to entry with path " + entryPath);
+                } catch (ApiException ex) {
+                    exceptionMessage(ex, "There was a problem registering the checker workflow.", Client.API_ERROR);
+                }
+            }
         }
     }
 
