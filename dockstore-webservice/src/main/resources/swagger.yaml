@@ -3169,7 +3169,7 @@ paths:
       - "workflows"
       summary: "Get an entry by path"
       description: "Gets an entry from the path. Enter full path."
-      operationId: "getEntryPath"
+      operationId: "getEntryByPath"
       produces:
       - "application/json"
       parameters:

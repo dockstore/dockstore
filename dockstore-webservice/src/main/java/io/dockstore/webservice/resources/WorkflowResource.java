@@ -753,7 +753,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/path/entry/{repository}")
     @ApiOperation(value = "Get an entry by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Gets an entry from the path. Enter full path.", response = Entry.class)
-    public Entry getEntryPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    public Entry getEntryByPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path);
 
         // Check if the entry exists
@@ -762,7 +762,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
 
         return entryPair.getValue();
-
     }
 
     @GET
