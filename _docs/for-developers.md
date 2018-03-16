@@ -2,65 +2,172 @@
 title: For Developers
 permalink: /docs/publisher-tutorials/for-developers/
 ---
-# Docker Registries
+# For Developers
 
-There are a number of alternative Docker Registries aside from Quay.io, Docker Hub and GitLab. These registries are a combination of public registries and private registries.
+## File Provisioning Plugins
 
-## Public vs Private Docker Registries
+When developing new plugins, we recommend using the [s3-plugin](https://github.com/dockstore/s3-plugin) as a model for plugins where [a Java library is available](https://aws.amazon.com/sdk-for-java/).
+We recommend using the [icgc-storage-client-plugin](https://github.com/dockstore/icgc-storage-client-plugin) as a model for plugins where a Java library is not available and the plugin needs to call out to an external binary.
 
-A `public registry` is a Docker registry where Docker images are available to all users through a public website. They may also include private images, though this is not mandatory. Docker Hub is a good example of a public registry. You can browse a list of public Docker images, and also store and view private Docker images.
+This was developed in an environment with Java 8 and Maven 3.3.9.
 
-We currently support the following public registries:
-* Docker Hub
-* Quay.io
-* GitLab
+The steps for implementing a new plugin are as follows:
 
-A `private registry` is a Docker registry where access to Docker images are restricted to authenticated users. These registries do not have public websites to view the Docker images. Amazon ECR is a good example of a private registry. These registries are useful when you want to restrict access of a tool to authorized users only.
+1. Fork the one of the above repos.
+2. Rename the project in the [pom.xml](https://github.com/dockstore/s3-plugin/blob/master/pom.xml#L6) by changing the artifactId, the name, and the plugin class in properties. If you wish to share your project, you may also wish to modify the repository locations.
+3. Remove the dependency on the AWS S3 library and add a library for your file transfer system [here](https://github.com/dockstore/s3-plugin/blob/master/pom.xml#L200).
+4. Rename the Java class to match the plugin class entered earlier in the pom.xml.
+5. Implement the downloadFrom and uploadTo methods from  [ProvisionInterface](https://github.com/ga4gh/dockstore/blob/develop/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/ProvisionInterface.java) Note that if your file provisioning system is input-only or output-only, you can throw an OperationNotSupportedException or similar.
+6. We recommend using [ProgressPrinter](https://github.com/ga4gh/dockstore/blob/develop/dockstore-file-plugin-parent/src/main/java/io/dockstore/provision/ProgressPrinter.java) to give your users an indication of file upload/download progress.
+7. If applicable, for file transfer systems that include metadata or require preparation or finalize steps, you can override the default methods listed in the ProvisionInterface. Note that the Base64 encoded metadata will be decoded by the time it reaches your plugin. It is up to you what kind of format the metadata should be in (for example, the s3 plugin uses a JSON map).
+8. Build the plugin with `mvn clean install` and copy the result zip file to the plugin directory.
+9. Test with a simple tool such as [md5sum](https://github.com/briandoconnor/dockstore-tool-md5sum).
 
-We currently support the following private registries:
-* Amazon ECR
+You should see something similar to the following
+```
+$ cat test.s3.json
+{
+  "input_file": {
+        "class": "File",
+        "path": "s3://oicr.temp/bamstats_report.zip"
+    },
+    "output_file": {
+        "class": "File",
+        "metadata": "eyJvbmUiOiJ3b24iLCJ0d28iOiJ0d28ifQ==",
+        "path": "s3://oicr.temp/bamstats_report.zip"
+    }
+}
 
-## Registries with Custom Docker Paths
-Many Docker registries that you may be familiar with use standard paths. For example, Docker Hub uses `registry.hub.docker.com`. These are used to uniquely identify a registry. While standard paths are common for major public registries, there are some registries which require a custom Docker registry path.
+$ dockstore tool launch --entry  quay.io/briandoconnor/dockstore-tool-md5sum  --json test.s3.json
+Creating directories for run of Dockstore launcher at: ./datastore//launcher-a246f1b6-21fd-468e-8780-b064d311dda5
+Provisioning your input files to your local machine
+Downloading: #input_file from s3://oicr.temp/bamstats_report.zip into directory: /media/large_volume/dockstore_tools/dockstore-tool-md5sum/./datastore/launcher-a246f1b6-21fd-468e-8780-b064d311dda5/inputs/73b70f11
+-1711-40b7-bfea-9ee4543a8226
+Found file s3://oicr.temp/bamstats_report.zip in cache, hard-linking
+Calling on plugin io.dockstore.provision.S3Plugin$S3Provision to provision s3://oicr.temp/bamstats_report.zip
+Calling out to cwltool to run your tool
+Executing: cwltool --enable-dev --non-strict --outdir /media/large_volume/dockstore_tools/dockstore-tool-md5sum/./datastore/launcher-a246f1b6-21fd-468e-8780-b064d311dda5/outputs/ --tmpdir-prefix /media/large_volu
+me/dockstore_tools/dockstore-tool-md5sum/./datastore/launcher-a246f1b6-21fd-468e-8780-b064d311dda5/tmp/ --tmp-outdir-prefix /media/large_volume/dockstore_tools/dockstore-tool-md5sum/./datastore/launcher-a246f1b6-
+21fd-468e-8780-b064d311dda5/working/ /tmp/1488407859906-0/temp3047430238970788171.cwl /media/large_volume/dockstore_tools/dockstore-tool-md5sum/./datastore/launcher-a246f1b6-21fd-468e-8780-b064d311dda5/workflow_p
+arams.json
+/usr/local/bin/cwltool 1.0.20170217172322
+...
+```
 
-This is common for services like Amazon ECR which allow users to create their own registries, instead of just using one big registry. Having your own registry makes it easy to restrict access to your Docker images.
+To disable or enable plugins, create a disabled.txt file or enabled.txt file in the plugins folder.  If an enabled.txt file exists, only the plugins listed in the file will be enabled.  If a disabled.txt file exists, the plugins listed in the file will be disabled.  The disabled.txt file is ignored if the enabled.txt exists.  Here is a sample enabled.txt or disabled.txt file:
 
-For registries that require a custom path, Dockstore lets you set these paths during manual registration of a tool.
+```
+dockstore-file-s3-plugin
+dockstore-file-synapse-plugin
+```
 
+See https://github.com/decebals/pf4j#enabledisable-plugins more details.
+## Write-API Conversion Process
+### Client Configuration
+The configuration file used by the write-api-client is located at ~/.dockstore/write.api.config.properties
+It should look something like this:
 
-## Private Docker Registry Best Practices
+```
+dockstoreToken=abcdefghijklmnopqrstuvwxyz1234567890
+server-url=https://www.dockstore.org:8443
+organization=test_organization
+repo=test_repository
+write-api-url=http://localhost:8080/api/ga4gh/v1
+```
 
-### Private tools only
+"token" is the dockstore token which is acquired from the dockstore website.
+"server-url" is the dockstore server url.
+"organization" is the organization/user of the repository to create.
+"repo" is the repository to create.
+"write-api-url" is the url of the write-api-service
 
-One thing to note is that all Dockstore tool entries that reference an image from a private Docker registry must be set as private. At registration, you will have to set the tool as private or else you will not be able to register it.
+### Server Configuration
+The write-api-service uses githubToken and quayToken from the server yml file and looks something like this:
 
-This is because private Docker registry images require authorization to access, so they have to be specified as private. For a user to gain access, they will have to select the request access button on the Dockstore tool page and give the username they have for the given Docker registry. Then it will be the responsibility of the tool maintainer to add the user to have pull access to the Docker image.
+```
+quayioToken: abcdefghijklmnopqrstuvwxyz1234567890
+githubToken: abcdefghijklmnopqrstuvwxyz1234567890
+...
+```
+The github token can be attained by following the instructions from [GitHub Help](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
+The quay.io token can be attained by following the instruction from [Quay.io API docs](https://docs.quay.io/api/) -> OAuth 2 Access Tokens -> Generating a Token (for internal application use).  When generating the token, provide these 3 permissions:
+* Create Repositories
+* View all visible repositories
+* Read/Write to any accessible repositories
 
-### Amazon ECR tools
+### Client Usage
+```
+Usage: client [options] [command] [command options]
+  Options:
+    --help
+      Prints help for the client.
+      Default: false
+  Commands:
+    add      Add the Dockerfile and CWL file(s) using the write API.
+      Usage: add [options]
+        Options:
+        * --Dockerfile
+            The Dockerfile to upload
+        * --cwl-file
+            The cwl descriptor to upload
+          --cwl-secondary-file
+            The optional secondary cwl descriptor to upload
+          --help
+            Prints help for the add command
+            Default: false
+          --version
+            The version of the tool to upload to
 
-Amazon ECR images are treated in Dockstore as a custom Docker registry path and an empty namespace.
+    publish      Publish tool to dockstore using the output of the 'add'
+            command.
+      Usage: publish [options]
+        Options:
+          --help
+            Prints help for the publish command.
+            Default: false
+        * --tool
+            The json output from the 'add' command.
+```
 
-The following images demonstrate registering a tool with a registry-id and an empty namespace, represented as `_`.
+### Sample Client Output
+```
+client add --Dockerfile Dockerfile --cwl-file Dockstore.cwl --cwl-secondary-file Dockstore2.cwl --version 3.0
+{
+  "githubURL": "https://github.com/dockstore-testing/test_repo3",
+  "quayioURL": "https://quay.io/repository/dockstore-testing/test_repo3",
+  "version": "3.0"
+}
+```
+You can pipe the output like this:
+```
+client add --Dockerfile Dockerfile --cwl-file Dockstore.cwl --cwl-secondary-file Dockstore2.cwl --version 3.0 > test.json
+```
+and then:
+```
+client publish --tool test.json
+```
 
-![Add ECR tool](/assets/images/docs/ecr-1.png)
-![Add ECR tool version](/assets/images/docs/ecr-2.png)
+## [Different Ways To Register Tools on Dockstore](#different-ways-to-register)
 
+There are 3 major ways to register tools on Dockstore
+- The Dockstore website
+- The Dockstore webservice
+- The Write API webservice and client
 
-Amazon ECR images have an associated file containing the `Repository Policies`. When a tool user requests access to an Amazon ECR image, the tool maintainer should add them to the list of users with pull access. More information can be found on this [Amazon ECR](http://docs.aws.amazon.com/AmazonECR/latest/userguide/RepositoryPolicyExamples.html#IAM_allow_other_accounts) page.
+There is no clear cut answer for determining which is the best way to register tools on Dockstore.  Many factors affect it.  The below is merely our a suggestion, feel free to register tools on Dockstore in whichever way you prefer.
 
-The user would then need to ensure that they have the AWS client installed on their machine. They then need to retrieve the Docker login command using the following command:
-`aws ecr get-login --region <region> --registry-ids <registry-id>`
+Registering many tools or very few tools?
+  - Very Few
+    - Use the Dockstore website.  Just need to manually create the GitHub and Quay.io repository (if they don't exist).  If you're using Quay.io as the image registry, you can simply "Refresh All Tools" on the Dockstore website.  Otherwise, you can manually register the tool.
+  - Many
+    - GitHub and image registry repositories already made for each tool?
+      - Yes
+        - Are you using Quay.io for your image registry?
+          - Yes
+            - Use either the Dockstore webservice or website.  Just need to refresh all tools.  All of your Quay.io tools should automatically register on Dockstore.
+          - No
+            - Use the Dockstore webservice so you can programmatically register and publish all tools.
+      - No
+        - Use the Write API webservice and client.  After some setup time (getting GitHub and Quay.io tokens, setting up service, etc), it allows you to programmatically create GitHub and Quay.io repositories on the fly, then register/publish them on Dockstore.
 
-In this case, the `<registry-id>` is the number prefix for the docker registry path, representing the AWS ID of the user that created the registry. For example, if the entry ID on Dockstore is `312767926603.dkr.ecr.us-west-2.amazonaws.com/test_namespace/test_image`, then the registry-id would be `312767926603`.
-
-Now if the user runs the Docker login command returned by the get-login call, they should now be able to pull the Docker image.
-
-## Private Docker Registry Common Errors
-
-### CWLTool can't find a Docker image
-If you are trying to launch a private docker tool and are getting errors like `image not found` or `CalledProcessError: Command '['docker', 'pull', 'registrypath/namespace/name']' returned non-zero exit status 1`, then you likely do not have access to the Docker image. You'll have to request access to the Docker image by clicking the `Request Access` button on the tool's Dockstore page. If you have already done so then you may need to contact the tool maintainer again to confirm that you have been authorized to pull the image.
-
-
-## Docker Registry Request
-
-If you would like to request support for a registry that is not currently supported, then please create an issue on our [Github](https://github.com/ga4gh/dockstore/issues) page.
+Generally, Write API webservice and client has the highest setup time compared to the other methods of registering.  But, as you register more tools, the Write API tends to become the better choice (since it performs many intermediary steps for you).
