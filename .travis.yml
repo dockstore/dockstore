@@ -32,6 +32,7 @@ env:
 
 before_install:
 - pip install --upgrade pip
+- npm install -g swagger2openapi@2.11.16
 # pre-build to check dependencies and look for out-of-sync swagger
 - mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
 # start local stack in the background
