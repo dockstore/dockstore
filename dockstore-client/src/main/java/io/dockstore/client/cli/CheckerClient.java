@@ -9,6 +9,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Entry;
+import io.swagger.client.model.Workflow;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
@@ -42,7 +43,9 @@ public class CheckerClient extends WorkflowClient {
         // Checker client help
         out("Commands:");
         out("");
-        out("  add   :  Adds a checker workflow to and existing tool/workflow.");
+        out("  add      :  Adds a checker workflow to and existing tool/workflow.");
+        out("");
+        out("  update   :  Updates an existing checker workflow of a tool/workflow.");
         out("");
 
         if (isAdmin) {
@@ -65,6 +68,9 @@ public class CheckerClient extends WorkflowClient {
             switch (activeCommand) {
             case "add":
                 addChecker(args);
+                break;
+            case "update":
+                updateChecker(args);
                 break;
             default:
                 return false;
@@ -141,6 +147,82 @@ public class CheckerClient extends WorkflowClient {
         printHelpFooter();
     }
 
+    private void updateChecker(List<String> args) {
+        if (containsHelpRequest(args) || args.isEmpty()) {
+            updateCheckerHelp();
+        } else {
+            // Retrieve arguments
+            String entryPath = reqVal(args, "--entry");
 
+            // Get entry from path
+            Entry entry = null;
+            try {
+                entry = workflowsApi.getEntryByPath(entryPath);
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
+            }
+
+            Workflow checkerWorkflow = null;
+            if (entry != null) {
+                if (entry.getCheckerId() == null) {
+                    errorMessage("The entry has no checker workflow.",
+                        Client.CLIENT_ERROR);
+                } else {
+                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
+                }
+            }
+
+            // Update the checker workflow
+            if (entry != null && checkerWorkflow != null) {
+                String descriptorPath = optVal(args, "--descriptor-path", checkerWorkflow.getWorkflowPath());
+                String inputParameterPath = optVal(args, "--input-parameter-path", checkerWorkflow.getDefaultTestParameterFilePath());
+
+                // Check that descriptor path is valid
+                if (!descriptorPath.startsWith("/")) {
+                    errorMessage("Descriptor paths must be absolute paths.",
+                        Client.CLIENT_ERROR);
+                }
+
+                // Check that input parameter path is valid
+                if (inputParameterPath != null && !inputParameterPath.startsWith("/")) {
+                    errorMessage("Input parameter path paths must be absolute paths.",
+                        Client.CLIENT_ERROR);
+                }
+
+                // Update fields
+                checkerWorkflow.setWorkflowPath(descriptorPath);
+                checkerWorkflow.setDefaultTestParameterFilePath(inputParameterPath);
+
+                try {
+                    // Update the checker workflow
+                    workflowsApi.updateWorkflow(checkerWorkflow.getId(), checkerWorkflow);
+
+                    // Refresh the checker workflow
+                    workflowsApi.refresh(checkerWorkflow.getId());
+                    out("The workflow has been updated.");
+                } catch (ApiException ex) {
+                    exceptionMessage(ex, "There was a problem updating the checker workflow.", Client.API_ERROR);
+                }
+            }
+        }
+    }
+
+
+    private void updateCheckerHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " update --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " update [parameters]");
+        out("");
+        out("Description:");
+        out("  Update an existing checker workflow associated with an entry.");
+        out("");
+        out("Required Parameters:");
+        out("  --entry <entry>                                                          Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("");
+        out("Optional Parameters:");
+        out("  --input-parameter-path <input parameter path>                            Path to the input parameter path, defaults to that of the entry.");
+        out("  --descriptor-path <descriptor-path>                                      Path to the main descriptor file.");
+        printHelpFooter();
+    }
 
 }
