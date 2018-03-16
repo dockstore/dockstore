@@ -141,7 +141,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
-        return processImports("",content, version, sourceCodeRepoInterface);
+        return processImports("", content, version, sourceCodeRepoInterface);
     }
 
     public Map<String, SourceFile> processImports(String workingDirectoryForFile, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
