@@ -54,7 +54,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
- *
+ * {@link io.dockstore.client.cli.BaseIT}
  * @author dyuen
  */
 @Category(ConfidentialTest.class)

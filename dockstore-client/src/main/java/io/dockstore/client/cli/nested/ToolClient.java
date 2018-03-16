@@ -74,8 +74,8 @@ import static io.dockstore.client.cli.ArgumentUtility.reqVal;
  * @author dyuen
  */
 public class ToolClient extends AbstractEntryClient {
-    private static final Logger LOG = LoggerFactory.getLogger(ToolClient.class);
     public static final String UPDATE_TOOL = "update_tool";
+    private static final Logger LOG = LoggerFactory.getLogger(ToolClient.class);
     private final Client client;
     private ContainersApi containersApi;
     private ContainertagsApi containerTagsApi;
