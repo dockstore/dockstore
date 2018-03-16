@@ -1036,7 +1036,7 @@ public class ToolClient extends AbstractEntryClient {
             }
         } finally {
             if (container == null) {
-                errorMessage("No tool found with path " + path, Client.API_ERROR);
+                errorMessage("No tool found with path " + path, Client.ENTRY_NOT_FOUND);
             }
         }
         return container;

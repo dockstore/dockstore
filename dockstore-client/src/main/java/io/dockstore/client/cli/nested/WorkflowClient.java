@@ -303,7 +303,7 @@ public class WorkflowClient extends AbstractEntryClient {
             }
         } finally {
             if (workflow == null) {
-                errorMessage("No workflow found with path " + path, Client.API_ERROR);
+                errorMessage("No workflow found with path " + path, Client.ENTRY_NOT_FOUND);
             }
         }
         return workflow;
