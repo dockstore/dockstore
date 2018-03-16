@@ -4573,7 +4573,6 @@ components:
         - namespace
         - private_access
         - registry
-        - toolname
       properties:
         id:
           type: integer
