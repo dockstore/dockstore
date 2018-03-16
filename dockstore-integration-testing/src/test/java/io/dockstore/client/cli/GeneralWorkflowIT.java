@@ -451,7 +451,7 @@ public class GeneralWorkflowIT extends BaseIT {
     @Test
     @Category(ToilCompatibleTest.class)
     public void testRemoteLaunchCWLNoFile() {
-        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry",
                 "imnotreal.cwl", "--json", "imnotreal-job.json", "--script" });
     }
@@ -461,7 +461,7 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     public void testRemoteLaunchWDLNoFile() {
-        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry",
                 "imnotreal.wdl", "--json", "imnotreal-job.json", "--script" });
     }
