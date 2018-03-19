@@ -174,7 +174,7 @@ public class WorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", toolpath, "--json" , ResourceHelpers.resourceFilePath("md5sum-wrapper-tool.json") ,  "--script" });
 
         // should not be able to launch properly with incorrect credentials
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "launch", "--entry", toolpath, "--json" , ResourceHelpers.resourceFilePath("md5sum-wrapper-tool.json") ,  "--script" });
     }
 
