@@ -945,6 +945,28 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>swagger2openapi)</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <executable>swagger2openapi</executable>
+                            <arguments>
+                                <argument>src/main/resources/swagger.yaml</argument>
+                                <argument>-o</argument>
+                                <argument>src/main/resources/openapi.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
