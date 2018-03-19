@@ -47,6 +47,8 @@ import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 /**
  * Tests a variety of basic dockstore CLI commands along with some tool commands
  * using an older (CommonTestUtilities.OLD_DOCKSTORE_VERSION) dockstore client
+ * @author gluu
+ * @since 1.4.0
  */
 @Category({ RegressionTest.class })
 public class ClientRegressionIT extends BaseIT {
