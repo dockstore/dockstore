@@ -1206,7 +1206,7 @@ public abstract class AbstractEntryClient {
         printHelpFooter();
     }
 
-    private void launchHelp() {
+    protected void launchHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " launch --help");
         out("       dockstore " + getEntryType().toLowerCase() + " launch [parameters]");

@@ -79,6 +79,9 @@ public class CheckerClient extends WorkflowClient {
             case "download":
                 downloadChecker(args);
                 break;
+            case "launch":
+                launchChecker(args);
+                break;
             default:
                 return false;
             }
@@ -287,6 +290,45 @@ public class CheckerClient extends WorkflowClient {
         out("  --entry <entry>                             Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("");
         printHelpFooter();
+    }
+
+    private void launchChecker(List<String> args) {
+        if (containsHelpRequest(args) || args.isEmpty()) {
+            launchHelp();
+        } else {
+            for (String arg : args) {
+                out(arg);
+            }
+            // Retrieve arguments
+            String entryPath = reqVal(args, "--entry");
+
+            // Get entry from path
+            Entry entry = null;
+            try {
+                entry = workflowsApi.getEntryByPath(entryPath);
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
+            }
+
+            // Get checker workflow
+            Workflow checkerWorkflow = null;
+            if (entry != null) {
+                if (entry.getCheckerId() == null) {
+                    errorMessage("The entry has no checker workflow.",
+                        Client.CLIENT_ERROR);
+                } else {
+                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
+                }
+            }
+
+            // Call parent launcher
+            if (entry != null && checkerWorkflow != null) {
+                // Readd entry path to call, but with checker workflow
+                args.add("--entry");
+                args.add(checkerWorkflow.getFullWorkflowPath());
+                launch(args);
+            }
+        }
     }
 
 }
