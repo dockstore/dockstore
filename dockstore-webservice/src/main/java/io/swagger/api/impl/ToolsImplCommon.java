@@ -282,6 +282,9 @@ public final class ToolsImplCommon {
                 }
             }
 
+            if (toolVersion.getDescriptorType() == null) {
+                toolVersion.setDescriptorType(new ArrayList<>());
+            }
             // ensure that descriptor is non-null before adding to list
             if (!toolVersion.getDescriptorType().isEmpty()) {
                 // do some clean-up
