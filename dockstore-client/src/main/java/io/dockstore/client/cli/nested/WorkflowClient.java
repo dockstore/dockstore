@@ -896,7 +896,7 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
-    protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
+    protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType, String parentEntry) {
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
             long workflowId = workflow.getId();
@@ -911,13 +911,13 @@ public class WorkflowClient extends AbstractEntryClient {
 
             if (adds.size() > 0 || removes.size() > 0) {
                 workflowsApi.refresh(workflow.getId());
-                out("The test parameter files for version " + versionName + " of workflow " + entry + " have been updated.");
+                out("The test parameter files for version " + versionName + " of workflow " + parentEntry + " have been updated.");
             } else {
                 out("Please provide at least one test parameter file to add or remove.");
             }
 
         } catch (ApiException ex) {
-            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName,
+            exceptionMessage(ex, "There was an error updating the test parameter files for " + parentEntry + " version " + versionName,
                     Client.API_ERROR);
         }
     }

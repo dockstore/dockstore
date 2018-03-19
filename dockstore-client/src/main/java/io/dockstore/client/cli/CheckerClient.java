@@ -45,11 +45,15 @@ public class CheckerClient extends WorkflowClient {
         // Checker client help
         out("Commands:");
         out("");
-        out("  add          :  Adds a checker workflow to and existing tool/workflow.");
+        out("  add              :  Adds a checker workflow to and existing tool/workflow.");
         out("");
-        out("  update       :  Updates an existing checker workflow of a tool/workflow.");
+        out("  update           :  Updates an existing checker workflow of a tool/workflow.");
         out("");
-        out("  download     :  Downloads all files associated with a checker workflow.");
+        out("  download         :  Downloads all files associated with a checker workflow.");
+        out("");
+        out("  launch           :  Launch a checker workflow locally.");
+        out("");
+        out("  test_parameter   :  Add/Remove test parameter files for a checker workflow version.");
         out("");
 
         if (isAdmin) {
@@ -81,6 +85,9 @@ public class CheckerClient extends WorkflowClient {
                 break;
             case "launch":
                 launchChecker(args);
+                break;
+            case "test_parameter":
+                testParameterChecker(args);
                 break;
             default:
                 return false;
@@ -296,9 +303,6 @@ public class CheckerClient extends WorkflowClient {
         if (containsHelpRequest(args) || args.isEmpty()) {
             launchHelp();
         } else {
-            for (String arg : args) {
-                out(arg);
-            }
             // Retrieve arguments
             String entryPath = reqVal(args, "--entry");
 
@@ -327,6 +331,48 @@ public class CheckerClient extends WorkflowClient {
                 args.add("--entry");
                 args.add(checkerWorkflow.getFullWorkflowPath());
                 launch(args);
+            }
+        }
+    }
+
+    private void testParameterChecker(List<String> args) {
+        if (containsHelpRequest(args) || args.isEmpty()) {
+            testParameterHelp();
+        } else {
+            // Retrieve arguments
+            String entryPath = reqVal(args, "--entry");
+
+            // Get entry from path
+            Entry entry = null;
+            try {
+                entry = workflowsApi.getEntryByPath(entryPath);
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
+            }
+
+            // Get checker workflow
+            Workflow checkerWorkflow = null;
+            if (entry != null) {
+                if (entry.getCheckerId() == null) {
+                    errorMessage("The entry has no checker workflow.",
+                        Client.CLIENT_ERROR);
+                } else {
+                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
+                }
+            }
+
+            // Add/remove test parameter files
+            if (entry != null && checkerWorkflow != null) {
+                // Readd entry path to call, but with checker workflow
+                args.add("--entry");
+                args.add(checkerWorkflow.getFullWorkflowPath());
+
+                // This is used by testParameter to properly display output/error messages
+                args.add("--parent-entry");
+                args.add(entryPath);
+
+                // Call inherited test parameter function
+                testParameter(args);
             }
         }
     }
