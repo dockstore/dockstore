@@ -155,7 +155,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testUnableToLaunchUnpublishedToolCreds() throws IOException {
+    public void testWorkflowLaunchOrNotLaunchBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
@@ -176,11 +176,6 @@ public class WorkflowIT extends BaseIT {
         // should not be able to launch properly with incorrect credentials
         systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "launch", "--entry", toolpath, "--json" , ResourceHelpers.resourceFilePath("md5sum-wrapper-tool.json") ,  "--script" });
-    }
-
-    @Test
-    public void testAbletoLaunchUnpublishedToolWithCredentials(){
-
     }
 
     @Test
