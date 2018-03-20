@@ -48,6 +48,8 @@ import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
@@ -81,7 +83,7 @@ import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
  * @author dyuen
  */
 public class WorkflowClient extends AbstractEntryClient {
-
+    private static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
     private static final String UPDATE_WORKFLOW = "update_workflow";
     private final WorkflowsApi workflowsApi;
     private final UsersApi usersApi;
@@ -283,10 +285,28 @@ public class WorkflowClient extends AbstractEntryClient {
         // User may enter the version, so we have to extract the path
         String[] parts = entry.split(":");
         String path = parts[0];
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
+        Workflow workflow = getDockstoreWorkflow(path);
         String descriptor = workflow.getDescriptorType();
         LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
         return languageCLient.generateInputJson(entry, json);
+    }
+
+    private Workflow getDockstoreWorkflow(String path) {
+        // simply getting published descriptors does not require permissions
+        Workflow workflow = null;
+        try {
+            workflow = workflowsApi.getPublishedWorkflowByPath(path);
+        } catch (ApiException e) {
+            if (e.getResponseBody().contains("Entry not found")) {
+                LOG.info("Unable to locate entry without credentials, trying again as authenticated user");
+                workflow = workflowsApi.getWorkflowByPath(path);
+            }
+        } finally {
+            if (workflow == null) {
+                errorMessage("No workflow found with path " + path, Client.ENTRY_NOT_FOUND);
+            }
+        }
+        return workflow;
     }
 
     /**
@@ -318,7 +338,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     String[] parts = entry.split(":");
                     String path = parts[0];
                     try {
-                        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
+                        Workflow workflow = getDockstoreWorkflow(path);
                         String descriptor = workflow.getDescriptorType();
                         LanguageClientInterface languageClientInterface = convertCLIStringToEnum(descriptor);
 
@@ -1010,7 +1030,7 @@ public class WorkflowClient extends AbstractEntryClient {
         String version = (parts.length > 1) ? parts[1] : "master";
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath(path);
+        Workflow workflow = getDockstoreWorkflow(path);
 
         boolean valid = false;
         for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
@@ -1026,6 +1046,8 @@ public class WorkflowClient extends AbstractEntryClient {
                     file = workflowsApi.cwl(workflow.getId(), version);
                 } else if (descriptorType.equals(WDL_STRING)) {
                     file = workflowsApi.wdl(workflow.getId(), version);
+                } else {
+                    throw new UnsupportedOperationException("other languages not supported yet");
                 }
             } catch (ApiException ex) {
                 if (ex.getCode() == HttpStatus.SC_BAD_REQUEST) {
@@ -1042,25 +1064,22 @@ public class WorkflowClient extends AbstractEntryClient {
 
     public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
         // In the future, delete tmp files
-        Workflow workflow = null;
         String[] parts = entry.split(":");
         String path = parts[0];
         String version = (parts.length > 1) ? parts[1] : "master";
 
-        try {
-            workflow = workflowsApi.getPublishedWorkflowByPath(path);
-        } catch (ApiException e) {
-            exceptionMessage(e, "No match for entry", Client.API_ERROR);
-        }
+        Workflow workflow = getDockstoreWorkflow(path);
 
         List<SourceFile> result = new ArrayList<>();
         if (workflow != null) {
             try {
                 List<SourceFile> files;
-                if (descriptor.toLowerCase().equals("cwl")) {
+                if (descriptor.toLowerCase().equals(CWL_STRING)) {
                     files = workflowsApi.secondaryCwl(workflow.getId(), version);
-                } else {
+                } else if (descriptor.toLowerCase().equals(WDL_STRING)) {
                     files = workflowsApi.secondaryWdl(workflow.getId(), version);
+                } else {
+                    throw new UnsupportedOperationException("other languages not supported yet");
                 }
                 writeSourceFilesToDisk(tempDir, result, files);
             } catch (ApiException e) {
