@@ -65,7 +65,13 @@ import org.hibernate.annotations.UpdateTimestamp;
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname = :four"),
     @NamedNativeQuery(name = "Entry.getEntryByPathNullName", query =
         "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL union"
-            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL")})
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL"),
+    @NamedNativeQuery(name = "Entry.getPublishedEntryByPath", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname = :four and ispublished = TRUE union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname = :four and ispublished = TRUE"),
+    @NamedNativeQuery(name = "Entry.getPublishedEntryByPathNullName", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL and ispublished = TRUE union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE")})
 public abstract class Entry<S extends Entry, T extends Version> {
 
     /**

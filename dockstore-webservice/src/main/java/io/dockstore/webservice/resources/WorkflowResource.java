@@ -754,7 +754,26 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/path/entry/{repository}")
     @ApiOperation(value = "Get an entry by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Gets an entry from the path. Enter full path.", response = Entry.class)
     public Entry getEntryByPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path);
+        MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, false);
+
+        // Check if the entry exists
+        if (entryPair.getValue() == null) {
+            throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Ensure the user has access
+        checkUser(user, entryPair.getValue());
+
+        return entryPair.getValue();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/entry/{repository}/published")
+    @ApiOperation(value = "Get an entry by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Gets a published entry from the path. Enter full path.", response = Entry.class)
+    public Entry getPublishedEntryByPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, true);
 
         // Check if the entry exists
         if (entryPair.getValue() == null) {

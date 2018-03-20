@@ -163,7 +163,7 @@ public class WorkflowClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-    private static void versionTagHelp() {
+    protected static void versionTagHelp() {
         printHelpHeader();
         out("Usage: dockstore workflow version_tag --help");
         out("       dockstore workflow version_tag [parameters]");
@@ -922,7 +922,7 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    private void versionTag(List<String> args) {
+    protected void versionTag(List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             versionTagHelp();
         } else {

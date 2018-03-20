@@ -68,8 +68,13 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
         return results;
     }
 
-    public MutablePair<String, Entry> findEntryByPath(String path) {
-        String queryString = "Entry.getEntryByPath";
+    public MutablePair<String, Entry> findEntryByPath(String path, boolean isPublished) {
+        String queryString = "Entry.";
+        if (isPublished) {
+            queryString += "getPublishedEntryByPath";
+        } else {
+            queryString += "getEntryByPath";
+        }
 
         // split path
         String[] splitPath = Tool.splitPath(path);

@@ -12,6 +12,8 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.Workflow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
@@ -33,6 +35,8 @@ import static io.dockstore.client.cli.ArgumentUtility.reqVal;
  */
 public class CheckerClient extends WorkflowClient {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CheckerClient.class);
+
     public CheckerClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client, boolean isAdmin) {
         super(workflowApi, usersApi, client, isAdmin);
     }
@@ -45,15 +49,17 @@ public class CheckerClient extends WorkflowClient {
         // Checker client help
         out("Commands:");
         out("");
-        out("  add              :  Adds a checker workflow to and existing tool/workflow.");
+        out("  download             :  Downloads all files associated with a checker workflow.");
         out("");
-        out("  update           :  Updates an existing checker workflow of a tool/workflow.");
+        out("  launch               :  Launch a checker workflow locally.");
         out("");
-        out("  download         :  Downloads all files associated with a checker workflow.");
+        out("  add                  :  Adds a checker workflow to and existing tool/workflow.");
         out("");
-        out("  launch           :  Launch a checker workflow locally.");
+        out("  update               :  Updates an existing checker workflow.");
         out("");
-        out("  test_parameter   :  Add/Remove test parameter files for a checker workflow version.");
+        out("  update_version       :  Updates a specific version of an existing checker workflow.");
+        out("");
+        out("  test_parameter       :  Add/Remove test parameter files for a checker workflow version.");
         out("");
 
         if (isAdmin) {
@@ -88,6 +94,9 @@ public class CheckerClient extends WorkflowClient {
                 break;
             case "test_parameter":
                 testParameterChecker(args);
+                break;
+            case "update_version":
+                updateVersionChecker(args);
                 break;
             default:
                 return false;
@@ -253,12 +262,7 @@ public class CheckerClient extends WorkflowClient {
             String entryPath = reqVal(args, "--entry");
 
             // Get entry from path
-            Entry entry = null;
-            try {
-                entry = workflowsApi.getEntryByPath(entryPath);
-            } catch (ApiException ex) {
-                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
-            }
+            Entry entry = getDockstoreEntry(entryPath);
 
             // Get checker workflow
             Workflow checkerWorkflow = null;
@@ -307,12 +311,7 @@ public class CheckerClient extends WorkflowClient {
             String entryPath = reqVal(args, "--entry");
 
             // Get entry from path
-            Entry entry = null;
-            try {
-                entry = workflowsApi.getEntryByPath(entryPath);
-            } catch (ApiException ex) {
-                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
-            }
+            Entry entry = getDockstoreEntry(entryPath);
 
             // Get checker workflow
             Workflow checkerWorkflow = null;
@@ -377,4 +376,65 @@ public class CheckerClient extends WorkflowClient {
         }
     }
 
+    private void updateVersionChecker(List<String> args) {
+        if (containsHelpRequest(args) || args.isEmpty()) {
+            versionTagHelp();
+        } else {
+            // Retrieve arguments
+            String entryPath = reqVal(args, "--entry");
+
+            // Get entry from path
+            Entry entry = null;
+            try {
+                entry = workflowsApi.getEntryByPath(entryPath);
+            } catch (ApiException ex) {
+                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
+            }
+
+            // Get checker workflow
+            Workflow checkerWorkflow = null;
+            if (entry != null) {
+                if (entry.getCheckerId() == null) {
+                    errorMessage("The entry has no checker workflow.",
+                        Client.CLIENT_ERROR);
+                } else {
+                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
+                }
+            }
+
+            // Update version
+            if (entry != null && checkerWorkflow != null) {
+                // Readd entry path to call, but with checker workflow
+                args.add("--entry");
+                args.add(checkerWorkflow.getFullWorkflowPath());
+
+                // Call inherited test parameter function
+                versionTag(args);
+            }
+        }
+    }
+
+    /**
+     * Retrieves a dockstore entry if either it is published or the user owns it
+     * Note: Only use with commands that normally are use for published workflows, but can also be useful to the owner if the workflow is not published
+     * @param path The complete entry path
+     * @return Matching entry
+     */
+    private Entry getDockstoreEntry(String path) {
+        // simply getting published descriptors does not require permissions
+        Entry entry = null;
+        try {
+            entry = workflowsApi.getPublishedEntryByPath(path);
+        } catch (ApiException e) {
+            if (e.getResponseBody().contains("Entry not found")) {
+                LOG.info("Unable to locate entry without credentials, trying again as authenticated user");
+                entry = workflowsApi.getEntryByPath(path);
+            }
+        } finally {
+            if (entry == null) {
+                errorMessage("No entry found with path " + path, Client.ENTRY_NOT_FOUND);
+            }
+        }
+        return entry;
+    }
 }
