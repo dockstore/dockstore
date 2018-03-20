@@ -121,10 +121,10 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    private static void manualPublishHelp() {
+    private void manualPublishHelp() {
         printHelpHeader();
-        out("Usage: dockstore workflow manual_publish --help");
-        out("       dockstore workflow manual_publish [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " manual_publish --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " manual_publish [parameters]");
         out("");
         out("Description:");
         out("  Manually register an workflow in the dockstore. If this is successful and the workflow is valid, then publish.");
@@ -143,10 +143,10 @@ public class WorkflowClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-    private static void updateWorkflowHelp() {
+    private void updateWorkflowHelp() {
         printHelpHeader();
-        out("Usage: dockstore workflow " + UPDATE_WORKFLOW + " --help");
-        out("       dockstore workflow " + UPDATE_WORKFLOW + " [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " " + UPDATE_WORKFLOW + " --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + UPDATE_WORKFLOW + " [parameters]");
         out("");
         out("Description:");
         out("  Update certain fields for a given workflow.");
@@ -163,20 +163,20 @@ public class WorkflowClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-    protected static void versionTagHelp() {
+    protected void versionTagHelp() {
         printHelpHeader();
-        out("Usage: dockstore workflow version_tag --help");
-        out("       dockstore workflow version_tag [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " version_tag --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " version_tag [parameters]");
         out("");
         out("Description:");
-        out("  Update certain fields for a given workflow version.");
+        out("  Update certain fields for a given " + getEntryType().toLowerCase() + " version.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                      Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("  --name <name>                                        Name of the workflow version.");
+        out("  --entry <entry>                                      Complete " + getEntryType().toLowerCase() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --name <name>                                        Name of the " + getEntryType().toLowerCase() + " version.");
         out("");
         out("Optional Parameters");
-        out("  --workflow-path <workflow-path>                      Path to workflow descriptor");
+        out("  --workflow-path <workflow-path>                      Path to " + getEntryType().toLowerCase() + " descriptor");
         out("  --hidden <true/false>                                Hide the tag from public viewing, default false");
         printHelpFooter();
     }

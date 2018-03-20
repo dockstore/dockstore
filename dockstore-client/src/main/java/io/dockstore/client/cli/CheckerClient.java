@@ -225,7 +225,7 @@ public class CheckerClient extends WorkflowClient {
 
                     // Refresh the checker workflow
                     workflowsApi.refresh(checkerWorkflow.getId());
-                    out("The workflow has been updated.");
+                    out("The checker workflow has been updated.");
                 } catch (ApiException ex) {
                     exceptionMessage(ex, "There was a problem updating the checker workflow.", Client.API_ERROR);
                 }
@@ -243,7 +243,7 @@ public class CheckerClient extends WorkflowClient {
         out("  Update an existing checker workflow associated with an entry.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                                          Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entry <entry>                                                          Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:master)");
         out("");
         out("Optional Parameters:");
         out("  --default-test-parameter-path <input parameter path>                     Path to the input parameter path, defaults to that of the entry.");
@@ -260,6 +260,7 @@ public class CheckerClient extends WorkflowClient {
 
             // Retrieve arguments
             String entryPath = reqVal(args, "--entry");
+            String version = reqVal(args, "--version");
 
             // Get entry from path
             Entry entry = getDockstoreEntry(entryPath);
@@ -279,7 +280,8 @@ public class CheckerClient extends WorkflowClient {
             if (entry != null && checkerWorkflow != null) {
                 try {
                     File downloadFolder = new File(currentDirectory);
-                    downloadDescriptorFiles(checkerWorkflow.getFullWorkflowPath(), checkerWorkflow.getDescriptorType(), downloadFolder);
+                    String entryToDownload = checkerWorkflow.getFullWorkflowPath() + ":" + version;
+                    downloadDescriptorFiles(entryToDownload, checkerWorkflow.getDescriptorType(), downloadFolder);
                     out("Files have been successfully downloaded to the current directory.");
                 } catch (IOException ex) {
                     exceptionMessage(ex, "Problems downloading files to " + currentDirectory, Client.IO_ERROR);
@@ -298,7 +300,8 @@ public class CheckerClient extends WorkflowClient {
         out("  Downloads all checker workflow files for the given entry and stores them in the current directory.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                             Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --entry <entry>                   Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --version <version>               Entry version");
         out("");
         printHelpFooter();
     }
