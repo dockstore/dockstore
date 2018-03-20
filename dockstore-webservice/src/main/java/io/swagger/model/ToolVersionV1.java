@@ -52,6 +52,10 @@ public class ToolVersionV1  {
     public ToolVersionV1(ToolVersion toolVersion) {
         try {
             BeanUtils.copyProperties(this, toolVersion);
+            // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
+            this.dockerfile = toolVersion.isContainerfile();
+            this.verified = toolVersion.isVerified();
+
         } catch (IllegalAccessException | InvocationTargetException e) {
             LOG.error("unable to backwards convert toolVersion");
             throw new RuntimeException(e);

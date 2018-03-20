@@ -46,6 +46,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
@@ -1363,11 +1364,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             // Get tool
             Tool tool = (Tool)entryPair.getValue();
 
-            workflowName = tool.getToolname();
-
-            if (workflowName == null) {
-                workflowName = "";
-            }
+            // Generate workflow name
+            workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
 
             // Get default test parameter path and toolname
             if (Objects.equals(descriptorType.toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
@@ -1414,7 +1412,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             lastUpdated = workflow.getLastUpdated();
 
             // Generate workflow name
-            workflowName = workflow.getWorkflowName();
+            workflowName = MoreObjects.firstNonNull(workflow.getWorkflowName(), "");
 
             if (workflowName == null) {
                 workflowName = "";

@@ -16,7 +16,9 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeoutException;
@@ -26,6 +28,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
+import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -39,6 +42,8 @@ import io.swagger.client.model.Tool;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
- *
+ * {@link io.dockstore.client.cli.BaseIT}
  * @author dyuen
  */
 @Category(ConfidentialTest.class)
@@ -145,6 +150,32 @@ public class WorkflowIT extends BaseIT {
         assertTrue("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
                         .filter(WorkflowVersion::isValid).count(),
                 refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 4);
+
+
+    }
+
+    @Test
+    public void testWorkflowLaunchOrNotLaunchBasedOnCredentials() throws IOException {
+        String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow workflow = workflowApi
+            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker_workflow_wrapping_workflow.cwl",
+                "test", "cwl", null);
+        Workflow refresh = workflowApi.refresh(workflow.getId());
+
+        Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
+
+        // should be able to launch properly with correct credentials even though the workflow is not published
+        FileUtils.writeStringToFile(new File("md5sum.input"), "foo" , StandardCharsets.UTF_8);
+        systemExit.expectSystemExitWithStatus(0);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", toolpath, "--json" , ResourceHelpers.resourceFilePath("md5sum-wrapper-tool.json") ,  "--script" });
+
+        // should not be able to launch properly with incorrect credentials
+        systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "launch", "--entry", toolpath, "--json" , ResourceHelpers.resourceFilePath("md5sum-wrapper-tool.json") ,  "--script" });
     }
 
     @Test

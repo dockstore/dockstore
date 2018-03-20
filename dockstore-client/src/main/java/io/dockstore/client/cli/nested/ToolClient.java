@@ -46,6 +46,8 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import org.apache.commons.validator.routines.EmailValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
@@ -73,6 +75,7 @@ import static io.dockstore.client.cli.ArgumentUtility.reqVal;
  */
 public class ToolClient extends AbstractEntryClient {
     public static final String UPDATE_TOOL = "update_tool";
+    private static final Logger LOG = LoggerFactory.getLogger(ToolClient.class);
     private final Client client;
     private ContainersApi containersApi;
     private ContainertagsApi containerTagsApi;
@@ -1001,8 +1004,8 @@ public class ToolClient extends AbstractEntryClient {
 
         String tag = (parts.length > 1) ? parts[1] : null;
         SourceFile file = new SourceFile();
-        // simply getting published descriptors does not require permissions
-        DockstoreTool container = containersApi.getPublishedContainerByToolPath(path);
+        DockstoreTool container = getDockstoreTool(path);
+
         if (tag == null && container.getDefaultVersion() != null) {
             tag = container.getDefaultVersion();
         }
@@ -1012,11 +1015,31 @@ public class ToolClient extends AbstractEntryClient {
                 file = containersApi.cwl(container.getId(), tag);
             } else if (descriptorType.equals(WDL_STRING)) {
                 file = containersApi.wdl(container.getId(), tag);
+            } else {
+                throw new UnsupportedOperationException("other languages not supported yet");
             }
         } else {
             errorMessage("No tool found with path " + entry, Client.API_ERROR);
         }
         return file;
+    }
+
+    private DockstoreTool getDockstoreTool(String path) {
+        // simply getting published descriptors does not require permissions
+        DockstoreTool container = null;
+        try {
+            container = containersApi.getPublishedContainerByToolPath(path);
+        } catch (ApiException e) {
+            if (e.getResponseBody().contains("Entry not found")) {
+                LOG.info("Unable to locate entry without credentials, trying again as authenticated user");
+                container = containersApi.getContainerByToolPath(path);
+            }
+        } finally {
+            if (container == null) {
+                errorMessage("No tool found with path " + path, Client.ENTRY_NOT_FOUND);
+            }
+        }
+        return container;
     }
 
     @Override
@@ -1026,16 +1049,11 @@ public class ToolClient extends AbstractEntryClient {
 
     public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
         // In the future, delete tmp files
-        DockstoreTool tool = null;
         String[] parts = entry.split(":");
         String path = parts[0];
         String version = (parts.length > 1) ? parts[1] : "master";
 
-        try {
-            tool = containersApi.getPublishedContainerByToolPath(path);
-        } catch (ApiException e) {
-            exceptionMessage(e, "No match for entry", Client.API_ERROR);
-        }
+        DockstoreTool tool = getDockstoreTool(path);
 
         List<SourceFile> result = new ArrayList<>();
         if (tool != null) {
