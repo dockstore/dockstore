@@ -136,12 +136,7 @@ public class CheckerClient extends WorkflowClient {
             }
 
             // Get entry from path
-            Entry entry = null;
-            try {
-                entry = workflowsApi.getEntryByPath(entryPath);
-            } catch (ApiException ex) {
-                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
-            }
+            Entry entry = getEntryFromPath(entryPath);
 
             // Register the checker workflow
             if (entry != null) {
@@ -181,23 +176,10 @@ public class CheckerClient extends WorkflowClient {
             String entryPath = reqVal(args, "--entry");
 
             // Get entry from path
-            Entry entry = null;
-            try {
-                entry = workflowsApi.getEntryByPath(entryPath);
-            } catch (ApiException ex) {
-                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
-            }
+            Entry entry = getEntryFromPath(entryPath);
 
             // Retrieve the checker workflow
-            Workflow checkerWorkflow = null;
-            if (entry != null) {
-                if (entry.getCheckerId() == null) {
-                    errorMessage("The entry has no checker workflow.",
-                        Client.CLIENT_ERROR);
-                } else {
-                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
-                }
-            }
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
 
             // Update the checker workflow
             if (entry != null && checkerWorkflow != null) {
@@ -267,15 +249,7 @@ public class CheckerClient extends WorkflowClient {
             Entry entry = getDockstoreEntry(entryPath);
 
             // Get checker workflow
-            Workflow checkerWorkflow = null;
-            if (entry != null) {
-                if (entry.getCheckerId() == null) {
-                    errorMessage("The entry has no checker workflow.",
-                        Client.CLIENT_ERROR);
-                } else {
-                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
-                }
-            }
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
 
             // Download files
             if (entry != null && checkerWorkflow != null) {
@@ -320,15 +294,7 @@ public class CheckerClient extends WorkflowClient {
             Entry entry = getDockstoreEntry(entryPath);
 
             // Get checker workflow
-            Workflow checkerWorkflow = null;
-            if (entry != null) {
-                if (entry.getCheckerId() == null) {
-                    errorMessage("The entry has no checker workflow.",
-                        Client.CLIENT_ERROR);
-                } else {
-                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
-                }
-            }
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
 
             // Call parent launcher
             if (entry != null && checkerWorkflow != null) {
@@ -348,27 +314,14 @@ public class CheckerClient extends WorkflowClient {
             String entryPath = reqVal(args, "--entry");
 
             // Get entry from path
-            Entry entry = null;
-            try {
-                entry = workflowsApi.getEntryByPath(entryPath);
-            } catch (ApiException ex) {
-                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
-            }
+            Entry entry = getEntryFromPath(entryPath);
 
             // Get checker workflow
-            Workflow checkerWorkflow = null;
-            if (entry != null) {
-                if (entry.getCheckerId() == null) {
-                    errorMessage("The entry has no checker workflow.",
-                        Client.CLIENT_ERROR);
-                } else {
-                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
-                }
-            }
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
 
             // Add/remove test parameter files
             if (entry != null && checkerWorkflow != null) {
-                // Readd entry path to call, but with checker workflow
+                // Add entry path to command, but with checker workflow
                 args.add("--entry");
                 args.add(checkerWorkflow.getFullWorkflowPath());
 
@@ -390,23 +343,10 @@ public class CheckerClient extends WorkflowClient {
             String entryPath = reqVal(args, "--entry");
 
             // Get entry from path
-            Entry entry = null;
-            try {
-                entry = workflowsApi.getEntryByPath(entryPath);
-            } catch (ApiException ex) {
-                exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
-            }
+            Entry entry = getEntryFromPath(entryPath);
 
             // Get checker workflow
-            Workflow checkerWorkflow = null;
-            if (entry != null) {
-                if (entry.getCheckerId() == null) {
-                    errorMessage("The entry has no checker workflow.",
-                        Client.CLIENT_ERROR);
-                } else {
-                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
-                }
-            }
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
 
             // Update version
             if (entry != null && checkerWorkflow != null) {
@@ -418,6 +358,41 @@ public class CheckerClient extends WorkflowClient {
                 versionTag(args);
             }
         }
+    }
+
+    /**
+     * Retrieve an entry from the full path
+     * @param entryPath Full path of the entry
+     * @return entry
+     */
+    private Entry getEntryFromPath(String entryPath) {
+        // Get entry from path
+        Entry entry = null;
+        try {
+            entry = workflowsApi.getEntryByPath(entryPath);
+        } catch (ApiException ex) {
+            exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
+        }
+        return entry;
+    }
+
+    /**
+     * Retrieve the checker workflow from an entry
+     * @param entry
+     * @return checker workflow
+     */
+    private Workflow getCheckerWorkflowFromEntry(Entry entry) {
+        // Get checker workflow
+        Workflow checkerWorkflow = null;
+        if (entry != null) {
+            if (entry.getCheckerId() == null) {
+                errorMessage("The entry has no checker workflow.",
+                    Client.CLIENT_ERROR);
+            } else {
+                checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
+            }
+        }
+        return checkerWorkflow;
     }
 
     /**
