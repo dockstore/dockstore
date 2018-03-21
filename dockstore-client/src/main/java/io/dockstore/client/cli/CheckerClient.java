@@ -188,6 +188,7 @@ public class CheckerClient extends WorkflowClient {
                 exceptionMessage(ex, "Could not find the entry with path" + entryPath, Client.API_ERROR);
             }
 
+            // Retrieve the checker workflow
             Workflow checkerWorkflow = null;
             if (entry != null) {
                 if (entry.getCheckerId() == null) {
@@ -285,6 +286,8 @@ public class CheckerClient extends WorkflowClient {
                     out("Files have been successfully downloaded to the current directory.");
                 } catch (IOException ex) {
                     exceptionMessage(ex, "Problems downloading files to " + currentDirectory, Client.IO_ERROR);
+                } catch (ApiException ex) {
+                    exceptionMessage(ex, "Problems downloading files to " + currentDirectory, Client.API_ERROR);
                 }
             }
         }

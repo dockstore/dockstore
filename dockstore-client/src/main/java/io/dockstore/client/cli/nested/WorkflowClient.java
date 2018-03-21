@@ -83,7 +83,7 @@ import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
  * @author dyuen
  */
 public class WorkflowClient extends AbstractEntryClient {
-    
+
     protected static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
     protected static final String UPDATE_WORKFLOW = "update_workflow";
     protected final WorkflowsApi workflowsApi;
@@ -932,7 +932,7 @@ public class WorkflowClient extends AbstractEntryClient {
 
             if (adds.size() > 0 || removes.size() > 0) {
                 workflowsApi.refresh(workflow.getId());
-                out("The test parameter files for version " + versionName + " of workflow " + parentEntry + " have been updated.");
+                out("The test parameter files for version " + versionName + " of " + getEntryType().toLowerCase() + " " + parentEntry + " have been updated.");
             } else {
                 out("Please provide at least one test parameter file to add or remove.");
             }

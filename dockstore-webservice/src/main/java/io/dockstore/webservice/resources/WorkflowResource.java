@@ -758,7 +758,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, false);
 
         // Check if the entry exists
-        checkEntry(entryPair.getValue());
+        if (entryPair == null) {
+            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
+        }
 
         // Ensure the user has access
         checkUser(user, entryPair.getValue());
@@ -775,7 +777,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, true);
 
         // Check if the entry exists
-        checkEntry(entryPair.getValue());
+        if (entryPair == null) {
+            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
+        }
 
         return entryPair.getValue();
     }
