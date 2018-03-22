@@ -83,13 +83,14 @@ import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
  * @author dyuen
  */
 public class WorkflowClient extends AbstractEntryClient {
-    private static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
-    private static final String UPDATE_WORKFLOW = "update_workflow";
-    private final WorkflowsApi workflowsApi;
-    private final UsersApi usersApi;
-    private final Client client;
-    private JCommander jCommander;
-    private CommandLaunch commandLaunch;
+
+    protected static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
+    protected static final String UPDATE_WORKFLOW = "update_workflow";
+    protected final WorkflowsApi workflowsApi;
+    protected final UsersApi usersApi;
+    protected final Client client;
+    protected JCommander jCommander;
+    protected CommandLaunch commandLaunch;
 
     public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.workflowsApi = workflowApi;
@@ -123,10 +124,10 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    private static void manualPublishHelp() {
+    private void manualPublishHelp() {
         printHelpHeader();
-        out("Usage: dockstore workflow manual_publish --help");
-        out("       dockstore workflow manual_publish [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " manual_publish --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " manual_publish [parameters]");
         out("");
         out("Description:");
         out("  Manually register an workflow in the dockstore. If this is successful and the workflow is valid, then publish.");
@@ -145,10 +146,10 @@ public class WorkflowClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-    private static void updateWorkflowHelp() {
+    private void updateWorkflowHelp() {
         printHelpHeader();
-        out("Usage: dockstore workflow " + UPDATE_WORKFLOW + " --help");
-        out("       dockstore workflow " + UPDATE_WORKFLOW + " [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " " + UPDATE_WORKFLOW + " --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " " + UPDATE_WORKFLOW + " [parameters]");
         out("");
         out("Description:");
         out("  Update certain fields for a given workflow.");
@@ -165,20 +166,20 @@ public class WorkflowClient extends AbstractEntryClient {
         printHelpFooter();
     }
 
-    private static void versionTagHelp() {
+    protected void versionTagHelp() {
         printHelpHeader();
-        out("Usage: dockstore workflow version_tag --help");
-        out("       dockstore workflow version_tag [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " version_tag --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " version_tag [parameters]");
         out("");
         out("Description:");
-        out("  Update certain fields for a given workflow version.");
+        out("  Update certain fields for a given " + getEntryType().toLowerCase() + " version.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                                      Complete workflow path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("  --name <name>                                        Name of the workflow version.");
+        out("  --entry <entry>                                      Complete " + getEntryType().toLowerCase() + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --name <name>                                        Name of the " + getEntryType().toLowerCase() + " version.");
         out("");
         out("Optional Parameters");
-        out("  --workflow-path <workflow-path>                      Path to workflow descriptor");
+        out("  --workflow-path <workflow-path>                      Path to " + getEntryType().toLowerCase() + " descriptor");
         out("  --hidden <true/false>                                Hide the tag from public viewing, default false");
         printHelpFooter();
     }
@@ -916,7 +917,7 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     @Override
-    protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType) {
+    protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType, String parentEntry) {
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(entry);
             long workflowId = workflow.getId();
@@ -931,18 +932,18 @@ public class WorkflowClient extends AbstractEntryClient {
 
             if (adds.size() > 0 || removes.size() > 0) {
                 workflowsApi.refresh(workflow.getId());
-                out("The test parameter files for version " + versionName + " of workflow " + entry + " have been updated.");
+                out("The test parameter files for version " + versionName + " of " + getEntryType().toLowerCase() + " " + parentEntry + " have been updated.");
             } else {
                 out("Please provide at least one test parameter file to add or remove.");
             }
 
         } catch (ApiException ex) {
-            exceptionMessage(ex, "There was an error updating the test parameter files for " + entry + " version " + versionName,
+            exceptionMessage(ex, "There was an error updating the test parameter files for " + parentEntry + " version " + versionName,
                     Client.API_ERROR);
         }
     }
 
-    private void versionTag(List<String> args) {
+    protected void versionTag(List<String> args) {
         if (args.isEmpty() || containsHelpRequest(args)) {
             versionTagHelp();
         } else {

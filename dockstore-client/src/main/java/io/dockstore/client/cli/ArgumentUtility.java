@@ -225,6 +225,24 @@ public final class ArgumentUtility {
         out("");
     }
 
+    public static void printFlagHelp() {
+        out("");
+        out("Flags:");
+        out("  --help               Print help information");
+        out("                       Default: false");
+        out("  --debug              Print debugging information");
+        out("                       Default: false");
+        out("  --config <file>      Override config file");
+        out("                       Default: ~/.dockstore/config");
+        out("  --script             For usage with scripts. Will not check for updates to Dockstore CLI.");
+        out("                       Default: false");
+    }
+
+    public static void printUsageHelp(String type) {
+        out("Usage: dockstore " + type + " [flags] [command] [command parameters]");
+        out("");
+    }
+
     public static void printHelpFooter() {
         out("");
         printLineBreak();

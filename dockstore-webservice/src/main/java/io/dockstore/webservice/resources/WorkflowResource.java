@@ -752,6 +752,41 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @GET
     @Timed
     @UnitOfWork
+    @Path("/path/entry/{repository}")
+    @ApiOperation(value = "Get an entry by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Gets an entry from the path. Enter full path.", response = Entry.class)
+    public Entry getEntryByPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, false);
+
+        // Check if the entry exists
+        if (entryPair == null) {
+            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Ensure the user has access
+        checkUser(user, entryPair.getValue());
+
+        return entryPair.getValue();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/entry/{repository}/published")
+    @ApiOperation(value = "Get an entry by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Gets a published entry from the path. Enter full path.", response = Entry.class)
+    public Entry getPublishedEntryByPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, true);
+
+        // Check if the entry exists
+        if (entryPair == null) {
+            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        return entryPair.getValue();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/path/{repository}")
     @ApiOperation(value = "Get a list of workflows by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
@@ -1383,10 +1418,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(workflow.getWorkflowName(), "");
 
+            if (workflowName == null) {
+                workflowName = "";
+            }
+
             if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
                 workflowName += "_cwl_checker";
             } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
-                workflowName += "_wdl_checker";
+                workflowName +=  "_wdl_checker";
             } else {
                 throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().toLowerCase() + " is not valid.\nSupported types include cwl and wdl.");
             }

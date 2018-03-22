@@ -35,6 +35,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.NamedNativeQueries;
 import javax.persistence.NamedNativeQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
@@ -57,7 +58,20 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
 // TODO: Replace this with JPA when possible
-@NamedNativeQuery(name = "Entry.getEntryById", query = "SELECT 'tool' as type, id from tool where id = :id union select 'workflow' as type, id from workflow where id = :id")
+@NamedNativeQueries({
+    @NamedNativeQuery(name = "Entry.getEntryById", query = "SELECT 'tool' as type, id from tool where id = :id union select 'workflow' as type, id from workflow where id = :id"),
+    @NamedNativeQuery(name = "Entry.getEntryByPath", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname = :four union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname = :four"),
+    @NamedNativeQuery(name = "Entry.getEntryByPathNullName", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL"),
+    @NamedNativeQuery(name = "Entry.getPublishedEntryByPath", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname = :four and ispublished = TRUE union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname = :four and ispublished = TRUE"),
+    @NamedNativeQuery(name = "Entry.getPublishedEntryByPathNullName", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL and ispublished = TRUE union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE")})
 public abstract class Entry<S extends Entry, T extends Version> {
 
     /**

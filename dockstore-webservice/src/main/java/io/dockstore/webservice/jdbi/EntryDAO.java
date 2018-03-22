@@ -17,6 +17,7 @@
 package io.dockstore.webservice.jdbi;
 
 import java.lang.reflect.ParameterizedType;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Objects;
 
@@ -63,6 +64,57 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
             results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(id)));
         } else {
             results = new MutablePair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(id)));
+        }
+        return results;
+    }
+
+    public MutablePair<String, Entry> findEntryByPath(String path, boolean isPublished) {
+        String queryString = "Entry.";
+        if (isPublished) {
+            queryString += "getPublishedEntryByPath";
+        } else {
+            queryString += "getEntryByPath";
+        }
+
+        // split path
+        String[] splitPath = Tool.splitPath(path);
+
+        // Not a valid path
+        if (splitPath == null) {
+            return null;
+        }
+
+        // Valid path
+        String one = splitPath[registryIndex];
+        String two = splitPath[orgIndex];
+        String three = splitPath[repoIndex];
+        String four = splitPath[entryNameIndex];
+
+        if (four == null) {
+            queryString += "NullName";
+        }
+
+        Query query = super.namedQuery(queryString);
+
+        query.setParameter("one", one);
+        query.setParameter("two", two);
+        query.setParameter("three", three);
+
+        if (four != null) {
+            query.setParameter("four", four);
+        }
+
+        List<Object[]> pair = list(query);
+        MutablePair<String, Entry> results = null;
+        if (pair.size() > 0) {
+            String type = (String)(pair.get(0))[0];
+            BigInteger id = (BigInteger)(pair.get(0))[1];
+            Long longId = id.longValue();
+            if ("workflow".equals(type)) {
+                results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(longId)));
+            } else {
+                results = new MutablePair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(longId)));
+            }
         }
         return results;
     }

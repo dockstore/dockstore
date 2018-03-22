@@ -112,6 +112,7 @@ public class Client {
     private boolean isAdmin = false;
     private ToolClient toolClient;
     private WorkflowClient workflowClient;
+    private CheckerClient checkerClient;
 
     /*
      * Dockstore Client Functions for CLI
@@ -567,6 +568,7 @@ public class Client {
         out("Modes:");
         out("   tool                Puts dockstore into tool mode.");
         out("   workflow            Puts dockstore into workflow mode.");
+        out("   checker             Puts dockstore into checker mode.");
         out("   plugin              Configure and debug plugins.");
         out("");
         printLineBreak();
@@ -681,6 +683,8 @@ public class Client {
                         handled = PluginClient.handleCommand(args, Utilities.parseConfig(configFile));
                     } else if ("search".equals(mode)) {
                         handled = SearchClient.handleCommand(args, this.extendedGA4GHApi);
+                    } else if ("checker".equals(mode)) {
+                        targetClient = getCheckerClient();
                     }
 
                     if (targetClient != null) {
@@ -783,6 +787,7 @@ public class Client {
         }
         this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), usersApi, this, isAdmin);
         this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
+        this.checkerClient = new CheckerClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
 
         defaultApiClient.setDebugging(DEBUG.get());
         CWLRunnerFactory.setConfig(config);
@@ -805,24 +810,16 @@ public class Client {
     void setConfigFile(String configFile) {
         this.configFile = configFile;
     }
-
-    /**
-     * Setup method called by Consonance
-     *
-     * @return
-     */
-    @SuppressWarnings("WeakerAccess")
+    
     public ToolClient getToolClient() {
         return toolClient;
     }
 
-    /**
-     * Setup method called by Consonance
-     *
-     * @return
-     */
-    @SuppressWarnings("WeakerAccess")
     public WorkflowClient getWorkflowClient() {
         return workflowClient;
+    }
+
+    public CheckerClient getCheckerClient() {
+        return checkerClient;
     }
 }

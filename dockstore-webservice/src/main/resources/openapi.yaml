@@ -3452,6 +3452,52 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
+  '/workflows/path/entry/{repository}':
+    get:
+      tags:
+        - workflows
+      summary: Get an entry by path
+      description: Gets an entry from the path. Enter full path.
+      operationId: getEntryByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - BEARER: []
+  '/workflows/path/entry/{repository}/published':
+    get:
+      tags:
+        - workflows
+      summary: Get an entry by path
+      description: Gets a published entry from the path. Enter full path.
+      operationId: getPublishedEntryByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - BEARER: []
   '/workflows/path/workflow/{repository}':
     get:
       tags:
