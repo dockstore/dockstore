@@ -1185,7 +1185,7 @@
         </profile>
         <profile>
             <id>regression-integration-tests</id>
-            <!-- run only tests that are relevant for toil (tests that use cwltool, cwlrunner, toil -->
+            <!-- run only regression tests-->
             <properties>
                 <groups>io.dockstore.common.RegressionTest</groups>
             </properties>
@@ -1200,7 +1200,7 @@
         </profile>
         <profile>
             <id>integration-tests</id>
-            <!-- run all non-integration tests -->
+            <!-- run all integration tests -->
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
