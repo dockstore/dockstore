@@ -18,6 +18,7 @@ package io.dockstore.common;
 /**
  * Tests with an older dockstore client with the current webservice
  * Check CommonTestUtilities.OLD_DOCKSTORE_VERSION to see which old dockstore client is being tested
+ * Testing Dockstore CLI 1.3.6 at the time of creation
  * @author gluu
  * @since 1.4.0
  */

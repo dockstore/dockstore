@@ -57,6 +57,7 @@ import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClientWithS
  * This test suite will have tests for the workflow mode of the old Dockstore Client.
  * Tests a variety of different CLI commands that start with 'dockstore workflow'
  * See CommonTestUtilities.OLD_DOCKSTORE_VERSION for the version of the Dockstore client used.
+ * Testing Dockstore CLI 1.3.6 at the time of creation
  * @author gluu
  * @since 1.4.0
  */

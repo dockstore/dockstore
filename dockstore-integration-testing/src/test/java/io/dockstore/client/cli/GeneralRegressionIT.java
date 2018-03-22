@@ -63,6 +63,7 @@ import static org.junit.Assert.assertTrue;
  * Extra confidential integration tests with old dockstore client, don't rely on the type of repository used (Github, Dockerhub, Quay.io, Bitbucket)
  * Tests a variety of different CLI commands that start with 'dockstore tool'
  * Uses an older (CommonTestUtilities.OLD_DOCKSTORE_VERSION) dockstore client
+ * Testing Dockstore CLI 1.3.6 at the time of creation
  * @author gluu
  * @since 1.4.0
  */

@@ -47,6 +47,7 @@ import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
 /**
  * Tests a variety of basic dockstore CLI commands along with some tool commands
  * using an older (CommonTestUtilities.OLD_DOCKSTORE_VERSION) dockstore client
+ * Testing Dockstore CLI 1.3.6 at the time of creation
  * @author gluu
  * @since 1.4.0
  */
