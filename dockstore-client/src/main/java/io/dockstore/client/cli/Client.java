@@ -810,33 +810,15 @@ public class Client {
     void setConfigFile(String configFile) {
         this.configFile = configFile;
     }
-
-    /**
-     * Setup method called by Consonance
-     *
-     * @return
-     */
-    @SuppressWarnings("WeakerAccess")
+    
     public ToolClient getToolClient() {
         return toolClient;
     }
 
-    /**
-     * Setup method called by Consonance
-     *
-     * @return
-     */
-    @SuppressWarnings("WeakerAccess")
     public WorkflowClient getWorkflowClient() {
         return workflowClient;
     }
 
-    /**
-     * Setup method called by Consonance
-     *
-     * @return
-     */
-    @SuppressWarnings("WeakerAccess")
     public CheckerClient getCheckerClient() {
         return checkerClient;
     }
