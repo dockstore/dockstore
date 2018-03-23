@@ -38,6 +38,7 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
+import static io.dockstore.common.CommonTestUtilities.checkToolList;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
@@ -47,10 +48,10 @@ public class ClientIT extends BaseIT {
 
     final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -65,11 +66,13 @@ public class ClientIT extends BaseIT {
     @Test
     public void testListEntries() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list" });
+        checkToolList(systemOutRule.getLog());
     }
 
     @Test
     public void testDebugModeListEntries() throws IOException, ApiException {
         Client.main(new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list" });
+        checkToolList(systemOutRule.getLog());
     }
 
     @Test

@@ -17,6 +17,10 @@
 package io.dockstore.common;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
@@ -24,7 +28,13 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +43,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
+    public final static String OLD_DOCKSTORE_VERSION = "1.3.6";
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
 
     // Travis is slow, need to wait up to 1 min for webservice to return
@@ -180,6 +191,43 @@ public final class CommonTestUtilities {
         return new TestingPostgres(parseConfig);
     }
 
+    public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws ExecuteException, RuntimeException {
+        List commandList = new ArrayList<String>();
+        commandList.add(dockstore.getAbsolutePath());
+        commandList.addAll(Arrays.asList(commandArray));
+        String commandString = String.join(" ", commandList);
+        return Utilities.executeCommand(commandString);
+    }
+
+    /**
+     * For running the old dockstore client when spaces are involved
+     * @param dockstore
+     * @param commandArray
+     * @throws ExecuteException
+     * @throws RuntimeException
+     */
+    public static void runOldDockstoreClientWithSpaces(File dockstore, String[] commandArray) throws ExecuteException, RuntimeException {
+        List<String> commandList;
+        CommandLine commandLine = new CommandLine(dockstore.getAbsoluteFile());
+
+        commandList = Arrays.asList(commandArray);
+        commandList.forEach(command -> {
+            commandLine.addArgument(command, false);
+        });
+        Executor executor = new DefaultExecutor();
+        try {
+            executor.execute(commandLine);
+        } catch (IOException e) {
+            LOG.error("Could not execute command. " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void checkToolList(String log) {
+        Assert.assertTrue(log.contains("NAME"));
+        Assert.assertTrue(log.contains("DESCRIPTION"));
+        Assert.assertTrue(log.contains("Git Repo"));
+    }
 
     public static class TestingPostgres extends BasicPostgreSQL {
 

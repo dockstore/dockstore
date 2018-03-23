@@ -393,7 +393,7 @@ public class WorkflowIT extends BaseIT {
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
         tool.setNamespace("dockstoretestuser2");
         tool.setName("dockstore-cgpmap");
-        tool.setRegistry(Registry.QUAY_IO.toString());
+        tool.setRegistryString(Registry.QUAY_IO.toString());
         tool.setDefaultVersion("symbolic.v1");
 
         DockstoreTool registeredTool = toolApi.registerManual(tool);

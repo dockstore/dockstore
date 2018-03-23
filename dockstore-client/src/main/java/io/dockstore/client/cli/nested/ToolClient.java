@@ -221,7 +221,7 @@ public class ToolClient extends AbstractEntryClient {
                     newContainer.setMode(container.getMode());
                     newContainer.setName(container.getName());
                     newContainer.setNamespace(container.getNamespace());
-                    newContainer.setRegistry(container.getRegistry());
+                    newContainer.setRegistryString(container.getRegistryString());
                     newContainer.setDefaultDockerfilePath(container.getDefaultDockerfilePath());
                     newContainer.setDefaultCwlPath(container.getDefaultCwlPath());
                     newContainer.setDefaultWdlPath(container.getDefaultWdlPath());
@@ -445,7 +445,7 @@ public class ToolClient extends AbstractEntryClient {
             tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
             tool.setName(name);
             tool.setNamespace(namespace);
-            tool.setRegistry(regEnum.get().toString());
+            tool.setRegistryString(regEnum.get().toString());
 
             // Registry path used (ex. quay.io)
             Optional<String> registryPath;
@@ -468,7 +468,7 @@ public class ToolClient extends AbstractEntryClient {
             }
 
             if (hasCustomDockerPath) {
-                tool.setRegistry(registryPath.get());
+                tool.setRegistryString(registryPath.get());
             }
 
             tool.setDefaultDockerfilePath(dockerfilePath);
@@ -949,7 +949,7 @@ public class ToolClient extends AbstractEntryClient {
                     }
 
                     boolean isPrivateRegistry = Stream.of(Registry.values())
-                            .anyMatch(r -> r.name().equals(tool.getRegistryProvider().name()) && r.isPrivateOnly());
+                            .anyMatch(r -> r.name().equals(tool.getRegistry().name()) && r.isPrivateOnly());
 
                     // Cannot set private only registry tools to public
                     if (isPrivateRegistry) {

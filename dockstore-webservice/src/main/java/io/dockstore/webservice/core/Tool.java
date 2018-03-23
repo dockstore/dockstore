@@ -204,7 +204,7 @@ public class Tool extends Entry<Tool, Tag> {
         this.namespace = namespace;
     }
 
-    @JsonProperty
+    @JsonProperty("registry_string")
     public String getRegistry() {
         return registry;
     }
@@ -313,9 +313,12 @@ public class Tool extends Entry<Tool, Tag> {
         return getPath() + (toolname == null || toolname.isEmpty() ? "" : '/' + toolname);
     }
 
-
+    /**
+     * Change name of JsonProperty back to "registry_provider" once users no longer use the older client (CommonTestUtilities.OLD_DOCKSTORE_VERSION)
+     * @return the registry as an enum
+     */
     @Enumerated(EnumType.STRING)
-    @JsonProperty("registry_provider")
+    @JsonProperty("registry")
     @ApiModelProperty(position = 30)
     public Registry getRegistryProvider() {
         for (Registry r : Registry.values()) {
@@ -330,6 +333,48 @@ public class Tool extends Entry<Tool, Tag> {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Remove this once users no longer use the old client (1.3.6)
+     * @param registryThing
+     */
+    public void setRegistryProvider(Registry registryThing) {
+        switch (registryThing) {
+        case GITLAB:
+            this.setRegistry("registry.gitlab.com");
+            break;
+        case QUAY_IO:
+            this.setRegistry("quay.io");
+            break;
+        case AMAZON_ECR:
+            break;
+        case DOCKER_HUB:
+            this.setRegistry("registry.hub.docker.com");
+            break;
+        default:
+            break;
+        }
+
+    }
+
+    /**
+     * Remove this once users no longer use the old client (1.3.6)
+     * @param newCustomDockerRegistryString
+     */
+    public void setCustomerDockerRegistryPath(String newCustomDockerRegistryString) {
+        if (newCustomDockerRegistryString != null) {
+            this.setRegistry(newCustomDockerRegistryString);
+        }
+    }
+
+    /**
+     * Remove this once users no longer use the old client (1.3.6)
+     * @return
+     */
+    @JsonProperty("custom_docker_registry_path")
+    public String getCustomDockerRegistryPath() {
+        return this.registry;
     }
 
     public String getToolMaintainerEmail() {

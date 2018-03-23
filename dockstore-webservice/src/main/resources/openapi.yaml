@@ -4618,12 +4618,15 @@ components:
         - name
         - namespace
         - private_access
-        - registry
+        - registry_string
       properties:
         id:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        custom_docker_registry_path:
+          type: string
+          readOnly: true
         last_modified_date:
           type: string
           format: date-time
@@ -4770,7 +4773,7 @@ components:
           type: string
           position: 23
           description: 'This is a docker namespace for the container, required: GA4GH'
-        registry:
+        registry_string:
           type: string
           position: 24
           description: >-
@@ -4803,10 +4806,9 @@ components:
           type: string
           position: 29
           readOnly: true
-        registry_provider:
+        registry:
           type: string
           position: 30
-          readOnly: true
           enum:
             - QUAY_IO
             - DOCKER_HUB

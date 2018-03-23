@@ -86,7 +86,7 @@ public class CheckerWorkflowIT extends BaseIT {
         newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
         newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
-        newTool.setRegistry(Registry.QUAY_IO.toString());
+        newTool.setRegistryString(Registry.QUAY_IO.toString());
         newTool.setNamespace("dockstoretestuser2");
         newTool.setToolname("altname");
         newTool.setPrivateAccess(false);
@@ -266,7 +266,7 @@ public class CheckerWorkflowIT extends BaseIT {
         newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
         newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
-        newTool.setRegistry(Registry.QUAY_IO.toString());
+        newTool.setRegistryString(Registry.QUAY_IO.toString());
         newTool.setNamespace("dockstoretestuser2");
         newTool.setToolname("_altname");
         newTool.setPrivateAccess(false);
