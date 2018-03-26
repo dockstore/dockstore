@@ -99,9 +99,9 @@ cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir, --outdir /
 
 ## Alternative CWL Launchers:
 
-By default, the dockstore CLI launches workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
+By default, the dockstore CLI launches tools/workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
 - [Rabix Bunny](https://github.com/rabix/bunny) v1.0.2
-- [cwlrunner](https://github.com/common-workflow-language/cwltool).
+- [cwlrunner](https://github.com/common-workflow-language/cwltool)
 - [toil](https://github.com/BD2KGenomics/toil)
 - [cromwell](https://github.com/broadinstitute/cromwell)
 
@@ -109,7 +109,7 @@ For bunny, activate it by adding the following to your `~/.dockstore/config`:
 ```
 cwlrunner: bunny
 ```
-This will download rabix into `~/.dockstore/libraries/` when launching tools and workflows. This has not been thoroughly tested, but we have had some success running tools and workflows using this alternative.
+This will download rabix into `~/.dockstore/libraries/` when launching tools/workflows. This has not been thoroughly tested, but we have had some success running tools and workflows using this alternative.
 
 For cwlrunner, activate it by adding the following to your `~/.dockstore/config`:
 ```
@@ -121,5 +121,5 @@ For toil, you first need to install it with `pip2.7 install --user toil[cwl]==3.
 cwlrunner: toil
 ```
 
-For cromwell, it will automatically run for WDL workflows or tools.
+For cromwell, it will automatically run for WDL tools/workflows.
 Keep in mind that there are a few differences in how locked-down the Docker execution environments are between any two alternatives, so a workflow that succeeds in one may not necessarily succeed in the other.
