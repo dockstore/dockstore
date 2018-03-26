@@ -97,13 +97,29 @@ As an example, adding the following line to your config file will stop cwl-runne
 cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir, --outdir /new/outputdir
 ```
 
-## Alternative CWL Launcher: Bunny
+## Alternative CWL Launchers:
 
-By default, the dockstore CLI launches workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with [Rabix Bunny](https://github.com/rabix/bunny) v1.0.2. Activate it by adding the following to your `~.dockstore/config`:
+By default, the dockstore CLI launches workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
+- [Rabix Bunny](https://github.com/rabix/bunny) v1.0.2
+- [cwlrunner](https://github.com/common-workflow-language/cwltool).
+- [toil](https://github.com/BD2KGenomics/toil)
+- [cromwell](https://github.com/broadinstitute/cromwell)
+
+For bunny, activate it by adding the following to your `~/.dockstore/config`:
 ```
 cwlrunner: bunny
 ```
-
 This will download rabix into `~/.dockstore/libraries/` when launching tools and workflows. This has not been thoroughly tested, but we have had some success running tools and workflows using this alternative.
 
-Keep in mind that there are a few differences in how locked-down the Docker execution environments are between the two alternatives, so a workflow that succeeds in one may not necessarily succeed in the other.
+For cwlrunner, activate it by adding the following to your `~/.dockstore/config`:
+```
+cwlrunner: cwlrunner
+```
+
+For toil, you first need to install it with `pip2.7 install --user toil[cwl]==3.14.0` and then activate it by adding the following to your `~/.dockstore/config`:
+```
+cwlrunner: toil
+```
+
+For cromwell, it will automatically run for WDL workflows or tools.
+Keep in mind that there are a few differences in how locked-down the Docker execution environments are between any two alternatives, so a workflow that succeeds in one may not necessarily succeed in the other.
