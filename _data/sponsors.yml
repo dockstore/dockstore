@@ -8,6 +8,6 @@
 - title: GA4GH
   link: https://genomicsandhealth.org/
   img: /assets/images/ga4gh.png
-- title: CWL
-  link: http://www.commonwl.org/
-  img: /assets/images/cwl.png
+- title: UCSC
+  link: https://ucscgenomics.soe.ucsc.edu/
+  img: /assets/images/ucsc.png
