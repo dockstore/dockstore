@@ -103,7 +103,7 @@ By default, the dockstore CLI launches tools/workflows using [cwltool](https://g
 - [Rabix Bunny](https://github.com/rabix/bunny) v1.0.2
 - [cwlrunner](https://github.com/common-workflow-language/cwltool)
 - [toil](https://github.com/BD2KGenomics/toil)
-- [cromwell](https://github.com/broadinstitute/cromwell)
+- [cromwell](https://github.com/broadinstitute/cromwell) 29
 
 For bunny, activate it by adding the following to your `~/.dockstore/config`:
 ```
@@ -113,10 +113,10 @@ This will download rabix into `~/.dockstore/libraries/` when launching tools/wor
 
 For cwlrunner, activate it by adding the following to your `~/.dockstore/config`:
 ```
-cwlrunner: cwlrunner
+cwlrunner: cwl-runner
 ```
 
-For toil, you first need to install it with `pip2.7 install --user toil[cwl]==3.14.0` and then activate it by adding the following to your `~/.dockstore/config`:
+For toil, you first need to install it with `pip2.7 install --user toil[cwl]==3.14.0` and possibly schema-salad too (pip2.7 install --user schema-salad==2.6.20170927145003) and then activate it by adding the following to your `~/.dockstore/config`:
 ```
 cwlrunner: toil
 ```
