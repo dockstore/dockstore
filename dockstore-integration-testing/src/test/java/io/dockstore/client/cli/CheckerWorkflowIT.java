@@ -82,7 +82,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Manually register a tool
         DockstoreTool newTool = new DockstoreTool();
         newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        newTool.setName("md5sum");
+        newTool.setName("my-md5sum");
         newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
         newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
@@ -97,7 +97,7 @@ public class CheckerWorkflowIT extends BaseIT {
         containersApi.refresh(githubTool.getId());
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("/checker_workflow_wrapping_tool.cwl", githubTool.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-tool.cwl", githubTool.getId(), "cwl", null);
 
         // Refresh workflow
         containersApi.refresh(githubTool.getId());
@@ -184,7 +184,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertTrue("One workflow should be full, there are " + count2, count2 == 1);
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("/checker_workflow_wrapping_workflow.cwl", githubWorkflow.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
 
         // Refresh workflow
         workflowApi.refresh(githubWorkflow.getId());
@@ -245,7 +245,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertTrue("No workflows are in full mode, there are " + count, count == 0);
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("checker_workflow_wrapping_workflow.cwl", githubWorkflow.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
     }
 
     /**
@@ -262,7 +262,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Make tool
         DockstoreTool newTool = new DockstoreTool();
         newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        newTool.setName("md5sum");
+        newTool.setName("my-md5sum");
         newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
         newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
