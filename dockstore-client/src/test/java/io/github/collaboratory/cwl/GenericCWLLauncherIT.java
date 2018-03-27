@@ -22,7 +22,6 @@ import org.junit.experimental.categories.Category;
 /**
  * @author dyuen
  */
-@Category(ToilCompatibleTest.class)
 public class GenericCWLLauncherIT extends LauncherIT {
 
     public String getConfigFile() {
