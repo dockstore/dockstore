@@ -117,4 +117,13 @@ cwlrunner: cwl-runner
 
 For cromwell, it will automatically run for WDL tools/workflows.
 
+Furthermore, even though it's the default, you can also explicitly use cwltool by adding the following to your `~/.dockstore/config`:
+ ```
+ cwlrunner: cwltool
+ ```
+
 Keep in mind that there are a few differences in how locked-down the Docker execution environments are between any two alternatives, so a workflow that succeeds in one may not necessarily succeed in the other.
+
+You can test all the launchers by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git`
+Then test with cwl-runner, cwltool, and bunny using `dockstore tool launch --local-entry Dockstore.cwl --json test.json` after the above configurations have been made.
+You can test cromwell using `dockstore tool launch --local-entry Dockstore.wdl --json test.wdl.json`
