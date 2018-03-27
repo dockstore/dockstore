@@ -101,7 +101,7 @@ cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir, --outdir /
 
 By default, the dockstore CLI launches tools/workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
 - [Rabix Bunny](https://github.com/rabix/bunny) v1.0.2
-- [cwlrunner](https://github.com/common-workflow-language/cwltool)
+- [cwl-runner](https://github.com/common-workflow-language/cwltool)
 - [toil](https://github.com/BD2KGenomics/toil)
 - [cromwell](https://github.com/broadinstitute/cromwell) 29
 
@@ -111,7 +111,7 @@ cwlrunner: bunny
 ```
 This will download rabix into `~/.dockstore/libraries/` when launching tools/workflows. This has not been thoroughly tested, but we have had some success running tools and workflows using this alternative.
 
-For cwlrunner, activate it by adding the following to your `~/.dockstore/config`:
+For cwl-runner, install it via pip and then activate it by adding the following to your `~/.dockstore/config`:
 ```
 cwlrunner: cwl-runner
 ```
