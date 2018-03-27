@@ -101,21 +101,22 @@ cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir, --outdir /
 
 By default, the dockstore CLI launches tools/workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
 - [Rabix Bunny](https://github.com/rabix/bunny) v1.0.2
-- [cwl-runner](https://github.com/common-workflow-language/cwltool)
-- [cromwell](https://github.com/broadinstitute/cromwell) 29
+- [cwl-runner](http://www.commonwl.org/v1.0/CommandLineTool.html#Executing_CWL_documents_as_scripts)
 
 For bunny, activate it by adding the following to your `~/.dockstore/config`:
 ```
 cwlrunner: bunny
 ```
 This will download rabix into `~/.dockstore/libraries/` when launching tools/workflows. This has not been thoroughly tested, but we have had some success running tools and workflows using this alternative.
+Additionally, you can override the bunny version in the config file using:
+```
+bunny-version = 1.0.4-4
+```
 
-For cwl-runner, install it via pip and then activate it by adding the following to your `~/.dockstore/config`:
+If your workflow platform provides the cwl-runner alias as the platform's default CWL implementation, you can activate it by adding the following to your `~/.dockstore/config`:
 ```
 cwlrunner: cwl-runner
 ```
-
-For cromwell, it will automatically run for WDL tools/workflows.
 
 Furthermore, even though it's the default, you can also explicitly use cwltool by adding the following to your `~/.dockstore/config`:
  ```
@@ -126,4 +127,13 @@ Keep in mind that there are a few differences in how locked-down the Docker exec
 
 You can test all the launchers by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git`
 Then test with cwl-runner, cwltool, and bunny using `dockstore tool launch --local-entry Dockstore.cwl --json test.json` after the above configurations have been made.
-You can test cromwell using `dockstore tool launch --local-entry Dockstore.wdl --json test.wdl.json`
+
+## WDL Launcher Configuration
+
+By default, WDL tools/workflows will automatically be ran with [cromwell](https://github.com/broadinstitute/cromwell) 29.
+Additionally, you can override the cromwell version in the config file using:
+```
+cromwell-version = 30.2
+```
+
+You can test cromwell by git cloning git@github.com:briandoconnor/dockstore-tool-md5sum.git and using `dockstore tool launch --local-entry Dockstore.wdl --json test.wdl.json`
