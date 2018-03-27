@@ -102,7 +102,6 @@ cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir, --outdir /
 By default, the dockstore CLI launches tools/workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
 - [Rabix Bunny](https://github.com/rabix/bunny) v1.0.2
 - [cwl-runner](https://github.com/common-workflow-language/cwltool)
-- [toil](https://github.com/BD2KGenomics/toil)
 - [cromwell](https://github.com/broadinstitute/cromwell) 29
 
 For bunny, activate it by adding the following to your `~/.dockstore/config`:
@@ -116,10 +115,6 @@ For cwl-runner, install it via pip and then activate it by adding the following 
 cwlrunner: cwl-runner
 ```
 
-For toil, you first need to install it with `pip2.7 install --user toil[cwl]==3.14.0` and possibly schema-salad too (pip2.7 install --user schema-salad==2.6.20170927145003) and then activate it by adding the following to your `~/.dockstore/config`:
-```
-cwlrunner: toil
-```
-
 For cromwell, it will automatically run for WDL tools/workflows.
+
 Keep in mind that there are a few differences in how locked-down the Docker execution environments are between any two alternatives, so a workflow that succeeds in one may not necessarily succeed in the other.
