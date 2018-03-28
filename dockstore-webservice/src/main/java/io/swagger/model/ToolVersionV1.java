@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 @ApiModel(description = "A tool version describes a particular iteration of a tool as described by a reference to a specific image and dockerfile.")
 @JsonNaming(PropertyNamingStrategy.KebabCaseStrategy.class)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ToolVersionV1  {
     private static final Logger LOG = LoggerFactory.getLogger(ToolVersionV1.class);
 
