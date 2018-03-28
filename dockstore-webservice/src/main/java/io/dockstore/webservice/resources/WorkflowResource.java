@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,7 +55,6 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
@@ -173,6 +171,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         return workflowDAO.findAll();
     }
 
+    /**
+     * TODO: this should not be a GET either
+     * @param user
+     * @param workflowId
+     * @return
+     */
     @GET
     @Path("/{workflowId}/restub")
     @Timed
@@ -185,39 +189,20 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (workflow.getMode().toString().equals("STUB")) {
-            throw new CustomWebApplicationException("The given workflow is already a stub.", HttpStatus.SC_BAD_REQUEST);
-        }
+        workflow.setMode(WorkflowMode.STUB);
 
-        Workflow newWorkflow = new Workflow();
-        newWorkflow.setMode(WorkflowMode.STUB);
-        newWorkflow.setDefaultWorkflowPath(workflow.getDefaultWorkflowPath());
-        newWorkflow.setDefaultTestParameterFilePath(workflow.getDefaultTestParameterFilePath());
-        newWorkflow.setOrganization(workflow.getOrganization());
-        newWorkflow.setRepository(workflow.getRepository());
-        newWorkflow.setSourceControl(workflow.getSourceControl());
-        newWorkflow.setIsPublished(workflow.getIsPublished());
-        newWorkflow.setGitUrl(workflow.getGitUrl());
-        newWorkflow.setLastUpdated(workflow.getLastUpdated());
-        newWorkflow.setWorkflowName(workflow.getWorkflowName());
-        newWorkflow.setDescriptorType(workflow.getDescriptorType());
+        // go through and delete versions for a stub
+        for(WorkflowVersion version : workflow.getVersions()) {
+            workflowVersionDAO.delete(version);
+        }
+        workflow.getVersions().clear();
 
         // Do we maintain the checker workflow association? For now we won't
         //newWorkflow.setCheckerWorkflow(workflow.getCheckerWorkflow());
 
-        // Copy Labels
-        SortedSet<Label> labels = (SortedSet<Label>)workflow.getLabels();
-        newWorkflow.setLabels(labels);
 
-        // copy to new object
-        workflowDAO.delete(workflow);
-
-        // now should just be a stub
-        long id = workflowDAO.create(newWorkflow);
-        newWorkflow.addUser(user);
-        newWorkflow = workflowDAO.findById(id);
-        elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.DELETE);
-        return newWorkflow;
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.DELETE);
+        return workflow;
 
     }
 
