@@ -192,7 +192,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         workflow.setMode(WorkflowMode.STUB);
 
         // go through and delete versions for a stub
-        for(WorkflowVersion version : workflow.getVersions()) {
+        for (WorkflowVersion version : workflow.getVersions()) {
             workflowVersionDAO.delete(version);
         }
         workflow.getVersions().clear();
