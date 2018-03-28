@@ -198,7 +198,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         workflow.getVersions().clear();
 
         // Do we maintain the checker workflow association? For now we won't
-        //newWorkflow.setCheckerWorkflow(workflow.getCheckerWorkflow());
+        workflow.setCheckerWorkflow(null);
 
 
         elasticManager.handleIndexUpdate(workflow, ElasticMode.DELETE);
