@@ -61,14 +61,14 @@ public class CheckerWorkflowIT extends BaseIT {
     }
 
     /**
-     * This tests the process of adding a checker workflow to a tool entry and that some calls to the tool will also trigger the calls to the checker
+     * This tests the process of adding a checker workflow to a CWL tool entry and that some calls to the tool will also trigger the calls to the checker
      * - Refresh tool should refresh checker
      * - Publish tool should publish checker
      * - Unpublish tool should unpublish checker
      * @throws ApiException
      */
     @Test
-    public void testToolAddCheckerRefreshPublishUnpublish() throws ApiException {
+    public void testCWLToolAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -82,7 +82,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Manually register a tool
         DockstoreTool newTool = new DockstoreTool();
         newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        newTool.setName("md5sum");
+        newTool.setName("my-md5sum");
         newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
         newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
@@ -97,7 +97,7 @@ public class CheckerWorkflowIT extends BaseIT {
         containersApi.refresh(githubTool.getId());
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("/checker_workflow_wrapping_tool.cwl", githubTool.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-tool.cwl", githubTool.getId(), "cwl", null);
 
         // Refresh workflow
         containersApi.refresh(githubTool.getId());
@@ -151,14 +151,14 @@ public class CheckerWorkflowIT extends BaseIT {
     }
 
     /**
-     * This tests the process of adding a checker workflow to a workflow entry and that some calls to the workflow will also trigger the calls to the checker
+     * This tests the process of adding a checker workflow to a CWL workflow entry and that some calls to the workflow will also trigger the calls to the checker
      * - Refresh workflow should refresh checker
      * - Publish workflow should publish checker
      * - Unpublish workflow should unpublish checker
      * @throws ApiException
      */
     @Test
-    public void testWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
+    public void testCWLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -184,7 +184,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertTrue("One workflow should be full, there are " + count2, count2 == 1);
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("/checker_workflow_wrapping_workflow.cwl", githubWorkflow.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
 
         // Refresh workflow
         workflowApi.refresh(githubWorkflow.getId());
@@ -201,8 +201,8 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Checker workflow should have the correct workflow path
         final long count5 = testingPostgres
-            .runSelectStatement("select count(*) from workflow where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'md5sum-checker' and workflowname like 'altname%' and giturl = 'git@github.com:DockstoreTestUser2/md5sum-checker.git'", new ScalarHandler<>());
-        assertTrue("There should be two workflows with similar paths, tehre are " + count5, count5 == 2);
+            .runSelectStatement("select count(*) from workflow where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'md5sum-checker' and workflowname = 'altname_cwl_checker' and giturl = 'git@github.com:DockstoreTestUser2/md5sum-checker.git'", new ScalarHandler<>());
+        assertTrue("The workflow should have the correct path, there are " + count5, count5 == 1);
 
         // Publish workflow
         final long count6 = testingPostgres
@@ -221,6 +221,80 @@ public class CheckerWorkflowIT extends BaseIT {
         // Checker workflow should unpublish
         final long count8 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
+        assertTrue("No workflows should be published, there are " + count8, count8 == 0);
+    }
+
+    /**
+     * This tests the process of adding a checker workflow to a WDL workflow entry and that some calls to the workflow will also trigger the calls to the checker
+     * - Refresh workflow should refresh checker
+     * - Publish workflow should publish checker
+     * - Unpublish workflow should unpublish checker
+     * @throws ApiException
+     */
+    @Test
+    public void testWDLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
+        // Setup for test
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        final PublishRequest unpublishRequest = SwaggerUtility.createPublishRequest(false);
+
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manually register a workflow
+        Workflow githubWorkflow = workflowApi
+                .manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.wdl", "altname", "wdl", "/md5sum-wdl.json");
+
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertTrue("No workflows are in full mode, there are " + count, count == 0);
+
+        // Refresh the workflow
+        workflowApi.refresh(githubWorkflow.getId());
+
+        final long count2 = testingPostgres
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertTrue("One workflow should be full, there are " + count2, count2 == 1);
+
+        // Add checker workflow
+        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.wdl", githubWorkflow.getId(), "wdl", null);
+
+        // Refresh workflow
+        workflowApi.refresh(githubWorkflow.getId());
+
+        // Checker workflow should refresh
+        final long count3 = testingPostgres
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertTrue("Two workflows should be full (one being the checker), there are " + count3, count3 == 2);
+
+        // Checker workflow should have the same test path as entry
+        final long count4 = testingPostgres
+                .runSelectStatement("select count(*) from workflow where defaulttestparameterfilepath = '/md5sum-wdl.json'", new ScalarHandler<>());
+        assertTrue("There should be two workflows with default test parameter file path of /md5sum-wdl.json, there are " + count4, count4 == 2);
+
+        // Checker workflow should have the correct workflow path
+        final long count5 = testingPostgres
+                .runSelectStatement("select count(*) from workflow where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'md5sum-checker' and workflowname = 'altname_wdl_checker' and giturl = 'git@github.com:DockstoreTestUser2/md5sum-checker.git'", new ScalarHandler<>());
+        assertTrue("The workflow should have the correct path, there are " + count5, count5 == 1);
+
+        // Publish workflow
+        final long count6 = testingPostgres
+                .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
+        assertTrue("No workflows should be published, there are " + count6, count6 == 0);
+        workflowApi.publish(githubWorkflow.getId(), publishRequest);
+
+        // Checker workflow should publish
+        final long count7 = testingPostgres
+                .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
+        assertTrue("Two workflows should be published (one being the checker), there are " + count7, count7 == 2);
+
+        // Unpublish workflow
+        workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
+
+        // Checker workflow should unpublish
+        final long count8 = testingPostgres
+                .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
         assertTrue("No workflows should be published, there are " + count8, count8 == 0);
     }
 
@@ -245,7 +319,7 @@ public class CheckerWorkflowIT extends BaseIT {
         assertTrue("No workflows are in full mode, there are " + count, count == 0);
 
         // Add checker workflow
-        workflowApi.registerCheckerWorkflow("checker_workflow_wrapping_workflow.cwl", githubWorkflow.getId(), "cwl", null);
+        workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
     }
 
     /**
@@ -262,7 +336,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Make tool
         DockstoreTool newTool = new DockstoreTool();
         newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
-        newTool.setName("md5sum");
+        newTool.setName("my-md5sum");
         newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
         newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
         newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
