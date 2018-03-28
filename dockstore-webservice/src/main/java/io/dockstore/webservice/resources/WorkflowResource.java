@@ -536,7 +536,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
-        oldWorkflow.setWorkflowName(newWorkflow.getWorkflowName());
         oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
