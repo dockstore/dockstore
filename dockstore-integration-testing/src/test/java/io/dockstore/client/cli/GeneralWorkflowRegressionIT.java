@@ -82,7 +82,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         dockstore.setExecutable(true);
-        url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/master/md5sum-wrapper-tool.json");
+        url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/master/checker-input-cwl.json");
         md5sumJson = temporaryFolder.newFile("md5sum-wrapper-tool.json");
         FileUtils.copyURLToFile(url, md5sumJson);
         url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/master/md5sum.input");
@@ -160,9 +160,6 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
                         "--script" });
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry",
                         SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname:testBoth", "--script" });
     }
 
@@ -789,7 +786,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
                         "--repository", "md5sum-checker", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                        "--workflow-name", "testname", "--workflow-path", "/checker_workflow_wrapping_tool.cwl", "--descriptor-type", "cwl",
+                        "--workflow-name", "testname", "--workflow-path", "/checker-workflow-wrapping-tool.cwl", "--descriptor-type", "cwl",
                         "--script" });
         // launch the workflow
         String[] commandArray = { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry",
