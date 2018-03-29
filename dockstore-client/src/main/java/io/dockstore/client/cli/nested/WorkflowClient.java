@@ -158,7 +158,6 @@ public class WorkflowClient extends AbstractEntryClient {
         out("  --entry <entry>                                              Complete workflow path in the Dockstore (ex. github.com/collaboratory/seqware-bwa-workflow)");
         out("");
         out("Optional Parameters");
-        out("  --workflow-name <workflow-name>                              Name for the given workflow");
         out("  --descriptor-type <descriptor-type>                          Descriptor type of the given workflow.  Can only be altered if workflow is a STUB.");
         out("  --workflow-path <workflow-path>                              Path to default workflow descriptor location");
         out("  --default-version <default-version>                          Default branch name");
@@ -851,15 +850,10 @@ public class WorkflowClient extends AbstractEntryClient {
                 Workflow workflow = workflowsApi.getWorkflowByPath(entry);
                 long workflowId = workflow.getId();
 
-                String workflowName = optVal(args, "--workflow-name", workflow.getWorkflowName());
                 String descriptorType = optVal(args, "--descriptor-type", workflow.getDescriptorType());
                 String workflowDescriptorPath = optVal(args, "--workflow-path", workflow.getWorkflowPath());
                 String defaultVersion = optVal(args, "--default-version", workflow.getDefaultVersion());
                 String defaultTestJsonPath = optVal(args, "--default-test-parameter-path", workflow.getDefaultTestParameterFilePath());
-
-                if (workflowName != null && workflowName.startsWith("_")) {
-                    errorMessage("Workflow names cannot start with an underscore.", Client.CLIENT_ERROR);
-                }
 
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
@@ -875,11 +869,6 @@ public class WorkflowClient extends AbstractEntryClient {
                             Client.CLIENT_ERROR);
                 }
 
-                if (workflowName != null && "".equals(workflowName)) {
-                    workflowName = null;
-                }
-
-                workflow.setWorkflowName(workflowName);
                 workflow.setWorkflowPath(workflowDescriptorPath);
                 workflow.setDefaultTestParameterFilePath(defaultTestJsonPath);
 

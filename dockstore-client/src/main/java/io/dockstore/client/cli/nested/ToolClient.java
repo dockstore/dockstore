@@ -886,13 +886,9 @@ public class ToolClient extends AbstractEntryClient {
                 final String dockerfilePath = optVal(args, "--dockerfile-path", tool.getDefaultDockerfilePath());
                 final String testCwlPath = optVal(args, "--test-cwl-path", tool.getDefaultCWLTestParameterFile());
                 final String testWdlPath = optVal(args, "--test-wdl-path", tool.getDefaultWDLTestParameterFile());
-                final String toolname = optVal(args, "--toolname", tool.getToolname());
                 final String gitUrl = optVal(args, "--git-url", tool.getGitUrl());
                 final String defaultTag = optVal(args, "--default-version", tool.getDefaultVersion());
 
-                if (toolname != null && toolname.startsWith("_")) {
-                    errorMessage("Tool names cannot start with an underscore.", Client.CLIENT_ERROR);
-                }
 
                 // Check that user did not use manual only attributes for an auto tool
                 if (tool.getMode() != DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH && (args.contains("--private") || args
@@ -922,7 +918,6 @@ public class ToolClient extends AbstractEntryClient {
                 tool.setDefaultDockerfilePath(dockerfilePath);
                 tool.setDefaultCWLTestParameterFile(testCwlPath);
                 tool.setDefaultWDLTestParameterFile(testWdlPath);
-                tool.setToolname(toolname);
                 tool.setGitUrl(gitUrl);
 
                 // The following is only for manual tools as only they can be private tools
@@ -1109,7 +1104,6 @@ public class ToolClient extends AbstractEntryClient {
         out("  --test-cwl-path <test-cwl-path>                              Path to default test cwl location");
         out("  --test-wdl-path <test-wdl-path>                              Path to default test wdl location");
         out("  --dockerfile-path <dockerfile-path>                          Path to default dockerfile location");
-        out("  --toolname <toolname>                                        Toolname for the given tool");
         out("  --git-url <git-url>                                          Git url");
         out("  --default-version <default-version>                          Default branch name");
         out("  --tool-maintainer-email <tool-maintainer-email>              Email of tool maintainer (Used for private tools). Manual tools only.");

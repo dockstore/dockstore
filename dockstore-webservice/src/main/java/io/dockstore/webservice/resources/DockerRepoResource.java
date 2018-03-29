@@ -283,7 +283,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             }
         }
 
-        originalTool.setToolname(newTool.getToolname());
         originalTool.setGitUrl(newTool.getGitUrl());
 
         if (originalTool.getMode() == ToolMode.MANUAL_IMAGE_PATH) {
