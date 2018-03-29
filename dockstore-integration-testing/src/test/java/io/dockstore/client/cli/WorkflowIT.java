@@ -162,7 +162,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
-            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker_workflow_wrapping_workflow.cwl",
+            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
                 "test", "cwl", null);
         Workflow refresh = workflowApi.refresh(workflow.getId());
 
