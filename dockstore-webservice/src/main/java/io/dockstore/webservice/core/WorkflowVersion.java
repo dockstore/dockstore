@@ -82,7 +82,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public int hashCode() {
-        return 31 * super.hashCode() + Objects.hash(workflowPath);
+        return Objects.hash(this.getName(), this.getReference());
     }
 
     @Override
@@ -93,21 +93,12 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        if (!super.equals(obj)) {
-            return false;
-        }
         final WorkflowVersion other = (WorkflowVersion)obj;
-        return Objects.equals(this.workflowPath, other.workflowPath);
+        return Objects.equals(super.getName(), other.getName()) && Objects.equals(super.getReference(), other.getReference());
     }
 
     @Override
     public int compareTo(WorkflowVersion that) {
-        if (super.compareTo(that) < 0) {
-            return -1;
-        } else if (super.compareTo(that) > 0) {
-            return 1;
-        }
-
-        return ComparisonChain.start().compare(this.workflowPath, that.workflowPath, Ordering.natural().nullsLast()).result();
+        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast()).compare(this.getReference(), that.getReference()).result();
     }
 }

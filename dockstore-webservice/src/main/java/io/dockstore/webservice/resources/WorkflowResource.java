@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,7 +55,6 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
@@ -103,6 +101,8 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
+import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
@@ -112,7 +112,8 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
 public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow>, StarrableResourceInterface, SourceControlResourceInterface {
-
+    private static final String CWL_CHECKER = "_cwl_checker";
+    private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
@@ -173,6 +174,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         return workflowDAO.findAll();
     }
 
+    /**
+     * TODO: this should not be a GET either
+     * @param user
+     * @param workflowId
+     * @return
+     */
     @GET
     @Path("/{workflowId}/restub")
     @Timed
@@ -185,39 +192,20 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        if (workflow.getMode().toString().equals("STUB")) {
-            throw new CustomWebApplicationException("The given workflow is already a stub.", HttpStatus.SC_BAD_REQUEST);
-        }
+        workflow.setMode(WorkflowMode.STUB);
 
-        Workflow newWorkflow = new Workflow();
-        newWorkflow.setMode(WorkflowMode.STUB);
-        newWorkflow.setDefaultWorkflowPath(workflow.getDefaultWorkflowPath());
-        newWorkflow.setDefaultTestParameterFilePath(workflow.getDefaultTestParameterFilePath());
-        newWorkflow.setOrganization(workflow.getOrganization());
-        newWorkflow.setRepository(workflow.getRepository());
-        newWorkflow.setSourceControl(workflow.getSourceControl());
-        newWorkflow.setIsPublished(workflow.getIsPublished());
-        newWorkflow.setGitUrl(workflow.getGitUrl());
-        newWorkflow.setLastUpdated(workflow.getLastUpdated());
-        newWorkflow.setWorkflowName(workflow.getWorkflowName());
-        newWorkflow.setDescriptorType(workflow.getDescriptorType());
+        // go through and delete versions for a stub
+        for (WorkflowVersion version : workflow.getVersions()) {
+            workflowVersionDAO.delete(version);
+        }
+        workflow.getVersions().clear();
 
         // Do we maintain the checker workflow association? For now we won't
-        //newWorkflow.setCheckerWorkflow(workflow.getCheckerWorkflow());
+        workflow.setCheckerWorkflow(null);
 
-        // Copy Labels
-        SortedSet<Label> labels = (SortedSet<Label>)workflow.getLabels();
-        newWorkflow.setLabels(labels);
 
-        // copy to new object
-        workflowDAO.delete(workflow);
-
-        // now should just be a stub
-        long id = workflowDAO.create(newWorkflow);
-        newWorkflow.addUser(user);
-        newWorkflow = workflowDAO.findById(id);
-        elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.DELETE);
-        return newWorkflow;
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.DELETE);
+        return workflow;
 
     }
 
@@ -394,18 +382,27 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         // do a full refresh when targeted like this
         workflow.setMode(WorkflowMode.FULL);
+        // look for checker workflows to associate with if applicable
+        if (!workflow.isIsChecker() && workflow.getDescriptorType().equals(CWL_STRING) || workflow.getDescriptorType().equals(WDL_STRING)) {
+            String prefix = "/" + (workflow.getDescriptorType().equals(CWL_STRING) ? CWL_CHECKER : WDL_CHECKER);
+            Workflow byPath = workflowDAO.findByPath(workflow.getPath() + prefix, false);
+            if (byPath != null && workflow.getCheckerWorkflow() == null) {
+                workflow.setCheckerWorkflow(byPath);
+            }
+        }
+
         final Workflow newWorkflow = sourceCodeRepo.getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
-        Workflow finalWorkflow = workflowDAO.findById(workflowId);
+
 
         // Refresh checker workflow
-        if (!finalWorkflow.isIsChecker() && finalWorkflow.getCheckerWorkflow() != null) {
-            refresh(user, finalWorkflow.getCheckerWorkflow().getId());
+        if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
+            refresh(user, workflow.getCheckerWorkflow().getId());
         }
 
         elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
-        return finalWorkflow;
+        return workflow;
     }
 
     /**
@@ -889,7 +886,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/{workflowId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryCwlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
-
         return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
     }
 
@@ -899,7 +895,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/{workflowId}/wdl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
     public SourceFile secondaryWdlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
-
         return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
     }
 
@@ -1422,9 +1417,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             }
 
             if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
-                workflowName += "_cwl_checker";
+                workflowName += CWL_CHECKER;
             } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
-                workflowName +=  "_wdl_checker";
+                workflowName +=  WDL_CHECKER;
             } else {
                 throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().toLowerCase() + " is not valid.\nSupported types include cwl and wdl.");
             }
