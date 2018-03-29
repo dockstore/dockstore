@@ -887,7 +887,10 @@ public class WorkflowClient extends AbstractEntryClient {
                     }
                 }
 
-                if (!updateVersionSuccess && defaultVersion != null) {
+                if (workflow.getWorkflowVersions().isEmpty()) {
+                    // also remember to clear out default version
+                    workflow.setDefaultVersion(null);
+                } else if (!updateVersionSuccess && defaultVersion != null) {
                     out("Not a valid workflow version.");
                     out("Valid versions include:");
                     for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
