@@ -94,7 +94,7 @@ When running a CWL tool, you may want to add additional parameters/flags to the 
 As an example, adding the following line to your config file will stop cwl-runner from cleaning up, make it run in debug mode, and set the outdir to `/new/outputdir`
 
 ```
-cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir, --outdir /new/outputdir
+cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir
 ```
 
 ## Alternative CWL Launchers:
