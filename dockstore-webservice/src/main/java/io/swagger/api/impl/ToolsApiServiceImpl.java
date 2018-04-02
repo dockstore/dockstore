@@ -21,7 +21,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -376,7 +375,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath,
         boolean unwrap) {
         // if a version is provided, get that version, otherwise return the newest
-
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
             versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
@@ -421,21 +419,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
             case NEXTFLOW_TEST_PARAMS:
-                String testToolUrl = "";
-                String baseURL = "";
-                try {
-                    baseURL = ToolsImplCommon.baseURL(config);
-                } catch (URISyntaxException e) {
-                    LOG.error("Could not get base URL");
-                }
-                testToolUrl += baseURL;
-
-                try {
-                    testToolUrl += URLEncoder.encode("#workflow/" + entry.getCheckerWorkflow().getWorkflowPath(), StandardCharsets.UTF_8.toString());
-                } catch (UnsupportedEncodingException e) {
-                    LOG.error("Could not encode workflow path");
-                    testToolUrl = "";
-                }
+                String testToolUrl = ToolsImplCommon.getCheckerWorkflowPath(config, entry);
                 // this only works for test parameters associated with tools
                 List<SourceFile> testSourceFiles = new ArrayList<>();
                 try {

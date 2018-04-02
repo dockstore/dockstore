@@ -320,10 +320,39 @@ public final class ToolsImplCommon {
      * @return The baseURL for GA4GH tools endpoint
      * @throws URISyntaxException When URI building goes wrong
      */
-    public static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
+    private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
         URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
             DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
         return uri.toString();
+    }
+
+    /**
+     * Gets the checker workflow GA4GH path (test_tool_path) if it exists
+     * @param config    The dockstore configuration file in order to find the base GA4GH path
+     * @param entry     The entry to find its checker workflow path (test_tool_path)
+     * @return
+     */
+    public static String getCheckerWorkflowPath(DockstoreWebserviceConfiguration config, Entry entry) {
+        if (entry.getCheckerWorkflow() == null) {
+            return null;
+        } else {
+            String testToolUrl = "";
+            String baseURL = "";
+            try {
+                baseURL = ToolsImplCommon.baseURL(config);
+            } catch (URISyntaxException e) {
+                LOG.error("Could not get base URL");
+            }
+            testToolUrl += baseURL;
+
+            try {
+                testToolUrl += URLEncoder.encode("#workflow/" + entry.getCheckerWorkflow().getWorkflowPath(), StandardCharsets.UTF_8.toString());
+            } catch (UnsupportedEncodingException e) {
+                LOG.error("Could not encode workflow path");
+                testToolUrl = "";
+            }
+            return testToolUrl;
+        }
     }
 
     /**
