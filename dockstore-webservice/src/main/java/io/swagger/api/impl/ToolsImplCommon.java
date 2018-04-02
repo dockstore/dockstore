@@ -148,16 +148,9 @@ public final class ToolsImplCommon {
 
         String url;
         String newID = getNewId(container);
-        if (newID == null) {
+        url = getUrlFromId(config, newID);
+        if (url == null) {
             return null;
-        } else {
-            try {
-                String baseURL = baseURL(config);
-                url = getUrl(newID, baseURL);
-            } catch (URISyntaxException | UnsupportedEncodingException e) {
-                LOG.error("Could not construct URL for our container with id: " + container.getId());
-                return null;
-            }
         }
         // TODO: hook this up to a type field in our DB?
         io.swagger.model.Tool tool = new io.swagger.model.Tool();
@@ -345,20 +338,8 @@ public final class ToolsImplCommon {
         if (entry.getCheckerWorkflow() == null) {
             return null;
         } else {
-            String url;
             String newID = "#workflow/" + entry.getCheckerWorkflow().getWorkflowPath();
-            if (newID == null) {
-                return null;
-            } else {
-                try {
-                    String baseURL = baseURL(config);
-                    url = getUrl(newID, baseURL);
-                    return url;
-                } catch (URISyntaxException | UnsupportedEncodingException e) {
-                    LOG.error("Could not construct URL for our Checker with id: " + newID);
-                    return null;
-                }
-            }
+            return getUrlFromId(config, newID);
         }
     }
 
@@ -489,5 +470,21 @@ public final class ToolsImplCommon {
         toolTests.setUrl(sourceFile.getPath());
         toolTests.setTest(sourceFile.getContent());
         return toolTests;
+    }
+
+    private static String getUrlFromId(DockstoreWebserviceConfiguration config, String newID) {
+        String url;
+        if (newID == null) {
+            return null;
+        } else {
+            try {
+                String baseURL = baseURL(config);
+                url = getUrl(newID, baseURL);
+                return url;
+            } catch (URISyntaxException | UnsupportedEncodingException e) {
+                LOG.error("Could not construct URL for our container with id: " + newID);
+                return null;
+            }
+        }
     }
 }
