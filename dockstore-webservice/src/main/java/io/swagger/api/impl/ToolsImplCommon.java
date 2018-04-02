@@ -320,7 +320,7 @@ public final class ToolsImplCommon {
      * @return The baseURL for GA4GH tools endpoint
      * @throws URISyntaxException When URI building goes wrong
      */
-    private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
+    public static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
         URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
             DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
         return uri.toString();
