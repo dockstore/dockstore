@@ -290,6 +290,14 @@ public class CheckerClient extends WorkflowClient {
             // Retrieve arguments
             String entryPath = reqVal(args, "--entry");
 
+            // Properly handle versions
+            String[] splitPath = entryPath.split(":");
+            entryPath = splitPath[0];
+            String version = null;
+            if (splitPath.length > 1) {
+                version = splitPath[1];
+            }
+
             // Get entry from path
             Entry entry = getDockstoreEntry(entryPath);
 
@@ -299,8 +307,12 @@ public class CheckerClient extends WorkflowClient {
             // Call parent launcher
             if (entry != null && checkerWorkflow != null) {
                 // Readd entry path to call, but with checker workflow
+                String checkerPath = checkerWorkflow.getFullWorkflowPath();
+                if (version != null) {
+                    checkerPath += ":" + version;
+                }
                 args.add("--entry");
-                args.add(checkerWorkflow.getFullWorkflowPath());
+                args.add(checkerPath);
                 launch(args);
             }
         }

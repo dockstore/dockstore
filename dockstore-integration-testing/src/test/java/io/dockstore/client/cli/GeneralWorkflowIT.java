@@ -245,27 +245,6 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     /**
-     * This tests that a workflow can be updated to have a new workflow name
-     */
-    @Test
-    public void testUpdateWorkflowNameAndPath() {
-        // Set up DB
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
-        // Update workflow
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control", "github",
-                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
-        Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--workflow-name", "newname", "--script" });
-
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflow where workflowname = 'newname'", new ScalarHandler<>());
-        Assert.assertTrue("there should be 1 matching workflow, there is " + count, count == 1);
-    }
-
-    /**
      * This tests that a user can update a workflow version
      */
     @Test
@@ -781,49 +760,44 @@ public class GeneralWorkflowIT extends BaseIT {
                 .runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
         Assert.assertTrue("there should be 2 valid version, there are " + count2, count2 == 2);
 
-        // Give nickname
-        Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--workflow-name", "newname", "--script" });
-
         final long count3 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname'",
+                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 1 workflow, there are " + count3, count3 == 1);
 
         // publish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--script" });
+                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
         final long count4 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and ispublished='t'",
+                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 1 published workflow, there are " + count4, count4 == 1);
 
         // Should be able to get info since it is published
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "info", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--script" });
+                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
 
         // Should be able to grab descriptor
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "cwl", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname:master", "--script" });
+                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example:master", "--script" });
 
         // unpublish
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--unpub", "--script" });
+                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--unpub", "--script" });
         final long count5 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and ispublished='t'",
+                "select count(*) from workflow where mode='FULL' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and ispublished='t'",
                 new ScalarHandler<>());
         Assert.assertTrue("there should be 0 published workflows, there are " + count5, count5 == 0);
 
         // change default branch
         final long count6 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname' and author is null and email is null and description is null",
+                "select count(*) from workflow where sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and author is null and email is null and description is null",
                 new ScalarHandler<>());
         Assert.assertTrue("The given workflow shouldn't have any contact info", count6 == 1);
 
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--default-version", "test", "--script" });
+                        SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--default-version", "test", "--script" });
 
         final long count7 = testingPostgres.runSelectStatement(
                 "select count(*) from workflow where defaultversion = 'test' and author is null and email is null and description is null",
@@ -832,16 +806,16 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // restub
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "restub", "--entry",
-                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--script" });
+                SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
         final long count8 = testingPostgres.runSelectStatement(
-                "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example' and workflowname = 'newname'",
+                "select count(*) from workflow where mode='STUB' and sourcecontrol = '" + SourceControl.GITLAB.toString() + "' and organization = 'dockstore.test.user2' and repository = 'dockstore-workflow-example'",
                 new ScalarHandler<>());
         Assert.assertTrue("The workflow should now be a stub", count8 == 1);
 
         // Convert to WDL workflow
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/newname", "--descriptor-type", "wdl", "--script" });
+                        SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--descriptor-type", "wdl", "--script" });
 
         // Should now be a WDL workflow
         final long count9 = testingPostgres
