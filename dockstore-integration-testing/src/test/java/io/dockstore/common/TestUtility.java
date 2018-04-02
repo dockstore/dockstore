@@ -76,4 +76,20 @@ public final class TestUtility {
         FileUtils.write(f, "notifications: " + "https://hooks.slack.com/services/potato" + "\n", StandardCharsets.UTF_8, true);
         return f.getAbsolutePath();
     }
+
+    /**
+     * Due to issue #1264, we need to create a ~/.dockstore/config in order to bypass dockstore asking for token/server-url
+     * Creating a directory instead to avoid potential conflicts since it doesn't matter
+     */
+    public static void createFakeDockstoreConfigFile() {
+        String path = System.getProperty("user.home") + File.separator + ".dockstore/config";
+        File customDir = new File(path);
+        if (customDir.exists()) {
+            System.out.println(customDir + " already exists");
+        } else if (customDir.mkdirs()) {
+            System.out.println(customDir + " was created");
+        } else {
+            System.out.println(customDir + " was not created");
+        }
+    }
 }

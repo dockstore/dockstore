@@ -25,6 +25,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -78,6 +79,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
 
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
+        TestUtility.createFakeDockstoreConfigFile();
         url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);

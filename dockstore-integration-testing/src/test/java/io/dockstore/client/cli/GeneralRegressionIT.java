@@ -27,6 +27,7 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Registry;
 import io.dockstore.common.RegressionTest;
+import io.dockstore.common.TestUtility;
 import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -88,6 +89,7 @@ public class GeneralRegressionIT extends BaseIT {
 
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
+        TestUtility.createFakeDockstoreConfigFile();
         url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
