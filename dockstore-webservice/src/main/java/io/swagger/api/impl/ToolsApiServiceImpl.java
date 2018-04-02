@@ -419,7 +419,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
             case NEXTFLOW_TEST_PARAMS:
-                String testToolUrl = ToolsImplCommon.getCheckerWorkflowPath(config, entry);
                 // this only works for test parameters associated with tools
                 List<SourceFile> testSourceFiles = new ArrayList<>();
                 try {
@@ -436,9 +435,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 List<ToolTests> toolTestsList = new ArrayList<>();
                 for (SourceFile file : testSourceFiles) {
                     ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
-                    if (!testToolUrl.isEmpty() && testToolUrl != null) {
-                        toolTests.setTestToolUrl(testToolUrl);
-                    }
                     toolTestsList.add(toolTests);
                 }
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(

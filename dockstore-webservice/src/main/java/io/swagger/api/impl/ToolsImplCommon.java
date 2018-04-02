@@ -164,7 +164,16 @@ public final class ToolsImplCommon {
         tool = setGeneralToolInfo(tool, container);
         tool.setId(newID);
         tool.setUrl(url);
-
+        String checkerWorkflowPath = getCheckerWorkflowPath(config, container);
+        if (checkerWorkflowPath == null) {
+            checkerWorkflowPath = "";
+        }
+        tool.setCheckerUrl(checkerWorkflowPath);
+        if (tool.getCheckerUrl().isEmpty() || tool.getCheckerUrl() == null) {
+            tool.setHasChecker(false);
+        } else {
+            tool.setHasChecker(true);
+        }
         Set inputVersions;
         // tool specific
         if (container instanceof io.dockstore.webservice.core.Tool) {
@@ -336,22 +345,20 @@ public final class ToolsImplCommon {
         if (entry.getCheckerWorkflow() == null) {
             return null;
         } else {
-            String testToolUrl = "";
-            String baseURL = "";
-            try {
-                baseURL = ToolsImplCommon.baseURL(config);
-            } catch (URISyntaxException e) {
-                LOG.error("Could not get base URL");
+            String url;
+            String newID = "#workflow/" + entry.getCheckerWorkflow().getWorkflowPath();
+            if (newID == null) {
+                return null;
+            } else {
+                try {
+                    String baseURL = baseURL(config);
+                    url = getUrl(newID, baseURL);
+                    return url;
+                } catch (URISyntaxException | UnsupportedEncodingException e) {
+                    LOG.error("Could not construct URL for our Checker with id: " + newID);
+                    return null;
+                }
             }
-            testToolUrl += baseURL;
-
-            try {
-                testToolUrl += URLEncoder.encode("#workflow/" + entry.getCheckerWorkflow().getWorkflowPath(), StandardCharsets.UTF_8.toString());
-            } catch (UnsupportedEncodingException e) {
-                LOG.error("Could not encode workflow path");
-                testToolUrl = "";
-            }
-            return testToolUrl;
         }
     }
 
