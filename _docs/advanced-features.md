@@ -91,7 +91,7 @@ By default, Dockstore will attempt to download files up to three times. Control 
 
 When running a CWL tool, you may want to add additional parameters/flags to the cwl-runner command. You can do this by updating your dockstore config file (`~/.dockstore/config`).
 
-As an example, adding the following line to your config file will stop cwl-runner from cleaning up, make it run in debug mode, and set the outdir to `/new/outputdir`
+As an example, adding the following line to your config file will stop cwl-runner from cleaning up (the Docker container and the temp directory as mounted on the host) and make it run in debug mode.
 
 ```
 cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir
