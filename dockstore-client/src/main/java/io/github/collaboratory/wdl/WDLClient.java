@@ -194,12 +194,14 @@ public class WDLClient implements LanguageClientInterface {
             } catch (RuntimeException e) {
                 LOG.error("Problem running cromwell: ", e);
                 if (e.getCause() instanceof ExecuteException) {
-                    return ((ExecuteException)e.getCause()).getExitValue();
+                    exitCode = ((ExecuteException)e.getCause()).getExitValue();
+                    throw new ExecuteException("problems running command: " + Joiner.on(" ").join(arguments), exitCode);
                 }
                 notificationsClient.sendMessage(NotificationsClient.RUN, false);
                 throw new RuntimeException("Could not run Cromwell", e);
+            } finally {
+                System.out.println("Cromwell exit code: " + exitCode);
             }
-            System.out.println("Cromwell exit code: " + exitCode);
             notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
             try {
                 LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"),
