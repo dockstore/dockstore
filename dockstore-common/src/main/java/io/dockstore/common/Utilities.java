@@ -125,7 +125,7 @@ public final class Utilities {
                 // not sure why commons-exec does not throw an exception
                 if (resultHandler.getExitValue() != 0) {
                     resultHandler.getException().printStackTrace();
-                    throw new ExecuteException("problems running command: " + command, resultHandler.getExitValue());
+                    throw new ExecuteException("problems running command: " + command +localStdErrStream + localStdoutStream, resultHandler.getExitValue());
                 }
                 return new ImmutablePair<>(localStdoutStream.toString(utf8), localStdErrStream.toString(utf8));
             } catch (InterruptedException | IOException e) {

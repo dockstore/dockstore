@@ -426,37 +426,6 @@ public class GeneralRegressionIT extends BaseIT {
         // TODO: Test that output is the expected yaml file
     }
 
-    /**
-     * Change toolname of a container
-     */
-    @Test
-    public void testChangeToolnameOld() throws ExecuteException {
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
-                        Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithubalternate", "--git-url",
-                        "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname",
-                        "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                        "quay.io/dockstoretestuser2/quayandgithubalternate/alternate", "--toolname", "alternate", "--script" });
-
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-                        + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'alternate'",
-                new ScalarHandler<>());
-        assertTrue("there should only be one instance of the container with the toolname set to alternate", count == 1);
-
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                        "quay.io/dockstoretestuser2/quayandgithubalternate", "--toolname", "toolnameTest", "--script" });
-
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-                        + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'toolnameTest'",
-                new ScalarHandler<>());
-        assertTrue("there should only be one instance of the container with the toolname set to toolnameTest", count2 == 1);
-
-    }
 
     /**
      * Tests that WDL and CWL files can be grabbed from the command line
