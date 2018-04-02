@@ -537,7 +537,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
         // If workflow is FULL and descriptor type is being changed throw an error
-        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.STUB) && !Objects.equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
+        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) && !Objects.equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
             throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL workflow.", HttpStatus.SC_BAD_REQUEST);
         }
 
