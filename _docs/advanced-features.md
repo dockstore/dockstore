@@ -162,14 +162,14 @@ Lets use the TRS to retrieve the checker workflow from the checker workflows tut
 to grab an entry.
 
 ```
-curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/#workflow/github.com/dockstore-testing/md5sum-checker/_cwl_checker" -H "accept: application/json"
+curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2Fmd5sum-checker%2F_cwl_checker" -H "accept: application/json"
 ```
 
 ### Retrieve descriptors
 If we want the primary descriptor for our checker workflow, we can use the following command:
 
 ```
-curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/#workflow/github.com/dockstore-testing/md5sum-checker/_cwl_checker/versions/master/CWL/descriptor" -H "accept: application/json"
+curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2Fmd5sum-checker%2F_cwl_checker/versions/master/CWL/descriptor" -H "accept: application/json"
 ```
 
 Note that this command requires a version and descriptor type.
@@ -177,7 +177,7 @@ Note that this command requires a version and descriptor type.
 If we want to grab the secondary descriptor files, we must first get a list of secondary files:
 
 ```
-curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/#workflow/github.com/dockstore-testing/md5sum-checker/_cwl_checker/versions/master/CWL/files" -H "accept: application/json"
+curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2Fmd5sum-checker%2F_cwl_checker/versions/master/CWL/files" -H "accept: application/json"
 ```
 
 This will return an array of files, including the primary descriptor, secondary descriptors, and test files.
@@ -185,13 +185,13 @@ This will return an array of files, including the primary descriptor, secondary 
 We can grab a descriptor file using the following command:
 
 ```
-curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/#workflow/github.com/dockstore-testing/md5sum-checker/_cwl_checker/versions/master/CWL/descriptor/checker/md5sum-checker.cwl" -H "accept: application/json"
+curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2Fmd5sum-checker%2F_cwl_checker/versions/master/CWL/descriptor/checker%2Fmd5sum-checker.cwl" -H "accept: application/json"
 ```
 
 ### Retrieve the Test Parameter Files
 We can retrieve the test parameter files for a checker workflow using the following command:
 ```
-curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/#workflow/github.com/dockstore-testing/md5sum-checker/_cwl_checker/versions/master/CWL/tests" -H "accept: application/json"
+curl -X GET "https://dockstore.org:8443/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2Fdockstore-testing%2Fmd5sum-checker%2F_cwl_checker/versions/master/CWL/tests" -H "accept: application/json"
 ```
 
 Again, we must specify the version and descriptor type in the command.
