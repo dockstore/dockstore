@@ -16,7 +16,7 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 | DAG Display            | ✔             | ✔     |  ✘
 | Launch-with Platforms  | N/A           | FireCloud<br>DNAStack | N/A     
 | **CLI**                |               |       |
-| File Provisioning      | ✔             | ✔     |  ✘
+| File Provisioning      | Local File System<br>HTTP<br>FTP<br>S3             | Local File System     |  Local File System
 | Local workflow engines | cwltool<br>Bunny<br>Toil (experimental)              | Cromwell  | N/A    
 
 
