@@ -121,7 +121,9 @@ public class WDLClient implements LanguageClientInterface {
         throws ApiException {
 
         assert (yamlRun == null && jsonRun != null && csvRuns == null);
-
+        if (!(yamlRun == null && jsonRun != null && csvRuns == null)) {
+            errorMessage("dockstore: Missing required flag --json", CLIENT_ERROR);
+        }
         File parameterFile = new File(jsonRun);
 
         File cromwellTargetFile = getCromwellTargetFile();

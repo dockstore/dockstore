@@ -1108,7 +1108,7 @@ public class WorkflowClient extends AbstractEntryClient {
         private String entry;
         @Parameter(names = "--json", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs")
         private String json;
-        @Parameter(names = "--yaml", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs")
+        @Parameter(names = "--yaml", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs (Only for CWL)")
         private String yaml;
         @Parameter(names = "--tsv", description = "One row corresponds to parameters for one run in the dockstore (Only for CWL)")
         private String tsv;
