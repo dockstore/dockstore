@@ -167,16 +167,17 @@ public final class ToolsImplCommon {
 
         Set inputVersions;
         // tool specific
+        io.dockstore.webservice.core.Tool castedContainer = null;
         if (container instanceof io.dockstore.webservice.core.Tool) {
-            io.dockstore.webservice.core.Tool dockstoreTool = (io.dockstore.webservice.core.Tool)container;
+            castedContainer = (io.dockstore.webservice.core.Tool)container;
 
             // The name is composed of the repository name and then the optional toolname split with a '/'
-            String name = dockstoreTool.getName();
-            String toolName = dockstoreTool.getToolname();
+            String name = castedContainer.getName();
+            String toolName = castedContainer.getToolname();
             String returnName = constructName(Arrays.asList(name, toolName));
             tool.setToolname(returnName);
-            tool.setOrganization(dockstoreTool.getNamespace());
-            inputVersions = ((io.dockstore.webservice.core.Tool)container).getTags();
+            tool.setOrganization(castedContainer.getNamespace());
+            inputVersions = castedContainer.getTags();
         } else if (container instanceof Workflow) {
             // workflow specific
             Workflow workflow = (Workflow)container;
@@ -207,6 +208,15 @@ public final class ToolsImplCommon {
             }
 
             ToolVersion toolVersion = new ToolVersion();
+            if (container instanceof io.dockstore.webservice.core.Tool) {
+                toolVersion.setRegistryUrl(castedContainer.getRegistry());
+                toolVersion.setImageName(
+                    constructName(Arrays.asList(castedContainer.getRegistry(), castedContainer.getNamespace(), castedContainer.getName())));
+            } else {
+                toolVersion.setRegistryUrl("");
+                toolVersion.setImageName("");
+            }
+
             try {
                 toolVersion = setGeneralToolVersionInfo(url, toolVersion, version);
             } catch (UnsupportedEncodingException e) {

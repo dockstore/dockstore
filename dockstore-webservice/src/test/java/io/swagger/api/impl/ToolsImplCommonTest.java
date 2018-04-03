@@ -174,6 +174,8 @@ public class ToolsImplCommonTest {
         expectedToolVersion.setMetaVersion(null);
         expectedToolVersion.setVerified(false);
         expectedToolVersion.setVerifiedSource("");
+        expectedToolVersion.setRegistryUrl("quay.io");
+        expectedToolVersion.setImageName("quay.io/test_org/test6");
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion);
         expectedTool.setVersions(expectedToolVersions);
@@ -280,10 +282,15 @@ public class ToolsImplCommonTest {
         expectedToolVersion1.setMetaVersion(null);
         expectedToolVersion1.setVerified(true);
         expectedToolVersion1.setVerifiedSource("potatoTesterSource");
+        expectedToolVersion1.setImageName("");
+        expectedToolVersion1.setRegistryUrl("");
         json = gson.toJson(expectedToolVersion1);
         ToolVersion expectedToolVersion2 = gson.fromJson(json, ToolVersion.class);
         expectedToolVersion2.setName(REFERENCE3);
         expectedToolVersion2.setVerifiedSource("chickenTesterSource");
+        expectedToolVersion2.setImageName("");
+        expectedToolVersion2.setRegistryUrl("");
+
         if (toolname != null) {
             expectedToolVersion2.setUrl("http://localhost:8080/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow%2F"
                     + TOOLNAME + "/versions/" + REFERENCE3);
@@ -324,7 +331,7 @@ public class ToolsImplCommonTest {
 
         // Meta-version dates are currently dependant on the environment, disabling for now
         List<ToolVersion> versions = actualTool.getVersions();
-        versions.stream().forEach(version -> version.setMetaVersion(null));
+        versions.forEach(version -> version.setMetaVersion(null));
         actualTool.setVersions(versions);
         Assert.assertEquals(expectedTool, actualTool);
     }

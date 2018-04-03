@@ -77,6 +77,9 @@ public class GA4GHV2IT extends GA4GHIT {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6");
         Tool responseObject = response.readEntity(Tool.class);
         assertTool(MAPPER.writeValueAsString(responseObject), true);
+        // regression test for #1248
+        Assert.assertTrue("registry_url should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream().allMatch(version -> version.getRegistryUrl() != null));
+        Assert.assertTrue("imageName should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream().allMatch(version -> version.getImageName() != null));
     }
 
     private void toolsIdWorkflow() throws Exception {
