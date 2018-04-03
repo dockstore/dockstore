@@ -11,8 +11,12 @@ permalink: /docs/publisher-tutorials/checker-workflows/
 * Update a checker workflow
 * Launch a checker workflow
 
-## Overview Checker Workflows
-Checker workflows are additional workflows you can associate with a tool or workflow. The purpose of them is to ensure that a tool or workflow, given some inputs, produces the expected outputs. Below is a visual overview of how a checker workflow looks.
+## Overview of Checker Workflows
+Checker workflows are additional workflows you can associate with a tool or workflow. The purpose of them is to ensure that a tool or workflow, given some inputs, produces the expected outputs on a platform different from the one where you are developing.
+
+Checker workflows can be used in the near future for iterations of the GA4GH-DREAM challenge and in the long-term picked up and run by the automated GA4GH workflow "testbed" to test your workflows across a variety of workflow platforms. See this [presentation](https://docs.google.com/presentation/d/1VXdReGYXayzO7Jr-9XaLHNv6Wt46CwfvkfFDR8OEgJM/edit?usp=sharing) for more details and contact the GA4GH Cloud Work Stream for more information on contributing to the workflow testbed or related APIs.
+
+Below is a visual overview of how a checker workflow looks.
 
 ![Checker Workflow Layout](https://raw.githubusercontent.com/wiki/ga4gh/dockstore/checker-workflow.png)
 The term "entry" will be used as a generic term to refer to both tools and workflows.
@@ -53,7 +57,7 @@ The checker workflow has the input parameter file [/checker-input-cwl.json](http
 Notice that the checker parameter file has the same content as the parent parameter file, in addition to having a checker specific parameter.
 
 #### Output of checker workflow
-To ensure that checking a checker workflow's output can be automated, it is important that the checker workflow produce consistent exit codes. We recommend using an exit code of 0 for success and an exit code of not 0 for failures.
+To ensure that checking a checker workflow's output can be automated, it is important that the checker workflow produce consistent exit codes. We require using an exit code of 0 for success and an exit code of not 0 for failures.
 
 We also recommend producing the following two output files containing the stdout and stderr respectively:
 * log.stdout
