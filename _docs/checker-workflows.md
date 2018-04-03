@@ -18,7 +18,8 @@ Checker workflows can be used in the near future for iterations of the GA4GH-DRE
 
 Below is a visual overview of how a checker workflow looks.
 
-![Checker Workflow Layout](https://raw.githubusercontent.com/wiki/ga4gh/dockstore/checker-workflow.png)
+![Checker Workflow Layout](/assets/images/docs/checker-workflow.png)
+
 The term "entry" will be used as a generic term to refer to both tools and workflows.
 
 The entry that a checker workflow is testing will be referred to as an original tool/workflow/entry.
@@ -74,14 +75,14 @@ Lets add a checker workflow for the tool described by [/md5sum/md5sum-tool.cwl](
 
 The first step is to find the tool under the my tools page. In the info tab there is an option to add a checker workflow. Click on the add button.
 
-![Checker Workflow Add](https://raw.githubusercontent.com/wiki/ga4gh/dockstore/checkerWorkflow/checker-workflow-add.png)
+![Checker Workflow Add](/assets/images/docs/checker-workflow-add.png)
 
 When registering a checker workflow, you need the following fields:
 * Default checker workflow path (path to main descriptor of the checker workflow)
 * Default test parameter file (if not given will copy over from original entry)
 * Descriptor type (cwl or wdl)
 
-![Checker Workflow Register](https://raw.githubusercontent.com/wiki/ga4gh/dockstore/checkerWorkflow/checker-workflow-register.png)
+![Checker Workflow Register](/assets/images/docs/checker-workflow-register.png)
 
 Once a checker workflow has been added, you can view it by going to the info tab of the original entry. Where there used to be an add button, there is now the view and delete buttons. View will take you to your checker workflow page, and delete will remove the associated checker workflow (will not delete it from the database).
 
