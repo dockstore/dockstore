@@ -199,30 +199,6 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     }
 
     /**
-     * This tests that a workflow can be updated to have a new workflow name
-     */
-    @Test
-    public void testUpdateWorkflowNameAndPathOld() throws ExecuteException {
-        // Set up DB
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-
-        // Update workflow
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
-                        "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control",
-                        "github", "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl",
-                        "--script" });
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
-                        SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow/testname", "--workflow-name",
-                        "newname", "--script" });
-
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflow where workflowname = 'newname'", new ScalarHandler<>());
-        Assert.assertTrue("there should be 1 matching workflow, there is " + count, count == 1);
-    }
-
-    /**
      * This tests that a user can update a workflow version
      */
     @Test
