@@ -533,7 +533,16 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
-        oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
+        // If workflow is FULL and descriptor type is being changed throw an error
+        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) && !Objects.equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
+            throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL workflow.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Only copy workflow type if old workflow is a STUB
+        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.STUB)) {
+            oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
+        }
+
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         if (newWorkflow.getDefaultVersion() != null) {
