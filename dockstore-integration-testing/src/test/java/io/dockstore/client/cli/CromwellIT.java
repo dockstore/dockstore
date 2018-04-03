@@ -37,7 +37,9 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.experimental.categories.Category;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
@@ -48,6 +50,9 @@ import scala.collection.immutable.List;
  * @author dyuen
  */
 public class CromwellIT {
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Test
     public void testWDL2Json() {
@@ -70,11 +75,12 @@ public class CromwellIT {
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
         // run a workflow
         final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null, null);
-        Assert.assertTrue(run == 0);
+        Assert.assertEquals(0, run);
     }
 
     @Test
     public void failRunWDLWorkflow() throws IOException, ApiException {
+        exit.expectSystemExitWithStatus(3);
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
@@ -114,10 +120,10 @@ public class CromwellIT {
         String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
         // run a workflow
         final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, newJsonPath, null, tempDir.getAbsolutePath(), null);
-        Assert.assertTrue(run == 0);
+        Assert.assertEquals(0, run);
         // let's check that provisioning out occured
         final Collection<File> files = FileUtils.listFiles(tempDir, null, true);
-        Assert.assertTrue(files.size() == 2);
+        Assert.assertEquals(2, files.size());
     }
 
     @Test
