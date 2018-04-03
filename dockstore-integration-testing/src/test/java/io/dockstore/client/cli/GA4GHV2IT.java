@@ -117,7 +117,8 @@ public class GA4GHV2IT extends GA4GHIT {
     @Override
     public void toolsIdVersionsVersionIdTypeDockerfile() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/containerfile");
-        ToolContainerfile responseObject = response.readEntity(ToolContainerfile.class);
+        List<ToolContainerfile> responseObject = response.readEntity(new GenericType<List<ToolContainerfile>>() {
+        });
         assertThat(MAPPER.writeValueAsString(responseObject).contains("containerfile"));
     }
 

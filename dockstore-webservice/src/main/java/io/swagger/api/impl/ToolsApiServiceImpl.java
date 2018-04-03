@@ -329,6 +329,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
         responseBuilder.header("current_limit", limit);
+        // Placeholder for now until actual known value is used
+        responseBuilder.header("self_link", "");
         // construct links to other pages
         try {
             List<String> filters = new ArrayList<>();
@@ -442,8 +444,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                         : toolTestsList).build();
             case DOCKERFILE:
                 final ToolContainerfile dockerfile = (ToolContainerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
+                List<ToolContainerfile> containerfilesList = new ArrayList<>();
+                containerfilesList.add(dockerfile);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                    .entity(unwrap ? dockerfile.getContainerfile() : dockerfile).build();
+                    .entity(unwrap ? dockerfile.getContainerfile() : containerfilesList).build();
             default:
                 if (relativePath == null) {
                     if ((type == DOCKSTORE_WDL) && (
