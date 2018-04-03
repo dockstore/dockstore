@@ -332,9 +332,9 @@ public final class ToolsImplCommon {
      * Gets the checker workflow GA4GH path (test_tool_path) if it exists
      * @param config    The dockstore configuration file in order to find the base GA4GH path
      * @param entry     The entry to find its checker workflow path (test_tool_path)
-     * @return
+     * @return          The checker workflow's GA4GH Tool ID
      */
-    public static String getCheckerWorkflowPath(DockstoreWebserviceConfiguration config, Entry entry) {
+    private static String getCheckerWorkflowPath(DockstoreWebserviceConfiguration config, Entry entry) {
         if (entry.getCheckerWorkflow() == null) {
             return null;
         } else {
@@ -472,17 +472,23 @@ public final class ToolsImplCommon {
         return toolTests;
     }
 
-    private static String getUrlFromId(DockstoreWebserviceConfiguration config, String newID) {
+    /**
+     * Create the GA4GH /tools/{id} url for a specific GA4GH Tool
+     * @param config    The DockstoreWebserviceConfiguration which is used to get the baseURL
+     * @param toolID    The ID of the GA4GH Tool
+     * @return          The GA4GH /tools/{id} url
+     */
+    private static String getUrlFromId(DockstoreWebserviceConfiguration config, String toolID) {
         String url;
-        if (newID == null) {
+        if (toolID == null) {
             return null;
         } else {
             try {
                 String baseURL = baseURL(config);
-                url = getUrl(newID, baseURL);
+                url = getUrl(toolID, baseURL);
                 return url;
             } catch (URISyntaxException | UnsupportedEncodingException e) {
-                LOG.error("Could not construct URL for our container with id: " + newID);
+                LOG.error("Could not construct URL for our container with id: " + toolID);
                 return null;
             }
         }
