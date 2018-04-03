@@ -5272,6 +5272,14 @@ components:
             tool
           items:
             type: string
+        has_checker:
+          type: boolean
+          description: Whether this tool has a checker tool associated with it
+        checker_url:
+          type: string
+          description: >-
+            Optional url to the checker tool that will exit successfully if this
+            tool produced the expected result given test data.
         verified:
           type: boolean
           description: >-
@@ -5402,11 +5410,6 @@ components:
             Optional url to the test JSON used to test this tool. Note that this
             URL should resolve to the raw unwrapped content that would otherwise
             be available in test.
-        test_tool_url:
-          type: string
-          description: >-
-            Optional url to the test workflow that will exit successfully if
-            this workflow produced the expected result given this test data.
       description: >-
         A tool document that describes how to test with one or more sample test
         JSON.
