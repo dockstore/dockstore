@@ -29,7 +29,7 @@ One point of confusion is that a checker workflow contains a validation tool/wor
 
 Also like regular workflows, a checker workflow can take input from an input parameter file. The checker workflow can either use the input parameter file for the original entry, or it can define its own. The second case is useful when the validation tool/workflow has some extra parameters not required by the original entry.
 
-For our example the second case is used. The parent tool has the input parameter file [md5sum-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/md5sum/md5sum-input-cwl.json)
+For our example the second case is used. The parent tool has the input parameter file [/md5sum-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/md5sum/md5sum-input-cwl.json)
 ```
 {
   "input_file": {
@@ -39,7 +39,7 @@ For our example the second case is used. The parent tool has the input parameter
 }
 ```
 
-The checker workflow has the input parameter file [checker-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json)
+The checker workflow has the input parameter file [/checker-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json)
 ```
 {
   "input_file": {
@@ -124,7 +124,7 @@ Like most commands, adding/removing test input parameter files to a checker work
 
 `dockstore checker test_parameter --entry quay.io/agduncan94/my-md5sum --version master --add /checker-input-cwl.json`
 
-This will add the test parameter file `/checker-input-cwl.json` to the master version of the checker workflow. Though in our example we already added it when we added the checker workflow, so nothing will happen.
+This will add the test parameter file [/checker-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json) to the master version of the checker workflow. Though in our example we already added it when we added the checker workflow, so nothing will happen.
 
 ## Launching a checker workflow
 
@@ -135,11 +135,11 @@ Below is an example of launching a checker workflow for our md5sum example.
 
 `dockstore checker launch --entry quay.io/agduncan94/my-md5sum:master --json test.json`
 
-In this example, test.json is a local version of the following file.
-https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json
+In this example, test.json is a local version of the following file:
+[/checker-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json)
 
-We also need a local version of the file we are calculating the md5sum for.
-https://github.com/dockstore-testing/md5sum-checker/blob/master/md5sum.input
+We also need a local version of the file we are calculating the md5sum for:
+[/md5sum.input](https://github.com/dockstore-testing/md5sum-checker/blob/master/md5sum.input)
 
 ## Downloading all relevant files for a checker workflow
 It can be useful to have all relevant files for a checker workflow locally. This can be done with the download feature.
