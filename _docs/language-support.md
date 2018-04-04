@@ -8,6 +8,17 @@ However, due to time constraints and gaps in our knowledge of different workflow
 
 To help lay out what parts of Dockstore are available in which languages, we cover the following guide for what features are available on the Dockstore site and in the Dockstore command-line utility. 
 
+{: .table .table-striped .table-condensed}
+| Feature                | CWL           | WDL   |
+| ---------------------  | ------------- | ----- | 
+| **GUI**                |               |       |
+| Tool registration      | ✔             | ✔     | 
+| Workflow registration  | ✔             | ✔     |  
+| DAG Display            | ✔             | ✔     |  
+| Launch-with Platforms  | N/A           | FireCloud<br>DNAStack |  
+| **CLI**                |               |       |
+| File Provisioning      | Local File System<br>HTTP<br>FTP<br>S3             | Local File System     | 
+| Local workflow engines | cwltool<br>Bunny<br>Toil (experimental)              | Cromwell |
 <!-- &ast; Nextflow has preliminary support for workflow registration -->
 
 {% include language-support.html %}
