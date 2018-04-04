@@ -45,13 +45,17 @@ public final class ApiVersionConverter {
             for (Object innerObject : arrayList) {
                 if (innerObject instanceof Tool) {
                     Tool tool = (Tool)innerObject;
-                    newArrayList.add( new ToolV1(tool));
+                    newArrayList.add(new ToolV1(tool));
                 } else {
                     if (innerObject instanceof ToolVersion) {
                         ToolVersion toolVersion = (ToolVersion)innerObject;
                         newArrayList.add(new ToolVersionV1(toolVersion));
                     } else {
-                        return getResponse(object, response.getHeaders());
+                        if (innerObject instanceof ToolContainerfile) {
+                            return getResponse(new ToolDockerfile((ToolContainerfile)innerObject), response.getHeaders());
+                        } else {
+                            return getResponse(object, response.getHeaders());
+                        }
                     }
                 }
             }
