@@ -18,12 +18,17 @@ After clicking on that, you can see a list of the workflows associated with your
 
 When creating a workflow, you can work from scratch or import a workflow from Dockstore.
 
-![dnastack project1](/assets/images/docs/dnastack/dnastack_projects_2.png)
-![dnastack project1](/assets/images/docs/dnastack/dnastack_projects_3.png)
+![dnastack project2](/assets/images/docs/dnastack/dnastack_projects_2.png)
+![dnastack project3](/assets/images/docs/dnastack/dnastack_projects_3.png)
 
 After selecting the workflow and selecting a version, you will see the contents of the workflow. You will need to make sure that runtime steps specify cpu, memory, and possibly disk requirements in order to successfully import into DNAstack. Note that you may also get an error if the workflow has already been imported into DNAstack.
 
+![dnastack project4](/assets/images/docs/dnastack/dnastack_projects_4.png)
+
 If the import was successful after hitting the "Import" button you will see the regular DNAstack interface which will let you specify inputs and other parameters in order to run the workflow just like any other workflow in DNAstack.  
+
+![dnastack project5](/assets/images/docs/dnastack/dnastack_projects_5.png)
+
 
 
 ## While browsing Dockstore
