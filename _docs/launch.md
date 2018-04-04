@@ -89,11 +89,11 @@ Dockstore tools and workflows can also be run through a number of online service
 
 ### AWS Batch
 
-[AWS Batch](https://aws.amazon.com/batch/) is built by Amazon Web Services. Look [here](/docs/aws-batch) for a tutorial on how to run a few sample tools via AWS.
+[AWS Batch](https://aws.amazon.com/batch/) is built by Amazon Web Services. Look [here](/docs/publisher-tutorials/aws-batch) for a tutorial on how to run a few sample tools via AWS.
 
 ### Azure Batch
 
-[Azure Batch](https://azure.microsoft.com/en-us/services/batch/) and the associated [batch-shipyard](https://github.com/Azure/batch-shipyard) is built by Microsoft. Look [here](/docs/azure-batch) for a tutorial on how to run a few sample tools via Azure.
+[Azure Batch](https://azure.microsoft.com/en-us/services/batch/) and the associated [batch-shipyard](https://github.com/Azure/batch-shipyard) is built by Microsoft. Look [here](/docs/publisher-tutorials/azure-batch) for a tutorial on how to run a few sample tools via Azure.
 
 ### Google Pipelines
 

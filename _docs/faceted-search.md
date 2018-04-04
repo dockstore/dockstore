@@ -12,7 +12,7 @@ If you want to do a basic search for a keyword or a collection of keywords, use 
 ![Basic Search](/assets/images/docs/search-basic.png)
 
 ### Advanced search
-Advanced search is useful when you want to filter based on words or phrases. It extends basic search by allowing for advanced queries. You can access advanced search using the `open advanced search` button shown in the image above. The advanced search can be applied to either files or descriptions.
+Advanced search is useful when you want to filter based on words or phrases. It extends basic search by allowing for advanced queries. You can access advanced search using the "Open Advanced Search" button shown in the image above. The advanced search can be applied to either files or descriptions.
 ![Advanced Search](/assets/images/docs/adv-search.png)
 
 ### Facets
