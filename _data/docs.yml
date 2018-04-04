@@ -9,7 +9,9 @@
   link: user-tutorials
   docs:
     - user-tutorials/faceted-search
+    - user-tutorials/language-support
     - user-tutorials/launch
+    - user-tutorials/dnastack-launch-with
 
 - title: Publisher Tutorials
   link: publisher-tutorials
