@@ -4,7 +4,7 @@ permalink: /docs/user-tutorials/dnastack-launch/
 ---
 # Intro
 
-With integration with the DNAstack Workflows platform, WDL-based workflows in Dockstore can be launched in DNAstack both from within the Dockstore interface and from within the DNAstack interface. Read more about the background for this feature at their [blog](https://blog.dnastack.com/introducing-workflows-the-new-standard-in-cloud-bioinformatics-787a59b1d5c6) but here we also offer some information on what that looks like from a user point of view in a mini tutorial.
+Dockstore integrates with the DNAstack Workflows platform, allowing you to launch WDL-based workflows from Dockstore in DNAstack. This works both from within the Dockstore interface and from within the DNAstack interface. Read more about the background for this feature at their [blog](https://blog.dnastack.com/introducing-workflows-the-new-standard-in-cloud-bioinformatics-787a59b1d5c6) but here we also offer some information on what that looks like from a user point of view in a mini tutorial.
 
 ## While browsing DNAstack
 
