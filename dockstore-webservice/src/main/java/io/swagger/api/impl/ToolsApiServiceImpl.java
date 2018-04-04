@@ -329,8 +329,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
         responseBuilder.header("current_limit", limit);
-        // Placeholder for now until actual known value is used
-        responseBuilder.header("self_link", "");
+        responseBuilder.header("self_link", value.getUriInfo().getRequestUri().toString());
         // construct links to other pages
         try {
             List<String> filters = new ArrayList<>();
