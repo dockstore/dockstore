@@ -1187,6 +1187,8 @@
             <id>regression-integration-tests</id>
             <!-- run only regression tests-->
             <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
                 <groups>io.dockstore.common.RegressionTest</groups>
             </properties>
         </profile>

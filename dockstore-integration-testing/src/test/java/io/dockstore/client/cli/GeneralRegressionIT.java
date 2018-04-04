@@ -27,6 +27,7 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Registry;
 import io.dockstore.common.RegressionTest;
+import io.dockstore.common.TestUtility;
 import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -88,6 +89,7 @@ public class GeneralRegressionIT extends BaseIT {
 
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
+        TestUtility.createFakeDockstoreConfigFile();
         url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
@@ -227,8 +229,7 @@ public class GeneralRegressionIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
-                        + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("there should now be an invalid tag, found " + count, count == 1);
 
@@ -307,8 +308,7 @@ public class GeneralRegressionIT extends BaseIT {
         // should now be invalid
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
-                        + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
 
         assertTrue("there should now be 1 invalid tag, found " + count, count == 1);
@@ -318,8 +318,7 @@ public class GeneralRegressionIT extends BaseIT {
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/Dockstore.wdl", "--script" });
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
-                        + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("the tag should now be valid", count2 == 0);
 
@@ -372,25 +371,26 @@ public class GeneralRegressionIT extends BaseIT {
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl" });
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        boolean published = testingPostgres.runSelectStatement(
-                "select ispublished from tool where registry = '" + Registry.QUAY_IO.toString()
-                        + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';", new ScalarHandler<>());
+        boolean published = testingPostgres
+                .runSelectStatement("select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
+                        new ScalarHandler<>());
         assertTrue("tool not published", published);
 
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--entryname", "foo" });
 
-        long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-                + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';", new ScalarHandler<>());
+        long count = testingPostgres
+                .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
+                        new ScalarHandler<>());
         assertTrue("should be two after republishing", count == 2);
-
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--unpub", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl" });
 
-        published = testingPostgres.runSelectStatement("select ispublished from tool where registry = '" + Registry.QUAY_IO.toString()
-                + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname = '';", new ScalarHandler<>());
+        published = testingPostgres.runSelectStatement(
+                "select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;",
+                new ScalarHandler<>());
         assertTrue("tool not unpublished", !published);
     }
 
@@ -426,37 +426,6 @@ public class GeneralRegressionIT extends BaseIT {
         // TODO: Test that output is the expected yaml file
     }
 
-    /**
-     * Change toolname of a container
-     */
-    @Test
-    public void testChangeToolnameOld() throws ExecuteException {
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry",
-                        Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithubalternate", "--git-url",
-                        "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname",
-                        "alternate", "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                        "quay.io/dockstoretestuser2/quayandgithubalternate/alternate", "--toolname", "alternate", "--script" });
-
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-                        + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'alternate'",
-                new ScalarHandler<>());
-        assertTrue("there should only be one instance of the container with the toolname set to alternate", count == 1);
-
-        runOldDockstoreClient(dockstore,
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                        "quay.io/dockstoretestuser2/quayandgithubalternate", "--toolname", "toolnameTest", "--script" });
-
-        final long count2 = testingPostgres.runSelectStatement("select count(*) from tool where registry = '" + Registry.QUAY_IO.toString()
-                        + "' and namespace = 'dockstoretestuser2' and name = 'quayandgithubalternate' and toolname = 'toolnameTest'",
-                new ScalarHandler<>());
-        assertTrue("there should only be one instance of the container with the toolname set to toolnameTest", count2 == 1);
-
-    }
 
     /**
      * Tests that WDL and CWL files can be grabbed from the command line

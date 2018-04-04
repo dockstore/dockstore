@@ -24,6 +24,8 @@ import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
 
@@ -32,6 +34,7 @@ import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
  */
 public final class TestUtility {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TestUtility.class);
     @Rule
     public TemporaryFolder folder= new TemporaryFolder();
 
@@ -75,5 +78,21 @@ public final class TestUtility {
         File f = new File(configFileLocation);
         FileUtils.write(f, "notifications: " + "https://hooks.slack.com/services/potato" + "\n", StandardCharsets.UTF_8, true);
         return f.getAbsolutePath();
+    }
+
+    /**
+     * Due to issue #1264, we need to create a ~/.dockstore/config in order to bypass dockstore asking for token/server-url
+     * Creating a directory instead to avoid potential conflicts since it doesn't matter
+     */
+    public static void createFakeDockstoreConfigFile() {
+        String path = System.getProperty("user.home") + File.separator + ".dockstore/config";
+        File customDir = new File(path);
+        if (customDir.exists()) {
+            LOG.info(customDir + " already exists");
+        } else if (customDir.mkdirs()) {
+            LOG.info(customDir + " was created");
+        } else {
+            LOG.error(customDir + " was not created");
+        }
     }
 }
