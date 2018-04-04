@@ -24,6 +24,8 @@ import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
 
@@ -32,6 +34,7 @@ import static io.dockstore.common.CommonTestUtilities.DUMMY_TOKEN_1;
  */
 public final class TestUtility {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TestUtility.class);
     @Rule
     public TemporaryFolder folder= new TemporaryFolder();
 
@@ -85,11 +88,11 @@ public final class TestUtility {
         String path = System.getProperty("user.home") + File.separator + ".dockstore/config";
         File customDir = new File(path);
         if (customDir.exists()) {
-            System.out.println(customDir + " already exists");
+            LOG.info(customDir + " already exists");
         } else if (customDir.mkdirs()) {
-            System.out.println(customDir + " was created");
+            LOG.info(customDir + " was created");
         } else {
-            System.out.println(customDir + " was not created");
+            LOG.error(customDir + " was not created");
         }
     }
 }
