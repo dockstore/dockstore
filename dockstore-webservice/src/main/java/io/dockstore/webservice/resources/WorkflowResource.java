@@ -385,7 +385,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         // look for checker workflows to associate with if applicable
         if (!workflow.isIsChecker() && workflow.getDescriptorType().equals(CWL_STRING) || workflow.getDescriptorType().equals(WDL_STRING)) {
             String prefix = "/" + (workflow.getDescriptorType().equals(CWL_STRING) ? CWL_CHECKER : WDL_CHECKER);
-            Workflow byPath = workflowDAO.findByPath(workflow.getPath() + prefix, false);
+            Workflow byPath = workflowDAO.findByPath(workflow.getWorkflowPath() + prefix, false);
             if (byPath != null && workflow.getCheckerWorkflow() == null) {
                 workflow.setCheckerWorkflow(byPath);
             }

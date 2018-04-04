@@ -70,7 +70,7 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByOrganization", query = "SELECT c FROM Workflow c WHERE lower(c.organization) = lower(:organization) AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.searchPattern", query = "SELECT c FROM Workflow c WHERE ((c.defaultWorkflowPath LIKE :pattern) OR (c.description LIKE :pattern) OR (CONCAT(c.sourceControl, '/', c.organization, '/', c.repository, '/', c.workflowName) LIKE :pattern)) AND c.isPublished = true") })
 @DiscriminatorValue("workflow")
-@Check(constraints = " ((ischecker IS TRUE and workflowname LIKE '\\_%') or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
+@Check(constraints = " ((ischecker IS TRUE) or (ischecker IS FALSE and workflowname NOT LIKE '\\_%'))")
 @SuppressWarnings("checkstyle:magicnumber")
 public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
