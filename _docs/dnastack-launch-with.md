@@ -1,0 +1,36 @@
+---
+title: DNAstack Launch-With
+permalink: /docs/user-tutorials/dnastack-launch/
+---
+# Intro
+
+With integration with the DNAstack Workflows platform, WDL-based workflows in Dockstore can be launched in DNAstack both from within the Dockstore interface and from within the DNAstack interface. Read more about the background for this feature at their [blog](https://blog.dnastack.com/introducing-workflows-the-new-standard-in-cloud-bioinformatics-787a59b1d5c6) but here we also offer some information on what that looks like from a user point of view in a mini tutorial.
+
+## While browsing DNAstack
+
+While working within a project within the DNAstack interface, you can see an icon to manage the workflows associated with your project. 
+![dnastack project0](/assets/images/docs/dnastack/dnastack_projects_0.png)
+
+After clicking on that, you can see a list of the workflows associated with your project. Click on the button on the upper right to create a new workflow.
+![dnastack project1](/assets/images/docs/dnastack/dnastack_projects_1.png)
+
+When creating a workflow, you can work from scratch or import a workflow from Dockstore.
+![dnastack project1](/assets/images/docs/dnastack/dnastack_projects_2.png)
+![dnastack project1](/assets/images/docs/dnastack/dnastack_projects_3.png)
+
+After selecting the workflow and selecting a version, you will see the contents of the workflow. You will need to make sure that runtime steps specify cpu, memory, and possibly disk requirements in order to successfully import into DNAstack. Note that you may also get an error if the workflow has already been imported into DNAstack.
+
+If the import was successful after hitting the "Import" button you will see the regular DNAstack interface which will let you specify inputs and other parameters in order to run the workflow just like any other workflow in DNAstack.  
+
+
+## While browsing Dockstore
+
+When browing WDL workflows from within Dockstore, you will see a "Launch-With" icon on the right.
+![WDL workflow](/assets/images/docs/dnastack/dnastack_from_dockstore1.png)
+
+If not logged into DNAstack, you will be prompted to login. Otherwise or after login, you will be presented with the following screen. 
+![WDL workflow import](/assets/images/docs/dnastack/dnastack_from_dockstore2.png)
+
+You will need to pick a version of your workflow to import and a project to import it into.
+Then hit the button to "Import" and continue from within the DNAstack interface to run your workflow. 
+Note that as with the above approach, you will want to double-check that the workflow specifies a runtime environment (docker, cpu, memory, and disks) if you have trouble importing the workflow and that the workflow has not been imported before. 
