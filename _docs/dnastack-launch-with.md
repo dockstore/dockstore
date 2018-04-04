@@ -9,12 +9,15 @@ With integration with the DNAstack Workflows platform, WDL-based workflows in Do
 ## While browsing DNAstack
 
 While working within a project within the DNAstack interface, you can see an icon to manage the workflows associated with your project. 
+
 ![dnastack project0](/assets/images/docs/dnastack/dnastack_projects_0.png)
 
 After clicking on that, you can see a list of the workflows associated with your project. Click on the button on the upper right to create a new workflow.
+
 ![dnastack project1](/assets/images/docs/dnastack/dnastack_projects_1.png)
 
 When creating a workflow, you can work from scratch or import a workflow from Dockstore.
+
 ![dnastack project1](/assets/images/docs/dnastack/dnastack_projects_2.png)
 ![dnastack project1](/assets/images/docs/dnastack/dnastack_projects_3.png)
 
@@ -26,9 +29,11 @@ If the import was successful after hitting the "Import" button you will see the 
 ## While browsing Dockstore
 
 When browing WDL workflows from within Dockstore, you will see a "Launch-With" icon on the right.
+
 ![WDL workflow](/assets/images/docs/dnastack/dnastack_from_dockstore1.png)
 
 If not logged into DNAstack, you will be prompted to login. Otherwise or after login, you will be presented with the following screen. 
+
 ![WDL workflow import](/assets/images/docs/dnastack/dnastack_from_dockstore2.png)
 
 You will need to pick a version of your workflow to import and a project to import it into.
