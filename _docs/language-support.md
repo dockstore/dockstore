@@ -17,9 +17,10 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 | Launch-with Platforms  | N/A           | FireCloud<br>DNAStack |  
 | **CLI**                |               |       |
 | File Provisioning      | Local File System<br>HTTP<br>FTP<br>S3             | Local File System     | 
-| Local workflow engines | cwltool<br>Bunny<br>Toil (experimental)              | Cromwell |
+| Local workflow engines | cwltool<br>Bunny<br>Toil (experimental)              | Cromwell* |
 {: .table .table-striped .table-condensed}
 
+<sup>&ast; Handful of workflows were tested successfully.  More testing likely needed.</sup>
 <!-- &ast; Nextflow has preliminary support for workflow registration -->
 
 {% include language-support.html %}
