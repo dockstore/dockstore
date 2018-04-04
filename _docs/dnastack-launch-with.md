@@ -21,7 +21,7 @@ When creating a workflow, you can work from scratch or import a workflow from Do
 ![dnastack project2](/assets/images/docs/dnastack/dnastack_projects_2.png)
 ![dnastack project3](/assets/images/docs/dnastack/dnastack_projects_3.png)
 
-After selecting the workflow and selecting a version, you will see the contents of the workflow. You will need to make sure that runtime steps specify cpu, memory, and possibly disk requirements in order to successfully import into DNAstack. Note that you may also get an error if the workflow has already been imported into DNAstack.
+After selecting the workflow and selecting a version, you will see the contents of the workflow. You will need to make sure that runtime steps specify cpu, memory, and possibly disk requirements (highlighted in an example below) in order to successfully import into DNAstack. Note that you may also get an error if the workflow has already been imported into DNAstack.
 
 ![dnastack project4](/assets/images/docs/dnastack/dnastack_projects_4.png)
 
