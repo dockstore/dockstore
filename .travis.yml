@@ -1,0 +1,12 @@
+language: ruby
+rvm:
+  - 2.2
+
+install: 
+  - bundle install
+
+script:
+  - bundle exec jekyll build
+  # Ignore external certificate and SSL connect errors, ignore all empty "alt" images, ignore '#' and '#top'
+  - htmlproofer --http-status-ignore=0,301 --empty-alt-ignore --allow-hash-href --url-ignore='#top' _site/
+
