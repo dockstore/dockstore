@@ -40,14 +40,24 @@
         </tr>
         <tr>
             <td>DAG Display</td>
-            <td class="success">Yes</td>
-            <td class="success">Yes</td>
+            <td class="success">Yes (cwl version=>1.0)</td>
+            <td class="danger">No</td>
+        </tr>
+        <tr>
+            <td>Tool Tab Display</td>
+            <td class="success">Yes (cwl version=>1.0)</td>
+            <td class="danger">No</td>
         </tr>
         <tr>
             <td>Launch-with Platforms</td>
-            <td class="active">N/A</td>
+            <td class="danger">N/A</td>
             <td class="success">FireCloud
-                <br>DNAStack</td>
+                <br>DNAStack (workflows only)</td>
+        </tr>
+        <tr>
+            <td>Metadata Extraction</td>
+            <td class="success">Yes</td>
+            <td class="warning">Yes (but some metadata is missing)</td>
         </tr>
         <tr>
             <th>CLI</th>
@@ -55,21 +65,57 @@
             <th></th>
         </tr>
         <tr>
-            <td>File Provisioning</td>
+            <td>File Provisioning In</td>
             <td class="success">Local File System
                 <br>HTTP
                 <br>FTP
-                <br>S3</td>
-            <td class="warning">Local File System</td>
+                <br>S3 via plugins
+            </td>
+            <td class="success">Local File System
+                <br>HTTP
+                <br>FTP
+                <br>S3 via plugins
+            </td>
+        </tr>
+        <tr>
+            <td>File Provisioning Out</td>
+            <td class="success">Local File System
+                <br>HTTP
+                <br>FTP
+                <br>S3 via plugins
+            </td>
+            <td class="warning">Local File System
+            </td>
+        </tr>
+        <tr>
+            <td>Plugins Support</td>
+            <td class="success">
+                <a href="https://github.com/dockstore/s3-plugin">s3</a>
+                <br>
+                <a href="https://github.com/dockstore/s3cmd-plugin">s3cmd</a>
+                <br>
+                <a href="https://github.com/dockstore/icgc-get-plugin">icgc-get</a>
+            </td>
+            <td class="success">
+                <a href="https://github.com/dockstore/s3-plugin">s3</a>
+                <br>
+                <a href="https://github.com/dockstore/s3cmd-plugin">s3cmd</a>
+                <br>
+                <a href="https://github.com/dockstore/icgc-get-plugin">icgc-get</a>
+            </td>
         </tr>
         <tr>
             <td>Local workflow engines</td>
-            <td class="success">cwltool
-                <br>Bunny
-                <br>Toil(experimental)
+            <td class="success">Bunny
+                <sup>[1]</sup>
+                <br>cwltool
+                <br>Toil (experimental)
+                <sup>[2]</sup>
                 <br>
             </td>
-            <td class="success">Cromwell</td>
+            <td class="success">Cromwell
+                <sup>[3]</sup>
+            </td>
         </tr>
         <tr>
             <td>Notifications</td>
