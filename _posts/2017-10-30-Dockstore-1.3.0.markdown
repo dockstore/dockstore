@@ -16,5 +16,3 @@ Highlighted new features include a:
 * and a bit of inside baseball, we migrated from Angular 1 to Angular 4 as a foundation for future improvements
 
 See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/milestone/9).
-
-Due to the number of changes, we'll continue to run the classic UI at [https://dockstore.org:9000/](https://dockstore.org:9000/).

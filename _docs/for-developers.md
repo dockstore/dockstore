@@ -147,7 +147,7 @@ and then:
 client publish --tool test.json
 ```
 
-## [Different Ways To Register Tools on Dockstore](#different-ways-to-register)
+## Different Ways To Register Tools on Dockstore
 
 There are 3 major ways to register tools on Dockstore
 - The Dockstore website

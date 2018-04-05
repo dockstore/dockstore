@@ -101,7 +101,7 @@ export TMPDIR=/tmp/docker_tmp
 
 ## What is a verified tool or workflow?
 
-For certain tools or workflows on Dockstore, you will see a verified checkmark like <a href="/docs/faq#what-is-a-verified-tool-or-workflow-"><span class="glyphicon glyphicon-ok"></span></a>. This checkmark is used to indicate tools that were either:
+For certain tools or workflows on Dockstore, you will see a verified checkmark like <a href="/faq#what-is-a-verified-tool-or-workflow"><span class="glyphicon glyphicon-ok"></span></a>. This checkmark is used to indicate tools that were either:
 
 * created by our users and verified by our team to run successfully.
 * created by our team and verified by an outside party to run successfully

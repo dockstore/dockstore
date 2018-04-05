@@ -8,7 +8,7 @@ This tutorial walks through some of our utilities for quickly launching tools an
 
 ## Dockstore CLI
 
-The dockstore command-line includes basic tool and workflow launching capability built on top of [cwltool](https://github.com/common-workflow-language/cwltool). The Dockstore command-line also includes support for file provisioning via [plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) which allow for the reading of input files and the upload of output files from remote file systems. Support for http and https is built-in. Support for AWS S3 and [icgc-storage client](onboarding) is provided via plugins installed by default.  
+The dockstore command-line includes basic tool and workflow launching capability built on top of [cwltool](https://github.com/common-workflow-language/cwltool). The Dockstore command-line also includes support for file provisioning via [plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) which allow for the reading of input files and the upload of output files from remote file systems. Support for http and https is built-in. Support for AWS S3 and [icgc-storage client](https://github.com/dockstore/icgc-storage-client-plugin) is provided via plugins installed by default.
 
 ### Launch Tools
 
@@ -21,7 +21,7 @@ If you have followed the tutorial, you will have a tool registered on Dockstore.
   0. if outputs are specified as remote URLs, copy the results to these locations
 0. download tool descriptor files `dockstore tool cwl` and `dockstore tool wdl`
 
-Note that launching a CWL tool locally requires the cwltool to be installed. Check [onboarding](onboarding) if you have not already to ensure that your dependencies are correct.
+Note that launching a CWL tool locally requires the cwltool to be installed. Check [onboarding](https://dockstore.org/onboarding) if you have not already to ensure that your dependencies are correct.
 
 An example of launching a tool, in this case a bamstats sample tool follows:
 
@@ -89,11 +89,11 @@ Dockstore tools and workflows can also be run through a number of online service
 
 ### AWS Batch
 
-[AWS Batch](https://aws.amazon.com/batch/) is built by Amazon Web Services. Look [here](/docs/aws-batch) for a tutorial on how to run a few sample tools via AWS.
+[AWS Batch](https://aws.amazon.com/batch/) is built by Amazon Web Services. Look [here](/docs/publisher-tutorials/aws-batch) for a tutorial on how to run a few sample tools via AWS.
 
 ### Azure Batch
 
-[Azure Batch](https://azure.microsoft.com/en-us/services/batch/) and the associated [batch-shipyard](https://github.com/Azure/batch-shipyard) is built by Microsoft. Look [here](/docs/azure-batch) for a tutorial on how to run a few sample tools via Azure.
+[Azure Batch](https://azure.microsoft.com/en-us/services/batch/) and the associated [batch-shipyard](https://github.com/Azure/batch-shipyard) is built by Microsoft. Look [here](/docs/publisher-tutorials/azure-batch) for a tutorial on how to run a few sample tools via Azure.
 
 ### Google Pipelines
 
