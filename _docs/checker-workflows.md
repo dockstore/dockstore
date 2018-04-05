@@ -30,11 +30,9 @@ The relevant tools and workflows can be found in the following Git repository:
 [https://github.com/dockstore-testing/md5sum-checker](https://github.com/dockstore-testing/md5sum-checker)
 
 #### Quick overview of structure
-One point of confusion is that a checker workflow contains a validation tool/workflow. The validation tool/workflow is what does the bulk of the validation. It is responsible for ensuring that the results of the original entry match expected results. The checker workflow refers to the workflow that connects the original entry with the validation tool/workflow, so that it can be run as one workflow.
+Like regular workflows, a checker workflow can describe an example input from an input parameter file. The checker workflow can either use the input parameter file for the original entry, or it can define its own. The second case is useful when the validation tool/workflow has some extra parameters not required by the original entry.
 
-Also like regular workflows, a checker workflow can take input from an input parameter file. The checker workflow can either use the input parameter file for the original entry, or it can define its own. The second case is useful when the validation tool/workflow has some extra parameters not required by the original entry.
-
-For our example the second case is used. The parent tool has the input parameter file [/md5sum-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/md5sum/md5sum-input-cwl.json)
+For our example the second case is used. The original tool has the input parameter file [/md5sum-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/md5sum/md5sum-input-cwl.json). This is the file that runs a particular example with the original tool.
 ```
 {
   "input_file": {
@@ -44,7 +42,7 @@ For our example the second case is used. The parent tool has the input parameter
 }
 ```
 
-The checker workflow has the input parameter file [/checker-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json)
+The checker workflow has the input parameter file [/checker-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json). This is the file that we would pass to the checker workflow to ensure that our original tool is working properly when we run it with the input file mentioned above. Again, in some cases this file could be the same as the one for the original tool parameter file, though not in this case.
 ```
 {
   "input_file": {
@@ -55,7 +53,10 @@ The checker workflow has the input parameter file [/checker-input-cwl.json](http
 }
 ```
 
-Notice that the checker parameter file has the same content as the parent parameter file, in addition to having a checker specific parameter.
+Notice that the checker parameter file has the same content as the original parameter file, in addition to having a checker specific parameter.
+
+One point of confusion is that a checker workflow contains a validation tool/workflow. The validation tool/workflow is what does the bulk of the validation. It is responsible for ensuring that the results of the original entry match expected results. The checker workflow refers to the workflow that connects the original entry with the validation tool/workflow, so that it can be run as one workflow.
+
 
 #### Output of checker workflow
 To ensure that checking a checker workflow's output can be automated, it is important that the checker workflow produce consistent exit codes. We require using an exit code of 0 for success and an exit code of not 0 for failures.
@@ -65,7 +66,7 @@ We also recommend producing the following two output files containing the stdout
 * log.stderr
 
 #### Note on CLI usage
-For existing dockstore commands (tools and workflows), entry refers to the path of a specific tool or workflow. For checker workflows, entry refers to the path of the parent entry. It does not refer to the checker workflow's path.
+For existing dockstore commands (tools and workflows), entry refers to the path of a specific tool or workflow. For checker workflows, entry refers to the path of the original entry. It does not refer to the checker workflow's path.
 
 ## Adding a checker workflow
 Currently, you can add checker workflows to existing tools and workflows.
@@ -97,7 +98,7 @@ Using our example checker workflow, we would run the following:
 This will add the checker workflow defined by [/checker-workflow-wrapping-tool.cwl](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-workflow-wrapping-tool.cwl) to the entry `quay.io/agduncan94/my-md5sum`.
 
 The descriptor type will default to 'cwl' if none is provided.
-The default input parameter path will default to the default input parameter path of the parent entry.
+The default input parameter path will default to the default input parameter path of the original entry.
 
 ## Updating a checker workflow
 
@@ -150,7 +151,7 @@ We also need a local version of the file we are calculating the md5sum for:
 It can be useful to have all relevant files for a checker workflow locally. This can be done with the download feature.
 
 ### From the CLI
-The command for this is very simple. Again note that the entry is for the parent entry, and not the checker workflow.
+The command for this is very simple. Again note that the entry is for the original entry, and not the checker workflow.
 
 `dockstore checker download --entry quay.io/agduncan94/my-md5sum --version master`
 
@@ -158,4 +159,4 @@ This will download the descriptor and any secondary descriptors, maintaining the
 
 ## For Advanced Users
 You can interact with checker workflows using the TRS. See
-[Advanced Features](/docs/publisher-tutorials/advanced-features/) for more information.
+[Checker Workflows and the TRS](/docs/publisher-tutorials/checker-workflow-trs/) for more information.
