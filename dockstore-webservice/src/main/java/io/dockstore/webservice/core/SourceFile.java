@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -29,6 +30,8 @@ import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * This describes a cached copy of a remotely accessible file. Implementation specific.
@@ -38,32 +41,42 @@ import io.swagger.annotations.ApiModelProperty;
 @ApiModel("SourceFile")
 @Entity
 @Table(name = "sourcefile")
+@SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile {
+    /**
+     * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
+     *
+     */
     public enum FileType {
         // Add supported descriptor types here
-        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON
+        DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS
     }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty("Implementation specific ID for the source file in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", position = 0)
     private long id;
 
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "Enumerates the type of file", required = true)
+    @ApiModelProperty(value = "Enumerates the type of file", required = true, position = 1)
     private FileType type;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty("Cache for the contents of the target file")
+    @ApiModelProperty(value = "Cache for the contents of the target file", position = 2)
     private String content;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Path to source file in git repo", required = true)
+    @ApiModelProperty(value = "Path to source file in git repo", required = true, position = 3)
     private String path;
 
-    public void update(SourceFile file) {
-        content = file.content;
-    }
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     public long getId() {
         return id;

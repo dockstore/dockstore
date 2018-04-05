@@ -36,4 +36,8 @@ public class VersionDAO<T extends Version> extends AbstractDAO<T> {
     public long create(T tag) {
         return persist(tag).getId();
     }
+
+    public void delete(T version) {
+        currentSession().delete(version);
+    }
 }

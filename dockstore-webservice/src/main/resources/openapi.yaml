@@ -1,0 +1,5841 @@
+openapi: 3.0.0
+info:
+  description: >-
+    This describes the dockstore API, a webservice that manages pairs of Docker
+    images and associated metadata such as CWL documents and Dockerfiles used to
+    build those images
+  version: 1.3.0
+  title: Dockstore API
+  termsOfService: ''
+  contact:
+    name: Dockstore@ga4gh
+    url: 'https://github.com/ga4gh/dockstore'
+    email: theglobalalliance@genomicsandhealth.org
+  license:
+    name: ' GNU Lesser General Public License'
+    url: 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
+tags:
+  - name: GA4GH
+    description: >-
+      A curated subset of resources proposed as a common standard for tool
+      repositories
+  - name: GA4GHV1
+    description: >-
+      A curated subset of resources proposed as a common standard for tool
+      repositories
+  - name: containers
+    description: >-
+      List and register entries in the dockstore (pairs of images + metadata
+      (CWL and Dockerfile))
+  - name: containertags
+    description: List and modify tags for containers
+  - name: extendedGA4GH
+    description: Optional experimental extensions of the GA4GH API
+  - name: github.repo
+    description: List source code repositories (should be generalized from github)
+  - name: integration.bitbucket.org
+    description: stop-gap allowing developers to associate with bitbucket
+  - name: integration.github.com
+    description: stop-gap allowing developers to associate with github
+  - name: integration.gitlab.com
+    description: stop-gap allowing developers to associate with gitlab
+  - name: integration.quay.io
+    description: stop-gap allowing developers to associate with quay.io
+  - name: metadata
+  - name: tokens
+    description: 'List, modify, refresh, and delete tokens for external services'
+  - name: users
+    description: 'List, modify, and manage end users of the dockstore'
+  - name: workflows
+    description: List and register workflows in the dockstore (CWL or WDL)
+paths:
+  /api/ga4gh/v1/metadata:
+    get:
+      tags:
+        - GA4GHV1
+      summary: Return some metadata that is useful for describing this registry
+      description: Return some metadata that is useful for describing this registry
+      operationId: metadataGet
+      responses:
+        '200':
+          description: A Metadata object describing this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataV1'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/MetadataV1'
+  /api/ga4gh/v1/tool-classes:
+    get:
+      tags:
+        - GA4GHV1
+      summary: List all tool types
+      description: 'This endpoint returns all tool-classes available '
+      operationId: toolClassesGet
+      responses:
+        '200':
+          description: An array of methods that match the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolClass'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolClass'
+  /api/ga4gh/v1/tools:
+    get:
+      tags:
+        - GA4GHV1
+      summary: List all tools
+      description: >-
+        This endpoint returns all tools available or a filtered subset using
+        metadata query parameters. 
+      operationId: toolsGet
+      parameters:
+        - name: id
+          in: query
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: false
+          schema:
+            type: string
+        - name: registry
+          in: query
+          description: The image registry that contains the image.
+          required: false
+          schema:
+            type: string
+        - name: organization
+          in: query
+          description: The organization in the registry that published the image.
+          required: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: The name of the image.
+          required: false
+          schema:
+            type: string
+        - name: toolname
+          in: query
+          description: The name of the tool.
+          required: false
+          schema:
+            type: string
+        - name: description
+          in: query
+          description: The description of the tool.
+          required: false
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: >-
+            The author of the tool (TODO a thought occurs, are we assuming that
+            the author of the CWL and the image are the same?).
+          required: false
+          schema:
+            type: string
+        - name: offset
+          in: query
+          description: >-
+            Start index of paging. Pagination results can be based on numbers or
+            other values chosen by the registry implementor (for example, SHA
+            values). If this exceeds the current result set return an empty
+            set.  If not specified in the request this will start at the
+            beginning of the results.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Amount of records to return in a given page.  By default it is 1000.
+          required: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: An array of Tools that match the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+  '/api/ga4gh/v1/tools/{id}':
+    get:
+      tags:
+        - GA4GHV1
+      summary: 'List one specific tool, acts as an anchor for self references'
+      description: >-
+        This endpoint returns one specific tool (which has ToolVersions nested
+        inside it)
+      operationId: toolsIdGet
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A tool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolV1'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolV1'
+  '/api/ga4gh/v1/tools/{id}/versions':
+    get:
+      tags:
+        - GA4GHV1
+      summary: List versions of a tool
+      description: Returns all versions of the specified tool
+      operationId: toolsIdVersionsGet
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: An array of tool versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersionV1'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersionV1'
+  '/api/ga4gh/v1/tools/{id}/versions/{version_id}':
+    get:
+      tags:
+        - GA4GHV1
+      summary: 'List one specific tool version, acts as an anchor for self references'
+      description: This endpoint returns one specific tool version
+      operationId: toolsIdVersionsVersionIdGet
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version, scoped to this registry, for
+            example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A tool version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolVersionV1'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolVersionV1'
+  '/api/ga4gh/v1/tools/{id}/versions/{version_id}/dockerfile':
+    get:
+      tags:
+        - GA4GHV1
+      summary: Get the dockerfile for the specified image.
+      description: Returns the dockerfile for the specified image.
+      operationId: toolsIdVersionsVersionIdDockerfileGet
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDockerfile'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolDockerfile'
+        '404':
+          description: The tool payload is not present in the service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDockerfile'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolDockerfile'
+  '/api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor':
+    get:
+      tags:
+        - GA4GHV1
+      summary: Get the tool descriptor (CWL/WDL) for the specified tool.
+      description: Returns the CWL or WDL descriptor for the specified tool.
+      operationId: toolsIdVersionsVersionIdTypeDescriptorGet
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The output type of the descriptor. If not specified it is up to the
+            underlying implementation to determine which output type to return.
+            Plain types return the bare descriptor while the "non-plain" types
+            return a descriptor wrapped with metadata
+          required: true
+          schema:
+            type: string
+            enum:
+              - CWL
+              - WDL
+              - PLAIN_CWL
+              - PLAIN_WDL
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool descriptor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+        '404':
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+  '/api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}':
+    get:
+      tags:
+        - GA4GHV1
+      summary: Get additional tool descriptor files (CWL/WDL) relative to the main file
+      description: >-
+        Returns additional CWL or WDL descriptors for the specified tool in the
+        same or subdirectories
+      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The output type of the descriptor. If not specified it is up to the
+            underlying implementation to determine which output type to return. 
+            Plain types return the bare descriptor while the "non-plain" types
+            return a descriptor wrapped with metadata
+          required: true
+          schema:
+            type: string
+            enum:
+              - CWL
+              - WDL
+              - PLAIN_CWL
+              - PLAIN_WDL
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+        - name: relative_path
+          in: path
+          description: >-
+            A relative path to the additional file (same directory or
+            subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from
+            the same directory as the main descriptor
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool descriptor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+        '404':
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+  '/api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/tests':
+    get:
+      tags:
+        - GA4GHV1
+      summary: Get an array of test JSONs suitable for use with this descriptor type.
+      description: ''
+      operationId: toolsIdVersionsVersionIdTypeTestsGet
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The output type of the descriptor. If not specified it is up to the
+            underlying implementation to determine which output type to return.
+            Plain types return the bare descriptor while the "non-plain" types
+            return a descriptor wrapped with metadata
+          required: true
+          schema:
+            type: string
+            enum:
+              - CWL
+              - WDL
+              - PLAIN_CWL
+              - PLAIN_WDL
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool test JSON response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTests'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTests'
+        '404':
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTests'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTests'
+  '/api/ga4gh/v2/extended/containers/{organization}':
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List entries of an organization
+      description: 'This endpoint returns entries of an organization. '
+      operationId: entriesOrgGet
+      parameters:
+        - name: organization
+          in: path
+          description: 'An organization, for example `cancercollaboratory`'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: An array of Tools of the input organization.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+  /api/ga4gh/v2/extended/organizations:
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List all organizations
+      description: 'This endpoint returns list of all organizations. '
+      operationId: entriesOrgGet
+      responses:
+        '200':
+          description: An array of organizations' names.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+            text/plain:
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/ga4gh/v2/extended/tools/entry/_search:
+    post:
+      tags:
+        - extendedGA4GH
+      summary: Search the index of tools
+      description: >-
+        This endpoint searches the index for all published tools and workflows.
+        Used by utilities that expect to talk to an elastic search endpoint
+      operationId: toolsIndexSearch
+      responses:
+        '200':
+          description: An elastic search result.
+          content:
+            application/json:
+              schema:
+                type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: elastic search query
+        required: true
+  /api/ga4gh/v2/extended/tools/index:
+    post:
+      tags:
+        - extendedGA4GH
+      summary: Update the index of tools
+      description: 'This endpoint updates the index for all published tools and workflows. '
+      operationId: toolsIndexGet
+      responses:
+        '200':
+          description: An array of Tools of the input organization.
+          content:
+            text/plain:
+              schema:
+                type: integer
+                format: int32
+      security:
+        - BEARER: []
+  '/api/ga4gh/v2/extended/tools/{organization}':
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List tools of an organization
+      description: 'This endpoint returns tools of an organization. '
+      operationId: toolsOrgGet
+      parameters:
+        - name: organization
+          in: path
+          description: 'An organization, for example `cancercollaboratory`'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: An array of Tools of the input organization.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+  '/api/ga4gh/v2/extended/workflows/{organization}':
+    get:
+      tags:
+        - extendedGA4GH
+      summary: List workflows of an organization
+      description: 'This endpoint returns workflows of an organization. '
+      operationId: workflowsOrgGet
+      parameters:
+        - name: organization
+          in: path
+          description: 'An organization, for example `cancercollaboratory`'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: An array of Tools of the input organization.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolV1'
+  /api/ga4gh/v2/metadata:
+    get:
+      tags:
+        - GA4GH
+      summary: Return some metadata that is useful for describing this registry
+      description: Return some metadata that is useful for describing this registry
+      operationId: metadataGet
+      responses:
+        '200':
+          description: A Metadata object describing this service.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Metadata'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Metadata'
+  /api/ga4gh/v2/toolClasses:
+    get:
+      tags:
+        - GA4GH
+      summary: List all tool types
+      description: 'This endpoint returns all tool-classes available '
+      operationId: toolClassesGet
+      responses:
+        '200':
+          description: A list of potential tool classes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolClass'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolClass'
+  /api/ga4gh/v2/tools:
+    get:
+      tags:
+        - GA4GH
+      summary: List all tools
+      description: >-
+        This endpoint returns all tools available or a filtered subset using
+        metadata query parameters. 
+      operationId: toolsGet
+      parameters:
+        - name: id
+          in: query
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: false
+          schema:
+            type: string
+        - name: registry
+          in: query
+          description: The image registry that contains the image.
+          required: false
+          schema:
+            type: string
+        - name: organization
+          in: query
+          description: The organization in the registry that published the image.
+          required: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: The name of the image.
+          required: false
+          schema:
+            type: string
+        - name: toolname
+          in: query
+          description: The name of the tool.
+          required: false
+          schema:
+            type: string
+        - name: description
+          in: query
+          description: The description of the tool.
+          required: false
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: >-
+            The author of the tool (TODO a thought occurs, are we assuming that
+            the author of the CWL and the image are the same?).
+          required: false
+          schema:
+            type: string
+        - name: offset
+          in: query
+          description: >-
+            Start index of paging. Pagination results can be based on numbers or
+            other values chosen by the registry implementor (for example, SHA
+            values). If this exceeds the current result set return an empty
+            set.  If not specified in the request, this will start at the
+            beginning of the results.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Amount of records to return in a given page.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1000
+      responses:
+        '200':
+          description: An array of Tools that match the filter.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+  '/api/ga4gh/v2/tools/{id}':
+    get:
+      tags:
+        - GA4GH
+      summary: 'List one specific tool, acts as an anchor for self references'
+      description: >-
+        This endpoint returns one specific tool (which has ToolVersions nested
+        inside it)
+      operationId: toolsIdGet
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A tool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        '404':
+          description: The tool can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/api/ga4gh/v2/tools/{id}/versions':
+    get:
+      tags:
+        - GA4GH
+      summary: List versions of a tool
+      description: Returns all versions of the specified tool
+      operationId: toolsIdVersionsGet
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: An array of tool versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersion'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolVersion'
+  '/api/ga4gh/v2/tools/{id}/versions/{version_id}':
+    get:
+      tags:
+        - GA4GH
+      summary: 'List one specific tool version, acts as an anchor for self references'
+      description: This endpoint returns one specific tool version
+      operationId: toolsIdVersionsVersionIdGet
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version, scoped to this registry, for
+            example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A tool version.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolVersion'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolVersion'
+        '404':
+          description: The tool can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile':
+    get:
+      tags:
+        - GA4GH
+      summary: Get the container specification(s) for the specified image.
+      description: >-
+        Returns the container specifications(s) for the specified image. For
+        example, a CWL CommandlineTool can be associated with one specification
+        for a container, a CWL Workflow can be associated with multiple
+        specifications for containers
+      operationId: toolsIdVersionsVersionIdContainerfileGet
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool payload.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolContainerfile'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolContainerfile'
+        '404':
+          description: There are no container specifications for this tool
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor':
+    get:
+      tags:
+        - GA4GH
+      summary: Get the tool descriptor for the specified tool
+      description: >-
+        Returns the descriptor for the specified tool (examples include CWL,
+        WDL, or Nextflow documents).
+      operationId: toolsIdVersionsVersionIdTypeDescriptorGet
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The output type of the descriptor. If not specified, it is up to the
+            underlying implementation to determine which output type to return.
+            Plain types return the bare descriptor while the "non-plain" types
+            return a descriptor wrapped with metadata. Allowable values include
+            "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL".
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version, scoped to this registry, for
+            example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool descriptor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+        '404':
+          description: The tool descriptor can not be found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}':
+    get:
+      tags:
+        - GA4GH
+      summary: Get additional tool descriptor files relative to the main file
+      description: >-
+        Descriptors can often include imports that refer to additional
+        descriptors. This returns additional descriptors for the specified tool
+        in the same or other directories that can be reached as a relative path.
+        This endpoint can be useful for workflow engine implementations like
+        cwltool to programmatically download all the descriptors for a tool and
+        run it
+      operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The output type of the descriptor. If not specified, it is up to the
+            underlying implementation to determine which output type to return.
+            Plain types return the bare descriptor while the "non-plain" types
+            return a descriptor wrapped with metadata. Allowable values are
+            "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL".
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+        - name: relative_path
+          in: path
+          description: >-
+            A relative path to the additional file (same directory or
+            subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from
+            the same directory as the main descriptor. 'nestedDirectory/foo.cwl'
+            would return the file  from a nested subdirectory
+          required: true
+          schema:
+            type: string
+            pattern: .+
+      responses:
+        '200':
+          description: The tool descriptor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ToolDescriptor'
+        '404':
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files':
+    get:
+      tags:
+        - GA4GH
+      summary: Get a list of objects that contain the relative path and file type
+      description: >-
+        Get a list of objects that contain the relative path and file type. The
+        descriptors are intended for use with the
+        /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path : .+}
+        endpoint.
+      operationId: toolsIdVersionsVersionIdTypeFilesGet
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The output type of the descriptor. Examples of allowable values are
+            "CWL", "WDL", and "NextFlow."
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The array of File JSON responses.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFile'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolFile'
+        '404':
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+  '/api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests':
+    get:
+      tags:
+        - GA4GH
+      summary: Get a list of test JSONs
+      description: >-
+        Get a list of test JSONs (these allow you to execute the tool
+        successfully) suitable for use with this descriptor type.
+      operationId: toolsIdVersionsVersionIdTypeTestsGet
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The type of the underlying descriptor. Allowable values include
+            "CWL", "WDL", "NFL", "PLAIN_CWL", "PLAIN_WDL", "PLAIN_NFL". For
+            example, "CWL" would return an list of ToolTests objects while
+            "PLAIN_CWL" would return a bare JSON list with the content of the
+            tests. 
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool test JSON response.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTests'
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ToolTests'
+        '404':
+          description: The tool can not be output in the specified type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/tokens:
+    get:
+      tags:
+        - tokens
+      summary: List all known tokens
+      description: List all tokens. Admin Only.
+      operationId: listTokens
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  /auth/tokens/bitbucket.org:
+    get:
+      tags:
+        - tokens
+      summary: 'Add a new bitbucket.org token, used by quay.io redirect'
+      description: >-
+        This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI
+        which should resolve here
+      operationId: addBitbucketToken
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  /auth/tokens/bitbucket.org/refresh:
+    get:
+      tags:
+        - tokens
+      summary: Refresh Bitbucket token
+      description: >-
+        The Bitbucket token expire in one hour. When this happens you'll get 401
+        responses
+      operationId: refreshBitbucketToken
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  /auth/tokens/github:
+    post:
+      tags:
+        - tokens
+      summary: Allow satellizer to post a new GitHub token to dockstore
+      description: A post method is required by saetillizer to send the GitHub token
+      operationId: addToken
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: code
+  /auth/tokens/github.com:
+    get:
+      tags:
+        - tokens
+      summary: 'Add a new github.com token, used by github.com redirect'
+      description: >-
+        This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI
+        which should resolve here
+      operationId: addGithubToken
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  /auth/tokens/gitlab.com:
+    get:
+      tags:
+        - tokens
+      summary: Add a new gitlab.com token
+      description: >-
+        This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI
+        which should resolve here
+      operationId: addGitlabToken
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  /auth/tokens/quay.io:
+    get:
+      tags:
+        - tokens
+      summary: Add a new quay IO token
+      description: >-
+        This is used as part of the OAuth 2 web flow. Once a user has approved
+        permissions for CollaboratoryTheir browser will load the redirect URI
+        which should resolve here
+      operationId: addQuayToken
+      parameters:
+        - name: access_token
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  '/auth/tokens/{tokenId}':
+    get:
+      tags:
+        - tokens
+      summary: Get a specific token by id
+      description: Get a specific token by id
+      operationId: listToken
+      parameters:
+        - name: tokenId
+          in: path
+          description: ID of token to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Token not found
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - tokens
+      summary: Deletes a token
+      description: ''
+      operationId: deleteToken
+      parameters:
+        - name: tokenId
+          in: path
+          description: Token id to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '400':
+          description: Invalid token value
+      security:
+        - BEARER: []
+  /containers:
+    get:
+      tags:
+        - containers
+      summary: List all docker containers cached in database
+      description: List docker container repos currently known. Admin Only
+      operationId: allContainers
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  /containers/dockerRegistryList:
+    get:
+      tags:
+        - containers
+      summary: Get the list of docker registries supported on Dockstore.
+      description: Does not need authentication
+      operationId: getDockerRegistries
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
+  '/containers/namespace/{namespace}/published':
+    get:
+      tags:
+        - containers
+      summary: List all published containers belonging to the specified namespace
+      description: NO authentication
+      operationId: getPublishedContainersByNamespace
+      parameters:
+        - name: namespace
+          in: path
+          description: namespace
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+  '/containers/path/tool/{repository}':
+    get:
+      tags:
+        - containers
+      summary: Get a tool by the specific tool path
+      description: Lists info of tool. Enter full path (include quay.io in path).
+      operationId: getContainerByToolPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  '/containers/path/tool/{repository}/published':
+    get:
+      tags:
+        - containers
+      summary: Get a published tool by the specific tool path
+      description: Lists info of tool. Enter full path (include quay.io in path).
+      operationId: getPublishedContainerByToolPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+  '/containers/path/{containerId}/tags':
+    get:
+      tags:
+        - containertags
+      summary: Get tags  for a container by id
+      description: Lists tags for a container. Enter full path (include quay.io in path).
+      operationId: getTagsByPath
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - BEARER: []
+  '/containers/path/{repository}':
+    get:
+      tags:
+        - containers
+      summary: Get a list of tools by path
+      description: Lists info of tool. Enter full path (include quay.io in path).
+      operationId: getContainerByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  '/containers/path/{repository}/published':
+    get:
+      tags:
+        - containers
+      summary: Get a list of published tools by path
+      description: NO authentication
+      operationId: getPublishedContainerByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+  /containers/published:
+    get:
+      tags:
+        - containers
+      summary: List all published containers.
+      description: NO authentication
+      operationId: allPublishedContainers
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+  '/containers/published/{containerId}':
+    get:
+      tags:
+        - containers
+      summary: Get a published container
+      description: NO authentication
+      operationId: getPublishedContainer
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+  /containers/refresh:
+    get:
+      tags:
+        - containers
+      summary: Refresh all repos
+      description: Updates some metadata. ADMIN ONLY
+      operationId: refreshAll
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  /containers/registerManual:
+    post:
+      tags:
+        - containers
+      summary: 'Register an image manually, along with tags'
+      description: Register an image manually.
+      operationId: registerManual
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DockstoreTool'
+        description: Tool to be registered
+        required: true
+  '/containers/schema/{containerId}/published':
+    get:
+      tags:
+        - containers
+      summary: Get a published container's schema by ID
+      description: NO authentication
+      operationId: getPublishedContainerSchema
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: object
+  /containers/search:
+    get:
+      tags:
+        - containers
+      summary: Search for matching registered containers.
+      description: Search on the name (full path name) and description. NO authentication
+      operationId: search
+      parameters:
+        - name: pattern
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+  '/containers/{containerId}':
+    get:
+      tags:
+        - containers
+      summary: Get a registered repo
+      description: ''
+      operationId: getContainer
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+    put:
+      tags:
+        - containers
+      summary: Update the tool with the given tool.
+      description: ''
+      operationId: updateContainer
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/DockstoreTool'
+    delete:
+      tags:
+        - containers
+      summary: Delete a tool
+      description: ''
+      operationId: deleteContainer
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '400':
+          description: 'Invalid '
+      security:
+        - BEARER: []
+  '/containers/{containerId}/cwl':
+    get:
+      tags:
+        - containers
+      summary: Get the corresponding Dockstore.cwl file on Github.
+      description: Does not need authentication
+      operationId: cwl
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/containers/{containerId}/cwl/{relative-path}':
+    get:
+      tags:
+        - containers
+      summary: Get the corresponding Dockstore.cwl file on Github.
+      description: Does not need authentication
+      operationId: secondaryCwlPath
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: relative-path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/containers/{containerId}/dockerfile':
+    get:
+      tags:
+        - containers
+      summary: Get the corresponding Dockerfile on Github.
+      description: Does not need authentication
+      operationId: dockerfile
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/containers/{containerId}/labels':
+    put:
+      tags:
+        - containers
+      summary: Update the labels linked to a container.
+      description: >-
+        Labels are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateLabels
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: labels
+          in: query
+          description: Comma-delimited list of labels.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateLabelsBody'
+  '/containers/{containerId}/publish':
+    post:
+      tags:
+        - containers
+      summary: Publish or unpublish a container
+      description: >-
+        publish a container (public or private). Assumes that user is using
+        quay.io and github.
+      operationId: publish
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id to publish
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/PublishRequest'
+  '/containers/{containerId}/refresh':
+    get:
+      tags:
+        - containers
+      summary: Refresh one particular repo
+      description: ''
+      operationId: refresh
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  '/containers/{containerId}/requestDOI/{tagId}':
+    post:
+      tags:
+        - containertags
+      summary: Request a DOI for this version of a tool
+      description: ''
+      operationId: requestDOIForToolTag
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tagId
+          in: path
+          description: Tag to verify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - BEARER: []
+  '/containers/{containerId}/secondaryCwl':
+    get:
+      tags:
+        - containers
+      summary: Get a list of secondary CWL files from Git.
+      description: Does not need authentication
+      operationId: secondaryCwl
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+  '/containers/{containerId}/secondaryWdl':
+    get:
+      tags:
+        - containers
+      summary: Get a list of secondary WDL files from Git.
+      description: Does not need authentication
+      operationId: secondaryWdl
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+  '/containers/{containerId}/star':
+    put:
+      tags:
+        - containers
+      summary: Stars a tool.
+      description: ''
+      operationId: starEntry
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to star.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/StarRequest'
+  '/containers/{containerId}/starredUsers':
+    get:
+      tags:
+        - containers
+      summary: Returns list of users who starred the given tool
+      description: ''
+      operationId: getStarredUsers
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to grab starred users for.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  '/containers/{containerId}/tags':
+    post:
+      tags:
+        - containertags
+      summary: Add new tags linked to a container
+      description: >-
+        Tag correspond to each row of the versions table listing all information
+        for a docker repo tag
+      operationId: addTags
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tag'
+        description: List of new tags
+        required: true
+    put:
+      tags:
+        - containertags
+      summary: Update the tags linked to a container
+      description: >-
+        Tag correspond to each row of the versions table listing all information
+        for a docker repo tag
+      operationId: updateTags
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tag'
+        description: List of modified tags
+        required: true
+  '/containers/{containerId}/tags/{tagId}':
+    delete:
+      tags:
+        - containertags
+      summary: Delete tag linked to a container
+      description: >-
+        Tag correspond to each row of the versions table listing all information
+        for a docker repo tag
+      operationId: deleteTags
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tagId
+          in: path
+          description: Tag to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+  '/containers/{containerId}/testParameterFiles':
+    get:
+      tags:
+        - containers
+      summary: Get the corresponding wdl test parameter files.
+      description: Does not need authentication
+      operationId: getTestParameterFiles
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          description: Descriptor Type
+          required: true
+          schema:
+            type: string
+            enum:
+              - CWL
+              - WDL
+              - NFL
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+    put:
+      tags:
+        - containers
+      summary: Add test parameter files for a given tag.
+      description: ''
+      operationId: addTestParameterFiles
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: testParameterPaths
+          in: query
+          description: List of paths.
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: tagName
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          description: Descriptor Type
+          required: true
+          schema:
+            type: string
+            enum:
+              - CWL
+              - WDL
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateLabelsBody'
+    delete:
+      tags:
+        - containers
+      summary: Delete test parameter files for a given tag.
+      description: ''
+      operationId: deleteTestParameterFiles
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: testParameterPaths
+          in: query
+          description: List of paths.
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: tagName
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          description: Descriptor Type
+          required: true
+          schema:
+            type: string
+            enum:
+              - CWL
+              - WDL
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
+  '/containers/{containerId}/unstar':
+    delete:
+      tags:
+        - containers
+      summary: Unstars a tool.
+      description: ''
+      operationId: unstarEntry
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to unstar.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+  '/containers/{containerId}/updateTagPaths':
+    put:
+      tags:
+        - containers
+      summary: Change the workflow paths
+      description: >-
+        Tag correspond to each row of the versions table listing all information
+        for a docker repo tag
+      operationId: updateTagContainerPath
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/DockstoreTool'
+  '/containers/{containerId}/users':
+    get:
+      tags:
+        - containers
+      summary: Get users of a container
+      description: ''
+      operationId: getUsers
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  '/containers/{containerId}/verifiedSources':
+    get:
+      tags:
+        - containers
+      summary: Get the corresponding Dockstore.cwl file on Github.
+      description: Does not need authentication
+      operationId: verifiedSources
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  '/containers/{containerId}/verify/{tagId}':
+    put:
+      tags:
+        - containertags
+      summary: Verify or unverify a version . ADMIN ONLY
+      description: ''
+      operationId: verifyToolTag
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tagId
+          in: path
+          description: Tag to verify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/VerifyRequest'
+  '/containers/{containerId}/wdl':
+    get:
+      tags:
+        - containers
+      summary: Get the corresponding Dockstore.wdl file on Github.
+      description: Does not need authentication
+      operationId: wdl
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/containers/{containerId}/wdl/{relative-path}':
+    get:
+      tags:
+        - containers
+      summary: Get the corresponding Dockstore.wdl file on Github.
+      description: Does not need authentication
+      operationId: secondaryWdlPath
+      parameters:
+        - name: containerId
+          in: path
+          description: Tool id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: relative-path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  /github.repo:
+    get:
+      tags:
+        - github.repo
+      summary: List all repos known via all registered tokens
+      description: >-
+        List docker container repos currently known. Right now, tokens are used
+        to synchronously talk to the quay.io API to list repos. Ultimately, we
+        should cache this information and refresh either by user request or by
+        time TODO: This should be a properly defined list of objects, it also
+        needs admin authentication
+      operationId: getRepos
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BEARER: []
+  /integration.bitbucket.org:
+    get:
+      tags:
+        - integration.bitbucket.org
+      summary: Display an authorization link for bitbucket.org
+      description: >-
+        This is a stop-gap GUI for displaying a link that allows a user to start
+        the OAuth 2 web flow
+      operationId: getView
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/BitbucketOrgView'
+  /integration.github.com:
+    get:
+      tags:
+        - integration.github.com
+      summary: Display an authorization link for github.com
+      description: >-
+        This is a stop-gap GUI for displaying a link that allows a user to start
+        the OAuth 2 web flow
+      operationId: getView
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/GithubComView'
+  /integration.gitlab.com:
+    get:
+      tags:
+        - integration.gitlab.com
+      summary: Display an authorization link for gitlab.com
+      description: >-
+        This is a stop-gap GUI for displaying a link that allows a user to start
+        the OAuth 2 web flow
+      operationId: getView
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/GitlabComView'
+  /integration.quay.io:
+    get:
+      tags:
+        - integration.quay.io
+      summary: Display an authorization link for quay.io
+      description: More notes about this method
+      operationId: getView
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/QuayIOView'
+  /metadata/descriptorLanguageList:
+    get:
+      tags:
+        - metadata
+      summary: Get the list of descriptor languages supported on Dockstore.
+      description: Does not need authentication
+      operationId: getDescriptorLanguages
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DescriptorLanguageBean'
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+        - metadata
+      summary: Get the list of docker registries supported on Dockstore.
+      description: Does not need authentication
+      operationId: getDockerRegistries
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
+  /metadata/rss:
+    get:
+      tags:
+        - metadata
+      summary: List all tools and workflows in creation order
+      description: NO authentication
+      operationId: rssFeed
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/xml:
+              schema:
+                type: string
+  /metadata/sitemap:
+    get:
+      tags:
+        - metadata
+      summary: List all workflow and tool paths.
+      description: NO authentication
+      operationId: sitemap
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/html:
+              schema:
+                type: string
+            text/xml:
+              schema:
+                type: string
+  /metadata/sourceControlList:
+    get:
+      tags:
+        - metadata
+      summary: Get the list of source controls supported on Dockstore.
+      description: Does not need authentication
+      operationId: getSourceControlList
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceControlBean'
+  /users:
+    get:
+      tags:
+        - users
+      summary: List all known users
+      description: List all users. Admin only.
+      operationId: listUsers
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  /users/groups:
+    get:
+      tags:
+        - users
+      summary: List all groups
+      description: ''
+      operationId: allGroups
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+      security:
+        - BEARER: []
+    post:
+      tags:
+        - users
+      summary: Create user group
+      description: ''
+      operationId: createGroup
+      parameters:
+        - name: group_name
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+      security:
+        - BEARER: []
+  '/users/groups/{groupId}':
+    get:
+      tags:
+        - users
+      summary: List a group
+      description: ''
+      operationId: getGroup
+      parameters:
+        - name: groupId
+          in: path
+          description: Group
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - users
+      summary: 'Deletes a group, admin only'
+      description: ''
+      operationId: deleteGroup
+      parameters:
+        - name: groupId
+          in: path
+          description: Group id to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '400':
+          description: Invalid groupId value
+      security:
+        - BEARER: []
+  '/users/groups/{groupId}/users':
+    get:
+      tags:
+        - users
+      summary: Get users that belongs to a group
+      description: ''
+      operationId: getUsersFromGroup
+      parameters:
+        - name: groupId
+          in: path
+          description: Group
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  /users/starredTools:
+    get:
+      tags:
+        - users
+      summary: Get the logged-in user's starred tools
+      description: ''
+      operationId: getStarredTools
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+      security:
+        - BEARER: []
+  /users/starredWorkflows:
+    get:
+      tags:
+        - users
+      summary: Get the logged-in user's starred workflows
+      description: ''
+      operationId: getStarredWorkflows
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Entry'
+      security:
+        - BEARER: []
+  /users/updateUserMetadata:
+    get:
+      tags:
+        - users
+      summary: Update metadata of all users
+      description: Update all users metadata. Admin only.
+      operationId: updateUserMetadata
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  /users/user:
+    get:
+      tags:
+        - users
+      summary: Get the logged-in user
+      description: ''
+      operationId: getUser
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  /users/user/updateUserMetadata:
+    get:
+      tags:
+        - users
+      summary: Update metadata for logged in user
+      description: Update metadata for logged in user.
+      operationId: updateLoggedInUserMetadata
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  '/users/username/{username}':
+    get:
+      tags:
+        - users
+      summary: Get user
+      description: ''
+      operationId: listUser
+      parameters:
+        - name: username
+          in: path
+          description: Username of user to return
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  '/users/{userId}':
+    get:
+      tags:
+        - users
+      summary: Get user with id
+      description: ''
+      operationId: getUser
+      parameters:
+        - name: userId
+          in: path
+          description: User to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  '/users/{userId}/containers':
+    get:
+      tags:
+        - users
+      summary: List repos owned by the logged-in user
+      description: Lists all registered and unregistered containers owned by the user
+      operationId: userContainers
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  '/users/{userId}/containers/published':
+    get:
+      tags:
+        - users
+      summary: List all published containers from a user
+      description: Get user's published containers only
+      operationId: userPublishedContainers
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  '/users/{userId}/containers/refresh':
+    get:
+      tags:
+        - users
+      summary: Refresh repos owned by the logged-in user
+      description: Updates some metadata
+      operationId: refresh
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  '/users/{userId}/containers/{organization}/refresh':
+    get:
+      tags:
+        - users
+      summary: Refresh repos owned by the logged-in user with specified organization
+      description: Refresh all tools in an organization
+      operationId: refreshToolsByOrganization
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organization
+          in: path
+          description: Organization
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  '/users/{userId}/groups':
+    get:
+      tags:
+        - users
+      summary: Get groups that the user belongs to
+      description: ''
+      operationId: getGroupsFromUser
+      parameters:
+        - name: userId
+          in: path
+          description: User
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+      security:
+        - BEARER: []
+    put:
+      tags:
+        - users
+      summary: Add a group to a user
+      description: ''
+      operationId: addGroupToUser
+      parameters:
+        - name: userId
+          in: path
+          description: User ID of user
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Group'
+        description: PublishRequest to refresh the list of repos for a user
+        required: true
+  '/users/{userId}/groups/{groupId}':
+    delete:
+      tags:
+        - users
+      summary: Remove a user from a group
+      description: ''
+      operationId: removeUserFromGroup
+      parameters:
+        - name: userId
+          in: path
+          description: User ID of user
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: groupId
+          in: path
+          description: Group ID of group
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid user or group value
+      security:
+        - BEARER: []
+  '/users/{userId}/tokens':
+    get:
+      tags:
+        - users
+      summary: Get tokens with user id
+      description: ''
+      operationId: getUserTokens
+      parameters:
+        - name: userId
+          in: path
+          description: User to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  '/users/{userId}/tokens/dockstore':
+    get:
+      tags:
+        - users
+      summary: Get Dockstore tokens with user id
+      description: ''
+      operationId: getDockstoreUserTokens
+      parameters:
+        - name: userId
+          in: path
+          description: User to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  '/users/{userId}/tokens/github.com':
+    get:
+      tags:
+        - users
+      summary: Get Github tokens with user id
+      description: ''
+      operationId: getGithubUserTokens
+      parameters:
+        - name: userId
+          in: path
+          description: User to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  '/users/{userId}/tokens/gitlab.com':
+    get:
+      tags:
+        - users
+      summary: Get Gitlab tokens with user id
+      description: ''
+      operationId: getGitlabUserTokens
+      parameters:
+        - name: userId
+          in: path
+          description: User to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  '/users/{userId}/tokens/quay.io':
+    get:
+      tags:
+        - users
+      summary: Get Quay tokens with user id
+      description: ''
+      operationId: getQuayUserTokens
+      parameters:
+        - name: userId
+          in: path
+          description: User to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+  '/users/{userId}/workflows':
+    get:
+      tags:
+        - users
+      summary: List workflows owned by the logged-in user
+      description: Lists all registered and unregistered workflows owned by the user
+      operationId: userWorkflows
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  '/users/{userId}/workflows/published':
+    get:
+      tags:
+        - users
+      summary: List all published workflows from a user
+      description: Get user's published workflows only
+      operationId: userPublishedWorkflows
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  '/users/{userId}/workflows/refresh':
+    get:
+      tags:
+        - users
+      summary: Refresh workflows owned by the logged-in user
+      description: Updates some metadata
+      operationId: refreshWorkflows
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  '/users/{userId}/workflows/{organization}/refresh':
+    get:
+      tags:
+        - users
+      summary: >-
+        Refresh workflows owned by the logged-in user with specified
+        organization
+      description: Refresh all workflows in an organization
+      operationId: refreshWorkflowsByOrganization
+      parameters:
+        - name: userId
+          in: path
+          description: User ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organization
+          in: path
+          description: Organization
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  /workflows:
+    get:
+      tags:
+        - workflows
+      summary: List all workflows cached in database
+      description: List workflows currently known. Admin Only
+      operationId: allWorkflows
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  /workflows/manualRegister:
+    post:
+      tags:
+        - workflows
+      summary: Manually register a workflow
+      description: Manually register workflow (public or private).
+      operationId: manualRegister
+      parameters:
+        - name: workflowRegistry
+          in: query
+          description: Workflow registry
+          required: true
+          schema:
+            type: string
+        - name: workflowPath
+          in: query
+          description: Workflow repository
+          required: true
+          schema:
+            type: string
+        - name: defaultWorkflowPath
+          in: query
+          description: Workflow container new descriptor path (CWL or WDL) and/or name
+          required: true
+          schema:
+            type: string
+        - name: workflowName
+          in: query
+          description: Workflow name
+          required: true
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          description: Descriptor type
+          required: true
+          schema:
+            type: string
+        - name: defaultTestParameterFilePath
+          in: query
+          description: Default test parameter file path
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  '/workflows/organization/{organization}/published':
+    get:
+      tags:
+        - workflows
+      summary: List all published workflows belonging to the specified namespace
+      description: NO authentication
+      operationId: getPublishedWorkflowsByOrganization
+      parameters:
+        - name: organization
+          in: path
+          description: organization
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+  '/workflows/path/entry/{repository}':
+    get:
+      tags:
+        - workflows
+      summary: Get an entry by path
+      description: Gets an entry from the path. Enter full path.
+      operationId: getEntryByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - BEARER: []
+  '/workflows/path/entry/{repository}/published':
+    get:
+      tags:
+        - workflows
+      summary: Get an entry by path
+      description: Gets a published entry from the path. Enter full path.
+      operationId: getPublishedEntryByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - BEARER: []
+  '/workflows/path/workflow/{repository}':
+    get:
+      tags:
+        - workflows
+      summary: Get a workflow by path
+      description: Lists info of workflow. Enter full path.
+      operationId: getWorkflowByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  '/workflows/path/workflow/{repository}/published':
+    get:
+      tags:
+        - workflows
+      summary: Get a published workflow by path
+      description: Lists info of workflow. Enter full path.
+      operationId: getPublishedWorkflowByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+  '/workflows/path/{repository}':
+    get:
+      tags:
+        - workflows
+      summary: Get a list of workflows by path
+      description: Lists info of workflow. Enter full path.
+      operationId: getAllWorkflowByPath
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  /workflows/published:
+    get:
+      tags:
+        - workflows
+      summary: List all published workflows.
+      description: NO authentication
+      operationId: allPublishedWorkflows
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+  '/workflows/published/{workflowId}':
+    get:
+      tags:
+        - workflows
+      summary: Get a published workflow
+      description: NO authentication
+      operationId: getPublishedWorkflow
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+  /workflows/refresh:
+    get:
+      tags:
+        - workflows
+      summary: Refresh all workflows
+      description: Updates some metadata. ADMIN ONLY
+      operationId: refreshAll
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  /workflows/search:
+    get:
+      tags:
+        - workflows
+      summary: Search for matching published workflows.
+      description: Search on the name (full path name) and description. NO authentication
+      operationId: search
+      parameters:
+        - name: pattern
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+  '/workflows/{entryId}/registerCheckerWorkflow/{descriptorType}':
+    post:
+      tags:
+        - workflows
+      summary: >-
+        Register a checker workflow and associates it with the given
+        tool/workflow
+      description: ''
+      operationId: registerCheckerWorkflow
+      parameters:
+        - name: checkerWorkflowPath
+          in: query
+          description: >-
+            Path of the main descriptor of the checker workflow (located in
+            associated tool/workflow repository)
+          required: true
+          schema:
+            type: string
+        - name: testParameterPath
+          in: query
+          description: >-
+            Default path to test parameter files for the checker workflow. If
+            not specified will use that of the entry.
+          required: false
+          schema:
+            type: string
+        - name: entryId
+          in: path
+          description: Entry Id of parent tool/workflow.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: descriptorType
+          in: path
+          description: 'Descriptor type of the workflow, either cwl or wdl.'
+          required: true
+          schema:
+            type: string
+            enum:
+              - cwl
+              - wdl
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - BEARER: []
+  '/workflows/{workflowId}':
+    get:
+      tags:
+        - workflows
+      summary: Get a registered workflow
+      description: ''
+      operationId: getWorkflow
+      parameters:
+        - name: workflowId
+          in: path
+          description: workflow ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+    put:
+      tags:
+        - workflows
+      summary: Update the workflow with the given workflow.
+      description: ''
+      operationId: updateWorkflow
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/Workflow'
+  '/workflows/{workflowId}/cwl':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding Dockstore.cwl file on Github.
+      description: Does not need authentication
+      operationId: cwl
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/cwl/{relative-path}':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding Dockstore.cwl file on Github.
+      description: Does not need authentication
+      operationId: secondaryCwlPath
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: relative-path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/dag/{workflowVersionId}':
+    get:
+      tags:
+        - workflows
+      summary: Get the DAG for a given workflow version
+      description: ''
+      operationId: getWorkflowDag
+      parameters:
+        - name: workflowId
+          in: path
+          description: workflowId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: workflowVersionId
+          in: path
+          description: workflowVersionId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  '/workflows/{workflowId}/labels':
+    put:
+      tags:
+        - workflows
+      summary: Update the labels linked to a workflow.
+      description: >-
+        Labels are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateLabels
+      parameters:
+        - name: workflowId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: labels
+          in: query
+          description: Comma-delimited list of labels.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateLabelsBody'
+  '/workflows/{workflowId}/nextflow':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding nextflow.config file on Github.
+      description: Does not need authentication
+      operationId: nextflow
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/nextflow/{relative-path}':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding nextflow documents on Github.
+      description: Does not need authentication
+      operationId: secondaryNextFlowPath
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: relative-path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/publish':
+    post:
+      tags:
+        - workflows
+      summary: Publish or unpublish a workflow
+      description: Publish/publish a workflow (public or private).
+      operationId: publish
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id to publish/unpublish
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/PublishRequest'
+  '/workflows/{workflowId}/refresh':
+    get:
+      tags:
+        - workflows
+      summary: Refresh one particular workflow. Always do a full refresh when targeted
+      description: ''
+      operationId: refresh
+      parameters:
+        - name: workflowId
+          in: path
+          description: workflow ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  '/workflows/{workflowId}/requestDOI/{workflowVersionId}':
+    put:
+      tags:
+        - workflows
+      summary: Request a DOI for this version of a workflow
+      description: ''
+      operationId: requestDOIForWorkflowVersion
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: workflowVersionId
+          in: path
+          description: workflowVersionId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+      security:
+        - BEARER: []
+  '/workflows/{workflowId}/resetVersionPaths':
+    put:
+      tags:
+        - workflows
+      summary: Change the workflow paths
+      description: >-
+        Workflow version correspond to each row of the versions table listing
+        all information for a workflow
+      operationId: updateWorkflowPath
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/Workflow'
+  '/workflows/{workflowId}/restub':
+    get:
+      tags:
+        - workflows
+      summary: Restub a workflow
+      description: 'Restubs a full, unpublished workflow.'
+      operationId: restub
+      parameters:
+        - name: workflowId
+          in: path
+          description: workflow ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  '/workflows/{workflowId}/secondaryCwl':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding cwl documents on Github.
+      description: Does not need authentication
+      operationId: secondaryCwl
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/secondaryNextflow':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding Nextflow documents on Github.
+      description: Does not need authentication
+      operationId: secondaryNextflow
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/secondaryWdl':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding wdl documents on Github.
+      description: Does not need authentication
+      operationId: secondaryWdl
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/star':
+    put:
+      tags:
+        - workflows
+      summary: Stars a workflow.
+      description: ''
+      operationId: starEntry
+      parameters:
+        - name: workflowId
+          in: path
+          description: Tool to star.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/StarRequest'
+  '/workflows/{workflowId}/starredUsers':
+    get:
+      tags:
+        - workflows
+      summary: Returns list of users who starred the given Workflow
+      description: ''
+      operationId: getStarredUsers
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to grab starred users for.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  '/workflows/{workflowId}/testParameterFiles':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding test parameter files.
+      description: Does not need authentication
+      operationId: getTestParameterFiles
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+    put:
+      tags:
+        - workflows
+      summary: Add test parameter files for a given version.
+      description: ''
+      operationId: addTestParameterFiles
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: testParameterPaths
+          in: query
+          description: List of paths.
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateLabelsBody'
+    delete:
+      tags:
+        - workflows
+      summary: Delete test parameter files for a given version.
+      description: ''
+      operationId: deleteTestParameterFiles
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: testParameterPaths
+          in: query
+          description: List of paths.
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+        - name: version
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
+  '/workflows/{workflowId}/tools/{workflowVersionId}':
+    get:
+      tags:
+        - workflows
+      summary: Get the Tools for a given workflow version
+      description: ''
+      operationId: getTableToolContent
+      parameters:
+        - name: workflowId
+          in: path
+          description: workflowId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: workflowVersionId
+          in: path
+          description: workflowVersionId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  '/workflows/{workflowId}/unstar':
+    delete:
+      tags:
+        - workflows
+      summary: Unstars a workflow.
+      description: ''
+      operationId: unstarEntry
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to unstar.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+  '/workflows/{workflowId}/users':
+    get:
+      tags:
+        - workflows
+      summary: Get users of a workflow
+      description: ''
+      operationId: getUsers
+      parameters:
+        - name: workflowId
+          in: path
+          description: workflow ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  '/workflows/{workflowId}/verifiedSources':
+    get:
+      tags:
+        - workflows
+      summary: Get a semicolon delimited list of verified sources
+      description: Does not need authentication
+      operationId: verifiedSources
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+  '/workflows/{workflowId}/verify/{workflowVersionId}':
+    put:
+      tags:
+        - workflows
+      summary: Verify or unverify a workflow. ADMIN ONLY
+      description: ''
+      operationId: verifyWorkflowVersion
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: workflowVersionId
+          in: path
+          description: workflowVersionId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/VerifyRequest'
+  '/workflows/{workflowId}/wdl':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding Dockstore.wdl file on Github.
+      description: Does not need authentication
+      operationId: wdl
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/wdl/{relative-path}':
+    get:
+      tags:
+        - workflows
+      summary: Get the corresponding Dockstore.wdl file on Github.
+      description: Does not need authentication
+      operationId: secondaryWdlPath
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow id
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tag
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: relative-path
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  '/workflows/{workflowId}/workflowVersions':
+    put:
+      tags:
+        - workflows
+      summary: Update the workflow versions linked to a workflow
+      description: >-
+        Workflow version correspond to each row of the versions table listing
+        all information for a workflow
+      operationId: updateWorkflowVersion
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/WorkflowVersion'
+        description: List of modified workflow versions
+        required: true
+servers:
+  - url: /
+components:
+  requestBodies:
+    PublishRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PublishRequest'
+      description: PublishRequest to refresh the list of repos for a user
+      required: true
+    updateLabelsBody:
+      content:
+        application/json:
+          schema:
+            type: string
+      description: >-
+        This is here to appease Swagger. It requires PUT methods to have a body,
+        even if it is empty. Please leave it empty.
+    Workflow:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Workflow'
+      description: Workflow with updated information
+      required: true
+    DockstoreTool:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DockstoreTool'
+      description: Tool with updated information
+      required: true
+    StarRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/StarRequest'
+      description: StarRequest to star a repo for a user
+      required: true
+    VerifyRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/VerifyRequest'
+      description: Object containing verification information.
+      required: true
+  securitySchemes:
+    BEARER:
+      type: apiKey
+      name: Authorization
+      in: header
+  schemas:
+    BitbucketOrgAuthenticationResource:
+      type: object
+      properties:
+        clientID:
+          type: string
+        view:
+          $ref: '#/components/schemas/BitbucketOrgView'
+    BitbucketOrgView:
+      type: object
+      properties:
+        parent:
+          $ref: '#/components/schemas/BitbucketOrgAuthenticationResource'
+    DescriptorLanguageBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    DockstoreTool:
+      type: object
+      required:
+        - defaultCWLTestParameterFile
+        - defaultWDLTestParameterFile
+        - default_cwl_path
+        - default_dockerfile_path
+        - default_wdl_path
+        - gitUrl
+        - mode
+        - name
+        - namespace
+        - private_access
+        - registry_string
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
+        custom_docker_registry_path:
+          type: string
+          readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        author:
+          type: string
+          position: 1
+          description: This is the name of the author stated in the Dockstore.cwl
+        description:
+          type: string
+          position: 2
+          description: >-
+            This is a human-readable description of this container and what it
+            is trying to accomplish, required GA4GH
+        labels:
+          type: array
+          position: 3
+          description: >-
+            Labels (i.e. meta tags) for describing the purpose and contents of
+            containers
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Label'
+        users:
+          type: array
+          position: 4
+          description: >-
+            This indicates the users that have control over this entry,
+            dockstore specific
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/User'
+        starredUsers:
+          type: array
+          position: 5
+          description: >-
+            This indicates the users that have starred this entry, dockstore
+            specific
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/User'
+        email:
+          type: string
+          position: 6
+          description: This is the email of the git organization
+        defaultVersion:
+          type: string
+          position: 7
+          description: This is the default version of the entry
+        is_published:
+          type: boolean
+          position: 8
+          description: Implementation specific visibility in this web service
+        last_modified:
+          type: integer
+          format: int32
+          position: 9
+          description: Implementation specific timestamp for last modified
+        lastUpdated:
+          type: string
+          format: date-time
+          position: 10
+          description: Implementation specific timestamp for last updated on webservice
+        gitUrl:
+          type: string
+          position: 11
+          description: >-
+            This is a link to the associated repo with a descriptor, required
+            GA4GH
+        checker_id:
+          type: integer
+          format: int64
+          position: 12
+          description: The id of the associated checker workflow
+          readOnly: true
+        mode:
+          type: string
+          position: 13
+          description: >-
+            This indicates what mode this is in which informs how we do things
+            like refresh, dockstore specific
+          enum:
+            - AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
+            - AUTO_DETECT_QUAY_TAGS_WITH_MIXED
+            - MANUAL_IMAGE_PATH
+        name:
+          type: string
+          position: 14
+          description: 'This is the name of the container, required: GA4GH'
+        default_dockerfile_path:
+          type: string
+          position: 15
+          description: >-
+            This indicates for the associated git repository, the default path
+            to the Dockerfile, required: GA4GH
+        default_cwl_path:
+          type: string
+          position: 16
+          description: >-
+            This indicates for the associated git repository, the default path
+            to the CWL document, required: GA4GH
+        default_wdl_path:
+          type: string
+          position: 17
+          description: >-
+            This indicates for the associated git repository, the default path
+            to the WDL document
+        defaultCWLTestParameterFile:
+          type: string
+          position: 18
+          description: >-
+            This indicates for the associated git repository, the default path
+            to the CWL test parameter file
+        defaultWDLTestParameterFile:
+          type: string
+          position: 19
+          description: >-
+            This indicates for the associated git repository, the default path
+            to the WDL test parameter file
+        tool_maintainer_email:
+          type: string
+          position: 20
+          description: >-
+            The email address of the tool maintainer. Required for private
+            repositories
+        private_access:
+          type: boolean
+          position: 21
+          description: Is the docker image private or not.
+        toolname:
+          type: string
+          position: 22
+          description: >-
+            This is the tool name of the container, when not-present this will
+            function just like 0.1 dockstorewhen present, this can be used to
+            distinguish between two containers based on the same image, but
+            associated with different CWL and Dockerfile documents. i.e. two
+            containers with the same registry+namespace+name but different
+            toolnames will be two different entries in the dockstore
+            registry/namespace/name/tool, different options to edit tags, and
+            only the same insofar as they would "docker pull" the same image,
+            required: GA4GH
+        namespace:
+          type: string
+          position: 23
+          description: 'This is a docker namespace for the container, required: GA4GH'
+        registry_string:
+          type: string
+          position: 24
+          description: >-
+            This is a specific docker provider like quay.io or dockerhub or
+            n/a?, required: GA4GH
+        lastBuild:
+          type: string
+          format: date-time
+          position: 25
+          description: Implementation specific timestamp for last built
+        tags:
+          type: array
+          position: 26
+          description: >-
+            Implementation specific tracking of valid build tags for the docker
+            container
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Tag'
+        path:
+          type: string
+          position: 27
+        descriptorType:
+          type: array
+          position: 28
+          readOnly: true
+          items:
+            type: string
+        tool_path:
+          type: string
+          position: 29
+          readOnly: true
+        registry:
+          type: string
+          position: 30
+          enum:
+            - QUAY_IO
+            - DOCKER_HUB
+            - GITLAB
+            - AMAZON_ECR
+      description: >-
+        This describes one entry in the dockstore. Logically, this currently
+        means one tuple of registry (either quay or docker hub), organization,
+        image name, and toolname which can be
+         * associated with CWL and Dockerfile documents
+    Entry:
+      type: object
+      required:
+        - gitUrl
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        author:
+          type: string
+          position: 1
+          description: This is the name of the author stated in the Dockstore.cwl
+        description:
+          type: string
+          position: 2
+          description: >-
+            This is a human-readable description of this container and what it
+            is trying to accomplish, required GA4GH
+        labels:
+          type: array
+          position: 3
+          description: >-
+            Labels (i.e. meta tags) for describing the purpose and contents of
+            containers
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Label'
+        users:
+          type: array
+          position: 4
+          description: >-
+            This indicates the users that have control over this entry,
+            dockstore specific
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/User'
+        starredUsers:
+          type: array
+          position: 5
+          description: >-
+            This indicates the users that have starred this entry, dockstore
+            specific
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/User'
+        email:
+          type: string
+          position: 6
+          description: This is the email of the git organization
+        defaultVersion:
+          type: string
+          position: 7
+          description: This is the default version of the entry
+        is_published:
+          type: boolean
+          position: 8
+          description: Implementation specific visibility in this web service
+        last_modified:
+          type: integer
+          format: int32
+          position: 9
+          description: Implementation specific timestamp for last modified
+        lastUpdated:
+          type: string
+          format: date-time
+          position: 10
+          description: Implementation specific timestamp for last updated on webservice
+        gitUrl:
+          type: string
+          position: 11
+          description: >-
+            This is a link to the associated repo with a descriptor, required
+            GA4GH
+        checker_id:
+          type: integer
+          format: int64
+          position: 12
+          description: The id of the associated checker workflow
+          readOnly: true
+    Error:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    GitHubComAuthenticationResource:
+      type: object
+      properties:
+        clientID:
+          type: string
+        redirectURI:
+          type: string
+        view:
+          $ref: '#/components/schemas/GithubComView'
+    GitLabComAuthenticationResource:
+      type: object
+      properties:
+        clientID:
+          type: string
+        redirectURI:
+          type: string
+        view:
+          $ref: '#/components/schemas/GitlabComView'
+    GithubComView:
+      type: object
+      properties:
+        parent:
+          $ref: '#/components/schemas/GitHubComAuthenticationResource'
+    GitlabComView:
+      type: object
+      properties:
+        parent:
+          $ref: '#/components/schemas/GitLabComAuthenticationResource'
+    Group:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          readOnly: true
+        name:
+          type: string
+        users:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/User'
+      description: >-
+        This describes a grouping of end-users for the purposes of managing
+        sharing. Implementation-specific.
+    Label:
+      type: object
+      required:
+        - value
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
+          readOnly: true
+        value:
+          type: string
+          position: 1
+          description: String representation of the tag
+      description: >-
+        This describes a descriptive label that can be placed on an entry in the
+        dockstore
+    Metadata:
+      type: object
+      required:
+        - api_version
+        - version
+      properties:
+        version:
+          type: string
+          description: The version of this registry
+        api_version:
+          type: string
+          description: >-
+            The version of the GA4GH tool-registry API supported by this
+            registry
+        country:
+          type: string
+          description: A country code for the registry (ISO 3166-1 alpha-3)
+        friendly_name:
+          type: string
+          description: >-
+            A friendly name that can be used in addition to the hostname to
+            describe a registry
+      description: Describes this registry to better allow for mirroring and indexing.
+    MetadataV1:
+      type: object
+      properties:
+        version:
+          type: string
+        api-version:
+          type: string
+        country:
+          type: string
+        friendly-name:
+          type: string
+      description: Describes this registry to better allow for mirroring and indexing.
+    PublishRequest:
+      type: object
+      properties:
+        publish:
+          type: boolean
+          readOnly: true
+    QuayIOAuthenticationResource:
+      type: object
+      properties:
+        clientID:
+          type: string
+        redirectURI:
+          type: string
+        view:
+          $ref: '#/components/schemas/QuayIOView'
+    QuayIOView:
+      type: object
+      properties:
+        parent:
+          $ref: '#/components/schemas/QuayIOAuthenticationResource'
+    RegistryBean:
+      type: object
+      properties:
+        dockerPath:
+          type: string
+        friendlyName:
+          type: string
+        url:
+          type: string
+        privateOnly:
+          type: string
+        customDockerPath:
+          type: string
+        enum:
+          type: string
+    SourceControlBean:
+      type: object
+      properties:
+        value:
+          type: string
+        friendlyName:
+          type: string
+    SourceFile:
+      type: object
+      required:
+        - path
+        - type
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the source file in this web service
+        type:
+          type: string
+          position: 1
+          description: Enumerates the type of file
+          enum:
+            - DOCKSTORE_CWL
+            - DOCKSTORE_WDL
+            - DOCKERFILE
+            - CWL_TEST_JSON
+            - WDL_TEST_JSON
+            - NEXTFLOW
+            - NEXTFLOW_CONFIG
+            - NEXTFLOW_TEST_PARAMS
+        content:
+          type: string
+          position: 2
+          description: Cache for the contents of the target file
+        path:
+          type: string
+          position: 3
+          description: Path to source file in git repo
+    StarRequest:
+      type: object
+      properties:
+        star:
+          type: boolean
+          readOnly: true
+    Tag:
+      type: object
+      required:
+        - name
+        - reference
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the tag in this web service
+          readOnly: true
+        last_modified:
+          type: string
+          format: date-time
+          position: 1
+          description: The last time this image was modified in the image registry
+        reference:
+          type: string
+          position: 2
+          description: git commit/tag/branch
+        sourceFiles:
+          type: array
+          position: 3
+          description: >-
+            Cached files for each version. Includes Dockerfile and Descriptor
+            files
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        hidden:
+          type: boolean
+          position: 4
+          description: >-
+            Implementation specific, whether this row is visible to other users
+            aside from the owner
+        valid:
+          type: boolean
+          position: 5
+          description: >-
+            Implementation specific, whether this tag has valid files from
+            source code repo
+        name:
+          type: string
+          position: 6
+          description: 'Implementation specific, can be a quay.io or docker hub tag name'
+        dirtyBit:
+          type: boolean
+          position: 7
+          description: True if user has altered the tag
+        verified:
+          type: boolean
+          position: 8
+          description: Whether this version has been verified or not
+        verifiedSource:
+          type: string
+          position: 9
+          description: Verified source for the version
+        doiURL:
+          type: string
+          position: 10
+          description: This is a URL for the DOI for the version of the entry
+        doiStatus:
+          type: string
+          position: 11
+          description: This indicates the DOI status
+          enum:
+            - NOT_REQUESTED
+            - REQUESTED
+            - CREATED
+        size:
+          type: integer
+          format: int64
+          position: 13
+          description: Size of the image
+        dockerfile_path:
+          type: string
+          position: 14
+          description: Path for the Dockerfile
+        cwl_path:
+          type: string
+          position: 15
+          description: Path for the CWL document
+        wdl_path:
+          type: string
+          position: 16
+          description: Path for the WDL document
+        automated:
+          type: boolean
+          position: 17
+          description: >-
+            Implementation specific, indicates whether this is an automated
+            build on quay.io
+        workingDirectory:
+          type: string
+          position: 18
+        image_id:
+          type: string
+          position: 19
+      description: This describes one tag associated with a container.
+    Token:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the token in this web service
+          readOnly: true
+        tokenSource:
+          type: string
+          position: 1
+          description: Source website for this token
+        content:
+          type: string
+          position: 2
+          description: Contents of the access token
+        username:
+          type: string
+          position: 3
+          description: 'When an integrated service is not aware of the username, we store it'
+        refreshToken:
+          type: string
+          position: 4
+        userId:
+          type: integer
+          format: int64
+          position: 5
+        token:
+          type: string
+          position: 6
+          description: Contents of the access token
+          readOnly: true
+      description: >-
+        Access tokens for this web service and integrated services like quay.io
+        and github
+    Tool:
+      type: object
+      required:
+        - author
+        - id
+        - meta_version
+        - organization
+        - toolclass
+        - url
+        - versions
+      properties:
+        url:
+          type: string
+          example: 'http://agora.broadinstitute.org/tools/123456'
+          description: The URL for this tool in this registry
+        id:
+          type: string
+          example: '123456'
+          description: 'A unique identifier of the tool, scoped to this registry'
+        organization:
+          type: string
+          description: The organization that published the image.
+        toolname:
+          type: string
+          description: The name of the tool.
+        toolclass:
+          $ref: '#/components/schemas/ToolClass'
+        description:
+          type: string
+          description: The description of the tool.
+        author:
+          type: string
+          description: >-
+            Contact information for the author of this tool entry in the
+            registry. (More complex authorship information is handled by the
+            descriptor)
+        meta_version:
+          type: string
+          description: >-
+            The version of this tool in the registry. Iterates when fields like
+            the description, author, etc. are updated.
+        contains:
+          type: array
+          example: '"https://bio.tools/tool/mytum.de/SNAP2/1"'
+          description: >-
+            An array of IDs for the applications that are stored inside this
+            tool
+          items:
+            type: string
+        has_checker:
+          type: boolean
+          description: Whether this tool has a checker tool associated with it
+        checker_url:
+          type: string
+          description: >-
+            Optional url to the checker tool that will exit successfully if this
+            tool produced the expected result given test data.
+        verified:
+          type: boolean
+          description: >-
+            Reports whether this tool has been verified by a specific
+            organization or individual
+        verified_source:
+          type: string
+          description: >-
+            Source of metadata that can support a verified tool, such as an
+            email or URL
+        signed:
+          type: boolean
+          description: Reports whether this tool has been signed.
+        versions:
+          type: array
+          description: A list of versions for this tool
+          items:
+            $ref: '#/components/schemas/ToolVersion'
+      description: >-
+        A tool (or described tool) is defined as a tuple of a descriptor file
+        (which potentially consists of multiple files), a set of container
+        images, and a set of instructions for creating those images.
+    ToolClass:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the class
+        name:
+          type: string
+          description: A short friendly name for the class
+        description:
+          type: string
+          description: >-
+            A longer explanation of what this class is and what it can
+            accomplish
+      description: >-
+        Describes a class (type) of tool allowing us to categorize workflows,
+        tasks, and maybe even other entities (such as services) separately
+    ToolContainerfile:
+      type: object
+      required:
+        - containerfile
+      properties:
+        containerfile:
+          type: string
+          description: The container specification for this tool.
+        url:
+          type: string
+          example: >-
+            https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile
+          description: >-
+            Optional url to the file used to build this image, should include
+            version information, and can include a git hash
+      description: >-
+        A containerfile is a document that describes how to build a particular
+        container image. Examples include Dockerfiles for creating Docker images
+        and Singularity recipes for Singularity images
+    ToolDescriptor:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - CWL
+            - WDL
+            - NFL
+        descriptor:
+          type: string
+          description: The descriptor that represents this version of the tool.
+        url:
+          type: string
+          example: >-
+            https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/ea2a5db69bd20a42976838790bc29294df3af02b/delly_docker/Delly.cwl
+          description: >-
+            Optional url to the underlying tool descriptor, should include
+            version information, and can include a git hash
+      description: >-
+        A tool descriptor is a metadata document that describes one or more
+        tools.
+    ToolDockerfile:
+      type: object
+      required:
+        - dockerfile
+      properties:
+        dockerfile:
+          type: string
+          description: The dockerfile content for this tool.
+        url:
+          type: string
+          description: >-
+            Optional url to the dockerfile used to build this image, should
+            include version information, and can include a git hash  (e.g.
+            https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile
+            )
+      description: >-
+        A tool dockerfile is a document that describes how to build a particular
+        Docker image.
+    ToolFile:
+      type: object
+      properties:
+        path:
+          type: string
+          description: >-
+            Relative path of the file.  A descriptor's path can be used with the
+            GA4GH .../{type}/descriptor/{relative_path} endpoint
+        file_type:
+          type: string
+          enum:
+            - TEST_FILE
+            - PRIMARY_DESCRIPTOR
+            - SECONDARY_DESCRIPTOR
+            - CONTAINERFILE
+            - OTHER
+    ToolTests:
+      type: object
+      properties:
+        test:
+          type: string
+          description: >-
+            Optional test JSON content for this tool. (Note that one of test and
+            URL are required)
+        url:
+          type: string
+          description: >-
+            Optional url to the test JSON used to test this tool. Note that this
+            URL should resolve to the raw unwrapped content that would otherwise
+            be available in test.
+      description: >-
+        A tool document that describes how to test with one or more sample test
+        JSON.
+    ToolV1:
+      type: object
+      properties:
+        url:
+          type: string
+        id:
+          type: string
+        organization:
+          type: string
+        toolname:
+          type: string
+        toolclass:
+          $ref: '#/components/schemas/ToolClass'
+        description:
+          type: string
+        author:
+          type: string
+        meta-version:
+          type: string
+        contains:
+          type: array
+          items:
+            type: string
+        verified:
+          type: boolean
+        verified-source:
+          type: string
+        signed:
+          type: boolean
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolVersionV1'
+      description: >-
+        A tool (or described tool) describes one pairing of a tool as described
+        in a descriptor file (which potentially describes multiple tools) and a
+        Docker image.
+    ToolVersion:
+      type: object
+      required:
+        - id
+        - meta_version
+        - url
+      properties:
+        name:
+          type: string
+          description: The name of the version.
+        url:
+          type: string
+          example: 'http://agora.broadinstitute.org/tools/123456/1'
+          description: The URL for this tool in this registry
+        id:
+          type: string
+          example: v1
+          description: >-
+            An identifier of the version of this tool for this particular tool
+            registry
+        image:
+          type: string
+          example: quay.io/seqware/seqware_full/1.1
+          description: The docker path to the image (and version) for this tool
+        registry_url:
+          type: string
+          description: >-
+            A URL to a Singularity registry is provided when a specific type of
+            image does not use ids in the Docker format. Used along with
+            image_name to locate a specific image.
+        image_name:
+          type: string
+          description: Used in conjunction with a registry_url if provided to locate images
+        descriptor_type:
+          type: array
+          description: The type (or types) of descriptors available.
+          items:
+            type: string
+            enum:
+              - CWL
+              - WDL
+              - NFL
+        containerfile:
+          type: boolean
+          description: Reports if this tool has a containerfile available.
+        meta_version:
+          type: string
+          description: >-
+            The version of this tool version in the registry. Iterates when
+            fields like the description, author, etc. are updated.
+        verified:
+          type: boolean
+          description: >-
+            Reports whether this tool has been verified by a specific
+            organization or individual
+        verified_source:
+          type: string
+          description: >-
+            Source of metadata that can support a verified tool, such as an
+            email or URL
+      description: >-
+        A tool version describes a particular iteration of a tool as described
+        by a reference to a specific image and/or documents.
+    ToolVersionV1:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        id:
+          type: string
+        image:
+          type: string
+        descriptor-type:
+          type: array
+          items:
+            type: string
+            enum:
+              - CWL
+              - WDL
+        dockerfile:
+          type: boolean
+        meta-version:
+          type: string
+        verified:
+          type: boolean
+        verified-source:
+          type: string
+      description: >-
+        A tool version describes a particular iteration of a tool as described
+        by a reference to a specific image and dockerfile.
+    User:
+      type: object
+      required:
+        - isAdmin
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
+          readOnly: true
+        username:
+          type: string
+          position: 1
+          description: Username on dockstore
+        isAdmin:
+          type: boolean
+          position: 2
+          description: Indicates whether this user is an admin
+        company:
+          type: string
+          position: 3
+          description: Company of user
+        bio:
+          type: string
+          position: 4
+          description: Bio of user
+        location:
+          type: string
+          position: 5
+          description: Location of user
+        email:
+          type: string
+          position: 6
+          description: Email of user
+        avatarUrl:
+          type: string
+          position: 7
+          description: URL of user avatar on Github.
+        name:
+          type: string
+          position: 8
+      description: End users for the dockstore
+    VerifyRequest:
+      type: object
+      properties:
+        verify:
+          type: boolean
+          readOnly: true
+        verifiedSource:
+          type: string
+          readOnly: true
+    Workflow:
+      type: object
+      required:
+        - defaultTestParameterFilePath
+        - descriptorType
+        - gitUrl
+        - mode
+        - organization
+        - repository
+        - sourceControl
+        - workflow_path
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the container in this web service
+        parent_id:
+          type: integer
+          format: int64
+          readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        author:
+          type: string
+          position: 1
+          description: This is the name of the author stated in the Dockstore.cwl
+        description:
+          type: string
+          position: 2
+          description: >-
+            This is a human-readable description of this container and what it
+            is trying to accomplish, required GA4GH
+        labels:
+          type: array
+          position: 3
+          description: >-
+            Labels (i.e. meta tags) for describing the purpose and contents of
+            containers
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Label'
+        users:
+          type: array
+          position: 4
+          description: >-
+            This indicates the users that have control over this entry,
+            dockstore specific
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/User'
+        starredUsers:
+          type: array
+          position: 5
+          description: >-
+            This indicates the users that have starred this entry, dockstore
+            specific
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/User'
+        email:
+          type: string
+          position: 6
+          description: This is the email of the git organization
+        defaultVersion:
+          type: string
+          position: 7
+          description: This is the default version of the entry
+        is_published:
+          type: boolean
+          position: 8
+          description: Implementation specific visibility in this web service
+        last_modified:
+          type: integer
+          format: int32
+          position: 9
+          description: Implementation specific timestamp for last modified
+        lastUpdated:
+          type: string
+          format: date-time
+          position: 10
+          description: Implementation specific timestamp for last updated on webservice
+        gitUrl:
+          type: string
+          position: 11
+          description: >-
+            This is a link to the associated repo with a descriptor, required
+            GA4GH
+        checker_id:
+          type: integer
+          format: int64
+          position: 12
+          description: The id of the associated checker workflow
+          readOnly: true
+        mode:
+          type: string
+          position: 13
+          description: >-
+            This indicates what mode this is in which informs how we do things
+            like refresh, dockstore specific
+          enum:
+            - FULL
+            - STUB
+        workflowName:
+          type: string
+          position: 14
+          description: >-
+            This is the name of the workflow, not needed when only one workflow
+            in a repo
+        organization:
+          type: string
+          position: 15
+          description: This is a git organization for the workflow
+        repository:
+          type: string
+          position: 16
+          description: This is a git repository name
+        sourceControl:
+          type: string
+          position: 17
+          description: >-
+            This is a specific source control provider like github or bitbucket
+            or n/a?, required: GA4GH
+        descriptorType:
+          type: string
+          position: 18
+          description: >-
+            This is a descriptor type for the workflow, either CWL or WDL
+            (Defaults to CWL)
+        workflow_path:
+          type: string
+          position: 19
+          description: >-
+            This indicates for the associated git repository, the default path
+            to the CWL document
+        defaultTestParameterFilePath:
+          type: string
+          position: 20
+          description: >-
+            This indicates for the associated git repository, the default path
+            to the test parameter file
+        workflowVersions:
+          type: array
+          position: 21
+          description: >-
+            Implementation specific tracking of valid build workflowVersions for
+            the docker container
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/WorkflowVersion'
+        is_checker:
+          type: boolean
+          position: 23
+        full_workflow_path:
+          type: string
+          position: 24
+          readOnly: true
+        path:
+          type: string
+          position: 25
+        source_control_provider:
+          type: string
+          position: 26
+          readOnly: true
+          enum:
+            - GITHUB
+            - BITBUCKET
+            - GITLAB
+      description: This describes one workflow in the dockstore
+    WorkflowVersion:
+      type: object
+      required:
+        - name
+        - reference
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the tag in this web service
+          readOnly: true
+        workingDirectory:
+          type: string
+        last_modified:
+          type: string
+          format: date-time
+          position: 1
+          description: The last time this image was modified in the image registry
+        reference:
+          type: string
+          position: 2
+          description: git commit/tag/branch
+        sourceFiles:
+          type: array
+          position: 3
+          description: >-
+            Cached files for each version. Includes Dockerfile and Descriptor
+            files
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/SourceFile'
+        hidden:
+          type: boolean
+          position: 4
+          description: >-
+            Implementation specific, whether this row is visible to other users
+            aside from the owner
+        valid:
+          type: boolean
+          position: 5
+          description: >-
+            Implementation specific, whether this tag has valid files from
+            source code repo
+        name:
+          type: string
+          position: 6
+          description: 'Implementation specific, can be a quay.io or docker hub tag name'
+        dirtyBit:
+          type: boolean
+          position: 7
+          description: True if user has altered the tag
+        verified:
+          type: boolean
+          position: 8
+          description: Whether this version has been verified or not
+        verifiedSource:
+          type: string
+          position: 9
+          description: Verified source for the version
+        doiURL:
+          type: string
+          position: 10
+          description: This is a URL for the DOI for the version of the entry
+        doiStatus:
+          type: string
+          position: 11
+          description: This indicates the DOI status
+          enum:
+            - NOT_REQUESTED
+            - REQUESTED
+            - CREATED
+        workflow_path:
+          type: string
+          position: 12
+          description: Path for the workflow
+      description: This describes one workflow version associated with a workflow.

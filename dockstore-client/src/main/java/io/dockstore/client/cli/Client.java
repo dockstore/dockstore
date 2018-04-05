@@ -47,16 +47,16 @@ import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
-import io.dockstore.client.cwlrunner.CWLRunnerFactory;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import io.dockstore.common.Utilities;
-import io.dockstore.client.cwlrunner.CWLRunnerInterface;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
-import io.swagger.client.api.ExtendedGA4GHApi;
-import io.swagger.client.api.GA4GHApi;
+import io.swagger.client.api.ExtendedGa4GhApi;
+import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
@@ -106,12 +106,13 @@ public class Client {
     private String configFile = null;
     private ContainersApi containersApi;
     private UsersApi usersApi;
-    private GA4GHApi ga4ghApi;
-    private ExtendedGA4GHApi extendedGA4GHApi;
+    private Ga4GhApi ga4ghApi;
+    private ExtendedGa4GhApi extendedGA4GHApi;
 
     private boolean isAdmin = false;
     private ToolClient toolClient;
     private WorkflowClient workflowClient;
+    private CheckerClient checkerClient;
 
     /*
      * Dockstore Client Functions for CLI
@@ -539,7 +540,9 @@ public class Client {
         out("Dockstore version " + currentVersion);
         String latestVersion = getLatestVersion();
         if (latestVersion == null) {
-            errorMessage("Can't find the latest version. Something might be wrong with the connection to Github.", CLIENT_ERROR);
+            err("Can't find the latest version. Something might be wrong with the connection to Github.");
+            // do not crash when rate limited
+            return;
         }
 
         // skip upgrade check for development versions
@@ -565,6 +568,7 @@ public class Client {
         out("Modes:");
         out("   tool                Puts dockstore into tool mode.");
         out("   workflow            Puts dockstore into workflow mode.");
+        out("   checker             Puts dockstore into checker mode.");
         out("   plugin              Configure and debug plugins.");
         out("");
         printLineBreak();
@@ -678,7 +682,9 @@ public class Client {
                     } else if ("plugin".equals(mode)) {
                         handled = PluginClient.handleCommand(args, Utilities.parseConfig(configFile));
                     } else if ("search".equals(mode)) {
-                        handled = SearchClient.handleCommand(args, Utilities.parseConfig(configFile), this.extendedGA4GHApi);
+                        handled = SearchClient.handleCommand(args, this.extendedGA4GHApi);
+                    } else if ("checker".equals(mode)) {
+                        targetClient = getCheckerClient();
                     }
 
                     if (targetClient != null) {
@@ -758,6 +764,8 @@ public class Client {
         String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
+        String cliVersion = Client.class.getPackage().getImplementationVersion();
+        defaultApiClient.setUserAgent("Dockstore-CLI/" + cliVersion + "/java");
 
         ApiKeyAuth bearer = (ApiKeyAuth)defaultApiClient.getAuthentication("BEARER");
         bearer.setApiKeyPrefix("BEARER");
@@ -766,19 +774,20 @@ public class Client {
 
         this.containersApi = new ContainersApi(defaultApiClient);
         this.usersApi = new UsersApi(defaultApiClient);
-        this.ga4ghApi = new GA4GHApi(defaultApiClient);
-        this.extendedGA4GHApi = new ExtendedGA4GHApi(defaultApiClient);
+        this.ga4ghApi = new Ga4GhApi(defaultApiClient);
+        this.extendedGA4GHApi = new ExtendedGa4GhApi(defaultApiClient);
 
 
         try {
             if (this.usersApi.getApiClient() != null) {
-                this.isAdmin = this.usersApi.getUser().getIsAdmin();
+                this.isAdmin = this.usersApi.getUser().isIsAdmin();
             }
         } catch (ApiException ex) {
             this.isAdmin = false;
         }
         this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), usersApi, this, isAdmin);
         this.workflowClient = new WorkflowClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
+        this.checkerClient = new CheckerClient(new WorkflowsApi(defaultApiClient), usersApi, this, isAdmin);
 
         defaultApiClient.setDebugging(DEBUG.get());
         CWLRunnerFactory.setConfig(config);
@@ -786,7 +795,10 @@ public class Client {
 
     private INIConfiguration getIniConfiguration(List<String> args) {
         String userHome = System.getProperty("user.home");
-        this.setConfigFile(optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config"));
+        String commandLineConfigFile = optVal(args, "--config", userHome + File.separator + ".dockstore" + File.separator + "config");
+        if (this.configFile == null) {
+            this.configFile = commandLineConfigFile;
+        }
 
         return Utilities.parseConfig(configFile);
     }
@@ -798,24 +810,16 @@ public class Client {
     void setConfigFile(String configFile) {
         this.configFile = configFile;
     }
-
-    /**
-     * Setup method called by Consonance
-     *
-     * @return
-     */
-    @SuppressWarnings("WeakerAccess")
+    
     public ToolClient getToolClient() {
         return toolClient;
     }
 
-    /**
-     * Setup method called by Consonance
-     *
-     * @return
-     */
-    @SuppressWarnings("WeakerAccess")
     public WorkflowClient getWorkflowClient() {
         return workflowClient;
+    }
+
+    public CheckerClient getCheckerClient() {
+        return checkerClient;
     }
 }

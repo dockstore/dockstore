@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
+import java.util.List;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -30,6 +32,8 @@ import javax.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Access tokens for this web service and integrated services like quay.io and github.
@@ -48,38 +52,54 @@ import io.swagger.annotations.ApiModelProperty;
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findGitlabByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'gitlab.com'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'") })
+@SuppressWarnings("checkstyle:magicnumber")
 public class Token {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty("Implementation specific ID for the token in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0)
     private long id;
+
     @Column(nullable = false)
-    @ApiModelProperty("Source website for this token")
+    @ApiModelProperty(value = "Source website for this token", position = 1)
     private String tokenSource;
 
     @Column(nullable = false)
-    @ApiModelProperty("Contents of the access token")
+    @ApiModelProperty(value = "Contents of the access token", position = 2)
     private String content;
+
     @Column(nullable = false)
-    @ApiModelProperty("When an integrated service is not aware of the username, we store it")
+    @ApiModelProperty(value = "When an integrated service is not aware of the username, we store it", position = 3)
     private String username;
+
     @Column
-    @ApiModelProperty("")
+    @ApiModelProperty(position = 4)
     private String refreshToken;
 
     // TODO: tokens will need to be associated with a particular user
     @Column
+    @ApiModelProperty(position = 5)
     private long userId;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     public Token() {
     }
 
-    public Token(long id, long userId, String tokenSource, String content) {
-        this.id = id;
-        this.userId = userId;
-        this.tokenSource = tokenSource;
-        this.content = content;
+    public static Token extractToken(List<Token> tokens, String source) {
+        for (Token token : tokens) {
+            if (token.getTokenSource().equals(source)) {
+                return token;
+            }
+        }
+        return null;
     }
 
     @JsonProperty
@@ -88,7 +108,7 @@ public class Token {
     }
 
     @JsonProperty
-    @ApiModelProperty("Contents of the access token")
+    @ApiModelProperty(value = "Contents of the access token", position = 6)
     public String getToken() {
         return content;
     }

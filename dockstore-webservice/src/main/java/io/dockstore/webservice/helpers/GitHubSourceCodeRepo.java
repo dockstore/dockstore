@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -31,13 +32,15 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import org.apache.commons.io.FilenameUtils;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.eclipse.egit.github.core.Blob;
 import org.eclipse.egit.github.core.Repository;
@@ -51,6 +54,10 @@ import org.eclipse.egit.github.core.service.DataService;
 import org.eclipse.egit.github.core.service.OrganizationService;
 import org.eclipse.egit.github.core.service.RepositoryService;
 import org.eclipse.egit.github.core.service.UserService;
+import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GitHub;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,11 +73,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private final RepositoryService service;
     private final OrganizationService oService;
     private final UserService uService;
+    private final GitHub github;
     private final DataService dService;
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
-
         GitHubClient githubClient = new GitHubClient();
         githubClient.setOAuth2Token(githubTokenContent);
 
@@ -81,6 +88,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         this.dService = new DataService(githubClient);
         this.gitUsername = gitUsername;
         this.gitRepository = gitRepository;
+        try {
+            this.github = GitHub.connectUsingOAuth(githubTokenContent);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Override
@@ -139,7 +152,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             } else {
                 return null;
             }
-
         } catch (RequestException e) {
             if (e.getStatus() == HttpStatus.SC_UNAUTHORIZED) {
                 // we have bad credentials which should not be ignored
@@ -201,8 +213,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             oService.getOrganizations();
         } catch (IOException e) {
+            if (e instanceof RequestException && e.getMessage().contains("API rate limit")) {
+                throw new CustomWebApplicationException(
+                    e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            }
             throw new CustomWebApplicationException(
-                "Please recreate your GitHub token, we need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
+                "Please recreate your GitHub token, we probably need an upgraded token to list your organizations: ", HttpStatus.SC_BAD_REQUEST);
         }
         return true;
     }
@@ -229,6 +245,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             final Repository repository = service.getRepository(id);
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
+            workflow.setSourceControl(SourceControl.GITHUB.toString());
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
             // Why is the path not set here?
@@ -246,47 +263,70 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         RepositoryId id = RepositoryId.createFromId(repositoryId);
 
         // when getting a full workflow, look for versions and check each version for valid workflows
-        List<String> references = new ArrayList<>();
+        List<Pair<String, Date>> references = new ArrayList<>();
         try {
-            service.getBranches(id).forEach(branch -> references.add(branch.getName()));
-            service.getTags(id).forEach(tag -> references.add(tag.getName()));
+            GHRepository repository = github.getRepository(repositoryId);
+            final Date epochStart = new Date(0);
+            service.getBranches(id).forEach(branch -> {
+                Date branchDate = new Date(0);
+                try {
+                    GHBranch githubBranch = repository.getBranch(branch.getName());
+                    GHCommit commit = repository.getCommit(githubBranch.getSHA1());
+                    branchDate = commit.getCommitDate();
+                    if (branchDate.before(epochStart)) {
+                        branchDate = epochStart;
+                    }
+                } catch (IOException e) {
+                    LOG.info("unable to retrieve commit date for branch " + branch.getName());
+                }
+                references.add(Pair.of(branch.getName(), branchDate));
+            });
+            service.getTags(id).forEach(tag -> {
+                Date branchDate = new Date(0);
+                try {
+                    GHCommit commit = repository.getCommit(tag.getCommit().getSha());
+                    branchDate = commit.getCommitDate();
+                    if (branchDate.before(epochStart)) {
+                        branchDate = epochStart;
+                    }
+                } catch (IOException e) {
+                    LOG.info("unable to retrieve commit date for tag " + tag.getName());
+                }
+                references.add(Pair.of(tag.getName(), branchDate));
+            });
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
+        Optional<Date> max = references.stream().map(Pair::getRight).max(Comparator.naturalOrder());
+        // TODO: this conversion is lossy
+        max.ifPresent(date -> {
+            long time = max.get().getTime();
+            workflow.setLastModified(new Date(Math.max(time, 0L)));
+        });
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
-        for (String ref : references) {
-            LOG.info(gitUsername + ": Looking at reference: " + ref);
-
+        for (Pair<String, Date> ref : references) {
+            LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
             // Initialize the workflow version
-            WorkflowVersion version = initializeWorkflowVersion(ref, existingWorkflow, existingDefaults);
+            WorkflowVersion version = initializeWorkflowVersion(ref.getKey(), existingWorkflow, existingDefaults);
+            version.setLastModified(ref.getRight());
             String calculatedPath = version.getWorkflowPath();
 
-            //TODO: is there a case-insensitive endsWith?
-            String calculatedExtension = FilenameUtils.getExtension(calculatedPath);
-            boolean validWorkflow;
+            SourceFile.FileType identifiedType = workflow.getFileType();
 
             // Grab workflow file from github
             try {
                 // Get contents of descriptor file and store
-                final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref);
+                final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref.getKey());
                 if (descriptorContents != null && descriptorContents.size() > 0) {
                     String content = extractGitHubContents(descriptorContents);
 
-                    // TODO: Is this the best way to determine file type? I don't think so
-                    // Should be workflow.getDescriptorType().equals("cwl") - though enum is better!
-                    if ("cwl".equalsIgnoreCase(calculatedExtension) || "yml".equalsIgnoreCase(calculatedExtension) || "yaml"
-                            .equalsIgnoreCase(calculatedExtension)) {
-                        validWorkflow = checkValidCWLWorkflow(content);
-                    } else {
-                        validWorkflow = checkValidWDLWorkflow(content);
-                    }
+                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(content);
 
                     if (validWorkflow) {
                         // if we have a valid workflow document
                         SourceFile file = new SourceFile();
-                        SourceFile.FileType identifiedType = getFileType(calculatedPath);
                         file.setContent(content);
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
@@ -295,18 +335,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
+                    // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref);
+                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref.getKey());
                         if (testJsonFile != null && testJsonFile.size() > 0) {
                             String testJsonContent = extractGitHubContents(testJsonFile);
                             SourceFile testJson = new SourceFile();
 
                             // Set Filetype
-                            SourceFile.FileType identifiedType = getFileType(calculatedPath);
                             if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
                                 testJson.setType(SourceFile.FileType.CWL_TEST_JSON);
                             } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
                                 testJson.setType(SourceFile.FileType.WDL_TEST_JSON);
+                            } else if (identifiedType.equals(SourceFile.FileType.NEXTFLOW_CONFIG)) {
+                                testJson.setType(SourceFile.FileType.NEXTFLOW_TEST_PARAMS);
                             }
 
                             testJson.setPath(workflow.getDefaultTestParameterFilePath());
@@ -382,9 +424,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return mainBranch;
     }
 
+    @Override
+    public SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
+        throw new UnsupportedOperationException("not implemented/needed for github");
+    }
+
     /**
      * Updates a user object with metadata from GitHub
-     * @param user
+     * @param user the user to be updated
      * @return Updated user object
      */
     public io.dockstore.webservice.core.User getUserMetadata(io.dockstore.webservice.core.User user) {

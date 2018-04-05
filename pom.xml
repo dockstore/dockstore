@@ -19,41 +19,45 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.3.7-SNAPSHOT</version>
+    <version>1.4.0</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
     <description>dockstore parent POM</description>
     <url>https://github.com/CancerCollaboratory/dockstore</url>
 
-    <prerequisites>
-        <maven>3.2.3</maven>
-    </prerequisites>
-
-
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <github.url>scm:git:git@github.com:ga4gh/dockstore.git</github.url>
-        <dropwizard.version>1.1.3</dropwizard.version>
-        <swagger-annotations-version>1.5.9</swagger-annotations-version>
-        <assertj.version>3.6.2</assertj.version>
-        <jackson.version>2.8.9</jackson.version>
+        <dropwizard.version>1.2.3</dropwizard.version>
+        <swagger-annotations-version>1.5.17</swagger-annotations-version>
+        <assertj.version>3.8.0</assertj.version>
+        <jackson.version>2.9.3</jackson.version>
         <jersey-version>2.25.1</jersey-version>
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
-        <aws.version>1.11.86</aws.version>
+        <aws.version>1.11.264</aws.version>
         <powermock.version>1.6.5</powermock.version>
         <postgresql.version>42.1.4</postgresql.version>
         <mockito.version>1.10.19</mockito.version>
-        <cwlavro.version>2.0.3</cwlavro.version>
+        <cwlavro.version>2.0.4</cwlavro.version>
         <okhttp.version>3.2.0</okhttp.version>
         <slf4j.version>1.7.25</slf4j.version>
         <swagger-ui.version>3.1.7</swagger-ui.version>
         <maven-surefire.version>2.20</maven-surefire.version>
         <maven-failsafe.version>2.19.1</maven-failsafe.version>
         <httpcomponents.version>4.4.5</httpcomponents.version>
+        <jackson-datatype-jsr310.version>2.9.3</jackson-datatype-jsr310.version>
+
+        <skipTests>false</skipTests>
+        <skipITs>true</skipITs>
     </properties>
+
+    <!-- deprecated, but needed by Versions Maven Plugin -->
+    <prerequisites>
+        <maven>3.3.9</maven>
+    </prerequisites>
 
     <organization>
         <name>Dockstore</name>
@@ -64,7 +68,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.3.1</tag>
+        <tag>1.4.0</tag>
     </scm>
 
     <repositories>
@@ -149,6 +153,7 @@
         <module>swagger-java-quay-client</module>
         <module>dockstore-client</module>
         <module>dockstore-integration-testing</module>
+        <module>dockstore-event-consumer</module>
     </modules>
 
 
@@ -261,7 +266,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.9.7</version>
+                <version>2.9.9</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -299,7 +304,7 @@
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.3.4.Final</version>
+                <version>5.4.2.Final</version>
             </dependency>
 
             <!-- jersey -->
@@ -322,6 +327,11 @@
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-multipart</artifactId>
                 <version>${jersey-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-json-jackson</artifactId>
+                <version>2.25.1</version>
             </dependency>
 
             <dependency>
@@ -348,7 +358,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.5</version>
+                <version>3.6</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
@@ -363,12 +373,12 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>21.0</version>
+                <version>23.5-jre</version>
             </dependency>
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.20.0-GA</version>
+                <version>3.21.0-GA</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -378,7 +388,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
-                <version>2.1</version>
+                <version>2.2</version>
             </dependency>
 
             <dependency>
@@ -477,13 +487,13 @@
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
-                <version>3.0.1</version>
+                <version>3.0.2</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>2.5.1</version>
+                <version>2.6</version>
             </dependency>
             <dependency>
                 <groupId>com.google.http-client</groupId>
@@ -624,7 +634,7 @@
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.9.2</version>
+                <version>1.9.3</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -655,6 +665,36 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>1.13</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>javax.ws.rs-api</artifactId>
+                <version>2.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson-datatype-jsr310.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dockstore</groupId>
+                <artifactId>zenodo-client-generated</artifactId>
+                <version>0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>5.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>5.0.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>2.4.7</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -698,7 +738,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.5.1</version>
+                    <version>3.7.0</version>
                     <configuration>
                         <source>1.8</source>
                         <target>1.8</target>
@@ -735,6 +775,7 @@
                     </dependencies>
                     <configuration>
                         <configLocation>checkstyle.xml</configLocation>
+                        <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -809,6 +850,7 @@
                     <version>${maven-surefire.version}</version>
                     <configuration>
                         <excludedGroups>${excludeGroups}</excludedGroups>
+                        <skipTests>${skipTests}</skipTests>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -817,6 +859,7 @@
                     <version>${maven-failsafe.version}</version>
                     <configuration>
                         <excludedGroups>${excludeGroups}</excludedGroups>
+                        <skipTests>${skipITs}</skipTests>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -845,7 +888,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>2.4.3</version>
+                    <version>3.1.0</version>
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -891,12 +934,18 @@
                 <plugin>
                     <groupId>io.swagger</groupId>
                     <artifactId>swagger-codegen-maven-plugin</artifactId>
-                    <version>2.2.3</version>
+                    <version>2.3.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>1.5.0</version>
+                </plugin>
+                <!-- https://mvnrepository.com/artifact/org.codehaus.mojo/versions-maven-plugin -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>2.5</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -922,6 +971,13 @@
                                     </excludes>
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
+                                <requireMavenVersion>
+                                    <version>3.3.9</version>
+                                </requireMavenVersion>
+                                <requireJavaVersion>
+                                    <version>1.8.0</version>
+                                </requireJavaVersion>
+                                <banDuplicatePomDependencyVersions />
                             </rules>
                         </configuration>
                         <goals>
@@ -1117,21 +1173,40 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <excludeGroups>io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest, io.dockstore.common.BenchmarkTest</excludeGroups>
+                <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ConfidentialTest,io.dockstore.common.SlowTest, io.dockstore.common.BenchmarkTest,io.dockstore.common.ToilOnlyTest</excludeGroups>
             </properties>
         </profile>
         <profile>
-            <id>travis-tests</id>
-            <!-- travis has access to our confidential data bundle -->
+            <id>toil-integration-tests</id>
+            <!-- run only tests that are relevant for toil (tests that use cwltool, cwlrunner, toil -->
             <properties>
-                <excludeGroups>io.dockstore.common.SlowTest</excludeGroups>
+                <groups>io.dockstore.common.ToilCompatibleTest,io.dockstore.common.ToilOnlyTest</groups>
             </properties>
         </profile>
         <profile>
-            <id>jenkins-tests</id>
-            <!-- run all tests in-house -->
+            <id>regression-integration-tests</id>
+            <!-- run only regression tests-->
             <properties>
-                <excludeGroups />
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.RegressionTest</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>unit-tests</id>
+            <!-- run all non-integration tests -->
+            <properties>
+                <skipTests>false</skipTests>
+                <skipITs>true</skipITs>
+            </properties>
+        </profile>
+        <profile>
+            <id>integration-tests</id>
+            <!-- run all integration tests -->
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
             </properties>
         </profile>
     </profiles>

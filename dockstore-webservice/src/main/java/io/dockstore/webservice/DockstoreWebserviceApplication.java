@@ -24,7 +24,9 @@ import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
@@ -34,8 +36,10 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.helpers.DataExceptionMapper;
+import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
+import io.dockstore.webservice.helpers.TransactionExceptionMapper;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -74,8 +78,11 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import io.swagger.api.MetadataApi;
+import io.swagger.api.MetadataApiV1;
 import io.swagger.api.ToolClassesApi;
+import io.swagger.api.ToolClassesApiV1;
 import io.swagger.api.ToolsApi;
+import io.swagger.api.ToolsApiV1;
 import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
@@ -88,8 +95,6 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
-import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,7 +108,8 @@ import static org.eclipse.jetty.servlets.CrossOriginFilter.ALLOWED_ORIGINS_PARAM
  * @author dyuen
  */
 public class DockstoreWebserviceApplication extends Application<DockstoreWebserviceConfiguration> {
-    public static final String GA4GH_API_PATH = "/api/ga4gh/v1";
+    public static final String GA4GH_API_PATH = "/api/ga4gh/v2";
+    public static final String GA4GH_API_PATH_V1 = "/api/ga4gh/v1";
     private static final Logger LOG = LoggerFactory.getLogger(DockstoreWebserviceApplication.class);
     private static final int BYTES_IN_KILOBYTE = 1024;
     private static final int KILOBYTES_IN_MEGABYTE = 1024;
@@ -130,6 +136,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     @Override
     public void initialize(Bootstrap<DockstoreWebserviceConfiguration> bootstrap) {
+
+        configureMapper(bootstrap.getObjectMapper());
+
 
         // setup hibernate+postgres
         bootstrap.addBundle(hibernate);
@@ -174,6 +183,14 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         }
     }
 
+    public static void configureMapper(ObjectMapper objectMapper) {
+        objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
+        objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+        // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
+        objectMapper.enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
+    }
+
     @Override
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
@@ -214,12 +231,15 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new AuthValueFactoryProvider.Binder<>(User.class));
         environment.jersey().register(RolesAllowedDynamicFeature.class);
 
-        final ObjectMapper mapper = environment.getObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
-        final DockerRepoResource dockerRepoResource = new DockerRepoResource(mapper, httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
-                labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
+
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO,
+            workflowVersionDAO, labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
+        environment.jersey().register(workflowResource);
+
+        // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
+        final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
+                labelDAO, fileDAO, workflowDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource);
         environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new GitHubRepoResource(tokenDAO));
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
@@ -235,16 +255,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 configuration.getGitlabRedirectURI());
         environment.jersey().register(resource5);
 
-        environment.jersey().register(
-                new TokenResource(tokenDAO, userDAO, configuration.getGithubClientID(), configuration.getGithubClientSecret(),
-                        configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), configuration.getGitlabClientID(),
-                        configuration.getGitlabClientSecret(), configuration.getGitlabRedirectURI(), httpClient, cachingAuthenticator));
+        environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO,
-                workflowVersionDAO, labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
-        environment.jersey().register(workflowResource);
-
-        environment.jersey().register(new UserResource(httpClient, tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
+        environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
 
         // attach the container dao statically to avoid too much modification of generated code
@@ -256,11 +269,19 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setWorkflowDAO(workflowDAO);
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
-        environment.jersey().register(new ToolsApi());
+        DOIGeneratorFactory.setConfig(configuration);
+
+        ToolsApi toolsApi = new ToolsApi(null);
+        environment.jersey().register(toolsApi);
         environment.jersey().register(new ToolsExtendedApi());
-        environment.jersey().register(new MetadataApi());
-        environment.jersey().register(new ToolClassesApi());
-        environment.jersey().register(new DataExceptionMapper());
+        environment.jersey().register(new MetadataApi(null));
+        environment.jersey().register(new ToolClassesApi(null));
+        environment.jersey().register(new PersistenceExceptionMapper());
+        environment.jersey().register(new TransactionExceptionMapper());
+
+        environment.jersey().register(new ToolsApiV1());
+        environment.jersey().register(new MetadataApiV1());
+        environment.jersey().register(new ToolClassesApiV1());
 
         // extra renderers
         environment.jersey().register(new CharsetResponseFilter());
@@ -291,31 +312,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
         // cors.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, environment.getApplicationContext().getContextPath() +
         // "*");
-
-
-        /**
-         * Ugly, but it does not look like there is a JPA standard annotation for partial indexes
-         */
-        Session session = hibernate.getSessionFactory().openSession();
-        Transaction transaction = session.getTransaction();
-        transaction.begin();
-
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS full_workflow_name ON workflow (organization, repository, workflowname) WHERE workflowname IS NOT NULL;")
-                .executeUpdate();
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS partial_workflow_name ON workflow (organization, repository) WHERE workflowname IS NULL;")
-                .executeUpdate();
-        session.createNativeQuery(
-                "CREATE UNIQUE INDEX IF NOT EXISTS full_tool_name ON tool (registry, namespace, name, toolname) WHERE toolname IS NOT NULL")
-                .executeUpdate();
-        session.createNativeQuery("CREATE UNIQUE INDEX IF NOT EXISTS partial_tool_name ON tool (registry, namespace, name) WHERE toolname IS NULL;")
-                .executeUpdate();
-        try {
-            session.getTransaction().commit();
-        } finally {
-            session.close();
-        }
     }
 
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {

@@ -19,6 +19,7 @@ package io.dockstore.webservice.resources;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.List;
@@ -29,6 +30,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -89,7 +93,7 @@ public class MetadataResource {
 
     private String createWorkflowURL(Workflow workflow) {
         return config.getScheme() + "://" + config.getHostname() + (config.getUiPort() == null ? "" : ":" + config.getUiPort()) + "/workflows/"
-                + workflow.getPath();
+                + workflow.getWorkflowPath();
     }
 
     private String createToolURL(Tool tool) {
@@ -130,7 +134,7 @@ public class MetadataResource {
             RSSEntry entry = new RSSEntry();
             if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
-                entry.setTitle(workflow.getPath());
+                entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
@@ -159,4 +163,41 @@ public class MetadataResource {
             throw new CustomWebApplicationException("Could not write RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/sourceControlList")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "Does not need authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
+    public List<SourceControl.SourceControlBean> getSourceControlList() {
+        List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
+        Arrays.asList(SourceControl.values()).forEach(sourceControl -> sourceControlList.add(new SourceControl.SourceControlBean(sourceControl)));
+        return sourceControlList;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/dockerRegistryList")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
+    public List<Registry.RegistryBean> getDockerRegistries() {
+        List<Registry.RegistryBean> registryList = new ArrayList<>();
+        Arrays.asList(Registry.values()).forEach(registry -> registryList.add(new Registry.RegistryBean(registry)));
+        return registryList;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/descriptorLanguageList")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "Does not need authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
+    public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
+        List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
+        Arrays.asList(DescriptorLanguage.values()).forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
+        return descriptorLanguageList;
+    }
+
 }

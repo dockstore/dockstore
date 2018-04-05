@@ -22,11 +22,10 @@ import java.nio.charset.StandardCharsets;
 
 import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.TestUtility;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.SourceFile;
@@ -36,18 +35,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static io.dockstore.common.CommonTestUtilities.clearState;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -64,11 +62,8 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PowerMockIgnore({ "org.apache.http.conn.ssl.*", "javax.net.ssl.*", "javax.crypto.*", "javax.management.*", "javax.net.*" })
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ Client.class, ToolClient.class, UsersApi.class })
+@Category(ConfidentialTest.class)
 public class MockedIT {
-
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -81,9 +76,15 @@ public class MockedIT {
 
     private Client client;
 
+//    @Before
+//    @Override
+//    public void resetDBBetweenTests() throws Exception {
+//        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
+//    }
+
     @Before
     public void clearDB() throws Exception {
-        clearState();
+        CommonTestUtilities.getTestingPostgres().clearDatabase();
         this.client = mock(Client.class);
         ToolClient toolClient = spy(new ToolClient(client, false));
 

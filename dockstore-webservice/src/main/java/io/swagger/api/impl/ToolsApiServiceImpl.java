@@ -16,36 +16,6 @@
 
 package io.swagger.api.impl;
 
-import avro.shaded.com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Table;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceFile;
-import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.swagger.api.NotFoundException;
-import io.swagger.api.ToolsApiService;
-import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolDockerfile;
-import io.swagger.model.ToolVersion;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.SecurityContext;
-
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -59,6 +29,44 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
+
+import avro.shaded.com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Table;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.swagger.api.NotFoundException;
+import io.swagger.api.ToolsApiService;
+import io.swagger.model.DescriptorType;
+import io.swagger.model.ToolContainerfile;
+import io.swagger.model.ToolDescriptor;
+import io.swagger.model.ToolFile;
+import io.swagger.model.ToolTests;
+import io.swagger.model.ToolVersion;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.CWL_TEST_JSON;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
@@ -68,18 +76,24 @@ import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 
 public class ToolsApiServiceImpl extends ToolsApiService {
 
-    public static final int DEFAULT_PAGE_SIZE = 1000;
+    private static final int SEGMENTS_IN_ID = 3;
+    private static final int DEFAULT_PAGE_SIZE = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
 
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
+    private static EntryVersionHelper<Tool> toolHelper;
+    private static EntryVersionHelper<Workflow> workflowHelper;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
+        ToolsApiServiceImpl.toolHelper = () -> toolDAO;
     }
+
     public static void setWorkflowDAO(WorkflowDAO workflowDAO) {
         ToolsApiServiceImpl.workflowDAO = workflowDAO;
+        ToolsApiServiceImpl.workflowHelper = () -> workflowDAO;
     }
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
@@ -108,7 +122,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             // check whether this is registered
             response = Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
-            io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(container, config).getLeft();
+            io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(container, config).getLeft();
             assert (tool != null);
             // filter out other versions if we're narrowing to a specific version
             if (version != null) {
@@ -130,7 +144,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
+    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
+        throws NotFoundException {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         try {
             versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
@@ -143,35 +158,33 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     private Entry getEntry(ParsedRegistryID parsedID) {
         Entry entry;
+        String entryPath = parsedID.getPath();
+        String entryName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
+        if (entryName != null) {
+            entryPath += "/" + parsedID.getToolName();
+        }
         if (parsedID.isTool()) {
-            entry = toolDAO.findPublishedByToolPath(parsedID.getPath(), parsedID.getToolName());
+            entry = toolDAO.findByPath(entryPath, true);
         } else {
-            String workflowPath = parsedID.getPath();
-            String workflowName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
-            if (workflowName != null) {
-                workflowPath += "/" + parsedID.getToolName();
-                entry = workflowDAO.findPublishedByWorkflowPath(workflowPath, workflowName);
-            } else {
-                entry = workflowDAO.findPublishedByWorkflowPathNullWorkflowName(workflowPath);
-            }
-
+            entry = workflowDAO.findByPath(entryPath, true);
         }
         return entry;
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
-            throws NotFoundException {
+    public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
+        ContainerRequestContext value) throws NotFoundException {
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        return getFileByToolVersionID(id, versionId, fileType, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+        return getFileByToolVersionID(id, versionId, fileType, null,
+            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
-            SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
+        SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -179,15 +192,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-
-        return getFileByToolVersionID(id, versionId, fileType, relativePath, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+        return getFileByToolVersionID(id, versionId, fileType, relativePath,
+            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
     }
 
-
-
     @Override
-    public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
-            throws NotFoundException {
+    public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext,
+        ContainerRequestContext value) throws NotFoundException {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -197,20 +208,19 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
-        boolean plainTextResponse = value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.contains("plain");
-
+        boolean plainTextResponse =
+            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.toLowerCase().contains("plain");
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
-            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null,
-                    plainTextResponse);
+            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, plainTextResponse);
         case WDL_TEST_JSON:
         case DOCKSTORE_WDL:
-            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null,
-                    plainTextResponse);
-        case DOCKERFILE:
-            return Response.status(Response.Status.BAD_REQUEST).build();
-
+            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, plainTextResponse);
+        case NEXTFLOW:
+        case NEXTFLOW_CONFIG:
+        case NEXTFLOW_TEST_PARAMS:
+            return getFileByToolVersionID(id, versionId, SourceFile.FileType.NEXTFLOW_TEST_PARAMS, null, plainTextResponse);
         default:
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -222,6 +232,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             type = DOCKSTORE_CWL;
         } else if (StringUtils.containsIgnoreCase(format, "WDL")) {
             type = DOCKSTORE_WDL;
+        } else if (StringUtils.containsIgnoreCase(format, "NFL")) {
+            type = SourceFile.FileType.NEXTFLOW_CONFIG;
         } else if (Objects.equals("JSON", format)) {
             // if JSON is specified
             type = DOCKSTORE_CWL;
@@ -233,15 +245,16 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdDockerfileGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
-            throws NotFoundException {
+    public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
+        ContainerRequestContext value) throws NotFoundException {
         return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
     }
 
     @SuppressWarnings("CheckStyle")
     @Override
     public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
-            String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
+        String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value)
+        throws NotFoundException {
         final List<Entry> all = new ArrayList<>();
         all.addAll(toolDAO.findAllPublished());
         all.addAll(workflowDAO.findAllPublished());
@@ -249,7 +262,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Entry c : all) {
-            if (c instanceof Workflow && (registryId != null || registry != null || organization != null || name != null || toolname != null)) {
+            if (c instanceof Workflow && (registryId != null || registry != null || organization != null || name != null
+                || toolname != null)) {
                 continue;
             }
 
@@ -262,7 +276,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     }
                 }
                 if (registry != null && tool.getRegistry() != null) {
-                    if (!tool.getRegistry().toString().contains(registry)) {
+                    if (!tool.getRegistry().contains(registry)) {
                         continue;
                     }
                 }
@@ -293,7 +307,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
             }
             // if passing, for each container that matches the criteria, convert to standardised format and return
-            io.swagger.model.Tool tool = ToolsImplCommon.convertContainer2Tool(c, config).getLeft();
+            io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config).getLeft();
             if (tool != null) {
                 results.add(tool);
             }
@@ -313,8 +327,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             results = pagedResults.get(offsetInteger);
         }
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
-        responseBuilder.header("current-offset", offset);
-        responseBuilder.header("current-limit", limit);
+        responseBuilder.header("current_offset", offset);
+        responseBuilder.header("current_limit", limit);
+        responseBuilder.header("self_link", value.getUriInfo().getRequestUri().toString());
         // construct links to other pages
         try {
             List<String> filters = new ArrayList<>();
@@ -329,17 +344,18 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
-                        "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
-                responseBuilder.header("next-page", nextPageURI.toURL().toString());
+                    DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
+                    Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
+                responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
-                    "/api/ga4gh/v1/tools", Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
-            responseBuilder.header("last-page", lastPageURI.toURL().toString());
+                DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
+                Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
+            responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
             throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
-
         return responseBuilder.build();
     }
 
@@ -358,7 +374,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * @return a specific file wrapped in a response
      */
     private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath,
-            boolean unwrap) {
+        boolean unwrap) {
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
@@ -368,11 +384,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
         Entry entry = getEntry(parsedID);
         // check whether this is registered
+        if (entry == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
         if (!entry.getIsPublished()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        final Pair<io.swagger.model.Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = ToolsImplCommon.convertContainer2Tool(entry, config);
+        final Pair<io.swagger.model.Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = ToolsImplCommon
+            .convertEntryToTool(entry, config);
 
         String finalVersionId = versionId;
         if (toolTablePair == null || toolTablePair.getKey().getVersions() == null) {
@@ -380,17 +400,16 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         }
         io.swagger.model.Tool convertedTool = toolTablePair.getKey();
         final Optional<ToolVersion> first = convertedTool.getVersions().stream()
-                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-
+            .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
         Optional<? extends Version> oldFirst;
         if (entry instanceof Tool) {
             Tool toolEntry = (Tool)entry;
             oldFirst = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
-                    .findFirst();
+                .findFirst();
         } else {
             Workflow workflowEntry = (Workflow)entry;
             oldFirst = workflowEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
-                    .findFirst();
+                .findFirst();
         }
 
         final Table<String, SourceFile.FileType, Object> table = toolTablePair.getValue();
@@ -400,37 +419,63 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             switch (type) {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
-                final EntryVersionHelper<Tool> entryVersionHelper = new EntryVersionHelper<>(toolDAO);
-                List<SourceFile> sourceFile = entryVersionHelper.getAllSourceFiles(entry.getId(), versionId, type);
-                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? sourceFile.stream().map(SourceFile::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n")) : sourceFile).build();
+            case NEXTFLOW_TEST_PARAMS:
+                // this only works for test parameters associated with tools
+                List<SourceFile> testSourceFiles = new ArrayList<>();
+                try {
+                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type));
+                } catch (CustomWebApplicationException e){
+
+                }
+                try {
+                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type));
+                } catch (CustomWebApplicationException e) {
+
+                }
+
+                List<ToolTests> toolTestsList = new ArrayList<>();
+                for (SourceFile file : testSourceFiles) {
+                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
+                    toolTestsList.add(toolTests);
+                }
+                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
+                    unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull).collect(Collectors.joining("\n"))
+                        : toolTestsList).build();
             case DOCKERFILE:
-                final ToolDockerfile dockerfile = (ToolDockerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
+                final ToolContainerfile dockerfile = (ToolContainerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
+                List<ToolContainerfile> containerfilesList = new ArrayList<>();
+                containerfilesList.add(dockerfile);
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? dockerfile.getDockerfile() : dockerfile).build();
+                    .entity(unwrap ? dockerfile.getContainerfile() : containerfilesList).build();
             default:
                 if (relativePath == null) {
                     if ((type == DOCKSTORE_WDL) && (
-                            ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
-                                    == ToolDescriptor.TypeEnum.WDL)) {
+                        ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
+                            == DescriptorType.WDL)) {
                         final ToolDescriptor descriptor = (ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL);
                         return Response.status(Response.Status.OK).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
                     } else if (type == DOCKSTORE_CWL && (
-                            ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL)).getType()
-                                    == ToolDescriptor.TypeEnum.CWL)) {
+                        ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL)).getType()
+                            == DescriptorType.CWL)) {
                         final ToolDescriptor descriptor = (ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL);
                         return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                                .entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
+                            .entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
                     }
                     return Response.status(Response.Status.NOT_FOUND).build();
                 } else {
                     final Set<SourceFile> sourceFiles = oldFirst.get().getSourceFiles();
-                    final Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
+                    Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
+                        .findFirst();
+                    if (!first1.isPresent()) {
+                        first1 = sourceFiles.stream()
+                            .filter(file -> (cleanRelativePath(file.getPath()).equalsIgnoreCase(cleanRelativePath(relativePath))))
                             .findFirst();
+                    }
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
+                        ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
                         return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                                .entity(unwrap ? entity.getContent() : entity).build();
+                            .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
                     }
                 }
             }
@@ -438,8 +483,159 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return Response.status(Response.Status.NOT_FOUND).build();
     }
 
+    @Override
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext containerRequestContext)
+        throws NotFoundException {
+        ParsedRegistryID parsedID = new ParsedRegistryID(id);
+        Entry entry = getEntry(parsedID);
+        List<String> primaryDescriptorPaths = new ArrayList<>();
+        if (entry instanceof Workflow) {
+            Workflow workflow = (Workflow)entry;
+            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+            Optional<WorkflowVersion> first = workflowVersions.stream()
+                .filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
+            if (first.isPresent()) {
+                WorkflowVersion workflowVersion = first.get();
+                // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
+                primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
+                Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type);
+                return Response.ok().entity(toolFiles).build();
+            } else {
+                return Response.noContent().build();
+            }
+        } else if (entry instanceof Tool) {
+            Tool tool = (Tool)entry;
+            Set<Tag> versions = tool.getVersions();
+            Optional<Tag> first = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
+            if (first.isPresent()) {
+                Tag tag = first.get();
+                // Matching the CWL path or WDL path in a tool automatically indicates that the file is a primary descriptor
+                primaryDescriptorPaths.add(tag.getCwlPath());
+                primaryDescriptorPaths.add(tag.getWdlPath());
+                Set<SourceFile> sourceFiles = tag.getSourceFiles();
+                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type);
+                return Response.ok().entity(toolFiles).build();
+            } else {
+                return Response.noContent().build();
+            }
+        } else {
+            return Response.noContent().build();
+        }
+    }
+
+    /**
+     * Converts SourceFile.FileType to ToolFile.FileTypeEnum
+     *
+     * @param fileType The SourceFile.FileType
+     * @return The ToolFile.FileTypeEnum
+     */
+    private ToolFile.FileTypeEnum fileTypeToToolFileFileTypeEnum(SourceFile.FileType fileType) {
+        switch (fileType) {
+        case NEXTFLOW_TEST_PARAMS:
+        case CWL_TEST_JSON:
+        case WDL_TEST_JSON:
+            return ToolFile.FileTypeEnum.TEST_FILE;
+        case DOCKERFILE:
+            return ToolFile.FileTypeEnum.CONTAINERFILE;
+        case DOCKSTORE_WDL:
+        case DOCKSTORE_CWL:
+            return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
+        case NEXTFLOW_CONFIG:
+            return ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
+        case NEXTFLOW:
+            return ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR;
+        default:
+            return ToolFile.FileTypeEnum.OTHER;
+        }
+    }
+
+    /**
+     * Converts a list of SourceFile to a list of ToolFile.
+     *
+     * @param sourceFiles    The list of SourceFile to convert
+     * @param mainDescriptor The main descriptor path, used to determine if the file is a primary or secondary descriptor
+     * @return A list of ToolFile for the Tool
+     */
+    private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type) {
+        List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
+        List<ToolFile> toolFiles = filteredSourceFiles.stream().map(file -> {
+            ToolFile toolFile = new ToolFile();
+            toolFile.setPath(file.getPath());
+            ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
+            if (fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) && mainDescriptor.contains(file.getPath())) {
+                fileTypeEnum = ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
+            }
+            toolFile.setFileType(fileTypeEnum);
+            return toolFile;
+        }).filter(Objects::nonNull).sorted(Comparator.comparing(ToolFile::getPath)).collect(Collectors.toList());
+        return toolFiles;
+    }
+
+    /**
+     * Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL)
+     *
+     * @param sourceFiles The original source files for the Tool
+     * @param type        The type (CWL or WDL), nextflow is not currently handled
+     * @return A list of source files that are possibly relevant to the type (CWL or WDL)
+     */
+    private List<SourceFile> filterSourcefiles(Set<SourceFile> sourceFiles, String type) {
+        switch (type) {
+        case "CWL":
+            return sourceFiles.stream().filter(this::isCWL).collect(Collectors.toList());
+        case "WDL":
+            return sourceFiles.stream().filter(this::isWDL).collect(Collectors.toList());
+        case "NFL":
+            return sourceFiles.stream().filter(this::isNFL).collect(Collectors.toList());
+        default:
+            throw new CustomWebApplicationException("Unknown descriptor type.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    /**
+     * This checks whether the sourcefile is CWL
+     *
+     * @param sourceFile the sourcefile to check
+     * @return true if the sourcefile is CWL-related, false otherwise
+     */
+    private boolean isCWL(SourceFile sourceFile) {
+        SourceFile.FileType type = sourceFile.getType();
+        return Stream.of(SourceFile.FileType.CWL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_CWL)
+            .anyMatch(type::equals);
+    }
+
+    /**
+     * This checks whether the sourcefile is WDL
+     *
+     * @param sourceFile the sourcefile to check
+     * @return true if the sourcefile is WDL-related, false otherwise
+     */
+    private boolean isWDL(SourceFile sourceFile) {
+        SourceFile.FileType type = sourceFile.getType();
+        return Stream.of(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL)
+            .anyMatch(type::equals);
+    }
+
+    /**
+     * This checks whether the sourcefile is Nextflow
+     * @param sourceFile the sourcefile to check
+     * @return true if the sourcefile is WDL-related, false otherwise
+     */
+    private boolean isNFL(SourceFile sourceFile) {
+        SourceFile.FileType type = sourceFile.getType();
+        return Stream.of(SourceFile.FileType.NEXTFLOW_CONFIG, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.NEXTFLOW, SourceFile.FileType.NEXTFLOW_TEST_PARAMS).anyMatch(type::equals);
+    }
+
+    private String cleanRelativePath(String relativePath) {
+        String cleanRelativePath = StringUtils.stripStart(relativePath, "./");
+        return StringUtils.stripStart(cleanRelativePath, "/");
+    }
+
     /**
      * Used to parse localised IDs (no URL)
+     * If tool, the id will look something like "registry.hub.docker.com/sequenza/sequenza"
+     * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
+     * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it.
      */
     private class ParsedRegistryID {
         private boolean tool = true;
@@ -455,14 +651,15 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 throw new RuntimeException(e);
             }
             List<String> textSegments = Splitter.on('/').omitEmptyStrings().splitToList(id);
-            if (textSegments.get(0).equalsIgnoreCase("#workflow")) {
+            List<String> list = new ArrayList<>(textSegments);
+            if (list.get(0).equalsIgnoreCase("#workflow")) {
+                list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
                 tool = false;
-            } else {
-                registry = textSegments.get(0);
             }
-            organization = textSegments.get(1);
-            name = textSegments.get(2);
-            toolName = textSegments.size() > 3 ? textSegments.get(3) : "";
+            registry = list.get(0);
+            organization = list.get(1);
+            name = list.get(2);
+            toolName = list.size() > SEGMENTS_IN_ID ? list.get(SEGMENTS_IN_ID) : "";
         }
 
         public String getRegistry() {
@@ -487,11 +684,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
          * @return an internal path, usable only if we know if we have a tool or workflow
          */
         public String getPath() {
-            if (tool) {
-                return registry + "/" + organization + "/" + name;
-            } else {
-                return organization + "/" + name;
-            }
+            return registry + "/" + organization + "/" + name;
         }
 
         public boolean isTool() {

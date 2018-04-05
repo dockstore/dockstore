@@ -16,35 +16,28 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
-import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.resources.ResourceUtilities;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -52,19 +45,19 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author xliu
+ * @deprecated let's gradually remove this class, this is a bit of an ugly grab-bag
  */
+@Deprecated
 public final class Helper {
 
     private static final Logger LOG = LoggerFactory.getLogger(Helper.class);
-
-    private static final String BITBUCKET_URL = "https://bitbucket.org/";
 
     private Helper() {
         // hide the constructor for utility classes
     }
 
-    public static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken,
-            final Token bitbucketToken, final Token gitlabToken) {
+    static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken, final Token bitbucketToken,
+        final Token gitlabToken) {
         Set<Tag> tags = tool.getTags();
 
         // For each tag, will download files to db and determine if the tag is valid
@@ -112,49 +105,6 @@ public final class Helper {
     }
 
     /**
-     * // Determine which tags need to be deleted (no longer exist on registry)
-     * // Iterate over tags found from registry
-     * // Find if user already has the tool (if so then update)
-     * sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
-     * // Creates list of tools to delete
-     * final List<Tool> toDelete = new ArrayList<>();
-     * <p>
-     * // Does the tool in the database still exist in Quay
-     * <p>
-     * // Add tool to remove list if it is no longer on Quay (Ignore manual DockerHub/Quay tools)
-     * // when a tool from the registry (ex: quay.io) has newer content, update it from
-     * // Find if user already has the tool, if so just update
-     * // Tool does not already exist, add it
-     * <p>
-     * // Save all new and existing tools
-     * // delete tool if it has no users
-     * Check if the given quay tool has tags
-     *
-     * @param tool
-     * @param client
-     * @param objectMapper
-     * @param tokenDAO
-     * @param userId
-     * @return true if tool has tags, false otherwise
-     */
-    public static boolean checkQuayContainerForTags(final Tool tool, final HttpClient client, final ObjectMapper objectMapper,
-            final TokenDAO tokenDAO, final long userId) {
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
-        if (quayToken == null) {
-            // no quay token extracted
-            throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
-                    HttpStatus.SC_NOT_FOUND);
-        }
-        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
-
-        final AbstractImageRegistry imageRegistry = factory.createImageRegistry(tool.getRegistry());
-        final List<Tag> tags = imageRegistry.getTags(tool);
-
-        return !tags.isEmpty();
-    }
-
-    /**
      * Given a container and tags, load up required files from git repository
      *
      * @param client
@@ -173,12 +123,14 @@ public final class Helper {
         final String githubTokenContent = githubToken == null ? null : githubToken.getContent();
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(c.getGitUrl(), client, bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
-        FileImporter importer = new FileImporter(sourceCodeRepo);
+        if (sourceCodeRepo == null) {
+            return files;
+        }
 
         // Add for new descriptor types
         for (FileType f : FileType.values()) {
-            if (f != FileType.CWL_TEST_JSON && f != FileType.WDL_TEST_JSON) {
-                String fileResponse = importer.readGitRepositoryFile(f, tag, null);
+            if (f != FileType.CWL_TEST_JSON && f != FileType.WDL_TEST_JSON && f != FileType.NEXTFLOW_TEST_PARAMS) {
+                String fileResponse = sourceCodeRepo.readGitRepositoryFile(f, tag, null);
                 if (fileResponse != null) {
                     SourceFile dockstoreFile = new SourceFile();
                     dockstoreFile.setType(f);
@@ -188,50 +140,30 @@ public final class Helper {
                     } else if (f == FileType.DOCKSTORE_CWL) {
                         dockstoreFile.setPath(tag.getCwlPath());
                         // see if there are imported files and resolve them
-                        Map<String, SourceFile> importedFiles = importer.resolveImports(fileResponse, c, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(fileResponse, f, tag);
                         files.addAll(importedFiles.values());
                     } else if (f == FileType.DOCKSTORE_WDL) {
                         dockstoreFile.setPath(tag.getWdlPath());
-                        Map<String, SourceFile> importedFiles = importer.resolveImports(fileResponse, c, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(fileResponse, f, tag);
                         files.addAll(importedFiles.values());
+                    } else {
+                        //TODO add nextflow work here
+                        LOG.error("file type not implemented yet");
+                        continue;
                     }
                     files.add(dockstoreFile);
                 }
             } else {
                 // If test json, must grab all
-                if (f == FileType.CWL_TEST_JSON) {
-                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream()
-                            .filter((SourceFile u) -> u.getType() == FileType.CWL_TEST_JSON).collect(Collectors.toList());
-                    for (SourceFile testJson : cwlTestJson) {
-                        String fileResponse = importer.readGitRepositoryFile(f, tag, testJson.getPath());
-                        if (fileResponse != null) {
-                            SourceFile dockstoreFile = new SourceFile();
-                            dockstoreFile.setType(f);
-                            dockstoreFile.setContent(fileResponse);
-                            dockstoreFile.setPath(testJson.getPath());
-                            files.add(dockstoreFile);
-                        }
-                    }
-                } else if (f == FileType.WDL_TEST_JSON) {
-                    List<SourceFile> cwlTestJson = tag.getSourceFiles().stream()
-                            .filter((SourceFile u) -> u.getType() == FileType.WDL_TEST_JSON).collect(Collectors.toList());
-                    for (SourceFile testJson : cwlTestJson) {
-                        String fileResponse = importer.readGitRepositoryFile(f, tag, testJson.getPath());
-                        if (fileResponse != null) {
-                            SourceFile dockstoreFile = new SourceFile();
-                            dockstoreFile.setType(f);
-                            dockstoreFile.setContent(fileResponse);
-                            dockstoreFile.setPath(testJson.getPath());
-                            files.add(dockstoreFile);
-                        }
-                    }
-                }
+                List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == f)
+                    .collect(Collectors.toList());
+                cwlTestJson.forEach(file -> sourceCodeRepo.readFile(tag, files, f, file.getPath()));
             }
-
         }
-
         return files;
     }
+
+
 
     /**
      * Refreshes user's containers
@@ -252,10 +184,10 @@ public final class Helper {
             final ToolDAO toolDAO, final TokenDAO tokenDAO, final TagDAO tagDAO, final FileDAO fileDAO, String organization) {
         // Get user's quay and git tokens
         List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
-        Token githubToken = extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        Token gitlabToken = extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
@@ -293,17 +225,17 @@ public final class Helper {
 
         // Get user's quay and git tokens
         List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
-        Token githubToken = extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token gitlabToken = extractToken(tokens, TokenType.GITLAB_COM.toString());
-        Token bitbucketToken = extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
 
         // with Docker Hub support it is now possible that there is no quayToken
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
-        final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistry());
+        final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
 
         if (abstractImageRegistry == null) {
             throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
@@ -312,125 +244,6 @@ public final class Helper {
         return abstractImageRegistry
                 .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken);
 
-    }
-
-    public static Token extractToken(List<Token> tokens, String source) {
-        for (Token token : tokens) {
-            if (token.getTokenSource().equals(source)) {
-                return token;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Refreshes user's Bitbucket token.
-     *
-     * @param token
-     * @param client
-     * @param tokenDAO
-     * @param bitbucketClientID
-     * @param bitbucketClientSecret
-     * @return the updated token
-     */
-    public static Token refreshBitbucketToken(Token token, HttpClient client, TokenDAO tokenDAO, String bitbucketClientID,
-            String bitbucketClientSecret) {
-
-        String url = BITBUCKET_URL + "site/oauth2/access_token";
-
-        try {
-            Optional<String> asString = ResourceUtilities.bitbucketPost(url, null, client, bitbucketClientID, bitbucketClientSecret,
-                    "grant_type=refresh_token&refresh_token=" + token.getRefreshToken());
-
-            if (asString.isPresent()) {
-                String accessToken;
-                String refreshToken;
-                LOG.info(token.getUsername() + ": RESOURCE CALL: {}", url);
-                String json = asString.get();
-
-                Gson gson = new Gson();
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>)gson.fromJson(json, map.getClass());
-
-                accessToken = map.get("access_token");
-                refreshToken = map.get("refresh_token");
-
-                token.setContent(accessToken);
-                token.setRefreshToken(refreshToken);
-
-                long create = tokenDAO.create(token);
-                return tokenDAO.findById(create);
-            } else {
-                throw new CustomWebApplicationException("Could not retrieve bitbucket.org token based on code",
-                        HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            }
-        } catch (UnsupportedEncodingException ex) {
-            LOG.info(token.getUsername() + ": " + ex.toString());
-            throw new CustomWebApplicationException(ex.toString(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Check if admin or correct user
-     *
-     * @param user
-     * @param id
-     */
-    public static void checkUser(User user, long id) {
-        if (!user.getIsAdmin() && user.getId() != id) {
-            throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
-        }
-    }
-
-    /**
-     * Check if admin or if tool belongs to user
-     *
-     * @param user
-     * @param entry
-     */
-    public static void checkUser(User user, Entry entry) {
-        if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-            throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                    HttpStatus.SC_FORBIDDEN);
-        }
-    }
-
-    /**
-     * Check if admin or if container belongs to user
-     *
-     * @param user
-     * @param list
-     */
-    public static void checkUser(User user, List<? extends Entry> list) {
-        for (Entry entry : list) {
-            if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                        HttpStatus.SC_FORBIDDEN);
-            }
-        }
-    }
-
-    /**
-     * Check if tool is null
-     *
-     * @param entry
-     */
-    public static void checkEntry(Entry entry) {
-        if (entry == null) {
-            throw new CustomWebApplicationException("Entry not found", HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Check if tool is null
-     *
-     * @param entry
-     */
-    public static void checkEntry(List<? extends Entry> entry) {
-        if (entry == null) {
-            throw new CustomWebApplicationException("No entries provided", HttpStatus.SC_BAD_REQUEST);
-        }
-        entry.forEach(Helper::checkEntry);
     }
 
     public static String convertHttpsToSsh(String url) {
@@ -479,9 +292,9 @@ public final class Helper {
             final TokenDAO tokenDAO, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         // get quay token
-        Token quayToken = extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
 
-        if (tool.getRegistry() == Registry.QUAY_IO && quayToken == null) {
+        if (tool.getRegistry() == Registry.QUAY_IO.toString() && quayToken == null) {
             LOG.info("WARNING: QUAY.IO token not found!");
             throw new CustomWebApplicationException("A valid Quay.io token is required to add this tool.", HttpStatus.SC_BAD_REQUEST);
         }
@@ -525,73 +338,4 @@ public final class Helper {
         }
     }
 
-    /**
-     * Stars the entry
-     *
-     * @param entry     the entry to star
-     * @param user      the user to star the entry with
-     * @param entryType the entry type which is either "workflow" or "tool"
-     * @param entryPath the path of the entry
-     */
-    public static void starEntryHelper(Entry entry, User user, String entryType, String entryPath) {
-        Helper.checkEntry(entry);
-        Set<User> starredUsers = entry.getStarredUsers();
-        if (!starredUsers.contains(user)) {
-            entry.addStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException(
-                    "You cannot star the " + entryType + " " + entryPath + " because you have already starred it.",
-                    HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Unstars the entry
-     *
-     * @param entry     the entry to unstar
-     * @param user      the user to unstar the entry with
-     * @param entryType the entry type which is either "workflow" or "tool"
-     * @param entryPath the path of the entry
-     */
-    public static void unstarEntryHelper(Entry entry, User user, String entryType, String entryPath) {
-        Helper.checkEntry(entry);
-
-        Set<User> starredUsers = entry.getStarredUsers();
-        if (starredUsers.contains(user)) {
-            entry.removeStarredUser(user);
-        } else {
-            throw new CustomWebApplicationException(
-                    "You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.",
-                    HttpStatus.SC_BAD_REQUEST);
-        }
-    }
-
-    /**
-     * Updates the given user with metadata from Github
-     *
-     * @param user
-     * @param userDAO
-     * @param tokenDAO
-     * @return updated user
-     */
-    public static User updateUserHelper(final User user, final UserDAO userDAO, final TokenDAO tokenDAO) {
-        User existingUser = userDAO.findById(user.getId());
-        Token githubToken = tokenDAO.findGithubByUserId(existingUser.getId()).get(0);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(existingUser.getUsername(), githubToken.getContent(), null);
-        existingUser.update(gitHubSourceCodeRepo.getUserMetadata(existingUser));
-        return existingUser;
-    }
-
-    public static class RepoList {
-
-        private List<Tool> repositories;
-
-        public List<Tool> getRepositories() {
-            return repositories;
-        }
-
-        public void setRepositories(List<Tool> repositories) {
-            this.repositories = repositories;
-        }
-    }
 }

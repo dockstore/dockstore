@@ -14,35 +14,46 @@ addons:
 cache:
   directories:
   - $HOME/.m2
+  - /tmp/localstack_install_dir
+  - $HOME/.cache/pip
 
 language: java
 jdk:
 - oraclejdk8
+
+env:
+   - EXTRA_MAVEN_VAR="" TESTING_PROFILE="unit-tests"
+   - EXTRA_MAVEN_VAR="" TESTING_PROFILE="integration-tests"
+   - EXTRA_MAVEN_VAR="cobertura:cobertura coveralls:report" TESTING_PROFILE="unit-tests"
+   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="integration-tests"
+   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="toil-integration-tests"
+   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="regression-integration-tests"
+
+# build lifecycle is before_install, install, before_script, script, after_script
+
+before_install:
+- npm install -g swagger2openapi@2.11.16
+# pre-build to check dependencies and look for out-of-sync swagger
+- mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
+# start local stack in the background
+- pip install --user localstack
+- localstack start &
+- ./scripts/check-swagger.sh
+
 install:
 - docker version
-- pip2.7 install --user setuptools==36.5.0
-- pip2.7 install --user cwl-runner cwltool==1.0.20170828135420 schema-salad==2.6.20170806163416 avro==1.8.1 ruamel.yaml==0.14.12 requests==2.18.4
+- ./scripts/install-tests.sh
+
 before_script:
 - psql -c "create user dockstore with password 'dockstore' createdb;" -U postgres
 - psql -c "ALTER USER dockstore WITH superuser;" -U postgres
 - psql -c 'create database webservice_test with owner = dockstore;' -U postgres
 - export PATH=$PATH:$PWD/dockstore-client/target
 
-env:
-   - EXTRA_MAVEN_VAR=""
-   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report"
-
 script: ./scripts/run-tests.sh
 
-before_install:
-- pip install --upgrade pip
-- mvn --batch-mode dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
-- openssl aes-256-cbc -K $encrypted_7175463b6d7d_key -iv $encrypted_7175463b6d7d_iv -in dockstore-integration-testing/src/test/resources/secrets.tar.enc -out dockstore-integration-testing/src/test/resources/secrets.tar -d
-- tar xvf dockstore-integration-testing/src/test/resources/secrets.tar
-
-# master branch will require this till 1.4.0
-dist: trusty
-group: deprecated-2017Q4
+before_cache:
+- rm -rf /home/travis/.m2/repository/io/dockstore
 
 notifications:
   webhooks:

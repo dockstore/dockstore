@@ -1,0 +1,289 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2017 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.4.0">
+    <changeSet id="workflowWorkflownameConvertEmptyStringToNull" author="gluu">
+        <update schemaName="public"
+                tableName="workflow">
+            <column name="workflowname"/>
+            <where>workflowname = ''</where>
+        </update>
+    </changeSet>
+    <changeSet id="addWorkflowWorkflownameNotEmptyConstraint" author="gluu" >
+        <sql dbms="postgresql">
+            ALTER TABLE workflow add constraint workflow_workflowname_notempty check (workflowname &lt;&gt; '')
+        </sql>
+    </changeSet>
+    <changeSet author="agduncan" id="74274923472389478923">
+        <addColumn tableName="workflow">
+            <column name="sourcecontrol" type="text">
+            </column>
+        </addColumn>
+
+        <sql dbms="postgresql">
+            update workflow set sourcecontrol='GITHUB' where giturl like '%github%'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set path = CONCAT('github.com/', path) where sourcecontrol='GITHUB'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set sourcecontrol='BITBUCKET' where giturl like '%bitbucket%'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set path = CONCAT('bitbucket.org/', path) where sourcecontrol='BITBUCKET'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set sourcecontrol='GITLAB' where giturl like '%gitlab%'
+        </sql>
+
+        <sql dbms="postgresql">
+            update workflow set path = CONCAT('gitlab.com/', path) where sourcecontrol='GITLAB'
+        </sql>
+
+        <addNotNullConstraint tableName="workflow" columnName="sourcecontrol"/>
+
+        <sql dbms="postgresql">
+            alter table workflow drop constraint if exists ukkprrtg54h6rjca5l1navospm8
+        </sql>
+
+        <sql dbms="postgresql">
+            alter table workflow drop constraint if exists uk_kprrtg54h6rjca5l1navospm8
+        </sql>
+
+
+        <dropIndex indexName="full_workflow_name" tableName="workflow"/>
+
+        <sql dbms="postgresql">
+            create unique index if not exists full_workflow_name on workflow (sourcecontrol, organization, repository, workflowname) where workflowname is not null
+        </sql>
+
+        <dropIndex indexName="partial_workflow_name" tableName="workflow"/>
+
+        <sql dbms="postgresql">
+            create unique index if not exists partial_workflow_name on workflow (sourcecontrol, organization, repository) where workflowname is null
+        </sql>
+    </changeSet>
+
+    <!-- odd, but required for starting workflow refresh from a clean db -->
+    <changeSet author="dyuen" id="custom_tool_sequence1">
+        <sql>alter sequence container_id_seq increment by 50</sql>
+    </changeSet>
+    <changeSet author="dyuen" id="custom_tag_sequence2">
+        <sql>alter sequence tag_id_seq increment by 50</sql>
+    </changeSet>
+
+    <changeSet id="addCustomDockerRegistryPath" author="agduncan">
+        <addColumn tableName="tool">
+            <column name="customdockerregistrypath" type="text"></column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="updateAmazonCustomDockerRegistryPath" author="agduncan">
+        <sql dbms="postgresql">
+            UPDATE tool SET "customdockerregistrypath" = split_part(path,'/',1) WHERE registry = 'AMAZON_ECR'
+        </sql>
+    </changeSet>
+
+    <changeSet id="dropWorkflowPath" author="agduncan">
+        <dropColumn tableName="workflow" columnName="path"></dropColumn>
+    </changeSet>
+
+    <changeSet id="dropToolPath" author="agduncan">
+        <dropColumn tableName="tool" columnName="path"></dropColumn>
+    </changeSet>
+
+    <!-- adding support for storing and requesting DOIs -->
+    <changeSet author="dyuen (generated)" id="1516219456530-1">
+        <addColumn tableName="tag">
+            <column defaultValue="NOT_REQUESTED" name="doistatus" type="text"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516219456530-2">
+        <addColumn tableName="workflowversion">
+            <column defaultValue="NOT_REQUESTED" name="doistatus" type="text"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516219456530-3">
+        <addColumn tableName="tag">
+            <column name="doiurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516219456530-4">
+        <addColumn tableName="workflowversion">
+            <column name="doiurl" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516220040864-6">
+        <addNotNullConstraint columnDataType="clob" columnName="doistatus" tableName="tag"/>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1516220040864-7">
+        <addNotNullConstraint columnDataType="clob" columnName="doistatus" tableName="workflowversion"/>
+    </changeSet>
+
+    <!-- Convert source control and registry to paths -->
+    <changeSet author="aduncan" id="3424324325r3r3g45g-8">
+        <!-- Update tool registry to be a path -->
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'quay.io' WHERE registry =  'QUAY_IO'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'registry.hub.docker.com' WHERE registry =  'DOCKER_HUB'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = 'registry.gitlab.com' WHERE registry =  'GITLAB'
+        </sql>
+        <sql dbms="postgresql">
+            UPDATE tool SET registry = customdockerregistrypath WHERE registry =  'AMAZON_ECR'
+        </sql>
+
+        <!-- Update workflow source control to be a path -->
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'github.com' WHERE sourcecontrol =  'GITHUB'
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'gitlab.com' WHERE sourcecontrol =  'GITLAB'
+        </sql>
+
+        <sql dbms="postgresql">
+            UPDATE workflow SET sourcecontrol = 'bitbucket.org' WHERE sourcecontrol =  'BITBUCKET'
+        </sql>
+
+        <!-- drop custom docker path -->
+        <dropColumn tableName="tool" columnName="customdockerregistrypath">
+        </dropColumn>
+    </changeSet>
+    <changeSet id="n4io234ni23o4nio33r-1" author="agduncan">
+        <!-- Add column for tool checker -->
+        <addColumn tableName="tool">
+            <column name="checkerid" type="bigint" defaultValue="null"/>
+        </addColumn>
+        <!-- Add columns for workflow checker -->
+        <addColumn tableName="workflow">
+            <column name="checkerid" type="bigint" defaultValue="null"/>
+        </addColumn>
+        <addColumn tableName="workflow">
+            <column name="ischecker" type="boolean" defaultValueBoolean="false"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="workflow-jpa-dbcreate">
+        <addColumn tableName="workflow">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="workflow-jpa-dbupdate">
+        <addColumn tableName="workflow">
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="tool-jpa-dbcreate">
+        <addColumn tableName="tool">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="tool-jpa-dbupdate">
+        <addColumn tableName="tool">
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen (generated)" id="more-dates">
+        <addColumn tableName="usergroup">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="label">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="sourcefile">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="token">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="enduser">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+        <addColumn tableName="tag">
+            <column name="dbcreatedate" type="timestamp without time zone"/>
+            <column name="dbupdatedate" type="timestamp without time zone"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="dyuen" id="mutate-tool-modified-timestamp">
+        <sql>alter table tool alter column lastModified type timestamp without time zone USING to_timestamp(lastModified/1000)</sql>
+    </changeSet>
+    <changeSet author="dyuen" id="mutate-workflow-modified-timestamp">
+        <sql>alter table workflow alter column lastModified type timestamp without time zone USING to_timestamp(lastModified/1000)</sql>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="1520436537629-2">
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="workflow" constraintName="fk_checkerid_with_workflow" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1520436537629-3">
+        <addForeignKeyConstraint baseColumnNames="checkerid" baseTableName="tool" constraintName="fk_checkerid_with_tool" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+
+    <changeSet id="constraint-for-underscore-workflow-and-tool-names" author="agduncan">
+        <sql dbms="postgresql">
+            ALTER TABLE tool DROP CONSTRAINT IF EXISTS tool_check
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE tool ADD CHECK ((defaultwdlpath IS NOT NULL OR defaultcwlpath IS NOT NULL) AND toolname !~~ '\_%'::text)
+        </sql>
+        <sql dbms="postgresql">
+            ALTER TABLE workflow ADD CHECK ((ischecker IS TRUE) OR (ischecker IS FALSE AND workflowname !~~ '\_%'::text))
+        </sql>
+    </changeSet>
+
+    <changeSet author="dyuen" id="fix_rogue_git_urls">
+        <!-- Update tool registry to be a path -->
+         <sql dbms="postgresql">
+             UPDATE workflow SET giturl = 'git@github.com:' || substring(giturl, 16) where giturl like 'git@github.com/%'
+        </sql>
+    </changeSet>
+
+    <changeSet id="drop-toolname-null-constraint-update-check-constraint" author="agduncan">
+        <dropNotNullConstraint tableName="tool" columnName="toolname"></dropNotNullConstraint>
+
+        <dropDefaultValue tableName="tool" columnName="toolname"></dropDefaultValue>
+
+        <sql dbms="postgresql">
+            UPDATE tool SET toolname = NULL WHERE toolname = ''
+        </sql>
+
+        <sql dbms="postgresql">
+            ALTER TABLE tool add constraint tool_toolname_notempty check (toolname &lt;&gt; '')
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

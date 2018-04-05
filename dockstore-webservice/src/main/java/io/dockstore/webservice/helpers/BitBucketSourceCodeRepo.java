@@ -28,11 +28,13 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -162,7 +164,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
      * @param type
      * @return source file
      */
-    private SourceFile getSourceFile(String path, String repositoryId, String branch, SourceFile.FileType type) {
+    @Override
+    public SourceFile getSourceFile(String path, String repositoryId, String branch, SourceFile.FileType type) {
         // TODO: should we even be creating a sourcefile before checking that it is valid?
         // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
         SourceFile file = null;
@@ -179,15 +182,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             String content = asString.get();
 
             // Is workflow descriptor valid?
-            boolean validWorkflow;
-
-            if (type == SourceFile.FileType.DOCKSTORE_CWL) {
-                validWorkflow = checkValidCWLWorkflow(content);
-            } else if (type == SourceFile.FileType.DOCKSTORE_WDL) {
-                validWorkflow = checkValidWDLWorkflow(content);
-            } else {
-                // Must be a testjson file
-                validWorkflow = true;
+            boolean validWorkflow = true;
+            if (LanguageHandlerFactory.isWorkflow(type)) {
+                validWorkflow = LanguageHandlerFactory.getInterface(type).isValidWorkflow(content);
             }
 
             if (validWorkflow) {
@@ -211,11 +208,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         // Setup workflow
         workflow.setOrganization(owner);
         workflow.setRepository(name);
+        workflow.setSourceControl(SourceControl.BITBUCKET.toString());
 
         final String gitUrl = BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX;
         workflow.setGitUrl(gitUrl);
         workflow.setLastUpdated(new Date());
-        workflow.setPath(workflow.getPath());
 
         return workflow;
     }
@@ -246,11 +243,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     String calculatedPath = version.getWorkflowPath();
 
                     // Now grab source files
-                    SourceFile sourceFile;
-                    SourceFile.FileType identifiedType = getFileType(calculatedPath);
-
+                    SourceFile.FileType identifiedType = workflow.getFileType();
                     // TODO: No exceptions are caught here in the event of a failed call
-                    sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
+                    SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
                     // Non-null sourcefile means that the sourcefile is valid
                     if (sourceFile != null) {
@@ -258,26 +253,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     }
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
-                    if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        // Set Filetype
-                        SourceFile.FileType testJsonType = null;
-                        if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-                            testJsonType = SourceFile.FileType.CWL_TEST_JSON;
-                        } else if (identifiedType.equals(SourceFile.FileType.DOCKSTORE_WDL)) {
-                            testJsonType = SourceFile.FileType.WDL_TEST_JSON;
-                        }
-
-                        // Check if test parameter file has already been added
-                        final SourceFile.FileType finalFileType = testJsonType;
-                        long duplicateCount = version.getSourceFiles().stream().filter((SourceFile v) -> v.getPath().equals(workflow.getDefaultTestParameterFilePath()) && v.getType() == finalFileType).count();
-                        if (duplicateCount == 0) {
-                            SourceFile testJsonSourceFile = getSourceFile(workflow.getDefaultTestParameterFilePath(), repositoryId, branchName, testJsonType);
-                            if (testJsonSourceFile != null) {
-                                version.getSourceFiles().add(testJsonSourceFile);
-                            }
-                        }
-                    }
-
+                    createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
                     workflow.addWorkflowVersion(
                             combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
                 }

@@ -35,11 +35,12 @@ import org.apache.commons.io.FilenameUtils;
  */
 @ApiModel(value = "WorkflowVersion", description = "This describes one workflow version associated with a workflow.")
 @Entity
+@SuppressWarnings("checkstyle:magicnumber")
 public class WorkflowVersion extends Version<WorkflowVersion> implements Comparable<WorkflowVersion> {
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("workflow_path")
-    @ApiModelProperty("Path for the workflow")
+    @ApiModelProperty(value = "Path for the workflow", position = 12)
     private String workflowPath;
 
     public WorkflowVersion() {
@@ -81,7 +82,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     @Override
     public int hashCode() {
-        return 31 * super.hashCode() + Objects.hash(workflowPath);
+        return Objects.hash(this.getName(), this.getReference());
     }
 
     @Override
@@ -92,21 +93,12 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        if (!super.equals(obj)) {
-            return false;
-        }
         final WorkflowVersion other = (WorkflowVersion)obj;
-        return Objects.equals(this.workflowPath, other.workflowPath);
+        return Objects.equals(super.getName(), other.getName()) && Objects.equals(super.getReference(), other.getReference());
     }
 
     @Override
     public int compareTo(WorkflowVersion that) {
-        if (super.compareTo(that) < 0) {
-            return -1;
-        } else if (super.compareTo(that) > 0) {
-            return 1;
-        }
-
-        return ComparisonChain.start().compare(this.workflowPath, that.workflowPath, Ordering.natural().nullsLast()).result();
+        return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast()).compare(this.getReference(), that.getReference()).result();
     }
 }

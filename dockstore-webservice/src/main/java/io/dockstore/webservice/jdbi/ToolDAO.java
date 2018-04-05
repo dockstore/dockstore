@@ -16,12 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
+
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.helpers.JsonLdRetriever;
 import org.hibernate.SessionFactory;
-
-import java.util.List;
+import org.hibernate.query.Query;
 
 /**
  * @author xliu
@@ -31,26 +32,101 @@ public class ToolDAO extends EntryDAO<Tool> {
         super(factory);
     }
 
-    public List<Tool> findByPath(String path) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findByPath").setParameter("path", path));
-    }
-
-    public Tool findByToolPath(String path, String tool) {
-        return uniqueResult(
-                namedQuery("io.dockstore.webservice.core.Tool.findByToolPath").setParameter("path", path).setParameter("toolname", tool));
-    }
-
     public List<Tool> findByMode(final ToolMode mode) {
         return list(namedQuery("io.dockstore.webservice.core.Tool.findByMode").setParameter("mode", mode));
     }
 
-    public List<Tool> findPublishedByPath(String path) {
-        return list(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByPath").setParameter("path", path));
+    /**
+     * Finds all tools with the given path (ignores tool name)
+     * When findPublished is true, will only look at published tools
+     *
+     * @param path
+     * @param findPublished
+     * @return A list of tools with the given path
+     */
+    public List<Tool> findAllByPath(String path, boolean findPublished) {
+        String[] splitPath = Tool.splitPath(path);
+
+        // Not a valid path
+        if (splitPath == null) {
+            return null;
+        }
+
+        // Valid path
+        String registry = splitPath[registryIndex];
+        String namespace = splitPath[orgIndex];
+        String name = splitPath[repoIndex];
+
+        // Create full query name
+        String fullQueryName = "io.dockstore.webservice.core.Tool.";
+
+        if (findPublished) {
+            fullQueryName += "findPublishedByPath";
+        } else {
+            fullQueryName += "findByPath";
+        }
+
+        // Create query
+        Query query = namedQuery(fullQueryName)
+            .setParameter("registry", registry)
+            .setParameter("namespace", namespace)
+            .setParameter("name", name);
+
+        return list(query);
     }
 
-    public Tool findPublishedByToolPath(String path, String tool) {
-        return uniqueResult(namedQuery("io.dockstore.webservice.core.Tool.findPublishedByToolPath").setParameter("path", path)
-                .setParameter("toolname", tool));
+    /**
+     * Finds the tool matching the given tool path
+     * When findPublished is true, will only look at published tools
+     *
+     * @param path
+     * @param findPublished
+     * @return Tool matching the path
+     */
+    public Tool findByPath(String path, boolean findPublished) {
+        String[] splitPath = Tool.splitPath(path);
+
+        // Not a valid path
+        if (splitPath == null) {
+            return null;
+        }
+
+        // Valid path
+        String registry = splitPath[registryIndex];
+        String namespace = splitPath[orgIndex];
+        String name = splitPath[repoIndex];
+        String toolname = splitPath[entryNameIndex];
+
+
+        // Create full query name
+        String fullQueryName = "io.dockstore.webservice.core.Tool.";
+
+        if (splitPath[entryNameIndex] == null) {
+            if (findPublished) {
+                fullQueryName += "findPublishedByToolPathNullToolName";
+            } else {
+                fullQueryName += "findByToolPathNullToolName";
+            }
+
+        } else {
+            if (findPublished) {
+                fullQueryName += "findPublishedByToolPath";
+            } else {
+                fullQueryName += "findByToolPath";
+            }
+        }
+
+        // Create query
+        Query query = namedQuery(fullQueryName)
+            .setParameter("registry", registry)
+            .setParameter("namespace", namespace)
+            .setParameter("name", name);
+
+        if (splitPath[entryNameIndex] != null) {
+            query.setParameter("toolname", toolname);
+        }
+
+        return uniqueResult(query);
     }
 
     public List<Tool> findPublishedByNamespace(String namespace) {

@@ -6,12 +6,20 @@ echo "${TRAVIS_PULL_REQUEST}"
 echo "${TRAVIS_PULL_REQUEST_BRANCH}"
 echo "${TRAVIS_PULL_REQUEST_SHA}"
 
+if [ "${TESTING_PROFILE}" = "integration-tests" ] || [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
+    openssl aes-256-cbc -K $encrypted_7e2d6ff95e70_key -iv $encrypted_7e2d6ff95e70_iv -in secrets.tar.enc -out secrets.tar -d
+    tar xvf secrets.tar
+fi
+
 if [ ${#EXTRA_MAVEN_VAR} -eq 0 ]; then
         # always do non-coverage builds
-	mvn --batch-mode clean install -Ptravis-tests ${EXTRA_MAVEN_VAR}
+    echo "Non-coverage build"
+	mvn --batch-mode clean install -P${TESTING_PROFILE} ${EXTRA_MAVEN_VAR}
 else
-        # for coverage builds, we need to be more picky, let's exclude builds from branches other than develop and master
-        if [ "${TRAVIS_BRANCH}" = "master" ] || [ "${TRAVIS_BRANCH}" = "develop" ]; then
-		mvn --batch-mode clean install -Ptravis-tests ${EXTRA_MAVEN_VAR}
-        fi
+    mvn --batch-mode dependency:get -Dartifact=org.eluder.coveralls:coveralls-maven-plugin:4.2.0
+    # for coverage builds, we need to be more picky, let's exclude builds from branches other than develop and master
+    if [ "${TRAVIS_BRANCH}" = "master" ] || [ "${TRAVIS_BRANCH}" = "develop" ]; then
+        echo "Coverage build"
+        mvn --batch-mode clean install -P${TESTING_PROFILE} ${EXTRA_MAVEN_VAR}
+    fi
 fi

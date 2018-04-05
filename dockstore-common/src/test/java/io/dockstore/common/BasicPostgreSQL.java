@@ -16,12 +16,7 @@
 
 package io.dockstore.common;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -32,10 +27,8 @@ import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
-import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.slf4j.Logger;
@@ -123,21 +116,14 @@ public class BasicPostgreSQL {
         runUpdateStatement("delete from workflow;");
         runUpdateStatement("delete from tool;");
         runUpdateStatement("delete from usergroup;");
+        runUpdateStatement("delete from databasechangelog;");
+        runUpdateStatement("delete from databasechangeloglock;");
     }
 
     protected <T> T runSelectStatement(String query, ResultSetHandler<T> handler, Object... params) {
         try {
             QueryRunner run = new QueryRunner(dataSource);
             return run.query(query, handler, params);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected <T> T runInsertStatement(String query, ResultSetHandler<T> handler, Object... params) {
-        try {
-            QueryRunner run = new QueryRunner(dataSource);
-            return run.insert(query, handler, params);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -151,34 +137,6 @@ public class BasicPostgreSQL {
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
-        }
-    }
-
-    protected boolean runUpdateStatementConfidential(String query) {
-        try {
-            QueryRunner run = new QueryRunner(dataSource);
-            run.update(query);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    }
-
-    protected boolean loadDatabaseDump(String sqlDumpFile) {
-        Statement statement = null;
-        try {
-            final String s = FileUtils.readFileToString(new File(sqlDumpFile), StandardCharsets.UTF_8);
-            try (Connection connection = dataSource.getConnection()) {
-                statement = connection.createStatement();
-                statement.execute(s);
-            }
-            return true;
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        } finally {
-            DbUtils.closeQuietly(statement);
         }
     }
 }

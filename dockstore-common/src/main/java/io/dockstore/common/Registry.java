@@ -16,6 +16,8 @@
 
 package io.dockstore.common;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * This enumerates the types of docker registry that we can associate an entry with.
  *
@@ -81,5 +83,28 @@ public enum Registry {
 
     public boolean hasCustomDockerPath() {
         return customDockerPath;
+    }
+
+    /**
+     * Expanded version for API list of registries
+     */
+    public static class RegistryBean {
+
+        @JsonProperty("enum")
+        public String value;
+        public String dockerPath;
+        public String friendlyName;
+        public String url;
+        public String privateOnly;
+        public String customDockerPath;
+
+        public RegistryBean(Registry registry) {
+            this.value = registry.name();
+            this.dockerPath = registry.toString();
+            this.friendlyName = registry.getFriendlyName();
+            this.url = registry.url;
+            this.privateOnly = Boolean.toString(registry.isPrivateOnly());
+            this.customDockerPath = Boolean.toString(registry.hasCustomDockerPath());
+        }
     }
 }

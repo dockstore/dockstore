@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -39,15 +40,16 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -60,7 +62,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,10 +73,9 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/users")
 @Api("/users")
 @Produces(MediaType.APPLICATION_JSON)
-public class UserResource {
+public class UserResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private final ElasticManager elasticManager;
-    private final HttpClient client;
     private final UserDAO userDAO;
     private final GroupDAO groupDAO;
     private final TokenDAO tokenDAO;
@@ -83,9 +83,8 @@ public class UserResource {
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
 
-    public UserResource(HttpClient client, TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, WorkflowResource workflowResource,
+    public UserResource(TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, WorkflowResource workflowResource,
             DockerRepoResource dockerRepoResource) {
-        this.client = client;
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
         this.tokenDAO = tokenDAO;
@@ -144,7 +143,7 @@ public class UserResource {
     public User listUser(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("Username of user to return") @PathParam("username") String username) {
         User user = userDAO.findByUsername(username);
-        Helper.checkUser(authUser, user.getId());
+        checkUser(authUser, user.getId());
         return user;
     }
 
@@ -154,7 +153,7 @@ public class UserResource {
     @Path("/{userId}")
     @ApiOperation(value = "Get user with id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
         User user = userDAO.findById(userId);
         if (user == null) {
             throw new CustomWebApplicationException("User not found.", HttpStatus.SC_BAD_REQUEST);
@@ -178,7 +177,7 @@ public class UserResource {
     @ApiOperation(value = "Get tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findByUserId(userId);
     }
@@ -190,7 +189,7 @@ public class UserResource {
     @ApiOperation(value = "Get Github tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGithubUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findGithubByUserId(userId);
     }
@@ -202,7 +201,7 @@ public class UserResource {
     @ApiOperation(value = "Get Gitlab tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getGitlabUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findGitlabByUserId(userId);
     }
@@ -214,7 +213,7 @@ public class UserResource {
     @ApiOperation(value = "Get Quay tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getQuayUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findQuayByUserId(userId);
     }
@@ -226,7 +225,7 @@ public class UserResource {
     @ApiOperation(value = "Get Dockstore tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getDockstoreUserTokens(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("User to return") @PathParam("userId") long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         return tokenDAO.findQuayByUserId(userId);
     }
@@ -237,7 +236,7 @@ public class UserResource {
     @Path("/{userId}/groups")
     @ApiOperation(value = "Get groups that the user belongs to", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Group.class, responseContainer = "List")
     public List<Group> getGroupsFromUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User") @PathParam("userId") long userId) {
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         if (user == null) {
@@ -286,7 +285,7 @@ public class UserResource {
     @ApiOperation(value = "Add a group to a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User addGroupToUser(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User ID of user") @PathParam("userId") long userId,
             @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) Group groupParam) {
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         // need a live group
@@ -312,7 +311,7 @@ public class UserResource {
     public User removeUserFromGroup(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam("User ID of user") @PathParam("userId") long userId,
             @ApiParam("Group ID of group") @PathParam("groupId") long groupId) {
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
         User user = userDAO.findById(userId);
         Group group = groupDAO.findById(groupId);
@@ -333,7 +332,7 @@ public class UserResource {
     @ApiOperation(value = "List all published containers from a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get user's published containers only", response = Tool.class, responseContainer = "List")
     public List<Tool> userPublishedContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         // get live entity
         final User byId = this.userDAO.findById(user.getId());
@@ -358,7 +357,7 @@ public class UserResource {
     @ApiOperation(value = "List all published workflows from a user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get user's published workflows only", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userPublishedWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
 
         // get live entity
         final User byId = this.userDAO.findById(user.getId());
@@ -385,14 +384,17 @@ public class UserResource {
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
 
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
-        // Update user data
-        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        // Check if the user has tokens for the organization they're refreshing
+        checkToolTokens(authUser, userId, organization);
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
+        // Update user data
+        authUser.updateUserMetadata(tokenDAO);
+
         List<Tool> finalTools = getTools(authUser);
         bulkUpsertTools(authUser);
         return finalTools;
@@ -418,6 +420,27 @@ public class UserResource {
         }
     }
 
+    private void checkToolTokens(User authUser, Long userId, String organization) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        List<Tool> tools = userContainers(authUser, userId);
+        if (organization != null && !organization.isEmpty()) {
+            tools.removeIf(tool -> !tool.getNamespace().equals(organization));
+        }
+        Token gitLabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token quayioToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Set<Registry> uniqueRegistry = new HashSet<>();
+        tools.forEach(tool -> uniqueRegistry.add(tool.getRegistryProvider()));
+        if (uniqueRegistry.size() == 0 && quayioToken == null) {
+            throw new CustomWebApplicationException("You have no tools and no Quay.io token to automatically add tools. Please add a Quay.io token.", HttpStatus.SC_BAD_REQUEST);
+        }
+        if (uniqueRegistry.contains(Registry.QUAY_IO) && quayioToken == null) {
+            throw new CustomWebApplicationException("You have Quay.io tools but no Quay.io token to refresh the tools with. Please add a Quay.io token.", HttpStatus.SC_BAD_REQUEST);
+        }
+        if (uniqueRegistry.contains(Registry.GITLAB) && gitLabToken == null) {
+            throw new CustomWebApplicationException("You have GitLab tools but no GitLab token to refresh the tools with. Please add a GitLab token", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -426,14 +449,18 @@ public class UserResource {
     public List<Tool> refresh(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
-        Helper.checkUser(authUser, userId);
+        checkUser(authUser, userId);
 
-        // Update user data
-        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        // Checks if the user has the tokens for their current tools
+        checkToolTokens(authUser, userId, null);
+
         List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, null);
 
         // TODO: Only update the ones that have changed
         authUser = userDAO.findById(authUser.getId());
+        // Update user data
+        authUser.updateUserMetadata(tokenDAO);
+
         List<Tool> finalTools = getTools(authUser);
         bulkUpsertTools(authUser);
         return finalTools;
@@ -448,16 +475,16 @@ public class UserResource {
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId,
             @ApiParam(value = "Organization", required = true) @PathParam("organization") String organization) {
 
-        Helper.checkUser(authUser, userId);
-
-        // Update user data
-        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        checkUser(authUser, userId);
 
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser, organization);
         userDAO.clearCache();
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
+        // Update user data
+        authUser.updateUserMetadata(tokenDAO);
+
         List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
         return finalWorkflows;
@@ -471,15 +498,15 @@ public class UserResource {
     public List<Workflow> refreshWorkflows(@ApiParam(hidden = true) @Auth User authUser,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
 
-        Helper.checkUser(authUser, userId);
-
-        // Update user data
-        Helper.updateUserHelper(authUser, userDAO, tokenDAO);
+        checkUser(authUser, userId);
 
         // Refresh all workflows, including full workflows
         workflowResource.refreshStubWorkflowsForUser(authUser, null);
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
+        // Update user data
+        authUser.updateUserMetadata(tokenDAO);
+
         List<Workflow> finalWorkflows = getWorkflows(authUser);
         bulkUpsertWorkflows(authUser);
         return finalWorkflows;
@@ -492,7 +519,7 @@ public class UserResource {
     @ApiOperation(value = "List workflows owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all registered and unregistered workflows owned by the user", response = Workflow.class, responseContainer = "List")
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
         // need to avoid lazy initialize error
         final User authUser = this.userDAO.findById(userId);
         return getWorkflows(authUser);
@@ -513,7 +540,7 @@ public class UserResource {
     @ApiOperation(value = "List repos owned by the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all registered and unregistered containers owned by the user", response = Tool.class, responseContainer = "List")
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
-        Helper.checkUser(user, userId);
+        checkUser(user, userId);
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
         return getTools(byId);
@@ -550,7 +577,7 @@ public class UserResource {
     public List<User> updateUserMetadata(@ApiParam(hidden = true) @Auth User user) {
         List<User> users = userDAO.findAll();
         for (User u : users) {
-            Helper.updateUserHelper(u, userDAO, tokenDAO);
+            u.updateUserMetadata(tokenDAO);
         }
 
         return userDAO.findAll();
@@ -562,7 +589,8 @@ public class UserResource {
     @Path("/user/updateUserMetadata")
     @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update metadata for logged in user.", response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user) {
-        Helper.updateUserHelper(user, userDAO, tokenDAO);
-        return userDAO.findById(user.getId());
+        User dbuser = userDAO.findById(user.getId());
+        dbuser.updateUserMetadata(tokenDAO);
+        return dbuser;
     }
 }

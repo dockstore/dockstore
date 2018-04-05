@@ -18,73 +18,71 @@ package io.dockstore.client.cli;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.TimeoutException;
 
 import com.google.common.collect.Lists;
+import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestUtility;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiException;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 
-import static io.dockstore.common.CommonTestUtilities.clearState;
+import static io.dockstore.common.CommonTestUtilities.checkToolList;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
  * @author dyuen
  */
-public class ClientIT {
+public class ClientIT extends BaseIT {
 
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstore.yml"));
+    final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
-
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
     @Before
-    public void clearDB() throws IOException, TimeoutException {
-        clearState();
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate1(SUPPORT);
         Client.DEBUG.set(false);
     }
 
     @Test
-    public void testListEntries() throws IOException, TimeoutException, ApiException {
+    public void testListEntries() throws IOException, ApiException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "list" });
+        checkToolList(systemOutRule.getLog());
     }
 
     @Test
-    public void testDebugModeListEntries() throws IOException, TimeoutException, ApiException {
+    public void testDebugModeListEntries() throws IOException, ApiException {
         Client.main(new String[] { "--debug", "--config", TestUtility.getConfigFileLocation(true), "tool", "list" });
+        checkToolList(systemOutRule.getLog());
     }
 
     @Test
-    public void testListEntriesWithoutCreds() throws IOException, TimeoutException, ApiException {
+    public void testListEntriesWithoutCreds() throws IOException, ApiException {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(false), "tool", "list" });
     }
 
     @Test
-    public void testListEntriesOnWrongPort() throws IOException, TimeoutException, ApiException {
+    public void testListEntriesOnWrongPort() throws IOException, ApiException {
         systemExit.expectSystemExitWithStatus(Client.CONNECTION_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true, false, false), "tool", "list" });
     }
@@ -100,12 +98,11 @@ public class ClientIT {
         Assert.assertTrue("should see three entries", count == 1);
     }
 
-
     @Test
     public void testPluginEnable() {
-        Client.main(new String[] {"--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin", "download"});
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin", "download" });
         systemOutRule.clearLog();
-        Client.main(new String[] {"--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin", "list"});
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin", "list" });
         Assert.assertTrue(systemOutRule.getLog().contains("dockstore-file-synapse-plugin"));
         Assert.assertTrue(systemOutRule.getLog().contains("dockstore-file-s3-plugin"));
         Assert.assertFalse(systemOutRule.getLog().contains("dockstore-icgc-storage-client-plugin"));
@@ -113,9 +110,9 @@ public class ClientIT {
 
     @Test
     public void testPluginDisable() {
-        Client.main(new String[] {"--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "download"});
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "download" });
         systemOutRule.clearLog();
-        Client.main(new String[] {"--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "list"});
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "list" });
         Assert.assertFalse(systemOutRule.getLog().contains("dockstore-file-synapse-plugin"));
         Assert.assertFalse(systemOutRule.getLog().contains("dockstore-file-s3-plugin"));
         Assert.assertTrue(systemOutRule.getLog().contains("dockstore-file-icgc-storage-client-plugin"));
@@ -180,24 +177,33 @@ public class ClientIT {
     @Test
     public void manualRegisterADuplicate() throws IOException {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
+                Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
                 "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
+                Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
                 "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
+                Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
                 "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
     }
 
     @Test
+    @Category(ToilCompatibleTest.class)
     public void launchingCWLWorkflow() throws IOException {
         final String firstWorkflowCWL = ResourceHelpers.resourceFilePath("1st-workflow.cwl");
         final String firstWorkflowJSON = ResourceHelpers.resourceFilePath("1st-workflow-job.json");
         Client.main(
                 new String[] { "--config", TestUtility.getConfigFileLocation(true), "workflow", "launch", "--local-entry", firstWorkflowCWL,
                         "--json", firstWorkflowJSON });
+    }
+
+    @Test
+    @Category(ToilCompatibleTest.class)
+    public void launchingCWLToolWithRemoteParameters() throws IOException {
+        Client.main(
+                new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
+                        "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
     }
 
     @Test
@@ -218,28 +224,28 @@ public class ClientIT {
 
     @Test
     public void pluginDownload() throws IOException {
-        Client.main(new String[] {"--config", TestUtility.getConfigFileLocation(true), "plugin", "download"});
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" });
     }
 
     @Test
     public void touchOnAllHelpMessages() throws IOException {
 
-        checkCommandForHelp(new String[] { "tool", "search"});
-        checkCommandForHelp(new String[] { "tool", "info"});
-        checkCommandForHelp(new String[] { "tool", "cwl"});
-        checkCommandForHelp(new String[] { "tool", "wdl"});
-        checkCommandForHelp(new String[] { "tool", "label"});
-        checkCommandForHelp(new String[] { "tool", "test_parameter"});
-        checkCommandForHelp(new String[] { "tool", "convert"});
-        checkCommandForHelp(new String[] { "tool", "launch"});
-        checkCommandForHelp(new String[] { "tool", "version_tag"});
-        checkCommandForHelp(new String[] { "tool", "update_tool"});
+        checkCommandForHelp(new String[] { "tool", "search" });
+        checkCommandForHelp(new String[] { "tool", "info" });
+        checkCommandForHelp(new String[] { "tool", "cwl" });
+        checkCommandForHelp(new String[] { "tool", "wdl" });
+        checkCommandForHelp(new String[] { "tool", "label" });
+        checkCommandForHelp(new String[] { "tool", "test_parameter" });
+        checkCommandForHelp(new String[] { "tool", "convert" });
+        checkCommandForHelp(new String[] { "tool", "launch" });
+        checkCommandForHelp(new String[] { "tool", "version_tag" });
+        checkCommandForHelp(new String[] { "tool", "update_tool" });
 
-        checkCommandForHelp(new String[] {"tool", "convert", "entry2json"});
-        checkCommandForHelp(new String[] {"tool", "convert", "entry2tsv"});
-        checkCommandForHelp(new String[] {"tool", "convert", "cwl2yaml"});
-        checkCommandForHelp(new String[] {"tool", "convert", "cwl2json"});
-        checkCommandForHelp(new String[] {"tool", "convert", "wdl2json"});
+        checkCommandForHelp(new String[] { "tool", "convert", "entry2json" });
+        checkCommandForHelp(new String[] { "tool", "convert", "entry2tsv" });
+        checkCommandForHelp(new String[] { "tool", "convert", "cwl2yaml" });
+        checkCommandForHelp(new String[] { "tool", "convert", "cwl2json" });
+        checkCommandForHelp(new String[] { "tool", "convert", "wdl2json" });
 
         checkCommandForHelp(new String[] {});
         checkCommandForHelp(new String[] { "tool" });
@@ -269,24 +275,23 @@ public class ClientIT {
         checkCommandForHelp(new String[] { "tool", "verify", "--help" });
         checkCommandForHelp(new String[] { "tool" });
 
-        checkCommandForHelp(new String[] {"workflow", "convert", "entry2json"});
-        checkCommandForHelp(new String[] {"workflow", "convert", "entry2tsv"});
-        checkCommandForHelp(new String[] {"workflow", "convert", "cwl2yaml"});
-        checkCommandForHelp(new String[] {"workflow", "convert", "cwl2json"});
-        checkCommandForHelp(new String[] {"workflow", "convert", "wdl2json"});
+        checkCommandForHelp(new String[] { "workflow", "convert", "entry2json" });
+        checkCommandForHelp(new String[] { "workflow", "convert", "entry2tsv" });
+        checkCommandForHelp(new String[] { "workflow", "convert", "cwl2yaml" });
+        checkCommandForHelp(new String[] { "workflow", "convert", "cwl2json" });
+        checkCommandForHelp(new String[] { "workflow", "convert", "wdl2json" });
 
-
-        checkCommandForHelp(new String[] { "workflow", "search"});
-        checkCommandForHelp(new String[] { "workflow", "info"});
-        checkCommandForHelp(new String[] { "workflow", "cwl"});
-        checkCommandForHelp(new String[] { "workflow", "wdl"});
-        checkCommandForHelp(new String[] { "workflow", "label"});
-        checkCommandForHelp(new String[] { "workflow", "test_parameter"});
-        checkCommandForHelp(new String[] { "workflow", "convert"});
-        checkCommandForHelp(new String[] { "workflow", "launch"});
-        checkCommandForHelp(new String[] { "workflow", "version_tag"});
-        checkCommandForHelp(new String[] { "workflow", "update_workflow"});
-        checkCommandForHelp(new String[] { "workflow", "restub"});
+        checkCommandForHelp(new String[] { "workflow", "search" });
+        checkCommandForHelp(new String[] { "workflow", "info" });
+        checkCommandForHelp(new String[] { "workflow", "cwl" });
+        checkCommandForHelp(new String[] { "workflow", "wdl" });
+        checkCommandForHelp(new String[] { "workflow", "label" });
+        checkCommandForHelp(new String[] { "workflow", "test_parameter" });
+        checkCommandForHelp(new String[] { "workflow", "convert" });
+        checkCommandForHelp(new String[] { "workflow", "launch" });
+        checkCommandForHelp(new String[] { "workflow", "version_tag" });
+        checkCommandForHelp(new String[] { "workflow", "update_workflow" });
+        checkCommandForHelp(new String[] { "workflow", "restub" });
 
         checkCommandForHelp(new String[] { "workflow", "list", "--help" });
         checkCommandForHelp(new String[] { "workflow", "search", "--help" });

@@ -37,7 +37,6 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
-import io.dockstore.webservice.helpers.Helper.RepoList;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import io.swagger.quay.client.ApiClient;
 import io.swagger.quay.client.ApiException;
@@ -147,7 +146,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
                     List<Tool> tools = repos.getRepositories();
                     // tag all of these with where they came from
-                    tools.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO));
+                    tools.stream().forEach(container -> container.setRegistry(Registry.QUAY_IO.toString()));
                     // not quite correct, they could be mixed but how can we tell from quay?
                     tools.stream().forEach(container -> container.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS));
                     toolList.addAll(tools);
@@ -169,8 +168,6 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         for (Tool tool : apiTools) {
             // Set path information (not sure why we have to do this here)
             final String repo = tool.getNamespace() + '/' + tool.getName();
-            final String path = quayToken.getTokenSource() + '/' + repo;
-            tool.setPath(path);
 
             LOG.info("Grabbing tool information for " + tool.getPath());
 
@@ -242,7 +239,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
 
                     // Set some attributes if not manual
                     if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
-                        tool.setRegistry(Registry.QUAY_IO);
+                        tool.setRegistry(Registry.QUAY_IO.toString());
                         tool.setGitUrl(gitUrl);
                     }
                 }
@@ -355,5 +352,18 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     @Override
     public Registry getRegistry() {
         return Registry.QUAY_IO;
+    }
+
+    public static class RepoList {
+
+        private List<Tool> repositories;
+
+        public List<Tool> getRepositories() {
+            return repositories;
+        }
+
+        public void setRepositories(List<Tool> repositories) {
+            this.repositories = repositories;
+        }
     }
 }

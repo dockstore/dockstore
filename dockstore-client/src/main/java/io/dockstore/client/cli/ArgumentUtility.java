@@ -23,6 +23,8 @@ import java.util.List;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Organizes all methods that have to do with parsing of input and creation of output.
@@ -31,14 +33,18 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  * @author dyuen
  */
 public final class ArgumentUtility {
+
     public static final String CONVERT = "convert";
     public static final String LAUNCH = "launch";
     public static final String CWL_STRING = "cwl";
     public static final String WDL_STRING = "wdl";
+    public static final String NFL_STRING = "nfl";
     public static final String NAME_HEADER = "NAME";
     public static final String DESCRIPTION_HEADER = "DESCRIPTION";
     public static final String GIT_HEADER = "Git Repo";
     public static final int MAX_DESCRIPTION = 50;
+
+    private static final Logger LOG = LoggerFactory.getLogger(ArgumentUtility.class);
 
     private ArgumentUtility() {
         // hide the constructor for utility classes
@@ -216,6 +222,24 @@ public final class ArgumentUtility {
                 + "|____/ \\___/ \\___|_|\\_\\___/\\__\\___/|_|  \\___|\n");
         printLineBreak();
         out("See https://www.dockstore.org for more information");
+        out("");
+    }
+
+    public static void printFlagHelp() {
+        out("");
+        out("Flags:");
+        out("  --help               Print help information");
+        out("                       Default: false");
+        out("  --debug              Print debugging information");
+        out("                       Default: false");
+        out("  --config <file>      Override config file");
+        out("                       Default: ~/.dockstore/config");
+        out("  --script             For usage with scripts. Will not check for updates to Dockstore CLI.");
+        out("                       Default: false");
+    }
+
+    public static void printUsageHelp(String type) {
+        out("Usage: dockstore " + type + " [flags] [command] [command parameters]");
         out("");
     }
 

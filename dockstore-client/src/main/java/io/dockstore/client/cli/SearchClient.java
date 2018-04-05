@@ -26,9 +26,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import io.dockstore.common.ToolWorkflowDeserializer;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.ExtendedGA4GHApi;
-import io.swagger.client.model.Tool;
-import org.apache.commons.configuration2.INIConfiguration;
+import io.swagger.client.api.ExtendedGa4GhApi;
+import io.swagger.client.model.ToolV1;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,9 +60,8 @@ public final class SearchClient {
 
     /**
      * @param args
-     * @param configFile
      */
-    public static boolean handleCommand(List<String> args, INIConfiguration configFile, ExtendedGA4GHApi api) {
+    static boolean handleCommand(List<String> args, ExtendedGa4GhApi api) {
         String[] argv = args.toArray(new String[args.size()]);
         JCommander jc = new JCommander();
 
@@ -107,7 +105,7 @@ public final class SearchClient {
 
     }
 
-    private static boolean search(ExtendedGA4GHApi api) {
+    private static boolean search(ExtendedGa4GhApi api) {
         // this needs to be improved, obviously a hardcoded search query is not what we'll want in the future
         String body = "{\"aggs\":{\"registry_0\":{\"terms\":{\"field\":\"registry\",\"size\":5}},\"author_1\":{\"terms\":{\"field\":\"author\",\"size\":10}}},\"query\":{\"match_all\":{}}}";
         try {
@@ -115,7 +113,7 @@ public final class SearchClient {
             Gson gson = new GsonBuilder().registerTypeAdapter(ElasticSearchObject.HitsInternal.class, new ToolWorkflowDeserializer()).create();
             ElasticSearchObject elasticSearchObject = gson.fromJson(s, ElasticSearchObject.class);
             for (ElasticSearchObject.HitsInternal hit : elasticSearchObject.hits.hits) {
-                if (hit.source instanceof Tool) {
+                if (hit.source instanceof ToolV1) {
                     System.out.println("Found deserialized tool");
                 } else {
                     System.out.println("Found deserialized workflow");
@@ -128,7 +126,7 @@ public final class SearchClient {
         return true;
     }
 
-    private static boolean index(ExtendedGA4GHApi api) {
+    private static boolean index(ExtendedGa4GhApi api) {
         try {
             api.toolsIndexGet();
         } catch (ApiException e) {

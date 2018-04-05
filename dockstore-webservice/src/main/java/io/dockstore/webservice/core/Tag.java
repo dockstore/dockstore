@@ -37,35 +37,36 @@ import org.apache.commons.io.FilenameUtils;
 @ApiModel(value = "Tag", description = "This describes one tag associated with a container.")
 @Entity
 @DiscriminatorValue("tool")
+@SuppressWarnings("checkstyle:magicnumber")
 public class Tag extends Version<Tag> {
 
     @Column
     @JsonProperty("image_id")
-    @ApiModelProperty(value = "Tag for this image in quay.ui/docker hub", required = true)
+    @ApiModelProperty(value = "Tag for this image in quay.io/docker hub", required = true, position = 12)
     private String imageId;
 
     @Column
-    @ApiModelProperty("Size of the image")
+    @ApiModelProperty(value = "Size of the image", position = 13)
     private long size;
 
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("dockerfile_path")
-    @ApiModelProperty("Path for the Dockerfile")
+    @ApiModelProperty(value = "Path for the Dockerfile", position = 14)
     private String dockerfilePath = "/Dockerfile";
 
     // Add for new descriptor types
     @Column(columnDefinition = "text", nullable = false)
     @JsonProperty("cwl_path")
-    @ApiModelProperty("Path for the CWL document")
+    @ApiModelProperty(value = "Path for the CWL document", position = 15)
     private String cwlPath = "/Dockstore.cwl";
 
-    @Column(columnDefinition = "text", nullable = false)
+    @Column(columnDefinition = "text default '/Dockstore.wdl'", nullable = false)
     @JsonProperty("wdl_path")
-    @ApiModelProperty("Path for the WDL document")
+    @ApiModelProperty(value = "Path for the WDL document", position = 16)
     private String wdlPath = "/Dockstore.wdl";
 
     @Column
-    @ApiModelProperty("Implementation specific, indicates whether this is an automated build on quay.io")
+    @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io", position = 17)
     private boolean automated;
 
     public Tag() {
@@ -73,6 +74,7 @@ public class Tag extends Version<Tag> {
     }
 
     @Override
+    @ApiModelProperty(position = 18)
     public String getWorkingDirectory() {
         if (!cwlPath.isEmpty()) {
             return FilenameUtils.getPathNoEndSeparator(cwlPath);
@@ -125,6 +127,7 @@ public class Tag extends Version<Tag> {
     }
 
     @JsonProperty
+    @ApiModelProperty(position = 19)
     public String getImageId() {
         return imageId;
     }

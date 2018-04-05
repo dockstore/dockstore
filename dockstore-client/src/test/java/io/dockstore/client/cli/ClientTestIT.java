@@ -15,7 +15,7 @@
  */
 package io.dockstore.client.cli;
 
-import io.dockstore.client.cwlrunner.CWLRunnerFactory;
+import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;

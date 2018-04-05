@@ -1,0 +1,393 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2017 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="test">
+    <changeSet author="dyuen (generated)" id="1511389821166-3">
+        <insert tableName="enduser">
+            <column name="id" valueNumeric="1"/>
+            <column name="avatarurl"/>
+            <column name="bio"/>
+            <column name="company"/>
+            <column name="email"/>
+            <column name="isadmin" valueBoolean="true"/>
+            <column name="location"/>
+            <column name="username" value="admin@admin.com"/>
+        </insert>
+        <insert tableName="enduser">
+            <column name="id" valueNumeric="2"/>
+            <column name="avatarurl"/>
+            <column name="bio"/>
+            <column name="company"/>
+            <column name="email"/>
+            <column name="isadmin" valueBoolean="false"/>
+            <column name="location"/>
+            <column name="username" value="user1@user.com"/>
+        </insert>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511389821166-4">
+        <insert tableName="tag">
+            <column name="id" valueNumeric="1"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="name" value="fakeName"/>
+            <column name="reference" value="fakeReference"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="automated" valueBoolean="true"/>
+            <column name="cwlpath" value="/Dockstore.cwl"/>
+            <column name="dockerfilepath" value="/Dockerfile"/>
+            <column name="imageid" value="Potato"/>
+            <column name="size" valueNumeric="0"/>
+            <column name="wdlpath" value="/Dockstore.wdl"/>
+        </insert>
+        <insert tableName="tag">
+            <column name="id" valueNumeric="2"/>
+            <column name="dirtybit" valueBoolean="false"/>
+            <column name="hidden" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="name"/>
+            <column name="reference"/>
+            <column name="valid" valueBoolean="true"/>
+            <column name="verified" valueBoolean="false"/>
+            <column name="verifiedsource"/>
+            <column name="automated" valueBoolean="true"/>
+            <column name="cwlpath" value="/Dockstore.cwl"/>
+            <column name="dockerfilepath" value="/Dockerfile"/>
+            <column name="imageid"/>
+            <column name="size" valueNumeric="0"/>
+            <column name="wdlpath" value="/Dockstore.wdl"/>
+        </insert>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511389821166-5">
+        <insert tableName="token">
+            <column name="id" valueNumeric="1"/>
+            <column name="content" value="08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7"/>
+            <column name="refreshtoken"/>
+            <column name="tokensource" value="dockstore"/>
+            <column name="userid" valueNumeric="1"/>
+            <column name="username" value="admin@admin.com"/>
+        </insert>
+        <insert tableName="token">
+            <column name="id" valueNumeric="2"/>
+            <column name="content" value="3a04647fd0a1bd949637n5fddb164261fc8c80d83f0750fe0e873bc744338fce"/>
+            <column name="refreshtoken"/>
+            <column name="tokensource" value="dockstore"/>
+            <column name="userid" valueNumeric="2"/>
+            <column name="username" value="user1@user.com"/>
+        </insert>
+    </changeSet>
+    <changeSet author="dyuen (generated)-edited" id="1511389821166-6">
+        <insert tableName="tool">
+            <column name="id" valueNumeric="1"/>
+            <column name="author"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl"/>
+            <column name="ispublished" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile"/>
+            <column name="defaulttestwdlparameterfile"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild"/>
+            <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
+            <column name="name" value="test1"/>
+            <column name="namespace" value="test_org"/>
+            <column name="path" value="quay.io/test_org/test1"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="QUAY_IO"/>
+            <column name="toolmaintaineremail"/>
+            <column name="toolname" value=""/>
+        </insert>
+        <insert tableName="tool">
+            <column name="id" valueNumeric="2"/>
+            <column name="author"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl"/>
+            <column name="ispublished" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile"/>
+            <column name="defaulttestwdlparameterfile"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild"/>
+            <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
+            <column name="name" value="test2"/>
+            <column name="namespace" value="test_org"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="QUAY_IO"/>
+            <column name="toolmaintaineremail"/>
+            <column name="toolname" value=""/>
+        </insert>
+        <insert tableName="tool">
+            <column name="id" valueNumeric="3"/>
+            <column name="author"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl"/>
+            <column name="ispublished" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile"/>
+            <column name="defaulttestwdlparameterfile"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild"/>
+            <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
+            <column name="name" value="test3"/>
+            <column name="namespace" value="test_org"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="QUAY_IO"/>
+            <column name="toolmaintaineremail"/>
+            <column name="toolname" value=""/>
+        </insert>
+        <insert tableName="tool">
+            <column name="id" valueNumeric="4"/>
+            <column name="author"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@github.com:test/test4.git"/>
+            <column name="ispublished" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile"/>
+            <column name="defaulttestwdlparameterfile"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild"/>
+            <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
+            <column name="name" value="test4"/>
+            <column name="namespace" value="test_org"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="QUAY_IO"/>
+            <column name="toolmaintaineremail"/>
+            <column name="toolname" value=""/>
+        </insert>
+        <insert tableName="tool">
+            <column name="id" valueNumeric="5"/>
+            <column name="author"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@github.com:test/test5.git"/>
+            <column name="ispublished" valueBoolean="false"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile"/>
+            <column name="defaulttestwdlparameterfile"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild"/>
+            <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
+            <column name="name" value="test5"/>
+            <column name="namespace" value="test_org"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="QUAY_IO"/>
+            <column name="toolmaintaineremail"/>
+            <column name="toolname" value=""/>
+        </insert>
+        <insert tableName="tool">
+            <column name="id" valueNumeric="6"/>
+            <column name="author"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@github.com:test/test6.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated"/>
+            <column name="defaultcwlpath" value="/Dockstore.cwl"/>
+            <column name="defaultdockerfilepath" value="/Dockerfile"/>
+            <column name="defaulttestcwlparameterfile"/>
+            <column name="defaulttestwdlparameterfile"/>
+            <column name="defaultwdlpath" value="/Dockstore.wdl"/>
+            <column name="lastbuild"/>
+            <column name="mode" value="AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS"/>
+            <column name="name" value="test6"/>
+            <column name="namespace" value="test_org"/>
+            <column name="privateaccess" valueBoolean="false"/>
+            <column name="registry" value="QUAY_IO"/>
+            <column name="toolmaintaineremail"/>
+            <column name="toolname" value=""/>
+        </insert>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511389821166-7">
+        <insert tableName="tool_tag">
+            <column name="toolid" valueNumeric="6"/>
+            <column name="tagid" valueNumeric="1"/>
+        </insert>
+        <insert tableName="tool_tag">
+            <column name="toolid" valueNumeric="5"/>
+            <column name="tagid" valueNumeric="2"/>
+        </insert>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511389821166-8">
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="1"/>
+            <column name="entryid" valueNumeric="1"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="2"/>
+            <column name="entryid" valueNumeric="2"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="2"/>
+            <column name="entryid" valueNumeric="3"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="2"/>
+            <column name="entryid" valueNumeric="4"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="2"/>
+            <column name="entryid" valueNumeric="5"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="1"/>
+            <column name="entryid" valueNumeric="6"/>
+        </insert>
+        <insert tableName="user_entry">
+            <column name="userid" valueNumeric="2"/>
+            <column name="entryid" valueNumeric="6"/>
+        </insert>
+    </changeSet>
+    <changeSet author="dyuen (generated)" id="1511389821166-9">
+        <insert tableName="workflow">
+            <column name="id" valueNumeric="11"/>
+            <column name="author"/>
+            <column name="defaultversion"/>
+            <column name="description"/>
+            <column name="email"/>
+            <column name="giturl" value="git@github.com:A/l.git"/>
+            <column name="ispublished" valueBoolean="true"/>
+            <column name="lastmodified"/>
+            <column name="lastupdated" valueDate="2016-11-28 15:00:57.688"/>
+            <column name="defaulttestparameterfilepath" value=""/>
+            <column name="defaultworkflowpath" value="/1st-workflow.cwl"/>
+            <column name="descriptortype" value="cwl"/>
+            <column name="mode" value="FULL"/>
+            <column name="organization" value="A"/>
+            <column name="repository" value="l"/>
+            <column name="workflowname"/>
+        </insert>
+    </changeSet>
+    <changeSet author="gluu" id="insert_sourcefiles">
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9001"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/Dockstore.cwl"/>
+            <column name="type" value="DOCKSTORE_CWL"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9002"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/test.cwl.json"/>
+            <column name="type" value="CWL_TEST_JSON"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9003"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/Dockerfile"/>
+            <column name="type" value="DOCKERFILE"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9004"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/Dockstore.wdl"/>
+            <column name="type" value="DOCKSTORE_WDL"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9005"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/test.wdl.json"/>
+            <column name="type" value="WDL_TEST_JSON"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9006"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/Dockerfile"/>
+            <column name="type" value="NEXTFLOW"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9007"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/Dockstore.wdl"/>
+            <column name="type" value="NEXTFLOW_CONFIG"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9008"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/test.wdl.json"/>
+            <column name="type" value="NEXTFLOW_TEST_PARAMS"/>
+        </insert>
+    </changeSet>
+    <changeSet author="gluu" id="insert_version_sourcefiles">
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9001"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9002"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9003"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9004"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9005"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9006"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9007"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9008"/>
+        </insert>
+    </changeSet>
+    <changeSet author="dyuen" id="custom_test_sequence1">
+        <sql>alter sequence container_id_seq increment by 50 restart with 1000</sql>
+    </changeSet>
+    <changeSet author="dyuen" id="custom_test_sequence2">
+        <sql>alter sequence tag_id_seq increment by 50 restart with 1000</sql>
+    </changeSet>
+</databaseChangeLog>

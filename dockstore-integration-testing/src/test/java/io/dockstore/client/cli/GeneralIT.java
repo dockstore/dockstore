@@ -20,19 +20,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
-import io.dockstore.common.Utilities;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -41,13 +36,9 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.io.FileUtils;
-import org.json.JSONException;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,7 +50,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import static io.dockstore.common.CommonTestUtilities.clearStateMakePrivate2;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertTrue;
 
@@ -68,18 +58,14 @@ import static org.junit.Assert.assertTrue;
  *
  * @author aduncan
  */
-@Category(ConfidentialTest.class)
-public class GeneralIT {
+@Category({ConfidentialTest.class})
+public class GeneralIT extends BaseIT {
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, ResourceHelpers.resourceFilePath("dockstoreTest.yml"));
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -90,22 +76,11 @@ public class GeneralIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    
 
     @Before
-    public void clearDBandSetup() throws IOException, TimeoutException {
-        clearStateMakePrivate2();
-    }
-
-    private static ApiClient getWebClient() throws IOException, TimeoutException {
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        ApiClient client = new ApiClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                .runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>())));
-        return client;
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
 
     /**
@@ -123,7 +98,7 @@ public class GeneralIT {
         c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
         c.setDefaultDockerfilePath("/Dockerfile");
         c.setDefaultCwlPath("/Dockstore.cwl");
-        c.setRegistry(DockstoreTool.RegistryEnum.DOCKER_HUB);
+        c.setRegistryString(Registry.DOCKER_HUB.toString());
         c.setIsPublished(false);
         c.setNamespace("testPath");
         c.setToolname("test5");
@@ -156,11 +131,9 @@ public class GeneralIT {
      * this method will set up the webservice and return the container api
      *
      * @return ContainersApi
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
-    private ContainersApi setupWebService() throws IOException, TimeoutException, ApiException {
+    private ContainersApi setupWebService() throws ApiException {
         // Set up webservice
         ApiClient client = getWebClient();
 
@@ -180,8 +153,6 @@ public class GeneralIT {
      * this method will set up the databse and select data needed
      *
      * @return cwl/wdl/dockerfile path of the tool's tag in the database
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     private String getPathfromDB(String type) {
@@ -190,9 +161,8 @@ public class GeneralIT {
         // Select data from DB
         final Long toolID = testingPostgres.runSelectStatement("select id from tool where name = 'testUpdatePath'", new ScalarHandler<>());
         final Long tagID = testingPostgres.runSelectStatement("select tagid from tool_tag where toolid = " + toolID, new ScalarHandler<>());
-        final String path = testingPostgres.runSelectStatement("select " + type + " from tag where id = " + tagID, new ScalarHandler<>());
 
-        return path;
+        return testingPostgres.runSelectStatement("select " + type + " from tag where id = " + tagID, new ScalarHandler<>());
     }
 
     /**
@@ -265,7 +235,7 @@ public class GeneralIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.path = 'quay.io/dockstoretestuser2/quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("there should now be an invalid tag, found " + count, count == 1);
 
@@ -278,7 +248,7 @@ public class GeneralIT {
                 "quay.io/dockstoretestuser2/quayandgithub", "--script" });
 
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.path = 'quay.io/dockstoretestuser2/quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("the invalid tag should now be valid, found " + count2, count2 == 0);
     }
@@ -311,8 +281,7 @@ public class GeneralIT {
      */
     @Test
     public void testAddVersionTagManualContainer() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
 
@@ -364,7 +333,7 @@ public class GeneralIT {
         // should now be invalid
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
 
         assertTrue("there should now be 1 invalid tag, found " + count, count == 1);
@@ -374,7 +343,7 @@ public class GeneralIT {
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--name", "master", "--wdl-path", "/Dockstore.wdl", "--script" });
         // should now be valid
         final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tag,tool_tag,tool where tool.path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
+                "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
         assertTrue("the tag should now be valid", count2 == 0);
 
@@ -385,8 +354,7 @@ public class GeneralIT {
      */
     @Test
     public void testVersionTagDelete() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--wdl-path", "/testDir/Dockstore.wdl", "--dockerfile-path", "/testDir/Dockerfile",
                 "--script" });
@@ -429,16 +397,13 @@ public class GeneralIT {
         // TODO: Test that output is the expected WDL file
     }
 
-    /**
-     * @throws IOException
-     */
     @Test
-    public void registerUnregisterAndCopy() throws IOException {
+    public void registerUnregisterAndCopy() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--entry",
                 "quay.io/dockstoretestuser2/quayandgithubwdl" });
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         boolean published = testingPostgres
-                .runSelectStatement("select ispublished from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl';",
+                .runSelectStatement("select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
                         new ScalarHandler<>());
         assertTrue("tool not published", published);
 
@@ -446,7 +411,7 @@ public class GeneralIT {
                 "quay.io/dockstoretestuser2/quayandgithubwdl", "--entryname", "foo" });
 
         long count = testingPostgres
-                .runSelectStatement("select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl';",
+                .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
                         new ScalarHandler<>());
         assertTrue("should be two after republishing", count == 2);
 
@@ -455,7 +420,7 @@ public class GeneralIT {
                         "quay.io/dockstoretestuser2/quayandgithubwdl" });
 
         published = testingPostgres.runSelectStatement(
-                "select ispublished from tool where path = 'quay.io/dockstoretestuser2/quayandgithubwdl' and toolname = '';",
+                "select ispublished from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl' and toolname IS NULL;",
                 new ScalarHandler<>());
         assertTrue("tool not unpublished", !published);
     }
@@ -472,7 +437,8 @@ public class GeneralIT {
     }
 
     @Test
-    public void testCWL2JSON() throws JSONException {
+    @Category(ToilCompatibleTest.class)
+    public void testCWL2JSON() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2json", "--cwl",
                 sourceFile.getAbsolutePath(), "--script" });
@@ -480,6 +446,7 @@ public class GeneralIT {
     }
 
     @Test
+    @Category(ToilCompatibleTest.class)
     public void testCWL2YAML() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "cwl2yaml", "--cwl",
@@ -498,37 +465,6 @@ public class GeneralIT {
     }
 
     /**
-     * Change toolname of a container
-     */
-    @Test
-    public void testChangeToolname() {
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser2", "--name", "quayandgithubalternate", "--git-url",
-                "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "alternate",
-                "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
-
-        Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                        "quay.io/dockstoretestuser2/quayandgithubalternate/alternate", "--toolname", "alternate", "--script" });
-
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'alternate'",
-                new ScalarHandler<>());
-        assertTrue("there should only be one instance of the container with the toolname set to alternate", count == 1);
-
-        Client.main(
-                new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", ToolClient.UPDATE_TOOL, "--entry",
-                        "quay.io/dockstoretestuser2/quayandgithubalternate", "--toolname", "toolnameTest", "--script" });
-
-        final long count2 = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithubalternate' and toolname = 'toolnameTest'",
-                new ScalarHandler<>());
-        assertTrue("there should only be one instance of the container with the toolname set to toolnameTest", count2 == 1);
-
-    }
-
-    /**
      * Tests that a user can only add Quay containers that they own directly or through an organization
      */
     @Test
@@ -536,29 +472,26 @@ public class GeneralIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
         // Repo user has access to
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser2", "--name", "quayandgithub", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithubalternate.git", "--git-reference", "master", "--toolname", "testTool",
                 "--cwl-path", "/testDir/Dockstore.cwl", "--dockerfile-path", "/testDir/Dockerfile", "--script" });
         final long count = testingPostgres.runSelectStatement(
-                "select count(*) from tool where path = 'quay.io/dockstoretestuser2/quayandgithub' and toolname = 'testTool'",
+                "select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithub' and toolname = 'testTool'",
                 new ScalarHandler<>());
         assertTrue("the container should exist", count == 1);
 
         // Repo user is part of org
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "dockstore2", "--name", "testrepo2", "--git-url",
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstore2", "--name", "testrepo2", "--git-url",
                 "git@github.com:dockstoretestuser2/quayandgithub.git", "--git-reference", "master", "--toolname", "testOrg", "--cwl-path",
                 "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
         final long count2 = testingPostgres
-                .runSelectStatement("select count(*) from tool where path = 'quay.io/dockstore2/testrepo2' and toolname = 'testOrg'",
+                .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstore2' and name = 'testrepo2' and toolname = 'testOrg'",
                         new ScalarHandler<>());
         assertTrue("the container should exist", count2 == 1);
 
         // Repo user doesn't own
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
-                Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(),
-                Registry.QUAY_IO.toString(), "--namespace", "dockstoretestuser", "--name", "testrepo", "--git-url",
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "manual_publish", "--registry", Registry.QUAY_IO.name(), "--namespace", "dockstoretestuser", "--name", "testrepo", "--git-url",
                 "git@github.com:dockstoretestuser/quayandgithub.git", "--git-reference", "master", "--toolname", "testTool", "--cwl-path",
                 "/Dockstore.cwl", "--dockerfile-path", "/Dockerfile", "--script" });
     }
@@ -609,6 +542,7 @@ public class GeneralIT {
      * Tests that a developer can launch a CWL Tool locally, instead of getting files from Dockstore
      */
     @Test
+    @Category(ToilCompatibleTest.class)
     public void testLocalLaunchCWL() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",
                 ResourceHelpers.resourceFilePath("arrays.cwl"), "--json",
@@ -618,12 +552,10 @@ public class GeneralIT {
     /**
      * Test to update the default path of CWL and it should change the tag's CWL path in the database
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathCWL() throws IOException, TimeoutException, ApiException {
+    public void testUpdateToolPathCWL() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -645,12 +577,10 @@ public class GeneralIT {
     /**
      * Test to update the default path of WDL and it should change the tag's WDL path in the database
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathWDL() throws IOException, TimeoutException, ApiException {
+    public void testUpdateToolPathWDL() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 
@@ -672,12 +602,10 @@ public class GeneralIT {
     /**
      * Test to update the default path of Dockerfile and it should change the tag's dockerfile path in the database
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
-    public void testUpdateToolPathDockerfile() throws IOException, TimeoutException, ApiException {
+    public void testUpdateToolPathDockerfile() throws ApiException {
         //setup webservice and get tool api
         ContainersApi toolsApi = setupWebService();
 

@@ -22,17 +22,14 @@ import java.util.List;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
-import org.apache.http.client.HttpClient;
 
 /**
  * Created by aduncan on 09/12/16.
  */
 public class ManualRegistry extends AbstractImageRegistry {
-    private final HttpClient client;
     private final Registry registry;
 
-    public ManualRegistry(HttpClient client, Registry registry) {
-        this.client = client;
+    public ManualRegistry(Registry registry) {
         this.registry = registry;
     }
 
@@ -53,9 +50,6 @@ public class ManualRegistry extends AbstractImageRegistry {
 
     @Override
     public void updateAPIToolsWithBuildInformation(List<Tool> apiTools) {
-        for (Tool tool : apiTools) {
-            tool.setRegistry(registry);
-        }
     }
 
     @Override

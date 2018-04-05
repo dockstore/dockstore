@@ -5,10 +5,6 @@ id: HelloWorld
 label: HelloWorld Tool
 cwlVersion: v1.0
 
-dct:creator:
-  '@id': http://orcid.org/0000-0003-3566-7705
-  foaf:name: Peter Amstutz
-  foaf:mbox: mailto:peter.amstutz@curoverse.com
 requirements:
 - class: DockerRequirement
   dockerPull: ubuntu:trusty
@@ -19,7 +15,6 @@ hints:
   coresMin: 8
   ramMin: 8092
   outdirMin: 512000
-  description: these parameters are used to locate a VM with appropriate resources
 inputs:
   hello_input:
     type: File

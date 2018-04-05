@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.3.7-SNAPSHOT</version>
+        <version>1.4.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>dockstore-integration-testing</artifactId>
@@ -34,14 +34,14 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
-            <version>1.3.7-SNAPSHOT</version>
+            <version>1.4.0</version>
         </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.3.7-SNAPSHOT</version>
+            <version>1.4.0</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -182,6 +182,9 @@
                             <filesets>
                                 <fileset>
                                     <directory>cromwell-workflow-logs</directory>
+                                    <directory>datastore</directory>
+                                    <directory>cromwell-input</directory>
+                                    <directory>cromwell-executions</directory>
                                 </fileset>
                                 <fileset>
                                     <includes>

@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Objects;
@@ -34,6 +35,9 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.NamedNativeQueries;
+import javax.persistence.NamedNativeQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
@@ -42,6 +46,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Base class for all entries in the dockstore
@@ -50,6 +56,22 @@ import io.swagger.annotations.ApiModelProperty;
  */
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@SuppressWarnings("checkstyle:magicnumber")
+// TODO: Replace this with JPA when possible
+@NamedNativeQueries({
+    @NamedNativeQuery(name = "Entry.getEntryById", query = "SELECT 'tool' as type, id from tool where id = :id union select 'workflow' as type, id from workflow where id = :id"),
+    @NamedNativeQuery(name = "Entry.getEntryByPath", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname = :four union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname = :four"),
+    @NamedNativeQuery(name = "Entry.getEntryByPathNullName", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL"),
+    @NamedNativeQuery(name = "Entry.getPublishedEntryByPath", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname = :four and ispublished = TRUE union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname = :four and ispublished = TRUE"),
+    @NamedNativeQuery(name = "Entry.getPublishedEntryByPathNullName", query =
+        "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL and ispublished = TRUE union"
+            + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE")})
 public abstract class Entry<S extends Entry, T extends Version> {
 
     /**
@@ -58,52 +80,68 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "container_id_seq")
     @SequenceGenerator(name = "container_id_seq", sequenceName = "container_id_seq")
-    @ApiModelProperty("Implementation specific ID for the container in this web service")
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
 
     @Column
-    @ApiModelProperty("This is the name of the author stated in the Dockstore.cwl")
+    @ApiModelProperty(value = "This is the name of the author stated in the Dockstore.cwl", position = 1)
     private String author;
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty("This is a human-readable description of this container and what it is trying to accomplish, required GA4GH")
+    @ApiModelProperty(value = "This is a human-readable description of this container and what it is trying to accomplish, required GA4GH", position = 2)
     private String description;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "entry_label", joinColumns = @JoinColumn(name = "entryid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "labelid", referencedColumnName = "id"))
-    @ApiModelProperty("Labels (i.e. meta tags) for describing the purpose and contents of containers")
+    @ApiModelProperty(value = "Labels (i.e. meta tags) for describing the purpose and contents of containers", position = 3)
     @OrderBy("id")
     private SortedSet<Label> labels = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false)
+    @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
     private Set<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false)
+    @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
     private Set<User> starredUsers;
 
     @Column
-    @ApiModelProperty("This is the email of the git organization")
+    @ApiModelProperty(value = "This is the email of the git organization", position = 6)
     private String email;
     @Column
-    @ApiModelProperty("This is the default version of the entry")
+    @ApiModelProperty(value = "This is the default version of the entry", position = 7)
     private String defaultVersion;
     @Column
     @JsonProperty("is_published")
-    @ApiModelProperty("Implementation specific visibility in this web service")
+    @ApiModelProperty(value = "Implementation specific visibility in this web service", position = 8)
     private boolean isPublished;
+
     @Column
-    @ApiModelProperty("Implementation specific timestamp for last modified")
-    private Integer lastModified;
+    @ApiModelProperty(value = "Implementation specific timestamp for last modified", position = 9)
+    private Date lastModified;
     @Column
-    @ApiModelProperty("Implementation specific timestamp for last updated on webservice")
+    @ApiModelProperty(value = "Implementation specific timestamp for last updated on webservice", position = 10)
     private Date lastUpdated;
     @Column
-    @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true)
+    @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
+
+    @JsonIgnore
+    @JoinColumn(name = "checkerid")
+    @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
+    @ApiModelProperty(value = "The id of the associated checker workflow")
+    private Workflow checkerWorkflow;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     public Entry() {
         users = new HashSet<>(0);
@@ -114,6 +152,26 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.id = id;
         users = new HashSet<>(0);
         starredUsers = new HashSet<>(0);
+    }
+
+
+    @JsonProperty("checker_id")
+    @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
+    public Long getCheckerId() {
+        if (checkerWorkflow == null) {
+            return null;
+        } else {
+            return checkerWorkflow.getId();
+        }
+    }
+
+
+    public Workflow getCheckerWorkflow() {
+        return checkerWorkflow;
+    }
+
+    public void setCheckerWorkflow(Workflow checkerWorkflow) {
+        this.checkerWorkflow = checkerWorkflow;
     }
 
     @JsonProperty
@@ -197,7 +255,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     /**
      * @param lastModified the lastModified to set
      */
-    public void setLastModified(Integer lastModified) {
+    public void setLastModified(Date lastModified) {
         this.lastModified = lastModified;
     }
 
@@ -211,6 +269,12 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     @JsonProperty("last_modified")
     public Integer getLastModified() {
+        // this is lossy, but needed for backwards compatibility
+        return lastModified == null ? null : (int)lastModified.getTime();
+    }
+
+    @JsonProperty("last_modified_date")
+    public Date getLastModifiedDate() {
         return lastModified;
     }
 
@@ -227,6 +291,9 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     @JsonProperty
     public Date getLastUpdated() {
+        if (lastUpdated == null) {
+            return new Date(0L);
+        }
         return lastUpdated;
     }
 
@@ -252,9 +319,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
      */
     public void update(S entry) {
         this.setDescription(entry.getDescription());
-        // this causes an issue when newly refreshed tools that are not published overwrite publish settings for existing containers
-        // isPublished = entry.getIsPublished();
-        lastModified = entry.getLastModified();
+        lastModified = entry.getLastModifiedDate();
         this.setAuthor(entry.getAuthor());
         this.setEmail(entry.getEmail());
 
@@ -286,5 +351,48 @@ public abstract class Entry<S extends Entry, T extends Version> {
             }
         }
         return false;
+    }
+
+    /**
+     * Given a path (A/B/C/D), splits it into parts and returns it
+     *
+     * @param path
+     * @return An array of fields used to identify an entry
+     */
+    public static String[] splitPath(String path) {
+        // Used for accessing index of path
+        final int registryIndex = 0;
+        final int orgIndex = 1;
+        final int repoIndex = 2;
+        final int entryNameIndex = 3;
+
+        // Lengths of paths
+        final int pathNoNameLength = 3;
+        final int pathWithNameLength = 4;
+
+        // Used for storing values at path locations
+        String registry;
+        String org;
+        String repo;
+        String entryName = null;
+
+        // Split path by slash
+        String[] splitPath = path.split("/");
+
+        // Only split if it is the correct length
+        if (splitPath.length == pathNoNameLength || splitPath.length == pathWithNameLength) {
+            // Get remaining positions
+            registry = splitPath[registryIndex];
+            org = splitPath[orgIndex];
+            repo = splitPath[repoIndex];
+            if (splitPath.length == pathWithNameLength) {
+                entryName = splitPath[entryNameIndex];
+            }
+
+            // Return an array of the form [A,B,C,D]
+            return new String[]{registry, org, repo, entryName};
+        } else {
+            return null;
+        }
     }
 }

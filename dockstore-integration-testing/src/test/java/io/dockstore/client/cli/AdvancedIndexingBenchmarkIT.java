@@ -36,22 +36,19 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.context.internal.ManagedSessionContext;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -68,7 +65,8 @@ import static junit.framework.TestCase.assertTrue;
  * @author gluu
  */
 @Category(BenchmarkTest.class)
-public class AdvancedIndexingBenchmarkIT {
+@Ignore("more like benchmarking than a test per say")
+public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -76,14 +74,19 @@ public class AdvancedIndexingBenchmarkIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
+    @Before
+    @Override
+    public void resetDBBetweenTests() throws Exception {
+        /** do nothing, do not load sample data */
+    }
+
     private static final int TOOL_COUNT = 10;
     private static final int MAX_LABELS_PER_TOOL = 5;
     private static final int MAX_AUTHORS = 10;
     private static final Logger LOGGER = LoggerFactory.getLogger(AdvancedIndexingBenchmarkIT.class);
-    private static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("advancedIndexingTest.yml");
-    @ClassRule
-    public static final DropwizardAppRule<DockstoreWebserviceConfiguration> RULE = new DropwizardAppRule<>(
-            DockstoreWebserviceApplication.class, CONFIG_PATH);
+
+
+
     private static final String LEXICON = "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345674890";
     private static final java.util.Random RAND = new java.util.Random();
     private static final Set<String> IDENTIFIERS = new HashSet<>();
@@ -115,7 +118,7 @@ public class AdvancedIndexingBenchmarkIT {
         com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         client = ClientBuilder.newClient();
         client.register(jacksonJsonProvider);
-        application = RULE.getApplication();
+        application = SUPPORT.getApplication();
         this.session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
         fixedStringLabels = randomlyGenerateFixedAuthors();
@@ -168,7 +171,7 @@ public class AdvancedIndexingBenchmarkIT {
         for (int i = 0; i < TOOL_COUNT; i++) {
             createTool();
         }
-        Response response = client.target("http://localhost:" + RULE.getLocalPort() + "/containers/published").request().get();
+        Response response = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/published").request().get();
         List<Tool> tools = response.readEntity(new GenericType<List<Tool>>() {
         });
         int actualToolCount = tools.size();
@@ -181,7 +184,7 @@ public class AdvancedIndexingBenchmarkIT {
     }
 
     private void buildIndex() {
-        Response response = client.target("http://localhost:" + RULE.getLocalPort() + "/api/ga4gh/v1/extended/tools/index").request()
+        Response response = client.target("http://localhost:" + SUPPORT.getLocalPort() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended/tools/index").request()
                 .post(null);
         long startTime = System.nanoTime();
         String output = response.readEntity(String.class);
@@ -192,7 +195,7 @@ public class AdvancedIndexingBenchmarkIT {
     }
 
     private void refresh(long id) {
-        Response registerManualResponse = client.target("http://localhost:" + RULE.getLocalPort() + "/containers/" + id + "/refresh")
+        Response registerManualResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/" + id + "/refresh")
                 .request().header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken").get();
         Tool tool = registerManualResponse.readEntity(Tool.class);
     }
@@ -204,7 +207,7 @@ public class AdvancedIndexingBenchmarkIT {
     }
 
     private void addLabels(long id) {
-        Response registerPutLabelResponse = client.target("http://localhost:" + RULE.getLocalPort() + "/containers/" + id + "/labels")
+        Response registerPutLabelResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/" + id + "/labels")
                 .queryParam("labels", randomlyGeneratedQueryLabels()).request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
                 .put(Entity.entity("asdf", MediaType.APPLICATION_JSON_TYPE));
@@ -215,7 +218,7 @@ public class AdvancedIndexingBenchmarkIT {
     // Directly injecting into database to avoid authentication issues
     private void createTool() {
         Tool tool = randomlyGenerateTool();
-        Response registerManualResponse = client.target("http://localhost:" + RULE.getLocalPort() + "/containers/registerManual").request()
+        Response registerManualResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/registerManual").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
                 .post(Entity.entity(tool, MediaType.APPLICATION_JSON_TYPE));
 
@@ -279,18 +282,21 @@ public class AdvancedIndexingBenchmarkIT {
         tool.setDefaultCwlPath(randomIdentifier());
         tool.setDefaultWdlPath(randomIdentifier());
         tool.setPrivateAccess(RAND.nextBoolean());
-        tool.setPath(randomIdentifier());
         tool.setToolname(randomIdentifier());
         return tool;
     }
 
-    private Registry randomlyGeneratedRegistry() {
+    private String randomlyGeneratedRegistry() {
         // Can't use Quay.io or else tool creation will fail
         Registry[] registries = { Registry.AMAZON_ECR, Registry.DOCKER_HUB, Registry.GITLAB };
         int length = registries.length;
         int random = RAND.nextInt(length);
         assertTrue(random >= 0 && random < length);
-        return registries[random];
+        if (random == 0) {
+            return "test.dkr.ecr.test.amazonaws.com";
+        } else {
+            return registries[random].toString();
+        }
     }
 }
 

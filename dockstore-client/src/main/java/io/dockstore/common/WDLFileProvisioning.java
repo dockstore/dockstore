@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -62,6 +64,7 @@ public class WDLFileProvisioning {
         System.out.println("Provisioning your input files to your local machine");
         String uniqueHash = UUID.randomUUID().toString();
 
+        List<Pair<String, Path>> inputSet = new ArrayList<>();
         // Go through input file fully qualified names
         for (Map.Entry<String, String> originalInputJsonEntry : originalInputJson.entrySet()) {
             LOG.info(originalInputJsonEntry.getKey());
@@ -76,7 +79,7 @@ public class WDLFileProvisioning {
                         ArrayList<String> updatedPaths = new ArrayList<>();
                         for (Object entry : stringObjectEntryList) {
                             if (entry instanceof String) {
-                                updatedPaths.add(doProcessFile(stringObjectEntry.getKey(), entry.toString(), uniqueHash)
+                                updatedPaths.add(doProcessFile(stringObjectEntry.getKey(), entry.toString(), uniqueHash, inputSet)
                                         .get(stringObjectEntry.getKey()).toString());
                             }
                         }
@@ -86,12 +89,13 @@ public class WDLFileProvisioning {
                     } else if (stringObjectEntry.getValue() instanceof String) {
                         // Just a file
                         Map<String, Object> tempMap;
-                        tempMap = doProcessFile(stringObjectEntry.getKey(), stringObjectEntry.getValue().toString(), uniqueHash);
+                        tempMap = doProcessFile(stringObjectEntry.getKey(), stringObjectEntry.getValue().toString(), uniqueHash, inputSet);
                         fileMap.putAll(tempMap);
                     }
                 }
             }
         }
+        fileProvisioning.provisionInputFiles("", inputSet);
 
         return fileMap;
     }
@@ -101,9 +105,10 @@ public class WDLFileProvisioning {
      *
      * @param key  Fully Qualified Name
      * @param path Original Path
+     * @param inputSet
      * @return Mapping of fully qualified name to new input file string or list of new input file strings
      */
-    private Map<String, Object> doProcessFile(String key, String path, String uniqueHash) {
+    private Map<String, Object> doProcessFile(String key, String path, String uniqueHash, List<Pair<String, Path>> inputSet) {
         Map<String, Object> jsonEntry = new HashMap<>();
 
         LOG.info("PATH TO DOWNLOAD FROM: {} FOR {}", path, key);
@@ -125,7 +130,8 @@ public class WDLFileProvisioning {
             // If directory we will create a copy of it, but not of the content
             Utilities.executeCommand("mkdir -p " + targetFilePath.toString());
         } else {
-            fileProvisioning.provisionInputFile("", path, targetFilePath);
+            inputSet.add(ImmutablePair.of(path, targetFilePath));
+            //fileProvisioning.provisionInputFile("", path, targetFilePath);
         }
 
         jsonEntry.put(key, targetFilePath);

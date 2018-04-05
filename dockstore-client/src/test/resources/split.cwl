@@ -26,4 +26,4 @@ outputs:
       - ^.af
 
 baseCommand: ["split"]
-arguments: ["--bytes=15000000", $(inputs.bam_input), "test."]
+arguments: ["-b", "15000000", $(inputs.bam_input), "test."]

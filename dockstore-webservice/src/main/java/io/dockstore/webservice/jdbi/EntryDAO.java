@@ -17,19 +17,28 @@
 package io.dockstore.webservice.jdbi;
 
 import java.lang.reflect.ParameterizedType;
+import java.math.BigInteger;
 import java.util.List;
+import java.util.Objects;
 
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.hibernate.AbstractDAO;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 
 /**
  * @author dyuen
  */
-public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
+public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
-    protected static final String SCHEMA = "http://schema.org/";
+    public final int registryIndex = 0;
+    public final int orgIndex = 1;
+    public final int repoIndex = 2;
+    public final int entryNameIndex = 3;
 
     private Class<T> typeOfT;
 
@@ -43,6 +52,71 @@ public class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
     public T findById(Long id) {
         return get(id);
+    }
+
+    public MutablePair<String, Entry> findEntryById(Long id) {
+        Query query = super.namedQuery("Entry.getEntryById");
+        query.setParameter("id", id);
+        List<Object[]> pair = list(query);
+        MutablePair<String, Entry> results;
+        String type = (String)(pair.get(0))[0];
+        if ("workflow".equals(type)) {
+            results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(id)));
+        } else {
+            results = new MutablePair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(id)));
+        }
+        return results;
+    }
+
+    public MutablePair<String, Entry> findEntryByPath(String path, boolean isPublished) {
+        String queryString = "Entry.";
+        if (isPublished) {
+            queryString += "getPublishedEntryByPath";
+        } else {
+            queryString += "getEntryByPath";
+        }
+
+        // split path
+        String[] splitPath = Tool.splitPath(path);
+
+        // Not a valid path
+        if (splitPath == null) {
+            return null;
+        }
+
+        // Valid path
+        String one = splitPath[registryIndex];
+        String two = splitPath[orgIndex];
+        String three = splitPath[repoIndex];
+        String four = splitPath[entryNameIndex];
+
+        if (four == null) {
+            queryString += "NullName";
+        }
+
+        Query query = super.namedQuery(queryString);
+
+        query.setParameter("one", one);
+        query.setParameter("two", two);
+        query.setParameter("three", three);
+
+        if (four != null) {
+            query.setParameter("four", four);
+        }
+
+        List<Object[]> pair = list(query);
+        MutablePair<String, Entry> results = null;
+        if (pair.size() > 0) {
+            String type = (String)(pair.get(0))[0];
+            BigInteger id = (BigInteger)(pair.get(0))[1];
+            Long longId = id.longValue();
+            if ("workflow".equals(type)) {
+                results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(longId)));
+            } else {
+                results = new MutablePair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(longId)));
+            }
+        }
+        return results;
     }
 
     public long create(T entry) {

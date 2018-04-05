@@ -17,7 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -53,11 +52,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -87,7 +86,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/auth/tokens")
 @Api(value = "/auth/tokens", tags = "tokens")
 @Produces(MediaType.APPLICATION_JSON)
-public class TokenResource {
+public class TokenResource implements AuthenticatedResourceInterface, SourceControlResourceInterface {
     /**
      * Global instance of the HTTP transport.
      */
@@ -116,19 +115,17 @@ public class TokenResource {
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, List<String> githubClientID, List<String> githubClientSecret, String bitbucketClientID,
-            String bitbucketClientSecret, String gitlabClientID, String gitlabClientSecret, String gitlabRedirectUri, HttpClient client,
-            CachingAuthenticator<String, User> cachingAuthenticator) {
+    public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
+        DockstoreWebserviceConfiguration configuration) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
-        this.githubClientID = githubClientID;
-        this.githubClientSecret = githubClientSecret;
-        this.bitbucketClientID = bitbucketClientID;
-        this.bitbucketClientSecret = bitbucketClientSecret;
-        this.gitlabClientID = gitlabClientID;
-        this.gitlabClientSecret = gitlabClientSecret;
-        this.gitlabRedirectUri = gitlabRedirectUri;
+        this.githubClientID = configuration.getGithubClientID();
+        this.githubClientSecret = configuration.getGithubClientSecret();
+        this.bitbucketClientID = configuration.getBitbucketClientID();
+        this.bitbucketClientSecret = configuration.getBitbucketClientSecret();
+        this.gitlabClientID = configuration.getGitlabClientID();
+        this.gitlabClientSecret = configuration.getGitlabClientSecret();
+        this.gitlabRedirectUri = configuration.getGitlabRedirectURI();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -152,7 +149,7 @@ public class TokenResource {
     public Token listToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam("ID of token to return") @PathParam("tokenId") Long tokenId) {
         Token t = tokenDAO.findById(tokenId);
-        Helper.checkUser(user, t.getUserId());
+        checkUser(user, t.getUserId());
 
         return t;
     }
@@ -208,7 +205,7 @@ public class TokenResource {
     public Response deleteToken(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Token id to delete", required = true) @PathParam("tokenId") Long tokenId) {
         Token token = tokenDAO.findById(tokenId);
-        Helper.checkUser(user, token.getUserId());
+        checkUser(user, token.getUserId());
 
         // invalidate cache now that we're deleting the token
         cachingAuthenticator.invalidate(token.getContent());
@@ -302,7 +299,7 @@ public class TokenResource {
     @Timed
     @UnitOfWork
     @Path("/github.com")
-    @ApiOperation(value = "Add a new github.com token, used by quay.io redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
+    @ApiOperation(value = "Add a new github.com token, used by github.com redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@QueryParam("code") String code) {
@@ -410,8 +407,7 @@ public class TokenResource {
     @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
             "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
                     + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addBitbucketToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code)
-            throws UnsupportedEncodingException {
+    public Token addBitbucketToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
         }
@@ -496,6 +492,6 @@ public class TokenResource {
 
         Token bitbucketToken = tokens.get(0);
 
-        return Helper.refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
+        return refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
     }
 }
