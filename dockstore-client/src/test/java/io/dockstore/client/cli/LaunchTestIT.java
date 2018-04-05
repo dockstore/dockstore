@@ -193,8 +193,48 @@ public class LaunchTestIT {
         }
     }
 
+    @Test
+    public void runToolWithSecondaryFilesOfVariousKinds() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files_renamed"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.nocaret.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.renamed.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 8);
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.aa");
+        for (char y = 'b'; y <= 'f'; y++) {
+            String filename = "/tmp/provision_out_with_files_renamed/renamed.aa.a" + y + "extra";
+            checkFileAndThenDeleteIt(filename);
+        }
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.aa.funky.extra.stuff");
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.aa.groovyextrastuff");
+    }
+
+    @Test
+    public void runToolWithSecondaryFilesOfEvenStrangerKinds() throws IOException {
+
+        FileUtils.deleteDirectory(new File("/tmp/provision_out_with_files_renamed"));
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("split.more.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("split.extra.json"));
+
+        runTool(cwlFile, cwlJSON);
+
+        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        for (char y = 'a'; y <= 'e'; y++) {
+            String filename = "/tmp/provision_out_with_files_renamed/renamed.txt.a" + y;
+            checkFileAndThenDeleteIt(filename);
+        }
+        checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.extra");
+    }
+
     private void checkFileAndThenDeleteIt(String filename) {
-        assertTrue("output should provision out to correct locations",
+        assertTrue("output should provision out to correct locations, could not find " + filename + " in log",
                 systemOutRule.getLog().contains(filename));
         assertTrue("file does not actually exist", Files.exists(Paths.get(filename)));
         // cleanup
