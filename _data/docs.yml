@@ -10,6 +10,7 @@
   docs:
     - user-tutorials/faceted-search
     - user-tutorials/launch
+    - user-tutorials/starring
 
 - title: Publisher Tutorials
   link: publisher-tutorials
