@@ -9,7 +9,9 @@
           No description.
         {% else %}
           <!-- Ignore headers in release body -->
-          {{ release.body | remove: '#' | markdownify }}
+          <!--{{ release.body | remove: '#' | markdownify }} -->
+          <!-- Don't ignore headers in release body? -->
+          {{ release.body | markdownify }}
         {% endif %}
       </div>
   {% endif %}

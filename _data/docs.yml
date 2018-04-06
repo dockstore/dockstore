@@ -12,6 +12,8 @@
     - user-tutorials/language-support
     - user-tutorials/launch
     - user-tutorials/dnastack-launch-with
+    - user-tutorials/starring
+
 
 - title: Publisher Tutorials
   link: publisher-tutorials
@@ -21,6 +23,8 @@
     - publisher-tutorials/docker-registries
     - publisher-tutorials/public-and-private-tools
     - publisher-tutorials/workflows
+    - publisher-tutorials/checker-workflows
+    - publisher-tutorials/checker-workflow-trs
     - publisher-tutorials/best-practices
     - publisher-tutorials/advanced-features
     - publisher-tutorials/aws-batch

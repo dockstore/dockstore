@@ -8,7 +8,7 @@ This tutorial walks through some of our utilities for quickly launching tools an
 
 ## Dockstore CLI
 
-The dockstore command-line includes basic tool and workflow launching capability built on top of [cwltool](https://github.com/common-workflow-language/cwltool). The Dockstore command-line also includes support for file provisioning via [plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) which allow for the reading of input files and the upload of output files from remote file systems. Support for http and https is built-in. Support for AWS S3 and [icgc-storage client](onboarding) is provided via plugins installed by default.  
+The dockstore command-line includes basic tool and workflow launching capability built on top of [cwltool](https://github.com/common-workflow-language/cwltool). The Dockstore command-line also includes support for file provisioning via [plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) which allow for the reading of input files and the upload of output files from remote file systems. Support for http and https is built-in. Support for AWS S3 and [icgc-storage client](https://github.com/dockstore/icgc-storage-client-plugin) is provided via plugins installed by default.
 
 ### Launch Tools
 
@@ -21,7 +21,7 @@ If you have followed the tutorial, you will have a tool registered on Dockstore.
   0. if outputs are specified as remote URLs, copy the results to these locations
 0. download tool descriptor files `dockstore tool cwl` and `dockstore tool wdl`
 
-Note that launching a CWL tool locally requires the cwltool to be installed. Check [onboarding](onboarding) if you have not already to ensure that your dependencies are correct.
+Note that launching a CWL tool locally requires the cwltool to be installed. Check [onboarding](https://dockstore.org/onboarding) if you have not already to ensure that your dependencies are correct.
 
 An example of launching a tool, in this case a bamstats sample tool follows:
 
