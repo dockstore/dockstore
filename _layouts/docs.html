@@ -37,11 +37,29 @@ layout: default
         </a>
       </div>
     </div>
-    {% endif %}
-    <!-- Main documentation section -->
-    <div class="col-md-9">
-      {% include breadcrumbs-docs.html path=page.id %}
-      {{ content }}
-    </div>
+      {% endif %}
+      <!-- Main documentation section -->
+      <div class="col-md-9">
+          {% include breadcrumbs-docs.html path=page.id %}
+          {{ content }}
+
+          <br/>
+          <div id='discourse-comments'></div>
+
+          <script type="text/javascript">
+              DiscourseEmbed = {
+                  discourseUrl: 'https://discuss.dockstore.org/',
+                  discourseEmbedUrl: window.location.href
+              };
+
+              (function () {
+                  var d = document.createElement('script');
+                  d.type = 'text/javascript';
+                  d.async = true;
+                  d.src = DiscourseEmbed.discourseUrl + 'javascripts/embed.js';
+                  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(d);
+              })();
+          </script>
+      </div>
 
   </div>
