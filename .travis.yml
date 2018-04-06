@@ -43,6 +43,8 @@ jobs:
         - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="integration-tests"
 
     - stage: deploy
+      env:
+        - EXTRA_MAVEN_VAR="" TESTING_PROFILE="unit-tests"
       deploy:
         provider: releases
         api_key:
