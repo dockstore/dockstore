@@ -29,8 +29,11 @@ import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolTests;
+import io.swagger.model.Error;
+import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -186,5 +189,19 @@ public abstract class GA4GHIT {
         Response response = client.target(path).request().get();
         assertThat(response.getStatus()).isEqualTo(200);
         return response;
+    }
+
+    /**
+     * This tests that a 400 response returns an Error response object similar to the 404 response defined in the
+     * GA4GH swagger.yaml
+     * @throws Exception
+     */
+    @Test
+    public void testInvalidToolId() throws Exception {
+        Response response = client.target(basePath + "tools/potato").request().get();
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
+        Error error = response.readEntity(Error.class);
+        Assert.assertTrue(error.getMessage().contains("Tool ID should"));
+        assertThat(error.getCode()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
     }
 }
