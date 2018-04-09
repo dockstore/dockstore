@@ -27,8 +27,17 @@
                       </li>
                     {% endif %}
                   {% endfor %}
-
                 </span>
+                <div class="pull-right">
+                  <form class="form-inline col-lg-12" style="padding-top:10px" action="{{site.baseurl}}/search.html" method="get">
+                    <div class="input-group">
+                      <input class="form-control" type="text" id="search_box" name="query">
+                      <span class="input-group-btn">
+                        <button class="btn btn-default" type="submit">Search</button>
+                      </span>
+                    </div>
+                  </form>
+                </div>
               </ul>
             </div>
           </div>
