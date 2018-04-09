@@ -32,7 +32,6 @@
 
   var searchTerm = getQueryVariable('query');
 
-  if (searchTerm) {
     document.getElementById('search_box').setAttribute("value", searchTerm);
 
     // Initalize lunr with the fields it will be searching on. I've given title
@@ -57,9 +56,7 @@
 
       }
     });
-
     var results = idx.search(searchTerm); // Get lunr to perform a search
     displaySearchResults(results, window.store); // We'll write this in the next section
 
-  }
 })();
