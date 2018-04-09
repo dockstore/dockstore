@@ -57,6 +57,7 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.DescriptorType;
+import io.swagger.model.Error;
 import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolFile;
@@ -656,10 +657,27 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 list.remove(0); // Remove #workflow from ArrayList to make parsing similar to tool
                 tool = false;
             }
+            checkToolId(list);
             registry = list.get(0);
             organization = list.get(1);
             name = list.get(2);
             toolName = list.size() > SEGMENTS_IN_ID ? list.get(SEGMENTS_IN_ID) : "";
+        }
+
+        /**
+         * This checks if the GA4GH toolId string segments provided by the user is of proper length
+         * If it is not the proper length, returns an Error response object similar to what's defined for the
+         * 404 response in the GA4GH swagger.yaml
+         * @param toolIdStringSegments    The toolId provided by the user which was split into string segments
+         */
+        private void checkToolId(List<String> toolIdStringSegments) {
+            if (toolIdStringSegments.size() < SEGMENTS_IN_ID) {
+                Error error = new Error();
+                error.setCode(HttpStatus.SC_BAD_REQUEST);
+                error.setMessage("Tool ID should have at least 3 separate segments, seperated by /");
+                Response errorResponse = Response.status(HttpStatus.SC_BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON).build();
+                throw new WebApplicationException(errorResponse);
+            }
         }
 
         public String getRegistry() {
