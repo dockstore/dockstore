@@ -142,6 +142,7 @@ public class User implements Principal {
         }
         Token githubToken = githubByUserId.get(0);
         GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(getUsername(), githubToken.getContent(), null);
+        gitHubSourceCodeRepo.checkSourceCodeValidity();
         gitHubSourceCodeRepo.getUserMetadata(this);
     }
 

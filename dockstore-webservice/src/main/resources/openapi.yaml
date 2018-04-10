@@ -2496,27 +2496,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-  /github.repo:
-    get:
-      tags:
-        - github.repo
-      summary: List all repos known via all registered tokens
-      description: >-
-        List docker container repos currently known. Right now, tokens are used
-        to synchronously talk to the quay.io API to list repos. Ultimately, we
-        should cache this information and refresh either by user request or by
-        time TODO: This should be a properly defined list of objects, it also
-        needs admin authentication
-      operationId: getRepos
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: string
-      security:
-        - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -2611,6 +2590,22 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
+  /metadata/okHttpCachePerformance:
+    get:
+      tags:
+        - metadata
+      summary: Get measures of cache performance.
+      description: Does not need authentication
+      operationId: getCachePerformance
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
   /metadata/rss:
     get:
       tags:

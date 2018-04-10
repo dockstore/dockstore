@@ -213,6 +213,10 @@ public class MetadataResource {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Get measures of cache performance.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
     public Map<String, String> getCachePerformance() {
+        return extractCacheStatistics(cache);
+    }
+
+    public static Map<String, String> extractCacheStatistics(Cache cache) {
         Map<String, String> results = new HashMap<>();
         results.put("requestCount", String.valueOf(cache.requestCount()));
         results.put("networkCount", String.valueOf(cache.networkCount()));
@@ -222,6 +226,7 @@ public class MetadataResource {
             results.put("size", String.valueOf(cache.size()) + " bytes");
         } catch (IOException e) {
             /* do nothing if we cannot report size */
+            LOG.warn("unable to determine cache size, may not have initialized yet");
         }
         return results;
     }

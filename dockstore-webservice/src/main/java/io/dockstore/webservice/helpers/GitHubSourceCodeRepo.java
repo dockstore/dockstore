@@ -18,9 +18,11 @@ package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,30 +36,30 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import okhttp3.OkHttpClient;
+import okhttp3.OkUrlFactory;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
-import org.eclipse.egit.github.core.Blob;
-import org.eclipse.egit.github.core.Repository;
-import org.eclipse.egit.github.core.RepositoryContents;
-import org.eclipse.egit.github.core.RepositoryId;
-import org.eclipse.egit.github.core.User;
-import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.client.RequestException;
-import org.eclipse.egit.github.core.service.ContentsService;
-import org.eclipse.egit.github.core.service.DataService;
-import org.eclipse.egit.github.core.service.OrganizationService;
-import org.eclipse.egit.github.core.service.RepositoryService;
-import org.eclipse.egit.github.core.service.UserService;
-import org.kohsuke.github.GHBranch;
+import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHCommit;
+import org.kohsuke.github.GHContent;
+import org.kohsuke.github.GHMyself;
+import org.kohsuke.github.GHOrganization;
+import org.kohsuke.github.GHRateLimit;
+import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
+import org.kohsuke.github.RateLimitHandler;
+import org.kohsuke.github.extras.OkHttp3Connector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,39 +71,26 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
-    private final ContentsService cService;
-    private final RepositoryService service;
-    private final OrganizationService oService;
-    private final UserService uService;
     private final GitHub github;
-    private final DataService dService;
 
     // TODO: should be made protected in favour of factory
     public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
-        GitHubClient githubClient = new GitHubClient();
-        githubClient.setOAuth2Token(githubTokenContent);
-
-        this.service = new RepositoryService(githubClient);
-        this.cService = new ContentsService(githubClient);
-        this.oService = new OrganizationService(githubClient);
-        this.uService = new UserService(githubClient);
-        this.dService = new DataService(githubClient);
         this.gitUsername = gitUsername;
         this.gitRepository = gitRepository;
         try {
-            this.github = GitHub.connectUsingOAuth(githubTokenContent);
+            this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(new OkHttp3Connector(new OkUrlFactory(
+                new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build()))).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Override
     public String readFile(String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
-        Repository repo;
+        GHRepository repo;
         try {
-            repo = service.getRepository(gitUsername, gitRepository);
+            repo = github.getRepository(gitUsername + "/" + gitRepository);
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
             return null;
@@ -109,12 +98,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         return readFileFromRepo(fileName, reference, repo);
     }
 
-    private String readFileFromRepo(String fileName, String reference, Repository repo) {
+    private String readFileFromRepo(String fileName, String reference, GHRepository repo) {
         try {
             // may need to pass owner from git url, as this may differ from the git username
-            // may need to account for symbolic links to directories
             List<String> folders = Arrays.asList(fileName.split("/"));
             List<String> start = new ArrayList<>();
+            // this complicated code is for accounting for symbolic links to directories
             for (int i = 0; i < folders.size() - 1; i++) {
                 // ignore leading slash
                 if (i == 0 && folders.get(i).isEmpty()) {
@@ -122,11 +111,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
                 start.add(folders.get(i));
                 String partialPath = Joiner.on("/").join(start);
-                List<RepositoryContents> contents = cService.getContents(repo, partialPath, reference);
-                if (!contents.isEmpty()) {
-                    if (contents.get(0).getType().equals("symlink")) {
-                        Blob blob = dService.getBlob(repo, contents.get(0).getSha());
-                        String content = extractGitHubContents(blob.getContent());
+                try {
+                    GHContent fileContent = repo.getFileContent(partialPath, reference);
+                    if (fileContent.getType().equals("symlink")) {
+                        String content = IOUtils.toString(fileContent.read(), StandardCharsets.UTF_8);
                         // restart the loop to look for symbolic links pointed to by symbolic links
                         List<String> newfolders = Lists.newArrayList(content.split("/"));
                         List<String> sublist = folders.subList(i + 1, folders.size());
@@ -135,71 +123,65 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                         start = new ArrayList<>();
                         i = -1;
                     }
+                } catch (IOException e) {
+                    // move on if a file is not found
+                    LOG.warn("Could not find " + partialPath + " at " + reference);
                 }
             }
-
             fileName = Joiner.on("/").join(folders);
 
-            List<RepositoryContents> contents;
             try {
-                contents = cService.getContents(repo, fileName, reference);
-            } catch (Exception e) {
-                contents = cService.getContents(repo, fileName.toLowerCase(), reference);
+                GHContent fileContent = repo.getFileContent(fileName, reference);
+                return IOUtils.toString(fileContent.read(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                GHContent fileContent = repo.getFileContent(fileName.toLowerCase(), reference);
+                return IOUtils.toString(fileContent.read(), StandardCharsets.UTF_8);
             }
-
-            if (!(contents == null || contents.isEmpty() || contents.get(0).getContent() == null)) {
-                return extractGitHubContents(contents);
-            } else {
-                return null;
-            }
-        } catch (RequestException e) {
-            if (e.getStatus() == HttpStatus.SC_UNAUTHORIZED) {
-                // we have bad credentials which should not be ignored
-                throw new CustomWebApplicationException("Error reading from " + gitRepository + ", please re-create your git token",
-                        HttpStatus.SC_BAD_REQUEST);
-            }
-            return null;
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
+//            if (e.getMessage() == HttpStatus.SC_UNAUTHORIZED) {
+//                // we have bad credentials which should not be ignored
+//                throw new CustomWebApplicationException("Error reading from " + gitRepository + ", please re-create your git token",
+//                        HttpStatus.SC_BAD_REQUEST);
+//            }
+            return null;
+//        } catch (IOException e) {
+//            LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
         }
-        return null;
     }
 
     @Override
     public String getFileContents(String filePath, String branch, String repositoryId) {
-        Repository repo;
+        GHRepository repository;
         try {
-            repo = service.getRepository(gitUsername, repositoryId);
+            repository = github.getRepository(gitUsername + "/" + repositoryId);
         } catch (IOException ex) {
             LOG.info(gitUsername + ": Repo " + repositoryId + " does not contain " + filePath + " on " + branch);
             return null;
         }
-        return readFileFromRepo(filePath, branch, repo);
+        return readFileFromRepo(filePath, branch, repository);
     }
 
     @Override
     public String getOrganizationEmail() {
-        User organization;
         try {
-            // TODO: only works if the gitUsername is an actual organization on github
-            // ie, it does not work if it is just a user
-            organization = oService.getOrganization(gitUsername);
+            return github.getMyself().getEmail();
         } catch (IOException ex) {
-            LOG.info(gitUsername + ": Cannot find Organization {}", gitUsername);
+            LOG.info(gitUsername + ": Cannot find email {}", gitUsername);
             return "";
         }
-
-        return organization.getEmail();
-
     }
 
     @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
-            final List<Repository> repositories = service.getRepositories();
-            for (Repository repo : repositories) {
-                reposByGitURl.put(repo.getSshUrl(), repo.generateId());
+            Map<String, GHOrganization> myOrganizations = github.getMyOrganizations();
+            for (Map.Entry<String, GHOrganization> entry : myOrganizations.entrySet()) {
+                GHOrganization organization = github.getOrganization(entry.getKey());
+                Map<String, GHRepository> repositories = organization.getRepositories();
+                for (Map.Entry<String, GHRepository> innerEntry : repositories.entrySet()) {
+                    reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
+                }
             }
             return reposByGitURl;
         } catch (IOException e) {
@@ -211,38 +193,25 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public boolean checkSourceCodeValidity() {
         try {
-            oService.getOrganizations();
-        } catch (IOException e) {
-            if (e instanceof RequestException && e.getMessage().contains("API rate limit")) {
-                throw new CustomWebApplicationException(
-                    e.getMessage(), HttpStatus.SC_BAD_REQUEST);
+            GHRateLimit ghRateLimit = github.rateLimit();
+            if (ghRateLimit.remaining == 0) {
+                ZonedDateTime zonedDateTime = Instant.ofEpochSecond(ghRateLimit.reset.getTime()).atZone(ZoneId.systemDefault());
+                throw new CustomWebApplicationException("Out of rate limit, please wait till " + zonedDateTime, HttpStatus.SC_BAD_REQUEST);
             }
+            github.getMyOrganizations();
+        } catch (IOException e) {
             throw new CustomWebApplicationException(
                 "Please recreate your GitHub token, we probably need an upgraded token to list your organizations: ", HttpStatus.SC_BAD_REQUEST);
         }
         return true;
     }
 
-    private String extractGitHubContents(List<RepositoryContents> cwlContents) {
-        String encoded = cwlContents.get(0).getContent();
-        return extractGitHubContents(encoded);
-    }
-
-    private String extractGitHubContents(String contents) {
-        byte[] decode = Base64.getDecoder().decode(contents.replace("\n", ""));
-        return new String(decode, StandardCharsets.UTF_8);
-    }
-
     @Override
     public Workflow initializeWorkflow(String repositoryId) {
         Workflow workflow = new Workflow();
-
-        // Get repository ID for API call
-        RepositoryId id = RepositoryId.createFromId(repositoryId);
-
         // Get repository from API and setup workflow
         try {
-            final Repository repository = service.getRepository(id);
+            GHRepository repository = github.getRepository(repositoryId);
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
             workflow.setSourceControl(SourceControl.GITHUB.toString());
@@ -260,40 +229,27 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
             Map<String, WorkflowVersion> existingDefaults) {
-        RepositoryId id = RepositoryId.createFromId(repositoryId);
-
+        GHRepository repository;
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<Pair<String, Date>> references = new ArrayList<>();
         try {
-            GHRepository repository = github.getRepository(repositoryId);
+            repository = github.getRepository(repositoryId);
             final Date epochStart = new Date(0);
-            service.getBranches(id).forEach(branch -> {
+            GHRef[] refs = repository.getRefs();
+            for (GHRef ref : refs) {
                 Date branchDate = new Date(0);
                 try {
-                    GHBranch githubBranch = repository.getBranch(branch.getName());
-                    GHCommit commit = repository.getCommit(githubBranch.getSHA1());
+                    String sha = ref.getObject().getSha();
+                    GHCommit commit = repository.getCommit(sha);
                     branchDate = commit.getCommitDate();
                     if (branchDate.before(epochStart)) {
                         branchDate = epochStart;
                     }
                 } catch (IOException e) {
-                    LOG.info("unable to retrieve commit date for branch " + branch.getName());
+                    LOG.info("unable to retrieve commit date for branch " + ref.getRef());
                 }
-                references.add(Pair.of(branch.getName(), branchDate));
-            });
-            service.getTags(id).forEach(tag -> {
-                Date branchDate = new Date(0);
-                try {
-                    GHCommit commit = repository.getCommit(tag.getCommit().getSha());
-                    branchDate = commit.getCommitDate();
-                    if (branchDate.before(epochStart)) {
-                        branchDate = epochStart;
-                    }
-                } catch (IOException e) {
-                    LOG.info("unable to retrieve commit date for tag " + tag.getName());
-                }
-                references.add(Pair.of(tag.getName(), branchDate));
-            });
+                references.add(Pair.of(ref.getRef(), branchDate));
+            }
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
@@ -318,16 +274,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Grab workflow file from github
             try {
                 // Get contents of descriptor file and store
-                final List<RepositoryContents> descriptorContents = cService.getContents(id, calculatedPath, ref.getKey());
-                if (descriptorContents != null && descriptorContents.size() > 0) {
-                    String content = extractGitHubContents(descriptorContents);
-
-                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(content);
-
+                GHContent content = repository.getFileContent(calculatedPath, ref.getKey());
+                if (content != null) {
+                    String decodedContent = IOUtils.toString(content.read(), StandardCharsets.UTF_8);
+                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(decodedContent);
                     if (validWorkflow) {
                         // if we have a valid workflow document
                         SourceFile file = new SourceFile();
-                        file.setContent(content);
+                        file.setContent(decodedContent);
                         file.setPath(calculatedPath);
                         file.setType(identifiedType);
                         version.setValid(true);
@@ -337,9 +291,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        final List<RepositoryContents> testJsonFile = cService.getContents(id, workflow.getDefaultTestParameterFilePath(), ref.getKey());
-                        if (testJsonFile != null && testJsonFile.size() > 0) {
-                            String testJsonContent = extractGitHubContents(testJsonFile);
+                        GHContent testJsonFile = repository.getFileContent(workflow.getDefaultTestParameterFilePath(), ref.getKey());
+                        if (testJsonFile != null) {
+                            String testJsonContent = IOUtils.toString(testJsonFile.read(), StandardCharsets.UTF_8);
                             SourceFile testJson = new SourceFile();
 
                             // Set Filetype
@@ -381,7 +335,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (gitRepository == null) {
             if (entry.getClass().equals(Tool.class)) {
                 // Parse git url for repo
-                Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+                Pattern p = Pattern.compile("git@bitbucket.org:(\\S+)/(\\S+)\\.git");
                 Matcher m = p.matcher(entry.getGitUrl());
 
                 if (!m.find()) {
@@ -401,27 +355,22 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public String getMainBranch(Entry entry, String repositoryId) {
-        Repository repository;
-        String mainBranch = null;
+        // Determine which branch to use for tool info
+        if (entry.getDefaultVersion() != null) {
+            return entry.getDefaultVersion();
+        }
 
         // Get repository based on username and repo id
         if (repositoryId != null) {
             try {
-                repository = service.getRepository(gitUsername, repositoryId);
-
+                GHRepository repository = github.getRepository(gitUsername + "/" + repositoryId);
                 // Determine the default branch on Github
-                mainBranch = repository.getDefaultBranch();
+                return repository.getDefaultBranch();
             } catch (IOException e) {
                 return null;
             }
         }
-
-        // Determine which branch to use for tool info
-        if (entry.getDefaultVersion() != null) {
-            mainBranch = entry.getDefaultVersion();
-        }
-
-        return mainBranch;
+        return null;
     }
 
     @Override
@@ -436,14 +385,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
      */
     public io.dockstore.webservice.core.User getUserMetadata(io.dockstore.webservice.core.User user) {
         // eGit user object
-        User gitUser;
         try {
-            gitUser = uService.getUser(user.getUsername());
-            user.setBio(gitUser.getBio());
-            user.setCompany(gitUser.getCompany());
-            user.setEmail(gitUser.getEmail());
-            user.setLocation(gitUser.getLocation());
-            user.setAvatarUrl(gitUser.getAvatarUrl());
+            GHMyself myself = github.getMyself();
+            user.setBio(myself.getBlog()); // ? not sure about this mapping in the new api
+            user.setCompany(myself.getCompany());
+            user.setEmail(myself.getEmail());
+            user.setLocation(myself.getLocation());
+            user.setAvatarUrl(myself.getAvatarUrl());
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername());
         }
