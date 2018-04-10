@@ -129,6 +129,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         new DockstoreWebserviceApplication().run(args);
     }
 
+    public static Cache getCache() {
+        return cache;
+    }
+
     @Override
     public String getName() {
         return "webservice";
@@ -258,7 +262,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
         environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
-        environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
+        environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration, cache));
 
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);
