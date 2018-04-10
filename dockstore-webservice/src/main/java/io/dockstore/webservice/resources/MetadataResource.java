@@ -17,12 +17,15 @@
 package io.dockstore.webservice.resources;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -47,6 +50,7 @@ import io.dockstore.webservice.resources.rss.RSSWriter;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import okhttp3.Cache;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,8 +68,10 @@ public class MetadataResource {
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
     private final DockstoreWebserviceConfiguration config;
+    private final Cache cache;
 
-    public MetadataResource(ToolDAO toolDAO, WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration config) {
+    public MetadataResource(ToolDAO toolDAO, WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration config, Cache cache) {
+        this.cache = cache;
         this.toolDAO = toolDAO;
         this.workflowDAO = workflowDAO;
         this.config = config;
@@ -198,6 +204,26 @@ public class MetadataResource {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
         Arrays.asList(DescriptorLanguage.values()).forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
         return descriptorLanguageList;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/okHttpCachePerformance")
+    @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Get measures of cache performance.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
+    public Map<String, String> getCachePerformance() {
+        Map<String, String> results = new HashMap<>();
+        results.put("requestCount", String.valueOf(cache.requestCount()));
+        results.put("networkCount", String.valueOf(cache.networkCount()));
+        results.put("hitCount", String.valueOf(cache.hitCount()));
+        results.put("maxSize", String.valueOf(cache.maxSize()) + " bytes");
+        try {
+            results.put("size", String.valueOf(cache.size()) + " bytes");
+        } catch (IOException e) {
+            /* do nothing if we cannot report size */
+        }
+        return results;
     }
 
 }
