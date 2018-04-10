@@ -758,9 +758,15 @@ public class LauncherCWL {
      * @return the name of the secondary file in the parameter json, mutated correctly to match outputParameterFile
      */
     private String mutateSecondaryFileName(String outputParameterFile, String originalBaseName, String renamedBaseName) {
-        String commonSuffix = Strings.commonSuffix(outputParameterFile, originalBaseName);
-        String fileWithoutSuffix = outputParameterFile.substring(0, outputParameterFile.length() - commonSuffix.length());
-        return fileWithoutSuffix + renamedBaseName.substring(renamedBaseName.length() - commonSuffix.length());
+        String commonPrefix = Strings.commonPrefix(originalBaseName, renamedBaseName);
+        String mutationSuffixStart = originalBaseName.substring(commonPrefix.length());
+        String mutationSuffixTarget = renamedBaseName.substring(commonPrefix.length());
+        int replacementIndex = outputParameterFile.lastIndexOf(mutationSuffixStart);
+        if (replacementIndex == -1) {
+            // all extensions should be removed before adding on the target
+            return FilenameUtils.removeExtension(outputParameterFile) + "." + mutationSuffixTarget;
+        }
+        return outputParameterFile.substring(0, replacementIndex) + mutationSuffixTarget;
     }
 
     private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject, Map<String, Object> inputsOutputs) {

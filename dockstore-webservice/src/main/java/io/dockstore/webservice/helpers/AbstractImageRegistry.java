@@ -270,8 +270,12 @@ public abstract class AbstractImageRegistry {
                             oldTag.setCwlPath(tool.getDefaultCwlPath());
                             oldTag.setWdlPath(tool.getDefaultWdlPath());
                             oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
-                            oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
-                            oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
+                            if (tool.getDefaultTestCwlParameterFile() != null) {
+                                oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
+                            }
+                            if (tool.getDefaultTestWdlParameterFile() != null) {
+                                oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
+                            }
                         }
 
                         break;
@@ -283,8 +287,12 @@ public abstract class AbstractImageRegistry {
                     // this could result in the same tag being added to multiple containers with the same path, need to clone
                     Tag clonedTag = new Tag();
                     clonedTag.clone(newTag);
-                    clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
-                    clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
+                    if (tool.getDefaultTestCwlParameterFile() != null) {
+                        clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
+                    }
+                    if (tool.getDefaultTestWdlParameterFile() != null) {
+                        clonedTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
+                    }
                     existingTags.add(clonedTag);
                 }
             }
