@@ -507,12 +507,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      */
     private String getDockerHint(List<Object> hints, Gson gsonWorkflow, String currentDefault) {
         if (hints != null) {
-            String hintsJson = gsonWorkflow.toJson(hints);
-            LOG.info(hintsJson);
-            List<Object> hintsList = gsonWorkflow.fromJson(hintsJson, new TypeToken<List<Object>>() {
-            }.getType());
-
-            for (Object requirement : hintsList) {
+            for (Object requirement : hints) {
                 if (((Map)requirement).get("class").equals("DockerRequirement") && ((Map)requirement).get("dockerPull") != null) {
                     return ((Map)requirement).get("dockerPull").toString();
                 }
