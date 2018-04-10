@@ -135,6 +135,21 @@ Setting the default version affects a number of elements including (but not limi
 4. In the files tab, the default version's files would be displayed first.
 5. The docker pull command reflects the default version
 
+## How to run Dockstore with Python 3?
+
+There are currently issues with avro, cwltool, and Python 3.  See [cwltool](https://github.com/common-workflow-language/cwltool/issues/524) for more info.  To work around this issue, instead of installing avro==1.8.1, install avro-cwl==1.8.3.  Therefore, the pip3 requirements.txt file should end up looking like:
+```
+setuptools==36.5.0
+cwl-runner
+cwltool==1.0.20170828135420
+schema-salad==2.6.20170806163416
+avro-cwl==1.8.3
+ruamel.yaml==0.14.12
+requests==2.18.4
+```
+
+Note that installing the "avro" pip package afterwards will overwrite the "avro-cwl" pip package and will result in cwltool not working again.
+
 ## Any last tips on using Dockstore?
 
 * the Dockstore CLI uses `./datastore` in the working directory for temp files so if you're processing large files make sure this partition hosting the current directory is large.
