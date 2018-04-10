@@ -45,6 +45,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
@@ -92,7 +93,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             repo = github.getRepository(gitUsername + "/" + gitRepository);
         } catch (IOException e) {
-            LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
+            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
             return null;
         }
         return readFileFromRepo(fileName, reference, repo);
@@ -112,6 +113,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 start.add(folders.get(i));
                 String partialPath = Joiner.on("/").join(start);
                 try {
+                    // TODO this should share code with that below, but this only handles symlinks so is less costly for now
                     GHContent fileContent = repo.getFileContent(partialPath, reference);
                     if (fileContent.getType().equals("symlink")) {
                         String content = IOUtils.toString(fileContent.read(), StandardCharsets.UTF_8);
@@ -129,36 +131,32 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
             fileName = Joiner.on("/").join(folders);
-
-            try {
-                GHContent fileContent = repo.getFileContent(fileName, reference);
-                return IOUtils.toString(fileContent.read(), StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                GHContent fileContent = repo.getFileContent(fileName.toLowerCase(), reference);
-                return IOUtils.toString(fileContent.read(), StandardCharsets.UTF_8);
+            // retrieval of directory content is cached as opposed to retrieving individual files
+            String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
+            String fileNameWithoutPath = FilenameUtils.getName(fileName);
+            // but tags on quay.io that do not match github are costly, avoid by checking cached references
+            GHRef[] refs = repo.getRefs();
+            if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))){
+                return null;
             }
+            // only look at github if the reference exists
+            List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
+            for (GHContent content : directoryContent) {
+                if (content.getPath().equalsIgnoreCase(fileNameWithoutPath)) {
+                    return IOUtils.toString(content.read(), StandardCharsets.UTF_8);
+                }
+            }
+            return null;
         } catch (IOException e) {
+            // TODO: how to detect this with new library?
 //            if (e.getMessage() == HttpStatus.SC_UNAUTHORIZED) {
 //                // we have bad credentials which should not be ignored
 //                throw new CustomWebApplicationException("Error reading from " + gitRepository + ", please re-create your git token",
 //                        HttpStatus.SC_BAD_REQUEST);
 //            }
-            return null;
-//        } catch (IOException e) {
-//            LOG.error(gitUsername + ": IOException on readFile" + e.getMessage());
-        }
-    }
-
-    @Override
-    public String getFileContents(String filePath, String branch, String repositoryId) {
-        GHRepository repository;
-        try {
-            repository = github.getRepository(gitUsername + "/" + repositoryId);
-        } catch (IOException ex) {
-            LOG.info(gitUsername + ": Repo " + repositoryId + " does not contain " + filePath + " on " + branch);
+            LOG.error(gitUsername + ": IOException on readFileFromRepo " + e.getMessage());
             return null;
         }
-        return readFileFromRepo(filePath, branch, repository);
     }
 
     @Override

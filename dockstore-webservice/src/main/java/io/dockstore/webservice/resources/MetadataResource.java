@@ -37,6 +37,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
@@ -68,10 +69,8 @@ public class MetadataResource {
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
     private final DockstoreWebserviceConfiguration config;
-    private final Cache cache;
 
-    public MetadataResource(ToolDAO toolDAO, WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration config, Cache cache) {
-        this.cache = cache;
+    public MetadataResource(ToolDAO toolDAO, WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration config) {
         this.toolDAO = toolDAO;
         this.workflowDAO = workflowDAO;
         this.config = config;
@@ -213,10 +212,11 @@ public class MetadataResource {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Get measures of cache performance.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
     public Map<String, String> getCachePerformance() {
-        return extractCacheStatistics(cache);
+        return extractCacheStatistics();
     }
 
-    public static Map<String, String> extractCacheStatistics(Cache cache) {
+    public static Map<String, String> extractCacheStatistics() {
+        Cache cache = DockstoreWebserviceApplication.getCache();
         Map<String, String> results = new HashMap<>();
         results.put("requestCount", String.valueOf(cache.requestCount()));
         results.put("networkCount", String.valueOf(cache.networkCount()));
