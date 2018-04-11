@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author dyuen
  */
-public class CWLClientTest {
+public class CWLClientIT {
 
     @Test
     public void serializeToJson() throws Exception {
