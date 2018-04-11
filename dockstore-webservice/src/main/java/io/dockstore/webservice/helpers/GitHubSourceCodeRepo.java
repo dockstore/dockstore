@@ -163,6 +163,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         throws IOException {
         // retrieval of directory content is cached as opposed to retrieving individual files
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
+        String stripStart = StringUtils.stripStart(fileName, "/");
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
         GHRef[] refs = repo.getRefs();
         if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
@@ -170,7 +171,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
         // only look at github if the reference exists
         List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
-        Optional<GHContent> firstMatch = directoryContent.stream().filter(content -> fileName.endsWith(content.getPath())).findFirst();
+        Optional<GHContent> firstMatch = directoryContent.stream().filter(content -> stripStart.equals(content.getPath())).findFirst();
         if (firstMatch.isPresent()) {
             GHContent content = firstMatch.get();
             if (content.isDirectory()) {
@@ -380,9 +381,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         if (startRateLimit != null && endRateLimit != null) {
             int used = startRateLimit.remaining - endRateLimit.remaining;
             if (used > 0) {
-                LOG.info(id + ": used up " + used + " GitHub rate limited requests");
+                LOG.debug(id + ": used up " + used + " GitHub rate limited requests");
             } else {
-                LOG.info(id + ": was served entirely from cache");
+                LOG.debug(id + ": was served entirely from cache");
             }
         }
     }
