@@ -17,7 +17,6 @@
 package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -46,10 +45,11 @@ import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.AbuseLimitHandler;
+import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHMyself;
@@ -57,6 +57,7 @@ import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHTagObject;
 import org.kohsuke.github.GitHub;
 import org.kohsuke.github.GitHubBuilder;
 import org.kohsuke.github.RateLimitHandler;
@@ -100,11 +101,16 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     private String readFileFromRepo(String fileName, String reference, GHRepository repo) {
+        GHRateLimit startRateLimit = null;
         try {
+            startRateLimit = getGhRateLimitQuietly();
+
             // may need to pass owner from git url, as this may differ from the git username
             List<String> folders = Arrays.asList(fileName.split("/"));
             List<String> start = new ArrayList<>();
             // this complicated code is for accounting for symbolic links to directories
+            // basically, we need to check if each folder level is actually a symbolic link to somewhere
+            // else entirely and then switch to checking that path instead if it is
             for (int i = 0; i < folders.size() - 1; i++) {
                 // ignore leading slash
                 if (i == 0 && folders.get(i).isEmpty()) {
@@ -113,12 +119,10 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 start.add(folders.get(i));
                 String partialPath = Joiner.on("/").join(start);
                 try {
-                    // TODO this should share code with that below, but this only handles symlinks so is less costly for now
-                    GHContent fileContent = repo.getFileContent(partialPath, reference);
-                    if (fileContent.getType().equals("symlink")) {
-                        String content = IOUtils.toString(fileContent.read(), StandardCharsets.UTF_8);
+                    Pair<GHContent, String> innerContent = getContentAndMetadataForFileName(partialPath, reference, repo);
+                    if (innerContent != null && innerContent.getLeft().getType().equals("symlink")) {
                         // restart the loop to look for symbolic links pointed to by symbolic links
-                        List<String> newfolders = Lists.newArrayList(content.split("/"));
+                        List<String> newfolders = Lists.newArrayList(innerContent.getRight().split("/"));
                         List<String> sublist = folders.subList(i + 1, folders.size());
                         newfolders.addAll(sublist);
                         folders = newfolders;
@@ -131,32 +135,55 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
             }
             fileName = Joiner.on("/").join(folders);
-            // retrieval of directory content is cached as opposed to retrieving individual files
-            String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
-            String fileNameWithoutPath = FilenameUtils.getName(fileName);
-            // but tags on quay.io that do not match github are costly, avoid by checking cached references
-            GHRef[] refs = repo.getRefs();
-            if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))){
+
+            Pair<GHContent, String> decodedContentAndMetadata = getContentAndMetadataForFileName(fileName, reference, repo);
+            if (decodedContentAndMetadata == null) {
                 return null;
+            } else {
+                return decodedContentAndMetadata.getRight();
             }
-            // only look at github if the reference exists
-            List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
-            for (GHContent content : directoryContent) {
-                if (content.getPath().equalsIgnoreCase(fileNameWithoutPath)) {
-                    return IOUtils.toString(content.read(), StandardCharsets.UTF_8);
-                }
-            }
-            return null;
         } catch (IOException e) {
-            // TODO: how to detect this with new library?
-//            if (e.getMessage() == HttpStatus.SC_UNAUTHORIZED) {
-//                // we have bad credentials which should not be ignored
-//                throw new CustomWebApplicationException("Error reading from " + gitRepository + ", please re-create your git token",
-//                        HttpStatus.SC_BAD_REQUEST);
-//            }
             LOG.error(gitUsername + ": IOException on readFileFromRepo " + e.getMessage());
             return null;
+        } finally {
+            GHRateLimit endRateLimit = getGhRateLimitQuietly();
+            reportOnRateLimit("readFileFromRepo", startRateLimit, endRateLimit);
         }
+    }
+
+    /**
+     * For a given file, in a github repo, with a particular cleaned reference name.
+     * @param fileName
+     * @param reference
+     * @param repo
+     * @return metadata describing the type of file and its decoded content
+     * @throws IOException
+     */
+    private Pair<GHContent, String> getContentAndMetadataForFileName(String fileName, String reference, GHRepository repo)
+        throws IOException {
+        // retrieval of directory content is cached as opposed to retrieving individual files
+        String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
+        // but tags on quay.io that do not match github are costly, avoid by checking cached references
+        GHRef[] refs = repo.getRefs();
+        if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
+            return null;
+        }
+        // only look at github if the reference exists
+        List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
+        Optional<GHContent> firstMatch = directoryContent.stream().filter(content -> fileName.endsWith(content.getPath())).findFirst();
+        if (firstMatch.isPresent()) {
+            GHContent content = firstMatch.get();
+            if (content.isDirectory()) {
+                // directories do not have content directly
+                return null;
+            }
+            // need to double-check whether this is a symlink by getting the specific file which sucks
+            GHContent fileContent = repo.getFileContent(content.getPath(), reference);
+            // this is deprecated, but this seems to be the only way to get the actual content, rather than the content on the symbolic link
+            return Pair.of(fileContent, fileContent.getContent());
+        }
+
+        return null;
     }
 
     @Override
@@ -173,6 +200,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
+            // get repos under the user directly
+            Map<String, GHRepository> allRepositories = github.getMyself().getAllRepositories();
+            for (Map.Entry<String, GHRepository> innerEntry : allRepositories.entrySet()) {
+                reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
+            }
+
+            // get organizations that user has access to
             Map<String, GHOrganization> myOrganizations = github.getMyOrganizations();
             for (Map.Entry<String, GHOrganization> entry : myOrganizations.entrySet()) {
                 GHOrganization organization = github.getOrganization(entry.getKey());
@@ -183,8 +217,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return reposByGitURl;
         } catch (IOException e) {
-            LOG.info(gitUsername + ": Cannot getWorkflowGitUrl2RepositoryId workflows {}", gitUsername);
-            return null;
+            LOG.error(gitUsername + ": Cannot getWorkflowGitUrl2RepositoryId workflows {}", gitUsername);
+            throw new CustomWebApplicationException("could not determine user organizations ", HttpStatus.SC_REQUEST_TIMEOUT);
         }
     }
 
@@ -199,7 +233,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             github.getMyOrganizations();
         } catch (IOException e) {
             throw new CustomWebApplicationException(
-                "Please recreate your GitHub token, we probably need an upgraded token to list your organizations: ", HttpStatus.SC_BAD_REQUEST);
+                "Please recreate your GitHub token, we probably need an upgraded token to list your organizations", HttpStatus.SC_BAD_REQUEST);
         }
         return true;
     }
@@ -228,6 +262,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
             Map<String, WorkflowVersion> existingDefaults) {
         GHRepository repository;
+        GHRateLimit startRateLimit = getGhRateLimitQuietly();
+
         // when getting a full workflow, look for versions and check each version for valid workflows
         List<Pair<String, Date>> references = new ArrayList<>();
         try {
@@ -236,17 +272,31 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRef[] refs = repository.getRefs();
             for (GHRef ref : refs) {
                 Date branchDate = new Date(0);
+                String refName = ref.getRef();
+                if (refName.startsWith("refs/heads/")) {
+                    refName = StringUtils.removeStart(refName, "refs/heads/");
+                } else if (refName.startsWith("refs/tags/")) {
+                    refName = StringUtils.removeStart(refName, "refs/tags/");
+                }
                 try {
                     String sha = ref.getObject().getSha();
+                    if (ref.getObject().getType().equals("tag")) {
+                        GHTagObject tagObject = repository.getTagObject(sha);
+                        sha = tagObject.getObject().getSha();
+                    } else if (ref.getObject().getType().equals("branch")) {
+                        GHBranch branch = repository.getBranch(refName);
+                        sha = branch.getSHA1();
+                    }
+
                     GHCommit commit = repository.getCommit(sha);
                     branchDate = commit.getCommitDate();
                     if (branchDate.before(epochStart)) {
                         branchDate = epochStart;
                     }
                 } catch (IOException e) {
-                    LOG.info("unable to retrieve commit date for branch " + ref.getRef());
+                    LOG.info("unable to retrieve commit date for branch " + refName);
                 }
-                references.add(Pair.of(ref.getRef(), branchDate));
+                references.add(Pair.of(refName, branchDate));
             }
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
@@ -272,26 +322,23 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Grab workflow file from github
             try {
                 // Get contents of descriptor file and store
-                GHContent content = repository.getFileContent(calculatedPath, ref.getKey());
-                if (content != null) {
-                    String decodedContent = IOUtils.toString(content.read(), StandardCharsets.UTF_8);
+                String decodedContent = this.readFileFromRepo(calculatedPath, ref.getKey(), repository);
+                if (decodedContent != null) {
                     boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(decodedContent);
-                    if (validWorkflow) {
-                        // if we have a valid workflow document
-                        SourceFile file = new SourceFile();
-                        file.setContent(decodedContent);
-                        file.setPath(calculatedPath);
-                        file.setType(identifiedType);
-                        version.setValid(true);
-                        version = combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults);
-                    }
+                    // if we have a valid workflow document
+                    SourceFile file = new SourceFile();
+                    file.setContent(decodedContent);
+                    file.setPath(calculatedPath);
+                    file.setType(identifiedType);
+                    version.setValid(validWorkflow);
+                    version = combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults);
+
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        GHContent testJsonFile = repository.getFileContent(workflow.getDefaultTestParameterFilePath(), ref.getKey());
-                        if (testJsonFile != null) {
-                            String testJsonContent = IOUtils.toString(testJsonFile.read(), StandardCharsets.UTF_8);
+                        String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.getKey(), repository);
+                        if (testJsonContent != null) {
                             SourceFile testJson = new SourceFile();
 
                             // Set Filetype
@@ -315,8 +362,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     }
                 }
 
-            } catch (IOException ex) {
-                LOG.info(gitUsername + ": Error getting contents of file.");
             } catch (Exception ex) {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow");
             }
@@ -324,7 +369,32 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
             workflow.addWorkflowVersion(version);
         }
+
+        GHRateLimit endRateLimit = getGhRateLimitQuietly();
+        reportOnRateLimit("setupWorkflowVersions", startRateLimit, endRateLimit);
+
         return workflow;
+    }
+
+    private void reportOnRateLimit(String id, GHRateLimit startRateLimit, GHRateLimit endRateLimit) {
+        if (startRateLimit != null && endRateLimit != null) {
+            int used = startRateLimit.remaining - endRateLimit.remaining;
+            if (used > 0) {
+                LOG.info(id + ": used up " + used + " GitHub rate limited requests");
+            } else {
+                LOG.info(id + ": was served entirely from cache");
+            }
+        }
+    }
+
+    private GHRateLimit getGhRateLimitQuietly() {
+        GHRateLimit startRateLimit = null;
+        try {
+            startRateLimit = github.rateLimit();
+        } catch (IOException e) {
+            LOG.error("unable to retrieve rate limit, weird");
+        }
+        return startRateLimit;
     }
 
     @Override

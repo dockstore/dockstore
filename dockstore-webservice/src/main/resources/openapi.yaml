@@ -3600,24 +3600,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
-  /workflows/refresh:
-    get:
-      tags:
-        - workflows
-      summary: Refresh all workflows
-      description: Updates some metadata. ADMIN ONLY
-      operationId: refreshAll
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workflow'
-      security:
-        - BEARER: []
   /workflows/search:
     get:
       tags:

@@ -423,7 +423,7 @@ public abstract class SourceCodeRepoInterface {
 
         if (!fileName.isEmpty()) {
             return this.readFile(fileName, reference);
-        } else{
+        } else {
             return null;
         }
     }

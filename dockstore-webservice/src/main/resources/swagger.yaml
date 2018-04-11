@@ -3307,25 +3307,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
-  /workflows/refresh:
-    get:
-      tags:
-      - "workflows"
-      summary: "Refresh all workflows"
-      description: "Updates some metadata. ADMIN ONLY"
-      operationId: "refreshAll"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /workflows/search:
     get:
       tags:

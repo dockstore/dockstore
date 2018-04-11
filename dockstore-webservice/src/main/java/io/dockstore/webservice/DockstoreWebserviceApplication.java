@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
@@ -162,14 +163,17 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         if (cache == null) {
             int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
-            final File tempDir;
+            final File cacheDir;
             try {
-                tempDir = Files.createTempDirectory("dockstore-web-cache-").toFile();
+                // let's try using the same cache each time
+                // not sure how corruptible/non-curruptable the cache is
+                // https://github.com/square/okhttp/blob/parent-3.10.0/okhttp/src/main/java/okhttp3/internal/cache/DiskLruCache.java#L82 looks promising
+                cacheDir = Files.createDirectories(Paths.get("/tmp/dockstore-web-cache")).toFile();
             } catch (IOException e) {
-                LOG.error("Could no create web cache");
+                LOG.error("Could no create or re-use web cache");
                 throw new RuntimeException(e);
             }
-            cache = new Cache(tempDir, cacheSize);
+            cache = new Cache(cacheDir, cacheSize);
         }
         // match HttpURLConnection which does not have a timeout by default
         OkHttpClient okHttpClient = new OkHttpClient().newBuilder().cache(cache).connectTimeout(0, TimeUnit.SECONDS)
