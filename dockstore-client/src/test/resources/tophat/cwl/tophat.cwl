@@ -9,7 +9,7 @@ baseCommand: [tophat]
 doc: "Tophat including fusion detection"
 
 hints:
-  - class: DockerRequirement:
+  - class: DockerRequirement
     dockerPull: quay.io/jeltje/tophat2
 
 requirements:

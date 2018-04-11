@@ -9,7 +9,7 @@ baseCommand: [samtools, index]
 doc: "samtools index"
 
 hints:
-  - class: DockerRequirement:
+  - class: DockerRequirement
     dockerPull: dreamchallenge/integrate
 
 requirements:
