@@ -25,13 +25,13 @@ import io.cwl.avro.Workflow;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gluu
  * @since 18/09/17
  */
-public class SecondaryFilesUtilityTest {
+public class SecondaryFilesUtilityIT {
 
     private static final String imageDescriptorPath = FileUtils
             .getFile("src", "test", "resources", "gdc/cwl/workflows/dnaseq/transform.cwl").getAbsolutePath();
@@ -41,7 +41,7 @@ public class SecondaryFilesUtilityTest {
 
 
     @Test
-    public void modifyWorkflowToIncludeToolSecondaryFiles() throws Exception {
+    public void modifyWorkflowToIncludeToolSecondaryFiles() {
         IntStream.range(0, 5).forEach(i -> modifyWorkflow());
     }
 
@@ -56,10 +56,8 @@ public class SecondaryFilesUtilityTest {
                 inputParameters.add(secondaryFiles);
             }
         });
-        assertTrue(inputParameters.size() == 1);
+        assertEquals(1, inputParameters.size());
         ArrayList inputParameterArray = (ArrayList)inputParameters.get(0);
-        assertTrue(inputParameterArray.size() == 5);
-
-
+        assertEquals(5, inputParameterArray.size());
     }
 }

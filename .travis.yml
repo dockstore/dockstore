@@ -21,13 +21,40 @@ language: java
 jdk:
 - oraclejdk8
 
-env:
-   - EXTRA_MAVEN_VAR="" TESTING_PROFILE="unit-tests"
-   - EXTRA_MAVEN_VAR="" TESTING_PROFILE="integration-tests"
-   - EXTRA_MAVEN_VAR="cobertura:cobertura coveralls:report" TESTING_PROFILE="unit-tests"
-   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="integration-tests"
-   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="toil-integration-tests"
-   - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="regression-integration-tests"
+jobs:
+  include:
+    - stage: unit-tests 
+      env:
+        - EXTRA_MAVEN_VAR="" TESTING_PROFILE="unit-tests"
+    - stage: integration-tests # no point in running integration tests if we don't pass unit tests
+      env:
+        - EXTRA_MAVEN_VAR="" TESTING_PROFILE="integration-tests"
+    - stage: integration-tests
+      env:
+        - EXTRA_MAVEN_VAR="" TESTING_PROFILE="toil-integration-tests"
+
+    - stage: coverage # no point in running coverage if we don't pass integration tests
+      if: branch IN (master, develop)
+      env:
+        - EXTRA_MAVEN_VAR="cobertura:cobertura coveralls:report" TESTING_PROFILE="unit-tests"
+    - stage: coverage
+      if: branch IN (master, develop)
+      env:
+        - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="integration-tests"
+
+    - stage: deploy # experiment with deploy from travis
+      env:
+        - EXTRA_MAVEN_VAR="" TESTING_PROFILE="unit-tests"
+      deploy:
+        provider: releases
+        api_key:
+          secure: UaVSOFWwDx2gQIZVSS6jxgs6/Q8cK6qKhg+sDG5aBE5qYJdFSZvBpphZQqSJ176L3dZ0+dxR10RMvrQpocW+bI5NLOj4R1j8dHxxv7Od6pyIYkdhFVsu9KB8F67DVbsIzVGRj7MZgbq4+UUpEif4oTrTI8LVg9AzlBnXhQ0Md4k=
+        file:
+          - dockstore-client/target/dockstore
+          - dockstore-client/target/dockstore-client-*-shaded.jar
+        skip_cleanup: true
+        on:
+          tags: true
 
 # build lifecycle is before_install, install, before_script, script, after_script
 
@@ -35,9 +62,6 @@ before_install:
 - npm install -g swagger2openapi@2.11.16
 # pre-build to check dependencies and look for out-of-sync swagger
 - mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
-# start local stack in the background
-- pip install --user localstack
-- localstack start &
 - ./scripts/check-swagger.sh
 
 install:
