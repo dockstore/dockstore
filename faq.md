@@ -135,11 +135,11 @@ Setting the default version affects a number of elements including (but not limi
 4. In the files tab, the default version's files would be displayed first.
 5. The docker pull command reflects the default version
 
-## How to add other users as maintainers of a tool?
+## How do I add other users as maintainers of a tool?
 For tools registered on Quay.io and workflows registered with GitHub, Dockstore automatically allows users from the same Quay.io organization to manage tools together (users will need to refresh). 
 
-For tools registered on Docker Hub, GitLab or private registries, this feature currently doesn't not exist because these registries do not allow the retrieval of organization information.
-Likewise, workflows registered with other source code repositories are lack this feature.
+For tools registered on Docker Hub, GitLab or private registries, this feature currently does not exist because these registries do not allow the retrieval of organization information.
+Likewise, workflows registered with other source code repositories lack this feature.
 
 
 
