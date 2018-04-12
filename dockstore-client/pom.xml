@@ -381,6 +381,15 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${excludeGroups}</excludedGroups>
+                    <skipTests>${skipClientITs}</skipTests>
+                    <skipITs>${skipClientITs}</skipITs>
+                </configuration>
+            </plugin>
         </plugins>
 
         <resources>

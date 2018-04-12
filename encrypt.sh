@@ -16,7 +16,7 @@ CUSTOM_DIR_NAME=db_with_checker_stuff_two
 rm -Rf /tmp/$CUSTOM_DIR_NAME
 mkdir -p /tmp/$CUSTOM_DIR_NAME
 
-cp $GIT_DIR/scripts/run-tests.template.mustache /tmp/$CUSTOM_DIR_NAME
+cp $GIT_DIR/scripts/decrypt.template.mustache /tmp/$CUSTOM_DIR_NAME
 cd /tmp/$CUSTOM_DIR_NAME
 ENCRYPT_FILE_CONTENTS=`travis encrypt-file $GIT_DIR/secrets.tar -r ga4gh/dockstore`
 
@@ -24,7 +24,7 @@ if [[ $ENCRYPT_FILE_CONTENTS =~ $regex ]]
     then
         name="${BASH_REMATCH[1]}"
         echo "name: ${name}" &> data.yml
-        mustache data.yml run-tests.template.mustache > run-tests.sh
+        mustache data.yml decrypt.template.mustache > decrypt.sh
     else
         echo "uh oh, could not find encrypted variable name" 
         exit
@@ -32,7 +32,7 @@ fi
 
 # copy the new file and run-script
 cp secrets.tar.enc $GIT_DIR
-cp run-tests.sh $GIT_DIR/scripts/run-tests.sh
+cp decrypt.sh $GIT_DIR/scripts/decrypt.sh
 cd - 
-git add secrets.tar.enc $GIT_DIR/scripts/run-tests.sh
+git add secrets.tar.enc $GIT_DIR/scripts/decrypt.sh
 git commit -m 'update secret archive'

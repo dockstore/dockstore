@@ -51,6 +51,7 @@
         <jackson-datatype-jsr310.version>2.9.3</jackson-datatype-jsr310.version>
 
         <skipTests>false</skipTests>
+        <skipClientITs>true</skipClientITs>
         <skipITs>true</skipITs>
     </properties>
 
@@ -859,7 +860,6 @@
                     <version>${maven-failsafe.version}</version>
                     <configuration>
                         <excludedGroups>${excludeGroups}</excludedGroups>
-                        <skipTests>${skipITs}</skipTests>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1133,6 +1133,24 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
+	    <plugin>
+		<groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <executions>
+                    <execution>
+		        <phase>generate-resources</phase>
+			<goals>
+			    <goal>write-project-properties</goal>
+                        </goals>
+		        <configuration>
+			    <outputFile>
+			    ${project.build.outputDirectory}/app.properties
+			    </outputFile>
+		        </configuration>
+		    </execution>
+		</executions>
+	    </plugin>
         </plugins>
     </build>
 
@@ -1189,6 +1207,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
+                <skipClientITs>true</skipClientITs>
                 <groups>io.dockstore.common.RegressionTest</groups>
             </properties>
         </profile>
@@ -1198,6 +1217,7 @@
             <properties>
                 <skipTests>false</skipTests>
                 <skipITs>true</skipITs>
+                <skipClientITs>true</skipClientITs>
             </properties>
         </profile>
         <profile>
@@ -1206,6 +1226,7 @@
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
+                <skipClientITs>false</skipClientITs>
                 <excludeGroups>io.dockstore.common.RegressionTest, io.dockstore.common.ToilOnlyTest</excludeGroups>
             </properties>
         </profile>
