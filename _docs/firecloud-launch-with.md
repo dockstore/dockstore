@@ -1,6 +1,6 @@
 ---
 title: FireCloud Launch-With
-permalink: /docs/user-tutorials/firecloud-launch/
+permalink: /docs/user-tutorials/firecloud-launch-with/
 ---
 # Intro
 
