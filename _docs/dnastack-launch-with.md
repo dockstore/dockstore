@@ -33,7 +33,7 @@ If the import was successful after hitting the "Import" button you will see the 
 
 ## While browsing Dockstore
 
-When browing WDL workflows from within Dockstore, you will see a "Launch-With" icon on the right.
+When browsing WDL workflows from within Dockstore, you will see a "Launch-With" icon on the right.
 
 ![WDL workflow](/assets/images/docs/dnastack/dnastack_from_dockstore1.png)
 
