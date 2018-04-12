@@ -9,8 +9,7 @@ baseCommand: [Integrate, fusion]
 doc: "INTEGRATE: Fusion Quantification"
 
 hints:
-
-  DockerRequirement:
+  - class: DockerRequirement
     dockerPull: docker.synapse.org/syn2813589/integrate
 
 requirements:
