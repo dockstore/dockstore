@@ -304,11 +304,6 @@ public class CWLHandler implements LanguageHandlerInterface {
                         nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
                     }
 
-                    // Workflows shouldn't have associated docker (they may have a default)
-                    if (stepToType.get(workflowStepId).equals(workflowType)) {
-                        stepDockerRequirement = null;
-                    }
-
                     if (secondaryFile != null) {
                         nodeDockerInfo.put(workflowStepId, new MutableTriple<>(secondaryFile, stepDockerRequirement, dockerUrl));
                     } else {
