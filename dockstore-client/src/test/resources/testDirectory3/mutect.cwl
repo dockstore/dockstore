@@ -9,7 +9,7 @@ baseCommand: ["--h", "ls"]
 doc: "Mutect 1.1.5"
 
 hints:
-  DockerRequirement:
+  - class: DockerRequirement
     dockerPull: quay.io/jeltje/mutect
 
 requirements:
