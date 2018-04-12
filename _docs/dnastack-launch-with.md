@@ -1,6 +1,6 @@
 ---
 title: DNAstack Launch-With
-permalink: /docs/user-tutorials/dnastack-launch/
+permalink: /docs/user-tutorials/dnastack-launch-with
 ---
 # Intro
 
