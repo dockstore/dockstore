@@ -32,7 +32,7 @@ We hope Dockstore provides a reference implementation for tool sharing in the sc
 standards within the GA4GH:
 
 * a best practices guide for describing tools in Docker containers with CWL
-* a minimal web service standard for registering, searching and describing CWL-annotated Docker containers that can be federated and indexed by multiple websites similar to [Maven Central](http://search.maven.org/)
+* a minimal web service standard for registering, searching and describing CWL-annotated Docker containers that can be federated and indexed by multiple websites similar to [Maven Central](https://search.maven.org/)
 
 ## Building a Community
 
