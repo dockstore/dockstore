@@ -37,6 +37,9 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import static io.dockstore.common.CommonTestUtilities.checkToolList;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -46,15 +49,22 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  */
 public class ClientIT extends BaseIT {
 
-    final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
+    private final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
 
     @Before
     @Override
@@ -95,7 +105,7 @@ public class ClientIT extends BaseIT {
         // verify DB
         final TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where name = 'test6'", new ScalarHandler<>());
-        Assert.assertTrue("should see three entries", count == 1);
+        Assert.assertEquals("should see three entries", 1, count);
     }
 
     @Test
@@ -122,14 +132,14 @@ public class ClientIT extends BaseIT {
     public void quickRegisterDuplicateEntry() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6" });
         Client.main(
-                new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6", "view1" });
+            new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6", "view1" });
         Client.main(
-                new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6", "view2" });
+            new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish", "quay.io/test_org/test6", "view2" });
 
         // verify DB
         final TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(*) from container where name = 'test6'", new ScalarHandler<>());
-        Assert.assertTrue("should see three entries", count == 3);
+        Assert.assertEquals("should see three entries", 3, count);
     }
 
     @Test
@@ -142,7 +152,7 @@ public class ClientIT extends BaseIT {
     public void quickRegisterUnknownEntry() throws IOException {
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "publish",
-                "quay.io/funky_container_that_does_not_exist" });
+            "quay.io/funky_container_that_does_not_exist" });
     }
 
     /* When you manually publish on the dockstore CLI, it will now refresh the container after it is added.
@@ -152,40 +162,40 @@ public class ClientIT extends BaseIT {
     @Ignore("Since dockstore now checks for associated tags for Quay container, manual publishing of nonexistant images won't work")
     public void manualRegisterABunchOfValidEntries() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
-                Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
-                "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
+            Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+            "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
-                Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
-                "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
+            Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+            "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
-                Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
-                "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test2" });
+            Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+            "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test2" });
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
-                Registry.DOCKER_HUB.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
-                "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
+            Registry.DOCKER_HUB.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+            "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
-                Registry.DOCKER_HUB.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
-                "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
+            Registry.DOCKER_HUB.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+            "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
 
         // verify DB
         final TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from container where name = 'bd2k-python-lib'", new ScalarHandler<>());
-        Assert.assertTrue("should see three entries", count == 5);
+            .runSelectStatement("select count(*) from container where name = 'bd2k-python-lib'", new ScalarHandler<>());
+        Assert.assertEquals("should see three entries", 5, count);
     }
 
     @Test
     public void manualRegisterADuplicate() throws IOException {
         systemExit.expectSystemExitWithStatus(Client.API_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
-                Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
-                "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
+            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+            "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
-                Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
-                "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
+            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+            "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
-                Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
-                "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
+            Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
+            "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master", "--toolname", "test1" });
     }
 
     @Test
@@ -194,16 +204,16 @@ public class ClientIT extends BaseIT {
         final String firstWorkflowCWL = ResourceHelpers.resourceFilePath("1st-workflow.cwl");
         final String firstWorkflowJSON = ResourceHelpers.resourceFilePath("1st-workflow-job.json");
         Client.main(
-                new String[] { "--config", TestUtility.getConfigFileLocation(true), "workflow", "launch", "--local-entry", firstWorkflowCWL,
-                        "--json", firstWorkflowJSON });
+            new String[] { "--config", TestUtility.getConfigFileLocation(true), "workflow", "launch", "--local-entry", firstWorkflowCWL,
+                "--json", firstWorkflowJSON });
     }
 
     @Test
     @Category(ToilCompatibleTest.class)
     public void launchingCWLToolWithRemoteParameters() throws IOException {
         Client.main(
-                new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
-                        "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
+            new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--local-entry", firstTool, "--json",
+                "https://raw.githubusercontent.com/ga4gh/dockstore/f343bcd6e4465a8ef790208f87740bd4d5a9a4da/dockstore-client/src/test/resources/test.cwl.json" });
     }
 
     @Test

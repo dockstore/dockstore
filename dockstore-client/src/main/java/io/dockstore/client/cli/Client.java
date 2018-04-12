@@ -47,9 +47,9 @@ import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
-import io.dockstore.common.Utilities;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -98,6 +98,7 @@ public class Client {
     public static final int ENTRY_NOT_FOUND = 12; // Entry could not be found locally or remotely
 
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
+    public static final AtomicBoolean INFO = new AtomicBoolean(false);
     public static final AtomicBoolean SCRIPT = new AtomicBoolean(false);
 
     private static final Logger LOG = LoggerFactory.getLogger(Client.class);
@@ -650,6 +651,10 @@ public class Client {
             DEBUG.set(true);
             // turn on logback
             root.setLevel(Level.DEBUG);
+        } else if (flag(args, "--info") || flag(args, "--i")) {
+            INFO.set(true);
+            // turn on logback
+            root.setLevel(Level.INFO);
         } else {
             root.setLevel(Level.ERROR);
         }
