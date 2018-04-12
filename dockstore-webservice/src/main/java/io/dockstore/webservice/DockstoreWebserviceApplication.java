@@ -183,7 +183,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
             URL.setURLStreamHandlerFactory(new OkUrlFactory(okHttpClient));
         } catch (Error factoryException) {
             if (factoryException.getMessage().contains("factory already defined")) {
-                LOG.info("OkHttpClient already registered, skipping");
+                LOG.debug("OkHttpClient already registered, skipping");
             } else {
                 LOG.error("Could no create web cache, factory exception");
                 throw new RuntimeException(factoryException);
