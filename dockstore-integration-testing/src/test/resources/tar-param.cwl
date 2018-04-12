@@ -1,4 +1,4 @@
-cwlVersion: v1.0
+cwlVersion: cwl:draft-3
 class: CommandLineTool
 baseCommand: [tar, xf]
 inputs:
