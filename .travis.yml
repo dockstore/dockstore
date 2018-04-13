@@ -1,7 +1,10 @@
 language: ruby
 rvm:
   - 2.2
-
+addons:
+  apt:
+    packages:
+    - libcurl4-openssl-dev
 branches:
   only:
   - gh-pages
@@ -12,6 +15,6 @@ install:
 
 script:
   - bundle exec jekyll build
-  # Ignore external certificate and SSL connect errors, ignore '#' and '#top'
-  - htmlproofer --http-status-ignore=0,301 --allow-hash-href --url-ignore='#top' _site/
+  # Ignore external certificate errors from https://ci.commonwl.org, ignore '#' and '#top'
+  - htmlproofer --allow-hash-href --url-ignore="#top,/https://ci.commonwl.org/" _site/
 
