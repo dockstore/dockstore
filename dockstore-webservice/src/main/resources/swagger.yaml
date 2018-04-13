@@ -1391,7 +1391,7 @@ paths:
             $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
-  /containers/runner_dependencies/{client_version}:
+  /containers/runner_dependencies:
     get:
       tags:
       - "containers"
@@ -1399,13 +1399,13 @@ paths:
       description: ""
       operationId: "getRunnerDependencies"
       produces:
-      - "application/json"
       - "text/plain"
+      - "application/json"
       parameters:
       - name: "client_version"
-        in: "path"
+        in: "query"
         description: "The Dockstore client version"
-        required: true
+        required: false
         type: "string"
       - name: "python_version"
         in: "query"

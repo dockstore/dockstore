@@ -21,8 +21,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +69,7 @@ import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
+import io.dockstore.webservice.helpers.PipHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -951,53 +950,36 @@ public class DockerRepoResource
     }
 
     @GET
-    @Produces({ "application/json", "text/plain" })
-    @Path("/runner_dependencies/{client_version}")
+    @Produces({ "text/plain", "application/json" })
+    @Path("/runner_dependencies")
     @ApiOperation(value = "Returns the file containing runner dependencies", response = String.class)
     public Response getRunnerDependencies(
-            @ApiParam(value = "The Dockstore client version", required = true) @PathParam("client_version") String apiVersion,
+            @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("2") @QueryParam("python_version") String pythonVersion,
             @ApiParam(value = "The tool runner", allowableValues = "cwltool") @DefaultValue("cwltool") @QueryParam("runner") String runner,
             @Context ContainerRequestContext containerRequestContext) {
         if (!("cwltool").equals(runner)) {
             return Response.noContent().build();
         }
-        URL url;
-        String baseURL = "https://raw.githubusercontent.com/ga4gh/dockstore/" + apiVersion
-                + "/dockstore-webservice/src/main/resources/requirements/";
         List<MediaType> acceptableMediaTypes = containerRequestContext.getAcceptableMediaTypes();
-        boolean unwrap = !acceptableMediaTypes.contains(MediaType.APPLICATION_JSON_TYPE);
+        boolean unwrap = acceptableMediaTypes.contains(MediaType.TEXT_PLAIN_TYPE);
+        URL url;
+        String content;
         try {
+            String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
             if (pythonVersion.startsWith("3")) {
-                url = new URL(baseURL + "requirements3.txt");
+                url = this.getClass().getClassLoader().getResource("requirements/" + fileVersion + "/requirements3.txt");
+                content = IOUtils.toString(new InputStreamReader(url.openStream(), Charset.defaultCharset()));
             } else {
-                url = new URL(baseURL + "requirements.txt");
+                url = this.getClass().getClassLoader().getResource("requirements/" + fileVersion + "/requirements.txt");
+                content = IOUtils.toString(new InputStreamReader(url.openStream(), Charset.defaultCharset()));
             }
-            String content = IOUtils.toString(new InputStreamReader(url.openStream(), Charset.defaultCharset()));
-            Map<String, String> pipDepMap = convertPipRequirementsStringToMap(content);
-            return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                    .entity(unwrap ? content : pipDepMap).build();
         } catch (IOException e) {
             return Response.noContent().build();
         }
-    }
-
-    private Map<String, String> convertPipRequirementsStringToMap(String pipRequirementsString) {
-        String[] lines = pipRequirementsString.split(System.getProperty("line.separator"));
-        List<String> pipDeps = new ArrayList(Arrays.asList(lines));
-        Map<String, String> pipDepMap = new HashMap<>();
-        pipDeps.forEach(pipDep -> {
-            String[] split = pipDep.split("==");
-            String key = split[0];
-            String mapValue;
-            if (split.length != 2) {
-                mapValue = "any";
-            } else {
-                mapValue = split[1];
-            }
-            pipDepMap.put(key, mapValue);
-        });
-        return pipDepMap;
+        Map<String, String> pipDepMap = PipHelper.convertPipRequirementsStringToMap(content);
+        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                .entity(unwrap ? content : pipDepMap).build();
     }
 
     @Override
