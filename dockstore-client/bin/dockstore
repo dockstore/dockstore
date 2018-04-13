@@ -101,10 +101,14 @@ if [ ! -r "$DOCKSTORE_JAR" -a "$1" != "self-install" -a "$1" != "self-check-inst
     fi
 fi
 
-if [ ! -r "$DOCKSTORE_SETTINGS" -a "$1" != "self-install" -a "$1" != "self-check-install"  -a "$1" != "init" ]; then
+if [[ "$@" == *"--config"* ]]; then
+    # do not do init
+    echo "Config provided" > /dev/null
+elif [ ! -r "$DOCKSTORE_SETTINGS" -a "$1" != "self-install" -a "$1" != "self-check-install"  -a "$1" != "init" ]; then
     "$0" init
     exit $?
 fi
+
 
 if [ "$HTTP_CLIENT" = "" ]; then
     if type -p curl >/dev/null 2>&1; then
