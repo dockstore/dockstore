@@ -9,7 +9,7 @@ We've just released the next major version of Dockstore!
 ## Highlighted new features include:
 * support for registering [checker workflows](https://docs.dockstore.org/docs/publisher-tutorials/checker-workflows/), workflows that validate whether a workflow executed successfully to lead-up to the GA4GH workflow testbed
   * see a [presentation](https://docs.google.com/presentation/d/1VXdReGYXayzO7Jr-9XaLHNv6Wt46CwfvkfFDR8OEgJM/edit?usp=sharing) and our tutorial in progress at https://github.com/ga4gh/dockstore/wiki/WIP-Checker-Workflow-Support-Tutorial 
-* launch-with [Firecloud](https://software.broadinstitute.org/firecloud/) coming soon!
+* launch-with [Firecloud](https://software.broadinstitute.org/firecloud/) support, see a summary [here](https://docs.dockstore.org/docs/user-tutorials/firecloud-launch-with/)
 * support for the next iteration of the tool registry schema, see [v2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.1)
 * usability improvements such as the ability to link to specific versions of workflows such as [Sanger 2.0.3](https://dockstore.org/containers/quay.io/pancancer/pcawg-sanger-cgp-workflow:2.0.3), search by [workflow or tool language](https://dockstore.org/search?_type=tool&descriptorType=cwl&searchMode=files), and sorting by number of stars
 * user requests such as the ability to link to [unencoded workflows](https://github.com/ga4gh/dockstore/issues/1097) 
