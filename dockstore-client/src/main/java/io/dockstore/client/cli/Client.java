@@ -145,7 +145,7 @@ public class Client {
         return installLocation;
     }
 
-    static String getCurrentVersion() {
+    public static String getCurrentVersion() {
         final Properties properties = new Properties();
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         try {
