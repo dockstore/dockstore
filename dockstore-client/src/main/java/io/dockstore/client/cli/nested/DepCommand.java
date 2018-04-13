@@ -1,11 +1,10 @@
 package io.dockstore.client.cli.nested;
 
-import javax.ws.rs.core.MediaType;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import io.dockstore.client.cli.ArgumentUtility;
+import io.dockstore.client.cli.JCommanderUtility;
 import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.ContainersApi;
@@ -20,23 +19,22 @@ public final class DepCommand {
 
     public static void handleDepCommand(String[] args) {
         CommandDep commandDep = new CommandDep();
-        JCommander jCommander = new JCommander(commandDep);
-        jCommander.parse(args);
+        JCommander jCommanderMain = new JCommander();
+        JCommanderUtility.addCommand(jCommanderMain, "deps", commandDep);
+        jCommanderMain.parse(args);
         if (commandDep.help) {
-            jCommander.usage();
+            JCommanderUtility.printJCommanderHelp(jCommanderMain, "dockstore tool", "deps");
         } else {
             ApiClient defaultApiClient;
-            String[] string = {MediaType.TEXT_PLAIN};
             defaultApiClient = Configuration.getDefaultApiClient();
-            defaultApiClient.selectHeaderContentType(string);
             ContainersApi containersApi = new ContainersApi(defaultApiClient);
             String runnerDependencies = containersApi
-                .getRunnerDependencies(commandDep.clientVersion, commandDep.pythonVersion, commandDep.runner);
+                    .getRunnerDependencies(commandDep.clientVersion, commandDep.pythonVersion, commandDep.runner);
             ArgumentUtility.out(runnerDependencies);
         }
     }
 
-    @Parameters(separators = "=", commandDescription = "Launch an entry locally or remotely.")
+    @Parameters(separators = "=", commandDescription = "Print tool runner dependencies")
     private static class CommandDep {
         @Parameter(names = "--client-version", description = "Dockstore version")
         private String clientVersion;

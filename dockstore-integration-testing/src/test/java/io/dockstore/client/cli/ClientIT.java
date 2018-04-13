@@ -229,7 +229,7 @@ public class ClientIT extends BaseIT {
 
     @Test
     public void testDepsCommandWithVersion() throws IOException {
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps", "--client-version", Client.getCurrentVersion() });
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps", "--client-version", "1.4.0", "--python-version", "3"});
     }
 
     @Test
@@ -240,6 +240,7 @@ public class ClientIT extends BaseIT {
     @Test
     public void testDepsCommandHelp() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps", "--help" });
+        Assert.assertTrue(systemOutRule.getLog().contains("Print tool runner dependencies"));
     }
 
     @Test

@@ -45,18 +45,6 @@ public final class PluginClient {
         // disable constructor for utility class
     }
 
-    /**
-     * This function is used when nesting commands within commands (ex. list and download within plugin)
-     *
-     * @param parentCommand The parent command (ex. plugin)
-     * @param commandName   The nested command name (ex. "list")
-     * @param commandObject The nested command (ex. list)
-     * @return
-     */
-    private static JCommander addCommand(JCommander parentCommand, String commandName, Object commandObject) {
-        parentCommand.addCommand(commandName, commandObject);
-        return parentCommand.getCommands().get(commandName);
-    }
 
     /**
      * @param args
@@ -67,13 +55,13 @@ public final class PluginClient {
         JCommander jc = new JCommander();
 
         CommandPlugin commandPlugin = new CommandPlugin();
-        JCommander jcPlugin = addCommand(jc, "plugin", commandPlugin);
+        JCommander jcPlugin = JCommanderUtility.addCommand(jc, "plugin", commandPlugin);
 
         CommandPluginList commandPluginList = new CommandPluginList();
-        addCommand(jcPlugin, "list", commandPluginList);
+        JCommanderUtility.addCommand(jcPlugin, "list", commandPluginList);
 
         CommandPluginDownload commandPluginDownload = new CommandPluginDownload();
-        addCommand(jcPlugin, "download", commandPluginDownload);
+        JCommanderUtility.addCommand(jcPlugin, "download", commandPluginDownload);
         // Not parsing with jc because we know the first command was plugin.  jc's purpose is to display help
         jcPlugin.parse(argv);
         try {
