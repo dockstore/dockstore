@@ -41,7 +41,6 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -169,7 +168,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files/test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -187,7 +186,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files_renamed/renamed.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -205,7 +204,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 8, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 8);
         checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.aa");
         for (char y = 'b'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files_renamed/renamed.aa.a" + y + "extra";
@@ -226,7 +225,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'e'; y++) {
             String filename = "/tmp/provision_out_with_files_renamed/renamed.txt.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -253,7 +252,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files/test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -271,7 +270,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON, true);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files/test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -286,7 +285,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "./test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -301,7 +300,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "./test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -316,7 +315,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "./test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -331,7 +330,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 1, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 1);
         String filename = "test1";
         checkFileAndThenDeleteIt(filename);
         FileUtils.deleteDirectory(new File(filename));
@@ -386,7 +385,7 @@ public class LaunchTestIT {
         runTool(cwlFile, args, api, usersApi, client, true);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 7, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 7);
         for (char y = 'a'; y <= 'f'; y++) {
             assertTrue("output should provision out to correct locations",
                     systemOutRule.getLog().contains("/tmp/provision_out_with_files/"));
@@ -417,7 +416,7 @@ public class LaunchTestIT {
         runTool(cwlFile, args, api, usersApi, client, true);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Uploading");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 0, countMatches);
+        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 0);
     }
 
     @Test
@@ -435,8 +434,8 @@ public class LaunchTestIT {
         final String log = systemOutRule.getLog();
         Gson gson = new Gson();
         final Map<String, Map<String, Object>> map = gson.fromJson(log, Map.class);
-        assertEquals(2, map.size());
-        assertEquals("Directory", map.get("indir").get("class"));
+        assertTrue(map.size() == 2);
+        assertTrue(map.get("indir").get("class").equals("Directory"));
     }
 
     @Test
@@ -454,7 +453,7 @@ public class LaunchTestIT {
         final String log = systemOutRule.getLog();
         Gson gson = new Gson();
         final Map<String, Map<String, Object>> map = gson.fromJson(log, Map.class);
-        assertEquals(4, map.size());
+        assertTrue(map.size() == 4);
         assertTrue(map.containsKey("TUMOR_FASTQ_1") && map.containsKey("TUMOR_FASTQ_2") && map.containsKey("index") && map
                 .containsKey("OUTPUT"));
     }
@@ -803,7 +802,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message of invalid file", systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.")));
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }
@@ -830,7 +829,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message of invalid file", systemOutRule.getLog().contains("Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.")));
+                () -> assertTrue("output should include an error message of invalid file", systemErrRule.getLog().contains("Entry file is invalid. Please enter a valid workflow file with the correct extension on the file name.")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }
@@ -857,7 +856,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message and exit", systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'task'")));
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'task'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }
@@ -884,7 +883,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message and exit", systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'command'")));
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'command'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }
@@ -911,7 +910,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message and exit", systemOutRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'")));
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from WDL file : 'workflow' 'call'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }
@@ -938,7 +937,7 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include an error message and exit", systemOutRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'")));
+                () -> assertTrue("output should include an error message and exit", systemErrRule.getLog().contains("Required fields that are missing from CWL file : 'inputs'")));
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
     }
@@ -959,7 +958,7 @@ public class LaunchTestIT {
         }};
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("Out should suggest to run as tool instead", systemOutRule.getLog().contains("Expected a workflow but the")));
+                () -> assertTrue("Out should suggest to run as tool instead", systemErrRule.getLog().contains("Expected a workflow but the")));
         runClientCommand(args, false);
     }
 
@@ -977,7 +976,7 @@ public class LaunchTestIT {
         }};
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("Out should suggest to run as workflow instead", systemOutRule.getLog().contains("Expected a tool but the")));
+                () -> assertTrue("Out should suggest to run as workflow instead", systemErrRule.getLog().contains("Expected a tool but the")));
         runClientCommand(args, false);
     }
 
@@ -996,7 +995,7 @@ public class LaunchTestIT {
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
                 () -> assertTrue("output should include an error message and exit",
-                        systemOutRule.getLog().contains("Required fields that are missing from CWL file : 'outputs'")));
+                        systemErrRule.getLog().contains("Required fields that are missing from CWL file : 'outputs'")));
         runClientCommand(args, false);
     }
 
