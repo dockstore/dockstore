@@ -54,7 +54,6 @@ import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
-import io.dockstore.webservice.resources.GitHubRepoResource;
 import io.dockstore.webservice.resources.GitLabComAuthenticationResource;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
@@ -249,7 +248,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
                 labelDAO, fileDAO, workflowDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource);
         environment.jersey().register(dockerRepoResource);
-        environment.jersey().register(new GitHubRepoResource());
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
 
         final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),

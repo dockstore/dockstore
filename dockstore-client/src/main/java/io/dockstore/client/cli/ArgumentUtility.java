@@ -59,11 +59,11 @@ public final class ArgumentUtility {
     }
 
     static void err(String arg) {
-        System.err.println(arg);
+        LOG.error(arg);
     }
 
     static void errFormatted(String format, Object... args) {
-        System.err.println(String.format(format, args));
+        LOG.error((String.format(format, args)));
     }
 
     public static void kill(String format, Object... args) {

@@ -30,8 +30,6 @@ tags:
   description: "List and modify tags for containers"
 - name: "extendedGA4GH"
   description: "Optional experimental extensions of the GA4GH API"
-- name: "github.repo"
-  description: "List source code repositories (should be generalized from github)"
 - name: "integration.bitbucket.org"
   description: "stop-gap allowing developers to associate with bitbucket"
 - name: "integration.github.com"
