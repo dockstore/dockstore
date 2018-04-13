@@ -24,8 +24,7 @@ See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/mi
 
 ## Breaking changes
 ### Major
-* workflow IDs now take into account the source control repo that they were indexed from 
-  * for example [https://dockstore.org/workflows/github.com/h3abionet/h3agatk](https://dockstore.org/workflows/github.com/h3abionet/h3agatk) is the proper home of that workflow as opposed to [https://dockstore.org/workflows/h3abionet/h3agatk](https://dockstore.org/workflows/h3abionet/h3agatk) 
+Workflow IDs now take into account the source control repo that they were indexed from for example [https://dockstore.org/workflows/github.com/h3abionet/h3agatk](https://dockstore.org/workflows/github.com/h3abionet/h3agatk) is the proper home of that workflow as opposed to [https://dockstore.org/workflows/h3abionet/h3agatk](https://dockstore.org/workflows/h3abionet/h3agatk) 
 ### Minor
 * can no longer change tool or workflow name for entries that have already been created
 * can no longer change descriptor type of workflows (unless in stub mode)
