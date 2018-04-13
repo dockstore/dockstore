@@ -228,6 +228,21 @@ public class ClientIT extends BaseIT {
     }
 
     @Test
+    public void testDepsCommandWithVersion() throws IOException {
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps", "--client-version", Client.getCurrentVersion() });
+    }
+
+    @Test
+    public void testDepsCommand() throws IOException {
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps" });
+    }
+
+    @Test
+    public void testDepsCommandHelp() throws IOException {
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps", "--help" });
+    }
+
+    @Test
     public void touchOnAllHelpMessages() throws IOException {
 
         checkCommandForHelp(new String[] { "tool", "search" });
