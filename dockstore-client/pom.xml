@@ -386,6 +386,8 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <excludedGroups>${excludeGroups}</excludedGroups>
+		    <!-- this is weird, but I needed to wire both skipTests and skipITs here, otherwise this is skipped if tests in dockstore-integration-tests
+			 are skipped with skipITs -->
                     <skipTests>${skipClientITs}</skipTests>
                     <skipITs>${skipClientITs}</skipITs>
                 </configuration>
