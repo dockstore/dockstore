@@ -46,13 +46,13 @@ jobs:
       if: branch IN (master, develop)
       env:
         - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install cobertura:cobertura coveralls:report -P$TESTING_PROFILE
+      script: mvn --batch-mode clean install jacoco:report coveralls:report -P$TESTING_PROFILE,coverage
     - stage: coverage
       if: branch IN (master, develop)
-      script: mvn --batch-mode clean install cobertura:cobertura-integration-test coveralls:report -P$TESTING_PROFILE -DskipITs=true 
+      script: mvn --batch-mode clean install jacoco:report-integration coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=true
     - stage: coverage
       if: branch IN (master, develop)
-      script: mvn --batch-mode clean install cobertura:cobertura-integration-test coveralls:report -P$TESTING_PROFILE -DskipClientITs=true
+      script: mvn --batch-mode clean install jacoco:report-integration coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
 
 # build lifecycle is before_install, install, before_script, script, after_script
 
