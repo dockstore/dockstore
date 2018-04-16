@@ -17,6 +17,10 @@ public final class DepCommand {
     private DepCommand() {
     }
 
+    /**
+     * Handles when the deps command is called from the client
+     * @param args     The command line arguments
+     */
     public static void handleDepCommand(String[] args) {
         CommandDep commandDep = new CommandDep();
         JCommander jCommanderMain = new JCommander();
