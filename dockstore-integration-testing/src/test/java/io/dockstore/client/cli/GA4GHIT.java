@@ -20,12 +20,10 @@ import java.util.List;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
-import io.dropwizard.jackson.Jackson;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolTests;
@@ -47,10 +45,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
             DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
-    static final ObjectMapper MAPPER = Jackson.newObjectMapper();
-    static {
-        DockstoreWebserviceApplication.configureMapper(MAPPER);
-    }
     protected static javax.ws.rs.client.Client client;
     final String basePath = String.format("http://localhost:%d/" + getApiVersion(), SUPPORT.getLocalPort());
 
@@ -120,7 +114,7 @@ public abstract class GA4GHIT {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(200);
-        assertDescriptor(MAPPER.writeValueAsString(responseObject));
+        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     /**
@@ -141,14 +135,14 @@ public abstract class GA4GHIT {
                 basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(200);
-        assertDescriptor(MAPPER.writeValueAsString(responseObject));
+        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(200);
-        assertDescriptor(MAPPER.writeValueAsString(responseObject));
+        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot() throws Exception {
@@ -156,7 +150,7 @@ public abstract class GA4GHIT {
                 basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
         assertThat(response.getStatus()).isEqualTo(200);
-        assertDescriptor(MAPPER.writeValueAsString(responseObject));
+        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     /**
@@ -169,7 +163,7 @@ public abstract class GA4GHIT {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
         List<ToolTests> responseObject = response.readEntity(new GenericType<List<ToolTests>>() {
         });
-        assertThat(MAPPER.writeValueAsString(responseObject).contains("test"));
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject).contains("test"));
 
         assertThat(response.getStatus()).isEqualTo(200);
     }

@@ -47,10 +47,10 @@ public class GA4GHV1IT extends GA4GHIT {
     public void metadata() throws Exception {
         Response response = checkedResponse(basePath + "metadata");
         MetadataV1 metadata = response.readEntity(MetadataV1.class);
-        assertThat(MAPPER.writeValueAsString(metadata)).contains("api-version");
-        assertThat(MAPPER.writeValueAsString(metadata)).contains("friendly-name");
-        assertThat(MAPPER.writeValueAsString(metadata)).doesNotContain("api_version");
-        assertThat(MAPPER.writeValueAsString(metadata)).doesNotContain("friendly_name");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).contains("api-version");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).contains("friendly-name");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).doesNotContain("api_version");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).doesNotContain("friendly_name");
     }
 
     @Test
@@ -58,7 +58,7 @@ public class GA4GHV1IT extends GA4GHIT {
         Response response = checkedResponse(basePath + "tools");
         List<ToolV1> responseObject = response.readEntity(new GenericType<List<ToolV1>>() {
         });
-        assertTool(MAPPER.writeValueAsString(responseObject), true);
+        assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
     }
 
     @Test
@@ -70,13 +70,13 @@ public class GA4GHV1IT extends GA4GHIT {
     private void toolsIdTool() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
-        assertTool(MAPPER.writeValueAsString(responseObject), true);
+        assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
     }
 
     private void toolsIdWorkflow() throws Exception {
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FA%2Fl");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
-        assertTool(MAPPER.writeValueAsString(responseObject), false);
+        assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), false);
     }
 
     @Test
@@ -84,7 +84,7 @@ public class GA4GHV1IT extends GA4GHIT {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions");
         List<ToolVersionV1> responseObject = response.readEntity(new GenericType<List<ToolVersionV1>>() {
         });
-        assertVersion(MAPPER.writeValueAsString(responseObject));
+        assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     @Test
@@ -92,24 +92,24 @@ public class GA4GHV1IT extends GA4GHIT {
         Response response = checkedResponse(basePath + "tool-classes");
         List<ToolClass> responseObject = response.readEntity(new GenericType<List<ToolClass>>() {
         });
-        final String expected = MAPPER
-                .writeValueAsString(MAPPER.readValue(fixture("fixtures/toolClasses.json"), new TypeReference<List<ToolClass>>() {
+        final String expected = SUPPORT.getObjectMapper()
+                .writeValueAsString(SUPPORT.getObjectMapper().readValue(fixture("fixtures/toolClasses.json"), new TypeReference<List<ToolClass>>() {
                 }));
-        assertThat(MAPPER.writeValueAsString(responseObject)).isEqualTo(expected);
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).isEqualTo(expected);
     }
 
     @Test
     public void toolsIdVersionsVersionId() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersionV1 responseObject = response.readEntity(ToolVersionV1.class);
-        assertVersion(MAPPER.writeValueAsString(responseObject));
+        assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     @Override
     public void toolsIdVersionsVersionIdTypeDockerfile() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile");
         ToolDockerfile responseObject = response.readEntity(ToolDockerfile.class);
-        assertThat(MAPPER.writeValueAsString(responseObject).contains("dockerfile"));
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject).contains("dockerfile"));
     }
 
     protected void assertVersion(String version) {
@@ -147,15 +147,15 @@ public class GA4GHV1IT extends GA4GHIT {
         // Check responses
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
-        assertThat(MAPPER.writeValueAsString(responseObject)).contains("author1");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author1");
         response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(MAPPER.writeValueAsString(responseObject)).contains("author2");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author2");
         response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(MAPPER.writeValueAsString(responseObject)).contains("author3");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author3");
         response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(ToolV1.class);
-        assertThat(MAPPER.writeValueAsString(responseObject)).contains("author4");
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
     }
 }
