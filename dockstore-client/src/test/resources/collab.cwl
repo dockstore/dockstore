@@ -10,11 +10,7 @@ requirements:
   dockerPull: ubuntu:trusty
 - class: InlineJavascriptRequirement
 
-hints:
-- class: ResourceRequirement
-  coresMin: 8
-  ramMin: 8092
-  outdirMin: 512000
+
 inputs:
   hello_input:
     type: File

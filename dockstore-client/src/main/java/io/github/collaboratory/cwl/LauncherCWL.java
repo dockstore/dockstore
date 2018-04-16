@@ -715,6 +715,14 @@ public class LauncherCWL {
         }
 
         String cwlOutputPath = (String)fileMapDataStructure.get("path");
+        // toil 3.15.0 uses location
+        if (cwlOutputPath == null) {
+            cwlOutputPath = (String)fileMapDataStructure.get("location");
+        }
+        if (cwlOutputPath == null) {
+            System.out.println("Skipping: #" + key + " was null from cwl-runner");
+            return outputSet;
+        }
         Path path = Paths.get(cwlOutputPath);
         if (!path.isAbsolute() || !Files.exists(path)) {
             // changing the cwlOutput path to an absolute path (bunny uses absolute, cwltool uses relative, but can change?!)

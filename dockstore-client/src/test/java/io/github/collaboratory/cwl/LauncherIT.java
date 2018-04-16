@@ -37,6 +37,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
@@ -48,6 +49,9 @@ import static org.junit.Assert.assertTrue;
  * @author dyuen
  */
 public abstract class LauncherIT {
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -88,7 +92,7 @@ public abstract class LauncherIT {
     }
 
     @Test
-    public void testCWLWithExtraParameters() throws Exception {
+    public void testCWLWithExtraParameters() {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 

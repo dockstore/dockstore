@@ -12,7 +12,7 @@ if [ "${TESTING_PROFILE}" = "unit-tests" ]; then
 fi
 
 if [ "${TESTING_PROFILE}" = "toil-integration-tests" ]; then
-    pip2.7 install --user toil[cwl]==3.14.0
+    pip2.7 install --user toil[cwl]==3.15.0
 else
     pip install --user localstack
     localstack start &

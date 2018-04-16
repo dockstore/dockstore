@@ -33,7 +33,7 @@ public class ToilWrapper implements CWLRunnerInterface {
                         com.google.common.base.Optional.absent());
         final String toilVersion = pair1.getValue().trim();
 
-        final String expectedToilVersion = "3.14.0";
+        final String expectedToilVersion = "3.15.0";
         if (!toilVersion.equals(expectedToilVersion)) {
             ArgumentUtility.errorMessage("toil version is " + toilVersion + " , Dockstore is tested with " + expectedToilVersion
                     + "\nOverride and run with `--script`", Client.COMMAND_ERROR);
@@ -44,7 +44,7 @@ public class ToilWrapper implements CWLRunnerInterface {
     public List<String> getExecutionCommand(String outputDir, String tmpDir, String workingDir, String cwlFile, String jsonSettings) {
         //TODO: this doesn't quite work yet, seeing "toil.batchSystems.abstractBatchSystem.InsufficientSystemResources: Requesting more disk than either physically available, or enforced by --maxDisk. Requested: 537944653824, Available: 134853001216" on trivial workflows like md5sum
         return new ArrayList<>(Arrays
-            .asList("toil-cwl-runner", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix",
+            .asList("toil-cwl-runner", "--logError", "--outdir", outputDir, "--tmpdir-prefix", tmpDir, "--tmp-outdir-prefix",
                 workingDir, cwlFile, jsonSettings));
     }
 }
