@@ -45,7 +45,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
     @UnitOfWork
     @Override
     public Optional<User> authenticate(String credentials) throws AuthenticationException {
-        LOG.info("SimpleAuthenticator called with {}", credentials);
+        LOG.debug("SimpleAuthenticator called with {}", credentials);
         final Token token = dao.findByContent(credentials);
         if (token != null) {
             return Optional.of(userDAO.findById(token.getUserId()));
