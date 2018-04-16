@@ -258,11 +258,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return null;
     }
 
-    @Override
-    public String getFileContents(String filePath, String branch, String repositoryId) {
-        return getFileContentsFromIdV4(getProjectId(repositoryId), branch, filePath);
-    }
-
     /**
      * Given a repository ID (namespace/reponame), returns the Gitlab ID
      *

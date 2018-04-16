@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -146,34 +145,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         elasticManager = new ElasticManager();
     }
 
-    @GET
-    @Path("/refresh")
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Refresh all workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata. ADMIN ONLY", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
-        List<User> users = userDAO.findAll();
-        LOG.info("# users to process: " + users.size());
-        Set<Long> alreadyProcessedWorkflows = new HashSet<>();
-        AtomicInteger integer = new AtomicInteger();
-        users.forEach(user -> {
-            try {
-                LOG.info("refreshing user " + integer.getAndAdd(1) + ": " + user.getUsername());
-                // why does a specific user have an issue?
-                if (user.getUsername().equals("chapmanb")) {
-                    return;
-                }
-                refreshStubWorkflowsForUser(user, null, alreadyProcessedWorkflows);
-            } catch (Exception e) {
-                // continue past users that have issues
-                LOG.debug("could not refresh user: " + user.getUsername(), e);
-                LOG.error("could not refresh user: " + user.getUsername(), e);
-            }
-        });
-        return workflowDAO.findAll();
-    }
-
     /**
      * TODO: this should not be a GET either
      * @param user
@@ -209,17 +180,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     }
 
-    void refreshStubWorkflowsForUser(User user, String organization) {
-        refreshStubWorkflowsForUser(user, organization, new HashSet<>());
-    }
-
     /**
      * For each valid token for a git hosting service, refresh all workflows
      *
      * @param user         a user to refresh workflows for
      * @param organization limit the refresh to particular organizations if given
+     * @param alreadyProcessed     skip particular workflows if already refreshed, previously used for debugging
      */
-    private void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
+    void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
 
         List<Token> tokens = checkOnBitbucketToken(user);
         // Check if tokens for git hosting services are valid and refresh corresponding workflows
@@ -274,7 +242,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             }
             // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
         } catch (WebApplicationException ex) {
-            LOG.info(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
+            LOG.error(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
+            throw ex;
         }
     }
 
@@ -306,6 +275,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
         // For each entry found of the associated git hosting service
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
+            LOG.info("refreshing " + entry.getKey());
             // Split entry into organization/namespace and repository/name
             String[] entryPathSplit = entry.getValue().split("/");
             sourceCodeRepoInterface.updateUsernameAndRepository(entryPathSplit[0], entryPathSplit[1]);

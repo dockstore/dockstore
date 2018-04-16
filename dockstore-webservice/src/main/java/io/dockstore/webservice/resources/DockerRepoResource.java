@@ -194,6 +194,7 @@ public class DockerRepoResource
             Token bitbucketToken = tokens.get(0);
             refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
+
         Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
 
         // Refresh checker workflow

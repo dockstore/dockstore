@@ -29,7 +29,7 @@ public final class DepCommand {
             defaultApiClient = Configuration.getDefaultApiClient();
             ContainersApi containersApi = new ContainersApi(defaultApiClient);
             String runnerDependencies = containersApi
-                    .getRunnerDependencies(commandDep.clientVersion, commandDep.pythonVersion, commandDep.runner);
+                    .getRunnerDependencies(commandDep.clientVersion, commandDep.pythonVersion, commandDep.runner, "text");
             ArgumentUtility.out(runnerDependencies);
         }
     }

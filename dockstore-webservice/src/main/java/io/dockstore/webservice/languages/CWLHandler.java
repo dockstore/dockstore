@@ -304,11 +304,6 @@ public class CWLHandler implements LanguageHandlerInterface {
                         nodePairs.add(new MutablePair<>(workflowStepId, dockerUrl));
                     }
 
-                    // Workflows shouldn't have associated docker (they may have a default)
-                    if (stepToType.get(workflowStepId).equals(workflowType)) {
-                        stepDockerRequirement = null;
-                    }
-
                     if (secondaryFile != null) {
                         nodeDockerInfo.put(workflowStepId, new MutableTriple<>(secondaryFile, stepDockerRequirement, dockerUrl));
                     } else {
@@ -410,7 +405,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         String constructedPath = workingDirectoryForFile + mapValue;
         final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, constructedPath);
         if (fileResponse == null) {
-            SourceCodeRepoInterface.LOG.error("Could not read: " + mapValue);
+            LOG.error("Could not read: " + mapValue);
             return;
         }
         SourceFile sourceFile = new SourceFile();
