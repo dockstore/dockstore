@@ -102,7 +102,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  */
 @Path("/containers")
 @Api("containers")
-@Produces(MediaType.APPLICATION_JSON)
+@Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
 public class DockerRepoResource
         implements AuthenticatedResourceInterface, EntryVersionHelper<Tool>, StarrableResourceInterface, SourceControlResourceInterface {
 
@@ -957,12 +957,12 @@ public class DockerRepoResource
             @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("2") @QueryParam("python_version") String pythonVersion,
             @ApiParam(value = "The tool runner", allowableValues = "cwltool") @DefaultValue("cwltool") @QueryParam("runner") String runner,
+            @ApiParam(value = "Response type", allowableValues = "json, text") @DefaultValue("text") @QueryParam("output") String output,
             @Context ContainerRequestContext containerRequestContext) {
         if (!("cwltool").equals(runner)) {
             return Response.noContent().build();
         }
-        List<MediaType> acceptableMediaTypes = containerRequestContext.getAcceptableMediaTypes();
-        boolean unwrap = acceptableMediaTypes.contains(MediaType.TEXT_PLAIN_TYPE);
+        boolean unwrap = !("json").equals(output);
         URL url;
         String content;
         try {
