@@ -1401,11 +1401,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
   /containers/dockerRegistryList:
@@ -1420,11 +1415,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
-            text/plain:
               schema:
                 type: array
                 items:
@@ -1452,11 +1442,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DockstoreTool'
   '/containers/path/tool/{repository}':
     get:
       tags:
@@ -1476,9 +1461,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
@@ -1502,9 +1484,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
   '/containers/path/{containerId}/tags':
@@ -1557,11 +1536,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
   '/containers/path/{repository}/published':
@@ -1585,9 +1559,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
   /containers/published:
     get:
       tags:
@@ -1600,11 +1571,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
               schema:
                 type: array
                 items:
@@ -1631,9 +1597,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
   /containers/refresh:
     get:
       tags:
@@ -1646,11 +1609,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
               schema:
                 type: array
                 items:
@@ -1669,9 +1627,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
@@ -1759,13 +1714,6 @@ paths:
                   type: array
                   items:
                     type: object
-            text/plain:
-              schema:
-                type: array
-                items:
-                  type: array
-                  items:
-                    type: object
   /containers/search:
     get:
       tags:
@@ -1784,11 +1732,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
               schema:
                 type: array
                 items:
@@ -1815,9 +1758,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
     put:
@@ -1839,9 +1779,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
@@ -1894,9 +1831,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
   '/containers/{containerId}/cwl/{relative-path}':
     get:
       tags:
@@ -1929,9 +1863,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
   '/containers/{containerId}/dockerfile':
     get:
       tags:
@@ -1957,9 +1888,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/SourceFile'
   '/containers/{containerId}/labels':
@@ -1992,9 +1920,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
       requestBody:
@@ -2023,9 +1948,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
       requestBody:
@@ -2050,9 +1972,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
@@ -2119,11 +2038,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SourceFile'
   '/containers/{containerId}/secondaryWdl':
     get:
       tags:
@@ -2149,11 +2063,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-            text/plain:
               schema:
                 type: array
                 items:
@@ -2200,11 +2109,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-            text/plain:
               schema:
                 type: array
                 items:
@@ -2350,11 +2254,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SourceFile'
     put:
       tags:
         - containers
@@ -2397,12 +2296,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                type: array
-                uniqueItems: true
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-            text/plain:
               schema:
                 type: array
                 uniqueItems: true
@@ -2459,12 +2352,6 @@ paths:
                 uniqueItems: true
                 items:
                   $ref: '#/components/schemas/SourceFile'
-            text/plain:
-              schema:
-                type: array
-                uniqueItems: true
-                items:
-                  $ref: '#/components/schemas/SourceFile'
       security:
         - BEARER: []
   '/containers/{containerId}/unstar':
@@ -2511,9 +2398,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
       requestBody:
@@ -2542,11 +2426,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-            text/plain:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
       security:
         - BEARER: []
   '/containers/{containerId}/verifiedSources':
@@ -2569,9 +2448,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                type: string
-            text/plain:
               schema:
                 type: string
   '/containers/{containerId}/verify/{tagId}':
@@ -2636,9 +2512,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-            text/plain:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
   '/containers/{containerId}/wdl/{relative-path}':
     get:
       tags:
@@ -2669,9 +2542,6 @@ paths:
           description: successful operation
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-            text/plain:
               schema:
                 $ref: '#/components/schemas/SourceFile'
   /integration.bitbucket.org:

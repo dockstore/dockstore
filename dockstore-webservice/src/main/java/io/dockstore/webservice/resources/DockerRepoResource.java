@@ -102,7 +102,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  */
 @Path("/containers")
 @Api("containers")
-@Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+@Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource
         implements AuthenticatedResourceInterface, EntryVersionHelper<Tool>, StarrableResourceInterface, SourceControlResourceInterface {
 

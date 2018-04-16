@@ -1147,7 +1147,6 @@ paths:
       operationId: "allContainers"
       produces:
       - "application/json"
-      - "text/plain"
       parameters: []
       responses:
         200:
@@ -1167,7 +1166,6 @@ paths:
       operationId: "getDockerRegistries"
       produces:
       - "application/json"
-      - "text/plain"
       parameters: []
       responses:
         200:
@@ -1185,7 +1183,6 @@ paths:
       operationId: "getPublishedContainersByNamespace"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "namespace"
         in: "path"
@@ -1208,7 +1205,6 @@ paths:
       operationId: "getContainerByToolPath"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "repository"
         in: "path"
@@ -1231,7 +1227,6 @@ paths:
       operationId: "getPublishedContainerByToolPath"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "repository"
         in: "path"
@@ -1279,7 +1274,6 @@ paths:
       operationId: "getContainerByPath"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "repository"
         in: "path"
@@ -1304,7 +1298,6 @@ paths:
       operationId: "getPublishedContainerByPath"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "repository"
         in: "path"
@@ -1325,7 +1318,6 @@ paths:
       operationId: "allPublishedContainers"
       produces:
       - "application/json"
-      - "text/plain"
       parameters: []
       responses:
         200:
@@ -1343,7 +1335,6 @@ paths:
       operationId: "getPublishedContainer"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1365,7 +1356,6 @@ paths:
       operationId: "refreshAll"
       produces:
       - "application/json"
-      - "text/plain"
       parameters: []
       responses:
         200:
@@ -1385,7 +1375,6 @@ paths:
       operationId: "registerManual"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - in: "body"
         name: "body"
@@ -1453,7 +1442,6 @@ paths:
       operationId: "getPublishedContainerSchema"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1479,7 +1467,6 @@ paths:
       operationId: "search"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "pattern"
         in: "query"
@@ -1501,7 +1488,6 @@ paths:
       operationId: "getContainer"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1524,7 +1510,6 @@ paths:
       operationId: "updateContainer"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1553,7 +1538,6 @@ paths:
       operationId: "deleteContainer"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1575,7 +1559,6 @@ paths:
       operationId: "cwl"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1601,7 +1584,6 @@ paths:
       operationId: "secondaryCwlPath"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1631,7 +1613,6 @@ paths:
       operationId: "dockerfile"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1658,7 +1639,6 @@ paths:
       operationId: "updateLabels"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1695,7 +1675,6 @@ paths:
       operationId: "publish"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1725,7 +1704,6 @@ paths:
       operationId: "refresh"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1780,7 +1758,6 @@ paths:
       operationId: "secondaryCwl"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1808,7 +1785,6 @@ paths:
       operationId: "secondaryWdl"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1836,7 +1812,6 @@ paths:
       operationId: "starEntry"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1864,7 +1839,6 @@ paths:
       operationId: "getStarredUsers"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -1983,7 +1957,6 @@ paths:
       operationId: "getTestParameterFiles"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -2019,7 +1992,6 @@ paths:
       operationId: "addTestParameterFiles"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -2072,7 +2044,6 @@ paths:
       operationId: "deleteTestParameterFiles"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -2119,7 +2090,6 @@ paths:
       operationId: "unstarEntry"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -2142,7 +2112,6 @@ paths:
       operationId: "updateTagContainerPath"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -2172,7 +2141,6 @@ paths:
       operationId: "getUsers"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -2198,7 +2166,6 @@ paths:
       operationId: "verifiedSources"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -2257,7 +2224,6 @@ paths:
       operationId: "wdl"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
@@ -2283,7 +2249,6 @@ paths:
       operationId: "secondaryWdlPath"
       produces:
       - "application/json"
-      - "text/plain"
       parameters:
       - name: "containerId"
         in: "path"
