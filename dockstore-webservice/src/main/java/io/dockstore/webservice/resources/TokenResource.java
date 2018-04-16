@@ -70,8 +70,8 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.eclipse.egit.github.core.client.GitHubClient;
-import org.eclipse.egit.github.core.service.UserService;
+import org.kohsuke.github.GitHub;
+import org.kohsuke.github.GitHubBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -320,17 +320,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             }
         }
 
-        GitHubClient githubClient = new GitHubClient();
-        githubClient.setOAuth2Token(accessToken);
         long userID;
         String githubLogin;
         Token dockstoreToken = null;
         Token githubToken = null;
         try {
-            UserService uService = new UserService(githubClient);
-            org.eclipse.egit.github.core.User githubUser = uService.getUser();
-
-            githubLogin = githubUser.getLogin();
+            GitHub github = new GitHubBuilder().withOAuthToken(accessToken).build();
+            githubLogin = github.getMyself().getLogin();
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Token ignored due to IOException", HttpStatus.SC_CONFLICT);
         }

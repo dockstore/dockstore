@@ -320,21 +320,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public String getFileContents(String filePath, String branch, String repositoryId) {
-        String content = null;
-        Optional<String> asString;
-
-        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + '/' + filePath;
-        asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-        LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-        if (asString.isPresent()) {
-            content = asString.get();
-        }
-
-        return content;
-    }
-
-    @Override
     public boolean checkSourceCodeValidity() {
         //TODO
         return true;

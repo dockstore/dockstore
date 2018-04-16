@@ -50,6 +50,8 @@
                             </configOptions>
                             <generateModelTests>false</generateModelTests>
                             <generateApiTests>false</generateApiTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <generateApiDocumentation>false</generateApiDocumentation>
                             <withXml>true</withXml>
                             <library>jersey2</library>
                         </configuration>

@@ -30,8 +30,6 @@ tags:
   description: "List and modify tags for containers"
 - name: "extendedGA4GH"
   description: "Optional experimental extensions of the GA4GH API"
-- name: "github.repo"
-  description: "List source code repositories (should be generalized from github)"
 - name: "integration.bitbucket.org"
   description: "stop-gap allowing developers to associate with bitbucket"
 - name: "integration.github.com"
@@ -2227,27 +2225,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
-  /github.repo:
-    get:
-      tags:
-      - "github.repo"
-      summary: "List all repos known via all registered tokens"
-      description: "List docker container repos currently known. Right now, tokens\
-        \ are used to synchronously talk to the quay.io API to list repos. Ultimately,\
-        \ we should cache this information and refresh either by user request or by\
-        \ time TODO: This should be a properly defined list of objects, it also needs\
-        \ admin authentication"
-      operationId: "getRepos"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "string"
-      security:
-      - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -2345,6 +2322,23 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/RegistryBean"
+  /metadata/okHttpCachePerformance:
+    get:
+      tags:
+      - "metadata"
+      summary: "Get measures of cache performance."
+      description: "Does not need authentication"
+      operationId: "getCachePerformance"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "object"
+            additionalProperties:
+              type: "object"
   /metadata/rss:
     get:
       tags:
@@ -3311,25 +3305,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
-  /workflows/refresh:
-    get:
-      tags:
-      - "workflows"
-      summary: "Refresh all workflows"
-      description: "Updates some metadata. ADMIN ONLY"
-      operationId: "refreshAll"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
   /workflows/search:
     get:
       tags:

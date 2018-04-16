@@ -134,7 +134,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have one tool with docker image, has " + countNode, countNode, 1);
+        Assert.assertEquals("JSON should have one tool with docker image, has " + countNode, 1, countNode);
         Assert.assertTrue("tool should not have untar since it has no docker image", !strings.get(0).contains("untar"));
         Assert.assertTrue("tool should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("compile docker and link should not be blank" + strings.get(0), strings.get(0).contains(
@@ -223,7 +223,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
         int countNode = countToolInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
-        Assert.assertEquals("JSON should have one tool", countNode, 1);
+        Assert.assertEquals("JSON should have one tool", 1, countNode );
         Assert.assertTrue("tool data should have compile as id", strings.get(0).contains("compile"));
         Assert.assertTrue("compile docker and link should use default docker req from workflow", strings.get(0).contains(
                 "\"id\":\"compile\"," + "\"file\":\"arguments.cwl\"," + "\"docker\":\"java:7\","

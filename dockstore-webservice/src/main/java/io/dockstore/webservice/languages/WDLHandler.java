@@ -124,7 +124,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
                 final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
                 if (fileResponse == null) {
-                    SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
+                    LOG.error("Could not read: " + importPath);
                     continue;
                 }
                 importFile.setContent(fileResponse);

@@ -478,7 +478,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(authUser, userId);
 
         // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser, organization);
+        workflowResource.refreshStubWorkflowsForUser(authUser, organization, new HashSet<>());
         userDAO.clearCache();
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
@@ -501,7 +501,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(authUser, userId);
 
         // Refresh all workflows, including full workflows
-        workflowResource.refreshStubWorkflowsForUser(authUser, null);
+        workflowResource.refreshStubWorkflowsForUser(authUser, null, new HashSet<>());
         // Refresh the user
         authUser = userDAO.findById(authUser.getId());
         // Update user data

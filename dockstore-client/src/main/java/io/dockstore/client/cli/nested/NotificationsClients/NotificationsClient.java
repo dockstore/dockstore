@@ -78,7 +78,7 @@ public class NotificationsClient {
         if (disabled) {
             return;
         } else {
-            LOG.debug("Sending notifications message.");
+            LOG.info("Sending notifications message.");
             String messageToSend = createText(message, success);
             // Message to be sent
             String jsonMessage;

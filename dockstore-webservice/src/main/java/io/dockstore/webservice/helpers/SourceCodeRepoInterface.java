@@ -295,16 +295,6 @@ public abstract class SourceCodeRepoInterface {
     public abstract String getMainBranch(Entry entry, String repositoryId);
 
     /**
-     * Returns the content of a given file from a specific git repository and branch
-     *
-     * @param filePath
-     * @param branch
-     * @param repositoryId
-     * @return content of a file from git host
-     */
-    public abstract String getFileContents(String filePath, String branch, String repositoryId);
-
-    /**
      * Initializes workflow version for given branch
      *
      * @param branch
@@ -431,7 +421,11 @@ public abstract class SourceCodeRepoInterface {
             fileName = workflowVersion.getWorkflowPath();
         }
 
-        return this.readFile(fileName, reference);
+        if (!fileName.isEmpty()) {
+            return this.readFile(fileName, reference);
+        } else {
+            return null;
+        }
     }
 
     Map<String, SourceFile> resolveImports(String content, SourceFile.FileType fileType, Version version) {

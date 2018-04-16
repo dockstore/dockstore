@@ -405,7 +405,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         String constructedPath = workingDirectoryForFile + mapValue;
         final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, constructedPath);
         if (fileResponse == null) {
-            SourceCodeRepoInterface.LOG.error("Could not read: " + mapValue);
+            LOG.error("Could not read: " + mapValue);
             return;
         }
         SourceFile sourceFile = new SourceFile();

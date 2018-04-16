@@ -53,7 +53,6 @@ jobs:
     - stage: coverage
       if: branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
-
 # build lifecycle is before_install, install, before_script, script, after_script
 
 before_install:

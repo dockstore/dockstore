@@ -41,8 +41,6 @@
                         <configuration>
                             <inputSpec>https://quay.io/api/v1/discovery</inputSpec>
                             <language>java</language>
-                            <generateModelTests>false</generateModelTests>
-                            <generateApiTests>false</generateApiTests>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
                                 <library>jersey2</library>
@@ -51,6 +49,10 @@
                                 <modelPackage>io.swagger.quay.client.model</modelPackage>
                                 <apiPackage>io.swagger.quay.client.api</apiPackage>
                             </configOptions>
+                            <generateModelTests>false</generateModelTests>
+                            <generateApiTests>false</generateApiTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <generateApiDocumentation>false</generateApiDocumentation>
                         </configuration>
                     </execution>
                 </executions>
