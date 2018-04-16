@@ -671,6 +671,7 @@
                             <artifact>io.dockstore:dockstore-client</artifact>
                             <includes>
                                 <include>io/dockstore/**</include>
+                                <include>io/github/**</include>
                             </includes>
                         </filter>
                         <filter>
