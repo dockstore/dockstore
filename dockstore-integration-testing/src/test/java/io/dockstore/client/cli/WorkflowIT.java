@@ -39,6 +39,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tool;
+import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -90,13 +91,11 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testStubRefresh() throws ApiException {
         // need to promote user to admin to refresh all stubs
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
-
         final ApiClient webClient = getWebClient();
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        final List<Workflow> workflows = workflowApi.refreshAll();
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
 
+        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
         for (Workflow workflow: workflows) {
             assertNotSame("", workflow.getWorkflowName());
         }
@@ -116,7 +115,10 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        final List<Workflow> workflows = workflowApi.refreshAll();
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+
+        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
 
         for (Workflow workflow: workflows) {
             assertNotSame("", workflow.getWorkflowName());
@@ -187,7 +189,10 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
-        final List<Workflow> workflows = workflowApi.refreshAll();
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+
+        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
 
         for (Workflow workflow: workflows) {
             assertNotSame("", workflow.getWorkflowName());

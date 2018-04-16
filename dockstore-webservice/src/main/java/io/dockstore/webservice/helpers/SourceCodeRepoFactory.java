@@ -72,6 +72,7 @@ public final class SourceCodeRepoFactory {
             LOG.info("Do not support: " + source);
             throw new CustomWebApplicationException("Sorry, we do not support " + source + ".", HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
         }
+        repo.checkSourceCodeValidity();
         return repo;
     }
 

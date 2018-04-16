@@ -59,14 +59,14 @@ public final class ArgumentUtility {
     }
 
     static void err(String arg) {
-        System.err.println(arg);
+        LOG.error(arg);
     }
 
-    static void errFormatted(String format, Object... args) {
-        System.err.println(String.format(format, args));
+    private static void errFormatted(String format, Object... args) {
+        LOG.error((String.format(format, args)));
     }
 
-    public static void kill(String format, Object... args) {
+    private static void kill(String format, Object... args) {
         errFormatted(format, args);
         throw new Kill();
     }
@@ -264,7 +264,7 @@ public final class ArgumentUtility {
         for (int i = 0; i < args.size(); i++) {
             if (flag.equals(args.get(i))) {
                 if (found) {
-                    kill("consonance: multiple instances of '%s'.", flag);
+                    kill("dockstore: multiple instances of '%s'.", flag);
                 } else {
                     found = true;
                     args.remove(i);

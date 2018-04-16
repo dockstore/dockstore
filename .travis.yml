@@ -42,20 +42,6 @@ jobs:
       env:
         - EXTRA_MAVEN_VAR="cobertura:cobertura-integration-test coveralls:report" TESTING_PROFILE="integration-tests"
 
-    - stage: deploy # experiment with deploy from travis
-      env:
-        - EXTRA_MAVEN_VAR="" TESTING_PROFILE="unit-tests"
-      deploy:
-        provider: releases
-        api_key:
-          secure: UaVSOFWwDx2gQIZVSS6jxgs6/Q8cK6qKhg+sDG5aBE5qYJdFSZvBpphZQqSJ176L3dZ0+dxR10RMvrQpocW+bI5NLOj4R1j8dHxxv7Od6pyIYkdhFVsu9KB8F67DVbsIzVGRj7MZgbq4+UUpEif4oTrTI8LVg9AzlBnXhQ0Md4k=
-        file:
-          - dockstore-client/target/dockstore
-          - dockstore-client/target/dockstore-client-*-shaded.jar
-        skip_cleanup: true
-        on:
-          tags: true
-
 # build lifecycle is before_install, install, before_script, script, after_script
 
 before_install:
