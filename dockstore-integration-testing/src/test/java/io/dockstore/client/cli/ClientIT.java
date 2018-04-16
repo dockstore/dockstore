@@ -228,19 +228,32 @@ public class ClientIT extends BaseIT {
     }
 
     @Test
-    public void testDepsCommandWithVersion() throws IOException {
+    public void testDepsCommandWithVersionAndPython3() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps", "--client-version", "1.4.0", "--python-version", "3"});
+        Assert.assertTrue(systemOutRule.getLog().contains("avro-cwl=="));
+        assertDepsCommandOutput();
     }
 
     @Test
     public void testDepsCommand() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps" });
+        Assert.assertTrue(systemOutRule.getLog().contains("avro=="));
+        assertDepsCommandOutput();
     }
 
     @Test
     public void testDepsCommandHelp() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "deps", "--help" });
         Assert.assertTrue(systemOutRule.getLog().contains("Print tool runner dependencies"));
+    }
+
+    private void assertDepsCommandOutput() {
+        Assert.assertTrue(systemOutRule.getLog().contains("setuptools=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("cwl-runner"));
+        Assert.assertTrue(systemOutRule.getLog().contains("cwltool=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("schema-salad=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("ruamel.yaml=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("requests=="));
     }
 
     @Test
