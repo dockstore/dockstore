@@ -23,7 +23,6 @@ import org.junit.experimental.categories.Category;
 /**
  * @author dyuen
  */
-@Category(ToilCompatibleTest.class)
 public class CWLToolLauncherIT extends LauncherIT {
 
     public String getConfigFile() {

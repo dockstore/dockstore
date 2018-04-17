@@ -57,7 +57,7 @@ public class LaunchTestIT {
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Test
-    public void wdlCorrect() throws IOException {
+    public void wdlCorrect() {
         //Test when content and extension are wdl  --> no need descriptor
         File helloWDL = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
         File helloJSON = new File(ResourceHelpers.resourceFilePath("hello.json"));
@@ -80,7 +80,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlCorrect() throws IOException {
+    public void cwlCorrect() {
         //Test when content and extension are cwl  --> no need descriptor
 
         File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl"));
@@ -100,7 +100,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void yamlToolCorrect() throws IOException {
+    public void yamlToolCorrect() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-tool.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
 
@@ -118,7 +118,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runToolWithDirectories() throws IOException {
+    public void runToolWithDirectories() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("dir6.cwl.json"));
 
@@ -138,7 +138,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runToolWithDirectoriesThreaded() throws IOException {
+    public void runToolWithDirectoriesThreaded() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("dir6.cwl.json"));
 
@@ -278,7 +278,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runToolSecondaryFilesToCWD() throws IOException {
+    public void runToolSecondaryFilesToCWD() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_missing_directory.json"));
 
@@ -293,7 +293,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runToolMalformedToCWD() throws IOException {
+    public void runToolMalformedToCWD() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_malformed.json"));
 
@@ -308,7 +308,7 @@ public class LaunchTestIT {
     }
 
     @Test(expected = RuntimeException.class)
-    public void runToolToMissingS3() throws IOException {
+    public void runToolToMissingS3() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_s3_failed.json"));
 
@@ -420,7 +420,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runToolWithDirectoriesConversion() throws IOException {
+    public void runToolWithDirectoriesConversion() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("dir6.cwl"));
 
         ArrayList<String> args = new ArrayList<String>() {{
@@ -439,7 +439,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void runWorkflowConvert() throws IOException {
+    public void runWorkflowConvert() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("smcFusionQuant-INTEGRATE-workflow.cwl"));
 
         ArrayList<String> args = new ArrayList<String>() {{
@@ -459,7 +459,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlCorrectWithCache() throws IOException {
+    public void cwlCorrectWithCache() {
         //Test when content and extension are cwl  --> no need descriptor
 
         File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl"));
@@ -514,7 +514,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlWrongExt() throws IOException {
+    public void cwlWrongExt() {
         //Test when content = cwl but ext = wdl, ask for descriptor
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtcwl.wdl"));
@@ -539,7 +539,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlWrongExtForce() throws IOException {
+    public void cwlWrongExtForce() {
         //Test when content = cwl but ext = wdl, descriptor provided --> CWL
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtcwl.wdl"));
@@ -568,7 +568,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void wdlWrongExt() throws IOException {
+    public void wdlWrongExt() {
         //Test when content = wdl but ext = cwl, ask for descriptor
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtwdl.cwl"));
@@ -593,7 +593,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void randomExtCwl() throws IOException {
+    public void randomExtCwl() {
         //Test when content is random, but ext = cwl
         File file = new File(ResourceHelpers.resourceFilePath("random.cwl"));
         File json = new File(ResourceHelpers.resourceFilePath("hello.json"));
@@ -617,7 +617,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void randomExtWdl() throws IOException {
+    public void randomExtWdl() {
         //Test when content is random, but ext = wdl
         File file = new File(ResourceHelpers.resourceFilePath("random.wdl"));
         File json = new File(ResourceHelpers.resourceFilePath("hello.json"));
@@ -641,7 +641,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void wdlWrongExtForce() throws IOException {
+    public void wdlWrongExtForce() {
         //Test when content = wdl but ext = cwl, descriptor provided --> WDL
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtwdl.cwl"));
@@ -670,7 +670,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlWrongExtForce1() throws IOException {
+    public void cwlWrongExtForce1() {
         //Test when content = cwl but ext = wdl, descriptor provided --> !CWL
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtcwl.wdl"));
@@ -698,7 +698,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void wdlWrongExtForce1() throws IOException {
+    public void wdlWrongExtForce1() {
         //Test when content = wdl but ext = cwl, descriptor provided --> !WDL
 
         File file = new File(ResourceHelpers.resourceFilePath("wrongExtwdl.cwl"));
@@ -726,7 +726,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlNoExt() throws IOException {
+    public void cwlNoExt() {
         //Test when content = cwl but no ext
 
         File file = new File(ResourceHelpers.resourceFilePath("cwlNoExt"));
@@ -753,7 +753,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void wdlNoExt() throws IOException {
+    public void wdlNoExt() {
         //Test when content = wdl but no ext
 
         File file = new File(ResourceHelpers.resourceFilePath("wdlNoExt"));
@@ -781,7 +781,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void randomNoExt() throws IOException {
+    public void randomNoExt() {
         //Test when content is neither CWL nor WDL, and there is no extension
 
         File file = new File(ResourceHelpers.resourceFilePath("random"));
@@ -808,7 +808,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void randomWithExt() throws IOException {
+    public void randomWithExt() {
         //Test when content is neither CWL nor WDL, and there is no extension
 
         File file = new File(ResourceHelpers.resourceFilePath("hello.txt"));
@@ -835,7 +835,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void wdlNoTask() throws IOException {
+    public void wdlNoTask() {
         //Test when content is missing 'task'
 
         File file = new File(ResourceHelpers.resourceFilePath("noTask.wdl"));
@@ -862,7 +862,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void wdlNoCommand() throws IOException {
+    public void wdlNoCommand() {
         //Test when content is missing 'command'
 
         File file = new File(ResourceHelpers.resourceFilePath("noCommand.wdl"));
@@ -889,7 +889,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void wdlNoWfCall() throws IOException {
+    public void wdlNoWfCall() {
         //Test when content is missing 'workflow' and 'call'
 
         File file = new File(ResourceHelpers.resourceFilePath("noWfCall.wdl"));
@@ -916,7 +916,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlNoInput() throws IOException {
+    public void cwlNoInput() {
         //Test when content is missing 'input'
 
         File file = new File(ResourceHelpers.resourceFilePath("noInput.cwl"));
@@ -981,7 +981,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlNoOutput() throws IOException {
+    public void cwlNoOutput() {
         File file = new File(ResourceHelpers.resourceFilePath("noOutput.cwl"));
         File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
         ArrayList<String> args = new ArrayList<String>() {{
@@ -1000,7 +1000,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlIncompleteOutput() throws IOException {
+    public void cwlIncompleteOutput() {
         File file = new File(ResourceHelpers.resourceFilePath("incompleteOutput.cwl"));
         File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
         ArrayList<String> args = new ArrayList<String>() {{
@@ -1018,7 +1018,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlIdContainsNonWord() throws IOException {
+    public void cwlIdContainsNonWord() {
         File file = new File(ResourceHelpers.resourceFilePath("idNonWord.cwl"));
         File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
         ArrayList<String> args = new ArrayList<String>() {{
@@ -1037,7 +1037,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwlMissingIdParameters() throws IOException {
+    public void cwlMissingIdParameters() {
         File file = new File(ResourceHelpers.resourceFilePath("missingIdParameters.cwl"));
         File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
         ArrayList<String> args = new ArrayList<String>() {{
@@ -1055,7 +1055,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void cwl2jsonNoOutput() throws IOException {
+    public void cwl2jsonNoOutput() {
         File file = new File(ResourceHelpers.resourceFilePath("noOutput.cwl"));
         ArrayList<String> args = new ArrayList<String>() {{
             add("tool");

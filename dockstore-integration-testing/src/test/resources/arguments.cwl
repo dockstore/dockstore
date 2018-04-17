@@ -1,21 +1,20 @@
-cwlVersion: cwl:draft-3
+#!/usr/bin/env cwl-runner
+
+cwlVersion: v1.0
 class: CommandLineTool
-baseCommand: javac
+label: Example trivial wrapper for Java 9 compiler
 hints:
-  - class: DockerRequirement
-    dockerPull: java:7
+  DockerRequirement:
+    dockerPull: openjdk:9.0.1-11-slim
 baseCommand: javac
-arguments:
-  - prefix: "-d"
-    valueFrom: $(runtime.outdir)
+arguments: ["-d", $(runtime.outdir)]
 inputs:
-  - id: src
+  src:
     type: File
     inputBinding:
       position: 1
 outputs:
-  - id: classfile
+  classfile:
     type: File
     outputBinding:
       glob: "*.class"
-

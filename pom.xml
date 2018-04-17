@@ -1105,6 +1105,8 @@
             <id>toil-integration-tests</id>
             <!-- run only tests that are relevant for toil (tests that use cwltool, cwlrunner, toil -->
             <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
                 <groups>io.dockstore.common.ToilCompatibleTest,io.dockstore.common.ToilOnlyTest</groups>
             </properties>
         </profile>
