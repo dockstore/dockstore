@@ -345,10 +345,6 @@
                 <artifactId>coveralls-maven-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>cobertura-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
                 <executions>
@@ -380,6 +376,17 @@
                         <phase>install</phase>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${excludeGroups}</excludedGroups>
+		    <!-- this is weird, but I needed to wire both skipTests and skipITs here, otherwise this is skipped if tests in dockstore-integration-tests
+			 are skipped with skipITs -->
+                    <skipTests>${skipClientITs}</skipTests>
+                    <skipITs>${skipClientITs}</skipITs>
+                </configuration>
             </plugin>
         </plugins>
 
