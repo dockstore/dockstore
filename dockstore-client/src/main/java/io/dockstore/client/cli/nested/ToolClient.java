@@ -110,6 +110,12 @@ public class ToolClient extends AbstractEntryClient {
             case ToolClient.UPDATE_TOOL:
                 updateTool(args);
                 break;
+            case "deps":
+                args.add(0, "deps");
+                String[] argsArray = new String[args.size()];
+                argsArray = args.toArray(argsArray);
+                DepCommand.handleDepCommand(argsArray);
+                break;
             default:
                 return false;
             }
