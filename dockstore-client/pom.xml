@@ -79,6 +79,11 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
         </dependency>
+        <!-- seems redundant, but actually needed by commons-vfs2 at runtime. See https://issues.apache.org/jira/browse/VFS-360 -->
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -314,6 +319,7 @@
 
                             <usedDependencies>
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
+                                <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
                                 <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</usedDependency>
                             </usedDependencies>
 
