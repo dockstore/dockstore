@@ -605,7 +605,28 @@
 
     <build>
         <plugins>
-	    <plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <id>touch confidential files</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <executable>touch</executable>
+                            <arguments>
+                                <argument>src/main/resources/migrations.test.confidential1.xml</argument>
+                                <argument>src/main/resources/migrations.test.confidential2.xml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+	        <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
@@ -961,20 +982,6 @@
                                 <argument>src/main/resources/swagger.yaml</argument>
                                 <argument>-o</argument>
                                 <argument>src/main/resources/openapi.yaml</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>touch confidential files</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <phase>compile</phase>
-                        <configuration>
-                            <executable>touch</executable>
-                            <arguments>
-                                <argument>src/main/resources/migrations.test.confidential1.xml</argument>
-                                <argument>src/main/resources/migrations.test.confidential2.xml</argument>
                             </arguments>
                         </configuration>
                     </execution>
