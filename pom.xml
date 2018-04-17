@@ -260,7 +260,7 @@
                         <artifactId>httpcore-osgi</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>config
+            </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
