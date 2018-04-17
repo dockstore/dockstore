@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.dockstore.client.cli.Client;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -505,6 +506,7 @@ public class FileProvisioning {
 
     }
 
+    @SuppressFBWarnings(value = "NP_NONNULL_PARAM_VIOLATION", justification = "looks like false positive due to https://github.com/spotbugs/spotbugs/issues/523 equivalent for findbugs")
     private Multimap<ProvisionInterface, Pair<String, FileInfo>> identifyPlugins(List<ImmutablePair<String, FileInfo>> outputSet) {
         Multimap<ProvisionInterface, Pair<String, FileInfo>> map = ArrayListMultimap.create();
 
@@ -523,6 +525,7 @@ public class FileProvisioning {
                 }
             }
             if (!handled) {
+                //noinspection ConstantConditions
                 map.put(null, pair);
             }
         }
