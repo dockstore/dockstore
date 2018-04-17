@@ -965,7 +965,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>touch confidential file 1</id>
+                        <id>touch confidential files</id>
                         <goals>
                             <goal>exec</goal>
                         </goals>
