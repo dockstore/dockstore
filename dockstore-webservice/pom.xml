@@ -974,18 +974,6 @@
                             <executable>touch</executable>
                             <arguments>
                                 <argument>src/main/resources/migrations.test.confidential1.xml</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>touch confidential file 2</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <phase>compile</phase>
-                        <configuration>
-                            <executable>touch</executable>
-                            <arguments>
                                 <argument>src/main/resources/migrations.test.confidential2.xml</argument>
                             </arguments>
                         </configuration>
