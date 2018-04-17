@@ -613,24 +613,6 @@
                 </configuration>
             </plugin>
             <plugin>
-                <!-- Touch confidential migration files as they need to exist to be able to run migrations, even though they are not used -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.6</version>
-                <executions>
-                    <execution>
-                        <phase>process-resources</phase>
-                        <configuration>
-                            <target>
-                                <touch file="src/main/resources/migrations.test.confidential1.xml" />
-                                <touch file="src/main/resources/migrations.test.confidential2.xml" />
-                            </target>
-                        </configuration>
-                        <goals><goal>run</goal></goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -979,6 +961,32 @@
                                 <argument>src/main/resources/swagger.yaml</argument>
                                 <argument>-o</argument>
                                 <argument>src/main/resources/openapi.yaml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>touch confidential file 1</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <executable>touch</executable>
+                            <arguments>
+                                <argument>src/main/resources/migrations.test.confidential1.xml</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>touch confidential file 2</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>compile</phase>
+                        <configuration>
+                            <executable>touch</executable>
+                            <arguments>
+                                <argument>src/main/resources/migrations.test.confidential2.xml</argument>
                             </arguments>
                         </configuration>
                     </execution>
