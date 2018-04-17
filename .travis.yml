@@ -45,6 +45,7 @@ jobs:
 # build lifecycle is before_install, install, before_script, script, after_script
 
 before_install:
+- sudo pip install --upgrade pip
 - npm install -g swagger2openapi@2.11.16
 # pre-build to check dependencies and look for out-of-sync swagger
 - mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
