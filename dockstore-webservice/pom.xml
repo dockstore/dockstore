@@ -622,9 +622,8 @@
                         <phase>process-resources</phase>
                         <configuration>
                             <target>
-                                <ant antfile="build.xml">
-                                    <target name="go"></target>
-                                </ant>
+                                <touch file="src/main/resources/migrations.test.confidential1.xml" />
+                                <touch file="src/main/resources/migrations.test.confidential2.xml" />
                             </target>
                         </configuration>
                         <goals><goal>run</goal></goals>
