@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -352,6 +353,37 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     @Override
     public Registry getRegistry() {
         return Registry.QUAY_IO;
+    }
+
+    @Override
+    public boolean convertToAuto(Tool tool) {
+        final String repo = tool.getNamespace() + '/' + tool.getName();
+        final Gson gson = new Gson();
+
+        // Grab build information for given repository
+        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=2147483647";
+        Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
+
+        // Look for a matching git reference
+        if (asStringBuilds.isPresent()) {
+            String json = asStringBuilds.get();
+            Map<String, ArrayList> map = new HashMap<>();
+            map = (Map<String, ArrayList>) gson.fromJson(json, map.getClass());
+            ArrayList builds = map.get("builds");
+
+            for (Object build : builds) {
+                Map<String, Map<String, String>> triggerMetadataMap = (Map<String, Map<String, String>>)build;
+                Map<String, String> triggerMetadata = triggerMetadataMap.get("trigger_metadata");
+                if (triggerMetadata != null) {
+                    String gitUrl = triggerMetadata.get("git_url");
+                    if (Objects.equals(gitUrl, tool.getGitUrl())) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public static class RepoList {

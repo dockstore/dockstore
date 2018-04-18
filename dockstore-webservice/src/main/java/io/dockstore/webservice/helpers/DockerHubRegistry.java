@@ -58,4 +58,8 @@ public class DockerHubRegistry extends AbstractImageRegistry {
         return Registry.DOCKER_HUB;
     }
 
+    @Override
+    public boolean convertToAuto(Tool tool) {
+        return false;
+    }
 }
