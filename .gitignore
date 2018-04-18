@@ -42,6 +42,8 @@ dockstore-integration-testing/datastore/
 # The dockstore CLI config file for testing confidential data
 dockstore-integration-testing/src/test/resources/config_file.txt
 dockstore-integration-testing/src/test/resources/config_file2.txt
+dockstore-webservice/src/main/resources/migrations.test.confidential1.xml
+dockstore-webservice/src/main/resources/migrations.test.confidential2.xml
 
 # The dockstore.yml file for running the confidential tests
 dockstore-integration-testing/src/test/resources/dockstoreTest.yml
