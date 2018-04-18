@@ -406,16 +406,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.esotericsoftware.yamlbeans</groupId>
-            <artifactId>yamlbeans</artifactId>
-            <version>1.09</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
@@ -557,13 +547,7 @@
         <dependency>
             <groupId>com.github.jsonld-java</groupId>
             <artifactId>jsonld-java</artifactId>
-            <version>0.8.3</version>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>io.dropwizard.modules</groupId>-->
-            <!--<artifactId>dropwizard-elasticsearch</artifactId>-->
-            <!--<version>1.1.0-1</version>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>rest</artifactId>
@@ -572,7 +556,7 @@
 
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore-osgi</artifactId>
+            <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -728,7 +712,6 @@
                             <usedDependencies>
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
-                                <usedDependency>org.apache.httpcomponents:httpcore-nio</usedDependency>
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
                                 <usedDepdenency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</usedDepdenency>
                             </usedDependencies>

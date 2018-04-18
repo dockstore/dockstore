@@ -46,8 +46,8 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -76,11 +76,6 @@ public class MockedIT {
 
     private Client client;
 
-//    @Before
-//    @Override
-//    public void resetDBBetweenTests() throws Exception {
-//        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
-//    }
 
     @Before
     public void clearDB() throws Exception {
@@ -101,7 +96,7 @@ public class MockedIT {
         when(file.getContent()).thenReturn(sourceFileContents);
         doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
         when(file.getPath()).thenReturn("Dockstore.cwl");
-        doReturn(Lists.newArrayList()).when(toolClient).downloadDescriptors(anyString(), anyString(), anyObject());
+        doReturn(Lists.newArrayList()).when(toolClient).downloadDescriptors(anyString(), anyString(), any(File.class));
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
@@ -188,7 +183,7 @@ public class MockedIT {
         // try again, things should be cached now
         Client.main(new String[] { "--config", configFileLocation, "tool", "launch", "--entry", "quay.io/collaboratory/arrays", "--json",
                 ResourceHelpers.resourceFilePath("testArrayLocalInputLocalOutput.json") });
-        Assert.assertTrue("output should contain only hard linking", StringUtils.countMatches(systemOutRule.getLog(), "hard-linking") == 6);
+        Assert.assertEquals("output should contain only hard linking", 6, StringUtils.countMatches(systemOutRule.getLog(), "hard-linking"));
         Assert.assertTrue("output should not contain warnings about skipping files", !systemOutRule.getLog().contains("skipping"));
     }
 

@@ -23,8 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import com.esotericsoftware.yamlbeans.YamlException;
-import com.esotericsoftware.yamlbeans.YamlReader;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
@@ -51,6 +49,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * This class will eventually handle support for understanding CWL
@@ -63,10 +62,8 @@ public class CWLHandler implements LanguageHandlerInterface {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
-                YamlReader reader = new YamlReader(content);
-                Object object = reader.read();
-                Map map = (Map)object;
-
+                Yaml yaml = new Yaml();
+                Map map = yaml.loadAs(content, Map.class);
                 String description = (String)map.get("description");
                 // changed for CWL 1.0
                 if (map.containsKey("doc")) {
@@ -100,7 +97,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 }
 
                 LOG.info("Repository has Dockstore.cwl");
-            } catch (YamlException ex) {
+            } catch (YAMLException ex) {
                 LOG.info("CWL file is malformed " + ex.getCause().toString());
                 throw new CustomWebApplicationException("Could not parse yaml: " + ex.getCause().toString(), HttpStatus.SC_BAD_REQUEST);
             }
@@ -147,11 +144,11 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     public Map<String, SourceFile> processImports(String workingDirectoryForFile, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
         Map<String, SourceFile> imports = new HashMap<>();
-        YamlReader reader = new YamlReader(content);
+        Yaml yaml = new Yaml();
         try {
-            Map<String, ?> map = reader.read(Map.class);
+            Map<String, ?> map = yaml.loadAs(content, Map.class);
             handleMap(workingDirectoryForFile, version, imports, map, sourceCodeRepoInterface);
-        } catch (YamlException e) {
+        } catch (YAMLException e) {
             SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");
         }
 
@@ -181,7 +178,7 @@ public class CWLHandler implements LanguageHandlerInterface {
             Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
 
             // Convert YAML to JSON
-            Map<String, Object> mapping = (Map<String, Object>)yaml.load(mainDescriptor);
+            Map<String, Object> mapping = yaml.loadAs(mainDescriptor, Map.class);
             JSONObject cwlJson = new JSONObject(mapping);
 
             // Other useful variables
@@ -441,7 +438,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      */
     private String parseSecondaryFile(String stepDockerRequirement, String secondaryFileContents, Gson gson, Yaml yaml) {
         if (secondaryFileContents != null) {
-            Map<String, Object> entryMapping = (Map<String, Object>)yaml.load(secondaryFileContents);
+            Map<String, Object> entryMapping = yaml.loadAs(secondaryFileContents, Map.class);
             JSONObject entryJson = new JSONObject(entryMapping);
 
             List<Object> cltRequirements = null;
@@ -518,7 +515,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      */
     private boolean isWorkflow(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
+            Map<String, Object> mapping = yaml.loadAs(content, Map.class);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
                 return "Workflow".equals(cwlClass);
@@ -535,7 +532,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      */
     private boolean isExpressionTool(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
+            Map<String, Object> mapping = yaml.loadAs(content, Map.class);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
                 return "ExpressionTool".equals(cwlClass);
@@ -552,7 +549,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      */
     private boolean isTool(String content, Yaml yaml) {
         if (!Strings.isNullOrEmpty(content)) {
-            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
+            Map<String, Object> mapping = yaml.loadAs(content, Map.class);
             if (mapping.get("class") != null) {
                 String cwlClass = mapping.get("class").toString();
                 return "CommandLineTool".equals(cwlClass);
@@ -563,7 +560,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     private boolean isValidCwl(String content, Yaml yaml) {
         try {
-            Map<String, Object> mapping = (Map<String, Object>)yaml.load(content);
+            Map<String, Object> mapping = yaml.loadAs(content, Map.class);
             String cwlVersion = mapping.get("cwlVersion").toString();
 
             if (cwlVersion != null) {
