@@ -615,7 +615,7 @@
                         <goals>
                             <goal>exec</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <phase>generate-resources</phase>
                         <configuration>
                             <executable>touch</executable>
                             <arguments>
