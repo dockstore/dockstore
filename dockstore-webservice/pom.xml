@@ -307,6 +307,10 @@
             <artifactId>jersey-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-auth</artifactId>
             <version>${dropwizard.version}</version>
@@ -782,7 +786,7 @@
                 -->
                 <groupId>org.liquibase</groupId>
                 <artifactId>liquibase-maven-plugin</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.1</version>
                 <configuration>
                     <driver>org.postgresql.Driver</driver>
                     <referenceDriver>org.postgresql.Driver</referenceDriver>
@@ -809,6 +813,7 @@
             <plugin>
                 <groupId>com.github.kongchen</groupId>
                 <artifactId>swagger-maven-plugin</artifactId>
+                <!-- fixed at 3.1.5 due to odd issue with our EntryDAO making it into Swagger and not being ignorable -->
                 <version>3.1.5</version>
                 <configuration>
                     <apiSources>
