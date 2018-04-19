@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.github.zafarkhaja.semver.Version;
+
 /**
  * @author gluu
  * @since 13/04/18
@@ -23,8 +25,8 @@ public final class PipHelper {
         if (semVerString == null) {
             semVerString = "9001.9001.9001";
         }
-        SemVer semVer = new SemVer(semVerString);
-        if (semVer.compareTo(new SemVer("1.5.0")) >= 0) {
+        Version semVer = Version.valueOf(semVerString);
+        if (semVer.greaterThanOrEqualTo(Version.valueOf("1.5.0"))) {
             return "1.5.0";
         } else {
             return "1.4.0";

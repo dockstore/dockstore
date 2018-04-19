@@ -18,6 +18,9 @@ package io.dockstore.webservice.resources;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,10 +30,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
@@ -42,6 +50,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.PipHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.rss.RSSEntry;
@@ -51,7 +60,9 @@ import io.dockstore.webservice.resources.rss.RSSWriter;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import okhttp3.Cache;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,6 +178,39 @@ public class MetadataResource {
         } catch (Exception e) {
             throw new CustomWebApplicationException("Could not write RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @GET
+    @Produces({ "text/plain", "application/json" })
+    @Path("/runner_dependencies")
+    @ApiOperation(value = "Returns the file containing runner dependencies", response = String.class)
+    public Response getRunnerDependencies(
+            @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
+            @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("2") @QueryParam("python_version") String pythonVersion,
+            @ApiParam(value = "The tool runner", allowableValues = "cwltool") @DefaultValue("cwltool") @QueryParam("runner") String runner,
+            @ApiParam(value = "Response type", allowableValues = "json, text") @DefaultValue("text") @QueryParam("output") String output,
+            @Context ContainerRequestContext containerRequestContext) {
+        if (!("cwltool").equals(runner)) {
+            return Response.noContent().build();
+        }
+        boolean unwrap = !("json").equals(output);
+        URL url;
+        String content;
+        try {
+            String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
+            if (pythonVersion.startsWith("3")) {
+                url = this.getClass().getClassLoader().getResource("requirements/" + fileVersion + "/requirements3.txt");
+                content = IOUtils.toString(new InputStreamReader(url.openStream(), Charset.defaultCharset()));
+            } else {
+                url = this.getClass().getClassLoader().getResource("requirements/" + fileVersion + "/requirements.txt");
+                content = IOUtils.toString(new InputStreamReader(url.openStream(), Charset.defaultCharset()));
+            }
+        } catch (IOException e) {
+            return Response.noContent().build();
+        }
+        Map<String, String> pipDepMap = PipHelper.convertPipRequirementsStringToMap(content);
+        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                .entity(unwrap ? content : pipDepMap).build();
     }
 
     @GET
