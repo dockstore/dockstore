@@ -244,7 +244,7 @@ public abstract class AbstractImageRegistry {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
 
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
                 LOG.info(githubToken.getUsername() + " : Tags for tool {} did not get updated because new tags were not found",
