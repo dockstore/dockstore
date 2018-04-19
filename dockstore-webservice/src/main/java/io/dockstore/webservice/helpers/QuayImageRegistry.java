@@ -356,7 +356,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
     }
 
     @Override
-    public boolean convertToAuto(Tool tool) {
+    public boolean canConvertToAuto(Tool tool) {
         final String repo = tool.getNamespace() + '/' + tool.getName();
         final Gson gson = new Gson();
 

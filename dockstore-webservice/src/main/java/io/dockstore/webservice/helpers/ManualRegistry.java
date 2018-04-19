@@ -58,7 +58,7 @@ public class ManualRegistry extends AbstractImageRegistry {
     }
 
     @Override
-    public boolean convertToAuto(Tool tool) {
+    public boolean canConvertToAuto(Tool tool) {
         return false;
     }
 }

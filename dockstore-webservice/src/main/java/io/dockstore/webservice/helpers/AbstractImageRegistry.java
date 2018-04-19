@@ -90,7 +90,7 @@ public abstract class AbstractImageRegistry {
      * @param tool
      * @return
      */
-    public abstract boolean convertToAuto(Tool tool);
+    public abstract boolean canConvertToAuto(Tool tool);
 
     /**
      * Updates/Adds/Deletes tools and their associated tags
@@ -187,7 +187,7 @@ public abstract class AbstractImageRegistry {
 
         // Check if manual Quay repository can be changed to automatic
         if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && tool.getRegistry().equals(Registry.QUAY_IO.toString())) {
-            if (convertToAuto(tool)) {
+            if (canConvertToAuto(tool)) {
                 tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
             }
         }
@@ -244,7 +244,7 @@ public abstract class AbstractImageRegistry {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
 
-        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
+        if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
 
             if (newTags == null) {
                 LOG.info(githubToken.getUsername() + " : Tags for tool {} did not get updated because new tags were not found",
