@@ -312,22 +312,61 @@ public class BasicIT extends BaseIT {
     public void testRefreshCorrectTool() {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
             "quay.io/dockstoretestuser/quayandbitbucket", "--script" });
-
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
             Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name",
             "dockerhubandbitbucket", "--git-url", "git@bitbucket.org:dockstoretestuser/dockstore-whalesay.git", "--git-reference", "master",
             "--toolname", "regular", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
             "registry.hub.docker.com/dockstoretestuser/dockerhubandbitbucket/regular", "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
-            "quay.io/dockstoretestuser/quayandgithub", "--script" });
-
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry",
             Registry.DOCKER_HUB.name(), Registry.DOCKER_HUB.toString(), "--namespace", "dockstoretestuser", "--name", "dockerhubandgithub",
             "--git-url", "git@github.com:dockstoretestuser/dockstore-whalesay.git", "--git-reference", "master", "--toolname", "regular",
             "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
             "registry.hub.docker.com/dockstoretestuser/dockerhubandgithub/regular", "--script" });
+    }
+
+    /**
+     * TODO: Don't use SQL statements here
+     * The testing database originally has tools with tags.  This test:
+     * - Deletes a tag from a certain tool from db
+     * - Refreshes the tool
+     * - Checks if the tag is back
+     */
+    @Test
+    public void testRefreshAfterDeletingAVersion() {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        // Get the tool id of the entry whose path is quay.io/dockstoretestuser/quayandgithub
+        final long id = testingPostgres
+                .runSelectStatement("select id from tool where name = 'quayandgithub' and namespace='dockstoretestuser' and registry='quay.io'", new ScalarHandler<>());
+
+        // Check how many versions the entry has
+        final long currentNumberOfTags = testingPostgres
+                .runSelectStatement("select count(*) from tool_tag where toolid = '"+ id + "'", new ScalarHandler<>());
+        Assert.assertTrue("There are no tags for this tool", currentNumberOfTags > 0);
+
+        // This grabs the first tag that belongs to the tool
+        final long firstTag = testingPostgres
+                .runSelectStatement("select tagid from tool_tag where toolid = '"+ id + "'", new ScalarHandler<>());
+
+        // Delete the version that is known
+        testingPostgres.runUpdateStatement("delete from tool_tag where toolid = '"+ id + "' and tagid='" + firstTag + "'");
+        testingPostgres.runUpdateStatement("delete from tag where id = '" + firstTag + "'");
+
+        // Double check that there is one less tag
+        final long afterDeletionTags = testingPostgres
+                .runSelectStatement("select count(*) from tool_tag where toolid = '"+ id + "'", new ScalarHandler<>());
+        Assert.assertEquals(currentNumberOfTags-1, afterDeletionTags);
+
+
+        // Refresh the tool
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
+                "quay.io/dockstoretestuser/quayandgithub", "--script" });
+
+        // Check how many tags there are after the refresh
+        final long afterRefreshTags = testingPostgres
+                .runSelectStatement("select count(*) from tool_tag where toolid = '"+ id + "'", new ScalarHandler<>());
+        Assert.assertEquals(currentNumberOfTags, afterRefreshTags);
     }
 
     /**
