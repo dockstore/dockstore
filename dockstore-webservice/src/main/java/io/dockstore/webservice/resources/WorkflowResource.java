@@ -511,6 +511,22 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         // Only copy workflow type if old workflow is a STUB
         if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.STUB)) {
+            // This automatically changes the new workflow's default workflow path when the descriptor type is changed but the default workflow path was not changed
+            if (!newWorkflow.getDescriptorType().equals(oldWorkflow.getDescriptorType()) && Objects.equals(newWorkflow.getDefaultWorkflowPath(), oldWorkflow.getDefaultWorkflowPath())) {
+                switch (newWorkflow.getDescriptorType()) {
+                case "cwl":
+                    newWorkflow.setDefaultWorkflowPath("/Dockstore.cwl");
+                    break;
+                case "wdl":
+                    newWorkflow.setDefaultWorkflowPath("/Dockstore.wdl");
+                    break;
+                case "nextflow":
+                    newWorkflow.setDefaultWorkflowPath("/nextflow.config");
+                    break;
+                default:
+                    throw new CustomWebApplicationException("Unrecognzied descriptor type", HttpStatus.SC_BAD_REQUEST);
+                }
+            }
             oldWorkflow.setDescriptorType(newWorkflow.getDescriptorType());
         }
 
