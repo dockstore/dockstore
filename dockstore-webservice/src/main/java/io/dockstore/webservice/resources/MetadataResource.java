@@ -17,10 +17,8 @@
 package io.dockstore.webservice.resources;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +60,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import okhttp3.Cache;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -194,23 +192,19 @@ public class MetadataResource {
             return Response.noContent().build();
         }
         boolean unwrap = !("json").equals(output);
-        URL url;
-        String content;
+        String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
+        File file = new File(this.getClass().getClassLoader()
+                .getResource("requirements/" + fileVersion + "/requirements" + (pythonVersion.startsWith("3") ? "3" : "") + ".txt")
+                .getFile());
         try {
-            String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
-            if (pythonVersion.startsWith("3")) {
-                url = this.getClass().getClassLoader().getResource("requirements/" + fileVersion + "/requirements3.txt");
-                content = IOUtils.toString(new InputStreamReader(url.openStream(), Charset.defaultCharset()));
-            } else {
-                url = this.getClass().getClassLoader().getResource("requirements/" + fileVersion + "/requirements.txt");
-                content = IOUtils.toString(new InputStreamReader(url.openStream(), Charset.defaultCharset()));
-            }
+            String content = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+            Map<String, String> pipDepMap = PipHelper.convertPipRequirementsStringToMap(content);
+            return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                    .entity(unwrap ? content : pipDepMap).build();
         } catch (IOException e) {
-            return Response.noContent().build();
+            e.printStackTrace();
+            return Response.serverError().build();
         }
-        Map<String, String> pipDepMap = PipHelper.convertPipRequirementsStringToMap(content);
-        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                .entity(unwrap ? content : pipDepMap).build();
     }
 
     @GET
