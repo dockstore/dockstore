@@ -17,7 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.io.Resources;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
@@ -60,7 +60,6 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import okhttp3.Cache;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -193,11 +192,9 @@ public class MetadataResource {
         }
         boolean unwrap = !("json").equals(output);
         String fileVersion = PipHelper.convertSemVerToAvailableVersion(clientVersion);
-        File file = new File(this.getClass().getClassLoader()
-                .getResource("requirements/" + fileVersion + "/requirements" + (pythonVersion.startsWith("3") ? "3" : "") + ".txt")
-                .getFile());
         try {
-            String content = FileUtils.readFileToString(file, StandardCharsets.UTF_8);
+            String content = Resources.toString(this.getClass().getClassLoader()
+                    .getResource("requirements/" + fileVersion + "/requirements" + (pythonVersion.startsWith("3") ? "3" : "") + ".txt"), StandardCharsets.UTF_8);
             Map<String, String> pipDepMap = PipHelper.convertPipRequirementsStringToMap(content);
             return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                     .entity(unwrap ? content : pipDepMap).build();
