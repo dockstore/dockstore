@@ -86,6 +86,13 @@ public abstract class AbstractImageRegistry {
     public abstract Registry getRegistry();
 
     /**
+     * Returns true if a tool can be converted to auto, false otherwise
+     * @param tool
+     * @return
+     */
+    public abstract boolean canConvertToAuto(Tool tool);
+
+    /**
      * Updates/Adds/Deletes tools and their associated tags
      *
      * @param userId         The ID of the user
@@ -176,6 +183,13 @@ public abstract class AbstractImageRegistry {
         if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && duplicatePath != null && tool.getRegistry()
                 .equals(Registry.QUAY_IO.toString()) && duplicatePath.getGitUrl().equals(tool.getGitUrl())) {
             tool.setMode(duplicatePath.getMode());
+        }
+
+        // Check if manual Quay repository can be changed to automatic
+        if (tool.getMode() == ToolMode.MANUAL_IMAGE_PATH && tool.getRegistry().equals(Registry.QUAY_IO.toString())) {
+            if (canConvertToAuto(tool)) {
+                tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+            }
         }
 
         // Get tool information from API (if not manual) and remove from api list all tools besides the tool of interest

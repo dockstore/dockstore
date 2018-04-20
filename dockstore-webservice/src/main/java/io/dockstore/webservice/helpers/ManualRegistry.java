@@ -56,4 +56,9 @@ public class ManualRegistry extends AbstractImageRegistry {
     public Registry getRegistry() {
         return registry;
     }
+
+    @Override
+    public boolean canConvertToAuto(Tool tool) {
+        return false;
+    }
 }

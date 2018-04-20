@@ -663,4 +663,59 @@ public class GeneralIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--entry",
                 "imnotreal.wdl", "--json", "imnotreal-job.json", "--descriptor", "wdl", "--script" });
     }
+
+    /**
+     * Creates a basic Manual Tool with Quay
+     * @param gitUrl
+     * @return
+     */
+    private DockstoreTool getQuayContainer(String gitUrl) {
+        DockstoreTool tool = new DockstoreTool();
+        tool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+        tool.setName("my-md5sum");
+        tool.setGitUrl(gitUrl);
+        tool.setDefaultDockerfilePath("/md5sum/Dockerfile");
+        tool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
+        tool.setRegistryString(Registry.QUAY_IO.toString());
+        tool.setNamespace("dockstoretestuser2");
+        tool.setToolname("altname");
+        tool.setPrivateAccess(false);
+        tool.setDefaultCWLTestParameterFile("/testcwl.json");
+        return tool;
+    }
+
+    /**
+     * Tests that manually adding a tool that should become auto is properly converted
+     */
+    @Test
+    public void testManualToAuto() {
+        String gitUrl = "git@github.com:DockstoreTestUser2/md5sum-checker.git";
+        ContainersApi toolsApi = setupWebService();
+        DockstoreTool tool = getQuayContainer(gitUrl);
+        DockstoreTool toolTest = toolsApi.registerManual(tool);
+        toolsApi.refresh(toolTest.getId());
+
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
+        assertEquals("The tool should be auto, there are " + count, 1, count);
+    }
+
+    /**
+     * Tests that manually adding a tool that shouldn't become auto stays manual
+     * The tool should specify a git URL that does not match any in any Quay builds
+     */
+    @Test
+    public void testManualToolStayManual() {
+        String gitUrl = "git@github.com:DockstoreTestUser2/dockstore-whalesay-imports.git";
+        ContainersApi toolsApi = setupWebService();
+        DockstoreTool tool = getQuayContainer(gitUrl);
+        DockstoreTool toolTest = toolsApi.registerManual(tool);
+        toolsApi.refresh(toolTest.getId());
+
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
+        assertEquals("The tool should be manual, there are " + count, 1, count);
+    }
 }
