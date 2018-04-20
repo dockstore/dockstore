@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -128,15 +127,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.gitlabRedirectUri = configuration.getGitlabRedirectURI();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "List all known tokens", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List all tokens. Admin Only.", response = Token.class, responseContainer = "List")
-    public List<Token> listTokens(@ApiParam(hidden = true) @Auth User user) {
-        return tokenDAO.findAll();
     }
 
     @GET
