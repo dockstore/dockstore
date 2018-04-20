@@ -35,7 +35,10 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
 
 /**
+ * @author dyuen
  *
+ * Command-line search prototype
+ * This is not currently hooked up but is functional and could be expanded if needed.
  */
 public final class SearchClient {
 
@@ -62,7 +65,7 @@ public final class SearchClient {
      * @param args
      */
     static boolean handleCommand(List<String> args, ExtendedGa4GhApi api) {
-        String[] argv = args.toArray(new String[args.size()]);
+        String[] argv = args.toArray(new String[0]);
         JCommander jc = new JCommander();
 
         SearchPlugin searchPlugin = new SearchPlugin();
