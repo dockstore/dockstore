@@ -63,16 +63,20 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tag_id_seq")
     @SequenceGenerator(name = "tag_id_seq", sequenceName = "tag_id_seq")
     @ApiModelProperty(value = "Implementation specific ID for the tag in this web service", position = 0)
-    private long id;
+    protected long id;
 
     @Column
     @JsonProperty("last_modified")
     @ApiModelProperty(value = "The last time this image was modified in the image registry", position = 1)
-    private Date lastModified;
+    protected Date lastModified;
 
     @Column
     @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 2)
-    private String reference;
+    protected String reference;
+
+    @Column
+    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 6)
+    protected String name;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
@@ -86,10 +90,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column
     @ApiModelProperty(value = "Implementation specific, whether this tag has valid files from source code repo", position = 5)
     private boolean valid;
-
-    @Column
-    @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 6)
-    private String name;
 
     @Column(columnDefinition = "boolean default false")
     @ApiModelProperty(value = "True if user has altered the tag", position = 7)
@@ -225,33 +225,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.name = name;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, lastModified, reference, hidden, valid, name);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        final Version other = (Version)obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects
-                .equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects
-                .equals(this.valid, other.valid) && Objects.equals(this.name, other.name);
-    }
-
-    @Override
-    public int compareTo(T that) {
-        return ComparisonChain.start().compare(this.id, that.getId(), Ordering.natural().nullsLast())
-                .compare(this.lastModified, that.getLastModified(), Ordering.natural().nullsLast())
-                .compare(this.reference, that.getReference(), Ordering.natural().nullsLast())
-                .compare(this.name, that.getName(), Ordering.natural().nullsLast()).result();
-    }
-
     public void updateVerified(boolean newVerified, String newVerifiedSource) {
         this.verified = newVerified;
         this.verifiedSource = newVerifiedSource;
@@ -275,4 +248,31 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, lastModified, reference, hidden, valid, name);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final Version other = (Version)obj;
+        return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects
+            .equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects
+            .equals(this.valid, other.valid) && Objects.equals(this.name, other.name);
+    }
+
+    @Override
+    public int compareTo(T that) {
+        return ComparisonChain.start().compare(this.id, that.id, Ordering.natural().nullsLast())
+            .compare(this.lastModified, that.lastModified, Ordering.natural().nullsLast())
+            .compare(this.reference, that.reference, Ordering.natural().nullsLast())
+            .compare(this.name, that.name, Ordering.natural().nullsLast()).result();
+    }
 }

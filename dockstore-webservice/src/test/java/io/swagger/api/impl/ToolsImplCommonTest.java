@@ -102,7 +102,7 @@ public class ToolsImplCommonTest {
         convertDockstoreToolToTool(null);
     }
 
-    public void convertDockstoreToolToTool(String toolname) {
+    private void convertDockstoreToolToTool(String toolname) {
         io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
         tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         tool.setName("test6");

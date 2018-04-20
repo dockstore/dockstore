@@ -27,7 +27,9 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -95,7 +97,12 @@ public class Label implements Comparable<Label> {
     }
 
     @Override
-    public int compareTo(Label o) {
-        return value.compareTo(o.getValue());
+    public int compareTo(Label that) {
+        return ComparisonChain.start().compare(this.value, that.value).result();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("id", id).add("value", value).toString();
     }
 }

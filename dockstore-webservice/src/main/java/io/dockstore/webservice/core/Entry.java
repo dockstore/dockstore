@@ -395,4 +395,12 @@ public abstract class Entry<S extends Entry, T extends Version> {
             return null;
         }
     }
+
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
 }

@@ -41,6 +41,8 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -61,7 +63,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
 @SuppressWarnings("checkstyle:magicnumber")
-public class User implements Principal {
+public class User implements Principal, Comparable<User> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
@@ -214,11 +216,6 @@ public class User implements Principal {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(id, username);
-    }
-
-    @Override
     @ApiModelProperty(position = 8)
     public String getName() {
         return getUsername();
@@ -265,13 +262,22 @@ public class User implements Principal {
             return false;
         }
         final User other = (User)obj;
-        if (id != other.id) {
-            return false;
-        }
-        if (!Objects.equals(username, other.username)) {
-            return false;
-        }
         // do not depend on lazily loaded collections for equality
-        return Objects.equals(isAdmin, other.isAdmin);
+        return Objects.equals(id, other.id) && Objects.equals(username, other.username) && Objects.equals(isAdmin, other.isAdmin);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, username, isAdmin);
+    }
+
+    @Override
+    public int compareTo(User that) {
+        return ComparisonChain.start().compare(this.id, that.id).compare(this.username, that.username).compareTrueFirst(this.isAdmin, that.isAdmin).result();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("id", id).add("username", username).add("isAdmin", isAdmin).toString();
     }
 }
