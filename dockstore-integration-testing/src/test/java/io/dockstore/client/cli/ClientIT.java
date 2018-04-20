@@ -330,6 +330,14 @@ public class ClientIT extends BaseIT {
         checkCommandForHelp(new String[] { "plugin", "list", "--help" });
         checkCommandForHelp(new String[] { "plugin", "download", "--help" });
         checkCommandForHelp(new String[] { "plugin" });
+
+        checkCommandForHelp(new String[] { "checker" });
+        checkCommandForHelp(new String[] { "checker", "download", "--help" });
+        checkCommandForHelp(new String[] { "checker", "launch", "--help" });
+        checkCommandForHelp(new String[] { "checker", "add", "--help" });
+        checkCommandForHelp(new String[] { "checker", "update", "--help" });
+        checkCommandForHelp(new String[] { "checker", "update_version", "--help" });
+        checkCommandForHelp(new String[] { "checker", "test_parameter", "--help" });
     }
 
     private void checkCommandForHelp(String[] argv) throws IOException {
@@ -337,7 +345,7 @@ public class ClientIT extends BaseIT {
         strings.add("--config");
         strings.add(TestUtility.getConfigFileLocation(true));
 
-        Client.main(strings.toArray(new String[strings.size()]));
+        Client.main(strings.toArray(new String[0]));
         Assert.assertTrue(systemOutRule.getLog().contains("Usage: dockstore"));
         systemOutRule.clearLog();
     }
