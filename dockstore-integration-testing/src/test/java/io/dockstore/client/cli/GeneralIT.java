@@ -698,7 +698,7 @@ public class GeneralIT extends BaseIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
-        assertTrue("The tool should be auto, there are " + count, count == 1);
+        assertEquals("The tool should be auto, there are " + count, count, 1);
     }
 
     /**
@@ -716,6 +716,6 @@ public class GeneralIT extends BaseIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
-        assertTrue("The tool should be manual, there are " + count, count == 1);
+        assertEquals("The tool should be manual, there are " + count, count, 1);
     }
 }

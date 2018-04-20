@@ -252,7 +252,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         final Gson gson = new Gson();
 
         // Grab build information for given repository
-        String urlBuilds = QUAY_URL + "repository/" + repository + "/build/?limit=2147483647";
+        String urlBuilds = QUAY_URL + "repository/" + repository + "/build/?limit=" + Integer.MAX_VALUE;
         Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
 
         // List of builds for a tool
@@ -361,7 +361,7 @@ public class QuayImageRegistry extends AbstractImageRegistry {
         final Gson gson = new Gson();
 
         // Grab build information for given repository
-        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=2147483647";
+        String urlBuilds = QUAY_URL + "repository/" + repo + "/build/?limit=" + Integer.MAX_VALUE;
         Optional<String> asStringBuilds = ResourceUtilities.asString(urlBuilds, quayToken.getContent(), client);
 
         // Look for a matching git reference
