@@ -25,6 +25,7 @@ import javax.persistence.Entity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.io.FilenameUtils;
@@ -206,7 +207,9 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Override
     public int compareTo(Tag that) {
-        return ComparisonChain.start().compare(this.imageId, that.imageId).result();
+        return ComparisonChain.start().compare(this.name, that.name, Ordering.natural().nullsFirst())
+            .compare(this.reference, reference, Ordering.natural().nullsFirst())
+            .compare(this.imageId, that.imageId, Ordering.natural().nullsFirst()).result();
     }
 
     @Override
