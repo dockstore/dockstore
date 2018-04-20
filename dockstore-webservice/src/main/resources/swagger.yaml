@@ -4229,6 +4229,12 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -4415,6 +4421,12 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
       last_modified_date:
         type: "string"
         format: "date-time"
@@ -4537,6 +4549,12 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/User"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
     description: "This describes a grouping of end-users for the purposes of managing\
       \ sharing. Implementation-specific."
   Label:
@@ -5153,6 +5171,12 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
       parent_id:
         type: "integer"
         format: "int64"
