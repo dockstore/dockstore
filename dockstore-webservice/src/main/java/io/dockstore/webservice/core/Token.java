@@ -30,6 +30,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -53,7 +55,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findGitlabByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'gitlab.com'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'") })
 @SuppressWarnings("checkstyle:magicnumber")
-public class Token {
+public class Token implements Comparable<Token> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -166,25 +168,6 @@ public class Token {
         this.refreshToken = refreshToken;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Token)) {
-            return false;
-        }
-
-        final Token that = (Token)o;
-
-        return Objects.equals(id, that.id) && Objects.equals(content, that.content);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, content);
-    }
-
     /**
      * @return the userId
      */
@@ -199,4 +182,34 @@ public class Token {
     public void setUserId(long userId) {
         this.userId = userId;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Token)) {
+            return false;
+        }
+
+        final Token that = (Token)o;
+
+        return Objects.equals(id, that.id) && Objects.equals(tokenSource, that.tokenSource) && Objects.equals(content, that.content);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, tokenSource, content);
+    }
+
+    @Override
+    public int compareTo(Token that) {
+        return ComparisonChain.start().compare(this.id, that.id).compare(this.tokenSource, that.tokenSource).result();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("id", id).add("tokenSource", tokenSource).add("username", username).toString();
+    }
+
 }

@@ -35,6 +35,9 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -48,7 +51,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "usergroup")
 @NamedQueries(@NamedQuery(name = "io.dockstore.webservice.core.Group.findAll", query = "SELECT t FROM Group t"))
-public class Group {
+public class Group  implements Comparable<Group> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
@@ -96,4 +99,38 @@ public class Group {
         users.add(user);
     }
 
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id, name);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        final Group other = (Group)obj;
+        return Objects.equal(id, other.id) && Objects.equal(name, other.name);
+    }
+
+    @Override
+    public int compareTo(Group that) {
+        return ComparisonChain.start().compare(this.name, that.name).result();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("id", id).add("name", name).toString();
+    }
 }

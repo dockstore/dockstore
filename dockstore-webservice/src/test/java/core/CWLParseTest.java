@@ -38,8 +38,8 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
         Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
-        Assert.assertTrue("incorrect author", entry.getAuthor().equals("Keiran Raine"));
-        Assert.assertTrue("incorrect email", entry.getEmail().equals("keiranmraine@gmail.com"));
+        Assert.assertEquals("incorrect author", "Keiran Raine", entry.getAuthor());
+        Assert.assertEquals("incorrect email", "keiranmraine@gmail.com", entry.getEmail());
     }
 
     @Test
@@ -47,8 +47,8 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
         Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
-        Assert.assertTrue("incorrect author", entry.getAuthor().equals("Denis Yuen"));
-        Assert.assertTrue("incorrect email", entry.getEmail().equals("dyuen@oicr.on.ca"));
+        Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
+        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
     }
 
     @Test
@@ -56,7 +56,7 @@ public class CWLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example3.cwl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL);
         Entry entry = sInterface.parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
-        Assert.assertTrue("incorrect author", entry.getAuthor().equals("Denis Yuen"));
-        Assert.assertTrue("incorrect email", entry.getEmail().equals("dyuen@oicr.on.ca"));
+        Assert.assertEquals("incorrect author", "Denis Yuen", entry.getAuthor());
+        Assert.assertEquals("incorrect email", "dyuen@oicr.on.ca", entry.getEmail());
     }
 }

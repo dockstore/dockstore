@@ -787,7 +787,7 @@ public class Client {
             if (this.usersApi.getApiClient() != null) {
                 this.isAdmin = this.usersApi.getUser().isIsAdmin();
             }
-        } catch (ApiException ex) {
+        } catch (ApiException | ProcessingException ex) {
             this.isAdmin = false;
         }
         this.toolClient = new ToolClient(containersApi, new ContainertagsApi(defaultApiClient), usersApi, this, isAdmin);

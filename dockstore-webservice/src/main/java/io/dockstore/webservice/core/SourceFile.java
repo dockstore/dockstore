@@ -28,6 +28,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -42,7 +44,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "sourcefile")
 @SuppressWarnings("checkstyle:magicnumber")
-public class SourceFile {
+public class SourceFile implements Comparable<SourceFile> {
     /**
      * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
      *
@@ -112,7 +114,7 @@ public class SourceFile {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, type, content);
+        return Objects.hash(id, type, content, path);
     }
 
     @Override
@@ -124,6 +126,16 @@ public class SourceFile {
             return false;
         }
         final SourceFile other = (SourceFile)obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.type, other.type) && Objects.equals(this.content, other.content);
+        return Objects.equals(this.id, other.id) && Objects.equals(this.type, other.type) && Objects.equals(this.path, other.path) && Objects.equals(this.content, other.content);
+    }
+
+    @Override
+    public int compareTo(SourceFile that) {
+        return ComparisonChain.start().compare(this.path, that.path).result();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).toString();
     }
 }

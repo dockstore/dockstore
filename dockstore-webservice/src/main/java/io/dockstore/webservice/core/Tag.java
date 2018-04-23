@@ -23,6 +23,9 @@ import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.io.FilenameUtils;
@@ -38,7 +41,7 @@ import org.apache.commons.io.FilenameUtils;
 @Entity
 @DiscriminatorValue("tool")
 @SuppressWarnings("checkstyle:magicnumber")
-public class Tag extends Version<Tag> {
+public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Column
     @JsonProperty("image_id")
@@ -183,11 +186,6 @@ public class Tag extends Version<Tag> {
     }
 
     @Override
-    public int compareTo(Tag o) {
-        return Long.compare(super.getId(), o.getId());
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -202,7 +200,20 @@ public class Tag extends Version<Tag> {
         return Objects.equals(this.getId(), other.getId());
     }
 
+    @Override
     public int hashCode() {
-        return (int)getId();
+        return Objects.hash(id, name, reference, imageId, dockerfilePath);
+    }
+
+    @Override
+    public int compareTo(Tag that) {
+        return ComparisonChain.start().compare(this.name, that.name, Ordering.natural().nullsFirst())
+            .compare(this.reference, reference, Ordering.natural().nullsFirst())
+            .compare(this.imageId, that.imageId, Ordering.natural().nullsFirst()).result();
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("id", id).add("name", name).add("reference", reference).add("imageId", imageId).add("dockerfilePath", dockerfilePath).toString();
     }
 }

@@ -30,18 +30,20 @@ public class SourceCodeRepoFactoryTest {
     public void parseGitUrl() {
         // test format 1
         final Map<String, String> stringStringMap1 = SourceCodeRepoFactory.parseGitUrl("git@github.com:ga4gh/dockstore-ui.git");
+        Assert.assertNotNull(stringStringMap1);
         Assert.assertTrue("values not found",
                 stringStringMap1.containsKey("Source") && stringStringMap1.containsKey("Username") && stringStringMap1
                         .containsKey("Repository"));
         // test format 2
         final Map<String, String> stringStringMap2 = SourceCodeRepoFactory
                 .parseGitUrl("git://github.com/denis-yuen/dockstore-whalesay.git");
+        Assert.assertNotNull(stringStringMap2);
         Assert.assertTrue("values not found",
                 stringStringMap2.containsKey("Source") && stringStringMap2.containsKey("Username") && stringStringMap2
                         .containsKey("Repository"));
         // test garbage
         final Map<String, String> stringStringMap3 = SourceCodeRepoFactory.parseGitUrl("mostly harmless");
-        Assert.assertTrue("should be null", stringStringMap3 == null);
+        Assert.assertNull("should be null", stringStringMap3);
     }
 
 }

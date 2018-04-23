@@ -1180,24 +1180,6 @@ paths:
             text/plain:
               schema:
                 $ref: '#/components/schemas/Error'
-  /auth/tokens:
-    get:
-      tags:
-        - tokens
-      summary: List all known tokens
-      description: List all tokens. Admin Only.
-      operationId: listTokens
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Token'
-      security:
-        - BEARER: []
   /auth/tokens/bitbucket.org:
     get:
       tags:
@@ -4599,6 +4581,12 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
         custom_docker_registry_path:
           type: string
           readOnly: true
@@ -4803,6 +4791,12 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
         last_modified_date:
           type: string
           format: date-time
@@ -4930,6 +4924,12 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/User'
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
       description: >-
         This describes a grouping of end-users for the purposes of managing
         sharing. Implementation-specific.
@@ -5584,6 +5584,12 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
         parent_id:
           type: integer
           format: int64

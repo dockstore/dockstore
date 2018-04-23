@@ -22,6 +22,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import io.swagger.annotations.ApiModel;
@@ -81,11 +82,6 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(this.getName(), this.getReference());
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -100,5 +96,16 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @Override
     public int compareTo(WorkflowVersion that) {
         return ComparisonChain.start().compare(this.getName(), that.getName(), Ordering.natural().nullsLast()).compare(this.getReference(), that.getReference()).result();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, reference);
+    }
+
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("id", id).add("name", name).add("reference", reference).toString();
     }
 }
