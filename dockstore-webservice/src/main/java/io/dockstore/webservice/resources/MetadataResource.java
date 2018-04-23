@@ -199,8 +199,7 @@ public class MetadataResource {
             return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                     .entity(unwrap ? content : pipDepMap).build();
         } catch (IOException e) {
-            e.printStackTrace();
-            return Response.serverError().build();
+            throw new CustomWebApplicationException("Could not retrieve runner dependencies file: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
