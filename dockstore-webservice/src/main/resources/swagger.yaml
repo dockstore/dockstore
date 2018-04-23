@@ -1328,25 +1328,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/DockstoreTool"
-  /containers/refresh:
-    get:
-      tags:
-      - "containers"
-      summary: "Refresh all repos"
-      description: "Updates some metadata. ADMIN ONLY"
-      operationId: "refreshAll"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/DockstoreTool"
-      security:
-      - BEARER: []
   /containers/registerManual:
     post:
       tags:
@@ -4677,6 +4658,15 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      referenceType:
+        type: "string"
+        description: "This indicates the type of git (or other source control) reference"
+        enum:
+        - "COMMIT"
+        - "TAG"
+        - "BRANCH"
+        - "NOT_APPLICABLE"
+        - "UNSET"
       last_modified:
         type: "string"
         format: "date-time"
@@ -5311,6 +5301,15 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the tag in this web service"
         readOnly: true
+      referenceType:
+        type: "string"
+        description: "This indicates the type of git (or other source control) reference"
+        enum:
+        - "COMMIT"
+        - "TAG"
+        - "BRANCH"
+        - "NOT_APPLICABLE"
+        - "UNSET"
       workingDirectory:
         type: "string"
       last_modified:

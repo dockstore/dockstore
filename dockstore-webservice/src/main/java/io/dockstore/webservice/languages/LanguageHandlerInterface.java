@@ -60,12 +60,13 @@ public interface LanguageHandlerInterface {
 
     /**
      * Look at the content of a descriptor and update its imports
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param content content of the primary descriptor
      * @param version version of the files to get
      * @param sourceCodeRepoInterface used too retrieve imports
      * @return map of file paths to SourceFile objects
      */
-    Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface);
+    Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface);
 
     /**
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation

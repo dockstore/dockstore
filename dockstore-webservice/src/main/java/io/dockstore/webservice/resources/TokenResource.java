@@ -56,6 +56,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -327,7 +328,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             user.setUsername(githubLogin);
 
             // Pull user information from Github
-            GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(githubLogin, accessToken, null);
+            Token dummyToken = new Token();
+            dummyToken.setContent(accessToken);
+            dummyToken.setUsername(githubLogin);
+            dummyToken.setTokenSource(TokenType.GITHUB_COM.toString());
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(dummyToken, null);
             user = gitHubSourceCodeRepo.getUserMetadata(user);
             userID = userDAO.create(user);
 

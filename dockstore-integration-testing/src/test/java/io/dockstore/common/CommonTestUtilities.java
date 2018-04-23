@@ -60,19 +60,19 @@ public final class CommonTestUtilities {
 
     /**
      * Drops the database and recreates from migrations, not including any test data, using new application
-     * @param support
+     * @param support reference to testing instance of the dockstore web service
      * @throws Exception
      */
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0");
     }
 
     /**
      * Drops the database and recreates from migrations for non-confidential tests
-     * @param support
+     * @param support reference to testing instance of the dockstore web service
      * @throws Exception
      */
     public static void dropAndCreateWithTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
@@ -88,11 +88,13 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.1.consistency");
         application.run("db", "migrate", CONFIG_PATH, "--include", "test");
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "1.5.0");
+
     }
 
     /**
      * Wrapper for dropping and recreating database from migrations for test confidential 1
-     * @param support
+     * @param support reference to testing instance of the dockstore web service
      * @throws Exception
      */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
@@ -102,7 +104,7 @@ public final class CommonTestUtilities {
 
     /**
      * Drops and recreates database from migrations for test confidential 1
-     * @param support
+     * @param support reference to testing instance of the dockstore web service
      * @param configPath
      * @throws Exception
      */
@@ -113,11 +115,12 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "1.3.1.consistency");
         application.run("db", "migrate", configPath, "--include", "test.confidential1");
         application.run("db", "migrate", configPath, "--include", "1.4.0");
+        application.run("db", "migrate", configPath, "--include", "1.5.0");
     }
 
     /**
      * Wrapper fir dropping and recreating database from migrations for test confidential 2
-     * @param support
+     * @param support reference to testing instance of the dockstore web service
      * @throws Exception
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
@@ -127,11 +130,12 @@ public final class CommonTestUtilities {
 
     /**
      * Drops and recreates database from migrations for test confidential 2
-     * @param support
+     * @param support reference to testing instance of the dockstore web service
      * @param configPath
      * @throws Exception
      */
-    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath, boolean isNewApplication) throws Exception {
+    private static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath,
+        boolean isNewApplication) throws Exception {
         Application<DockstoreWebserviceConfiguration> application;
         if (isNewApplication) {
             application = support.newApplication();
@@ -143,13 +147,13 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "1.3.1.consistency");
         application.run("db", "migrate", configPath, "--include", "test.confidential2");
         application.run("db", "migrate", configPath, "--include", "1.4.0");
-
+        application.run("db", "migrate", configPath, "--include", "1.5.0");
     }
 
     /**
      * Loads up a specific set of workflows into the database
      * Specifically for tests toolsIdGet4Workflows() in GA4GHV1IT.java and toolsIdGet4Workflows() in GA4GHV2IT.java
-     * @param support
+     * @param support reference to testing instance of the dockstore web service
      * @throws Exception
      */
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
@@ -162,23 +166,13 @@ public final class CommonTestUtilities {
     /**
      * Loads up a specific set of workflows into the database
      * Specifically for tests cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles in GA4GHV2IT.java
-     * @param support
+     * @param support reference to testing instance of the dockstore web service
      * @throws Exception
      */
     public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating testworkflow migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "migrate", CONFIG_PATH, "--include", "testworkflow");
-    }
-
-    /**
-     * Allows tests to clear the database completely
-     **/
-    private static void clearState() {
-        final File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        final INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        BasicPostgreSQL basicPostgreSQL = new BasicPostgreSQL(parseConfig);
-        basicPostgreSQL.clearDatabase();
     }
 
     /**
@@ -192,7 +186,7 @@ public final class CommonTestUtilities {
     }
 
     public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws ExecuteException, RuntimeException {
-        List commandList = new ArrayList<String>();
+        List<String> commandList = new ArrayList<>();
         commandList.add(dockstore.getAbsolutePath());
         commandList.addAll(Arrays.asList(commandArray));
         String commandString = String.join(" ", commandList);
@@ -203,10 +197,9 @@ public final class CommonTestUtilities {
      * For running the old dockstore client when spaces are involved
      * @param dockstore
      * @param commandArray
-     * @throws ExecuteException
      * @throws RuntimeException
      */
-    public static void runOldDockstoreClientWithSpaces(File dockstore, String[] commandArray) throws ExecuteException, RuntimeException {
+    public static void runOldDockstoreClientWithSpaces(File dockstore, String[] commandArray) throws RuntimeException {
         List<String> commandList;
         CommandLine commandLine = new CommandLine(dockstore.getAbsoluteFile());
 

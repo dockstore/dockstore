@@ -25,15 +25,21 @@ import io.swagger.annotations.ApiModel;
  */
 @ApiModel(description = "Enumerates the sources for access tokens for the dockstore")
 public enum TokenType {
-    QUAY_IO("quay.io"), GITHUB_COM("github.com"), DOCKSTORE("dockstore"), BITBUCKET_ORG("bitbucket.org"), GITLAB_COM("gitlab.com");
+    QUAY_IO("quay.io", false), GITHUB_COM("github.com", true), DOCKSTORE("dockstore", false), BITBUCKET_ORG("bitbucket.org", true), GITLAB_COM("gitlab.com", true);
     private final String friendlyName;
+    private final boolean sourceControlToken;
 
-    TokenType(String friendlyName) {
+    TokenType(String friendlyName, boolean sourceControlToken) {
         this.friendlyName = friendlyName;
+        this.sourceControlToken = sourceControlToken;
     }
 
     @Override
     public String toString() {
         return friendlyName;
+    }
+
+    public boolean isSourceControlToken() {
+        return sourceControlToken;
     }
 }

@@ -32,6 +32,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -53,23 +54,19 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private final HttpClient client;
     private final String bitbucketTokenContent;
 
-    // TODO: should be made protected in favour of factory
-
     /**
      * @param gitUsername           username that owns the bitbucket token
      * @param client
      * @param bitbucketTokenContent bitbucket token
-     * @param gitRepository         name of the repo
      */
-    public BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent, String gitRepository) {
+    BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent) {
         this.client = client;
         this.bitbucketTokenContent = bitbucketTokenContent;
         this.gitUsername = gitUsername;
-        this.gitRepository = gitRepository;
     }
 
     @Override
-    public String readFile(String fileName, String reference) {
+    public String readFile(String repositoryId, String fileName, String reference) {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -78,7 +75,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String branch = null;
 
         if (reference == null) {
-            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + gitRepository + "/main-branch";
+            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + repositoryId + "/main-branch";
 
             Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, bitbucketTokenContent, client);
             LOG.info(gitUsername + ": RESOURCE CALL: {}", mainBranchUrl);
@@ -103,7 +100,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             branch = reference;
         }
 
-        String url = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + '/' + fileName;
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + '/' + fileName;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
         LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
         if (asString.isPresent()) {
@@ -119,12 +116,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         } else {
             return null;
         }
-    }
-
-    @Override
-    public String getOrganizationEmail() {
-        // TODO: Need to get email of the container's organization/user
-        return "";
     }
 
     @Override
@@ -197,6 +188,12 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    void updateReferenceType(String repositoryId, Version version) {
+        // TODO:
+        return;
+    }
+
+    @Override
     public Workflow initializeWorkflow(String repositoryId) {
         Workflow workflow = new Workflow();
 
@@ -255,7 +252,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
                     workflow.addWorkflowVersion(
-                            combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
+                            combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
                 }
             }
 

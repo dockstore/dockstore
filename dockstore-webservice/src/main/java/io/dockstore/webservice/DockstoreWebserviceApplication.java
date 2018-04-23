@@ -246,7 +246,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
-                labelDAO, fileDAO, workflowDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource);
+                labelDAO, fileDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource);
         environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
 
