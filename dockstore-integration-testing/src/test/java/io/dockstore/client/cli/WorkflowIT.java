@@ -130,6 +130,10 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW);
         final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId());
 
+        // tests for reference type for bitbucket workflows
+        assertTrue("should see at least 4 branches",refreshBitbucket.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.BRANCH).count() >= 4);
+        assertTrue("should see at least 1 tags",refreshBitbucket.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.TAG).count() >= 1);
+
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
         assertEquals("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(), 4,
             refreshGithub.getWorkflowVersions().size());
@@ -208,7 +212,7 @@ public class WorkflowIT extends BaseIT {
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
 
-        // look that branches and tags are typed correctly for workflows
+        // look that branches and tags are typed correctly for workflows on GitHub
         assertTrue("should see at least 6 branches",refreshGithub.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.BRANCH).count() >= 6);
         assertTrue("should see at least 6 tags",refreshGithub.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.TAG).count() >= 6);
 

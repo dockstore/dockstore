@@ -196,6 +196,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
         objectMapper.enable(MapperFeature.ALLOW_EXPLICIT_PROPERTY_RENAMING);
+        // avoid using enum name values which can change
+        objectMapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
+        objectMapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
     }
 
     @Override

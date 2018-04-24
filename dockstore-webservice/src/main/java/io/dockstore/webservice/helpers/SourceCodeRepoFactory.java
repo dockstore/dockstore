@@ -44,11 +44,11 @@ public final class SourceCodeRepoFactory {
 
     public static SourceCodeRepoInterface createSourceCodeRepo(Token token, HttpClient client) {
         SourceCodeRepoInterface repo;
-        if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM.toString())) {
+        if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
             repo = new GitHubSourceCodeRepo(token.getUsername(), token.getContent());
-        } else if (Objects.equals(token.getTokenSource(), TokenType.BITBUCKET_ORG.toString())) {
+        } else if (Objects.equals(token.getTokenSource(), TokenType.BITBUCKET_ORG)) {
             repo = new BitBucketSourceCodeRepo(token.getUsername(), client, token.getContent());
-        } else if (Objects.equals(token.getTokenSource(), TokenType.GITLAB_COM.toString())) {
+        } else if (Objects.equals(token.getTokenSource(), TokenType.GITLAB_COM)) {
             repo = new GitLabSourceCodeRepo(token.getUsername(), client, token.getContent());
         } else {
             LOG.error("We do not currently support: " + token.getTokenSource());

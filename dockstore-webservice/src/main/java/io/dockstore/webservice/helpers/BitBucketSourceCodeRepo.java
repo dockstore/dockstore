@@ -91,7 +91,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 if (branch == null) {
                     LOG.info(gitUsername + ": Could NOT find bitbucket default branch!");
                     return null;
-                    // throw new CustomWebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 } else {
                     LOG.info(gitUsername + ": Default branch: {}", branch);
                 }
@@ -111,7 +110,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
 
-        if (content != null && !content.isEmpty()) {
+        if (!content.isEmpty()) {
             return content;
         } else {
             return null;
@@ -189,8 +188,30 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     void updateReferenceType(String repositoryId, Version version) {
-        // TODO:
-        return;
+        if (version.getReferenceType() != Version.ReferenceType.UNSET) {
+            return;
+        }
+        // Look at each version, check for valid workflows
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId;
+        // Call to Bitbucket API to get list of branches for a given repo (what about tags)
+        Optional<String> branches = ResourceUtilities.asString(url + "/branches", bitbucketTokenContent, client);
+        if (branches.isPresent()) {
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>)gson.fromJson(branches.get(), map.getClass());
+            if (map.keySet().stream().anyMatch(key -> key.equals(version.getReference()))) {
+                version.setReferenceType(Version.ReferenceType.BRANCH);
+            }
+        }
+        Optional<String> tags = ResourceUtilities.asString(url + "/tags", bitbucketTokenContent, client);
+        if (tags.isPresent()) {
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>)gson.fromJson(tags.get(), map.getClass());
+            if (map.keySet().stream().anyMatch(key -> key.equals(version.getReference()))) {
+                version.setReferenceType(Version.ReferenceType.TAG);
+            }
+        }
     }
 
     @Override
@@ -205,7 +226,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         // Setup workflow
         workflow.setOrganization(owner);
         workflow.setRepository(name);
-        workflow.setSourceControl(SourceControl.BITBUCKET.toString());
+        workflow.setSourceControl(SourceControl.BITBUCKET);
 
         final String gitUrl = BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX;
         workflow.setGitUrl(gitUrl);
@@ -269,7 +290,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String repositoryId;
         String giturl = entry.getGitUrl();
 
-        Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+        Pattern p = Pattern.compile("git@bitbucket.org:(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(giturl);
         LOG.info(gitUsername + ": " + giturl);
 

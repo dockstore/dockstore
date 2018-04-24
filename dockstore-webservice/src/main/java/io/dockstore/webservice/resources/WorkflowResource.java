@@ -54,6 +54,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
@@ -195,7 +196,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             }
             // Check if tokens for git hosting services are valid and refresh corresponding workflows
             // Refresh Bitbucket
-            Token token = Token.extractToken(tokens, type.toString());
+            Token token = Token.extractToken(tokens, type);
             // create each type of repo and check its validity
             SourceCodeRepoInterface sourceCodeRepo = null;
             if (token != null) {
@@ -1062,9 +1063,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     private SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
         List<Token> tokens = checkOnBitbucketToken(user);
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
 
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
@@ -1304,7 +1305,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         String defaultTestParameterPath;
         String organization;
         String repository;
-        String sourceControl;
+        SourceControl sourceControl;
         boolean isPublished;
         String gitUrl;
         Date lastUpdated;
@@ -1336,7 +1337,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
             Matcher m = p.matcher(tool.getGitUrl());
             if (m.find()) {
-                sourceControl = m.group(1);
+                SourceControlConverter converter = new SourceControlConverter();
+                sourceControl = converter.convertToEntityAttribute(m.group(1));
                 organization = m.group(2);
                 repository = m.group(3);
             } else {

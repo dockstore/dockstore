@@ -249,7 +249,7 @@ public class ToolsImplCommonTest {
         workflow.setWorkflowName(TOOLNAME);
         workflow.setOrganization("ICGC-TCGA-PanCancer");
         workflow.setRepository("wdl-pcawg-sanger-cgp-workflow");
-        workflow.setSourceControl(SourceControl.GITHUB.toString());
+        workflow.setSourceControl(SourceControl.GITHUB);
         workflow.setDescriptorType("wdl");
         workflow.setDefaultWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         workflow.setDefaultTestParameterFilePath(null);

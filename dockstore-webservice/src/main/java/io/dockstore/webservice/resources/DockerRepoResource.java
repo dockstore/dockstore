@@ -144,10 +144,10 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         // Get user's quay and git tokens
         tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
 
         // with Docker Hub support it is now possible that there is no quayToken
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
@@ -231,10 +231,10 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         // Get user's quay and git tokens
         List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
 
         // with Docker Hub support it is now possible that there is no quayToken
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
@@ -488,7 +488,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
      */
     private boolean checkContainerForTags(final Tool tool, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
         if (quayToken == null) {
             // no quay token extracted
             throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
@@ -686,7 +686,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         List<Token> tokens = tokenDAO.findByUserId(userId);
         StringBuilder builder = new StringBuilder();
         for (Token token : tokens) {
-            if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
+            if (token.getTokenSource().equals(TokenType.QUAY_IO)) {
                 String url = TARGET_URL + "repository/" + repo + "/build/";
                 Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
@@ -1026,7 +1026,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private boolean checkIfUserOwns(final Tool tool, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
         // get quay token
-        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
 
         if (quayToken == null && Objects.equals(tool.getRegistry(), Registry.QUAY_IO.toString())) {
             LOG.info("WARNING: QUAY.IO token not found!");
