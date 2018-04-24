@@ -1,0 +1,127 @@
+<!--
+    Copyright 2018 OICR
+ *
+    Licensed under the Apache License, Version 2.0 (the "License")
+    you may not use this file except in compliance with the License
+    You may obtain a copy of the License at
+ *
+        http://www.apache.org/licenses/LICENSE-2.0
+ *
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<table class="table table-striped table-condensed">
+    <thead>
+        <tr>
+            <th>Feature</th>
+            <th>CWL</th>
+            <th>WDL</th>
+        </tr>
+    </thead>
+
+    <body>
+        <tr>
+            <th>GUI</th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td>Tool registration</td>
+            <td class="success">Yes</td>
+            <td class="success">Yes</td>
+        </tr>
+        <tr>
+            <td>Workflow registration</td>
+            <td class="success">Yes</td>
+            <td class="success">Yes</td>
+        </tr>
+        <tr>
+            <td>DAG Display</td>
+            <td class="success">Yes (cwl version=>1.0)</td>
+            <td class="danger">No</td>
+        </tr>
+        <tr>
+            <td>Tool Tab Display</td>
+            <td class="success">Yes (cwl version=>1.0)</td>
+            <td class="danger">No</td>
+        </tr>
+        <tr>
+            <td>Launch-with Platforms</td>
+            <td class="danger">N/A</td>
+            <td class="success">FireCloud
+                <br>DNAStack (workflows only)</td>
+        </tr>
+        <tr>
+            <td>Metadata Extraction</td>
+            <td class="success">Yes</td>
+            <td class="warning">Yes (but some metadata is missing)</td>
+        </tr>
+        <tr>
+            <th>CLI</th>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+            <td>Local workflow engines</td>
+            <td class="success">Bunny
+                <sup>[1]</sup>
+                <br>cwltool
+            </td>
+            <td class="success">Cromwell
+                <sup>[2]</sup>
+            </td>
+        </tr>
+        <tr>
+            <td>File Provisioning In</td>
+            <td class="success">Local File System
+                <br>HTTP
+                <br>FTP
+                <br>S3 via plugins
+            </td>
+            <td class="success">Local File System
+                <br>HTTP
+                <br>FTP
+                <br>S3 via plugins
+            </td>
+        </tr>
+        <tr>
+            <td>Plugins Support</td>
+            <td class="success">
+                <a href="https://github.com/dockstore/s3-plugin">s3</a>
+                <br>
+                <a href="https://github.com/dockstore/s3cmd-plugin">s3cmd</a>
+                <br>
+                <a href="https://github.com/dockstore/icgc-get-plugin">icgc-get</a>
+            </td>
+            <td class="success">
+                <a href="https://github.com/dockstore/s3-plugin">s3</a>
+                <br>
+                <a href="https://github.com/dockstore/s3cmd-plugin">s3cmd</a>
+                <br>
+                <a href="https://github.com/dockstore/icgc-get-plugin">icgc-get</a>
+            </td>
+        </tr>
+        <tr>
+            <td>File Provisioning Out</td>
+            <td class="success">Local File System
+                <sup>[3]</sup>
+                <br>HTTP
+                <sup>[3]</sup>
+                <br>FTP
+                <sup>[3]</sup>
+                <br>S3 via plugins 
+                <sup>[3]</sup>
+            </td>
+            <td class="warning">Local File System
+            </td>
+        </tr>
+        <tr>
+            <td>Notifications</td>
+            <td class="success">Yes</td>
+            <td class="success">Yes</td>
+        </tr>
+    </body>
+</table>

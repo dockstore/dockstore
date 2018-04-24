@@ -1,6 +1,14 @@
 language: ruby
 rvm:
   - 2.2
+addons:
+  apt:
+    packages:
+    - libcurl4-openssl-dev
+branches:
+  only:
+  - gh-pages
+  - /.*/
 
 install: 
   - bundle install
@@ -9,4 +17,3 @@ script:
   - bundle exec jekyll build
   # Ignore external certificate and SSL connect errors, ignore '#' and '#top'
   - htmlproofer --allow-hash-href --url-ignore="#top,/https://ci.commonwl.org/,/https://dockstore.org:8443/metadata/runner_dependencies/" _site/
-

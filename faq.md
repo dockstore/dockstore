@@ -135,11 +135,18 @@ Setting the default version affects a number of elements including (but not limi
 4. In the files tab, the default version's files would be displayed first.
 5. The docker pull command reflects the default version
 
+
 ## How to run Dockstore with Python 3?
 
 There are currently issues with avro, cwltool, and Python 3.  See [cwltool](https://github.com/common-workflow-language/cwltool/issues/524) for more info.  To work around this issue, instead of installing avro, install avro-cwl.  Therefore, the pip3 requirements.txt file should end up looking like [this](https://dockstore.org:8443/metadata/runner_dependencies?client_version=1.5.0&python_version=3&runner=cwltool&output=text)
 
 Note that installing the "avro" pip package afterwards will overwrite the "avro-cwl" pip package and will result in cwltool not working again.
+
+## How do I add other users as maintainers of a tool?
+For tools registered on Quay.io and workflows registered with GitHub, Dockstore automatically allows users from the same Quay.io organization to manage tools together (users will need to refresh). 
+
+For tools registered on Docker Hub, GitLab or private registries, this feature currently does not exist because these registries do not allow the retrieval of organization information.
+Likewise, workflows registered with other source code repositories lack this feature.
 
 ## Any last tips on using Dockstore?
 

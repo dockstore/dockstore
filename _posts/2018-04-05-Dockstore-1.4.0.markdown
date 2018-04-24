@@ -1,0 +1,30 @@
+---
+layout: post
+title:  "Dockstore 1.4.0"
+date:   2018-04-05 09:00:00 -0400
+categories: dockstore update
+---
+We've just released the next major version of Dockstore!
+
+## Highlighted new features include:
+* support for registering [checker workflows](https://docs.dockstore.org/docs/publisher-tutorials/checker-workflows/), workflows that validate whether a workflow executed successfully to lead-up to the GA4GH workflow testbed
+  * see a [presentation](https://docs.google.com/presentation/d/1VXdReGYXayzO7Jr-9XaLHNv6Wt46CwfvkfFDR8OEgJM/edit?usp=sharing) and our tutorial in progress at https://github.com/ga4gh/dockstore/wiki/WIP-Checker-Workflow-Support-Tutorial 
+* launch-with [Firecloud](https://software.broadinstitute.org/firecloud/) support, see a summary [here](https://docs.dockstore.org/docs/user-tutorials/firecloud-launch-with/)
+* support for the next iteration of the tool registry schema, see [v2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.1)
+* usability improvements such as the ability to link to specific versions of workflows such as [Sanger 2.0.3](https://dockstore.org/containers/quay.io/pancancer/pcawg-sanger-cgp-workflow:2.0.3), search by [workflow or tool language](https://dockstore.org/search?_type=tool&descriptorType=cwl&searchMode=files), and sorting by number of stars
+* user requests such as the ability to link to [unencoded workflows](https://github.com/ga4gh/dockstore/issues/1097) 
+* documentation has been moved out to [docs.dockstore.org/](https://docs.dockstore.org/) allowing us to update it more often
+* CLI
+  * ability to [configure](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/#alternative-cwl-launchers) Cromwell and Bunny (rabix) version or use the [generic cwl-runner interface](https://github.com/common-workflow-language/common-workflow-language/blob/master/v1.1.0-dev1/cwl-runner.cwl) to run cwl
+  * ability to [POST notifications](https://docs.dockstore.org/docs/user-tutorials/launch/#notifications) during workflow execution to a custom endpoint
+  * ability to run unpublished tools and workflows (if you are the owner or in the organization for a tool or workflow)
+* [WIP](https://github.com/ga4gh/dockstore/issues/1058) for displaying CWL visualizations using view.commonwl.org 
+
+See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/milestone/15).
+
+## Breaking changes
+### Major
+Workflow IDs now take into account the source control repo that they were indexed from for example [https://dockstore.org/workflows/github.com/h3abionet/h3agatk](https://dockstore.org/workflows/github.com/h3abionet/h3agatk) is the proper home of that workflow as opposed to [https://dockstore.org/workflows/h3abionet/h3agatk](https://dockstore.org/workflows/h3abionet/h3agatk) 
+### Minor
+* can no longer change tool or workflow name for entries that have already been created
+* can no longer change descriptor type of workflows (unless in stub mode)
