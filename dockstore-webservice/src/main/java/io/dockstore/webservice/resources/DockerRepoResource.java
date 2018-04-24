@@ -434,7 +434,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         if (quayToken == null) {
             // no quay token extracted
             throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
-                HttpStatus.SC_NOT_FOUND);
+                    HttpStatus.SC_NOT_FOUND);
         }
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
 

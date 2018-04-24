@@ -64,7 +64,7 @@ public final class JCommanderUtility {
         List<ParameterDescription> sorted = commander.getParameters();
 
         printHelpHeader();
-        printJCommanderHelpUsage(programName, commandName, jc);
+        printJCommanderHelpUsage(programName, commandName, commander);
         printJCommanderHelpDescription(description);
         printJCommanderHelpCommand(commander);
         printJCommanderHelpRequiredParameters(sorted);
@@ -152,12 +152,25 @@ public final class JCommanderUtility {
         }
         if (def != null && !pd.isHelp()) {
             String displayedDef = Strings.isStringEmpty(def.toString()) ? "<empty string>" : def.toString();
-            ArgumentUtility.out("Default: " + (parameter.password() ? "********" : displayedDef));
+            outFormatted("%-" + maxLength + "s %s", "  ", "Default: " + (parameter.password() ? "********" : displayedDef));
         }
     }
 
     private static void printJCommanderHelpFooter() {
         out("---------------------------------------------");
         out("");
+    }
+
+    /**
+     * This function is used when nesting commands within commands (ex. list and download within plugin)
+     *
+     * @param parentCommand The parent command (ex. plugin)
+     * @param commandName   The nested command name (ex. "list")
+     * @param commandObject The nested command (ex. list)
+     * @return
+     */
+    public static JCommander addCommand(JCommander parentCommand, String commandName, Object commandObject) {
+        parentCommand.addCommand(commandName, commandObject);
+        return parentCommand.getCommands().get(commandName);
     }
 }

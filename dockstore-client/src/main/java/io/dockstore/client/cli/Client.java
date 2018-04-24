@@ -45,6 +45,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import io.cwl.avro.CWL;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.DepCommand;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.Utilities;
@@ -146,7 +147,7 @@ public class Client {
         return installLocation;
     }
 
-    static String getCurrentVersion() {
+    public static String getCurrentVersion() {
         final Properties properties = new Properties();
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         try {
@@ -690,6 +691,11 @@ public class Client {
                         handled = SearchClient.handleCommand(args, this.extendedGA4GHApi);
                     } else if ("checker".equals(mode)) {
                         targetClient = getCheckerClient();
+                    } else if ("deps".equals(mode)) {
+                        args.add(0, "deps");
+                        String[] argsArray = new String[args.size()];
+                        argsArray = args.toArray(argsArray);
+                        handled = DepCommand.handleDepCommand(argsArray);
                     }
 
                     if (targetClient != null) {

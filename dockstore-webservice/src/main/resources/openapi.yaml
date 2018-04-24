@@ -2600,6 +2600,56 @@ paths:
             text/xml:
               schema:
                 type: string
+  /metadata/runner_dependencies:
+    get:
+      tags:
+        - metadata
+      summary: Returns the file containing runner dependencies
+      description: ''
+      operationId: getRunnerDependencies
+      parameters:
+        - name: client_version
+          in: query
+          description: The Dockstore client version
+          required: false
+          schema:
+            type: string
+        - name: python_version
+          in: query
+          description: 'Python version, only relevant for the cwltool runner'
+          required: false
+          schema:
+            type: string
+            default: '2'
+        - name: runner
+          in: query
+          description: The tool runner
+          required: false
+          schema:
+            type: string
+            enum:
+              - cwltool
+            default: cwltool
+        - name: output
+          in: query
+          description: Response type
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - text
+            default: text
+      responses:
+        '200':
+          description: successful operation
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
   /metadata/sitemap:
     get:
       tags:

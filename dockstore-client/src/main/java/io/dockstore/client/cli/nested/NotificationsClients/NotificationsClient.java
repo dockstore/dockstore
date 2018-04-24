@@ -20,7 +20,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 import com.google.gson.Gson;
-import io.dockstore.client.cli.ArgumentUtility;
 import io.dockstore.client.cli.Client;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -46,14 +45,14 @@ public class NotificationsClient {
     protected String uuid;
     protected boolean disabled = false;
 
-
     public NotificationsClient(String hookURL, String uuid) {
         boolean invalidHookURL = (hookURL == null || hookURL.isEmpty());
         boolean invalidUUID = (uuid == null || uuid.isEmpty());
         if (invalidHookURL) {
             if (!invalidUUID) {
-                ArgumentUtility.errorMessage("Notifications UUID is specified but no notifications webhook URL found in config file.  Aborting launch.",
-                        Client.CLIENT_ERROR);
+                System.err.println(
+                        "Notifications UUID is specified but no notifications webhook URL found in config file.  Aborting launch.");
+                System.exit(Client.CLIENT_ERROR);
             }
             disabled = true;
 
@@ -119,6 +118,7 @@ public class NotificationsClient {
      * 1. The message is send via HTTP POST
      * 2. The message is send with Content-type: application/json
      * 3. The message is a JSON
+     *
      * @param jsonMessage
      */
     private void generalSendMessage(String jsonMessage) {
