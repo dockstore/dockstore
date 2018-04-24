@@ -271,19 +271,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     /**
-     * Might be redundant now
      * @return
      */
-    @Enumerated(EnumType.STRING)
     @JsonProperty("source_control_provider")
     @ApiModelProperty(position = 26)
-    public SourceControl getSourceControlProvider() {
-        for (SourceControl sc : SourceControl.values()) {
-            if (sc == this.sourceControl) {
-                return sc;
-            }
-        }
-        return null;
+    public String getSourceControlProvider() {
+        return this.sourceControl.name();
     }
 
     public void setDescriptorType(String descriptorType) {

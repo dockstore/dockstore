@@ -5329,10 +5329,6 @@ definitions:
         type: "string"
         position: 26
         readOnly: true
-        enum:
-        - "GITHUB"
-        - "BITBUCKET"
-        - "GITLAB"
     description: "This describes one workflow in the dockstore"
   WorkflowVersion:
     type: "object"
