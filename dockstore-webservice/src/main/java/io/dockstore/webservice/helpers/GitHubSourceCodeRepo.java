@@ -442,7 +442,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             repo = github.getRepository(repositoryId);
             GHRef[] refs = repo.getRefs();
 
-            for(GHRef ref : refs) {
+            for (GHRef ref : refs) {
                 String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
                 if (reference.equals(version.getReference())) {
                     if (ref.getRef().startsWith("refs/heads/")) {
