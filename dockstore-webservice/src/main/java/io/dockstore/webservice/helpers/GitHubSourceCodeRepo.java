@@ -417,7 +417,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // Get repository based on username and repo id
         if (repositoryId != null) {
             try {
-                GHRepository repository = github.getRepository(gitUsername + "/" + repositoryId);
+                GHRepository repository = github.getRepository(repositoryId);
                 // Determine the default branch on Github
                 return repository.getDefaultBranch();
             } catch (IOException e) {
