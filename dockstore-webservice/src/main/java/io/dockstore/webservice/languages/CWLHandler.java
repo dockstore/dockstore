@@ -156,7 +156,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         Map<String, SourceFile> recursiveImports = new HashMap<>();
         for (SourceFile file : imports.values()) {
             String workingDirectory = FilenameUtils.getFullPath(file.getPath());
-            final Map<String, SourceFile> sourceFiles = processImports(workingDirectory, file.getContent(), version, sourceCodeRepoInterface);
+            final Map<String, SourceFile> sourceFiles = processImports(repositoryId, workingDirectory, file.getContent(), version, sourceCodeRepoInterface);
             recursiveImports.putAll(sourceFiles);
         }
         recursiveImports.putAll(imports);
