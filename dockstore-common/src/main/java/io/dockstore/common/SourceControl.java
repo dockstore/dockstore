@@ -16,6 +16,8 @@
 
 package io.dockstore.common;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * This enumerates the types of source control that we can associate an entry with.
  *
@@ -23,7 +25,8 @@ package io.dockstore.common;
  */
 public enum SourceControl {
     // Add new source control here
-    GITHUB("github.com", "GitHub"), BITBUCKET("bitbucket.org", "BitBucket"), GITLAB("gitlab.com", "GitLab");
+    @JsonProperty("github.com") GITHUB("github.com", "GitHub"), @JsonProperty("bitbucket.org") BITBUCKET("bitbucket.org",
+        "BitBucket"), @JsonProperty("gitlab.com") GITLAB("gitlab.com", "GitLab");
 
     /**
      * this name is used in the source control path

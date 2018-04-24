@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 
 /**
@@ -25,7 +26,9 @@ import io.swagger.annotations.ApiModel;
  */
 @ApiModel(description = "Enumerates the sources for access tokens for the dockstore")
 public enum TokenType {
-    QUAY_IO("quay.io", false), GITHUB_COM("github.com", true), DOCKSTORE("dockstore", false), BITBUCKET_ORG("bitbucket.org", true), GITLAB_COM("gitlab.com", true);
+    @JsonProperty("quay.io") QUAY_IO("quay.io", false), @JsonProperty("github.com") GITHUB_COM("github.com",
+        true), @JsonProperty("dockstore") DOCKSTORE("dockstore", false), @JsonProperty("bitbucket.org") BITBUCKET_ORG("bitbucket.org",
+        true), @JsonProperty("gitlab.com") GITLAB_COM("gitlab.com", true);
     private final String friendlyName;
     private final boolean sourceControlToken;
 
