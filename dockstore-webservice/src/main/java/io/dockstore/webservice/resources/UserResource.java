@@ -371,7 +371,7 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // Check if the user has tokens for the organization they're refreshing
         checkToolTokens(authUser, userId, organization);
-        List<Tool> tools = dockerRepoResource.refreshToolsForUser(userId, organization);
+        dockerRepoResource.refreshToolsForUser(userId, organization);
 
         userDAO.clearCache();
         authUser = userDAO.findById(authUser.getId());
@@ -438,6 +438,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkToolTokens(authUser, userId, null);
 
         dockerRepoResource.refreshToolsForUser(userId, null);
+        userDAO.clearCache();
         // TODO: Only update the ones that have changed
         authUser = userDAO.findById(authUser.getId());
         // Update user data

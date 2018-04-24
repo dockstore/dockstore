@@ -237,6 +237,50 @@ public class ClientIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" });
     }
 
+    /**
+     * Tests the 'dockstore deps' command with a client version and python 3 version
+     * Passes if the returned result contains 'avro-cwl' as its dependency and the other common dependencies
+     * @throws IOException
+     */
+    @Test
+    public void testDepsCommandWithVersionAndPython3() throws IOException {
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.4.0", "--python-version", "3"});
+        Assert.assertTrue(systemOutRule.getLog().contains("avro-cwl=="));
+        assertDepsCommandOutput();
+    }
+
+    /**
+     * Tests the 'dockstore deps' command with default and no additional flag
+     * Passes if the returned result contains 'avro' as its dependency and the other common dependencies
+     * @throws IOException
+     */
+    @Test
+    public void testDepsCommand() throws IOException {
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps" });
+        Assert.assertTrue(systemOutRule.getLog().contains("avro=="));
+        assertDepsCommandOutput();
+    }
+
+    /**
+     * Tests the 'dockstore deps --help' command.
+     * Passes if it contains the right title
+     * @throws IOException
+     */
+    @Test
+    public void testDepsCommandHelp() throws IOException {
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--help" });
+        Assert.assertTrue(systemOutRule.getLog().contains("Print tool/workflow runner dependencies"));
+    }
+
+    private void assertDepsCommandOutput() {
+        Assert.assertTrue(systemOutRule.getLog().contains("setuptools=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("cwl-runner"));
+        Assert.assertTrue(systemOutRule.getLog().contains("cwltool=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("schema-salad=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("ruamel.yaml=="));
+        Assert.assertTrue(systemOutRule.getLog().contains("requests=="));
+    }
+
     @Test
     public void touchOnAllHelpMessages() throws IOException {
 

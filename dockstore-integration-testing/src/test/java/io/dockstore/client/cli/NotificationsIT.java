@@ -65,7 +65,7 @@ public class NotificationsIT extends BaseIT {
     public void launchCWLToolWithNotificationsUUIDNoURL() throws IOException {
         exit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         exit.checkAssertionAfterwards(() -> {
-            String log = systemOutRule.getLog();
+            String log = systemErrRule.getLog();
             Assert.assertTrue(log, log.contains("Aborting launch."));
         });
         Client.main(
@@ -129,7 +129,7 @@ public class NotificationsIT extends BaseIT {
     public void launchWDLToolWithNotificationsUUIDNoURL() throws IOException {
         exit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         exit.checkAssertionAfterwards(() -> {
-            String log = systemOutRule.getLog();
+            String log = systemErrRule.getLog();
             Assert.assertTrue(log, log.contains("Aborting launch."));
         });
         Client.main(
