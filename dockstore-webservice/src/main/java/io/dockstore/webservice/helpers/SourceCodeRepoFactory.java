@@ -18,10 +18,14 @@ package io.dockstore.webservice.helpers;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -38,6 +42,23 @@ public final class SourceCodeRepoFactory {
         // hide the constructor for utility classes
     }
 
+    public static SourceCodeRepoInterface createSourceCodeRepo(Token token, HttpClient client) {
+        SourceCodeRepoInterface repo;
+        if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
+            repo = new GitHubSourceCodeRepo(token.getUsername(), token.getContent());
+        } else if (Objects.equals(token.getTokenSource(), TokenType.BITBUCKET_ORG)) {
+            repo = new BitBucketSourceCodeRepo(token.getUsername(), client, token.getContent());
+        } else if (Objects.equals(token.getTokenSource(), TokenType.GITLAB_COM)) {
+            repo = new GitLabSourceCodeRepo(token.getUsername(), client, token.getContent());
+        } else {
+            LOG.error("We do not currently support: " + token.getTokenSource());
+            throw new CustomWebApplicationException("Sorry, we do not support " + token.getTokenSource() + ".",
+                HttpStatus.SC_UNSUPPORTED_MEDIA_TYPE);
+        }
+        repo.checkSourceCodeValidity();
+        return repo;
+    }
+
     public static SourceCodeRepoInterface createSourceCodeRepo(String gitUrl, HttpClient client, String bitbucketTokenContent,
             String gitlabTokenContent, String githubTokenContent) {
 
@@ -49,21 +70,20 @@ public final class SourceCodeRepoFactory {
 
         String source = repoUrlMap.get("Source");
         String gitUsername = repoUrlMap.get("Username");
-        String gitRepository = repoUrlMap.get("Repository");
 
         SourceCodeRepoInterface repo;
-        if ("github.com".equals(source)) {
-            repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent, gitRepository);
-        } else if ("bitbucket.org".equals(source)) {
+        if (SourceControl.GITHUB.toString().equals(source)) {
+            repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent);
+        } else if (SourceControl.BITBUCKET.toString().equals(source)) {
             if (bitbucketTokenContent != null) {
-                repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent, gitRepository);
+                repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent);
             } else {
                 LOG.info("WARNING: Source is from Bitbucket, but user does not have Bitbucket token!");
                 return null;
             }
-        } else if ("gitlab.com".equals(source)) {
+        } else if (SourceControl.GITLAB.toString().equals(source)) {
             if (gitlabTokenContent != null) {
-                repo = new GitLabSourceCodeRepo(gitUsername, client, gitlabTokenContent, gitRepository);
+                repo = new GitLabSourceCodeRepo(gitUsername, client, gitlabTokenContent);
             } else {
                 LOG.info("WARNING: Source is from Gitlab, but user does not have Gitlab token!");
                 return null;
@@ -82,7 +102,7 @@ public final class SourceCodeRepoFactory {
      * @param url
      * @return a map with keys: Source, Username, Repository
      */
-    static Map<String, String> parseGitUrl(String url) {
+    public static Map<String, String> parseGitUrl(String url) {
         // format 1 git@github.com:ga4gh/dockstore-ui.git
         Pattern p1 = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m1 = p1.matcher(url);

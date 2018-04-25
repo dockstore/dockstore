@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
+import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
@@ -60,9 +61,10 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             fullQueryName += "findByPath";
         }
 
+        SourceControlConverter converter = new SourceControlConverter();
         // Create query
         Query query = namedQuery(fullQueryName)
-            .setParameter("sourcecontrol", sourcecontrol)
+            .setParameter("sourcecontrol", converter.convertToEntityAttribute(sourcecontrol))
             .setParameter("organization", organization)
             .setParameter("repository", repository);
 
@@ -110,9 +112,11 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             }
         }
 
+        SourceControlConverter converter = new SourceControlConverter();
+
         // Create query
         Query query = namedQuery(fullQueryName)
-            .setParameter("sourcecontrol", sourcecontrol)
+            .setParameter("sourcecontrol", converter.convertToEntityAttribute(sourcecontrol))
             .setParameter("organization", organization)
             .setParameter("repository", repository);
 

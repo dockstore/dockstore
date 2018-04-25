@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.CommonTestUtilities;
@@ -38,6 +37,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
@@ -54,8 +54,11 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -77,7 +80,6 @@ public class WorkflowIT extends BaseIT {
 
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = "DockstoreTestUser2/dockstore-cgpmap";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -90,7 +92,6 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testStubRefresh() throws ApiException {
-        // need to promote user to admin to refresh all stubs
         final ApiClient webClient = getWebClient();
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
@@ -108,7 +109,6 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testTargettedRefresh() throws ApiException {
-        // need to promote user to admin to refresh all stubs
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
@@ -130,28 +130,30 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW);
         final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId());
 
-        assertTrue("github workflow is not in full mode", refreshGithub.getMode() == Workflow.ModeEnum.FULL);
-        assertTrue("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(),
-                refreshGithub.getWorkflowVersions().size() == 4);
-        assertTrue("should find two versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                        .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(),
-                refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count()
-                        == 2);
-        assertTrue("should find two valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                        .filter(WorkflowVersion::isValid).count(),
-                refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 2);
+        // tests for reference type for bitbucket workflows
+        assertTrue("should see at least 4 branches",refreshBitbucket.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.BRANCH).count() >= 4);
+        assertTrue("should see at least 1 tags",refreshBitbucket.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.TAG).count() >= 1);
 
-        assertTrue("bitbucket workflow is not in full mode", refreshBitbucket.getMode() == Workflow.ModeEnum.FULL);
+        assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
+        assertEquals("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(), 4,
+            refreshGithub.getWorkflowVersions().size());
+        assertEquals("should find two versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
+                .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(), 2,
+            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count());
+        assertEquals("should find two valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
+                .filter(WorkflowVersion::isValid).count(), 2,
+            refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
-        assertTrue("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(),
-                refreshBitbucket.getWorkflowVersions().size() == 5);
-        assertTrue("should find 4 versions with files for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
-                        .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(),
-                refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty())
-                        .count() == 4);
-        assertTrue("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
-                        .filter(WorkflowVersion::isValid).count(),
-                refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 4);
+        assertSame("bitbucket workflow is not in full mode", refreshBitbucket.getMode(), Workflow.ModeEnum.FULL);
+
+        assertEquals("bitbucket workflow version count is wrong: " + refreshBitbucket.getWorkflowVersions().size(), 5,
+            refreshBitbucket.getWorkflowVersions().size());
+        assertEquals("should find 4 versions with files for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
+                .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(), 4,
+            refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count());
+        assertEquals("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
+                .filter(WorkflowVersion::isValid).count(), 4,
+            refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
 
     }
@@ -208,16 +210,20 @@ public class WorkflowIT extends BaseIT {
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
-        assertTrue("github workflow is not in full mode", refreshGithub.getMode() == Workflow.ModeEnum.FULL);
-        assertTrue("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(),
-            refreshGithub.getWorkflowVersions().size() == 12);
-        assertTrue("should find 12 versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(),
-            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count()
-                == 12);
-        assertTrue("should find 12 valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
-                .filter(WorkflowVersion::isValid).count(),
-            refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 12);
+        assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
+
+        // look that branches and tags are typed correctly for workflows on GitHub
+        assertTrue("should see at least 6 branches",refreshGithub.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.BRANCH).count() >= 6);
+        assertTrue("should see at least 6 tags",refreshGithub.getWorkflowVersions().stream().filter(version -> version.getReferenceType() == WorkflowVersion.ReferenceTypeEnum.TAG).count() >= 6);
+
+        assertEquals("github workflow version count is wrong: " + refreshGithub.getWorkflowVersions().size(), 12,
+            refreshGithub.getWorkflowVersions().size());
+        assertEquals("should find 12 versions with files for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
+                .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(), 12,
+            refreshGithub.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count());
+        assertEquals("should find 12 valid versions for github workflow, found : " + refreshGithub.getWorkflowVersions().stream()
+                .filter(WorkflowVersion::isValid).count(), 12,
+            refreshGithub.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // nextflow version should have
         assertTrue("should find 2 files for each version for now: " + refreshGithub.getWorkflowVersions().stream()
@@ -246,10 +252,10 @@ public class WorkflowIT extends BaseIT {
 
         // Check that there are only stubs (no workflow version)
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
-        assertTrue("No entries in workflowversion", count2 == 0);
+        assertEquals("No entries in workflowversion", 0, count2);
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("No workflows are in full mode", count3 == 0);
+        assertEquals("No workflows are in full mode", 0, count3);
 
         // check that a nextflow workflow made it
         long nfWorkflowCount = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
@@ -268,7 +274,7 @@ public class WorkflowIT extends BaseIT {
             }
         });
         mtaNf = workflowApi.getWorkflow(mtaNf.getId());
-        assertTrue("Nextflow workflow not found after update", mtaNf != null);
+        assertNotNull("Nextflow workflow not found after update", mtaNf);
         assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
         int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> version.getSourceFiles().size()).sum();
         assertTrue("nextflow workflow should have at least two sourcefiles", numOfSourceFiles >= 2);
@@ -285,7 +291,7 @@ public class WorkflowIT extends BaseIT {
         Tool toolV2 = ga4Ghv2Api.toolsIdGet(mtaWorkflowID);
         assertTrue("could get mta as part of list", toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects
             .equals(tool.getId(), mtaWorkflowID)));
-        assertTrue("could get mta as a specific tool", toolV2 != null);
+        assertNotNull("could get mta as a specific tool", toolV2);
     }
 
     /**
@@ -314,12 +320,12 @@ public class WorkflowIT extends BaseIT {
         // publish one
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         workflowApi.publish(workflowByPath.getId(), publishRequest);
-        assertTrue("should have one published, found  " + workflowApi.allPublishedWorkflows().size(),
-                workflowApi.allPublishedWorkflows().size() == 1);
+        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows().size(), 1,
+            workflowApi.allPublishedWorkflows().size());
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId());
-        assertTrue("did not get published workflow", publishedWorkflow != null);
+        assertNotNull("did not get published workflow", publishedWorkflow);
         final Workflow publishedWorkflowByPath = workflowApi.getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
-        assertTrue("did not get published workflow", publishedWorkflowByPath != null);
+        assertNotNull("did not get published workflow", publishedWorkflowByPath);
     }
 
     /**
@@ -355,10 +361,10 @@ public class WorkflowIT extends BaseIT {
         // Assert some things
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("No workflows are in full mode", count == 0);
+        assertEquals("No workflows are in full mode", 0, count);
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where workflowname = 'altname'", new ScalarHandler<>());
-        assertTrue("There should be two workflows with name altname, there are " + count2, count2 == 2);
+        assertEquals("There should be two workflows with name altname, there are " + count2, 2, count2);
 
         // Publish github workflow
         workflowApi.refresh(githubWorkflow.getId());
@@ -369,14 +375,14 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
 
         // Assert some things
-        assertTrue("should have two published, found  " + workflowApi.allPublishedWorkflows().size(),
-                workflowApi.allPublishedWorkflows().size() == 2);
+        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows().size(), 2,
+            workflowApi.allPublishedWorkflows().size());
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("Two workflows are in full mode", count3 == 2);
+        assertEquals("Two workflows are in full mode", 2, count3);
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
-        assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 6);
+        assertEquals("There should be 5 valid version tags, there are " + count4, 6, count4);
     }
 
 
@@ -384,8 +390,6 @@ public class WorkflowIT extends BaseIT {
      * Tests manual registration of a tool and check that descriptors are downloaded properly.
      * Description is pulled properly from an $include.
      *
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     @Test
@@ -408,11 +412,17 @@ public class WorkflowIT extends BaseIT {
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         toolApi.publish(registeredTool.getId(), publishRequest);
 
+        // look that branches and tags are typed correctly for tools
+        assertTrue("should see at least 6 branches",registeredTool.getTags().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.BRANCH).count() >= 1);
+        assertTrue("should see at least 6 tags",registeredTool.getTags().stream().filter(version -> version.getReferenceType() == Tag.ReferenceTypeEnum.TAG).count() >= 2);
+
         assertTrue("did not pick up description from $include", registeredTool.getDescription().contains("A Docker container for PCAP-core."));
-        assertTrue("did not import mixin and includes properly", registeredTool.getTags().stream().filter(tag -> Objects
-            .equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles().size() == 5);
-        assertTrue("did not import symbolic links to folders properly", registeredTool.getTags().stream().filter(tag -> Objects
-            .equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles().size() == 5);
+        assertEquals("did not import mixin and includes properly", 5,
+            registeredTool.getTags().stream().filter(tag -> Objects.equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles()
+                .size());
+        assertEquals("did not import symbolic links to folders properly", 5,
+            registeredTool.getTags().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles()
+                .size());
     }
 
     /**
@@ -469,7 +479,7 @@ public class WorkflowIT extends BaseIT {
 
         // test out methods to access secondary files
         final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
-        assertTrue("should find 2 imports, found " + masterImports.size(), masterImports.size() == 2);
+        assertEquals("should find 2 imports, found " + masterImports.size(), 2, masterImports.size());
         final SourceFile master = workflowApi.cwl(workflow.getId(), "master");
         assertTrue("master content incorrect", master.getContent().contains("untar") && master.getContent().contains("compile"));
 
@@ -496,9 +506,9 @@ public class WorkflowIT extends BaseIT {
         // test out methods to access secondary files
 
         final List<SourceFile> masterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
-        assertTrue("should find 3 imports, found " + masterImports.size(), masterImports.size() == 3);
+        assertEquals("should find 3 imports, found " + masterImports.size(), 3, masterImports.size());
         final List<SourceFile> rootImports = workflowApi.secondaryCwl(workflow.getId(), "rootTest");
-        assertTrue("should find 0 imports, found " + rootImports.size(), rootImports.size() == 0);
+        assertEquals("should find 0 imports, found " + rootImports.size(), 0, rootImports.size());
 
         // next, change a path for the root imports version
         List<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
@@ -506,8 +516,8 @@ public class WorkflowIT extends BaseIT {
         workflowApi.updateWorkflowVersion(workflow.getId(), workflowVersions);
         workflowApi.refresh(workflowByPathGithub.getId());
         final List<SourceFile> newMasterImports = workflowApi.secondaryCwl(workflow.getId(), "master");
-        assertTrue("should find 3 imports, found " + newMasterImports.size(), newMasterImports.size() == 3);
+        assertEquals("should find 3 imports, found " + newMasterImports.size(), 3, newMasterImports.size());
         final List<SourceFile> newRootImports = workflowApi.secondaryCwl(workflow.getId(), "rootTest");
-        assertTrue("should find 3 imports, found " + newRootImports.size(), newRootImports.size() == 3);
+        assertEquals("should find 3 imports, found " + newRootImports.size(), 3, newRootImports.size());
     }
 }

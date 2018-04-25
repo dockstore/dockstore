@@ -39,6 +39,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -75,10 +76,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(GitHubSourceCodeRepo.class);
     private final GitHub github;
 
-    // TODO: should be made protected in favour of factory
-    public GitHubSourceCodeRepo(String gitUsername, String githubTokenContent, String gitRepository) {
+    GitHubSourceCodeRepo(String gitUsername, String githubTokenContent) {
         this.gitUsername = gitUsername;
-        this.gitRepository = gitRepository;
         try {
             this.github = new GitHubBuilder().withOAuthToken(githubTokenContent, gitUsername).withRateLimitHandler(RateLimitHandler.WAIT).withAbuseLimitHandler(AbuseLimitHandler.WAIT).withConnector(new OkHttp3Connector(new OkUrlFactory(
                 new OkHttpClient.Builder().cache(DockstoreWebserviceApplication.getCache()).build()))).build();
@@ -88,11 +87,11 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public String readFile(String fileName, String reference) {
+    public String readFile(String repositoryId, String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
         GHRepository repo;
         try {
-            repo = github.getRepository(gitUsername + "/" + gitRepository);
+            repo = github.getRepository(repositoryId);
         } catch (IOException e) {
             LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
             return null;
@@ -188,16 +187,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
-    public String getOrganizationEmail() {
-        try {
-            return github.getMyself().getEmail();
-        } catch (IOException ex) {
-            LOG.info(gitUsername + ": Cannot find email {}", gitUsername);
-            return "";
-        }
-    }
-
-    @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
@@ -247,7 +236,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             GHRepository repository = github.getRepository(repositoryId);
             workflow.setOrganization(repository.getOwner().getLogin());
             workflow.setRepository(repository.getName());
-            workflow.setSourceControl(SourceControl.GITHUB.toString());
+            workflow.setSourceControl(SourceControl.GITHUB);
             workflow.setGitUrl(repository.getSshUrl());
             workflow.setLastUpdated(new Date());
             // Why is the path not set here?
@@ -278,6 +267,9 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     refName = StringUtils.removeStart(refName, "refs/heads/");
                 } else if (refName.startsWith("refs/tags/")) {
                     refName = StringUtils.removeStart(refName, "refs/tags/");
+                } else if (refName.startsWith("refs/pull/")) {
+                    // ignore these strange pull request objects that this library produces
+                    continue;
                 }
                 try {
                     String sha = ref.getObject().getSha();
@@ -332,7 +324,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     file.setPath(calculatedPath);
                     file.setType(identifiedType);
                     version.setValid(validWorkflow);
-                    version = combineVersionAndSourcefile(file, workflow, identifiedType, version, existingDefaults);
+                    version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
 
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
@@ -400,26 +392,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public String getRepositoryId(Entry entry) {
-        String repositoryId;
-        if (gitRepository == null) {
-            if (entry.getClass().equals(Tool.class)) {
-                // Parse git url for repo
-                Pattern p = Pattern.compile("git@bitbucket.org:(\\S+)/(\\S+)\\.git");
-                Matcher m = p.matcher(entry.getGitUrl());
+        if (entry.getClass().equals(Tool.class)) {
+            // Parse git url for repo
+            Pattern p = Pattern.compile("git@github.com:(\\S+)/(\\S+)\\.git");
+            Matcher m = p.matcher(entry.getGitUrl());
 
-                if (!m.find()) {
-                    repositoryId = null;
-                } else {
-                    repositoryId = m.group(2);
-                }
+            if (!m.find()) {
+                return null;
             } else {
-                repositoryId = ((Workflow)entry).getRepository();
+                return m.group(1) + "/" + m.group(2);
             }
         } else {
-            repositoryId = gitRepository;
+            return ((Workflow)entry).getOrganization() + '/' + ((Workflow)entry).getRepository();
         }
-
-        return repositoryId;
     }
 
     @Override
@@ -432,7 +417,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // Get repository based on username and repo id
         if (repositoryId != null) {
             try {
-                GHRepository repository = github.getRepository(gitUsername + "/" + repositoryId);
+                GHRepository repository = github.getRepository(repositoryId);
                 // Determine the default branch on Github
                 return repository.getDefaultBranch();
             } catch (IOException e) {
@@ -445,6 +430,35 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
         throw new UnsupportedOperationException("not implemented/needed for github");
+    }
+
+    @Override
+    void updateReferenceType(String repositoryId, Version version) {
+        if (version.getReferenceType() != Version.ReferenceType.UNSET) {
+            return;
+        }
+        GHRepository repo;
+        try {
+            repo = github.getRepository(repositoryId);
+            GHRef[] refs = repo.getRefs();
+
+            for (GHRef ref : refs) {
+                String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
+                if (reference.equals(version.getReference())) {
+                    if (ref.getRef().startsWith("refs/heads/")) {
+                        version.setReferenceType(Version.ReferenceType.BRANCH);
+                    } else if (ref.getRef().startsWith("refs/tags/")) {
+                        version.setReferenceType(Version.ReferenceType.TAG);
+                    } else {
+                        version.setReferenceType(Version.ReferenceType.NOT_APPLICABLE);
+                    }
+                    break;
+                }
+            }
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            // this is not so critical to warrant a http error code
+        }
     }
 
     /**

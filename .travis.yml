@@ -78,7 +78,7 @@ before_script:
 
 before_cache:
 - rm -rf /home/travis/.m2/repository/io/dockstore
-- rf -rf $HOME/.m2/repository/.cache/download-maven-plugin directory
+- rm -rf $HOME/.m2/repository/.cache/download-maven-plugin directory
 
 notifications:
   webhooks:

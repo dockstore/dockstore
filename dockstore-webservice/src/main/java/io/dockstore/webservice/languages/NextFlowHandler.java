@@ -56,7 +56,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
+    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
         ConfigSlurper slurper = new ConfigSlurper();
         ConfigObject parse = slurper.parse(content);
         Map<String, SourceFile> imports = new HashMap<>();
@@ -67,7 +67,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         if (manifest.containsKey("mainScript")) {
             mainScriptPath = (String)manifest.get("mainScript");
         }
-        SourceFile sourceFile = sourceCodeRepoInterface.readFile(version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
+        SourceFile sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
         imports.put(mainScriptPath, sourceFile);
 
         // TODO: does NextFlow have imports beyond the main script file linked to from nextflow.config?

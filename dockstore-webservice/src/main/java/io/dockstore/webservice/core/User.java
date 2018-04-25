@@ -45,6 +45,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -143,9 +144,9 @@ public class User implements Principal, Comparable<User> {
             throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.", HttpStatus.SC_FORBIDDEN);
         }
         Token githubToken = githubByUserId.get(0);
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(getUsername(), githubToken.getContent(), null);
-        gitHubSourceCodeRepo.checkSourceCodeValidity();
-        gitHubSourceCodeRepo.getUserMetadata(this);
+        GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
+        sourceCodeRepo.checkSourceCodeValidity();
+        sourceCodeRepo.getUserMetadata(this);
     }
 
     @JsonProperty

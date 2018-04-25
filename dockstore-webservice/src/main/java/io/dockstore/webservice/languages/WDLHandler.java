@@ -95,7 +95,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
+    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
         Map<String, SourceFile> imports = new HashMap<>();
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
         final File tempDesc;
@@ -122,7 +122,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             for (String importPath : importPaths) {
                 SourceFile importFile = new SourceFile();
 
-                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
+                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, importPath);
                 if (fileResponse == null) {
                     LOG.error("Could not read: " + importPath);
                     continue;

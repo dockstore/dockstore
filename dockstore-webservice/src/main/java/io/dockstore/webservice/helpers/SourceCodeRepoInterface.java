@@ -50,26 +50,27 @@ public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
 
     String gitUsername;
-    String gitRepository;
 
     /**
      * If this interface is pointed at a specific repository, grab a
      * file from a specific branch/tag
      *
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param fileName  the name of the file (full path) to retrieve
      * @param reference the tag/branch to get the file from
      * @return content of the file
      */
-    public abstract String readFile(String fileName, String reference);
+    public abstract String readFile(String repositoryId, String fileName, String reference);
 
     /**
      * Read a file from the importer and add it into files
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param tag the version of source control we want to read from
      * @param files the files collection we want to add to
      * @param fileType the type of file
      */
-    void readFile(Version tag, Collection<SourceFile> files, SourceFile.FileType fileType, String path) {
-        SourceFile sourceFile = this.readFile(tag, fileType, path);
+    void readFile(String repositoryId, Version tag, Collection<SourceFile> files, SourceFile.FileType fileType, String path) {
+        SourceFile sourceFile = this.readFile(repositoryId, tag, fileType, path);
         if (sourceFile != null) {
             files.add(sourceFile);
         }
@@ -77,11 +78,12 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Read a file from the importer and add it into files
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param tag the version of source control we want to read from
      * @param fileType the type of file
      */
-    public SourceFile readFile(Version tag, SourceFile.FileType fileType, String path) {
-        String fileResponse = this.readGitRepositoryFile(fileType, tag, path);
+    public SourceFile readFile(String repositoryId, Version tag, SourceFile.FileType fileType, String path) {
+        String fileResponse = this.readGitRepositoryFile(repositoryId, fileType, tag, path);
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
             dockstoreFile.setType(fileType);
@@ -90,26 +92,6 @@ public abstract class SourceCodeRepoInterface {
             return dockstoreFile;
         }
         return null;
-    }
-
-    /**
-     * Get the email for the current user
-     *
-     * @return email for the logged in user
-     */
-    public abstract String getOrganizationEmail();
-
-    /**
-     * Updates the username and repository used to retrieve files from github
-     * Note that this is only called when refreshing multiple workflows at once, because
-     * the code does not instantiate them (since they vary)
-     * Ex. ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow (breaks up into examples below)
-     * @param username ex. ICGC-TCGA-PanCancer
-     * @param repository ex. wdl-pcawg-sanger-cgp-workflow
-     */
-    public void updateUsernameAndRepository(String username, String repository) {
-        this.gitUsername = username;
-        this.gitRepository = repository;
     }
 
     /**
@@ -128,7 +110,7 @@ public abstract class SourceCodeRepoInterface {
     /**
      * Set up workflow with basic attributes from git repository
      *
-     * @param repositoryId
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @return workflow with some attributes set
      */
     public abstract Workflow initializeWorkflow(String repositoryId);
@@ -186,6 +168,10 @@ public abstract class SourceCodeRepoInterface {
 
         // Create branches and associated source files
         setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
+
+        // update each workflow with reference types
+        Set<WorkflowVersion> versions = workflow.getVersions();
+        versions.forEach(version -> updateReferenceType(repositoryId, version));
 
         // Get metadata for workflow and update workflow with it
         updateEntryMetadata(workflow, workflow.determineWorkflowType());
@@ -281,7 +267,7 @@ public abstract class SourceCodeRepoInterface {
      * Get the repository Id of an entry to be used for API calls
      *
      * @param entry
-     * @return repository id of an entry
+     * @return repository id of an entry, now standardised to be organization/repo_name
      */
     public abstract String getRepositoryId(Entry entry);
 
@@ -333,19 +319,19 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Resolves imports for a sourcefile, associates with version
-     *
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param sourceFile
      * @param workflow
      * @param identifiedType
      * @param version
      * @return workflow version
      */
-    WorkflowVersion combineVersionAndSourcefile(SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType,
+    WorkflowVersion combineVersionAndSourcefile(String repositoryId, SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType,
         WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         if (sourceFile != null && sourceFile.getContent() != null) {
-            final Map<String, SourceFile> stringSourceFileMap = this.resolveImports(sourceFile.getContent(), identifiedType, version);
+            final Map<String, SourceFile> stringSourceFileMap = this.resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version);
             sourceFileSet.addAll(stringSourceFileMap.values());
         }
 
@@ -356,7 +342,7 @@ public abstract class SourceCodeRepoInterface {
 
             List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream()
                     .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
-            testParameterFiles.forEach(file -> this.readFile(existingVersion, sourceFileSet, workflowDescriptorType, file.getPath()));
+            testParameterFiles.forEach(file -> this.readFile(repositoryId, existingVersion, sourceFileSet, workflowDescriptorType, file.getPath()));
         }
 
         // If source file is found and valid then add it
@@ -374,12 +360,13 @@ public abstract class SourceCodeRepoInterface {
 
     /**
      * Look in a source code repo for a particular file
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param fileType
      * @param version
      * @param specificPath if specified, look for a specific file, otherwise return the "default" for a fileType
      * @return  a FileResponse instance
      */
-    public String readGitRepositoryFile(SourceFile.FileType fileType, Version version, String specificPath) {
+    public String readGitRepositoryFile(String repositoryId, SourceFile.FileType fileType, Version version, String specificPath) {
 
         final String reference = version.getReference();
 
@@ -422,15 +409,15 @@ public abstract class SourceCodeRepoInterface {
         }
 
         if (!fileName.isEmpty()) {
-            return this.readFile(fileName, reference);
+            return this.readFile(repositoryId, fileName, reference);
         } else {
             return null;
         }
     }
 
-    Map<String, SourceFile> resolveImports(String content, SourceFile.FileType fileType, Version version) {
+    Map<String, SourceFile> resolveImports(String repositoryId, String content, SourceFile.FileType fileType, Version version) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
-        return languageInterface.processImports(content, version, this);
+        return languageInterface.processImports(repositoryId, content, version, this);
     }
 
     /**
@@ -461,4 +448,11 @@ public abstract class SourceCodeRepoInterface {
             }
         }
     }
+
+    /**
+     * Given a version of a tool or workflow, ensure that its reference type is up-to-date
+     * @param repositoryId
+     * @param version
+     */
+    abstract void updateReferenceType(String repositoryId, Version version);
 }

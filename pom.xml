@@ -971,6 +971,16 @@
                                     <version>1.8.0</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions/>
+                                <bannedDependencies>
+                                    <!-- currently, some of these dependencies are brought in transitively -->
+                                    <searchTransitive>false</searchTransitive>
+                                    <excludes>
+                                        <!-- superceded by org.apache.commons:commons-lang3 for direct dependencies-->
+                                        <exclude>commons-lang:commons-lang</exclude>
+                                        <!-- superceded by org.apache.commons:commons-configuration2 for direct dependencies-->
+                                        <exclude>commons-configuration:commons-configuration</exclude>
+                                    </excludes>
+                                </bannedDependencies>
                             </rules>
                         </configuration>
                         <goals>

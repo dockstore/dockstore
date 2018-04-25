@@ -138,16 +138,17 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
-        return processImports("", content, version, sourceCodeRepoInterface);
+    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
+        return processImports(repositoryId, "", content, version, sourceCodeRepoInterface);
     }
 
-    public Map<String, SourceFile> processImports(String workingDirectoryForFile, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
+    private Map<String, SourceFile> processImports(String repositoryId, String workingDirectoryForFile, String content, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface) {
         Map<String, SourceFile> imports = new HashMap<>();
         Yaml yaml = new Yaml();
         try {
             Map<String, ?> map = yaml.loadAs(content, Map.class);
-            handleMap(workingDirectoryForFile, version, imports, map, sourceCodeRepoInterface);
+            handleMap(repositoryId, workingDirectoryForFile, version, imports, map, sourceCodeRepoInterface);
         } catch (YAMLException e) {
             SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");
         }
@@ -155,7 +156,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         Map<String, SourceFile> recursiveImports = new HashMap<>();
         for (SourceFile file : imports.values()) {
             String workingDirectory = FilenameUtils.getFullPath(file.getPath());
-            final Map<String, SourceFile> sourceFiles = processImports(workingDirectory, file.getContent(), version, sourceCodeRepoInterface);
+            final Map<String, SourceFile> sourceFiles = processImports(repositoryId, workingDirectory, file.getContent(), version, sourceCodeRepoInterface);
             recursiveImports.putAll(sourceFiles);
         }
         recursiveImports.putAll(imports);
@@ -358,7 +359,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
     }
 
-    private void handleMap(String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, Map<String, ?> map,
+    private void handleMap(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, Map<String, ?> map,
         SourceCodeRepoInterface sourceCodeRepoInterface) {
         Set<String> importKeywords = Sets.newHashSet("$import", "$include", "$mixin", "import", "include", "mixin");
         for (Map.Entry<String, ?> e : map.entrySet()) {
@@ -366,7 +367,7 @@ public class CWLHandler implements LanguageHandlerInterface {
             if (importKeywords.contains(e.getKey().toLowerCase())) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
-                    handleImport(workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface);
+                    handleImport(repositoryId, workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
                 // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
@@ -374,33 +375,33 @@ public class CWLHandler implements LanguageHandlerInterface {
                 //  run: {import: revtool.cwl}
                 //  run: revtool.cwl
                 if (mapValue instanceof String) {
-                    handleImport(workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface);
+                    handleImport(repositoryId, workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface);
                 } else if (mapValue instanceof Map) {
                     // this handles the case where an import is used
-                    handleMap(workingDirectoryForFile, version, imports, (Map)mapValue, sourceCodeRepoInterface);
+                    handleMap(repositoryId, workingDirectoryForFile, version, imports, (Map)mapValue, sourceCodeRepoInterface);
                 }
             } else {
-                handleMapValue(workingDirectoryForFile, version, imports, mapValue, sourceCodeRepoInterface);
+                handleMapValue(repositoryId, workingDirectoryForFile, version, imports, mapValue, sourceCodeRepoInterface);
             }
         }
     }
 
-    private void handleMapValue(String workingDirectoryForFile, Version version, Map<String, SourceFile> imports,
+    private void handleMapValue(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports,
         Object mapValue, SourceCodeRepoInterface sourceCodeRepoInterface) {
         if (mapValue instanceof Map) {
-            handleMap(workingDirectoryForFile, version, imports, (Map)mapValue, sourceCodeRepoInterface);
+            handleMap(repositoryId, workingDirectoryForFile, version, imports, (Map)mapValue, sourceCodeRepoInterface);
         } else if (mapValue instanceof List) {
             for (Object listMember : (List)mapValue) {
-                handleMapValue(workingDirectoryForFile, version, imports, listMember, sourceCodeRepoInterface);
+                handleMapValue(repositoryId, workingDirectoryForFile, version, imports, listMember, sourceCodeRepoInterface);
             }
         }
     }
 
-    private void handleImport(String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, String mapValue, SourceCodeRepoInterface sourceCodeRepoInterface) {
+    private void handleImport(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, String mapValue, SourceCodeRepoInterface sourceCodeRepoInterface) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_CWL;
         // create a new source file
         String constructedPath = workingDirectoryForFile + mapValue;
-        final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, constructedPath);
+        final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, constructedPath);
         if (fileResponse == null) {
             LOG.error("Could not read: " + mapValue);
             return;

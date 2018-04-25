@@ -873,7 +873,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 workflow.setDefaultTestParameterFilePath(defaultTestJsonPath);
 
 
-                if (!EnumUtils.isValidEnum(SourceControl.class, workflow.getSourceControlProvider().name())) {
+                if (!EnumUtils.isValidEnum(SourceControl.class, workflow.getSourceControlProvider())) {
                     errorMessage("The source control type is not valid.", Client.CLIENT_ERROR);
                 }
 

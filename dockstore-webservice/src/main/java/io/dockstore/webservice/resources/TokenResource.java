@@ -56,6 +56,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -165,7 +166,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
             if (tokens.isEmpty()) {
                 Token token = new Token();
-                token.setTokenSource(TokenType.QUAY_IO.toString());
+                token.setTokenSource(TokenType.QUAY_IO);
                 token.setContent(accessToken);
                 token.setUserId(user.getId());
                 if (username != null) {
@@ -245,7 +246,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
             if (tokens.isEmpty()) {
                 Token token = new Token();
-                token.setTokenSource(TokenType.GITLAB_COM.toString());
+                token.setTokenSource(TokenType.GITLAB_COM);
                 token.setContent(accessToken);
                 token.setUserId(user.getId());
                 if (username != null) {
@@ -327,7 +328,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             user.setUsername(githubLogin);
 
             // Pull user information from Github
-            GitHubSourceCodeRepo gitHubSourceCodeRepo = new GitHubSourceCodeRepo(githubLogin, accessToken, null);
+            Token dummyToken = new Token();
+            dummyToken.setContent(accessToken);
+            dummyToken.setUsername(githubLogin);
+            dummyToken.setTokenSource(TokenType.GITHUB_COM);
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(dummyToken, null);
             user = gitHubSourceCodeRepo.getUserMetadata(user);
             userID = userDAO.create(user);
 
@@ -356,7 +361,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             LOG.info("Could not find user's github token. Making new one...");
             // CREATE GITHUB TOKEN
             githubToken = new Token();
-            githubToken.setTokenSource(TokenType.GITHUB_COM.toString());
+            githubToken.setTokenSource(TokenType.GITHUB_COM);
             githubToken.setContent(accessToken);
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
@@ -377,7 +382,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         final String dockstoreAccessToken = Hashing.sha256().hashString(githubLogin + randomString, Charsets.UTF_8).toString();
 
         dockstoreToken = new Token();
-        dockstoreToken.setTokenSource(TokenType.DOCKSTORE.toString());
+        dockstoreToken.setTokenSource(TokenType.DOCKSTORE);
         dockstoreToken.setContent(dockstoreAccessToken);
         dockstoreToken.setUserId(userID);
         dockstoreToken.setUsername(githubLogin);
@@ -424,7 +429,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
             if (tokens.isEmpty()) {
                 Token token = new Token();
-                token.setTokenSource(TokenType.BITBUCKET_ORG.toString());
+                token.setTokenSource(TokenType.BITBUCKET_ORG);
                 token.setContent(accessToken);
                 token.setRefreshToken(refreshToken);
                 token.setUserId(user.getId());

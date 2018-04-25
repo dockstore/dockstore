@@ -32,6 +32,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -53,23 +54,19 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     private final HttpClient client;
     private final String bitbucketTokenContent;
 
-    // TODO: should be made protected in favour of factory
-
     /**
      * @param gitUsername           username that owns the bitbucket token
      * @param client
      * @param bitbucketTokenContent bitbucket token
-     * @param gitRepository         name of the repo
      */
-    public BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent, String gitRepository) {
+    BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent) {
         this.client = client;
         this.bitbucketTokenContent = bitbucketTokenContent;
         this.gitUsername = gitUsername;
-        this.gitRepository = gitRepository;
     }
 
     @Override
-    public String readFile(String fileName, String reference) {
+    public String readFile(String repositoryId, String fileName, String reference) {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -78,7 +75,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String branch = null;
 
         if (reference == null) {
-            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + gitRepository + "/main-branch";
+            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + repositoryId + "/main-branch";
 
             Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, bitbucketTokenContent, client);
             LOG.info(gitUsername + ": RESOURCE CALL: {}", mainBranchUrl);
@@ -94,7 +91,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                 if (branch == null) {
                     LOG.info(gitUsername + ": Could NOT find bitbucket default branch!");
                     return null;
-                    // throw new CustomWebApplicationException(HttpStatus.SC_INTERNAL_SERVER_ERROR);
                 } else {
                     LOG.info(gitUsername + ": Default branch: {}", branch);
                 }
@@ -103,7 +99,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             branch = reference;
         }
 
-        String url = BITBUCKET_API_URL + "repositories/" + gitUsername + "/" + gitRepository + "/raw/" + branch + '/' + fileName;
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + '/' + fileName;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
         LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
         if (asString.isPresent()) {
@@ -114,17 +110,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
 
-        if (content != null && !content.isEmpty()) {
+        if (!content.isEmpty()) {
             return content;
         } else {
             return null;
         }
-    }
-
-    @Override
-    public String getOrganizationEmail() {
-        // TODO: Need to get email of the container's organization/user
-        return "";
     }
 
     @Override
@@ -197,6 +187,34 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    void updateReferenceType(String repositoryId, Version version) {
+        if (version.getReferenceType() != Version.ReferenceType.UNSET) {
+            return;
+        }
+        // Look at each version, check for valid workflows
+        String url = BITBUCKET_API_URL + "repositories/" + repositoryId;
+        // Call to Bitbucket API to get list of branches for a given repo (what about tags)
+        Optional<String> branches = ResourceUtilities.asString(url + "/branches", bitbucketTokenContent, client);
+        if (branches.isPresent()) {
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>)gson.fromJson(branches.get(), map.getClass());
+            if (map.keySet().stream().anyMatch(key -> key.equals(version.getReference()))) {
+                version.setReferenceType(Version.ReferenceType.BRANCH);
+            }
+        }
+        Optional<String> tags = ResourceUtilities.asString(url + "/tags", bitbucketTokenContent, client);
+        if (tags.isPresent()) {
+            Gson gson = new Gson();
+            Map<String, String> map = new HashMap<>();
+            map = (Map<String, String>)gson.fromJson(tags.get(), map.getClass());
+            if (map.keySet().stream().anyMatch(key -> key.equals(version.getReference()))) {
+                version.setReferenceType(Version.ReferenceType.TAG);
+            }
+        }
+    }
+
+    @Override
     public Workflow initializeWorkflow(String repositoryId) {
         Workflow workflow = new Workflow();
 
@@ -208,7 +226,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         // Setup workflow
         workflow.setOrganization(owner);
         workflow.setRepository(name);
-        workflow.setSourceControl(SourceControl.BITBUCKET.toString());
+        workflow.setSourceControl(SourceControl.BITBUCKET);
 
         final String gitUrl = BITBUCKET_GIT_URL_PREFIX + repositoryId + BITBUCKET_GIT_URL_SUFFIX;
         workflow.setGitUrl(gitUrl);
@@ -255,7 +273,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
                     workflow.addWorkflowVersion(
-                            combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
+                            combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
                 }
             }
 
@@ -272,7 +290,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         String repositoryId;
         String giturl = entry.getGitUrl();
 
-        Pattern p = Pattern.compile("git\\@bitbucket.org:(\\S+)/(\\S+)\\.git");
+        Pattern p = Pattern.compile("git@bitbucket.org:(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(giturl);
         LOG.info(gitUsername + ": " + giturl);
 

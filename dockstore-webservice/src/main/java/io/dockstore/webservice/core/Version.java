@@ -66,17 +66,22 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     protected long id;
 
     @Column
-    @JsonProperty("last_modified")
-    @ApiModelProperty(value = "The last time this image was modified in the image registry", position = 1)
-    protected Date lastModified;
-
-    @Column
     @ApiModelProperty(value = "git commit/tag/branch", required = true, position = 2)
     protected String reference;
 
     @Column
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 6)
     protected String name;
+
+    @Column
+    @JsonProperty("last_modified")
+    @ApiModelProperty(value = "The last time this image was modified in the image registry", position = 1)
+    Date lastModified;
+
+    @Column(columnDefinition = "text", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "This indicates the type of git (or other source control) reference")
+    private ReferenceType referenceType = ReferenceType.UNSET;
 
     @OneToMany(fetch = FetchType.EAGER, orphanRemoval = true, cascade = CascadeType.ALL)
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
@@ -160,11 +165,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         valid = version.isValid();
         lastModified = version.getLastModified();
         name = version.getName();
+        referenceType = version.getReferenceType();
     }
 
     public void clone(T version) {
         name = version.getName();
         lastModified = version.getLastModified();
+        referenceType = version.getReferenceType();
     }
 
     @JsonProperty
@@ -247,7 +254,17 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.doiStatus = doiStatus;
     }
 
+    public ReferenceType getReferenceType() {
+        return referenceType;
+    }
+
+    public void setReferenceType(ReferenceType referenceType) {
+        this.referenceType = referenceType;
+    }
+
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
+
+    public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
 
     @Override
     public int hashCode() {

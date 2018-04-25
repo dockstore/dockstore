@@ -1579,24 +1579,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
-  /containers/refresh:
-    get:
-      tags:
-        - containers
-      summary: Refresh all repos
-      description: Updates some metadata. ADMIN ONLY
-      operationId: refreshAll
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DockstoreTool'
-      security:
-        - BEARER: []
   /containers/registerManual:
     post:
       tags:
@@ -5125,6 +5107,15 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        referenceType:
+          type: string
+          description: This indicates the type of git (or other source control) reference
+          enum:
+            - COMMIT
+            - TAG
+            - BRANCH
+            - NOT_APPLICABLE
+            - UNSET
         last_modified:
           type: string
           format: date-time
@@ -5789,10 +5780,6 @@ components:
           type: string
           position: 26
           readOnly: true
-          enum:
-            - GITHUB
-            - BITBUCKET
-            - GITLAB
       description: This describes one workflow in the dockstore
     WorkflowVersion:
       type: object
@@ -5805,6 +5792,15 @@ components:
           format: int64
           description: Implementation specific ID for the tag in this web service
           readOnly: true
+        referenceType:
+          type: string
+          description: This indicates the type of git (or other source control) reference
+          enum:
+            - COMMIT
+            - TAG
+            - BRANCH
+            - NOT_APPLICABLE
+            - UNSET
         workingDirectory:
           type: string
         last_modified:

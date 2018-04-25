@@ -17,11 +17,13 @@
 package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.Registry;
@@ -114,7 +116,7 @@ public abstract class AbstractImageRegistry {
         // Get all the namespaces for the given registry
         List<String> namespaces;
         if (organization != null) {
-            namespaces = Arrays.asList(organization);
+            namespaces = Collections.singletonList(organization);
         } else {
             namespaces = getNamespaces();
         }
@@ -160,7 +162,7 @@ public abstract class AbstractImageRegistry {
      * @return
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
+    public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
             final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
@@ -239,8 +241,8 @@ public abstract class AbstractImageRegistry {
      * @param client
      */
     @SuppressWarnings("checkstyle:parameternumber")
-    public void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, Token gitlabToken, final TagDAO tagDAO,
-            final FileDAO fileDAO, final ToolDAO toolDAO, final HttpClient client) {
+    private void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, Token gitlabToken, final TagDAO tagDAO,
+        final FileDAO fileDAO, final ToolDAO toolDAO, final HttpClient client) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
 
@@ -346,7 +348,7 @@ public abstract class AbstractImageRegistry {
         }
 
         // Grab files for each version/tag and check if valid
-        Helper.updateFiles(tool, client, fileDAO, githubToken, bitbucketToken, gitlabToken);
+        updateFiles(tool, client, fileDAO, githubToken, bitbucketToken, gitlabToken);
 
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
@@ -374,6 +376,117 @@ public abstract class AbstractImageRegistry {
 
     }
 
+    private static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken,
+        final Token bitbucketToken, final Token gitlabToken) {
+        Set<Tag> tags = tool.getTags();
+
+        // For each tag, will download files to db and determine if the tag is valid
+        for (Tag tag : tags) {
+            LOG.info(githubToken.getUsername() + " : Updating files for tag {}", tag.getName());
+
+            // Get all of the required sourcefiles for the given tag
+            List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, gitlabToken, tool, tag);
+
+            // Remove all existing sourcefiles
+            tag.getSourceFiles().clear();
+
+            // Add for new descriptor types
+            boolean hasCwl = false;
+            boolean hasWdl = false;
+            boolean hasDockerfile = false;
+
+            for (SourceFile newFile : newFiles) {
+                long id = fileDAO.create(newFile);
+                SourceFile file = fileDAO.findById(id);
+                tag.addSourceFile(file);
+
+                if (file.getType() == SourceFile.FileType.DOCKERFILE) {
+                    hasDockerfile = true;
+                    LOG.info(githubToken.getUsername() + " : HAS Dockerfile");
+                }
+                // Add for new descriptor types
+                if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
+                    hasCwl = true;
+                    LOG.info(githubToken.getUsername() + " : HAS Dockstore.cwl");
+                }
+                if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL) {
+                    hasWdl = true;
+                    LOG.info(githubToken.getUsername() + " : HAS Dockstore.wdl");
+                }
+            }
+
+            // Private tools don't require a dockerfile
+            if (tool.isPrivateAccess()) {
+                tag.setValid((hasCwl || hasWdl));
+            } else {
+                tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            }
+        }
+    }
+
+    /**
+     * Given a container and tags, load up required files from git repository
+     *
+     * @param client
+     * @param bitbucketToken
+     * @param githubToken
+     * @param c
+     * @param tag
+     * @return list of SourceFiles containing cwl and dockerfile.
+     */
+    private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Token gitlabToken, Tool c,
+        Tag tag) {
+        List<SourceFile> files = new ArrayList<>();
+
+        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
+        final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
+        final String githubTokenContent = githubToken == null ? null : githubToken.getContent();
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+            .createSourceCodeRepo(c.getGitUrl(), client, bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
+        if (sourceCodeRepo == null) {
+            return files;
+        }
+
+        String repositoryId = sourceCodeRepo.getRepositoryId(c);
+        // determine type of git reference for tag
+        sourceCodeRepo.updateReferenceType(repositoryId, tag);
+
+        // Add for new descriptor types
+        for (SourceFile.FileType f : SourceFile.FileType.values()) {
+            if (f != SourceFile.FileType.CWL_TEST_JSON && f != SourceFile.FileType.WDL_TEST_JSON && f != SourceFile.FileType.NEXTFLOW_TEST_PARAMS) {
+                String fileResponse = sourceCodeRepo.readGitRepositoryFile(repositoryId, f, tag, null);
+                if (fileResponse != null) {
+                    SourceFile dockstoreFile = new SourceFile();
+                    dockstoreFile.setType(f);
+                    dockstoreFile.setContent(fileResponse);
+                    if (f == SourceFile.FileType.DOCKERFILE) {
+                        dockstoreFile.setPath(tag.getDockerfilePath());
+                    } else if (f == SourceFile.FileType.DOCKSTORE_CWL) {
+                        dockstoreFile.setPath(tag.getCwlPath());
+                        // see if there are imported files and resolve them
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag);
+                        files.addAll(importedFiles.values());
+                    } else if (f == SourceFile.FileType.DOCKSTORE_WDL) {
+                        dockstoreFile.setPath(tag.getWdlPath());
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag);
+                        files.addAll(importedFiles.values());
+                    } else {
+                        //TODO add nextflow work here
+                        LOG.error("file type not implemented yet");
+                        continue;
+                    }
+                    files.add(dockstoreFile);
+                }
+            } else {
+                // If test json, must grab all
+                List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == f)
+                    .collect(Collectors.toList());
+                cwlTestJson.forEach(file -> sourceCodeRepo.readFile(repositoryId, tag, files, f, file.getPath()));
+            }
+        }
+        return files;
+    }
+
     private SourceFile createSourceFile(String path, SourceFile.FileType type) {
         SourceFile sourcefile = new SourceFile();
         sourcefile.setPath(path);
@@ -388,7 +501,7 @@ public abstract class AbstractImageRegistry {
      * @param userDAO
      * @return
      */
-    public List<Tool> getToolsFromUser(Long userId, UserDAO userDAO) {
+    private List<Tool> getToolsFromUser(Long userId, UserDAO userDAO) {
         final Set<Entry> entries = userDAO.findById(userId).getEntries();
         List<Tool> toolList = new ArrayList<>();
         for (Entry entry : entries) {

@@ -20,8 +20,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
@@ -60,8 +63,9 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.helpers.Helper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
+import io.dockstore.webservice.helpers.QuayImageRegistry;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -69,7 +73,6 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -103,7 +106,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
-    private final WorkflowDAO workflowDAO;
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
     private final HttpClient client;
@@ -115,14 +117,13 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
-            LabelDAO labelDAO, FileDAO fileDAO, WorkflowDAO workflowDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
+            LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
         objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
         this.labelDAO = labelDAO;
         this.fileDAO = fileDAO;
-        this.workflowDAO = workflowDAO;
         this.client = client;
 
         this.bitbucketClientID = bitbucketClientID;
@@ -134,30 +135,53 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         elasticManager = new ElasticManager();
     }
 
-    @GET
-    @Path("/refresh")
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Refresh all repos", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates some metadata. ADMIN ONLY", response = Tool.class, responseContainer = "List")
-    public List<Tool> refreshAll(@ApiParam(hidden = true) @Auth User authUser) {
-        List<Tool> tools;
-        List<User> users = userDAO.findAll();
-        for (User user : users) {
-            refreshToolsForUser(user.getId(), null);
-        }
-        tools = toolDAO.findAll();
-
-        return tools;
-    }
-
     List<Tool> refreshToolsForUser(Long userId, String organization) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(userId);
         if (!tokens.isEmpty()) {
             Token bitbucketToken = tokens.get(0);
             refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
-        return Helper.refresh(userId, client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO, organization);
+
+        // Get user's quay and git tokens
+        tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+
+        // with Docker Hub support it is now possible that there is no quayToken
+        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
+
+        // Get a list of all image registries
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        final List<AbstractImageRegistry> allRegistries = factory.getAllRegistries();
+
+        // Get a list of all namespaces from all image registries
+        List<Tool> updatedTools = new ArrayList<>();
+        for (AbstractImageRegistry abstractImageRegistry : allRegistries) {
+            Registry registry = abstractImageRegistry.getRegistry();
+            LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
+
+            updatedTools.addAll(abstractImageRegistry
+                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken, organization));
+        }
+        return updatedTools;
+    }
+
+    private static void checkTokens(final Token quayToken, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
+        if (githubToken == null) {
+            LOG.info("GIT token not found!");
+            throw new CustomWebApplicationException("Git token not found.", HttpStatus.SC_CONFLICT);
+        }
+        if (bitbucketToken == null) {
+            LOG.info("WARNING: BITBUCKET token not found!");
+        }
+        if (gitlabToken == null) {
+            LOG.info("WARNING: GITLAB token not found!");
+        }
+        if (quayToken == null) {
+            LOG.info("WARNING: QUAY token not found!");
+        }
     }
 
     @GET
@@ -182,7 +206,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
         }
 
-        Tool tool = Helper.refreshContainer(containerId, user.getId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
+        Tool tool = refreshContainer(containerId, user.getId());
 
         // Refresh checker workflow
         if (tool.getCheckerWorkflow() != null) {
@@ -191,6 +215,40 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
+    }
+
+    private Tool refreshContainer(final long containerId, final long userId) {
+        Tool tool = toolDAO.findById(containerId);
+
+        // Check if tool has a valid Git URL (needed to refresh!)
+        String gitUrl = tool.getGitUrl();
+        Map<String, String> gitMap = SourceCodeRepoFactory.parseGitUrl(gitUrl);
+
+        if (gitMap == null) {
+            LOG.info("Could not parse Git URL. Unable to refresh tool!");
+            return tool;
+        }
+
+        // Get user's quay and git tokens
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+
+        // with Docker Hub support it is now possible that there is no quayToken
+        checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
+
+        // Get all registries
+        ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
+        final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
+
+        if (abstractImageRegistry == null) {
+            throw new CustomWebApplicationException("unable to establish connection to registry, check that you have linked your accounts",
+                HttpStatus.SC_NOT_FOUND);
+        }
+        return abstractImageRegistry
+            .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken);
     }
 
     @GET
@@ -392,8 +450,8 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         tool.getLabels().clear();
         tool.getLabels().addAll(createdLabels);
 
-        if (!Helper.isGit(tool.getGitUrl())) {
-            tool.setGitUrl(Helper.convertHttpsToSsh(tool.getGitUrl()));
+        if (!isGit(tool.getGitUrl())) {
+            tool.setGitUrl(convertHttpsToSsh(tool.getGitUrl()));
         }
         Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
 
@@ -410,7 +468,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
 
         // Check if user owns repo, or if user is in the organization which owns the tool
-        if (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && !Helper.checkIfUserOwns(tool, client, objectMapper, tokenDAO, user.getId())) {
+        if (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && !checkIfUserOwns(tool, user.getId())) {
             LOG.info(user.getUsername() + ": User does not own the given Quay Repo.");
             throw new CustomWebApplicationException("User does not own the tool " + tool.getPath()
                     + ". You can only add Quay repositories that you own or are part of the organization", HttpStatus.SC_BAD_REQUEST);
@@ -430,7 +488,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
      */
     private boolean checkContainerForTags(final Tool tool, final long userId) {
         List<Token> tokens = tokenDAO.findByUserId(userId);
-        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
         if (quayToken == null) {
             // no quay token extracted
             throw new CustomWebApplicationException("no quay token found, please link your quay.io account to read from quay.io",
@@ -628,7 +686,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         List<Token> tokens = tokenDAO.findByUserId(userId);
         StringBuilder builder = new StringBuilder();
         for (Token token : tokens) {
-            if (token.getTokenSource().equals(TokenType.QUAY_IO.toString())) {
+            if (token.getTokenSource().equals(TokenType.QUAY_IO)) {
                 String url = TARGET_URL + "repository/" + repo + "/build/";
                 Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
 
@@ -924,5 +982,77 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Override
     public EntryDAO getDAO() {
         return this.toolDAO;
+    }
+
+    private String convertHttpsToSsh(String url) {
+        Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org|gitlab\\.com)\\/([\\w-\\.]+)\\/([\\w-\\.]+)$");
+        Matcher m = p.matcher(url);
+        if (!m.find()) {
+            LOG.info("Cannot parse HTTPS url: " + url);
+            return null;
+        }
+
+        // These correspond to the positions of the pattern matcher
+        final int sourceIndex = 3;
+        final int usernameIndex = 4;
+        final int reponameIndex = 5;
+
+        String source = m.group(sourceIndex);
+        String gitUsername = m.group(usernameIndex);
+        String gitRepository = m.group(reponameIndex);
+
+        return "git@" + source + ":" + gitUsername + "/" + gitRepository + ".git";
+    }
+
+    /**
+     * Determines if the given URL is a git URL
+     *
+     * @param url
+     * @return is url of the format git@source:gitUsername/gitRepository
+     */
+    private static boolean isGit(String url) {
+        Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+        Matcher m = p.matcher(url);
+        return m.matches();
+    }
+
+    /**
+     * Checks if a user owns a given quay repo or is part of an organization that owns the quay repo
+     *
+     * @param tool
+     * @param userId
+     * @return
+     */
+    private boolean checkIfUserOwns(final Tool tool, final long userId) {
+        List<Token> tokens = tokenDAO.findByUserId(userId);
+        // get quay token
+        Token quayToken = Token.extractToken(tokens, TokenType.QUAY_IO);
+
+        if (quayToken == null && Objects.equals(tool.getRegistry(), Registry.QUAY_IO.toString())) {
+            LOG.info("WARNING: QUAY.IO token not found!");
+            throw new CustomWebApplicationException("A valid Quay.io token is required to add this tool.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // set up
+        QuayImageRegistry factory = new QuayImageRegistry(client, objectMapper, quayToken);
+
+        // get quay username
+        String quayUsername = quayToken.getUsername();
+
+        // call quay api, check if user owns or is part of owning organization
+        Map<String, Object> map = factory.getQuayInfo(tool);
+
+        if (map != null) {
+            String namespace = map.get("namespace").toString();
+            boolean isOrg = (Boolean)map.get("is_organization");
+
+            if (isOrg) {
+                List<String> namespaces = factory.getNamespaces();
+                return namespaces.stream().anyMatch(nm -> nm.equals(namespace));
+            } else {
+                return (namespace.equals(quayUsername));
+            }
+        }
+        return false;
     }
 }

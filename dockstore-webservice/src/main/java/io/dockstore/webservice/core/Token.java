@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -63,8 +64,9 @@ public class Token implements Comparable<Token> {
     private long id;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Source website for this token", position = 1)
-    private String tokenSource;
+    @Convert(converter = TokenTypeConverter.class)
+    @ApiModelProperty(value = "Source website for this token", position = 1, dataType = "string")
+    private TokenType tokenSource;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "Contents of the access token", position = 2)
@@ -95,7 +97,7 @@ public class Token implements Comparable<Token> {
     public Token() {
     }
 
-    public static Token extractToken(List<Token> tokens, String source) {
+    public static Token extractToken(List<Token> tokens, TokenType source) {
         for (Token token : tokens) {
             if (token.getTokenSource().equals(source)) {
                 return token;
@@ -129,7 +131,7 @@ public class Token implements Comparable<Token> {
      * @return the tokenSource
      */
     @JsonProperty
-    public String getTokenSource() {
+    public TokenType getTokenSource() {
         return tokenSource;
     }
 
@@ -143,7 +145,7 @@ public class Token implements Comparable<Token> {
     /**
      * @param tokenSource the tokenSource to set
      */
-    public void setTokenSource(String tokenSource) {
+    public void setTokenSource(TokenType tokenSource) {
         this.tokenSource = tokenSource;
     }
 

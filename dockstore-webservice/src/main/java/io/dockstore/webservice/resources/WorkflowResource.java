@@ -54,6 +54,7 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
 import io.dockstore.webservice.core.Token;
@@ -66,13 +67,10 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.doi.DOIGeneratorInterface;
-import io.dockstore.webservice.helpers.BitBucketSourceCodeRepo;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
-import io.dockstore.webservice.helpers.GitLabSourceCodeRepo;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -190,60 +188,39 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
 
         List<Token> tokens = checkOnBitbucketToken(user);
-        // Check if tokens for git hosting services are valid and refresh corresponding workflows
-        // Refresh Bitbucket
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        // Refresh Github
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
-        // Refresh Gitlab
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
 
-        // create each type of repo and check its validity
-        BitBucketSourceCodeRepo bitBucketSourceCodeRepo = null;
-        if (bitbucketToken != null) {
-            bitBucketSourceCodeRepo = new BitBucketSourceCodeRepo(bitbucketToken.getUsername(), client, bitbucketToken.getContent(), null);
-            bitBucketSourceCodeRepo.checkSourceCodeValidity();
+        boolean foundAtLeastOneToken = false;
+        for (TokenType type : TokenType.values()) {
+            if (!type.isSourceControlToken()) {
+                continue;
+            }
+            // Check if tokens for git hosting services are valid and refresh corresponding workflows
+            // Refresh Bitbucket
+            Token token = Token.extractToken(tokens, type);
+            // create each type of repo and check its validity
+            SourceCodeRepoInterface sourceCodeRepo = null;
+            if (token != null) {
+                sourceCodeRepo = SourceCodeRepoFactory.createSourceCodeRepo(token, client);
+            }
+            boolean hasToken = token != null && token.getContent() != null;
+            foundAtLeastOneToken = foundAtLeastOneToken || hasToken;
+
+            try {
+                if (hasToken) {
+                    // get workflows from source control for a user and updates db
+                    refreshHelper(sourceCodeRepo, user, organization, alreadyProcessed);
+                }
+                // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
+            } catch (WebApplicationException ex) {
+                LOG.error(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
+                throw ex;
+            }
         }
 
-        GitHubSourceCodeRepo gitHubSourceCodeRepo = null;
-        if (githubToken != null) {
-            gitHubSourceCodeRepo = new GitHubSourceCodeRepo(user.getUsername(), githubToken.getContent(), null);
-            gitHubSourceCodeRepo.checkSourceCodeValidity();
-        }
-
-        GitLabSourceCodeRepo gitLabSourceCodeRepo = null;
-        if (gitlabToken != null) {
-            gitLabSourceCodeRepo = new GitLabSourceCodeRepo(user.getUsername(), client, gitlabToken.getContent(), null);
-            gitLabSourceCodeRepo.checkSourceCodeValidity();
-        }
-        // Update bitbucket workflows if token exists
-        boolean hasBitbucketToken = bitbucketToken != null && bitbucketToken.getContent() != null;
-        boolean hasGitHubToken = githubToken != null && githubToken.getContent() != null;
-        boolean hasGitLabToken = gitlabToken != null && gitlabToken.getContent() != null;
-        if (!hasBitbucketToken && !hasGitHubToken && !hasGitLabToken) {
+        if (!foundAtLeastOneToken) {
             throw new CustomWebApplicationException(
                 "No source control repository token found.  Please link at least one source control repository token to your account.",
                 HttpStatus.SC_BAD_REQUEST);
-        }
-        try {
-            if (hasBitbucketToken) {
-                // get workflows from bitbucket for a user and updates db
-                refreshHelper(bitBucketSourceCodeRepo, user, organization, alreadyProcessed);
-            }
-            // Update github workflows if token exists
-            if (hasGitHubToken) {
-                // get workflows from github for a user and updates db
-                refreshHelper(gitHubSourceCodeRepo, user, organization, alreadyProcessed);
-            }
-            // Update gitlab workflows if token exists
-            if (hasGitLabToken) {
-                // get workflows from gitlab for a user and updates db
-                refreshHelper(gitLabSourceCodeRepo, user, organization, alreadyProcessed);
-            }
-            // when 3) no data is found for a workflow in the db, we may want to create a warning, note, or label
-        } catch (WebApplicationException ex) {
-            LOG.error(user.getUsername() + ": " + "Failed to refresh user {}", user.getId());
-            throw ex;
         }
     }
 
@@ -276,9 +253,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         // For each entry found of the associated git hosting service
         for (Map.Entry<String, String> entry : workflowGitUrl2Name.entrySet()) {
             LOG.info("refreshing " + entry.getKey());
-            // Split entry into organization/namespace and repository/name
-            String[] entryPathSplit = entry.getValue().split("/");
-            sourceCodeRepoInterface.updateUsernameAndRepository(entryPathSplit[0], entryPathSplit[1]);
 
             // Get all workflows with the same giturl)
             final List<Workflow> byGitUrl = workflowDAO.findByGitUrl(entry.getKey());
@@ -1089,9 +1063,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     private SourceCodeRepoInterface getSourceCodeRepoInterface(String gitUrl, User user) {
         List<Token> tokens = checkOnBitbucketToken(user);
-        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG.toString());
-        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM.toString());
-        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
+        Token bitbucketToken = Token.extractToken(tokens, TokenType.BITBUCKET_ORG);
+        Token githubToken = Token.extractToken(tokens, TokenType.GITHUB_COM);
+        Token gitlabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
 
         final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
         final String gitHubTokenContent = githubToken == null ? null : githubToken.getContent();
@@ -1331,7 +1305,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         String defaultTestParameterPath;
         String organization;
         String repository;
-        String sourceControl;
+        SourceControl sourceControl;
         boolean isPublished;
         String gitUrl;
         Date lastUpdated;
@@ -1363,7 +1337,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
             Matcher m = p.matcher(tool.getGitUrl());
             if (m.find()) {
-                sourceControl = m.group(1);
+                SourceControlConverter converter = new SourceControlConverter();
+                sourceControl = converter.convertToEntityAttribute(m.group(1));
                 organization = m.group(2);
                 repository = m.group(3);
             } else {

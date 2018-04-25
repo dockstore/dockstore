@@ -33,6 +33,7 @@ import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -55,15 +56,14 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private final HttpClient client;
     private final String gitlabTokenContent;
 
-    public GitLabSourceCodeRepo(String gitUsername, HttpClient client, String gitlabTokenContent, String gitRepository) {
+    GitLabSourceCodeRepo(String gitUsername, HttpClient client, String gitlabTokenContent) {
         this.client = client;
         this.gitlabTokenContent = gitlabTokenContent;
         this.gitUsername = gitUsername;
-        this.gitRepository = gitRepository;
     }
 
     @Override
-    public String readFile(String fileName, String reference) {
+    public String readFile(String repositoryId, String fileName, String reference) {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
@@ -85,8 +85,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                 for (JsonElement project : jsonArray) {
                     JsonObject projectObject = project.getAsJsonObject();
 
-                    // What if username != namespace?
-                    if (projectObject.get("path_with_namespace").getAsString().equals(gitUsername + "/" + gitRepository)) {
+                    if (projectObject.get("path_with_namespace").getAsString().equals(repositoryId)) {
                         id = projectObject.get("id").getAsString();
                         if (reference == null) {
                             branch = projectObject.get("default_branch").getAsString();
@@ -104,11 +103,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         return content;
-    }
-
-    @Override
-    public String getOrganizationEmail() {
-        return null;
     }
 
     @Override
@@ -148,7 +142,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         // Setup workflow
         workflow.setOrganization(owner);
         workflow.setRepository(name);
-        workflow.setSourceControl(SourceControl.GITLAB.toString());
+        workflow.setSourceControl(SourceControl.GITLAB);
 
         final String gitUrl = GITLAB_GIT_URL_PREFIX + repositoryId + GITLAB_GIT_URL_SUFFIX;
         workflow.setGitUrl(gitUrl);
@@ -200,7 +194,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                     createTestParameterFiles(workflow, id, branchName, version, identifiedType);
 
                     workflow.addWorkflowVersion(
-                            combineVersionAndSourcefile(sourceFile, workflow, identifiedType, version, existingDefaults));
+                            combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
                 }
             }
         }
@@ -208,6 +202,11 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    @Override
+    void updateReferenceType(String repositoryId, Version version) {
+        // TODO:
+        return;
+    }
 
 
     @Override

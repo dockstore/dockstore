@@ -21,6 +21,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -92,8 +93,9 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     private String repository;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 17)
-    private String sourceControl;
+    @ApiModelProperty(value = "This is a specific source control provider like github or bitbucket or n/a?, required: GA4GH", required = true, position = 17, dataType = "string")
+    @Convert(converter = SourceControlConverter.class)
+    private SourceControl sourceControl;
 
     @Column(nullable = false)
     @ApiModelProperty(value = "This is a descriptor type for the workflow, either CWL or WDL (Defaults to CWL)", required = true, position = 18)
@@ -265,19 +267,16 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     @ApiModelProperty(position = 25)
     public String getPath() {
-        return getSourceControl() + '/' + organization + '/' + repository;
+        return sourceControl.toString() + '/' + organization + '/' + repository;
     }
 
-    @Enumerated(EnumType.STRING)
+    /**
+     * @return
+     */
     @JsonProperty("source_control_provider")
     @ApiModelProperty(position = 26)
-    public SourceControl getSourceControlProvider() {
-        for (SourceControl sc : SourceControl.values()) {
-            if (sc.toString().equals(this.sourceControl)) {
-                return sc;
-            }
-        }
-        return null;
+    public String getSourceControlProvider() {
+        return this.sourceControl.name();
     }
 
     public void setDescriptorType(String descriptorType) {
@@ -345,11 +344,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     public void setDefaultTestParameterFilePath(String defaultTestParameterFilePath) {
         this.defaultTestParameterFilePath = defaultTestParameterFilePath;
     }
-    public String getSourceControl() {
+    public SourceControl getSourceControl() {
         return sourceControl;
     }
 
-    public void setSourceControl(String sourceControl) {
+    public void setSourceControl(SourceControl sourceControl) {
         this.sourceControl = sourceControl;
     }
 

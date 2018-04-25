@@ -18,7 +18,6 @@ package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,8 +36,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -336,17 +333,10 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // get live entity
         final User byId = this.userDAO.findById(user.getId());
-        final ImmutableList<Tool> immutableList = FluentIterable.from(byId.getEntries()).filter(Tool.class).toList();
+        final List<Tool> immutableList = byId.getEntries().stream().filter(Tool.class::isInstance).map(Tool.class::cast)
+            .collect(Collectors.toList());
         final List<Tool> repositories = Lists.newArrayList(immutableList);
-
-        for (Iterator<Tool> iterator = repositories.iterator(); iterator.hasNext(); ) {
-            Tool c = iterator.next();
-
-            if (!c.getIsPublished()) {
-                iterator.remove();
-            }
-        }
-
+        repositories.removeIf(c -> !c.getIsPublished());
         return repositories;
     }
 
@@ -361,17 +351,10 @@ public class UserResource implements AuthenticatedResourceInterface {
 
         // get live entity
         final User byId = this.userDAO.findById(user.getId());
-        final ImmutableList<Workflow> immutableList = FluentIterable.from(byId.getEntries()).filter(Workflow.class).toList();
+        final List<Workflow> immutableList = byId.getEntries().stream().filter(Workflow.class::isInstance).map(Workflow.class::cast)
+            .collect(Collectors.toList());
         final List<Workflow> repositories = Lists.newArrayList(immutableList);
-
-        for (Iterator<Workflow> iterator = repositories.iterator(); iterator.hasNext(); ) {
-            Workflow workflow = iterator.next();
-
-            if (!workflow.getIsPublished()) {
-                iterator.remove();
-            }
-        }
-
+        repositories.removeIf(workflow -> !workflow.getIsPublished());
         return repositories;
     }
 
@@ -426,8 +409,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (organization != null && !organization.isEmpty()) {
             tools.removeIf(tool -> !tool.getNamespace().equals(organization));
         }
-        Token gitLabToken = Token.extractToken(tokens, TokenType.GITLAB_COM.toString());
-        Token quayioToken = Token.extractToken(tokens, TokenType.QUAY_IO.toString());
+        Token gitLabToken = Token.extractToken(tokens, TokenType.GITLAB_COM);
+        Token quayioToken = Token.extractToken(tokens, TokenType.QUAY_IO);
         Set<Registry> uniqueRegistry = new HashSet<>();
         tools.forEach(tool -> uniqueRegistry.add(tool.getRegistryProvider()));
         if (uniqueRegistry.size() == 0 && quayioToken == null) {
