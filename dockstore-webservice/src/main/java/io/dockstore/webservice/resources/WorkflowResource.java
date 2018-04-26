@@ -672,9 +672,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("published")
     @ApiOperation(value = "List all published workflows.", tags = { "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> allPublishedWorkflows() {
-        List<Workflow> tools = workflowDAO.findAllPublished();
-        filterContainersForHiddenTags(tools);
-        return tools;
+        List<Workflow> workflows = workflowDAO.findAllPublished();
+        filterContainersForHiddenTags(workflows);
+        stripContent(workflows);
+        return workflows;
     }
 
     @GET

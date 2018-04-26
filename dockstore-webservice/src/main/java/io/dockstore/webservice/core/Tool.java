@@ -43,6 +43,8 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
 
 /**
@@ -148,6 +150,7 @@ public class Tool extends Entry<Tool, Tag> {
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
     @OrderBy("id")
+    @Cascade(CascadeType.DETACH)
     private final SortedSet<Tag> tags;
 
     public Tool() {

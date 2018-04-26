@@ -588,6 +588,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public List<Tool> allPublishedContainers() {
         List<Tool> tools = toolDAO.findAllPublished();
         filterContainersForHiddenTags(tools);
+        stripContent(tools);
         return tools;
     }
 
