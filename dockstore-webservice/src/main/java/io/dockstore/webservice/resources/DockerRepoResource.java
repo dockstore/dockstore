@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -249,15 +248,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
         return abstractImageRegistry
             .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "List all docker containers cached in database", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List docker container repos currently known. Admin Only", response = Tool.class, responseContainer = "List")
-    public List<Tool> allContainers(@ApiParam(hidden = true) @Auth User user) {
-        return toolDAO.findAll();
     }
 
     @GET

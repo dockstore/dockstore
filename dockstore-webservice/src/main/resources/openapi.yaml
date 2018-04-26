@@ -1367,24 +1367,6 @@ paths:
           description: Invalid token value
       security:
         - BEARER: []
-  /containers:
-    get:
-      tags:
-        - containers
-      summary: List all docker containers cached in database
-      description: List docker container repos currently known. Admin Only
-      operationId: allContainers
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/DockstoreTool'
-      security:
-        - BEARER: []
   /containers/dockerRegistryList:
     get:
       tags:
@@ -3354,24 +3336,6 @@ paths:
           required: true
           schema:
             type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workflow'
-      security:
-        - BEARER: []
-  /workflows:
-    get:
-      tags:
-        - workflows
-      summary: List all workflows cached in database
-      description: List workflows currently known. Admin Only
-      operationId: allWorkflows
       responses:
         '200':
           description: successful operation
