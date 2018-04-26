@@ -17,6 +17,7 @@ package io.dockstore.webservice.languages;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -161,6 +162,28 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
         recursiveImports.putAll(imports);
         return recursiveImports;
+    }
+
+    public Set<String> getFileFormats(String content, String type) {
+        Set<String> fileFormats = new HashSet<>();
+        Yaml yaml = new Yaml();
+        try {
+            Map<String, ?> map = yaml.loadAs(content, Map.class);
+            Object outputs = map.get(type);
+            Map<String, ?> outputsMap = (Map<String, ?>)outputs;
+            outputsMap.forEach((k, v) -> {
+                if (v instanceof Map) {
+                    Map<String, String> outputMap = (Map<String, String>)v;
+                    String format = outputMap.get("format");
+                    if (format != null) {
+                        fileFormats.add(format);
+                    }
+                }
+            });
+        } catch (YAMLException e) {
+            SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");
+        }
+        return fileFormats;
     }
 
     @Override
