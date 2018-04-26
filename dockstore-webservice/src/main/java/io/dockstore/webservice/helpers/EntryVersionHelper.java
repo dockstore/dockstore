@@ -76,6 +76,31 @@ public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResour
     }
 
     /**
+     * For the purposes of display, this method filters an entry to not show sourcefiles
+     * @param entry the entry to be filtered
+     * @return the filtered entry
+     */
+    default T stripContent(T entry) {
+        return filterContainersForHiddenTags(Lists.newArrayList(entry)).get(0);
+    }
+
+    /**
+     * For convenience, filters a list of entries
+     * @see EntryVersionHelper#stripContent(Entry)
+     */
+    default List<T> stripContent(List<T> entries) {
+        for (T entry : entries) {
+            getDAO().evict(entry);
+            // clear users which are also lazy loaded
+            entry.setUsers(null);
+            // need to have this evicted so that hibernate does not actually delete the tags and users
+            Set<Version> versions = entry.getVersions();
+            versions.forEach(version -> version.getSourceFiles().clear());
+        }
+        return entries;
+    }
+
+    /**
      * Return the primary descriptor (i.e. the dockstore.cwl or dockstore.wdl usually, or a single Dockerfile)
      *
      * @param entryId  internal id for an entry

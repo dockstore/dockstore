@@ -45,6 +45,8 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
 
 /**
@@ -115,6 +117,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
+    @Cascade(CascadeType.DETACH)
     private final SortedSet<WorkflowVersion> workflowVersions;
 
 
