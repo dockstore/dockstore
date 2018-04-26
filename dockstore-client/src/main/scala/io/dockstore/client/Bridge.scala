@@ -21,9 +21,10 @@ import java.util
 
 import io.github.collaboratory.wdl.BridgeHelper
 import spray.json._
-import wdl4s._
-import wdl4s.types.{WdlArrayType, WdlFileType}
-import wdl4s.values.WdlValue
+import wdl4s.wdl.{WdlNamespace, WdlNamespaceWithWorkflow}
+import wdl4s.wdl.types.{WdlArrayType, WdlFileType}
+import wdl4s.wdl.values.WdlValue
+import wdl4s.wdl.{WorkflowSource, WdlNamespaceWithWorkflow}
 
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -46,24 +47,14 @@ class Bridge {
 
   def inputs(args: Seq[String]): String = {
     loadWdl(args.head) { namespace =>
-      import wdl4s.types.WdlTypeJsonFormatter._
+      import wdl4s.wdl.types.WdlTypeJsonFormatter._
       namespace match {
-        case x: NamespaceWithWorkflow => x.workflow.inputs.toJson.prettyPrint
+        case x: WdlNamespaceWithWorkflow => x.workflow.inputs.toJson.prettyPrint
       }
     }
   }
 
-  private[this] def loadWdl(path: String)(f: WdlNamespace => String): String = {
-    val lines = scala.io.Source.fromFile(new JFile(path)).mkString
-    Try(NamespaceWithWorkflow.load(lines, launchResolver)) match {
-      case Success(namespace) => f(namespace)
-      case Failure(t) =>
-        println(t.getMessage)
-        null
-    }
-  }
-
-  def dagResolver(importString: String): WdlSource = {
+  def dagResolver(importString: String): WorkflowSource = {
     importString match {
       case s if (s.startsWith("http://") || s.startsWith("https://")) =>
         bridgeHelper.resolveUrl(s)
@@ -72,7 +63,7 @@ class Bridge {
     }
   }
 
-  def launchResolver(importString: String): WdlSource = {
+  def launchResolver(importString: String): WorkflowSource = {
     importString match {
       case s if (s.startsWith("http://") || s.startsWith("https://")) =>
         bridgeHelper.resolveUrl(s)
@@ -81,9 +72,19 @@ class Bridge {
     }
   }
 
+  private[this] def loadWdl(path: String)(f: WdlNamespace => String): String = {
+    val lines = scala.io.Source.fromFile(new JFile(path)).mkString
+    Try(WdlNamespaceWithWorkflow.load(lines, Seq(launchResolver _)).get) match {
+      case Success(namespace) => f(namespace)
+      case Failure(t) =>
+        println(t.getMessage)
+        null
+    }
+  }
+
   def getInputFiles(file: JFile): util.Map[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines, launchResolver)
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(launchResolver _)).get
 
     val inputList = new util.HashMap[String, String]()
 
@@ -99,7 +100,7 @@ class Bridge {
     val lines = scala.io.Source.fromFile(file).mkString
     val importList = new util.ArrayList[String]()
 
-    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
 
     ns.imports foreach { imported =>
       println(imported.uri)
@@ -113,10 +114,10 @@ class Bridge {
     val lines = scala.io.Source.fromFile(file).mkString
     val importMap = new util.LinkedHashMap[String, String]()
 
-    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
 
     ns.imports foreach { imported =>
-      val importNamespace = imported.namespace.get
+      val importNamespace = imported.namespaceName
       if (!importNamespace.isEmpty) {
         importMap.put(importNamespace, imported.uri)
       }
@@ -128,7 +129,7 @@ class Bridge {
 
   def getOutputFiles(file: JFile): util.List[String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines, launchResolver)
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(launchResolver _)).get
 
     val outputList = new util.ArrayList[String]()
 
@@ -146,48 +147,26 @@ class Bridge {
     def isDefinedAt(x: WdlValue) = true
   }
 
-  def getCallsAndDocker(file: JFile): util.LinkedHashMap[String, Seq[String]] = {
-    val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
-    val tasks = new util.LinkedHashMap[String, Seq[String]]()
-
-    // For each call
-    //ns.workflow.collectAllScatters foreach { scatter => print(scatter.collectAllCalls foreach(call => println(call.task.name)))}
-    ns.workflow.collectAllCalls foreach { call =>
-      // Find associated task (Should only be one)
-      ns.findTask(call.unqualifiedName) foreach { task =>
-        try {
-          // Get the list of docker images
-          val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-          val attributes = if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")) else null
-          var name = call.alias.toString
-          tasks.put(task.name, attributes)
-        } catch {
-          // Throws error if task has no runtime section or a runtime section but no docker (we stop error from being thrown)
-          case e: NoSuchElementException =>
-        }
-      }
-    }
-    tasks
-  }
-
   def getCallsToDockerMap(file: JFile): util.LinkedHashMap[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
     val tasks = new util.LinkedHashMap[String, String]()
 
-
     ns.workflow.calls foreach { call =>
-      val task = call.task
-      val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-      tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+      println(call.callable.fullyQualifiedName)
+      ns.findTask(call.callable.fullyQualifiedName) foreach { task =>
+        println("task name " + task.name)
+        val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+        tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+      }
+      println("\n")
     }
     tasks
   }
 
   def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.List[String]] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = NamespaceWithWorkflow.load(lines, dagResolver)
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
     val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
     ns.workflow.calls foreach { call =>
       val dependencies = new util.ArrayList[String]()
