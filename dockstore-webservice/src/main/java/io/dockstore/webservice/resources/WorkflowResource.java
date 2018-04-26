@@ -413,15 +413,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @GET
     @Timed
     @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "List all workflows cached in database", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List workflows currently known. Admin Only", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> allWorkflows(@ApiParam(hidden = true) @Auth User user) {
-        return workflowDAO.findAll();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/{workflowId}")
     @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {

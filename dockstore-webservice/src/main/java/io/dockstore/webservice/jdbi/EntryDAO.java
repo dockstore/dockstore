@@ -139,10 +139,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
                 namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
     }
 
-    public List<T> findAll() {
-        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAll"));
-    }
-
     public List<T> findAllPublished() {
         return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }

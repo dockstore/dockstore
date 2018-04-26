@@ -46,15 +46,15 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ApiModel(value = "Token", description = "Access tokens for this web service and integrated services like quay.io and github")
 @Entity
 @Table(name = "token")
-@NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.Token.findAll", query = "SELECT t FROM Token t"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findBySource", query = "SELECT t FROM Token t WHERE t.tokenSource = :source"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findDockstoreByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'dockstore'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findGithubByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'github.com'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findGitlabByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'gitlab.com'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'") })
+@NamedQueries({
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findBySource", query = "SELECT t FROM Token t WHERE t.tokenSource = :source"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findDockstoreByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'dockstore'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findGithubByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'github.com'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findQuayByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'quay.io'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findGitlabByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'gitlab.com'"),
+    @NamedQuery(name = "io.dockstore.webservice.core.Token.findBitbucketByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'bitbucket.org'") })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Token implements Comparable<Token> {
 

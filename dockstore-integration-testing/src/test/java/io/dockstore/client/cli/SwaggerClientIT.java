@@ -85,6 +85,8 @@ import org.xml.sax.SAXException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -167,7 +169,7 @@ public class SwaggerClientIT {
         UsersApi usersApi = new UsersApi(client);
         final List<User> users = usersApi.listUsers();
         // should just be the one admin user after we clear it out
-        assertTrue(users.size() == 2);
+        assertEquals(2, users.size());
     }
 
     @Test
@@ -178,11 +180,7 @@ public class SwaggerClientIT {
         User user = usersApi.getUser();
 
         List<DockstoreTool> tools = usersApi.userContainers(user.getId());
-        assertTrue(tools.size() == 2);
-
-        ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containerList = containersApi.allContainers();
-        assertTrue(containerList.size() > 1);
+        assertEquals(2, tools.size());
     }
 
     @Test(expected = ApiException.class)
@@ -191,13 +189,13 @@ public class SwaggerClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers();
 
-        assertTrue(containers.size() == 1);
+        assertEquals(1, containers.size());
 
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
         containers = usersApi.userContainers(user.getId());
 
-        assertTrue(containers.size() == 5);
+        assertEquals(5, containers.size());
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         assertFalse(container.isIsPublished());
@@ -335,19 +333,19 @@ public class SwaggerClientIT {
         containersApi.registerManual(c);
 
         final io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        assertTrue(tool != null);
-        assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
+        assertNotNull(tool);
+        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         // get versions
         final List<ToolVersionV1> toolVersions = toolApi.toolsIdVersionsGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        assertTrue(toolVersions.size() == 1);
+        assertEquals(1, toolVersions.size());
 
         final ToolVersionV1 master = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "master");
-        assertTrue(master != null);
+        assertNotNull(master);
         try {
             final ToolVersionV1 foobar = toolApi.toolsIdVersionsVersionIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE, "foobar");
-            assertTrue(foobar != null); // this should be unreachable
+            assertNotNull(foobar); // this should be unreachable
         } catch (ApiException e) {
-            assertTrue(e.getCode() == HttpStatus.SC_NOT_FOUND);
+            assertEquals(e.getCode(), HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -362,15 +360,15 @@ public class SwaggerClientIT {
         final DockstoreTool dockstoreTool = containersApi.registerManual(c);
 
         io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
-        assertTrue(tool != null);
-        assertTrue(tool.getId().equals(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE));
+        assertNotNull(tool);
+        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
         List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
-        assertTrue(tags.size() == 1);
+        assertEquals(1, tags.size());
         Tag tag = tags.get(0);
 
         // verify master branch
         assertTrue(!tag.isVerified());
-        assertTrue(tag.getVerifiedSource() == null);
+        assertNull(tag.getVerifiedSource());
         VerifyRequest request = SwaggerUtility.createVerifyRequest(true, "test-source");
         containertagsApi.verifyToolTag(dockstoreTool.getId(), tag.getId(), request);
 
@@ -378,7 +376,7 @@ public class SwaggerClientIT {
         tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
         tag = tags.get(0);
         assertTrue(tag.isVerified());
-        assertTrue(tag.getVerifiedSource().equals("test-source"));
+        assertEquals("test-source", tag.getVerifiedSource());
     }
 
     @Test
@@ -458,7 +456,7 @@ public class SwaggerClientIT {
         url = new URL(basePath + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/" + encodedID + "/versions/master");
         strings = Resources.readLines(url, Charset.forName("UTF-8"));
         // test nested version
-        assertTrue(strings.size() == 1);
+        assertEquals(1, strings.size());
         assertTrue(strings.get(0).contains("\"verified\":true"));
         assertTrue(strings.get(0).contains("\"verified_source\":\"funky source\""));
     }
@@ -470,13 +468,13 @@ public class SwaggerClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         List<DockstoreTool> containers = containersApi.allPublishedContainers();
 
-        assertTrue(containers.size() == 1);
+        assertEquals(1, containers.size());
 
         UsersApi usersApi = new UsersApi(client);
         User user = usersApi.getUser();
         containers = usersApi.userContainers(user.getId());
 
-        assertTrue(containers.size() == 5);
+        assertEquals(5, containers.size());
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test5");
         assertFalse(container.isIsPublished());
@@ -489,7 +487,7 @@ public class SwaggerClientIT {
         assertTrue(container.isIsPublished());
 
         containers = containersApi.allPublishedContainers();
-        assertTrue(containers.size() == 2);
+        assertEquals(2, containers.size());
 
         pub = SwaggerUtility.createPublishRequest(false);
 
@@ -503,8 +501,8 @@ public class SwaggerClientIT {
         ContainersApi containersApi = new ContainersApi(client);
 
         List<DockstoreTool> containers = containersApi.search("test6");
-        assertTrue(containers.size() == 1);
-        assertTrue(containers.get(0).getPath().equals(QUAY_IO_TEST_ORG_TEST6));
+        assertEquals(1, containers.size());
+        assertEquals(containers.get(0).getPath(), QUAY_IO_TEST_ORG_TEST6);
 
         containers = containersApi.search("test52");
         assertTrue(containers.isEmpty());
@@ -520,13 +518,13 @@ public class SwaggerClientIT {
         c.getTags().get(0).setHidden(true);
         c = containersApi.registerManual(c);
 
-        assertTrue("should see one tag as an admin, saw " + c.getTags().size(), c.getTags().size() == 1);
+        assertEquals("should see one tag as an admin, saw " + c.getTags().size(), 1, c.getTags().size());
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId());
-        assertTrue("should see no tags as a regular user, saw " + registeredContainer.getTags().size(),
-                registeredContainer.getTags().size() == 0);
+        assertEquals("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), 0,
+            registeredContainer.getTags().size());
     }
 
     @Test
@@ -540,7 +538,7 @@ public class SwaggerClientIT {
         long groupId = group.getId();
 
         List<Group> groups = usersApi.allGroups();
-        assertTrue(groups.size() == 1);
+        assertEquals(1, groups.size());
 
         // add group to non-admin user
         long userId = 2;
@@ -589,7 +587,7 @@ public class SwaggerClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         long containerId = container.getId();
-        assertTrue(containerId == 2);
+        assertEquals(2, containerId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         containersApi.starEntry(containerId, request);
         containersApi.starEntry(containerId, request);
@@ -609,7 +607,7 @@ public class SwaggerClientIT {
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         long containerId = container.getId();
-        assertTrue(containerId == 2);
+        assertEquals(2, containerId);
         containersApi.unstarEntry(containerId);
     }
 
@@ -627,7 +625,7 @@ public class SwaggerClientIT {
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
         Workflow workflow = workflowsApi.getPublishedWorkflowByPath("G/A/l");
         long workflowId = workflow.getId();
-        assertTrue(workflowId == 11);
+        assertEquals(11, workflowId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         workflowsApi.starEntry(workflowId, request);
         workflowsApi.starEntry(workflowId, request);
@@ -647,7 +645,7 @@ public class SwaggerClientIT {
         WorkflowsApi workflowApi = new WorkflowsApi(client);
         Workflow workflow = workflowApi.getPublishedWorkflowByPath("G/A/l");
         long workflowId = workflow.getId();
-        assertTrue(workflowId == 11);
+        assertEquals(11, workflowId);
         workflowApi.unstarEntry(workflowId);
     }
 
@@ -707,8 +705,8 @@ public class SwaggerClientIT {
         List<Entry> starredTools = usersApi.getStarredTools();
         for (int i = 0; i < 5; i++) {
             Long id = starredTools.get(i).getId();
-            assertTrue("Wrong order of starred tools returned, should be in ascending order.  Got" + id + ". Should be " + i + 1,
-                    id == i + 1);
+            assertEquals("Wrong order of starred tools returned, should be in ascending order.  Got" + id + ". Should be " + i + 1,
+                (long)id, i + 1);
         }
         containerIds.parallelStream().forEach(containerId -> {
             try {
