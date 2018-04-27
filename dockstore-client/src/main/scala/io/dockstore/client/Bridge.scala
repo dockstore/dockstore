@@ -153,13 +153,10 @@ class Bridge {
     val tasks = new util.LinkedHashMap[String, String]()
 
     ns.workflow.calls foreach { call =>
-      println(call.callable.fullyQualifiedName)
       ns.findTask(call.callable.fullyQualifiedName) foreach { task =>
-        println("task name " + task.name)
         val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
         tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
       }
-      println("\n")
     }
     tasks
   }
