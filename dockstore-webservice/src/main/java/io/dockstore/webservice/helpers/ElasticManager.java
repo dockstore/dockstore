@@ -45,8 +45,8 @@ import org.slf4j.LoggerFactory;
  */
 public class ElasticManager {
     public static DockstoreWebserviceConfiguration config;
-    public static String hostname;
-    public static int port;
+    private static String hostname;
+    private static int port;
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticManager.class);
 
     public ElasticManager() {

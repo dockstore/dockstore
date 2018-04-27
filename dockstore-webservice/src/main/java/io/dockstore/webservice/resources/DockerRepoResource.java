@@ -65,7 +65,6 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
-import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -96,7 +95,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool>, StarrableResourceInterface, SourceControlResourceInterface {
+public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface {
 
     private static final String TARGET_URL = "https://quay.io/api/v1/";
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
@@ -971,7 +970,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     }
 
     @Override
-    public EntryDAO getDAO() {
+    public ToolDAO getDAO() {
         return this.toolDAO;
     }
 
