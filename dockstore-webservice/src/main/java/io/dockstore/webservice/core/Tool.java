@@ -39,7 +39,7 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -233,10 +233,10 @@ public class Tool extends Entry<Tool, Tag> {
         boolean supportsWDL = set.contains(SourceFile.FileType.DOCKSTORE_WDL);
         List<String> languages = new ArrayList<>();
         if (supportsCWL) {
-            languages.add(AbstractEntryClient.Type.CWL.toString());
+            languages.add(LanguageType.CWL.toString());
         }
         if (supportsWDL) {
-            languages.add(AbstractEntryClient.Type.WDL.toString());
+            languages.add(LanguageType.WDL.toString());
         }
         return languages;
     }

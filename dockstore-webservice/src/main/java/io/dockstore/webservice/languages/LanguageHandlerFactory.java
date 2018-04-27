@@ -15,7 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
-import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.LanguageType;
 import io.dockstore.webservice.core.SourceFile;
 
 public final class LanguageHandlerFactory {
@@ -28,7 +28,7 @@ public final class LanguageHandlerFactory {
             || identifiedType == SourceFile.FileType.NEXTFLOW_CONFIG;
     }
 
-    public static LanguageHandlerInterface getInterface(AbstractEntryClient.Type type) {
+    public static LanguageHandlerInterface getInterface(LanguageType type) {
         switch (type) {
         case CWL:
             return new CWLHandler();

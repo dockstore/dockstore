@@ -26,12 +26,13 @@ import java.util.Map;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.LanguageClientFactory;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.ToolClient;
+import io.dockstore.common.Bridge;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.WDLFileProvisioning;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
@@ -69,7 +70,7 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, AbstractEntryClient.Type.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
             .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl.json"));
@@ -84,7 +85,7 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, AbstractEntryClient.Type.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
             .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdl_wrong.json"));
@@ -99,7 +100,7 @@ public class CromwellIT {
         Client client = new Client();
         client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
         AbstractEntryClient main = new ToolClient(client, false);
-        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, AbstractEntryClient.Type.WDL)
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
             .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));

@@ -1175,7 +1175,7 @@
                         <configuration>
                             <append>true</append>
                             <excludes>
-                                <exclude>io/dockstore/client/Bridge.*</exclude>
+                                <exclude>io/dockstore/common/Bridge.*</exclude>
                                 <exclude>io/swagger/**/*</exclude>
                                 <exclude>**/*$*</exclude>
                             </excludes>
