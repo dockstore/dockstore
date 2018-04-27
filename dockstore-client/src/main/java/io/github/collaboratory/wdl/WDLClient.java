@@ -36,10 +36,10 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-import io.dockstore.client.Bridge;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
+import io.dockstore.common.Bridge;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WDLFileProvisioning;
@@ -53,12 +53,12 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 
 /**
  * Grouping code for launching WDL tools and workflows

@@ -33,6 +33,7 @@ import com.google.common.base.Joiner;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
 import io.dockstore.client.cli.SwaggerUtility;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.SourceControl;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -51,12 +52,12 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
-import static io.dockstore.client.cli.ArgumentUtility.NFL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.NFL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 import static io.dockstore.client.cli.ArgumentUtility.columnWidthsWorkflow;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
@@ -398,7 +399,7 @@ public class WorkflowClient extends AbstractEntryClient {
      */
     private void checkEntryFile(String entry, String jsonRun, String yamlRun, String tsvRuns, String wdlOutputTarget, String uuid) {
         File file = new File(entry);
-        Type ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
+        LanguageType ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
         if (!file.exists() || file.isDirectory()) {
             errorMessage("The workflow file " + file.getPath() + " does not exist. Did you mean to launch a remote workflow?",
@@ -419,7 +420,7 @@ public class WorkflowClient extends AbstractEntryClient {
                 languageCLient.launch(entry, true, null, jsonRun, null, null, uuid);
                 break;
             default:
-                Type content = checkFileContent(file);             //check the file content (wdl,cwl or "")
+                LanguageType content = checkFileContent(file);             //check the file content (wdl,cwl or "")
                 switch (content) {
                 case CWL:
                     out("This is a CWL file.. Please put an extension to the entry file name.");

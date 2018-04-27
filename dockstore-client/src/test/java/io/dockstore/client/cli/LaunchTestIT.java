@@ -39,8 +39,8 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 

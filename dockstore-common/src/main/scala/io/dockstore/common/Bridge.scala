@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package io.dockstore.client
+package io.dockstore.common
 
 import java.io.{File => JFile}
 import java.util

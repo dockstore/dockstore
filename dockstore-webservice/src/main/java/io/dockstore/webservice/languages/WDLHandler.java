@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Strings;
 import com.google.common.io.Files;
-import io.dockstore.client.Bridge;
+import io.dockstore.common.Bridge;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;

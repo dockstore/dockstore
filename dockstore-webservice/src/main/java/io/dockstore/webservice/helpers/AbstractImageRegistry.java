@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -364,12 +364,12 @@ public abstract class AbstractImageRegistry {
 
             if (tool.getDefaultCwlPath() != null) {
                 LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.CWL);
+                sourceCodeRepo.updateEntryMetadata(tool, LanguageType.CWL);
             }
 
             if (tool.getDefaultWdlPath() != null) {
                 LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
+                sourceCodeRepo.updateEntryMetadata(tool, LanguageType.WDL);
             }
         }
         toolDAO.create(tool);

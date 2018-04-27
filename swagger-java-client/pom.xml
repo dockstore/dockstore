@@ -261,5 +261,18 @@
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
         </dependency>
+        <dependency>
+            <!-- used just for ordering since this uses the swagger.json created by dockstore-webservice during the build -->
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-webservice</artifactId>
+            <version>1.5.0-SNAPSHOT</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 </project>

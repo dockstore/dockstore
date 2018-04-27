@@ -23,9 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dropwizard.testing.ResourceHelpers;
@@ -242,7 +242,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(AbstractEntryClient.Type.NEXTFLOW.toString());
+        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);
