@@ -25,13 +25,20 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -43,6 +50,7 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +61,7 @@ import org.slf4j.LoggerFactory;
  * @author dyuen
  */
 @Api("hosted")
+@Produces(MediaType.APPLICATION_JSON)
 public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U extends Version<U>, W extends EntryDAO<T>, X extends VersionDAO<U>>
     implements AuthenticatedResourceInterface {
 
@@ -99,6 +108,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     protected abstract T getEntry(User user, String registry, String name, String descriptorType);
 
     @PATCH
+    @io.swagger.jaxrs.PATCH
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
@@ -108,7 +118,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
         checkUser(user, entry);
-        // TODO: may need to revisit some of these arbitrary decisions
+        checkHosted(entry);
         U version = getVersion(entry);
         handleSourceFileMerger(entryId, sourceFiles, entry, version);
         long l = getVersionDAO().create(version);
@@ -119,6 +129,23 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return newTool;
     }
 
+    private void checkHosted(T entry) {
+        if (entry instanceof Tool) {
+            if (((Tool)entry).getMode() != ToolMode.HOSTED) {
+                throw new WebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+            }
+        } else if (entry instanceof Workflow) {
+            if (((Workflow)entry).getMode() != WorkflowMode.HOSTED) {
+                throw new WebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+    }
+
+    /**
+     * Create new version of a workflow or tag of a tool
+     * @param entry the parent for the new version
+     * @return the new version
+     */
     protected abstract U getVersion(T entry);
 
     @DELETE
@@ -128,11 +155,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     public T deleteHostedVersion(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
-        T entryById = getEntryDAO().findById(entryId);
-        checkEntry(entryById);
-        checkUser(user, entryById);
-        entryById.getVersions().removeIf(v -> Objects.equals(v.getName(), version));
-        return entryById;
+        T entry = getEntryDAO().findById(entryId);
+        checkEntry(entry);
+        checkUser(user, entry);
+        checkHosted(entry);
+        entry.getVersions().removeIf(v -> Objects.equals(v.getName(), version));
+        return entry;
     }
 
     private void handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
