@@ -4513,6 +4513,17 @@ definitions:
         format: "int32"
       message:
         type: "string"
+  FileFormat:
+    type: "object"
+    required:
+    - "value"
+    properties:
+      value:
+        type: "string"
+        position: 1
+        description: "String representation of the file format"
+    description: "This describes a input or output file format that is associated\
+      \ with an entry in the dockstore"
   GitHubComAuthenticationResource:
     type: "object"
     properties:
@@ -4795,6 +4806,14 @@ definitions:
       image_id:
         type: "string"
         position: 19
+      fileFormats:
+        type: "array"
+        position: 123
+        description: "File formats for describing the input file formats and output\
+          \ file formats of versions (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
     description: "This describes one tag associated with a container."
   Token:
     type: "object"
@@ -5412,4 +5431,12 @@ definitions:
         type: "string"
         position: 12
         description: "Path for the workflow"
+      fileFormats:
+        type: "array"
+        position: 123
+        description: "File formats for describing the input file formats and output\
+          \ file formats of versions (tag/workflowVersion)"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
     description: "This describes one workflow version associated with a workflow."
