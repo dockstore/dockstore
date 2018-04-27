@@ -42,12 +42,13 @@ import org.apache.http.HttpStatus;
  * <p>
  * Created by dyuen on 10/03/16.
  */
-public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResourceInterface {
+public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W extends EntryDAO<T>>
+    extends AuthenticatedResourceInterface {
 
     /**
      * Implementors of this interface require a DAO
      */
-    EntryDAO getDAO();
+    W getDAO();
 
     /**
      * For the purposes of display, this method filters an entry to not show workflow or tool versions that are hidden
@@ -69,35 +70,24 @@ public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResour
             // clear users which are also lazy loaded
             entry.setUsers(null);
             // need to have this evicted so that hibernate does not actually delete the tags and users
-            Set<Version> versions = entry.getVersions();
+            Set<U> versions = entry.getVersions();
             versions.removeIf(Version::isHidden);
         }
         return entries;
     }
 
     /**
-     * For the purposes of display, this method filters an entry to not show sourcefiles
-     * @param entry the entry to be filtered
-     * @return the filtered entry
-     */
-    default T stripContent(T entry) {
-        return filterContainersForHiddenTags(Lists.newArrayList(entry)).get(0);
-    }
-
-    /**
      * For convenience, filters a list of entries
-     * @see EntryVersionHelper#stripContent(Entry)
      */
-    default List<T> stripContent(List<T> entries) {
+    default void stripContent(List<T> entries) {
         for (T entry : entries) {
             getDAO().evict(entry);
             // clear users which are also lazy loaded
             entry.setUsers(null);
             // need to have this evicted so that hibernate does not actually delete the tags and users
-            Set<Version> versions = entry.getVersions();
+            Set<U> versions = entry.getVersions();
             versions.forEach(version -> version.getSourceFiles().clear());
         }
-        return entries;
     }
 
     /**
@@ -173,7 +163,7 @@ public interface EntryVersionHelper<T extends Entry> extends AuthenticatedResour
      */
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
             SourceFile.FileType fileType) {
-        T entry = (T)getDAO().findById(workflowId);
+        T entry = getDAO().findById(workflowId);
         checkEntry(entry);
         this.filterContainersForHiddenTags(entry);
         Version tagInstance = null;

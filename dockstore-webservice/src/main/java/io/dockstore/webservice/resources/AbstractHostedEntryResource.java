@@ -53,7 +53,8 @@ import org.slf4j.LoggerFactory;
  * @author dyuen
  */
 @Api("hosted")
-public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U extends Version<U>, W extends EntryDAO<T>, X extends VersionDAO<U>> implements AuthenticatedResourceInterface {
+public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U extends Version<U>, W extends EntryDAO<T>, X extends VersionDAO<U>>
+    implements AuthenticatedResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
     final ElasticManager elasticManager;

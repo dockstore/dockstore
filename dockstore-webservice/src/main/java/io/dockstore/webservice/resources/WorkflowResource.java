@@ -73,7 +73,6 @@ import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -108,7 +107,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/workflows")
 @Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow>, StarrableResourceInterface, SourceControlResourceInterface {
+public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface, SourceControlResourceInterface {
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
@@ -1413,7 +1412,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
 
     @Override
-    public EntryDAO getDAO() {
+    public WorkflowDAO getDAO() {
         return this.workflowDAO;
     }
 }
