@@ -35,7 +35,9 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -124,6 +126,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
+
+    @ManyToMany(cascade = {CascadeType.MERGE})
+    @JoinTable(name = "version_file_format", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "File formats for describing the input file formats and output file formats of versions (tag/workflowVersion)", position = 123)
+    @OrderBy("id")
+    private Set<FileFormat> fileFormats = new HashSet<>();
 
     public Version() {
         sourceFiles = new HashSet<>(0);
@@ -260,6 +268,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setReferenceType(ReferenceType referenceType) {
         this.referenceType = referenceType;
+    }
+
+    public Set<FileFormat> getFileFormats() {
+        return fileFormats;
+    }
+
+    public void setFileFormats(Set<FileFormat> fileFormats) {
+        this.fileFormats = fileFormats;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
