@@ -1144,7 +1144,9 @@ paths:
       - "hosted"
       summary: "Create a hosted tool"
       description: "Create a hosted tool"
-      operationId: "createHosted"
+      operationId: "createHostedTool"
+      produces:
+      - "application/json"
       parameters:
       - name: "registry"
         in: "query"
@@ -1174,7 +1176,9 @@ paths:
       - "hosted"
       summary: "Delete a revision of a hosted tool"
       description: "Delete a revision of a hosted tool"
-      operationId: "deleteHostedVersion"
+      operationId: "deleteHostedToolVersion"
+      produces:
+      - "application/json"
       parameters:
       - name: "entryId"
         in: "path"
@@ -1187,6 +1191,38 @@ paths:
         description: "version"
         required: true
         type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
+    patch:
+      tags:
+      - "hosted"
+      summary: "Non-idempotent operation for creating new revisions of hosted tools"
+      description: "Non-idempotent operation for creating new revisions of hosted\
+        \ tools"
+      operationId: "editHostedTool"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "entryId"
+        in: "path"
+        description: "Entry to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Set of updated sourcefiles, add files by adding new files with\
+          \ unknown paths, delete files by including them with emptied content"
+        required: true
+        schema:
+          type: "array"
+          items:
+            $ref: "#/definitions/SourceFile"
       responses:
         200:
           description: "successful operation"
@@ -3120,7 +3156,9 @@ paths:
       - "hosted"
       summary: "Create a hosted workflow"
       description: "Create a hosted workflow"
-      operationId: "createHosted"
+      operationId: "createHostedWorkflow"
+      produces:
+      - "application/json"
       parameters:
       - name: "registry"
         in: "query"
@@ -3150,7 +3188,9 @@ paths:
       - "hosted"
       summary: "Delete a revision of a hosted workflow"
       description: "Delete a revision of a hosted workflow"
-      operationId: "deleteHostedVersion"
+      operationId: "deleteHostedWorkflowVersion"
+      produces:
+      - "application/json"
       parameters:
       - name: "entryId"
         in: "path"
@@ -3163,6 +3203,38 @@ paths:
         description: "version"
         required: true
         type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
+    patch:
+      tags:
+      - "hosted"
+      summary: "Non-idempotent operation for creating new revisions of hosted workflows"
+      description: "Non-idempotent operation for creating new revisions of hosted\
+        \ workflows"
+      operationId: "editHostedWorkflow"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "entryId"
+        in: "path"
+        description: "Entry to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Set of updated sourcefiles, add files by adding new files with\
+          \ unknown paths, delete files by including them with emptied content"
+        required: true
+        schema:
+          type: "array"
+          items:
+            $ref: "#/definitions/SourceFile"
       responses:
         200:
           description: "successful operation"

@@ -1391,7 +1391,7 @@ paths:
         - hosted
       summary: Create a hosted tool
       description: Create a hosted tool
-      operationId: createHosted
+      operationId: createHostedTool
       parameters:
         - name: registry
           in: query
@@ -1415,7 +1415,7 @@ paths:
         '200':
           description: successful operation
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
@@ -1426,7 +1426,7 @@ paths:
         - hosted
       summary: Delete a revision of a hosted tool
       description: Delete a revision of a hosted tool
-      operationId: deleteHostedVersion
+      operationId: deleteHostedToolVersion
       parameters:
         - name: entryId
           in: path
@@ -1445,11 +1445,36 @@ paths:
         '200':
           description: successful operation
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
+    patch:
+      tags:
+        - hosted
+      summary: Non-idempotent operation for creating new revisions of hosted tools
+      description: Non-idempotent operation for creating new revisions of hosted tools
+      operationId: editHostedTool
+      parameters:
+        - name: entryId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -3420,7 +3445,7 @@ paths:
         - hosted
       summary: Create a hosted workflow
       description: Create a hosted workflow
-      operationId: createHosted
+      operationId: createHostedWorkflow
       parameters:
         - name: registry
           in: query
@@ -3444,7 +3469,7 @@ paths:
         '200':
           description: successful operation
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
       security:
@@ -3455,7 +3480,7 @@ paths:
         - hosted
       summary: Delete a revision of a hosted workflow
       description: Delete a revision of a hosted workflow
-      operationId: deleteHostedVersion
+      operationId: deleteHostedWorkflowVersion
       parameters:
         - name: entryId
           in: path
@@ -3474,11 +3499,36 @@ paths:
         '200':
           description: successful operation
           content:
-            '*/*':
+            application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
       security:
         - BEARER: []
+    patch:
+      tags:
+        - hosted
+      summary: Non-idempotent operation for creating new revisions of hosted workflows
+      description: Non-idempotent operation for creating new revisions of hosted workflows
+      operationId: editHostedWorkflow
+      parameters:
+        - name: entryId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -4650,6 +4700,17 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
+      required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:
