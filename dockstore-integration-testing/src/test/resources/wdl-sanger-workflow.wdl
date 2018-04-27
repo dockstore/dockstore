@@ -1,5 +1,4 @@
 import "https://raw.githubusercontent.com/DockstoreTestUser/dockstore-whalesay/master/Dockstore.wdl" as httpimport
-import "wdl.wdl" as localimport
 task get_basename {
   File f
 
@@ -478,7 +477,6 @@ workflow sanger_cgp_somatic_vc {
   String seqProtocol = "genomic"
   String assembly = "GRCh37"
   String species = "human"
-  String platform = "ILLUMINA"
 
   # bbAlleleCount
   Array[File] bbRefLociFiles
