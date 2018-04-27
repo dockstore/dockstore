@@ -103,7 +103,6 @@ class Bridge {
     val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
 
     ns.imports foreach { imported =>
-      println(imported.uri)
       importList.add(imported.uri)
     }
 
@@ -153,9 +152,30 @@ class Bridge {
     val tasks = new util.LinkedHashMap[String, String]()
 
     ns.workflow.calls foreach { call =>
-      ns.findTask(call.callable.fullyQualifiedName) foreach { task =>
-        val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-        tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+      if (ns.findTask(call.callable.fullyQualifiedName).nonEmpty) {
+        ns.findTask(call.callable.fullyQualifiedName) foreach { task =>
+          val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+          tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+        }
+      } else {
+        ns.namespaces.foreach { namespace =>
+          if (namespace.findTask(call.unqualifiedName).nonEmpty) {
+            namespace.findTask(call.unqualifiedName).foreach  { task =>
+              val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+              tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+            }
+          } else if (namespace.findTask(call.callable.fullyQualifiedName).nonEmpty) {
+            namespace.findTask(call.callable.fullyQualifiedName).foreach  { task =>
+              val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+              tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+            }
+          } else if (namespace.findTask(call.callable.unqualifiedName).nonEmpty) {
+            namespace.findTask(call.callable.unqualifiedName).foreach  { task =>
+              val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+              tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+            }
+          }
+        }
       }
     }
     tasks
