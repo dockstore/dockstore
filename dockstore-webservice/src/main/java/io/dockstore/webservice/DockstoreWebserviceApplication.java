@@ -55,6 +55,8 @@ import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitLabComAuthenticationResource;
+import io.dockstore.webservice.resources.HostedToolResource;
+import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.MetadataResource;
 import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
@@ -265,6 +267,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
+        environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO));
+        environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO));
+
 
         // attach the container dao statically to avoid too much modification of generated code
         ToolsApiServiceImpl.setToolDAO(toolDAO);

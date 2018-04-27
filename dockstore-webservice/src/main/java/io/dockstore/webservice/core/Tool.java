@@ -217,8 +217,7 @@ public class Tool extends Entry<Tool, Tag> {
 
     @ApiModelProperty(position = 27)
     public String getPath() {
-        String repositoryPath = registry + '/' + namespace + '/' + name;
-        return repositoryPath;
+        return registry + '/' + namespace + '/' + name;
     }
 
     /**
