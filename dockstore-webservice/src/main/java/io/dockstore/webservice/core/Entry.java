@@ -57,6 +57,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
+
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
     @NamedNativeQuery(name = "Entry.getEntryById", query = "SELECT 'tool' as type, id from tool where id = :id union select 'workflow' as type, id from workflow where id = :id"),

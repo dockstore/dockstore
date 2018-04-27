@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public enum SourceControl {
     // Add new source control here
-    @JsonProperty("github.com") GITHUB("github.com", "GitHub"), @JsonProperty("bitbucket.org") BITBUCKET("bitbucket.org",
+    @JsonProperty("dockstore.org") DOCKSTORE("dockstore.org", "Dockstore"), @JsonProperty("github.com") GITHUB("github.com", "GitHub"), @JsonProperty("bitbucket.org") BITBUCKET("bitbucket.org",
         "BitBucket"), @JsonProperty("gitlab.com") GITLAB("gitlab.com", "GitLab");
 
     /**

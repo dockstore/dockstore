@@ -31,6 +31,8 @@ tags:
     description: List and modify tags for containers
   - name: extendedGA4GH
     description: Optional experimental extensions of the GA4GH API
+  - name: hosted
+    description: Created and modify hosted entries in the dockstore
   - name: integration.bitbucket.org
     description: stop-gap allowing developers to associate with bitbucket
   - name: integration.github.com
@@ -1383,6 +1385,71 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
+  /containers/hostedEntry:
+    post:
+      tags:
+        - hosted
+      summary: Create a hosted tool
+      description: Create a hosted tool
+      operationId: createHosted
+      parameters:
+        - name: registry
+          in: query
+          description: 'For tools, the Docker registry'
+          required: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: name
+          required: true
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          description: Descriptor type
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+  '/containers/hostedEntry/{entryId}':
+    delete:
+      tags:
+        - hosted
+      summary: Delete a revision of a hosted tool
+      description: Delete a revision of a hosted tool
+      operationId: deleteHostedVersion
+      parameters:
+        - name: entryId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: version
+          in: query
+          description: version
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -3347,6 +3414,71 @@ paths:
                   $ref: '#/components/schemas/Workflow'
       security:
         - BEARER: []
+  /workflows/hostedEntry:
+    post:
+      tags:
+        - hosted
+      summary: Create a hosted workflow
+      description: Create a hosted workflow
+      operationId: createHosted
+      parameters:
+        - name: registry
+          in: query
+          description: 'For tools, the Docker registry'
+          required: false
+          schema:
+            type: string
+        - name: name
+          in: query
+          description: name
+          required: true
+          schema:
+            type: string
+        - name: descriptorType
+          in: query
+          description: Descriptor type
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+  '/workflows/hostedEntry/{entryId}':
+    delete:
+      tags:
+        - hosted
+      summary: Delete a revision of a hosted workflow
+      description: Delete a revision of a hosted workflow
+      operationId: deleteHostedVersion
+      parameters:
+        - name: entryId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: version
+          in: query
+          description: version
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
   /workflows/manualRegister:
     post:
       tags:
@@ -4671,6 +4803,7 @@ components:
             - AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS
             - AUTO_DETECT_QUAY_TAGS_WITH_MIXED
             - MANUAL_IMAGE_PATH
+            - HOSTED
         name:
           type: string
           position: 14
@@ -5683,6 +5816,7 @@ components:
           enum:
             - FULL
             - STUB
+            - HOSTED
         workflowName:
           type: string
           position: 14

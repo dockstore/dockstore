@@ -29,16 +29,20 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author dyuen
  */
 public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
 
-    public final int registryIndex = 0;
-    public final int orgIndex = 1;
-    public final int repoIndex = 2;
-    public final int entryNameIndex = 3;
+    private static final Logger LOG = LoggerFactory.getLogger(EntryDAO.class);
+
+    final int registryIndex = 0;
+    final int orgIndex = 1;
+    final int repoIndex = 2;
+    final int entryNameIndex = 3;
 
     private Class<T> typeOfT;
 
