@@ -141,8 +141,9 @@
         <!-- broad - cromwell stuff -->
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl4s_2.11</artifactId>
+            <artifactId>wdl4s-wom_2.11</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.spray</groupId>
             <artifactId>spray-json_2.11</artifactId>
