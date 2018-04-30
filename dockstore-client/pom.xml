@@ -322,7 +322,7 @@
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
                                 <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
                                 <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</usedDependency>
-                                <usedDependency>org.broadinstitute:wdl4s_2.11</usedDependency>
+                                <usedDependency>org.broadinstitute:wdl4s-wom_2.11</usedDependency>
                                 <usedDependency>io.spray:spray-json_2.11</usedDependency>
                             </usedDependencies>
 
