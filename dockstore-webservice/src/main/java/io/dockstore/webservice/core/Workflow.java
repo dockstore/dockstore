@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -152,6 +153,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Override
     public Set<WorkflowVersion> getVersions() {
         return workflowVersions;
+    }
+
+    @Override
+    public Set<FileFormat> getFileFormats() {
+        return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getFileFormats().stream()).collect(Collectors.toSet());
     }
 
     public Entry getParentEntry() {

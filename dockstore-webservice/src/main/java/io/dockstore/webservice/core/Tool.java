@@ -167,6 +167,11 @@ public class Tool extends Entry<Tool, Tag> {
         return tags;
     }
 
+    @Override
+    public Set<FileFormat> getFileFormats() {
+        return this.tags.stream().flatMap(tag -> tag.getFileFormats().stream()).collect(Collectors.toSet());
+    }
+
     /**
      * Used during refresh to update tools
      *
