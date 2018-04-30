@@ -160,6 +160,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkUser(user, entry);
         checkHosted(entry);
         entry.getVersions().removeIf(v -> Objects.equals(v.getName(), version));
+        elasticManager.handleIndexUpdate(entry, ElasticMode.UPDATE);
         return entry;
     }
 
