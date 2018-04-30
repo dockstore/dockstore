@@ -36,7 +36,7 @@ import io.swagger.annotations.ApiModelProperty;
  * @author gluu
  * @since 1.5.0
  */
-@ApiModel(value = "FileFormat", description = "This describes a input or output file format that is associated with an entry in the dockstore")
+@ApiModel(value = "FileFormat", description = "This describes an input or output file format that is associated with an entry in the dockstore")
 @Entity
 @Table(name = "FileFormat")
 @NamedQuery(name = "io.dockstore.webservice.core.FileFormat.findByFileFormatValue", query = "SELECT l FROM FileFormat l WHERE l.value = :fileformatValue")
