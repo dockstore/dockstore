@@ -54,7 +54,8 @@ class Bridge {
     }
   }
 
-  def dagResolver(importString: String): WorkflowSource = {
+  // When resolving non-http(s) files that do not actually exist locally, but instead in strings
+  def resolveHttpAndSecondaryFiles(importString: String): WorkflowSource = {
     importString match {
       case s if (s.startsWith("http://") || s.startsWith("https://")) =>
         bridgeHelper.resolveUrl(s)
@@ -63,7 +64,8 @@ class Bridge {
     }
   }
 
-  def launchResolver(importString: String): WorkflowSource = {
+  // When resolving non-http(s) files that do exist locally
+  def resolveHttpAndLocalFiles(importString: String): WorkflowSource = {
     importString match {
       case s if (s.startsWith("http://") || s.startsWith("https://")) =>
         bridgeHelper.resolveUrl(s)
@@ -74,7 +76,7 @@ class Bridge {
 
   private[this] def loadWdl(path: String)(f: WdlNamespace => String): String = {
     val lines = scala.io.Source.fromFile(new JFile(path)).mkString
-    Try(WdlNamespaceWithWorkflow.load(lines, Seq(launchResolver _)).get) match {
+    Try(WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndLocalFiles _)).get) match {
       case Success(namespace) => f(namespace)
       case Failure(t) =>
         println(t.getMessage)
@@ -84,7 +86,7 @@ class Bridge {
 
   def getInputFiles(file: JFile): util.Map[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndLocalFiles _)).get
 
     val inputList = new util.HashMap[String, String]()
 
@@ -100,7 +102,7 @@ class Bridge {
     val lines = scala.io.Source.fromFile(file).mkString
     val importList = new util.ArrayList[String]()
 
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
 
     ns.imports foreach { imported =>
       importList.add(imported.uri)
@@ -113,7 +115,7 @@ class Bridge {
     val lines = scala.io.Source.fromFile(file).mkString
     val importMap = new util.LinkedHashMap[String, String]()
 
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
 
     ns.imports foreach { imported =>
       val importNamespace = imported.namespaceName
@@ -128,7 +130,7 @@ class Bridge {
 
   def getOutputFiles(file: JFile): util.List[String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(launchResolver _)).get
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndLocalFiles _)).get
 
     val outputList = new util.ArrayList[String]()
 
@@ -148,7 +150,7 @@ class Bridge {
 
   def getCallsToDockerMap(file: JFile): util.LinkedHashMap[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
     val tasks = new util.LinkedHashMap[String, String]()
 
     ns.workflow.calls foreach { call =>
@@ -183,7 +185,7 @@ class Bridge {
 
   def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.List[String]] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
     val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
     ns.workflow.calls foreach { call =>
       val dependencies = new util.ArrayList[String]()
