@@ -331,7 +331,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
         }
     }
 
-    public abstract Set<FileFormat> getFileFormats();
+    @JsonProperty("file_formats")
+    public abstract Set<String> getFileFormats();
+
+    @JsonIgnore
+    public abstract Set<FileFormat> getFileFormatsOriginal();
 
     /**
      * Convenience method to access versions in a generic manner

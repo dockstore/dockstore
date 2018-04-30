@@ -168,8 +168,12 @@ public class Tool extends Entry<Tool, Tag> {
     }
 
     @Override
-    public Set<FileFormat> getFileFormats() {
+    public Set<String> getFileFormats() {
         return this.tags.stream().flatMap(tag -> tag.getFileFormats().stream()).collect(Collectors.toSet());
+    }
+
+    public Set<FileFormat> getFileFormatsOriginal() {
+        return this.tags.stream().flatMap(tag -> tag.getFileFormatsOriginal().stream()).collect(Collectors.toSet());
     }
 
     /**
