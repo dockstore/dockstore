@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.Date;
 import java.util.Set;
 
 import javax.ws.rs.Path;
@@ -92,6 +93,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         tag.setAutomated(false);
         tag.setWdlPath("Dockstore.wdl");
         tag.setReferenceType(Version.ReferenceType.TAG);
+        tag.setLastModified(new Date());
         return tag;
     }
 
