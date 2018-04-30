@@ -84,7 +84,7 @@ class Bridge {
 
   def getInputFiles(file: JFile): util.Map[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(launchResolver _)).get
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(dagResolver _)).get
 
     val inputList = new util.HashMap[String, String]()
 

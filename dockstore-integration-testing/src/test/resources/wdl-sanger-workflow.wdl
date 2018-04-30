@@ -1,4 +1,5 @@
 import "https://raw.githubusercontent.com/DockstoreTestUser/dockstore-whalesay/master/Dockstore.wdl" as httpimport
+import "wdl.wdl" as localimport
 task get_basename {
   File f
 

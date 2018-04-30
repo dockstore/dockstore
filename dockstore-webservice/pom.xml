@@ -543,7 +543,6 @@
         <dependency>
             <groupId>org.broadinstitute</groupId>
             <artifactId>wdl4s-wom_2.11</artifactId>
-            <version>0.15</version>
         </dependency>
 
         <dependency>
