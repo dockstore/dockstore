@@ -4244,6 +4244,12 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
       last_modified_date:
         type: "string"
         format: "date-time"
@@ -4437,6 +4443,12 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
+      file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
       author:
         type: "string"
         position: 1
@@ -4522,7 +4534,7 @@ definitions:
         type: "string"
         position: 1
         description: "String representation of the file format"
-    description: "This describes a input or output file format that is associated\
+    description: "This describes an input or output file format that is associated\
       \ with an entry in the dockstore"
   GitHubComAuthenticationResource:
     type: "object"
@@ -4722,6 +4734,11 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      fileFormatsOriginal:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       last_modified:
         type: "string"
         format: "date-time"
@@ -4806,14 +4823,14 @@ definitions:
       image_id:
         type: "string"
         position: 19
-      fileFormats:
+      file_formats:
         type: "array"
         position: 123
         description: "File formats for describing the input file formats and output\
           \ file formats of versions (tag/workflowVersion)"
         uniqueItems: true
         items:
-          $ref: "#/definitions/FileFormat"
+          type: "string"
     description: "This describes one tag associated with a container."
   Token:
     type: "object"
@@ -5211,6 +5228,12 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
       parent_id:
         type: "integer"
         format: "int64"
@@ -5371,6 +5394,11 @@ definitions:
         - "UNSET"
       workingDirectory:
         type: "string"
+      fileFormatsOriginal:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/FileFormat"
       last_modified:
         type: "string"
         format: "date-time"
@@ -5431,12 +5459,12 @@ definitions:
         type: "string"
         position: 12
         description: "Path for the workflow"
-      fileFormats:
+      file_formats:
         type: "array"
         position: 123
         description: "File formats for describing the input file formats and output\
           \ file formats of versions (tag/workflowVersion)"
         uniqueItems: true
         items:
-          $ref: "#/definitions/FileFormat"
+          type: "string"
     description: "This describes one workflow version associated with a workflow."

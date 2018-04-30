@@ -4622,6 +4622,12 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        file_formats:
+          type: array
+          readOnly: true
+          uniqueItems: true
+          items:
+            type: string
         last_modified_date:
           type: string
           format: date-time
@@ -4833,6 +4839,12 @@ components:
           type: string
           format: date-time
           readOnly: true
+        file_formats:
+          type: array
+          readOnly: true
+          uniqueItems: true
+          items:
+            type: string
         author:
           type: string
           position: 1
@@ -4924,7 +4936,7 @@ components:
           position: 1
           description: String representation of the file format
       description: >-
-        This describes a input or output file format that is associated with an
+        This describes an input or output file format that is associated with an
         entry in the dockstore
     GitHubComAuthenticationResource:
       type: object
@@ -5128,6 +5140,11 @@ components:
             - BRANCH
             - NOT_APPLICABLE
             - UNSET
+        fileFormatsOriginal:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/FileFormat'
         last_modified:
           type: string
           format: date-time
@@ -5215,7 +5232,7 @@ components:
         image_id:
           type: string
           position: 19
-        fileFormats:
+        file_formats:
           type: array
           position: 123
           description: >-
@@ -5223,7 +5240,7 @@ components:
             formats of versions (tag/workflowVersion)
           uniqueItems: true
           items:
-            $ref: '#/components/schemas/FileFormat'
+            type: string
       description: This describes one tag associated with a container.
     Token:
       type: object
@@ -5652,6 +5669,12 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        file_formats:
+          type: array
+          readOnly: true
+          uniqueItems: true
+          items:
+            type: string
         parent_id:
           type: integer
           format: int64
@@ -5824,6 +5847,11 @@ components:
             - UNSET
         workingDirectory:
           type: string
+        fileFormatsOriginal:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/FileFormat'
         last_modified:
           type: string
           format: date-time
@@ -5886,7 +5914,7 @@ components:
           type: string
           position: 12
           description: Path for the workflow
-        fileFormats:
+        file_formats:
           type: array
           position: 123
           description: >-
@@ -5894,5 +5922,5 @@ components:
             formats of versions (tag/workflowVersion)
           uniqueItems: true
           items:
-            $ref: '#/components/schemas/FileFormat'
+            type: string
       description: This describes one workflow version associated with a workflow.
