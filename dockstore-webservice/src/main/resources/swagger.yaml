@@ -4241,12 +4241,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          type: "string"
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -4254,6 +4248,12 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
+      file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
       author:
         type: "string"
         position: 1
@@ -4525,17 +4525,6 @@ definitions:
         format: "int32"
       message:
         type: "string"
-  FileFormat:
-    type: "object"
-    required:
-    - "value"
-    properties:
-      value:
-        type: "string"
-        position: 1
-        description: "String representation of the file format"
-    description: "This describes an input or output file format that is associated\
-      \ with an entry in the dockstore"
   GitHubComAuthenticationResource:
     type: "object"
     properties:
@@ -4734,11 +4723,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
-      fileFormatsOriginal:
+      file_formats:
         type: "array"
+        readOnly: true
         uniqueItems: true
         items:
-          $ref: "#/definitions/FileFormat"
+          type: "string"
       last_modified:
         type: "string"
         format: "date-time"
@@ -4823,14 +4813,6 @@ definitions:
       image_id:
         type: "string"
         position: 19
-      file_formats:
-        type: "array"
-        position: 123
-        description: "File formats for describing the input file formats and output\
-          \ file formats of versions (tag/workflowVersion)"
-        uniqueItems: true
-        items:
-          type: "string"
     description: "This describes one tag associated with a container."
   Token:
     type: "object"
@@ -5228,12 +5210,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      file_formats:
-        type: "array"
-        readOnly: true
-        uniqueItems: true
-        items:
-          type: "string"
       parent_id:
         type: "integer"
         format: "int64"
@@ -5242,6 +5218,12 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
+      file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
       author:
         type: "string"
         position: 1
@@ -5394,11 +5376,12 @@ definitions:
         - "UNSET"
       workingDirectory:
         type: "string"
-      fileFormatsOriginal:
+      file_formats:
         type: "array"
+        readOnly: true
         uniqueItems: true
         items:
-          $ref: "#/definitions/FileFormat"
+          type: "string"
       last_modified:
         type: "string"
         format: "date-time"
@@ -5459,12 +5442,4 @@ definitions:
         type: "string"
         position: 12
         description: "Path for the workflow"
-      file_formats:
-        type: "array"
-        position: 123
-        description: "File formats for describing the input file formats and output\
-          \ file formats of versions (tag/workflowVersion)"
-        uniqueItems: true
-        items:
-          type: "string"
     description: "This describes one workflow version associated with a workflow."

@@ -41,6 +41,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
@@ -132,7 +133,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JoinTable(name = "version_file_format", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the input file formats and output file formats of versions (tag/workflowVersion)", position = 123)
     @OrderBy("id")
-    @JsonProperty("file_formats")
+    @JsonIgnore
     private Set<FileFormat> fileFormats = new HashSet<>();
 
     public Version() {
@@ -272,12 +273,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.referenceType = referenceType;
     }
 
-    public Set<String> getFileFormats() {
-        return fileFormats.stream().map(fileFormat -> fileFormat.getValue()) .collect(Collectors.toSet());
+    @JsonIgnore
+    public Set<FileFormat> getFileFormats() {
+        return fileFormats;
     }
 
-    public Set<FileFormat> getFileFormatsOriginal() {
-        return fileFormats;
+    @JsonProperty("file_formats")
+    public Set<String> getFileFormatsString() {
+        return fileFormats.stream().map(fileFormat -> fileFormat.getValue()).collect(Collectors.toSet());
     }
 
     public void setFileFormats(Set<FileFormat> fileFormats) {

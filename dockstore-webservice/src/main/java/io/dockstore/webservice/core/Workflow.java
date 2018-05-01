@@ -155,13 +155,9 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return workflowVersions;
     }
 
-    @Override
-    public Set<String> getFileFormats() {
+    @JsonIgnore
+    public Set<FileFormat> getFileFormats() {
         return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getFileFormats().stream()).collect(Collectors.toSet());
-    }
-
-    public Set<FileFormat> getFileFormatsOriginal() {
-        return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getFileFormatsOriginal().stream()).collect(Collectors.toSet());
     }
 
     public Entry getParentEntry() {

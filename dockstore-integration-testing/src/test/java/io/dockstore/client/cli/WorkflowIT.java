@@ -500,6 +500,16 @@ public class WorkflowIT extends BaseIT {
 
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
 
+        // Test that the secondary file's input file formats are recognized (secondary file is varscan_cnv.cwl)
+        List<String> fileFormats = workflow.getFileFormats();
+        List<WorkflowVersion> workflowVersionsForFileFormat = workflow.getWorkflowVersions();
+        Assert.assertTrue(workflowVersionsForFileFormat.stream().anyMatch(workflowVersion -> workflowVersion.getFileFormats().contains("http://edamontology.org/format_2572")));
+        Assert.assertTrue(workflowVersionsForFileFormat.stream().anyMatch(workflowVersion -> workflowVersion.getFileFormats().contains("http://edamontology.org/format_1929")));
+        Assert.assertTrue(workflowVersionsForFileFormat.stream().anyMatch(workflowVersion -> workflowVersion.getFileFormats().contains("http://edamontology.org/format_3003")));
+        Assert.assertTrue(fileFormats.contains("http://edamontology.org/format_2572"));
+        Assert.assertTrue(fileFormats.contains("http://edamontology.org/format_1929"));
+        Assert.assertTrue(fileFormats.contains("http://edamontology.org/format_3003"));
+
         // This checks if a workflow whose default name is null would remain as null after refresh
         assertNull(workflow.getWorkflowName());
 

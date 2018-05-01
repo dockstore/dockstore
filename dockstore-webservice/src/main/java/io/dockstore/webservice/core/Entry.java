@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -331,11 +332,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
         }
     }
 
-    @JsonProperty("file_formats")
-    public abstract Set<String> getFileFormats();
 
     @JsonIgnore
-    public abstract Set<FileFormat> getFileFormatsOriginal();
+    public abstract Set<FileFormat> getFileFormats();
+
+    @JsonProperty("file_formats")
+    public Set<String> getFileFormatsString() {
+        return this.getFileFormats().stream().map(fileFormat -> fileFormat.getValue()).collect(Collectors.toSet());
+    }
 
     /**
      * Convenience method to access versions in a generic manner

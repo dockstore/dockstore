@@ -38,6 +38,7 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.Registry;
@@ -167,13 +168,9 @@ public class Tool extends Entry<Tool, Tag> {
         return tags;
     }
 
-    @Override
-    public Set<String> getFileFormats() {
+    @JsonIgnore
+    public Set<FileFormat> getFileFormats() {
         return this.tags.stream().flatMap(tag -> tag.getFileFormats().stream()).collect(Collectors.toSet());
-    }
-
-    public Set<FileFormat> getFileFormatsOriginal() {
-        return this.tags.stream().flatMap(tag -> tag.getFileFormatsOriginal().stream()).collect(Collectors.toSet());
     }
 
     /**
