@@ -155,6 +155,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return workflowVersions;
     }
 
+    /**
+     * This property is ignored and not sent and received through the REST endpoints because it is more complicated than necessary.
+     * It is only for internal use
+     * @return A set of FileFormat objects associated with this entry
+     */
     @JsonIgnore
     public Set<FileFormat> getFileFormats() {
         return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getFileFormats().stream()).collect(Collectors.toSet());

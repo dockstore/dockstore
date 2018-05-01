@@ -165,6 +165,12 @@ public class CWLHandler implements LanguageHandlerInterface {
         return recursiveImports;
     }
 
+    /**
+     * Gets the file formats (either input or output) associated with the contents of a single CWL descriptor file
+     * @param content   Contents of a CWL descriptor file
+     * @param type      Either "inputs" or "outputs"
+     * @return
+     */
     public Set<FileFormat> getFileFormats(String content, String type) {
         Set<FileFormat> fileFormats = new HashSet<>();
         Yaml yaml = new Yaml();

@@ -14,7 +14,7 @@ import io.dockstore.webservice.languages.CWLHandler;
 /**
  * This class helps resolve file formats in versions
  * @author gluu
- * @since 01/05/18
+ * @since 1.5.0
  */
 public final class FileFormatHelper {
     private FileFormatHelper() { }

@@ -11,10 +11,15 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
+ * Tests public methods in the CWLHandler file
  * @author gluu
- * @since 25/04/18
+ * @since 1.5.0
  */
 public class CWLHandlerTest {
+    /**
+     * Tests if the input and output file formats can be extracted from a CWL descriptor file
+     * @throws Exception
+     */
     @Test
     public void getInputFileFormats() throws Exception {
         CWLHandler cwlHandler = new CWLHandler();

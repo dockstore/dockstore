@@ -6,7 +6,7 @@ import org.hibernate.SessionFactory;
 
 /**
  * @author gluu
- * @since 27/04/18
+ * @since 1.5.0
  */
 public class FileFormatDAO extends AbstractDAO<FileFormat> {
 
