@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.Date;
 import java.util.Set;
 
 import javax.ws.rs.Path;
@@ -75,6 +76,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setSourceControl(SourceControl.DOCKSTORE);
         // TODO: do a proper check here
         workflow.setDescriptorType(descriptorType);
+        workflow.getUsers().add(user);
         return workflow;
     }
 
@@ -90,6 +92,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
         version.setWorkflowPath("Dockstore." + workflow.getDescriptorType());
+        version.setLastModified(new Date());
         return version;
     }
 
