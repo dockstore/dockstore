@@ -58,27 +58,4 @@
     <changeSet author="gluu (generated)" id="1525121539309-9">
         <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_file_format" constraintName="fk7j6hdyoygpkr6mqx1sil4un5v" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
     </changeSet>
-
-    <changeSet author="gluu (generated)" id="1525120592300-10">
-        <dropIndex indexName="full_workflow_name" tableName="workflow"/>
-    </changeSet>
-    <changeSet author="gluu (generated)" id="1525120592300-11">
-        <dropIndex indexName="partial_tool_name" tableName="tool"/>
-    </changeSet>
-    <changeSet author="gluu (generated)" id="1525120592300-12">
-        <dropIndex indexName="partial_workflow_name" tableName="workflow"/>
-    </changeSet>
-    <changeSet author="gluu (generated)" id="1525120592300-1">
-        <dropDefaultValue columnDataType="boolean" columnName="ischecker" tableName="workflow"/>
-    </changeSet>
-    <changeSet author="gluu (generated)" id="1525120592300-2">
-        <dropDefaultValue columnDataType="clob" columnName="referencetype" tableName="tag"/>
-    </changeSet>
-    <changeSet author="gluu (generated)" id="1525120592300-3">
-        <dropDefaultValue columnDataType="clob" columnName="referencetype" tableName="workflowversion"/>
-    </changeSet>
-    <changeSet author="gluu (generated)" id="1525120592300-4">
-        <modifyDataType columnName="sourcecontrol" newDataType="varchar(255)" tableName="workflow"/>
-    </changeSet>
-
 </databaseChangeLog>
