@@ -54,7 +54,6 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -72,6 +71,7 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.EntryDAO;
@@ -83,7 +83,6 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
-import io.dockstore.webservice.languages.CWLHandler;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dropwizard.auth.Auth;
@@ -344,7 +343,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         final Workflow newWorkflow = sourceCodeRepo.getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
-        updateFileFormats(newWorkflow.getVersions(), fileFormatDAO);
+        FileFormatHelper.updateFileFormats(newWorkflow.getVersions(), fileFormatDAO);
 
         // Refresh checker workflow
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
@@ -413,37 +412,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                 }
             }
         }
-    }
-
-    private static void updateFileFormats(Set<? extends Version> versions, final FileFormatDAO fileFormatDAO) {
-        Set<? extends Version> tags = versions;
-        CWLHandler cwlHandler = new CWLHandler();
-        tags.forEach(tag -> {
-            Set<FileFormat> inputFileFormats = new HashSet<>();
-            Set<FileFormat> outputFileFormats = new HashSet<>();
-            Set<SourceFile> sourceFiles = tag.getSourceFiles();
-            List<SourceFile> cwlFiles = sourceFiles.stream()
-                    .filter(sourceFile -> sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)).collect(Collectors.toList());
-            cwlFiles.forEach(cwlFile -> {
-                inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
-                outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));
-                inputFileFormats.addAll(outputFileFormats);
-            });
-            Set<FileFormat> realFileFormats = new HashSet<>();
-
-            inputFileFormats.forEach(fileFormat -> {
-                FileFormat fileFormatFromDB = fileFormatDAO.findByLabelValue(fileFormat.getValue());
-                if (fileFormatFromDB != null) {
-                    realFileFormats.add((fileFormatFromDB));
-                } else {
-                    fileFormatFromDB = new FileFormat();
-                    fileFormatFromDB.setValue(fileFormat.getValue());
-                    String id = fileFormatDAO.create(fileFormatFromDB);
-                    realFileFormats.add(fileFormatDAO.findByLabelValue(id));
-                }
-            });
-            tag.setFileFormats(realFileFormats);
-        });
     }
 
     @GET

@@ -19,7 +19,6 @@ package io.dockstore.webservice.helpers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +28,6 @@ import java.util.stream.Collectors;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -41,7 +39,6 @@ import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.languages.CWLHandler;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -376,40 +373,9 @@ public abstract class AbstractImageRegistry {
                 sourceCodeRepo.updateEntryMetadata(tool, AbstractEntryClient.Type.WDL);
             }
         }
-        updateFileFormats(tool, fileFormatDAO);
+        FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
         toolDAO.create(tool);
 
-    }
-
-    private static void updateFileFormats(Tool tool, final FileFormatDAO fileFormatDAO) {
-        Set<Tag> tags = tool.getTags();
-        CWLHandler cwlHandler = new CWLHandler();
-        tags.forEach(tag -> {
-            Set<FileFormat> inputFileFormats = new HashSet<>();
-            Set<FileFormat> outputFileFormats = new HashSet<>();
-            Set<SourceFile> sourceFiles = tag.getSourceFiles();
-            List<SourceFile> cwlFiles = sourceFiles.stream()
-                    .filter(sourceFile -> sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)).collect(Collectors.toList());
-            cwlFiles.forEach(cwlFile -> {
-                inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
-                outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));
-                inputFileFormats.addAll(outputFileFormats);
-            });
-            Set<FileFormat> realFileFormats = new HashSet<>();
-
-            inputFileFormats.forEach(fileFormat -> {
-                FileFormat fileFormatFromDB = fileFormatDAO.findByLabelValue(fileFormat.getValue());
-                if (fileFormatFromDB != null) {
-                    realFileFormats.add((fileFormatFromDB));
-                } else {
-                    fileFormatFromDB = new FileFormat();
-                    fileFormatFromDB.setValue(fileFormat.getValue());
-                    String id = fileFormatDAO.create(fileFormatFromDB);
-                    realFileFormats.add(fileFormatDAO.findByLabelValue(id));
-                }
-            });
-            tag.setFileFormats(realFileFormats);
-        });
     }
 
     private static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken,
