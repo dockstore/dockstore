@@ -31,7 +31,8 @@
         <addNotNullConstraint columnDataType="clob" columnName="referencetype" tableName="workflowversion"/>
     </changeSet>
 
-    <changeSet author="gluu (generated)" id="1525121539309-5">
+    <!-- adding support for input and output format -->
+    <changeSet author="gluu (generated)" id="1525277022753-5">
         <createTable tableName="fileformat">
             <column autoIncrement="true" name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" primaryKeyName="fileformat_pkey"/>
@@ -39,23 +40,34 @@
             <column name="value" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet author="gluu (generated)" id="1525121539309-6">
-        <createTable tableName="version_file_format">
+    <changeSet author="gluu (generated)" id="1525277022753-6">
+        <createTable tableName="version_input_file_format">
             <column name="versionid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="version_file_format_pkey"/>
+                <constraints primaryKey="true" primaryKeyName="version_input_file_format_pkey"/>
             </column>
             <column name="fileformatid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="version_file_format_pkey"/>
+                <constraints primaryKey="true" primaryKeyName="version_input_file_format_pkey"/>
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="gluu (generated)" id="1525121539309-7">
+    <changeSet author="gluu (generated)" id="1525277022753-7">
+        <createTable tableName="version_output_file_format">
+            <column name="versionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_output_file_format_pkey"/>
+            </column>
+            <column name="fileformatid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_output_file_format_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="1525277022753-8">
         <addUniqueConstraint columnNames="value" constraintName="uk_eqofp3o961e4nqeehch1yhai" tableName="fileformat"/>
     </changeSet>
-    <changeSet author="gluu (generated)" id="1525121539309-8">
-        <addUniqueConstraint columnNames="sourcecontrol, organization, repository, workflowname" constraintName="ukf7t1is17055ui265oq4vh3y3q" tableName="workflow"/>
+    <changeSet author="gluu (generated)" id="1525277022753-10">
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_input_file_format" constraintName="fkeyilkjf14nuqacbbvmdwxqgj0" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
     </changeSet>
-    <changeSet author="gluu (generated)" id="1525121539309-9">
-        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_file_format" constraintName="fk7j6hdyoygpkr6mqx1sil4un5v" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
+    <changeSet author="gluu (generated)" id="1525277022753-11">
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_output_file_format" constraintName="fkgim1ymct27tlpjfl8tnwhabtc" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
     </changeSet>
+
 </databaseChangeLog>

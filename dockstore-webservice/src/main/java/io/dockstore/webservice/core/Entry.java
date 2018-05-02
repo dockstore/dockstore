@@ -335,18 +335,35 @@ public abstract class Entry<S extends Entry, T extends Version> {
     /**
      * This property is ignored and not sent and received through the REST endpoints because it is more complicated than necessary.
      * It is only for internal use
-     * @return A set of FileFormat objects associated with this entry
+     * @return A set of input FileFormat objects associated with this entry
      */
     @JsonIgnore
-    public abstract Set<FileFormat> getFileFormats();
+    public abstract Set<FileFormat> getInputFileFormats();
+
+    /**
+     * This property is ignored and not sent and received through the REST endpoints because it is more complicated than necessary.
+     * It is only for internal use
+     * @return A set of output FileFormat objects associated with this entry
+     */
+    @JsonIgnore
+    public abstract Set<FileFormat> getOutputFileFormats();
 
     /**
      * This is the property that is sent and received through the REST endpoints which is a simple JSON String array
-     * @return a JSON array of Strings that represent the FileFormats of this entry
+     * @return a JSON array of Strings that represent the input FileFormats of this entry
      */
-    @JsonProperty("file_formats")
-    public Set<String> getFileFormatsString() {
-        return this.getFileFormats().stream().map(fileFormat -> fileFormat.getValue()).collect(Collectors.toSet());
+    @JsonProperty("input_file_formats")
+    public Set<String> getInputFileFormatsString() {
+        return this.getInputFileFormats().stream().map(fileFormat -> fileFormat.getValue()).collect(Collectors.toSet());
+    }
+
+    /**
+     * This is the property that is sent and received through the REST endpoints which is a simple JSON String array
+     * @return a JSON array of Strings that represent the output FileFormats of this entry
+     */
+    @JsonProperty("output_file_formats")
+    public Set<String> getOutputFileFormatsString() {
+        return this.getOutputFileFormats().stream().map(fileFormat -> fileFormat.getValue()).collect(Collectors.toSet());
     }
 
     /**

@@ -36,22 +36,33 @@ public final class FileFormatHelper {
             cwlFiles.forEach(cwlFile -> {
                 inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
                 outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));
-                inputFileFormats.addAll(outputFileFormats);
             });
-            Set<FileFormat> realFileFormats = new HashSet<>();
-
-            inputFileFormats.forEach(fileFormat -> {
-                FileFormat fileFormatFromDB = fileFormatDAO.findByLabelValue(fileFormat.getValue());
-                if (fileFormatFromDB != null) {
-                    realFileFormats.add((fileFormatFromDB));
-                } else {
-                    fileFormatFromDB = new FileFormat();
-                    fileFormatFromDB.setValue(fileFormat.getValue());
-                    String id = fileFormatDAO.create(fileFormatFromDB);
-                    realFileFormats.add(fileFormatDAO.findByLabelValue(id));
-                }
-            });
-            tag.setFileFormats(realFileFormats);
+            Set<FileFormat> realInputFileFormats = getFileFormatsFromDatabase(fileFormatDAO, inputFileFormats);
+            Set<FileFormat> realOutputFileFormats = getFileFormatsFromDatabase(fileFormatDAO, outputFileFormats);
+            tag.setInputFileFormats(realInputFileFormats);
+            tag.setOutputFileFormats(realOutputFileFormats);
         });
+    }
+
+    /**
+     * The original set of FileFormats contains FileFormats already present in the DB.  This uses the one from the DB to avoid duplicates.
+     * @param fileFormatDAO The FileFormatDAO used to access the DB
+     * @param fileFormats   The original set of FileFormats that may contain duplicates from the DB.
+     * @return
+     */
+    private static Set<FileFormat> getFileFormatsFromDatabase(FileFormatDAO fileFormatDAO, Set<FileFormat> fileFormats) {
+        Set<FileFormat> fileFormatsFromDB = new HashSet<>();
+        fileFormats.forEach(fileFormat -> {
+            FileFormat fileFormatFromDB = fileFormatDAO.findByLabelValue(fileFormat.getValue());
+            if (fileFormatFromDB != null) {
+                fileFormatsFromDB.add((fileFormatFromDB));
+            } else {
+                fileFormatFromDB = new FileFormat();
+                fileFormatFromDB.setValue(fileFormat.getValue());
+                String id = fileFormatDAO.create(fileFormatFromDB);
+                fileFormatsFromDB.add(fileFormatDAO.findByLabelValue(id));
+            }
+        });
+        return fileFormatsFromDB;
     }
 }

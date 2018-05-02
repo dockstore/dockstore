@@ -4248,7 +4248,13 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      file_formats:
+      input_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -4443,7 +4449,13 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      file_formats:
+      input_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -4723,7 +4735,13 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
-      file_formats:
+      input_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -5218,7 +5236,13 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      file_formats:
+      input_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -5376,7 +5400,13 @@ definitions:
         - "UNSET"
       workingDirectory:
         type: "string"
-      file_formats:
+      input_file_formats:
+        type: "array"
+        readOnly: true
+        uniqueItems: true
+        items:
+          type: "string"
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true

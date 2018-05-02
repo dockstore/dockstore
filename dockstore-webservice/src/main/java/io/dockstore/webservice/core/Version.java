@@ -129,12 +129,19 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    @ManyToMany(cascade = {CascadeType.MERGE})
-    @JoinTable(name = "version_file_format", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
-    @ApiModelProperty(value = "File formats for describing the input file formats and output file formats of versions (tag/workflowVersion)", position = 123)
+    @ManyToMany
+    @JoinTable(name = "version_input_file_format", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 122)
     @OrderBy("id")
     @JsonIgnore
-    private Set<FileFormat> fileFormats = new HashSet<>();
+    private Set<FileFormat> inputFileFormats = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(name = "version_output_file_format", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 123)
+    @OrderBy("id")
+    @JsonIgnore
+    private Set<FileFormat> outputFileFormats = new HashSet<>();
 
     public Version() {
         sourceFiles = new HashSet<>(0);
@@ -279,21 +286,35 @@ public abstract class Version<T extends Version> implements Comparable<T> {
      * @return A set of FileFormat objects associated with this version
      */
     @JsonIgnore
-    public Set<FileFormat> getFileFormats() {
-        return fileFormats;
+    public Set<FileFormat> getInputFileFormats() {
+        return inputFileFormats;
     }
 
     /**
      * This is the property that is sent and received through the REST endpoints which is a simple JSON String array
      * @return a JSON array of Strings that represent the FileFormats of this version
      */
-    @JsonProperty("file_formats")
-    public Set<String> getFileFormatsString() {
-        return fileFormats.stream().map(fileFormat -> fileFormat.getValue()).collect(Collectors.toSet());
+    @JsonProperty("input_file_formats")
+    public Set<String> getInputFileFormatsString() {
+        return inputFileFormats.stream().map(fileFormat -> fileFormat.getValue()).collect(Collectors.toSet());
     }
 
-    public void setFileFormats(Set<FileFormat> fileFormats) {
-        this.fileFormats = fileFormats;
+    public void setInputFileFormats(Set<FileFormat> inputFileFormats) {
+        this.inputFileFormats = inputFileFormats;
+    }
+
+    @JsonIgnore
+    public Set<FileFormat> getOutputFileFormats() {
+        return outputFileFormats;
+    }
+
+    @JsonProperty("output_file_formats")
+    public Set<String> getOutputFileFormatsString() {
+        return outputFileFormats.stream().map(fileFormat -> fileFormat.getValue()).collect(Collectors.toSet());
+    }
+
+    public void setOutputFileFormats(Set<FileFormat> outputFileFormats) {
+        this.outputFileFormats = outputFileFormats;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }

@@ -171,11 +171,21 @@ public class Tool extends Entry<Tool, Tag> {
     /**
      * This property is ignored and not sent and received through the REST endpoints because it is more complicated than necessary.
      * It is only for internal use
-     * @return A set of FileFormat objects associated with this entry
+     * @return A set of input FileFormat objects associated with this entry
      */
     @JsonIgnore
-    public Set<FileFormat> getFileFormats() {
-        return this.tags.stream().flatMap(tag -> tag.getFileFormats().stream()).collect(Collectors.toSet());
+    public Set<FileFormat> getInputFileFormats() {
+        return this.tags.stream().flatMap(tag -> tag.getInputFileFormats().stream()).collect(Collectors.toSet());
+    }
+
+    /**
+     * This property is ignored and not sent and received through the REST endpoints because it is more complicated than necessary.
+     * It is only for internal use
+     * @return A set of output FileFormat objects associated with this entry
+     */
+    @JsonIgnore
+    public Set<FileFormat> getOutputFileFormats() {
+        return this.tags.stream().flatMap(tag -> tag.getOutputFileFormats().stream()).collect(Collectors.toSet());
     }
 
     /**
