@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -66,7 +65,6 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
-import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -98,7 +96,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool>, StarrableResourceInterface, SourceControlResourceInterface {
+public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface {
 
     private static final String TARGET_URL = "https://quay.io/api/v1/";
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
@@ -252,15 +250,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
         return abstractImageRegistry
             .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "List all docker containers cached in database", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List docker container repos currently known. Admin Only", response = Tool.class, responseContainer = "List")
-    public List<Tool> allContainers(@ApiParam(hidden = true) @Auth User user) {
-        return toolDAO.findAll();
     }
 
     @GET
@@ -601,6 +590,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public List<Tool> allPublishedContainers() {
         List<Tool> tools = toolDAO.findAllPublished();
         filterContainersForHiddenTags(tools);
+        stripContent(tools);
         return tools;
     }
 
@@ -983,7 +973,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     }
 
     @Override
-    public EntryDAO getDAO() {
+    public ToolDAO getDAO() {
         return this.toolDAO;
     }
 

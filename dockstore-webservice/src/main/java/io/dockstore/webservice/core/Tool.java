@@ -40,10 +40,12 @@ import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
 
 /**
@@ -64,7 +66,6 @@ import org.hibernate.annotations.Check;
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByNameAndNamespaceAndRegistry", query = "SELECT c FROM Tool c WHERE c.name = :name AND c.namespace = :namespace AND c.registry = :registry"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedById", query = "SELECT c FROM Tool c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAllPublished", query = "SELECT c FROM Tool c WHERE c.isPublished = true ORDER BY size(c.starredUsers) DESC"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Tool.findAll", query = "SELECT c FROM Tool c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findByMode", query = "SELECT c FROM Tool c WHERE c.mode = :mode"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.findPublishedByNamespace", query = "SELECT c FROM Tool c WHERE lower(c.namespace) = lower(:namespace) AND c.isPublished = true ORDER BY gitUrl"),
         @NamedQuery(name = "io.dockstore.webservice.core.Tool.searchPattern", query = "SELECT c FROM Tool c WHERE (CONCAT(c.registry, '/', c.namespace, '/', c.name, '/', c.toolname) LIKE :pattern) OR (CONCAT(c.registry, '/', c.namespace, '/', c.name) LIKE :pattern) OR (c.description LIKE :pattern)) AND c.isPublished = true"),
@@ -150,6 +151,7 @@ public class Tool extends Entry<Tool, Tag> {
     @JoinTable(name = "tool_tag", joinColumns = @JoinColumn(name = "toolid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "tagid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build tags for the docker container", position = 26)
     @OrderBy("id")
+    @Cascade(CascadeType.DETACH)
     private final SortedSet<Tag> tags;
 
     public Tool() {
@@ -236,8 +238,7 @@ public class Tool extends Entry<Tool, Tag> {
 
     @ApiModelProperty(position = 27)
     public String getPath() {
-        String repositoryPath = registry + '/' + namespace + '/' + name;
-        return repositoryPath;
+        return registry + '/' + namespace + '/' + name;
     }
 
     /**
@@ -253,10 +254,10 @@ public class Tool extends Entry<Tool, Tag> {
         boolean supportsWDL = set.contains(SourceFile.FileType.DOCKSTORE_WDL);
         List<String> languages = new ArrayList<>();
         if (supportsCWL) {
-            languages.add(AbstractEntryClient.Type.CWL.toString());
+            languages.add(LanguageType.CWL.toString());
         }
         if (supportsWDL) {
-            languages.add(AbstractEntryClient.Type.WDL.toString());
+            languages.add(LanguageType.WDL.toString());
         }
         return languages;
     }

@@ -74,7 +74,6 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
-import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -100,8 +99,8 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
@@ -110,7 +109,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/workflows")
 @Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow>, StarrableResourceInterface, SourceControlResourceInterface {
+public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface, SourceControlResourceInterface {
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
@@ -417,15 +416,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @GET
     @Timed
     @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "List all workflows cached in database", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List workflows currently known. Admin Only", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> allWorkflows(@ApiParam(hidden = true) @Auth User user) {
-        return workflowDAO.findAll();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/{workflowId}")
     @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
@@ -685,9 +675,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("published")
     @ApiOperation(value = "List all published workflows.", tags = { "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> allPublishedWorkflows() {
-        List<Workflow> tools = workflowDAO.findAllPublished();
-        filterContainersForHiddenTags(tools);
-        return tools;
+        List<Workflow> workflows = workflowDAO.findAllPublished();
+        filterContainersForHiddenTags(workflows);
+        stripContent(workflows);
+        return workflows;
     }
 
     @GET
@@ -1425,7 +1416,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
 
     @Override
-    public EntryDAO getDAO() {
+    public WorkflowDAO getDAO() {
         return this.workflowDAO;
     }
 }

@@ -54,7 +54,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.DescriptorType;
 import io.swagger.model.Error;
@@ -84,8 +83,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     private static ToolDAO toolDAO = null;
     private static WorkflowDAO workflowDAO = null;
     private static DockstoreWebserviceConfiguration config = null;
-    private static EntryVersionHelper<Tool> toolHelper;
-    private static EntryVersionHelper<Workflow> workflowHelper;
+    private static EntryVersionHelper<Tool, Tag, ToolDAO> toolHelper;
+    private static EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO> workflowHelper;
 
     public static void setToolDAO(ToolDAO toolDAO) {
         ToolsApiServiceImpl.toolDAO = toolDAO;
@@ -102,14 +101,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
+    public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         return buildToolResponse(entry, null, false);
     }
 
     @Override
-    public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
+    public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         return buildToolResponse(entry, null, true);
@@ -145,8 +144,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value)
-        throws NotFoundException {
+    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         try {
             versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
@@ -157,8 +155,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return buildToolResponse(entry, versionId, false);
     }
 
-    private Entry getEntry(ParsedRegistryID parsedID) {
-        Entry entry;
+    private Entry<?,?> getEntry(ParsedRegistryID parsedID) {
+        Entry<?,?> entry;
         String entryPath = parsedID.getPath();
         String entryName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
         if (entryName != null) {
@@ -174,7 +172,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value) throws NotFoundException {
+        ContainerRequestContext value) {
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -185,7 +183,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
-        SecurityContext securityContext, ContainerRequestContext value) throws NotFoundException {
+        SecurityContext securityContext, ContainerRequestContext value) {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -199,7 +197,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value) throws NotFoundException {
+        ContainerRequestContext value) {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -247,15 +245,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value) throws NotFoundException {
+        ContainerRequestContext value) {
         return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
     }
 
     @SuppressWarnings("CheckStyle")
     @Override
     public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
-        String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value)
-        throws NotFoundException {
+        String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) {
         final List<Entry> all = new ArrayList<>();
         all.addAll(toolDAO.findAllPublished());
         all.addAll(workflowDAO.findAllPublished());
@@ -383,7 +380,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Entry entry = getEntry(parsedID);
+        Entry<?,?> entry = getEntry(parsedID);
         // check whether this is registered
         if (entry == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -402,16 +399,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         io.swagger.model.Tool convertedTool = toolTablePair.getKey();
         final Optional<ToolVersion> first = convertedTool.getVersions().stream()
             .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-        Optional<? extends Version> oldFirst;
-        if (entry instanceof Tool) {
-            Tool toolEntry = (Tool)entry;
-            oldFirst = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
-                .findFirst();
-        } else {
-            Workflow workflowEntry = (Workflow)entry;
-            oldFirst = workflowEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
-                .findFirst();
-        }
+        Optional<? extends Version> oldFirst = entry.getVersions().stream()
+            .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
 
         final Table<String, SourceFile.FileType, Object> table = toolTablePair.getValue();
         if (first.isPresent() && oldFirst.isPresent()) {
@@ -426,12 +415,12 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 try {
                     testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type));
                 } catch (CustomWebApplicationException e){
-
+                    LOG.warn("intentionally ignoring failure to get test parameters", e);
                 }
                 try {
                     testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type));
                 } catch (CustomWebApplicationException e) {
-
+                    LOG.warn("intentionally ignoring failure to get source files", e);
                 }
 
                 List<ToolTests> toolTestsList = new ArrayList<>();
@@ -485,8 +474,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext containerRequestContext)
-        throws NotFoundException {
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext containerRequestContext) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         Entry entry = getEntry(parsedID);
         List<String> primaryDescriptorPaths = new ArrayList<>();
@@ -560,7 +548,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      */
     private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type) {
         List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
-        List<ToolFile> toolFiles = filteredSourceFiles.stream().map(file -> {
+        return filteredSourceFiles.stream().map(file -> {
             ToolFile toolFile = new ToolFile();
             toolFile.setPath(file.getPath());
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
@@ -569,8 +557,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
             toolFile.setFileType(fileTypeEnum);
             return toolFile;
-        }).filter(Objects::nonNull).sorted(Comparator.comparing(ToolFile::getPath)).collect(Collectors.toList());
-        return toolFiles;
+        }).sorted(Comparator.comparing(ToolFile::getPath)).collect(Collectors.toList());
     }
 
     /**

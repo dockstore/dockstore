@@ -141,8 +141,9 @@
         <!-- broad - cromwell stuff -->
         <dependency>
             <groupId>org.broadinstitute</groupId>
-            <artifactId>wdl4s_2.11</artifactId>
+            <artifactId>wdl4s-wom_2.11</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.spray</groupId>
             <artifactId>spray-json_2.11</artifactId>
@@ -321,6 +322,8 @@
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
                                 <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
                                 <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</usedDependency>
+                                <usedDependency>org.broadinstitute:wdl4s-wom_2.11</usedDependency>
+                                <usedDependency>io.spray:spray-json_2.11</usedDependency>
                             </usedDependencies>
 
                         </configuration>
@@ -347,25 +350,6 @@
             <plugin>
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <phase>compile</phase>
-                    </execution>
-                    <execution>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

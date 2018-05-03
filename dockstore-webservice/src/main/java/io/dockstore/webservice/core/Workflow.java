@@ -40,12 +40,14 @@ import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
 
 /**
@@ -61,7 +63,6 @@ import org.hibernate.annotations.Check;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAllPublished", query = "SELECT c FROM Workflow c WHERE c.isPublished = true ORDER BY size(c.starredUsers) DESC"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findAll", query = "SELECT c FROM Workflow c"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedByPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findByWorkflowPath", query = "SELECT c FROM Workflow c WHERE c.sourceControl = :sourcecontrol AND c.organization = :organization AND c.repository = :repository AND c.workflowName = :workflowname"),
@@ -117,6 +118,7 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @JoinTable(name = "workflow_workflowversion", joinColumns = @JoinColumn(name = "workflowid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "workflowversionid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Implementation specific tracking of valid build workflowVersions for the docker container", position = 21)
     @OrderBy("id")
+    @Cascade(CascadeType.DETACH)
     private final SortedSet<WorkflowVersion> workflowVersions;
 
 
@@ -308,14 +310,14 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return this.descriptorType;
     }
 
-    public AbstractEntryClient.Type determineWorkflowType() {
-        AbstractEntryClient.Type fileType;
-        if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
-            fileType = AbstractEntryClient.Type.WDL;
-        } else if (this.getDescriptorType().equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
-            fileType = AbstractEntryClient.Type.CWL;
+    public LanguageType determineWorkflowType() {
+        LanguageType fileType;
+        if (this.getDescriptorType().equalsIgnoreCase(LanguageType.WDL.toString())) {
+            fileType = LanguageType.WDL;
+        } else if (this.getDescriptorType().equalsIgnoreCase(LanguageType.CWL.toString())) {
+            fileType = LanguageType.CWL;
         } else {
-            fileType = AbstractEntryClient.Type.NEXTFLOW;
+            fileType = LanguageType.NEXTFLOW;
         }
         return fileType;
     }
@@ -327,11 +329,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public static SourceFile.FileType getFileType(String descriptorType) {
         SourceFile.FileType fileType;
-        if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+        if (descriptorType.equalsIgnoreCase(LanguageType.WDL.toString())) {
             fileType = SourceFile.FileType.DOCKSTORE_WDL;
-        } else if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+        } else if (descriptorType.equalsIgnoreCase(LanguageType.CWL.toString())) {
             fileType = SourceFile.FileType.DOCKSTORE_CWL;
-        } else if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.NEXTFLOW.toString())) {
+        } else if (descriptorType.equalsIgnoreCase(LanguageType.NEXTFLOW.toString())) {
             fileType = SourceFile.FileType.NEXTFLOW_CONFIG;
         } else {
             throw new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST);
@@ -346,11 +348,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
 
     public static SourceFile.FileType getTestParameterType(String descriptorType) {
         SourceFile.FileType fileType;
-        if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.WDL.toString())) {
+        if (descriptorType.equalsIgnoreCase(LanguageType.WDL.toString())) {
             fileType = SourceFile.FileType.WDL_TEST_JSON;
-        } else if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.CWL.toString())) {
+        } else if (descriptorType.equalsIgnoreCase(LanguageType.CWL.toString())) {
             fileType = SourceFile.FileType.CWL_TEST_JSON;
-        } else if (descriptorType.equalsIgnoreCase(AbstractEntryClient.Type.NEXTFLOW.toString())) {
+        } else if (descriptorType.equalsIgnoreCase(LanguageType.NEXTFLOW.toString())) {
             fileType = SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
         } else {
             throw new CustomWebApplicationException("Descriptor type unknown", HttpStatus.SC_BAD_REQUEST);

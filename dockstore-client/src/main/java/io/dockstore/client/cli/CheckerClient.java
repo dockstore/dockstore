@@ -15,8 +15,8 @@ import io.swagger.client.model.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;

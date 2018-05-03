@@ -54,7 +54,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;

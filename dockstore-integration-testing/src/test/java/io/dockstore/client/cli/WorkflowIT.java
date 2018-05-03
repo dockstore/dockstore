@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2018 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,12 +19,13 @@ package io.dockstore.client.cli;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dropwizard.testing.ResourceHelpers;
@@ -32,6 +33,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.Ga4GhApi;
+import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
@@ -52,6 +54,7 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
@@ -83,6 +86,9 @@ public class WorkflowIT extends BaseIT {
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    @Rule
+    public ExpectedException thrown= ExpectedException.none();
 
     @Before
     @Override
@@ -154,8 +160,40 @@ public class WorkflowIT extends BaseIT {
         assertEquals("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
                 .filter(WorkflowVersion::isValid).count(), 4,
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
+    }
 
+    @Test
+    public void testHostedDelete() {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+        usersApi.refreshWorkflows(user.getId());
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
+        // using hosted apis to edit normal workflows should fail
+        HostedApi hostedApi = new HostedApi(webClient);
+        thrown.expect(ApiException.class);
+        hostedApi.deleteHostedWorkflowVersion(refreshGithub.getId(), "v1.0");
+    }
+
+    @Test
+    public void testHostedEdit() {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+        usersApi.refreshWorkflows(user.getId());
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+
+        // using hosted apis to edit normal workflows should fail
+        HostedApi hostedApi = new HostedApi(webClient);
+        thrown.expect(ApiException.class);
+        hostedApi.editHostedWorkflow(refreshGithub.getId(), new ArrayList<>());
     }
 
     @Test
@@ -204,7 +242,7 @@ public class WorkflowIT extends BaseIT {
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
-        workflowByPathGithub.setDescriptorType(AbstractEntryClient.Type.NEXTFLOW.toString());
+        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);

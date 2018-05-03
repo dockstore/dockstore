@@ -33,6 +33,16 @@
     <dependencies>
         <dependency>
             <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-client</artifactId>
+            <version>1.5.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>dockstore-common</artifactId>
+            <version>1.5.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
             <artifactId>dockstore-webservice</artifactId>
             <version>1.5.0-SNAPSHOT</version>
         </dependency>
@@ -159,14 +169,8 @@
                             <goal>analyze-only</goal>
                         </goals>
                         <configuration>
-                            <failOnWarning>true</failOnWarning>
-                            <outputXML>true</outputXML>
-                            <ignoreNonCompile>true</ignoreNonCompile>
-                            <usedDependencies>
-                                <!--                                <usedDependency>joda-time:joda-time</usedDependency>-->
-                                <usedDependency>commons-io:commons-io</usedDependency>
-                                <usedDependency>org.apache.commons:commons-configuration2</usedDependency>
-                            </usedDependencies>
+                            <!-- we don't really distribute this -->
+                            <skip>true</skip>
                         </configuration>
                     </execution>
                 </executions>

@@ -13,5 +13,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.dockstore.client.cli;
+package io.dockstore.common;
 
+/**
+ * Looks redundant with DescriptorType with some case-changes.
+ * Moved here from dockstore-client.
+ */
+public enum LanguageType {
+    CWL("cwl"), WDL("wdl"), NEXTFLOW("nextflow"), NONE("none");
+    public final String desc;
+
+    LanguageType(String name) {
+        desc = name;
+    }
+
+    @Override
+    public String toString() {
+        return desc;
+    }
+
+}

@@ -49,12 +49,12 @@ import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.client.cli.ArgumentUtility.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
-import static io.dockstore.client.cli.ArgumentUtility.WDL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 import static io.dockstore.client.cli.ArgumentUtility.columnWidthsTool;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;

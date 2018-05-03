@@ -44,5 +44,8 @@ public enum ToolMode {
      * from quay.io or Docker Hub, the user simply enters an image path (ex: org/foobar or quay.io/org/foobar) and then picks a source repo
      * and then enters most remaining info (source tag, image tag, paths)
      */
-    MANUAL_IMAGE_PATH
+    MANUAL_IMAGE_PATH, /**
+     * A tool hosted directly on dockstore itself
+     */
+    HOSTED
 }

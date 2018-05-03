@@ -33,5 +33,8 @@ public enum WorkflowMode {
      * A stub workflow entry means that we're aware of a repo. However, we should not do a full refresh or scan into that repo
      * to conserve quota
      */
-    STUB
+    STUB, /**
+     * A workflow hosted directly on dockstore itself
+     */
+    HOSTED
 }

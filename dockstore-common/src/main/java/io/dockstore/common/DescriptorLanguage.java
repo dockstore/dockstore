@@ -25,6 +25,9 @@ public enum DescriptorLanguage {
     // Add new descriptor language here
     CWL("CWL", "Common Workflow Language"), WDL("WDL", "Workflow Description Language"), NEXTFLOW("NEXTFLOW", "Nextflow");
 
+    public static final String CWL_STRING = "cwl";
+    public static final String WDL_STRING = "wdl";
+    public static final String NFL_STRING = "nfl";
     /**
      * this name is used in the workflow path
      */

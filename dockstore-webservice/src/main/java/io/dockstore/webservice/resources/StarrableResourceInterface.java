@@ -34,15 +34,14 @@ public interface StarrableResourceInterface extends AuthenticatedResourceInterfa
      * @param entryType the entry type which is either "workflow" or "tool"
      * @param entryPath the path of the entry
      */
-    default void starEntryHelper(Entry entry, User user, String entryType, String entryPath) {
+    default void starEntryHelper(Entry<?, ?> entry, User user, String entryType, String entryPath) {
         checkEntry(entry);
         Set<User> starredUsers = entry.getStarredUsers();
         if (!starredUsers.contains(user)) {
             entry.addStarredUser(user);
         } else {
             throw new CustomWebApplicationException(
-                "You cannot star the " + entryType + " " + entryPath + " because you have already starred it.",
-                HttpStatus.SC_BAD_REQUEST);
+                "You cannot star the " + entryType + " " + entryPath + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -54,7 +53,7 @@ public interface StarrableResourceInterface extends AuthenticatedResourceInterfa
      * @param entryType the entry type which is either "workflow" or "tool"
      * @param entryPath the path of the entry
      */
-    default void unstarEntryHelper(Entry entry, User user, String entryType, String entryPath) {
+    default void unstarEntryHelper(Entry<?, ?> entry, User user, String entryType, String entryPath) {
         checkEntry(entry);
 
         Set<User> starredUsers = entry.getStarredUsers();
@@ -62,8 +61,7 @@ public interface StarrableResourceInterface extends AuthenticatedResourceInterfa
             entry.removeStarredUser(user);
         } else {
             throw new CustomWebApplicationException(
-                "You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.",
-                HttpStatus.SC_BAD_REQUEST);
+                "You cannot unstar the " + entryType + " " + entryPath + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 

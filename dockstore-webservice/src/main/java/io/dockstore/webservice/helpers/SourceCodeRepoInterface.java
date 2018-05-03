@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
-import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.common.LanguageType;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -143,7 +143,7 @@ public abstract class SourceCodeRepoInterface {
         // Determine if workflow should be returned as a STUB or FULL
         if (!existingWorkflow.isPresent()) {
             // when there is no existing workflow at all, just return a stub workflow. Also set descriptor type to default cwl.
-            workflow.setDescriptorType(AbstractEntryClient.Type.CWL.toString());
+            workflow.setDescriptorType(LanguageType.CWL.toString());
             return workflow;
         }
         if (existingWorkflow.get().getMode() == WorkflowMode.STUB) {
@@ -185,7 +185,7 @@ public abstract class SourceCodeRepoInterface {
      * @param type
      * @return
      */
-    Entry updateEntryMetadata(Entry entry, AbstractEntryClient.Type type) {
+    Entry updateEntryMetadata(Entry entry, LanguageType type) {
         // Determine which branch to use
         String repositoryId = getRepositoryId(entry);
 
@@ -216,9 +216,9 @@ public abstract class SourceCodeRepoInterface {
             for (Tag tag : ((Tool)entry).getVersions()) {
                 if (tag.getReference() != null && tag.getReference().equals(branch)) {
                     sourceFiles = tag.getSourceFiles();
-                    if (type == AbstractEntryClient.Type.CWL) {
+                    if (type == LanguageType.CWL) {
                         filePath = tag.getCwlPath();
-                    } else if (type == AbstractEntryClient.Type.WDL) {
+                    } else if (type == LanguageType.WDL) {
                         filePath = tag.getWdlPath();
                     } else {
                         throw new UnsupportedOperationException("tool is not a CWL or WDL file");
