@@ -144,4 +144,34 @@ public class CromwellIT {
         bridge.setSecondaryFiles(secondaryFiles);
         bridge.getImportFiles(sourceFile);
     }
+
+    /**
+     * This tests compatibility with Cromwell 30.2 by running a workflow (https://github.com/ga4gh/dockstore/issues/1211)
+     */
+    @Test
+    public void testRunWorkflow() throws IOException, ApiException {
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+        AbstractEntryClient main = new ToolClient(client, false);
+        LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
+                .orElseThrow(RuntimeException::new);
+        File workflowFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
+        File parameterFile = new File(ResourceHelpers.resourceFilePath("hello_world.json"));
+        // run a workflow
+        final long run = wdlClient.launch(workflowFile.getAbsolutePath(), true, null, parameterFile.getAbsolutePath(), null, null, null);
+        Assert.assertEquals(0, run);
+    }
+
+    /**
+     * This tests compatibility with Cromwell 30.2 by converting to JSON (https://github.com/ga4gh/dockstore/issues/1211)
+     */
+    @Test
+    public void testWDL2JsonIssue() {
+        File sourceFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
+        final java.util.List<String> wdlDocuments = Lists.newArrayList(sourceFile.getAbsolutePath());
+        final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
+        Bridge bridge = new Bridge();
+        String inputs = bridge.inputs(wdlList);
+        Assert.assertTrue(inputs.contains("wf.hello_world.hello_input"));
+    }
 }
