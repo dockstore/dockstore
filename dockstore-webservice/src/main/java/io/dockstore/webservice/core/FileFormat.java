@@ -25,6 +25,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
@@ -52,6 +53,7 @@ public class FileFormat implements Comparable<FileFormat> {
     private String value;
 
     @JsonProperty
+    @JsonValue
     public String getValue() {
         return value;
     }

@@ -157,22 +157,11 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return workflowVersions;
     }
 
-    /**
-     * This property is ignored and not sent and received through the REST endpoints because it is more complicated than necessary.
-     * It is only for internal use
-     * @return A set of input FileFormat objects associated with this entry
-     */
-    @JsonIgnore
+
     public Set<FileFormat> getInputFileFormats() {
         return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getInputFileFormats().stream()).collect(Collectors.toSet());
     }
 
-    /**
-     * This property is ignored and not sent and received through the REST endpoints because it is more complicated than necessary.
-     * It is only for internal use
-     * @return A set of output FileFormat objects associated with this entry
-     */
-    @JsonIgnore
     public Set<FileFormat> getOutputFileFormats() {
         return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getOutputFileFormats().stream()).collect(Collectors.toSet());
     }
