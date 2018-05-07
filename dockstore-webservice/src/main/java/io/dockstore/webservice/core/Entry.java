@@ -129,6 +129,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
+
     @JsonIgnore
     @JoinColumn(name = "checkerid")
     @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
@@ -154,7 +155,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
         users = new HashSet<>(0);
         starredUsers = new HashSet<>(0);
     }
-
 
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
@@ -334,6 +334,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     @JsonProperty("input_file_formats")
     public abstract Set<FileFormat> getInputFileFormats();
+
 
     @JsonProperty("output_file_formats")
     public abstract Set<FileFormat> getOutputFileFormats();

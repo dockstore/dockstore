@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.core;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -38,6 +40,7 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.LanguageType;
@@ -157,6 +160,18 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return workflowVersions;
     }
 
+
+    @JsonProperty("input_file_formats")
+    @JsonCreator
+    public static Set<FileFormat> fromInputStrings(List<String> string) {
+        return new HashSet<>();
+    }
+
+    @JsonProperty("output_file_formats")
+    @JsonCreator
+    public static Set<FileFormat> fromOutputStrings(List<String> string) {
+        return new HashSet<>();
+    }
 
     public Set<FileFormat> getInputFileFormats() {
         return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getInputFileFormats().stream()).collect(Collectors.toSet());
