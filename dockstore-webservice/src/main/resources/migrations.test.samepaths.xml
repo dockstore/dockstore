@@ -24,7 +24,6 @@
             <column name="defaultversion"/>
             <column name="description"/>
             <column name="email"/>
-            <column name="ischecker" valueBoolean="false"/>
             <column name="giturl" value="git@github.com:fakeOrganization/fakeRepository.git"/>
             <column name="ispublished" valueBoolean="true"/>
             <column name="lastmodified"/>
@@ -44,7 +43,6 @@
             <column name="defaultversion"/>
             <column name="description"/>
             <column name="email"/>
-            <column name="ischecker" valueBoolean="false"/>
             <column name="giturl" value="git@bitbucket.org:fakeOrganization/fakeRepository.git"/>
             <column name="ispublished" valueBoolean="true"/>
             <column name="lastmodified"/>
@@ -64,7 +62,6 @@
             <column name="defaultversion"/>
             <column name="description"/>
             <column name="email"/>
-            <column name="ischecker" valueBoolean="false"/>
             <column name="giturl" value="git@github.com:fakeOrganization/fakeRepository.git"/>
             <column name="ispublished" valueBoolean="true"/>
             <column name="lastmodified"/>
@@ -84,7 +81,6 @@
             <column name="defaultversion"/>
             <column name="description"/>
             <column name="email"/>
-            <column name="ischecker" valueBoolean="false"/>
             <column name="giturl" value="git@bitbucket.org:fakeOrganization/fakeRepository.git"/>
             <column name="ispublished" valueBoolean="true"/>
             <column name="lastmodified"/>

@@ -61,7 +61,6 @@
             <column name="giturl" value="git@github.com:garyluu/testWorkflow.git"/>
             <column name="ispublished" valueBoolean="true"/>
             <column name="lastmodified"/>
-            <column name="ischecker" valueBoolean="false"/>
             <column name="lastupdated" valueDate="2018-02-13 10:42:52.608"/>
             <column name="defaulttestparameterfilepath"/>
             <column name="defaultworkflowpath" value="/Dockstore.cwl"/>
