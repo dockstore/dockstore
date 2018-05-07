@@ -18,7 +18,7 @@ public class FileFormatDAO extends AbstractDAO<FileFormat> {
         return get(id);
     }
 
-    public FileFormat findByLabelValue(String fileFormatValue) {
+    public FileFormat findFileFormatByValue(String fileFormatValue) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.FileFormat.findByFileFormatValue").setParameter("fileformatValue", fileFormatValue));
     }
 

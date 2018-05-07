@@ -130,13 +130,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private Timestamp dbUpdateDate;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_input_file_format", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 20)
     @OrderBy("id")
     private Set<FileFormat> inputFileFormats = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "version_output_file_format", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 21)
     @OrderBy("id")
     private Set<FileFormat> outputFileFormats = new HashSet<>();

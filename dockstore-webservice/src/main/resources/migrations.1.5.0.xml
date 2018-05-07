@@ -37,37 +37,37 @@
             <column autoIncrement="true" name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" primaryKeyName="fileformat_pkey"/>
             </column>
-            <column name="value" type="VARCHAR(255)"/>
+            <column name="value" type="text"/>
         </createTable>
     </changeSet>
     <changeSet author="gluu (generated)" id="1525277022753-6">
-        <createTable tableName="version_input_file_format">
+        <createTable tableName="version_input_fileformat">
             <column name="versionid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="version_input_file_format_pkey"/>
+                <constraints primaryKey="true" primaryKeyName="version_input_fileformat_pkey"/>
             </column>
             <column name="fileformatid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="version_input_file_format_pkey"/>
+                <constraints primaryKey="true" primaryKeyName="version_input_fileformat_pkey"/>
             </column>
         </createTable>
     </changeSet>
     <changeSet author="gluu (generated)" id="1525277022753-7">
-        <createTable tableName="version_output_file_format">
+        <createTable tableName="version_output_fileformat">
             <column name="versionid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="version_output_file_format_pkey"/>
+                <constraints primaryKey="true" primaryKeyName="version_outputfileformat_pkey"/>
             </column>
             <column name="fileformatid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="version_output_file_format_pkey"/>
+                <constraints primaryKey="true" primaryKeyName="version_outputfileformat_pkey"/>
             </column>
         </createTable>
     </changeSet>
     <changeSet author="gluu (generated)" id="1525277022753-8">
-        <addUniqueConstraint columnNames="value" constraintName="uk_eqofp3o961e4nqeehch1yhai" tableName="fileformat"/>
+        <addUniqueConstraint columnNames="value" constraintName="unique_fileformat" tableName="fileformat"/>
     </changeSet>
     <changeSet author="gluu (generated)" id="1525277022753-10">
-        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_input_file_format" constraintName="fkeyilkjf14nuqacbbvmdwxqgj0" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_input_fileformat" constraintName="fk_fileformatid_with_version_input_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
     </changeSet>
     <changeSet author="gluu (generated)" id="1525277022753-11">
-        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_output_file_format" constraintName="fkgim1ymct27tlpjfl8tnwhabtc" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
+        <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_output_fileformat" constraintName="fk_fileformatid_with_version_output_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
     </changeSet>
 
 </databaseChangeLog>

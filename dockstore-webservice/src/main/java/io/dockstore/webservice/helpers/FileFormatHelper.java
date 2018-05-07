@@ -53,14 +53,14 @@ public final class FileFormatHelper {
     private static Set<FileFormat> getFileFormatsFromDatabase(FileFormatDAO fileFormatDAO, Set<FileFormat> fileFormats) {
         Set<FileFormat> fileFormatsFromDB = new HashSet<>();
         fileFormats.forEach(fileFormat -> {
-            FileFormat fileFormatFromDB = fileFormatDAO.findByLabelValue(fileFormat.getValue());
+            FileFormat fileFormatFromDB = fileFormatDAO.findFileFormatByValue(fileFormat.getValue());
             if (fileFormatFromDB != null) {
                 fileFormatsFromDB.add((fileFormatFromDB));
             } else {
                 fileFormatFromDB = new FileFormat();
                 fileFormatFromDB.setValue(fileFormat.getValue());
                 String id = fileFormatDAO.create(fileFormatFromDB);
-                fileFormatsFromDB.add(fileFormatDAO.findByLabelValue(id));
+                fileFormatsFromDB.add(fileFormatDAO.findFileFormatByValue(id));
             }
         });
         return fileFormatsFromDB;
