@@ -313,9 +313,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // cors.setInitParameter("allowedHeaders", "X-Requested-With,Content-Type,Accept,Origin");
         // cors.setInitParameter("allowedMethods", "OPTIONS,GET,PUT,POST,DELETE,HEAD");
 
-        filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,POST,DELETE,PUT,OPTIONS");
+        filterHolder.setInitParameter(ACCESS_CONTROL_ALLOW_METHODS_HEADER, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
         filterHolder.setInitParameter(ALLOWED_ORIGINS_PARAM, "*");
-        filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS");
+        filterHolder.setInitParameter(ALLOWED_METHODS_PARAM, "GET,POST,DELETE,PUT,OPTIONS,PATCH");
         filterHolder.setInitParameter(ALLOWED_HEADERS_PARAM,
                 "Authorization, X-Auth-Username, X-Auth-Password, X-Requested-With,Content-Type,Accept,Origin,Access-Control-Request-Headers,cache-control");
 
