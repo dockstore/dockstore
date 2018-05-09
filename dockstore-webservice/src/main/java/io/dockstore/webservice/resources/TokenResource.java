@@ -39,11 +39,14 @@ import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.TokenResponse;
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
+import com.google.api.services.plus.Plus;
+import com.google.api.services.plus.model.Person;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -112,6 +115,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String gitlabClientID;
     private final String gitlabRedirectUri;
     private final String gitlabClientSecret;
+    private final List<String> googleClientID;
+    private final String googleRedirectUri;
+    private final List<String> googleClientSecret;
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
@@ -126,6 +132,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.gitlabClientID = configuration.getGitlabClientID();
         this.gitlabClientSecret = configuration.getGitlabClientSecret();
         this.gitlabRedirectUri = configuration.getGitlabRedirectURI();
+        this.googleClientID = configuration.getGoogleClientID();
+        this.googleClientSecret = configuration.getGoogleClientSecret();
+        this.googleRedirectUri = configuration.getGoogleRedirectURI();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -284,6 +293,98 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         final String code = satellizerObject.get("code").getAsString();
 
         return addGithubToken(code);
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/google")
+    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            notes = "A post method is required by saetillizer to send the GitHub token",
+            response = Token.class)
+    public Token addGoogleToken(@ApiParam("code") String satellizerJson) {
+        Gson gson = new Gson();
+        JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
+        JsonObject satellizerObject = element.getAsJsonObject();
+
+        final String code = satellizerObject.get("code").getAsString();
+        String accessToken = null;
+        for (int i = 0; i < googleClientID.size() && accessToken == null; i++) {
+            final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
+                    JSON_FACTORY, new GenericUrl("https://www.googleapis.com/oauth2/v4/token"),
+                    new ClientParametersAuthentication(googleClientID.get(i), googleClientSecret.get(i)), googleClientID.get(i),
+                    "https://accounts.google.com/o/oauth2/v2/auth").build();
+            try {
+                TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(googleRedirectUri).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+                accessToken = tokenResponse.getAccessToken();
+            } catch (IOException e) {
+                LOG.error("Retrieving accessToken was unsuccessful");
+                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+        GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
+        Plus plus = new Plus.Builder(new NetHttpTransport(), com.google.api.client.json.jackson2.JacksonFactory.getDefaultInstance(), credential)
+                .setApplicationName("Google-PlusSample/1.0")
+                .build();
+        try {
+            long userID;
+            Token dockstoreToken = null;
+            Token githubToken = null;
+            Person me = plus.people().get("me").execute();
+            String githubLogin = me.getDisplayName();
+            User user = userDAO.findByUsername(githubLogin);
+            if (user == null) {
+                user = new User();
+                user.setUsername(githubLogin);
+
+                // Pull user information from Github
+                Token dummyToken = new Token();
+                dummyToken.setContent(accessToken);
+                dummyToken.setUsername(githubLogin);
+                dummyToken.setTokenSource(TokenType.GOOGLE_COM);
+//                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(dummyToken, null);
+//                user = gitHubSourceCodeRepo.getUserMetadata(user);
+                userID = userDAO.create(user);
+
+                // CREATE DOCKSTORE TOKEN
+                dockstoreToken = createDockstoreToken(userID, githubLogin);
+
+            } else {
+                userID = user.getId();
+                List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
+                if (!tokens.isEmpty()) {
+                    dockstoreToken = tokens.get(0);
+                }
+
+                tokens = tokenDAO.findGithubByUserId(userID);
+                if (!tokens.isEmpty()) {
+                    githubToken = tokens.get(0);
+                }
+            }
+
+            if (dockstoreToken == null) {
+                LOG.info("Could not find user's dockstore token. Making new one...");
+                dockstoreToken = createDockstoreToken(userID, githubLogin);
+            }
+
+            if (githubToken == null) {
+                LOG.info("Could not find user's github token. Making new one...");
+                // CREATE GITHUB TOKEN
+                githubToken = new Token();
+                githubToken.setTokenSource(TokenType.GOOGLE_COM);
+                githubToken.setContent(accessToken);
+                githubToken.setUserId(userID);
+                githubToken.setUsername(githubLogin);
+                tokenDAO.create(githubToken);
+                LOG.info("Github token created for {}", githubLogin);
+            }
+
+            return dockstoreToken;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @GET

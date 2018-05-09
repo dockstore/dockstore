@@ -28,7 +28,7 @@ import io.swagger.annotations.ApiModel;
 public enum TokenType {
     @JsonProperty("quay.io") QUAY_IO("quay.io", false), @JsonProperty("github.com") GITHUB_COM("github.com",
         true), @JsonProperty("dockstore") DOCKSTORE("dockstore", false), @JsonProperty("bitbucket.org") BITBUCKET_ORG("bitbucket.org",
-        true), @JsonProperty("gitlab.com") GITLAB_COM("gitlab.com", true);
+        true), @JsonProperty("gitlab.com") GITLAB_COM("gitlab.com", true), @JsonProperty("google.com") GOOGLE_COM("google.com", false);
     private final String friendlyName;
     private final boolean sourceControlToken;
 
