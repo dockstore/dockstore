@@ -356,7 +356,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                     dockstoreToken = tokens.get(0);
                 }
 
-                tokens = tokenDAO.findGithubByUserId(userID);
+                tokens = tokenDAO.findGoogleByUserId(userID);
                 if (!tokens.isEmpty()) {
                     githubToken = tokens.get(0);
                 }
