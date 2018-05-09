@@ -16,11 +16,14 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -40,6 +43,11 @@ import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.resources.ResourceUtilities;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.gitlab.api.GitlabAPI;
+import org.gitlab.api.TokenType;
+import org.gitlab.api.models.GitlabBranch;
+import org.gitlab.api.models.GitlabProject;
+import org.gitlab.api.models.GitlabTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,11 +63,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     private static final Logger LOG = LoggerFactory.getLogger(GitLabSourceCodeRepo.class);
     private final HttpClient client;
     private final String gitlabTokenContent;
+    private final GitlabAPI gitlabAPI;
 
     GitLabSourceCodeRepo(String gitUsername, HttpClient client, String gitlabTokenContent) {
         this.client = client;
         this.gitlabTokenContent = gitlabTokenContent;
         this.gitUsername = gitUsername;
+        this.gitlabAPI = GitlabAPI.connect("https://gitlab.com", gitlabTokenContent, TokenType.ACCESS_TOKEN);
     }
 
     @Override
@@ -68,7 +78,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             fileName = fileName.substring(1);
         }
 
-        String content = null;
         String branch = reference;
         String id = null;
 
@@ -102,7 +111,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             return getFileContentsFromIdV4(id, branch, fileName);
         }
 
-        return content;
+        return null;
     }
 
     @Override
@@ -156,56 +165,53 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             Map<String, WorkflowVersion> existingDefaults) {
         // Get Gitlab id
         String id = getProjectId(repositoryId);
-
         if (id == null) {
             LOG.error("Could not find Gitlab repository " + repositoryId + " for user.");
             throw new CustomWebApplicationException("Could not reach GitLab", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
 
-        // Look at each version, check for valid workflows
-        String branchesUrl = GITLAB_API_URL + "projects/" + id + "/repository/branches";
-        Optional<String> asString = ResourceUtilities.asString(branchesUrl, gitlabTokenContent, client);
-
-        if (asString.isPresent()) {
-            String projectJson = asString.get();
-
-            JsonElement jsonElement = new JsonParser().parse(projectJson);
-            if (jsonElement instanceof JsonArray) {
-                JsonArray jsonArray = jsonElement.getAsJsonArray();
-                for (JsonElement branch : jsonArray) {
-                    JsonObject branchObject = branch.getAsJsonObject();
-                    String branchName = branchObject.get("name").getAsString();
-
-                    // Initialize workflow version
-                    WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
-                    String calculatedPath = version.getWorkflowPath();
-
-                    // Now grab source files
-                    SourceFile.FileType identifiedType = workflow.getFileType();
-                    // TODO: No exceptions are caught here in the event of a failed call
-                    SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
-
-                    // Non-null sourcefile means that the sourcefile is valid
-                    if (sourceFile != null) {
-                        version.setValid(true);
-                    }
-
-                    // Use default test parameter file if either new version or existing version that hasn't been edited
-                    createTestParameterFiles(workflow, id, branchName, version, identifiedType);
-
-                    workflow.addWorkflowVersion(
-                            combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
-                }
-            }
+        try {
+            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            List<GitlabTag> tagList = gitlabAPI.getTags(repositoryId);
+            List<GitlabBranch> branches = gitlabAPI.getBranches(project);
+            tagList.forEach(tag -> handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, id, tag.getName(),
+                Version.ReferenceType.TAG));
+            branches.forEach(branch -> {
+                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, id, branch.getName(), Version.ReferenceType.BRANCH);
+            });
+        } catch (IOException e) {
+            LOG.info("could not find " + repositoryId + " due to " + e.getMessage());
         }
-
         return workflow;
+    }
+
+    private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
+        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type) {
+        // Initialize workflow version
+        WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+        String calculatedPath = version.getWorkflowPath();
+
+        // Now grab source files
+        SourceFile.FileType identifiedType = workflow.getFileType();
+        // TODO: No exceptions are caught here in the event of a failed call
+        SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
+
+        // Non-null sourcefile means that the sourcefile is valid
+        if (sourceFile != null) {
+            version.setValid(true);
+        }
+        version.setReferenceType(type);
+
+        // Use default test parameter file if either new version or existing version that hasn't been edited
+        createTestParameterFiles(workflow, id, branchName, version, identifiedType);
+
+        workflow.addWorkflowVersion(
+                combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
     }
 
     @Override
     void updateReferenceType(String repositoryId, Version version) {
-        // TODO:
-        return;
+        /* no-op handled earlier since the library handles it in a more trivial way than the github library */
     }
 
 
@@ -214,7 +220,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         String repositoryId;
         String giturl = entry.getGitUrl();
 
-        Pattern p = Pattern.compile("git\\@gitlab.com:(\\S+)/(\\S+)\\.git");
+        Pattern p = Pattern.compile("git@gitlab.com:(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(giturl);
         LOG.info(gitUsername + ": " + giturl);
 
@@ -335,7 +341,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.error(e.getMessage());
             }
             // TODO: Figure out how to url encode the periods properly
-            fileURI = fileURI.replace(".", "%2E");
+            fileURI = Objects.requireNonNull(fileURI).replace(".", "%2E");
 
             String fileUrl = GITLAB_API_URL_V4 + "projects/" + id + "/repository/files/" + fileURI + "/raw?ref=" + branch;
             Optional<String> fileAsString = ResourceUtilities.asString(fileUrl, gitlabTokenContent, client);
