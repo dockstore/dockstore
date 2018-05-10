@@ -173,10 +173,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return new HashSet<>();
     }
 
+    @Override
     public Set<FileFormat> getInputFileFormats() {
         return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getInputFileFormats().stream()).collect(Collectors.toSet());
     }
 
+    @Override
     public Set<FileFormat> getOutputFileFormats() {
         return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getOutputFileFormats().stream()).collect(Collectors.toSet());
     }

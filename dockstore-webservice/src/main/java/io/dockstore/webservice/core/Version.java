@@ -278,11 +278,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.referenceType = referenceType;
     }
 
-    /**
-     * This property is ignored and not sent and received through the REST endpoints because it is more complicated than necessary.
-     * It is only for internal use
-     * @return A set of FileFormat objects associated with this version
-     */
     @JsonProperty("input_file_formats")
     public Set<FileFormat> getInputFileFormats() {
         return inputFileFormats;
