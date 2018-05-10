@@ -26,6 +26,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
+import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -37,6 +38,7 @@ import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
@@ -62,6 +64,8 @@ public class CRUDClientIT extends BaseIT {
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testToolCreation(){
@@ -74,6 +78,30 @@ public class CRUDClientIT extends BaseIT {
         ContainersApi oldApi = new ContainersApi(webClient);
         DockstoreTool container = oldApi.getContainer(hostedTool.getId());
         Assert.assertEquals(container, hostedTool);
+    }
+
+    /**
+     * Ensures that only valid descriptor types can be used to create a hosted workflow
+     */
+    @Test
+    public void testToolCreationInvalidDescriptorType(){
+        ApiClient webClient = getWebClient();
+        HostedApi api = new HostedApi(webClient);
+        thrown.expect(ApiException.class);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwll", "quay.io");
+    }
+
+    /**
+     * Ensures that hosted workflows cannot be refreshed (this tests individual refresh)
+     */
+    @Test
+    public void testRefreshingHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        thrown.expect(ApiException.class);
+        workflowApi.refresh(hostedWorkflow.getId());
     }
 
     @Test
