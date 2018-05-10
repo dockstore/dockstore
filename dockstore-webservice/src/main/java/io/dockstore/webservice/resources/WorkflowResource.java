@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -47,7 +46,6 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -231,8 +229,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
      * @param organization            if specified, only refresh if workflow belongs to the organization
      */
     private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization, Set<Long> alreadyProcessed) {
-        /** helpful code for testing, this was used to refresh a users existing workflows
-         *  with a fixed github token for all users
+        /* helpful code for testing, this was used to refresh a users existing workflows
+           with a fixed github token for all users
          */
         boolean statsCollection = false;
         if (statsCollection) {
@@ -1119,8 +1117,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
         if (mainDescriptor != null) {
-            File tmpDir = Files.createTempDir();
-            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, tmpDir);
+            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
 
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
@@ -1150,8 +1147,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
         if (mainDescriptor != null) {
-            File tmpDir = Files.createTempDir();
-            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion, mainDescriptor, tmpDir);
+            Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
             LanguageHandlerInterface lInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
             return lInterface.getContent(workflowVersion.getWorkflowPath(), mainDescriptor.getContent(), secondaryDescContent,
                 LanguageHandlerInterface.Type.TOOLS, toolDAO);
@@ -1164,11 +1160,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
      * Populates the return file with the descriptor and secondaryDescContent as a map between file paths and secondary files
      *
      * @param workflowVersion source control version to consider
-     * @param mainDescriptor  database record for the main descriptor
-     * @param tmpDir          a directory where to create the written out descriptor
      * @return secondary file map (string path -> string content)
      */
-    private Map<String, String> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion, SourceFile mainDescriptor, File tmpDir) {
+    private Map<String, String> extractDescriptorAndSecondaryFiles(WorkflowVersion workflowVersion) {
         Map<String, String> secondaryDescContent = new HashMap<>();
         // get secondary files
         for (SourceFile secondaryFile : workflowVersion.getSourceFiles()) {
@@ -1325,7 +1319,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             gitUrl = tool.getGitUrl();
 
             // Determine source control, org, and repo
-            Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+            Pattern p = Pattern.compile("git@(\\S+):(\\S+)/(\\S+)\\.git");
             Matcher m = p.matcher(tool.getGitUrl());
             if (m.find()) {
                 SourceControlConverter converter = new SourceControlConverter();
@@ -1357,10 +1351,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(workflow.getWorkflowName(), "");
-
-            if (workflowName == null) {
-                workflowName = "";
-            }
 
             if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
                 workflowName += CWL_CHECKER;
