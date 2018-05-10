@@ -122,12 +122,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkUser(user, entry);
         checkHosted(entry);
         U version = getVersion(entry);
-        boolean isValidVersion = checkValidVersion(sourceFiles, entry);
+        Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
+        boolean isValidVersion = checkValidVersion(versionSourceFiles, entry);
         if (!isValidVersion) {
             throw new WebApplicationException("The reversion is not valid", HttpStatus.SC_BAD_REQUEST);
         }
         version.setValid(isValidVersion);
-        handleSourceFileMerger(entryId, sourceFiles, entry, version);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
         userDAO.clearCache();
@@ -152,8 +152,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
     private void checkType(String descriptorType) {
         if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
-                && !Objects.equals(descriptorType.toUpperCase(), DescriptorLanguage.WDL_STRING)
-                && !Objects.equals(descriptorType.toUpperCase(), DescriptorLanguage.NFL_STRING)) {
+                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
+                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
             throw new WebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
         }
     }
@@ -181,7 +181,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return entry;
     }
 
-    private void handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
+    private Set<SourceFile> handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
         Set<U> versions = entry.getVersions();
         Map<String, SourceFile> map = new HashMap<>();
 
@@ -232,5 +232,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             long l = fileDAO.create(e);
             tag.getSourceFiles().add(fileDAO.findById(l));
         }
+        return tag.getSourceFiles();
     }
 }
