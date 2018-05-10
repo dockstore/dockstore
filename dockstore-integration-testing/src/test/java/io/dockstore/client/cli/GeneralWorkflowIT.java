@@ -845,7 +845,30 @@ public class GeneralWorkflowIT extends BaseIT {
         // grab wdl file
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
                 SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example/testname:master", "--script" });
+    }
 
+    /**
+     * This tests getting branches and tags from gitlab repositories
+     */
+    @Test
+    public void testTagAndBranchTracking() {
+        // Setup DB
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // manual publish
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
+            "--repository", "dockstore-workflow-md5sum-unified", "--organization", "dockstore.test.user2", "--git-version-control", "gitlab",
+            "--workflow-name", "testname", "--workflow-path", "/checker.wdl", "--descriptor-type", "wdl", "--script" });
+
+        final long count = testingPostgres
+            .runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
+        Assert.assertTrue("there should be at least 5 versions, there are " + count, count >= 5);
+        final long branchCount = testingPostgres
+            .runSelectStatement("select count(*) from workflowversion where referencetype = 'BRANCH'", new ScalarHandler<>());
+        Assert.assertTrue("there should be at least 2 branches, there are " + count, branchCount >= 2);
+        final long tagCount = testingPostgres
+            .runSelectStatement("select count(*) from workflowversion where referencetype = 'TAG'", new ScalarHandler<>());
+        Assert.assertTrue("there should be at least 3 tags, there are " + count, tagCount >= 3);
     }
 
     /**
