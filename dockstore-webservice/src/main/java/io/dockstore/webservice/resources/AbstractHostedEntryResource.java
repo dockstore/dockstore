@@ -121,6 +121,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkHosted(entry);
         U version = getVersion(entry);
         handleSourceFileMerger(entryId, sourceFiles, entry, version);
+        version.setVersionEditor(user);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
         userDAO.clearCache();
