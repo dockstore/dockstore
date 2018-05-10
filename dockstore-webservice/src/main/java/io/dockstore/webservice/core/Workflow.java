@@ -16,12 +16,9 @@
 
 package io.dockstore.webservice.core;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -40,7 +37,6 @@ import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.dockstore.common.LanguageType;
@@ -158,29 +154,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     @Override
     public Set<WorkflowVersion> getVersions() {
         return workflowVersions;
-    }
-
-
-    @JsonProperty("input_file_formats")
-    @JsonCreator
-    public static Set<FileFormat> fromInputStrings(List<String> string) {
-        return new HashSet<>();
-    }
-
-    @JsonProperty("output_file_formats")
-    @JsonCreator
-    public static Set<FileFormat> fromOutputStrings(List<String> string) {
-        return new HashSet<>();
-    }
-
-    @Override
-    public Set<FileFormat> getInputFileFormats() {
-        return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getInputFileFormats().stream()).collect(Collectors.toSet());
-    }
-
-    @Override
-    public Set<FileFormat> getOutputFileFormats() {
-        return this.workflowVersions.stream().flatMap(workflowVersion -> workflowVersion.getOutputFileFormats().stream()).collect(Collectors.toSet());
     }
 
     public Entry getParentEntry() {

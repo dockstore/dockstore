@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -333,11 +335,16 @@ public abstract class Entry<S extends Entry, T extends Version> {
     }
 
     @JsonProperty("input_file_formats")
-    public abstract Set<FileFormat> getInputFileFormats();
-
+    public Set<FileFormat> getInputFileFormats() {
+        Stream<FileFormat> fileFormatStream = this.getVersions().stream().flatMap(version -> version.getInputFileFormats().stream());
+        return fileFormatStream.collect(Collectors.toSet());
+    }
 
     @JsonProperty("output_file_formats")
-    public abstract Set<FileFormat> getOutputFileFormats();
+    public Set<FileFormat> getOutputFileFormats() {
+        Stream<FileFormat> fileFormatStream = this.getVersions().stream().flatMap(version -> version.getOutputFileFormats().stream());
+        return fileFormatStream.collect(Collectors.toSet());
+    }
 
     /**
      * Convenience method to access versions in a generic manner
