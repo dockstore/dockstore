@@ -16,19 +16,17 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -36,30 +34,30 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.languages.LanguageHandlerFactory;
-import io.dockstore.webservice.resources.ResourceUtilities;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
+import org.gitlab.api.GitlabAPI;
+import org.gitlab.api.TokenType;
+import org.gitlab.api.models.GitlabBranch;
+import org.gitlab.api.models.GitlabProject;
+import org.gitlab.api.models.GitlabRepositoryFile;
+import org.gitlab.api.models.GitlabTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Created by aduncan on 05/10/16.
+ * @author aduncan on 05/10/16.
+ * @author dyuen
  */
 public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
-    private static final String GITLAB_API_URL = "https://gitlab.com/api/v3/";
-    private static final String GITLAB_API_URL_V4 = "https://gitlab.com/api/v4/";
     private static final String GITLAB_GIT_URL_PREFIX = "git@gitlab.com:";
     private static final String GITLAB_GIT_URL_SUFFIX = ".git";
 
     private static final Logger LOG = LoggerFactory.getLogger(GitLabSourceCodeRepo.class);
-    private final HttpClient client;
-    private final String gitlabTokenContent;
+    private final GitlabAPI gitlabAPI;
 
-    GitLabSourceCodeRepo(String gitUsername, HttpClient client, String gitlabTokenContent) {
-        this.client = client;
-        this.gitlabTokenContent = gitlabTokenContent;
+    GitLabSourceCodeRepo(String gitUsername, String gitlabTokenContent) {
         this.gitUsername = gitUsername;
+        this.gitlabAPI = GitlabAPI.connect("https://gitlab.com", gitlabTokenContent, TokenType.ACCESS_TOKEN);
     }
 
     @Override
@@ -67,67 +65,33 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         if (fileName.startsWith("/")) {
             fileName = fileName.substring(1);
         }
-
-        String content = null;
-        String branch = reference;
-        String id = null;
-
-        // Determine a branches default branch (if needed) and ID
-        String projectsUrl = GITLAB_API_URL + "projects";
-        Optional<String> asString = ResourceUtilities.asString(projectsUrl, gitlabTokenContent, client);
-
-        if (asString.isPresent()) {
-            String projectJson = asString.get();
-
-            JsonElement jsonElement = new JsonParser().parse(projectJson);
-            if (jsonElement instanceof JsonArray) {
-                JsonArray jsonArray = jsonElement.getAsJsonArray();
-                for (JsonElement project : jsonArray) {
-                    JsonObject projectObject = project.getAsJsonObject();
-
-                    if (projectObject.get("path_with_namespace").getAsString().equals(repositoryId)) {
-                        id = projectObject.get("id").getAsString();
-                        if (reference == null) {
-                            branch = projectObject.get("default_branch").getAsString();
-                        }
-                        break;
-                    }
-                }
+        try {
+            if (reference == null) {
+                GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+                reference = project.getDefaultBranch();
             }
-
+            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, fileName, reference);
+            return new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            LOG.error("could not read file " + fileName + " on " + reference);
         }
-
-        // Get file contents
-        if (id != null || branch != null) {
-            return getFileContentsFromIdV4(id, branch, fileName);
-        }
-
-        return content;
+        return null;
     }
 
     @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
-        Map<String, String> reposByGitUrl = new HashMap<>();
-        String projectsUrl = GITLAB_API_URL + "projects";
-
-        Optional<String> asString = ResourceUtilities.asString(projectsUrl, gitlabTokenContent, client);
-
-        if (asString.isPresent()) {
-            String projectJson = asString.get();
-
-            JsonElement jsonElement = new JsonParser().parse(projectJson);
-            if (jsonElement instanceof JsonArray) {
-                JsonArray jsonArray = jsonElement.getAsJsonArray();
-                for (JsonElement project : jsonArray) {
-                    JsonObject projectObject = project.getAsJsonObject();
-                    String gitlabUrl = projectObject.get("ssh_url_to_repo").getAsString();
-                    String id = projectObject.get("path_with_namespace").getAsString();
-                    reposByGitUrl.put(gitlabUrl, id);
-                }
+        try {
+            List<GitlabProject> projects = gitlabAPI.getMembershipProjects();
+            Map<String, String> reposByGitUrl = new HashMap<>();
+            for (GitlabProject project : projects) {
+                reposByGitUrl.put(project.getSshUrl(), project.getPathWithNamespace());
             }
+            return reposByGitUrl;
+        } catch (IOException e) {
+            LOG.error("could not find projects due to ", e);
+            throw new CustomWebApplicationException("could not read projects from gitlab, please re-link your gitlab token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-
-        return reposByGitUrl;
     }
 
     @Override
@@ -154,58 +118,49 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
             Map<String, WorkflowVersion> existingDefaults) {
-        // Get Gitlab id
-        String id = getProjectId(repositoryId);
 
-        if (id == null) {
-            LOG.error("Could not find Gitlab repository " + repositoryId + " for user.");
-            throw new CustomWebApplicationException("Could not reach GitLab", HttpStatus.SC_SERVICE_UNAVAILABLE);
+        try {
+            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            List<GitlabTag> tagList = gitlabAPI.getTags(repositoryId);
+            List<GitlabBranch> branches = gitlabAPI.getBranches(project);
+            tagList.forEach(tag -> handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(),
+                Version.ReferenceType.TAG));
+            branches.forEach(branch -> {
+                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(), Version.ReferenceType.BRANCH);
+            });
+        } catch (IOException e) {
+            LOG.info("could not find " + repositoryId + " due to " + e.getMessage());
         }
-
-        // Look at each version, check for valid workflows
-        String branchesUrl = GITLAB_API_URL + "projects/" + id + "/repository/branches";
-        Optional<String> asString = ResourceUtilities.asString(branchesUrl, gitlabTokenContent, client);
-
-        if (asString.isPresent()) {
-            String projectJson = asString.get();
-
-            JsonElement jsonElement = new JsonParser().parse(projectJson);
-            if (jsonElement instanceof JsonArray) {
-                JsonArray jsonArray = jsonElement.getAsJsonArray();
-                for (JsonElement branch : jsonArray) {
-                    JsonObject branchObject = branch.getAsJsonObject();
-                    String branchName = branchObject.get("name").getAsString();
-
-                    // Initialize workflow version
-                    WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
-                    String calculatedPath = version.getWorkflowPath();
-
-                    // Now grab source files
-                    SourceFile.FileType identifiedType = workflow.getFileType();
-                    // TODO: No exceptions are caught here in the event of a failed call
-                    SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
-
-                    // Non-null sourcefile means that the sourcefile is valid
-                    if (sourceFile != null) {
-                        version.setValid(true);
-                    }
-
-                    // Use default test parameter file if either new version or existing version that hasn't been edited
-                    createTestParameterFiles(workflow, id, branchName, version, identifiedType);
-
-                    workflow.addWorkflowVersion(
-                            combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
-                }
-            }
-        }
-
         return workflow;
+    }
+
+    private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
+        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type) {
+        // Initialize workflow version
+        WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+        String calculatedPath = version.getWorkflowPath();
+
+        // Now grab source files
+        SourceFile.FileType identifiedType = workflow.getFileType();
+        // TODO: No exceptions are caught here in the event of a failed call
+        SourceFile sourceFile = getSourceFile(calculatedPath, id, branchName, identifiedType);
+
+        // Non-null sourcefile means that the sourcefile is valid
+        if (sourceFile != null) {
+            version.setValid(true);
+        }
+        version.setReferenceType(type);
+
+        // Use default test parameter file if either new version or existing version that hasn't been edited
+        createTestParameterFiles(workflow, id, branchName, version, identifiedType);
+
+        workflow.addWorkflowVersion(
+                combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
     }
 
     @Override
     void updateReferenceType(String repositoryId, Version version) {
-        // TODO:
-        return;
+        /* no-op handled earlier since the library handles it in a more trivial way than the github library */
     }
 
 
@@ -214,7 +169,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         String repositoryId;
         String giturl = entry.getGitUrl();
 
-        Pattern p = Pattern.compile("git\\@gitlab.com:(\\S+)/(\\S+)\\.git");
+        Pattern p = Pattern.compile("git@gitlab.com:(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(giturl);
         LOG.info(gitUsername + ": " + giturl);
 
@@ -233,115 +188,40 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         if (entry.getDefaultVersion() != null) {
             return entry.getDefaultVersion();
         } else {
-            String projectsUrl = GITLAB_API_URL + "projects";
-            // I think I have to pass tokens with ?private_token=...
-            Optional<String> asString = ResourceUtilities.asString(projectsUrl, gitlabTokenContent, client);
-
-            if (asString.isPresent()) {
-                String projectJson = asString.get();
-                JsonElement jsonElement = new JsonParser().parse(projectJson);
-                if (jsonElement instanceof JsonArray) {
-                    JsonArray jsonArray = jsonElement.getAsJsonArray();
-                    for (JsonElement project : jsonArray) {
-                        JsonObject projectObject = project.getAsJsonObject();
-                        if (projectObject.get("path_with_namespace").getAsString().equals(repositoryId)) {
-                            return projectObject.get("default_branch").getAsString();
-                        }
-
-                    }
-                }
-
+            try {
+                GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+                return project.getDefaultBranch();
+            } catch (IOException e) {
+                LOG.info("could not find " + repositoryId + " due to " + e.getMessage());
             }
         }
 
-        return null;
-    }
-
-    /**
-     * Given a repository ID (namespace/reponame), returns the Gitlab ID
-     *
-     * @param repositoryId
-     * @return
-     */
-    private String getProjectId(String repositoryId) {
-        String projectsUrl = GITLAB_API_URL + "projects";
-
-        Optional<String> asString = ResourceUtilities.asString(projectsUrl, gitlabTokenContent, client);
-
-        if (asString.isPresent()) {
-            String projectJson = asString.get();
-
-            JsonElement jsonElement = new JsonParser().parse(projectJson);
-            if (jsonElement instanceof JsonArray) {
-                JsonArray jsonArray = jsonElement.getAsJsonArray();
-                for (JsonElement project : jsonArray) {
-                    JsonObject projectObject = project.getAsJsonObject();
-                    if (projectObject.get("path_with_namespace").getAsString().equals(repositoryId)) {
-                        return projectObject.get("id").getAsString();
-                    }
-                }
-            }
-        }
         return null;
     }
 
     /**
      * Uses Gitlab API to grab a raw source file and return it; Return null if nothing found
      *
-     * @param path
-     * @param id
-     * @param branch
-     * @param type
+     * @param path file path to the file
+     * @param id a repository id
+     * @param branch branch (or tag) to get the file from
+     * @param type the type of file (passed through)
      * @return source file
      */
     @Override
     public SourceFile getSourceFile(String path, String id, String branch, SourceFile.FileType type) {
-        // TODO: should we even be creating a sourcefile before checking that it is valid?
-        // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
-        SourceFile file = null;
-        String content = getFileContentsFromIdV4(id, branch, path);
-
-        if (content != null) {
-            // Is workflow descriptor valid?
-            boolean validWorkflow;
-            file = new SourceFile();
-
-            validWorkflow = LanguageHandlerFactory.getInterface(type).isValidWorkflow(content);
-
-            if (validWorkflow) {
+        try {
+            GitlabProject project = gitlabAPI.getProject(id.split("/")[0], id.split("/")[1]);
+            GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, path, branch);
+            if (repositoryFile != null) {
+                SourceFile file = new SourceFile();
                 file.setType(type);
-                file.setContent(content);
+                file.setContent(new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8));
                 file.setPath(path);
+                return file;
             }
-        }
-        return file;
-    }
-
-    /**
-     * Given a gitlab project id, branch name and filepath, find the contents of a file with API V4
-     *
-     * @param id
-     * @param branch
-     * @param filepath
-     * @return contents of a file
-     */
-    private String getFileContentsFromIdV4(String id, String branch, String filepath) {
-        if (id != null && branch != null && filepath != null) {
-
-            String fileURI = null;
-            try {
-                fileURI = URLEncoder.encode(filepath, "UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                LOG.error(e.getMessage());
-            }
-            // TODO: Figure out how to url encode the periods properly
-            fileURI = fileURI.replace(".", "%2E");
-
-            String fileUrl = GITLAB_API_URL_V4 + "projects/" + id + "/repository/files/" + fileURI + "/raw?ref=" + branch;
-            Optional<String> fileAsString = ResourceUtilities.asString(fileUrl, gitlabTokenContent, client);
-            if (fileAsString.isPresent()) {
-                return fileAsString.get();
-            }
+        } catch (IOException e) {
+            LOG.info("could not find " + path + " at " + e.getMessage());
         }
         return null;
     }

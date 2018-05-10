@@ -69,5 +69,16 @@
     <changeSet author="gluu (generated)" id="add-fk-fileformatid-with-version_output_fileformat">
         <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_output_fileformat" constraintName="fk_fileformatid_with_version_output_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
     </changeSet>
-
+  
+    <!-- adding support for tracking who edited a revision of a hosted tool or workflow -->
+    <changeSet author="dyuen (generated)" id="version editor">
+        <addColumn tableName="tag">
+            <column name="versioneditor_id" type="int8"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="versioneditor_id" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="versioneditor_id" baseTableName="workflowversion" constraintName="versionEditorForWorkflows" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+        <addForeignKeyConstraint baseColumnNames="versioneditor_id" baseTableName="tag" constraintName="versionEditorForTools" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
 </databaseChangeLog>

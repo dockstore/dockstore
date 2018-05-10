@@ -106,6 +106,10 @@ public class CRUDClientIT extends BaseIT {
 
         dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "0");
         Assert.assertEquals("should only be two revisions", 2, dockstoreTool.getTags().size());
+
+        //check that all revisions have editing users
+        long count = dockstoreTool.getTags().stream().filter(tag -> tag.getVersionEditor() != null).count();
+        Assert.assertEquals("all versions do not seem to have editors", count, dockstoreTool.getTags().size());
     }
 
     @Test
@@ -151,5 +155,9 @@ public class CRUDClientIT extends BaseIT {
 
         dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "0");
         Assert.assertEquals("should only be two revisions", 2, dockstoreWorkflow.getWorkflowVersions().size());
+
+        //check that all revisions have editing users
+        long count = dockstoreWorkflow.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
+        Assert.assertEquals("all versions do not seem to have editors", count, dockstoreWorkflow.getWorkflowVersions().size());
     }
 }

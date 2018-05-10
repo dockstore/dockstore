@@ -40,6 +40,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
@@ -95,46 +96,39 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
+    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface) {
         Map<String, SourceFile> imports = new HashMap<>();
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
-        final File tempDesc;
-        try {
-            tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
-            Files.asCharSink(tempDesc, StandardCharsets.UTF_8).write(content);
 
-            // Use matcher to get imports
-            List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
-            ArrayList<String> importPaths = new ArrayList<>();
-            Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
+        // Use matcher to get imports
+        String[] lines = StringUtils.split(content, '\n');
+        List<String> importPaths = new ArrayList<>();
+        Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
 
-            for (String line : lines) {
-                Matcher m = p.matcher(line);
+        for (String line : lines) {
+            Matcher m = p.matcher(line);
 
-                while (m.find()) {
-                    String match = m.group(1);
-                    if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
-                        importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
-                    }
+            while (m.find()) {
+                String match = m.group(1);
+                if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
+                    importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
                 }
             }
+        }
 
-            for (String importPath : importPaths) {
-                SourceFile importFile = new SourceFile();
+        for (String importPath : importPaths) {
+            SourceFile importFile = new SourceFile();
 
-                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, importPath);
-                if (fileResponse == null) {
-                    LOG.error("Could not read: " + importPath);
-                    continue;
-                }
-                importFile.setContent(fileResponse);
-                importFile.setPath(importPath);
-                importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                imports.put(importFile.getPath(), importFile);
+            final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, importPath);
+            if (fileResponse == null) {
+                LOG.error("Could not read: " + importPath);
+                continue;
             }
-        } catch (IOException e) {
-            throw new CustomWebApplicationException("Internal server error, out of space",
-                HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
+            importFile.setContent(fileResponse);
+            importFile.setPath(importPath);
+            importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+            imports.put(importFile.getPath(), importFile);
         }
 
         return imports;
@@ -167,21 +161,25 @@ public class WDLHandler implements LanguageHandlerInterface {
         // Initialize data structures for Tool table
         Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
 
+        Map<String, String> callToDockerMap;
+        Map<String, String> namespaceToPath;
+        File tempMainDescriptor = null;
         // Write main descriptor to file
         // The use of temporary files is not needed here and might cause new problems
-        File tempMainDescriptor;
         try {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
+            // Iterate over each call, grab docker containers
+            callToDockerMap = bridge.getCallsToDockerMap(tempMainDescriptor);
+            // Iterate over each call, determine dependencies
+            callToDependencies = bridge.getCallsToDependencies(tempMainDescriptor);
+            // Get import files
+            namespaceToPath = bridge.getImportMap(tempMainDescriptor);
         } catch (IOException e) {
             throw new CustomWebApplicationException("could not process wdl into DAG", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } finally {
+            FileUtils.deleteQuietly(tempMainDescriptor);
         }
-
-        // Iterate over each call, grab docker containers
-        Map<String, String> callToDockerMap = bridge.getCallsToDockerMap(tempMainDescriptor);
-
-        // Get import files
-        Map<String, String> namespaceToPath = bridge.getImportMap(tempMainDescriptor);
 
         // Create nodePairs, callToType, toolID, and toolDocker
         for (Map.Entry<String, String> entry : callToDockerMap.entrySet()) {
@@ -207,9 +205,6 @@ public class WDLHandler implements LanguageHandlerInterface {
                 nodeDockerInfo.put(callId, new MutableTriple<>(mainDescName, docker, dockerUrl));
             }
         }
-
-        // Iterate over each call, determine dependencies
-        callToDependencies = bridge.getCallsToDependencies(tempMainDescriptor);
 
         // Determine start node edges
         for (Pair<String, String> node : nodePairs) {

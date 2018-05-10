@@ -38,6 +38,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -119,6 +120,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates the DOI status", position = 11)
     private DOIStatus doiStatus;
+
+    @ApiModelProperty(value = "Particularly for hosted workflows, this records who edited to create a revision", position = 12)
+    @OneToOne
+    private User versionEditor;
 
     // database timestamps
     @Column(updatable = false)
@@ -294,6 +299,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setOutputFileFormats(Set<FileFormat> outputFileFormats) {
         this.outputFileFormats = outputFileFormats;
+    }
+  
+    public User getVersionEditor() {
+        return versionEditor;
+    }
+
+    public void setVersionEditor(User versionEditor) {
+        this.versionEditor = versionEditor;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }

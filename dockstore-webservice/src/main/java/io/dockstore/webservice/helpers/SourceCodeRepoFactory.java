@@ -49,7 +49,7 @@ public final class SourceCodeRepoFactory {
         } else if (Objects.equals(token.getTokenSource(), TokenType.BITBUCKET_ORG)) {
             repo = new BitBucketSourceCodeRepo(token.getUsername(), client, token.getContent());
         } else if (Objects.equals(token.getTokenSource(), TokenType.GITLAB_COM)) {
-            repo = new GitLabSourceCodeRepo(token.getUsername(), client, token.getContent());
+            repo = new GitLabSourceCodeRepo(token.getUsername(), token.getContent());
         } else {
             LOG.error("We do not currently support: " + token.getTokenSource());
             throw new CustomWebApplicationException("Sorry, we do not support " + token.getTokenSource() + ".",
@@ -83,7 +83,7 @@ public final class SourceCodeRepoFactory {
             }
         } else if (SourceControl.GITLAB.toString().equals(source)) {
             if (gitlabTokenContent != null) {
-                repo = new GitLabSourceCodeRepo(gitUsername, client, gitlabTokenContent);
+                repo = new GitLabSourceCodeRepo(gitUsername, gitlabTokenContent);
             } else {
                 LOG.info("WARNING: Source is from Gitlab, but user does not have Gitlab token!");
                 return null;
