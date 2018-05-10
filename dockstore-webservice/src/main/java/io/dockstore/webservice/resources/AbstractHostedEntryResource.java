@@ -31,6 +31,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -98,6 +99,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "For tools, the Docker registry") @QueryParam("registry") String registry,
         @ApiParam(value = "name", required = true) @QueryParam("name") String name,
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
+        checkType(descriptorType);
         T entry = getEntry(user, registry, name, descriptorType);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
@@ -120,6 +122,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkUser(user, entry);
         checkHosted(entry);
         U version = getVersion(entry);
+        boolean isValidVersion = checkValidVersion(sourceFiles, entry);
+        if (!isValidVersion) {
+            throw new WebApplicationException("The reversion is not valid", HttpStatus.SC_BAD_REQUEST);
+        }
+        version.setValid(isValidVersion);
         handleSourceFileMerger(entryId, sourceFiles, entry, version);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
@@ -128,6 +135,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
     }
+
+    protected abstract boolean checkValidVersion(Set<SourceFile> sourceFiles, T entry);
 
     private void checkHosted(T entry) {
         if (entry instanceof Tool) {
@@ -138,6 +147,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             if (((Workflow)entry).getMode() != WorkflowMode.HOSTED) {
                 throw new WebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
             }
+        }
+    }
+
+    private void checkType(String descriptorType) {
+        if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
+                && !Objects.equals(descriptorType.toUpperCase(), DescriptorLanguage.WDL_STRING)
+                && !Objects.equals(descriptorType.toUpperCase(), DescriptorLanguage.NFL_STRING)) {
+            throw new WebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
         }
     }
 

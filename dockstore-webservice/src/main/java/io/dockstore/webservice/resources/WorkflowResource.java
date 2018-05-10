@@ -640,7 +640,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                 }
             }
 
-            if (validTag && !c.getGitUrl().isEmpty()) {
+            if (validTag && (!c.getGitUrl().isEmpty() || Objects.equals(c.getMode(), WorkflowMode.HOSTED))) {
                 c.setIsPublished(true);
                 if (checker != null) {
                     checker.setIsPublished(true);
