@@ -140,13 +140,18 @@ public class User implements Principal, Comparable<User> {
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
         List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
-        if (githubByUserId.isEmpty()) {
-            throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.", HttpStatus.SC_FORBIDDEN);
+        List<Token> googleByUserId = tokenDAO.findGoogleByUserId(getId());
+        if (githubByUserId.isEmpty() && googleByUserId.isEmpty()) {
+            throw new CustomWebApplicationException("No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
         }
-        Token githubToken = githubByUserId.get(0);
-        GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
-        sourceCodeRepo.checkSourceCodeValidity();
-        sourceCodeRepo.getUserMetadata(this);
+        if (!githubByUserId.isEmpty()) {
+            Token githubToken = githubByUserId.get(0);
+            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
+            sourceCodeRepo.checkSourceCodeValidity();
+            sourceCodeRepo.getUserMetadata(this);
+        } else {
+            Token googleToken = googleByUserId.get(0);
+        }
     }
 
     @JsonProperty

@@ -36,21 +36,10 @@
     </parent>
 
     <dependencies>
-
         <dependency>
             <groupId>com.google.apis</groupId>
-            <artifactId>google-api-services-plus</artifactId>
-            <version>v1-rev549-1.22.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava-jdk5</artifactId>
-                </exclusion>
-            <!--<exclusion>-->
-                <!--<groupId>com.google.http-client</groupId>-->
-                <!--<artifactId>google-http-client-jackson2</artifactId>-->
-            <!--</exclusion>-->
-        </exclusions>
+            <artifactId>google-api-services-oauth2</artifactId>
+            <version>v1-rev141-1.22.0</version>
         </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
@@ -570,11 +559,6 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore-nio</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.http-client</groupId>
-            <artifactId>google-http-client-jackson2</artifactId>
-            <version>1.22.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.api-client</groupId>

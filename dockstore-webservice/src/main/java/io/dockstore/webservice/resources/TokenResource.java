@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,15 +39,16 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
+import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.TokenResponse;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
-import com.google.api.services.plus.Plus;
-import com.google.api.services.plus.model.Person;
+import com.google.api.services.oauth2.Oauth2;
+import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.google.common.io.BaseEncoding;
@@ -308,6 +310,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         JsonObject satellizerObject = element.getAsJsonObject();
 
         final String code = satellizerObject.get("code").getAsString();
+        final String redirectUri = satellizerObject.get("redirectUri").getAsString();
         String accessToken = null;
         for (int i = 0; i < googleClientID.size() && accessToken == null; i++) {
             final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
@@ -315,23 +318,23 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                     new ClientParametersAuthentication(googleClientID.get(i), googleClientSecret.get(i)), googleClientID.get(i),
                     "https://accounts.google.com/o/oauth2/v2/auth").build();
             try {
-                TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(googleRedirectUri).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+                TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUri).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
                 accessToken = tokenResponse.getAccessToken();
             } catch (IOException e) {
                 LOG.error("Retrieving accessToken was unsuccessful");
                 throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
             }
         }
-        GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
-        Plus plus = new Plus.Builder(new NetHttpTransport(), com.google.api.client.json.jackson2.JacksonFactory.getDefaultInstance(), credential)
-                .setApplicationName("Google-PlusSample/1.0")
-                .build();
+        Credential credential =
+                new Credential(BearerToken.authorizationHeaderAccessMethod()).setAccessToken(accessToken);
         try {
+            Oauth2 oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, credential).setApplicationName(
+                    "").build();
+            Userinfoplus userinfo = oauth2.userinfo().get().execute();
             long userID;
             Token dockstoreToken = null;
             Token githubToken = null;
-            Person me = plus.people().get("me").execute();
-            String githubLogin = me.getDisplayName();
+            String githubLogin = userinfo.getName();
             User user = userDAO.findByUsername(githubLogin);
             if (user == null) {
                 user = new User();
@@ -378,9 +381,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 tokenDAO.create(githubToken);
                 LOG.info("Github token created for {}", githubLogin);
             }
-
             return dockstoreToken;
-
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
