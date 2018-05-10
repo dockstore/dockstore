@@ -314,7 +314,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkUser(user, workflow);
-
+        checkNotHosted(workflow);
         // get a live user for the following
         user = userDAO.findById(user.getId());
         // Update user data
@@ -1414,5 +1414,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Override
     public WorkflowDAO getDAO() {
         return this.workflowDAO;
+    }
+
+    public void checkNotHosted(Workflow workflow) {
+        if (workflow.getMode() == WorkflowMode.HOSTED) {
+            throw new WebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 }
