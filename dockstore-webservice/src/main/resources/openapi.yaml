@@ -5332,6 +5332,12 @@ components:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
+        versionEditor:
+          position: 12
+          description: >-
+            Particularly for hosted workflows, this records who edited to create
+            a revision
+          $ref: '#/components/schemas/User'
         size:
           type: integer
           format: int64
@@ -6020,6 +6026,12 @@ components:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
+        versionEditor:
+          position: 12
+          description: >-
+            Particularly for hosted workflows, this records who edited to create
+            a revision
+          $ref: '#/components/schemas/User'
         workflow_path:
           type: string
           position: 12
