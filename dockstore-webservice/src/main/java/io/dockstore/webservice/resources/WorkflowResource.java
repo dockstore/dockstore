@@ -69,9 +69,11 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -117,6 +119,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     private final WorkflowVersionDAO workflowVersionDAO;
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
+    private final FileFormatDAO fileFormatDAO;
     private final HttpClient client;
 
     private final String bitbucketClientID;
@@ -124,7 +127,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     @SuppressWarnings("checkstyle:parameternumber")
     public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
-        WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret) {
+        WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID, String bitbucketClientSecret) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.workflowVersionDAO = workflowVersionDAO;
@@ -132,6 +135,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         this.labelDAO = labelDAO;
         this.fileDAO = fileDAO;
         this.client = client;
+        this.fileFormatDAO = fileFormatDAO;
 
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
@@ -336,7 +340,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         final Workflow newWorkflow = sourceCodeRepo.getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
-
+        FileFormatHelper.updateFileFormats(newWorkflow.getVersions(), fileFormatDAO);
 
         // Refresh checker workflow
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {

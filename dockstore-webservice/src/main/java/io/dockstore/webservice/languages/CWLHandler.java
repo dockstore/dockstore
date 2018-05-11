@@ -17,6 +17,7 @@ package io.dockstore.webservice.languages;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,6 +37,7 @@ import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -161,6 +163,40 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
         recursiveImports.putAll(imports);
         return recursiveImports;
+    }
+
+    /**
+     * Gets the file formats (either input or output) associated with the contents of a single CWL descriptor file
+     * @param content   Contents of a CWL descriptor file
+     * @param type      Either "inputs" or "outputs"
+     * @return
+     */
+    public Set<FileFormat> getFileFormats(String content, String type) {
+        Set<FileFormat> fileFormats = new HashSet<>();
+        Yaml yaml = new Yaml();
+        try {
+            Map<String, ?> map = yaml.loadAs(content, Map.class);
+            Object outputs = map.get(type);
+            if (outputs instanceof Map) {
+                Map<String, ?> outputsMap = (Map<String, ?>)outputs;
+                outputsMap.forEach((k, v) -> {
+                    if (v instanceof Map) {
+                        Map<String, String> outputMap = (Map<String, String>)v;
+                        String format = outputMap.get("format");
+                        if (format != null) {
+                            FileFormat fileFormat = new FileFormat();
+                            fileFormat.setValue(format);
+                            fileFormats.add(fileFormat);
+                        }
+                    }
+                });
+            } else {
+                LOG.warn(type + " is not a map.");
+            }
+        } catch (YAMLException e) {
+            SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");
+        }
+        return fileFormats;
     }
 
     @Override

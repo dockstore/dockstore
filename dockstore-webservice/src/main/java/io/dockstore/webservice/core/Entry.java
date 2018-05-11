@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -129,6 +131,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
 
+
     @JsonIgnore
     @JoinColumn(name = "checkerid")
     @OneToOne(targetEntity = Workflow.class, fetch = FetchType.EAGER)
@@ -154,7 +157,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
         users = new HashSet<>(0);
         starredUsers = new HashSet<>(0);
     }
-
 
     @JsonProperty("checker_id")
     @ApiModelProperty(value = "The id of the associated checker workflow", position = 12)
@@ -330,6 +332,18 @@ public abstract class Entry<S extends Entry, T extends Version> {
         if (!entry.getGitUrl().isEmpty()) {
             gitUrl = entry.getGitUrl();
         }
+    }
+
+    @JsonProperty("input_file_formats")
+    public Set<FileFormat> getInputFileFormats() {
+        Stream<FileFormat> fileFormatStream = this.getVersions().stream().flatMap(version -> version.getInputFileFormats().stream());
+        return fileFormatStream.collect(Collectors.toSet());
+    }
+
+    @JsonProperty("output_file_formats")
+    public Set<FileFormat> getOutputFileFormats() {
+        Stream<FileFormat> fileFormatStream = this.getVersions().stream().flatMap(version -> version.getOutputFileFormats().stream());
+        return fileFormatStream.collect(Collectors.toSet());
     }
 
     /**

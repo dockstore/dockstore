@@ -66,6 +66,7 @@ import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -106,6 +107,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private final TagDAO tagDAO;
     private final LabelDAO labelDAO;
     private final FileDAO fileDAO;
+    private final FileFormatDAO fileFormatDAO;
     private final HttpClient client;
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
@@ -115,13 +117,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
-            LabelDAO labelDAO, FileDAO fileDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
+            LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
         objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.tagDAO = tagDAO;
         this.labelDAO = labelDAO;
         this.fileDAO = fileDAO;
+        this.fileFormatDAO = fileFormatDAO;
         this.client = client;
 
         this.bitbucketClientID = bitbucketClientID;
@@ -161,7 +164,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             LOG.info("Grabbing " + registry.getFriendlyName() + " repos");
 
             updatedTools.addAll(abstractImageRegistry
-                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken, organization));
+                .refreshTools(userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken, organization));
         }
         return updatedTools;
     }
@@ -246,7 +249,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
                 HttpStatus.SC_NOT_FOUND);
         }
         return abstractImageRegistry
-            .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, client, githubToken, bitbucketToken, gitlabToken);
+            .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken);
     }
 
     @GET

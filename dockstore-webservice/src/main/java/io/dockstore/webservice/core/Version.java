@@ -35,7 +35,9 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
 import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 
@@ -131,6 +133,18 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 20)
+    @OrderBy("id")
+    private Set<FileFormat> inputFileFormats = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 21)
+    @OrderBy("id")
+    private Set<FileFormat> outputFileFormats = new HashSet<>();
 
     public Version() {
         sourceFiles = new HashSet<>(0);
@@ -269,6 +283,24 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.referenceType = referenceType;
     }
 
+    @JsonProperty("input_file_formats")
+    public Set<FileFormat> getInputFileFormats() {
+        return inputFileFormats;
+    }
+
+    public void setInputFileFormats(Set<FileFormat> inputFileFormats) {
+        this.inputFileFormats = inputFileFormats;
+    }
+
+    @JsonProperty("output_file_formats")
+    public Set<FileFormat> getOutputFileFormats() {
+        return outputFileFormats;
+    }
+
+    public void setOutputFileFormats(Set<FileFormat> outputFileFormats) {
+        this.outputFileFormats = outputFileFormats;
+    }
+  
     public User getVersionEditor() {
         return versionEditor;
     }

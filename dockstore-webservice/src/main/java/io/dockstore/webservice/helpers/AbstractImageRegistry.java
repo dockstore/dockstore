@@ -35,6 +35,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -111,7 +112,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public List<Tool> refreshTools(final long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken,
             String organization) {
         // Get all the namespaces for the given registry
         List<String> namespaces;
@@ -150,7 +151,7 @@ public abstract class AbstractImageRegistry {
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
             List<Tag> toolTags = getTags(tool);
-            updateTags(toolTags, tool, githubToken, bitbucketToken, gitlabToken, tagDAO, fileDAO, toolDAO, client);
+            updateTags(toolTags, tool, githubToken, bitbucketToken, gitlabToken, tagDAO, fileDAO, toolDAO, fileFormatDAO, client);
         }
 
         return newDBTools;
@@ -163,7 +164,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
@@ -222,7 +223,7 @@ public abstract class AbstractImageRegistry {
 
         // Get tags and update for each tool
         List<Tag> toolTags = getTags(tool);
-        updateTags(toolTags, tool, githubToken, bitbucketToken, gitlabToken, tagDAO, fileDAO, toolDAO, client);
+        updateTags(toolTags, tool, githubToken, bitbucketToken, gitlabToken, tagDAO, fileDAO, toolDAO, fileFormatDAO, client);
 
         // Return the updated tool
         return newDBTools.get(0);
@@ -242,7 +243,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     private void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, Token gitlabToken, final TagDAO tagDAO,
-        final FileDAO fileDAO, final ToolDAO toolDAO, final HttpClient client) {
+        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final HttpClient client) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
 
@@ -372,6 +373,7 @@ public abstract class AbstractImageRegistry {
                 sourceCodeRepo.updateEntryMetadata(tool, LanguageType.WDL);
             }
         }
+        FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
         toolDAO.create(tool);
 
     }
