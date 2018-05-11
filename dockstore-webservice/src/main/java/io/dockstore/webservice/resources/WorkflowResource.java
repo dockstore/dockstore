@@ -160,6 +160,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             throw new CustomWebApplicationException("A workflow must be unpublished to restub.", HttpStatus.SC_BAD_REQUEST);
         }
 
+        checkNotHosted(workflow);
+
         workflow.setMode(WorkflowMode.STUB);
 
         // go through and delete versions for a stub
@@ -446,10 +448,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @ApiOperation(value = "Update the workflow with the given workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
-        Workflow c = workflowDAO.findById(workflowId);
-        checkEntry(c);
-
-        checkUser(user, c);
+        Workflow wf = workflowDAO.findById(workflowId);
+        checkEntry(wf);
+        checkNotHosted(wf);
+        checkUser(user, wf);
 
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false);
 
@@ -458,7 +460,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             throw new CustomWebApplicationException("Workflow " + workflow.getWorkflowPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        updateInfo(c, workflow);
+        updateInfo(wf, workflow);
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
@@ -563,21 +565,22 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
 
-        Workflow c = workflowDAO.findById(workflowId);
+        Workflow wf = workflowDAO.findById(workflowId);
 
         //check if the user and the entry is correct
-        checkEntry(c);
-        checkUser(user, c);
+        checkEntry(wf);
+        checkUser(user, wf);
+        checkNotHosted(wf);
 
         //update the workflow path in all workflowVersions
-        Set<WorkflowVersion> versions = c.getVersions();
+        Set<WorkflowVersion> versions = wf.getVersions();
         for (WorkflowVersion version : versions) {
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
             }
         }
-        elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
-        return c;
+        elasticManager.handleIndexUpdate(wf, ElasticMode.UPDATE);
+        return wf;
     }
 
     @GET
@@ -908,6 +911,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
+        checkNotHosted(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
             String msg = "The workflow \'" + workflow.getWorkflowPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files";
@@ -950,6 +954,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths, @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
+        checkNotHosted(workflow);
 
         Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream()
             .filter((WorkflowVersion v) -> v.getName().equals(version)).findFirst();

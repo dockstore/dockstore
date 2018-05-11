@@ -16,7 +16,9 @@
 
 package io.dockstore.client.cli;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 import com.google.common.collect.Lists;
@@ -78,30 +80,6 @@ public class CRUDClientIT extends BaseIT {
         ContainersApi oldApi = new ContainersApi(webClient);
         DockstoreTool container = oldApi.getContainer(hostedTool.getId());
         Assert.assertEquals(container, hostedTool);
-    }
-
-    /**
-     * Ensures that only valid descriptor types can be used to create a hosted workflow
-     */
-    @Test
-    public void testToolCreationInvalidDescriptorType(){
-        ApiClient webClient = getWebClient();
-        HostedApi api = new HostedApi(webClient);
-        thrown.expect(ApiException.class);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwll", "quay.io");
-    }
-
-    /**
-     * Ensures that hosted workflows cannot be refreshed (this tests individual refresh)
-     */
-    @Test
-    public void testRefreshingHostedWorkflow() {
-        ApiClient webClient = getWebClient();
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
-        thrown.expect(ApiException.class);
-        workflowApi.refresh(hostedWorkflow.getId());
     }
 
     @Test
@@ -179,5 +157,99 @@ public class CRUDClientIT extends BaseIT {
 
         dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "0");
         Assert.assertEquals("should only be two revisions", 2, dockstoreWorkflow.getWorkflowVersions().size());
+    }
+
+    /**
+     * Ensures that only valid descriptor types can be used to create a hosted workflow
+     */
+    @Test
+    public void testToolCreationInvalidDescriptorType(){
+        ApiClient webClient = getWebClient();
+        HostedApi api = new HostedApi(webClient);
+        api.createHostedTool("awesomeToolCwl", "cwl", "quay.io");
+        api.createHostedTool("awesomeToolWdl", "wdl", "quay.io");
+        thrown.expect(ApiException.class);
+        api.createHostedTool("awesomeToolCwll", "cwll", "quay.io");
+    }
+
+    /**
+     * Ensures that hosted workflows cannot be refreshed (this tests individual refresh)
+     */
+    @Test
+    public void testRefreshingHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        thrown.expect(ApiException.class);
+        workflowApi.refresh(hostedWorkflow.getId());
+    }
+
+
+    /**
+     * Ensures that hosted workflows cannot be restubed
+     */
+    @Test
+    public void testRestubHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        thrown.expect(ApiException.class);
+        workflowApi.restub(hostedWorkflow.getId());
+    }
+
+    /**
+     * Ensures that hosted workflows cannot be updated
+     */
+    @Test
+    public void testUpdatingHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow newWorkflow = new Workflow();
+        thrown.expect(ApiException.class);
+        workflowApi.updateWorkflow(hostedWorkflow.getId(), newWorkflow);
+    }
+
+    /**
+     * Ensures that hosted workflows cannot have their paths updated
+     */
+    @Test
+    public void testUpdatingWorkflowPathHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow newWorkflow = new Workflow();
+        thrown.expect(ApiException.class);
+        workflowApi.updateWorkflowPath(hostedWorkflow.getId(), newWorkflow);
+    }
+
+    /**
+     * Ensures that hosted workflows cannot have new test parameter files added
+     */
+    @Test
+    public void testAddingTestParameterFilesHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        thrown.expect(ApiException.class);
+        workflowApi.addTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "", "1");
+    }
+
+    /**
+     * Ensures that hosted workflows cannot have their test parameter files deleted
+     */
+    @Test
+    public void testDeletingTestParameterFilesHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        thrown.expect(ApiException.class);
+        workflowApi.deleteTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "1");
     }
 }
