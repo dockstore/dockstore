@@ -4916,6 +4916,11 @@ definitions:
         - "NOT_REQUESTED"
         - "REQUESTED"
         - "CREATED"
+      versionEditor:
+        position: 12
+        description: "Particularly for hosted workflows, this records who edited to\
+          \ create a revision"
+        $ref: "#/definitions/User"
       size:
         type: "integer"
         format: "int64"
@@ -5558,6 +5563,11 @@ definitions:
         - "NOT_REQUESTED"
         - "REQUESTED"
         - "CREATED"
+      versionEditor:
+        position: 12
+        description: "Particularly for hosted workflows, this records who edited to\
+          \ create a revision"
+        $ref: "#/definitions/User"
       workflow_path:
         type: "string"
         position: 12

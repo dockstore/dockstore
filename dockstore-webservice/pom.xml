@@ -578,6 +578,12 @@
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.gitlab/java-gitlab-api -->
+        <dependency>
+            <groupId>org.gitlab</groupId>
+            <artifactId>java-gitlab-api</artifactId>
+            <version>4.0.0</version>
+        </dependency>
     </dependencies>
 
 

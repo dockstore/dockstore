@@ -30,4 +30,16 @@
         <addNotNullConstraint columnDataType="clob" columnName="referencetype" tableName="tag"/>
         <addNotNullConstraint columnDataType="clob" columnName="referencetype" tableName="workflowversion"/>
     </changeSet>
+
+    <!-- adding support for tracking who edited a revision of a hosted tool or workflow -->
+    <changeSet author="dyuen (generated)" id="version editor">
+        <addColumn tableName="tag">
+            <column name="versioneditor_id" type="int8"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="versioneditor_id" type="int8"/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="versioneditor_id" baseTableName="workflowversion" constraintName="versionEditorForWorkflows" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+        <addForeignKeyConstraint baseColumnNames="versioneditor_id" baseTableName="tag" constraintName="versionEditorForTools" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
 </databaseChangeLog>

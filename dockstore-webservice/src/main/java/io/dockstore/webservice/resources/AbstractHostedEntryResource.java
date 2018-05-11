@@ -128,6 +128,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new WebApplicationException("The reversion is not valid", HttpStatus.SC_BAD_REQUEST);
         }
         version.setValid(isValidVersion);
+        version.setVersionEditor(user);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
         userDAO.clearCache();
