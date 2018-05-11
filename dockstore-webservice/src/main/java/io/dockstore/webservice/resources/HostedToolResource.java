@@ -108,6 +108,6 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
 
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
-        return false;
+        return true;
     }
 }

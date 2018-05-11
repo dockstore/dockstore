@@ -87,7 +87,7 @@ public class CRUDClientIT extends BaseIT {
         HostedApi api = new HostedApi(getWebClient());
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io");
         SourceFile file = new SourceFile();
-        file.setContent("foobar");
+        file.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file));
@@ -95,9 +95,9 @@ public class CRUDClientIT extends BaseIT {
         Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
 
         SourceFile file2 = new SourceFile();
-        file2.setContent("foobared");
-        file2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        file2.setPath("/Dockstore2.cwl");
+        file2.setContent("{\"message\": \"Hello world!\"}");
+        file2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        file2.setPath("/test.json");
         // add one file and include the old one implicitly
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file2));
         first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
@@ -136,7 +136,7 @@ public class CRUDClientIT extends BaseIT {
         HostedApi api = new HostedApi(getWebClient());
         Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", "cwl", null);
         SourceFile file = new SourceFile();
-        file.setContent("foobar");
+        file.setContent("cwlVersion: v1.0\\nclass: Workflow\\ninputs:\\ninp: File\\nex: string\\noutputs:\\nclassout:\\ntype: File\\noutputSource: compile/classfile\\nsteps:\\nuntar:\\nrun: tar-param.cwl\\nin:\\ntarfile: inp\\nextractfile: ex\\nout: [example_out]\\ncompile:\\nrun: arguments.cwl\\nin:\\nsrc: untar/example_out\\nout: [classfile]");
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
@@ -144,23 +144,32 @@ public class CRUDClientIT extends BaseIT {
         Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
 
         SourceFile file2 = new SourceFile();
-        file2.setContent("foobared");
+        file2.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nlabel: Example trivial wrapper for Java 7 compiler\\nhints:\\nDockerRequirement:\\ndockerPull: java:7-jdk\\nbaseCommand: javac\\narguments: [\"-d\", $(runtime.outdir)]\\ninputs:\\nsrc:\\ntype: File\\ninputBinding:\\nposition: 1\\noutputs:\\nclassfile:\\ntype: File\\noutputBinding:\\nglob: \"*.class\"");
         file2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        file2.setPath("/Dockstore2.cwl");
+        file2.setPath("/arguments.cwl");
         // add one file and include the old one implicitly
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file2));
         first = dockstoreWorkflow .getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+
+        SourceFile file3 = new SourceFile();
+        file3.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: [tar, xf]\\ninputs:\\ntarfile:\\ntype: File\\ninputBinding:\\nposition: 1\\nextractfile:\\ntype: string\\ninputBinding:\\nposition: 2\\noutputs:\\nexample_out:\\ntype: File\\noutputBinding:\\nglob: $(inputs.extractfile)");
+        file3.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file3.setPath("/tar-param.cwl");
+        // add one file and include the old one implicitly
+        dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
+        first = dockstoreWorkflow .getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
+        Assert.assertEquals("correct number of source files", 3, first.get().getSourceFiles().size());
 
         // delete a file
         file2.setContent(null);
 
         dockstoreWorkflow = api.editHostedWorkflow(dockstoreWorkflow.getId(), Lists.newArrayList(file,file2));
         first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
-        Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
         dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "0");
-        Assert.assertEquals("should only be two revisions", 2, dockstoreWorkflow.getWorkflowVersions().size());
+        Assert.assertEquals("should only be two revisions", 3, dockstoreWorkflow.getWorkflowVersions().size());
 
         //check that all revisions have editing users
         long count = dockstoreWorkflow.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
