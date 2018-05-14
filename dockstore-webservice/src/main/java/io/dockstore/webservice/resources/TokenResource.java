@@ -294,7 +294,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         final String code = satellizerObject.get("code").getAsString();
 
-        return addGithubToken(code);
+        return addGithubToken(null, code);
     }
 
     @POST
@@ -397,7 +397,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @ApiOperation(value = "Add a new github.com token, used by github.com redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
-    public Token addGithubToken(@QueryParam("code") String code) {
+    public Token addGithubToken(@ApiParam(hidden = true) @Auth User authUser, @QueryParam("code") String code) {
 
 
         String accessToken = null;
@@ -427,7 +427,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         User user = userDAO.findByUsername(githubLogin);
-        if (user == null) {
+        if (user == null && authUser == null) {
             user = new User();
             user.setUsername(githubLogin);
 
@@ -444,7 +444,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             dockstoreToken = createDockstoreToken(userID, githubLogin);
 
         } else {
-            userID = user.getId();
+            if (user != null) {
+                userID = user.getId();
+            } else {
+                userID = authUser.getId();
+            }
             List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
             if (!tokens.isEmpty()) {
                 dockstoreToken = tokens.get(0);
