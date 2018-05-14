@@ -1055,8 +1055,8 @@ paths:
     post:
       tags:
       - "tokens"
-      summary: "Allow satellizer to post a new GitHub token to dockstore"
-      description: "A post method is required by saetillizer to send the GitHub token"
+      summary: "Allow satellizer to post a new Google token to dockstore"
+      description: "A post method is required by satellizer to send the Google token"
       operationId: "addGoogleToken"
       produces:
       - "application/json"

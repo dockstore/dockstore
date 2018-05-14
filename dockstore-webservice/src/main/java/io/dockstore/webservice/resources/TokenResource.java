@@ -61,6 +61,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -105,7 +106,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
-    private static final String GOOGLE_USERNAME_PREFIX = "google/";
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     private final TokenDAO tokenDAO;
@@ -302,8 +302,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/google")
-    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
-            notes = "A post method is required by saetillizer to send the GitHub token",
+    @ApiOperation(value = "Allow satellizer to post a new Google token to dockstore", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
+            notes = "A post method is required by satellizer to send the Google token",
             response = Token.class)
     public Token addGoogleToken(@ApiParam(hidden = true) @Auth Optional<User> authUser, @ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
@@ -335,20 +335,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             long userID;
             Token dockstoreToken = null;
             Token githubToken = null;
-            String googleLoginName = GOOGLE_USERNAME_PREFIX + userinfo.getName();
+            String googleLoginName = GoogleHelper.GOOGLE_USERNAME_PREFIX + userinfo.getName();
             User user = userDAO.findByUsername(googleLoginName);
             if (user == null && !authUser.isPresent()) {
                 user = new User();
-                user.setUsername(googleLoginName);
-                user.setEmail(userinfo.getEmail());
-                user.setAvatarUrl(userinfo.getPicture());
-                // Pull user information from Github
+                // Pull user information from Google
+                GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
                 Token dummyToken = new Token();
                 dummyToken.setContent(accessToken);
                 dummyToken.setUsername(googleLoginName);
                 dummyToken.setTokenSource(TokenType.GOOGLE_COM);
-//                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(dummyToken, null);
-//                user = gitHubSourceCodeRepo.getUserMetadata(user);
                 userID = userDAO.create(user);
 
                 // CREATE DOCKSTORE TOKEN

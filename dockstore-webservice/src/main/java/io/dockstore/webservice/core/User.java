@@ -16,8 +16,6 @@
 
 package io.dockstore.webservice.core;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.sql.Timestamp;
 import java.util.HashSet;
@@ -43,16 +41,11 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.api.client.auth.oauth2.BearerToken;
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.json.jackson.JacksonFactory;
-import com.google.api.services.oauth2.Oauth2;
-import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.swagger.annotations.ApiModel;
@@ -159,18 +152,7 @@ public class User implements Principal, Comparable<User> {
             sourceCodeRepo.getUserMetadata(this);
         } else {
             Token googleToken = googleByUserId.get(0);
-            Credential credential =
-                    new Credential(BearerToken.authorizationHeaderAccessMethod()).setAccessToken(googleToken.getContent());
-            try {
-                Oauth2 oauth2;
-                oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), new JacksonFactory(), credential).setApplicationName("").build();
-                Userinfoplus userinfo = oauth2.userinfo().get().execute();
-                this.setUsername(userinfo.getName());
-                this.setEmail(userinfo.getEmail());
-                this.setAvatarUrl(userinfo.getPicture());
-            } catch (GeneralSecurityException | IOException e) {
-                throw new CustomWebApplicationException("Could not get Google profile.", HttpStatus.SC_BAD_REQUEST);
-            }
+            GoogleHelper.updateGoogleUserData(googleToken.getContent(), this);
         }
     }
 

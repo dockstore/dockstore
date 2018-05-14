@@ -69,7 +69,6 @@ public class TokenDAO extends AbstractDAO<Token> {
         return list(namedQuery("io.dockstore.webservice.core.Token.findGoogleByUserId").setParameter("userId", userId));
     }
 
-
     public List<Token> findQuayByUserId(long userId) {
         return list(namedQuery("io.dockstore.webservice.core.Token.findQuayByUserId").setParameter("userId", userId));
     }
