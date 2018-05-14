@@ -2,7 +2,6 @@
 title: Language Support
 permalink: /docs/user-tutorials/language-support-backup/
 ---
-[stuff](https://www.potatostew.com)
 
 Sample markdown table
 
