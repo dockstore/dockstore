@@ -16,4 +16,4 @@ install:
 script:
   - bundle exec jekyll build
   # Ignore external certificate and SSL connect errors, ignore '#' and '#top'
-  - htmlproofer --allow-hash-href --url-ignore="#top,/https://ci.commonwl.org/,/https://dockstore.org:8443/metadata/runner_dependencies/" _site/
+  - htmlproofer --allow-hash-href --file-ignore="/_site/docs/user-tutorials/language-support-backup/" --url-ignore="#top,/https://ci.commonwl.org/,/https://dockstore.org:8443/metadata/runner_dependencies/" _site/
