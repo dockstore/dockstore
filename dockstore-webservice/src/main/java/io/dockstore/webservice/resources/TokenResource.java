@@ -105,6 +105,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
     private static final String GITLAB_URL = "https://gitlab.com/";
+    private static final String GOOGLE_USERNAME_PREFIX = "google/";
     private static final Logger LOG = LoggerFactory.getLogger(TokenResource.class);
 
     private final TokenDAO tokenDAO;
@@ -334,7 +335,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             long userID;
             Token dockstoreToken = null;
             Token githubToken = null;
-            String googleLoginName = userinfo.getName();
+            String googleLoginName = GOOGLE_USERNAME_PREFIX + userinfo.getName();
             User user = userDAO.findByUsername(googleLoginName);
             if (user == null && !authUser.isPresent()) {
                 user = new User();
