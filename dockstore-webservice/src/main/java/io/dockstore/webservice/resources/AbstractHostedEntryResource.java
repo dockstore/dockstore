@@ -120,7 +120,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
-        checkUser(user, entry);
+        checkUserCanUpdate(user, entry);
         checkHosted(entry);
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
@@ -176,7 +176,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
-        checkUser(user, entry);
+        checkUserCanDelete(user, entry);
         checkHosted(entry);
         entry.getVersions().removeIf(v -> Objects.equals(v.getName(), version));
         elasticManager.handleIndexUpdate(entry, ElasticMode.UPDATE);

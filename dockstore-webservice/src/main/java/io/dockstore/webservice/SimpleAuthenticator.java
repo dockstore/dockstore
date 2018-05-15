@@ -16,10 +16,13 @@
 
 package io.dockstore.webservice;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.AuthenticationException;
@@ -46,10 +49,35 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
     @Override
     public Optional<User> authenticate(String credentials) throws AuthenticationException {
         LOG.debug("SimpleAuthenticator called with {}", credentials);
+        if (isGoogleToken(credentials)) {
+            final Optional<String> username = GoogleHelper.getUserNameFromToken(credentials);
+            if (username.isPresent()) {
+                User user = userDAO.findByUsername(username.get());
+                if (user != null) {
+                    List<Token> tokens = dao.findByUserId(user.getId());
+                    Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
+                    googleToken.setContent(credentials);
+                    dao.update(googleToken);
+                    return Optional.of(user);
+                }
+            }
+        }
+        // Just in case the check for whether the credentials are a Google token are incorrect,
+        // try it as a Dockstore token.
         final Token token = dao.findByContent(credentials);
         if (token != null) {
             return Optional.of(userDAO.findById(token.getUserId()));
         }
         return Optional.empty();
+    }
+
+    /**
+     * A crude test for whether a token is a Dockstore token or a Google access token.
+     *
+     * @param credentials
+     * @return
+     */
+    static boolean isGoogleToken(String credentials) {
+        return credentials != null && credentials.startsWith("ya29.");
     }
 }

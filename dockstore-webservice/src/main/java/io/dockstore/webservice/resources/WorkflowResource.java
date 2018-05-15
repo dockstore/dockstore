@@ -16,6 +16,8 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -51,7 +53,11 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
+import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Action;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.permissions.Permission;
+import io.dockstore.webservice.permissions.Role;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -88,6 +94,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
@@ -124,10 +131,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
+    private final PermissionsInterface permissionsInterface;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
-        WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID, String bitbucketClientSecret) {
+        WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID,
+        String bitbucketClientSecret, PermissionsInterface permissionsInterface) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.workflowVersionDAO = workflowVersionDAO;
@@ -139,6 +148,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
+
+        this.permissionsInterface = permissionsInterface;
 
         this.workflowDAO = workflowDAO;
         elasticManager = new ElasticManager();
@@ -685,14 +696,93 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @GET
     @Timed
     @UnitOfWork
+    @Path("shared")
+    @ApiOperation(value = "All workflows shared with user", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "List all workflows shared with user", tags = { "workflows"}, response = Workflow.class, responseContainer = "List")
+    public List<Workflow> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
+        return this.permissionsInterface.workflowsSharedWithUser(user).stream()
+                .map(encodedPath -> {
+                    try {
+                        final String path = URLDecoder.decode(encodedPath, "UTF-8");
+                        return workflowDAO.findByPath(path, false);
+                    } catch (UnsupportedEncodingException e) {
+                        return null;
+                    }
+                })
+                .filter(w -> w != null) // Just ignore
+                .collect(Collectors.toList());
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/path/workflow/{repository}")
     @ApiOperation(value = "Get a workflow by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
 
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        checkUser(user, workflow);
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            if (!permissionsInterface.canDoAction(user, workflow, Action.READ)) {
+                throw ex;
+            }
+        }
         return workflow;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/workflow/{repository}/permissions")
+    @ApiOperation(value = "Get all permissions for a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all permissions for a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
+    }
+
+    @PATCH
+    @Timed
+    @UnitOfWork
+    @Path("/path/workfow/{repository}/permissions")
+    @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Adds a permission for a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+            @ApiParam(value = "user permission", required = true) Permission permission) {
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        this.permissionsInterface.setPermission(workflow, user, permission);
+        return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/path/workfow/{repository}/permissions")
+    @ApiOperation(value = "Remove the specified user role for a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Removes a role from a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+            @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
+            @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        this.permissionsInterface.removePermission(workflow, user, email, role);
+        return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/workflow/{repository}/actions")
+    @ApiOperation(value = "Determine if user can perform an action on a workflow", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "", response = Boolean.class)
+    public Boolean canPerformAction(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+            @ApiParam(value = "action", required = true) @QueryParam("action") Action action) {
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        return this.permissionsInterface.canDoAction(user, workflow, action);
     }
 
     @GET

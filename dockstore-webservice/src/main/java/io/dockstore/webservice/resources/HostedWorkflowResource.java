@@ -22,6 +22,10 @@ import java.util.Set;
 import javax.ws.rs.Path;
 
 import io.dockstore.common.SourceControl;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.permissions.Action;
+import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
@@ -45,11 +49,14 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
+    private final PermissionsInterface permissionsInterface;
 
-    public HostedWorkflowResource(UserDAO userDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO, FileDAO fileDAO) {
+    public HostedWorkflowResource(UserDAO userDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO, FileDAO fileDAO,
+            PermissionsInterface permissionsInterface) {
         super(fileDAO, userDAO);
         this.workflowVersionDAO = workflowVersionDAO;
         this.workflowDAO = workflowDAO;
+        this.permissionsInterface = permissionsInterface;
     }
 
     @Override
@@ -67,6 +74,39 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted workflow", response = Workflow.class)
     public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace) {
         return super.createHosted(user, registry, name, descriptorType, namespace);
+    }
+
+    @Override
+    public void checkUserCanRead(User user, Entry entry) {
+        try {
+            checkUser(user, entry);
+        } catch (CustomWebApplicationException ex) {
+            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Action.READ)) {
+                throw ex;
+            }
+        }
+    }
+
+    @Override
+    public void checkUserCanUpdate(User user, Entry entry) {
+        try {
+            checkUser(user, entry);
+        } catch (CustomWebApplicationException ex) {
+            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Action.WRITE)) {
+                throw ex;
+            }
+        }
+    }
+
+    @Override
+    public void checkUserCanDelete(User user, Entry entry) {
+        try {
+            checkUser(user, entry);
+        } catch (CustomWebApplicationException ex) {
+            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Action.DELETE)) {
+                throw ex;
+            }
+        }
     }
 
     @Override
