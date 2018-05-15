@@ -20,14 +20,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import io.dockstore.common.Bridge;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -41,10 +39,6 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.MutableTriple;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,14 +146,8 @@ public class WDLHandler implements LanguageHandlerInterface {
         bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
-
         // Initialize data structures for DAG
         Map<String, List<String>> callToDependencies; // Mapping of stepId -> array of dependencies for the step
-        List<Pair<String, String>> nodePairs = new ArrayList<>();
-        Map<String, String> callToType = new HashMap<>();
-
-        // Initialize data structures for Tool table
-        Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
 
         Map<String, String> callToDockerMap;
         Map<String, String> namespaceToPath;
@@ -180,68 +168,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
-
-        // Create nodePairs, callToType, toolID, and toolDocker
-        for (Map.Entry<String, String> entry : callToDockerMap.entrySet()) {
-            String callId = entry.getKey();
-            String docker = entry.getValue();
-            nodePairs.add(new MutablePair<>(callId, docker));
-            if (Strings.isNullOrEmpty(docker)) {
-                callToType.put(callId, callType);
-            } else {
-                callToType.put(callId, toolType);
-            }
-            String dockerUrl = null;
-            if (!Strings.isNullOrEmpty(docker)) {
-                dockerUrl = getURLFromEntry(docker, dao);
-            }
-
-            // Determine if call is imported
-            String[] callName = callId.replaceFirst("^dockstore_", "").split("\\.");
-
-            if (callName.length > 1) {
-                nodeDockerInfo.put(callId, new MutableTriple<>(namespaceToPath.get(callName[0]), docker, dockerUrl));
-            } else {
-                nodeDockerInfo.put(callId, new MutableTriple<>(mainDescName, docker, dockerUrl));
-            }
-        }
-
-        // Determine start node edges
-        for (Pair<String, String> node : nodePairs) {
-            if (callToDependencies.get(node.getLeft()).size() == 0) {
-                ArrayList<String> dependencies = new ArrayList<>();
-                dependencies.add("UniqueBeginKey");
-                callToDependencies.put(node.getLeft(), dependencies);
-            }
-        }
-        nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
-
-        // Determine end node edges
-        Set<String> internalNodes = new HashSet<>(); // Nodes that are not leaf nodes
-        Set<String> leafNodes = new HashSet<>(); // Leaf nodes
-
-        for (Map.Entry<String, List<String>> entry : callToDependencies.entrySet()) {
-            List<String> dependencies = entry.getValue();
-            internalNodes.addAll(dependencies);
-            leafNodes.add(entry.getKey());
-        }
-
-        // Find leaf nodes by removing internal nodes
-        leafNodes.removeAll(internalNodes);
-
-        List<String> endDependencies = new ArrayList<>(leafNodes);
-
-        callToDependencies.put("UniqueEndKey", endDependencies);
-        nodePairs.add(new MutablePair<>("UniqueEndKey", ""));
-
-        // Create JSON for DAG/table
-        if (type == LanguageHandlerInterface.Type.DAG) {
-            return setupJSONDAG(nodePairs, callToDependencies, callToType, nodeDockerInfo);
-        } else if (type == LanguageHandlerInterface.Type.TOOLS) {
-            return getJSONTableToolContent(nodeDockerInfo);
-        }
-
-        return null;
+        return convertMapsToContent(mainDescName, type, dao, callType, toolType, callToDependencies, callToDockerMap, namespaceToPath);
     }
 
     /**
