@@ -14,14 +14,20 @@ import java.security.GeneralSecurityException;
 
 /**
  * @author gluu
- * @since 14/05/18
+ * @since 1.5.0
  */
 public final class GoogleHelper {
+    // Prefix for Dockstore usernames where the account with originally registered with Google
     public static final String GOOGLE_USERNAME_PREFIX = "google/";
 
     private GoogleHelper() {
     }
 
+    /**
+     * Retrieves info from Google and updates the user metadata
+     * @param token The Google access token
+     * @param user  The pre-updated user
+     */
     public static void updateGoogleUserData(String token, User user) {
         GoogleCredential credential = new GoogleCredential().setAccessToken(token);
         try {
@@ -35,6 +41,11 @@ public final class GoogleHelper {
         }
     }
 
+    /**
+     * Updates the User object's metadata using the Userinfoplus object provided by Google
+     * @param userinfo  The object provided by Google
+     * @param user      The pre-updated User object
+     */
     public static void updateUserFromGoogleUserinfoplus(Userinfoplus userinfo, User user) {
         user.setUsername(GoogleHelper.GOOGLE_USERNAME_PREFIX + userinfo.getName());
         user.setEmail(userinfo.getEmail());

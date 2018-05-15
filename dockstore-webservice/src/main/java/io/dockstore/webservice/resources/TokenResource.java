@@ -298,6 +298,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         return addGithubToken(null, code);
     }
 
+    /**
+     * Adds a Google token to the existing user if user is authenticated already.
+     * Otherwise, create a new Dockstore account too and also add token
+     * @param authUser      The optional Dockstore-authenticated user
+     * @param satellizerJson    Satellizer object returned by satellizer
+     * @return              The user's Dockstore token
+     */
     @POST
     @Timed
     @UnitOfWork
