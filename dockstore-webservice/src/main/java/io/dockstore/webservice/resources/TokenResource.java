@@ -320,6 +320,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         final String code = satellizerObject.get("code").getAsString();
         final String redirectUri = satellizerObject.get("redirectUri").getAsString();
         String accessToken = null;
+        String refreshToken = null;
         for (int i = 0; i < googleClientID.size() && accessToken == null; i++) {
             final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                     JSON_FACTORY, new GenericUrl("https://www.googleapis.com/oauth2/v4/token"),
@@ -328,6 +329,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             try {
                 TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUri).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
                 accessToken = tokenResponse.getAccessToken();
+                refreshToken = tokenResponse.getRefreshToken();
+                LOG.error(tokenResponse.getExpiresInSeconds().toString());
             } catch (IOException e) {
                 LOG.error("Retrieving accessToken was unsuccessful");
                 throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
@@ -341,18 +344,15 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             Userinfoplus userinfo = oauth2.userinfo().get().execute();
             long userID;
             Token dockstoreToken = null;
-            Token githubToken = null;
+            Token googleToken = null;
             String googleLoginName = GoogleHelper.GOOGLE_USERNAME_PREFIX + userinfo.getName();
             User user = userDAO.findByUsername(googleLoginName);
             if (user == null && !authUser.isPresent()) {
                 user = new User();
                 // Pull user information from Google
                 GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
-                Token dummyToken = new Token();
-                dummyToken.setContent(accessToken);
-                dummyToken.setUsername(googleLoginName);
-                dummyToken.setTokenSource(TokenType.GOOGLE_COM);
                 userID = userDAO.create(user);
+
 
                 // CREATE DOCKSTORE TOKEN
                 dockstoreToken = createDockstoreToken(userID, googleLoginName);
@@ -370,7 +370,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
                 tokens = tokenDAO.findGoogleByUserId(userID);
                 if (!tokens.isEmpty()) {
-                    githubToken = tokens.get(0);
+                    googleToken = tokens.get(0);
                 }
             }
 
@@ -379,24 +379,27 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 dockstoreToken = createDockstoreToken(userID, googleLoginName);
             }
 
-            if (githubToken == null) {
-                LOG.info("Could not find user's github token. Making new one...");
+            if (googleToken == null) {
+                LOG.info("Could not find user's Google token. Making new one...");
                 // CREATE GITHUB TOKEN
-                githubToken = new Token();
-                githubToken.setTokenSource(TokenType.GOOGLE_COM);
-                githubToken.setContent(accessToken);
-                githubToken.setUserId(userID);
-                githubToken.setUsername(googleLoginName);
-                tokenDAO.create(githubToken);
-                LOG.info("Github token created for {}", googleLoginName);
+                googleToken = new Token();
+                googleToken.setTokenSource(TokenType.GOOGLE_COM);
+                googleToken.setContent(accessToken);
+                googleToken.setRefreshToken(refreshToken);
+                googleToken.setUserId(userID);
+                googleToken.setUsername(googleLoginName);
+                tokenDAO.create(googleToken);
+                LOG.info("Google token created for {}", googleLoginName);
+            } else {
+                // Update tokens if exists
+                googleToken.setContent(accessToken);
+                googleToken.setRefreshToken(refreshToken);
+                tokenDAO.update(googleToken);
             }
             return dockstoreToken;
-        } catch (GeneralSecurityException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (GeneralSecurityException | IOException e) {
+            throw new CustomWebApplicationException(e.getMessage() + ". Could not use OAuth 2.0 client credentials.", HttpStatus.SC_BAD_REQUEST);
         }
-        return null;
     }
 
     @GET
