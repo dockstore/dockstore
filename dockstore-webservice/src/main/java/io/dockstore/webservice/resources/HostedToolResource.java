@@ -106,6 +106,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         return tool;
     }
 
+    //TODO: Need to implement this when we extend hosted tool support
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
         return true;

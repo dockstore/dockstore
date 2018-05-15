@@ -125,7 +125,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
         boolean isValidVersion = checkValidVersion(versionSourceFiles, entry);
         if (!isValidVersion) {
-            throw new WebApplicationException("The reversion is not valid", HttpStatus.SC_BAD_REQUEST);
+            throw new WebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
         }
         version.setValid(isValidVersion);
         version.setVersionEditor(user);
