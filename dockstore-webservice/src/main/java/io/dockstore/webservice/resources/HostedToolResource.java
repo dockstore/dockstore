@@ -88,10 +88,10 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     protected Tag getVersion(Tool tool) {
         Tag tag = new Tag();
-        tag.setCwlPath("Dockstore.cwl");
-        tag.setDockerfilePath("Dockerfile");
+        tag.setCwlPath("/Dockstore.cwl");
+        tag.setDockerfilePath("/Dockerfile");
         tag.setAutomated(false);
-        tag.setWdlPath("Dockstore.wdl");
+        tag.setWdlPath("/Dockstore.wdl");
         tag.setReferenceType(Version.ReferenceType.TAG);
         tag.setLastModified(new Date());
         return tag;
@@ -104,5 +104,11 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         Tool tool = super.deleteHostedVersion(user, entryId, version);
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
+    }
+
+    //TODO: Need to implement this when we extend hosted tool support
+    @Override
+    protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
+        return true;
     }
 }

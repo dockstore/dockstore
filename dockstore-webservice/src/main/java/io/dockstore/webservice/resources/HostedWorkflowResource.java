@@ -16,6 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Date;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.ws.rs.Path;
@@ -31,6 +32,7 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 
@@ -74,7 +76,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setOrganization(user.getUsername());
         workflow.setRepository(name);
         workflow.setSourceControl(SourceControl.DOCKSTORE);
-        // TODO: do a proper check here
         workflow.setDescriptorType(descriptorType);
         workflow.getUsers().add(user);
         return workflow;
@@ -91,7 +92,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion getVersion(Workflow workflow) {
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
-        version.setWorkflowPath("Dockstore." + workflow.getDescriptorType());
+        version.setWorkflowPath("/Dockstore." + workflow.getDescriptorType());
         version.setLastModified(new Date());
         return version;
     }
@@ -101,5 +102,17 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Delete a revision of a hosted workflow", response = Workflow.class)
     public Workflow deleteHostedVersion(User user, Long entryId, String version) {
         return super.deleteHostedVersion(user, entryId, version);
+    }
+
+    @Override
+    protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Workflow entry) {
+        SourceFile.FileType identifiedType = entry.getFileType();
+        String mainDescriptorPath = "/Dockstore." + entry.getDescriptorType().toLowerCase();
+        for (SourceFile sourceFile : sourceFiles) {
+            if (Objects.equals(sourceFile.getPath(), mainDescriptorPath)) {
+                return LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent());
+            }
+        }
+        return false;
     }
 }

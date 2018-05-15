@@ -31,6 +31,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -98,6 +99,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "For tools, the Docker registry") @QueryParam("registry") String registry,
         @ApiParam(value = "name", required = true) @QueryParam("name") String name,
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
+        checkType(descriptorType);
         T entry = getEntry(user, registry, name, descriptorType);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
@@ -120,7 +122,12 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkUser(user, entry);
         checkHosted(entry);
         U version = getVersion(entry);
-        handleSourceFileMerger(entryId, sourceFiles, entry, version);
+        Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
+        boolean isValidVersion = checkValidVersion(versionSourceFiles, entry);
+        if (!isValidVersion) {
+            throw new WebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
+        }
+        version.setValid(isValidVersion);
         version.setVersionEditor(user);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
@@ -129,6 +136,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
     }
+
+    protected abstract boolean checkValidVersion(Set<SourceFile> sourceFiles, T entry);
 
     private void checkHosted(T entry) {
         if (entry instanceof Tool) {
@@ -139,6 +148,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             if (((Workflow)entry).getMode() != WorkflowMode.HOSTED) {
                 throw new WebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
             }
+        }
+    }
+
+    private void checkType(String descriptorType) {
+        if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
+                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
+                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
+            throw new WebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -165,7 +182,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return entry;
     }
 
-    private void handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
+    private Set<SourceFile> handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
         Set<U> versions = entry.getVersions();
         Map<String, SourceFile> map = new HashMap<>();
 
@@ -216,5 +233,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             long l = fileDAO.create(e);
             tag.getSourceFiles().add(fileDAO.findById(l));
         }
+        return tag.getSourceFiles();
     }
 }
