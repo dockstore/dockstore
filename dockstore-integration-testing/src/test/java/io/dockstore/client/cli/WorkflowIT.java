@@ -21,8 +21,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
+import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.LanguageType;
@@ -288,6 +291,20 @@ public class WorkflowIT extends BaseIT {
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
+        Optional<WorkflowVersion> first = refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("1.0"))
+            .findFirst();
+        String tableToolContent = workflowApi.getTableToolContent(refreshGithub.getId(), first.get().getId());
+        String workflowDag = workflowApi.getWorkflowDag(refreshGithub.getId(), first.get().getId());
+        assertTrue("tool table should be present", !tableToolContent.isEmpty());
+        assertTrue("workflow dag should be present", !workflowDag.isEmpty());
+        Gson gson = new Gson();
+        List<Map<String, String>> list = gson.fromJson(tableToolContent, List.class);
+        Map<Map,List> map = gson.fromJson(workflowDag, Map.class);
+        assertTrue("tool table should be present", list.size() >= 9);
+        long dockerCount = list.stream().filter(tool -> !tool.get("docker").isEmpty()).count();
+        assertEquals("tool table is populated with docker images", dockerCount, list.size());
+        assertTrue("workflow dag should be present", map.entrySet().size() >= 2);
+        assertTrue("workflow dag is not as large as expected", map.get("nodes").size() >= 11 && map.get("edges").size() >= 10);
     }
 
     /**
