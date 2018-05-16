@@ -118,9 +118,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String gitlabClientID;
     private final String gitlabRedirectUri;
     private final String gitlabClientSecret;
-    private final List<String> googleClientID;
+    private final String googleClientID;
     private final String googleRedirectUri;
-    private final List<String> googleClientSecret;
+    private final String googleClientSecret;
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
@@ -321,16 +321,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         final String redirectUri = satellizerObject.get("redirectUri").getAsString();
         String accessToken = null;
         String refreshToken = null;
-        for (int i = 0; i < googleClientID.size() && accessToken == null; i++) {
+        if (accessToken == null) {
             final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                    JSON_FACTORY, new GenericUrl("https://www.googleapis.com/oauth2/v4/token"),
-                    new ClientParametersAuthentication(googleClientID.get(i), googleClientSecret.get(i)), googleClientID.get(i),
-                    "https://accounts.google.com/o/oauth2/v2/auth").build();
+                    JSON_FACTORY, new GenericUrl(GoogleHelper.GOOGLE_ENCODED_URL),
+                    new ClientParametersAuthentication(googleClientID, googleClientSecret), googleClientID,
+                GoogleHelper.GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL).build();
             try {
                 TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUri).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
                 accessToken = tokenResponse.getAccessToken();
                 refreshToken = tokenResponse.getRefreshToken();
-                LOG.error(tokenResponse.getExpiresInSeconds().toString());
+                LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");
             } catch (IOException e) {
                 LOG.error("Retrieving accessToken was unsuccessful");
                 throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);

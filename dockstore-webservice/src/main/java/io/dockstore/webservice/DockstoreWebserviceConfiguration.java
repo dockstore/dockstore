@@ -51,7 +51,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotEmpty
     private List<String> githubClientID;
 
-    private List<String> googleClientID;
+    private String googleClientID;
 
     @NotEmpty
     private String gitlabClientID;
@@ -74,7 +74,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String googleRedirectURI;
 
-    private List<String> googleClientSecret;
+    private String googleClientSecret;
 
     @NotEmpty
     private String gitlabRedirectURI;
@@ -331,12 +331,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     @JsonProperty
-    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-    public List<String> getGoogleClientID() {
+    public String getGoogleClientID() {
         return googleClientID;
     }
 
-    public void setGoogleClientID(List<String> googleClientID) {
+    public void setGoogleClientID(String googleClientID) {
         this.googleClientID = googleClientID;
     }
 
@@ -350,12 +349,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     }
 
     @JsonProperty
-    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
-    public List<String> getGoogleClientSecret() {
+    public String getGoogleClientSecret() {
         return googleClientSecret;
     }
 
-    public void setGoogleClientSecret(List<String> googleClientSecret) {
+    public void setGoogleClientSecret(String googleClientSecret) {
         this.googleClientSecret = googleClientSecret;
     }
 

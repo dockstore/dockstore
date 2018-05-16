@@ -17,8 +17,10 @@ import java.security.GeneralSecurityException;
  * @since 1.5.0
  */
 public final class GoogleHelper {
-    // Prefix for Dockstore usernames where the account with originally registered with Google
+    // Prefix for Dockstore usernames where the account was originally registered with Google
     public static final String GOOGLE_USERNAME_PREFIX = "google/";
+    public static final String GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+    public static final String GOOGLE_ENCODED_URL = "https://www.googleapis.com/oauth2/v4/token";
 
     private GoogleHelper() {
     }
@@ -37,7 +39,7 @@ public final class GoogleHelper {
             Userinfoplus userinfoplus = oauth2.userinfo().get().execute();
             updateUserFromGoogleUserinfoplus(userinfoplus, user);
         } catch (GeneralSecurityException | IOException e) {
-            throw new CustomWebApplicationException("Could not get Google profile.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Could not get Google profile of " + user.getUsername() + ".", HttpStatus.SC_BAD_REQUEST);
         }
     }
 

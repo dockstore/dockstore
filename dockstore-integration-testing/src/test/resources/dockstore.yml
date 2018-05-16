@@ -14,7 +14,7 @@ bitbucketClientSecret: <fill me in>
 googleClientID: <fill me in>
 googleClientSecret: <fill me in>
 # port should match the port where the UI is being hosted, 4200 by default
-googleRedirectURI: <fill me in>
+googleRedirectURI: http://<fill me in>:8080/auth/tokens/google.com
 
 hostname: localhost
 scheme: http
