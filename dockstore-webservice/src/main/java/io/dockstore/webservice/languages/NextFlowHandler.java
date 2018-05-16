@@ -146,8 +146,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         Map<String, List<String>> callToDependencies = this.getCallsToDependencies(mainDescriptor);
         // Get import files
         Map<String, String> namespaceToPath = this.getImportMap(mainDescriptor);
-
-        return convertMapsToContent(mainDescName, type, dao, callType, toolType, callToDependencies, callToDockerMap, namespaceToPath);
+        Map<String, ToolInfo> toolInfoMap = WDLHandler.mapConverterToToolInfo(callToDockerMap, callToDependencies);
+        return convertMapsToContent(mainScriptPath, type, dao, callType, toolType, toolInfoMap, namespaceToPath);
     }
 
     private Map<String, String> getImportMap(String mainDescriptor) {

@@ -147,9 +147,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
         // Initialize data structures for DAG
-        Map<String, List<String>> callToDependencies; // Mapping of stepId -> array of dependencies for the step
-
-        Map<String, String> callToDockerMap;
+        Map<String, ToolInfo> toolInfoMap;
         Map<String, String> namespaceToPath;
         File tempMainDescriptor = null;
         // Write main descriptor to file
@@ -157,10 +155,12 @@ public class WDLHandler implements LanguageHandlerInterface {
         try {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
+
             // Iterate over each call, grab docker containers
-            callToDockerMap = bridge.getCallsToDockerMap(tempMainDescriptor);
+            Map<String, String> callsToDockerMap = bridge.getCallsToDockerMap(tempMainDescriptor);
             // Iterate over each call, determine dependencies
-            callToDependencies = bridge.getCallsToDependencies(tempMainDescriptor);
+            Map<String, List<String>> callsToDependencies = bridge.getCallsToDependencies(tempMainDescriptor);
+            toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
             // Get import files
             namespaceToPath = bridge.getImportMap(tempMainDescriptor);
         } catch (IOException e) {
@@ -168,7 +168,35 @@ public class WDLHandler implements LanguageHandlerInterface {
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
-        return convertMapsToContent(mainDescName, type, dao, callType, toolType, callToDependencies, callToDockerMap, namespaceToPath);
+        return convertMapsToContent(mainDescName, type, dao, callType, toolType, toolInfoMap, namespaceToPath);
+    }
+
+    /**
+     * For existing code, converts from maps of untyped data to ToolInfo
+     * @param callsToDockerMap map from names of tools to Docker containers
+     * @param callsToDependencies map from names of tools to names of their parent tools (dependencies)
+     * @return
+     */
+    static Map<String, ToolInfo> mapConverterToToolInfo(Map<String, String> callsToDockerMap, Map<String, List<String>> callsToDependencies) {
+        Map<String, ToolInfo> toolInfoMap;
+        toolInfoMap = new HashMap<>();
+        callsToDockerMap.forEach((toolName, containerName) -> toolInfoMap.compute(toolName, (key, value) -> {
+            if (value == null) {
+                return new ToolInfo(containerName, new ArrayList<>());
+            } else {
+                value.dockerContainer = containerName;
+                return value;
+            }
+        }));
+        callsToDependencies.forEach((toolName, dependencies) -> toolInfoMap.compute(toolName, (key, value) -> {
+            if (value == null) {
+                return new ToolInfo(null, new ArrayList<>());
+            } else {
+                value.toolDependencyList.addAll(dependencies);
+                return value;
+            }
+        }));
+        return toolInfoMap;
     }
 
     /**
