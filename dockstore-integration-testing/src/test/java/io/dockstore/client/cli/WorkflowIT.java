@@ -21,8 +21,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
+import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.LanguageType;
@@ -52,8 +55,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
-import org.junit.contrib.java.lang.system.SystemErrRule;
-import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
@@ -77,13 +78,12 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
-    private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
+    // workflow with external library in lib directory
+    private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
+    // workflow that uses containers
+    private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/galaxy-workflows";
 
-    @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
-    @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -223,10 +223,6 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testNextFlowRefresh() throws ApiException {
-        // need to promote user to admin to refresh all stubs
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
-
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
@@ -240,13 +236,13 @@ public class WorkflowIT extends BaseIT {
         }
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_WORKFLOW);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
@@ -268,6 +264,47 @@ public class WorkflowIT extends BaseIT {
         assertTrue("should find 2 files for each version for now: " + refreshGithub.getWorkflowVersions().stream()
                 .filter(workflowVersion -> workflowVersion.getSourceFiles().size() != 2).count(),
             refreshGithub.getWorkflowVersions().stream().noneMatch(workflowVersion -> workflowVersion.getSourceFiles().size() != 2));
+    }
+
+    @Test
+    public void testNextFlowWorkflowWithImages() {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+
+        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+
+        for (Workflow workflow: workflows) {
+            assertNotSame("", workflow.getWorkflowName());
+        }
+
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW);
+        // need to set paths properly
+        workflowByPathGithub.setWorkflowPath("/nextflow.config");
+        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
+
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW);
+        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+
+        assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
+        Optional<WorkflowVersion> first = refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("1.0"))
+            .findFirst();
+        String tableToolContent = workflowApi.getTableToolContent(refreshGithub.getId(), first.get().getId());
+        String workflowDag = workflowApi.getWorkflowDag(refreshGithub.getId(), first.get().getId());
+        assertTrue("tool table should be present", !tableToolContent.isEmpty());
+        assertTrue("workflow dag should be present", !workflowDag.isEmpty());
+        Gson gson = new Gson();
+        List<Map<String, String>> list = gson.fromJson(tableToolContent, List.class);
+        Map<Map,List> map = gson.fromJson(workflowDag, Map.class);
+        assertTrue("tool table should be present", list.size() >= 9);
+        long dockerCount = list.stream().filter(tool -> !tool.get("docker").isEmpty()).count();
+        assertEquals("tool table is populated with docker images", dockerCount, list.size());
+        assertTrue("workflow dag should be present", map.entrySet().size() >= 2);
+        assertTrue("workflow dag is not as large as expected", map.get("nodes").size() >= 11 && map.get("edges").size() >= 10);
     }
 
     /**
