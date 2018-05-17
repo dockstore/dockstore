@@ -375,7 +375,6 @@ public abstract class AbstractImageRegistry {
         }
         FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
         toolDAO.create(tool);
-
     }
 
     private static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken,
