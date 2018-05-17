@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
@@ -36,8 +37,8 @@ import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
-import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.FileFormat;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -206,9 +207,9 @@ public class CWLHandler implements LanguageHandlerInterface {
         Yaml yaml = new Yaml();
         if (isValidCwl(mainDescriptor, yaml)) {
             // Initialize data structures for DAG
-            Map<String, List<String>> stepToDependencies = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
+            Map<String, ToolInfo> toolInfoMap = new HashMap<>(); // Mapping of stepId -> array of dependencies for the step
             List<Pair<String, String>> nodePairs = new ArrayList<>();       // List of pairings of step id and dockerPull url
-            Map<String, String> stepToType = new HashMap<>();                    // Map of stepId -> type (expression tool, tool, workflow)
+            Map<String, String> stepToType = new HashMap<>();               // Map of stepId -> type (expression tool, tool, workflow)
             String defaultDockerPath = null;
 
             // Initialize data structures for Tool table
@@ -270,7 +271,11 @@ public class CWLHandler implements LanguageHandlerInterface {
                             processDependencies(nodePrefix, stepDependencies, sources);
                         }
                         if (stepDependencies.size() > 0) {
-                            stepToDependencies.put(workflowStepId, stepDependencies);
+                            toolInfoMap.computeIfPresent(workflowStepId, (toolId, toolInfo) -> {
+                                toolInfo.toolDependencyList.addAll(stepDependencies);
+                                return toolInfo;
+                            });
+                            toolInfoMap.computeIfAbsent(workflowStepId, toolId -> new ToolInfo(null, stepDependencies));
                         }
                     }
 
@@ -348,27 +353,25 @@ public class CWLHandler implements LanguageHandlerInterface {
 
                 if (type == LanguageHandlerInterface.Type.DAG) {
                     // Determine steps that point to end
-                    ArrayList<String> endDependencies = new ArrayList<>();
+                    List<String> endDependencies = new ArrayList<>();
 
                     for (WorkflowOutputParameter workflowOutputParameter : workflow.getOutputs()) {
                         Object sources = workflowOutputParameter.getOutputSource();
                         processDependencies(nodePrefix, endDependencies, sources);
                     }
 
-                    stepToDependencies.put("UniqueEndKey", endDependencies);
+                    toolInfoMap.put("UniqueEndKey", new ToolInfo(null, endDependencies));
                     nodePairs.add(new MutablePair<>("UniqueEndKey", ""));
 
                     // connect start node with them
                     for (Pair<String, String> node : nodePairs) {
-                        if (stepToDependencies.get(node.getLeft()) == null) {
-                            ArrayList<String> dependencies = new ArrayList<>();
-                            dependencies.add("UniqueBeginKey");
-                            stepToDependencies.put(node.getLeft(), dependencies);
+                        if (toolInfoMap.get(node.getLeft()) == null) {
+                            toolInfoMap.put(node.getLeft(), new ToolInfo(null, Lists.newArrayList("UniqueBeginKey")));
                         }
                     }
                     nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
 
-                    return setupJSONDAG(nodePairs, stepToDependencies, stepToType, nodeDockerInfo);
+                    return setupJSONDAG(nodePairs, toolInfoMap, stepToType, nodeDockerInfo);
                 } else {
                     return getJSONTableToolContent(nodeDockerInfo);
                 }
@@ -381,7 +384,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
     }
 
-    private void processDependencies(String nodePrefix, ArrayList<String> endDependencies, Object sources) {
+    private void processDependencies(String nodePrefix, List<String> endDependencies, Object sources) {
         if (sources != null) {
             if (sources instanceof String) {
                 String[] sourceSplit = ((String)sources).split("/");
@@ -389,7 +392,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     endDependencies.add(nodePrefix + sourceSplit[0].replaceFirst("#", ""));
                 }
             } else {
-                List<String> filteredDependencies = filterDependent((ArrayList<String>)sources, nodePrefix);
+                List<String> filteredDependencies = filterDependent((List<String>)sources, nodePrefix);
                 endDependencies.addAll(filteredDependencies);
             }
         }
@@ -459,7 +462,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     private String getRequirementOrHint(List<Object> requirements, List<Object> hints, String dockerPull) {
         dockerPull = getDockerRequirement(requirements, dockerPull);
         if (dockerPull == null) {
-            dockerPull = getDockerHint(hints, dockerPull);
+            dockerPull = getDockerRequirement(hints, null);
         }
         return dockerPull;
     }
@@ -513,28 +516,6 @@ public class CWLHandler implements LanguageHandlerInterface {
             for (Object requirement : requirements) {
                 Object dockerRequirement = ((Map)requirement).get("class");
                 Object dockerPull = ((Map)requirement).get("dockerPull");
-                if (Objects.equals(dockerRequirement, "DockerRequirement") && dockerPull != null) {
-                    return dockerPull.toString();
-                }
-            }
-        }
-
-        return currentDefault;
-    }
-
-    /**
-     * Given a list of CWL hints, will return the DockerPull information if present.
-     * If not will return the current docker path (currentDefault)
-     *
-     * @param hints
-     * @param currentDefault
-     * @return
-     */
-    private String getDockerHint(List<Object> hints, String currentDefault) {
-        if (hints != null) {
-            for (Object hint : hints) {
-                Object dockerRequirement = ((Map)hint).get("class");
-                Object dockerPull = ((Map)hint).get("dockerPull");
                 if (Objects.equals(dockerRequirement, "DockerRequirement") && dockerPull != null) {
                     return dockerPull.toString();
                 }

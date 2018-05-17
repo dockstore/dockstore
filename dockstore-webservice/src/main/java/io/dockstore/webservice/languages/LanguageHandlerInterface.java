@@ -17,6 +17,7 @@ package io.dockstore.webservice.languages;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -31,6 +33,8 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -42,10 +46,10 @@ import org.slf4j.LoggerFactory;
 public interface LanguageHandlerInterface {
     Logger LOG = LoggerFactory.getLogger(LanguageHandlerInterface.class);
 
-
     /**
      * Parses the content of the primary descriptor to get author, email, and description
-     * @param entry an entry to be updated
+     *
+     * @param entry   an entry to be updated
      * @param content a cwl document
      * @return the updated entry
      */
@@ -53,6 +57,7 @@ public interface LanguageHandlerInterface {
 
     /**
      * Confirms whether the content of a descriptor contains a valid workflow
+     *
      * @param content the content of a descriptor
      * @return true iff the workflow looks like a valid workflow
      */
@@ -60,46 +65,42 @@ public interface LanguageHandlerInterface {
 
     /**
      * Look at the content of a descriptor and update its imports
-     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
-     * @param content content of the primary descriptor
-     * @param version version of the files to get
+     *
+     * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name`
+     * @param content                 content of the primary descriptor
+     * @param version                 version of the files to get
      * @param sourceCodeRepoInterface used too retrieve imports
      * @return map of file paths to SourceFile objects
      */
-    Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface);
+    Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface);
 
     /**
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation
      * of a workflow
-     * @param mainDescName the name of the main descriptor
-     * @param mainDescriptor the content of the main descriptor
+     *
+     * @param mainDescName         the name of the main descriptor
+     * @param mainDescriptor       the content of the main descriptor
      * @param secondaryDescContent the content of the secondary descriptors in a map, looks like file paths -> content
-     * @param type tools or DAG
-     * @param dao used to retrieve information on tools
+     * @param type                 tools or DAG
+     * @param dao                  used to retrieve information on tools
      * @return either a DAG or some form of a list of tools for a workflow
      */
     String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
 
-    enum Type {
-        DAG, TOOLS
-    }
-
-    // the following are helper methods used by implementations of getContent, messy, but not sure where to put them for now
-
     /**
      * This method will setup the nodes (nodePairs) and edges (stepToDependencies) into Cytoscape compatible JSON
      *
-     * @param nodePairs looks like a list of node ids and docker pull information (often null)
-     * @param stepToDependencies looks like a map of node ids to their children
-     * @param stepToType looks like a list of node ids paired with their type
-     * @param nodeDockerInfo also looks like a list of node ids mapped to a triple describing where it came from and some docker information?
+     * @param nodePairs          looks like a list of node ids and docker pull information (often null)
+     * @param stepToDependencies looks like a map of node ids to their parents
+     * @param stepToType         looks like a list of node ids paired with their type
+     * @param nodeDockerInfo     also looks like a list of node ids mapped to a triple describing where it came from and some docker information?
      * @return Cytoscape compatible JSON with nodes and edges
      */
-    default String setupJSONDAG(List<Pair<String, String>> nodePairs, Map<String, List<String>> stepToDependencies,
+    default String setupJSONDAG(List<Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
         Map<String, String> stepToType, Map<String, Triple<String, String, String>> nodeDockerInfo) {
-        List<Object> nodes = new ArrayList<>();
-        List<Object> edges = new ArrayList<>();
-        Map<String, List<Object>> dagJson = new LinkedHashMap<>();
+        List<Map<String, Map<String, String>>> nodes = new ArrayList<>();
+        List<Map<String, Map<String, String>>> edges = new ArrayList<>();
 
         // Iterate over steps, make nodes and edges
         for (Pair<String, String> node : nodePairs) {
@@ -109,7 +110,7 @@ public interface LanguageHandlerInterface {
                 dockerUrl = nodeDockerInfo.get(stepId).getRight();
             }
 
-            Map<String, Object> nodeEntry = new HashMap<>();
+            Map<String, Map<String, String>> nodeEntry = new HashMap<>();
             Map<String, String> dataEntry = new HashMap<>();
             dataEntry.put("id", stepId);
             dataEntry.put("tool", dockerUrl);
@@ -126,8 +127,8 @@ public interface LanguageHandlerInterface {
 
             // Make edges based on dependencies
             if (stepToDependencies.get(stepId) != null) {
-                for (String dependency : stepToDependencies.get(stepId)) {
-                    Map<String, Object> edgeEntry = new HashMap<>();
+                for (String dependency : stepToDependencies.get(stepId).toolDependencyList) {
+                    Map<String, Map<String, String>> edgeEntry = new HashMap<>();
                     Map<String, String> sourceTarget = new HashMap<>();
                     sourceTarget.put("source", dependency);
                     sourceTarget.put("target", stepId);
@@ -137,11 +138,14 @@ public interface LanguageHandlerInterface {
             }
         }
 
+        Map<String, List<Map<String, Map<String, String>>>> dagJson = new LinkedHashMap<>();
         dagJson.put("nodes", nodes);
         dagJson.put("edges", edges);
 
         return convertToJSONString(dagJson);
     }
+
+    // the following are helper methods used by implementations of getContent, messy, but not sure where to put them for now
 
     /**
      * This method will setup the tools of a workflow
@@ -254,5 +258,111 @@ public interface LanguageHandlerInterface {
         }
 
         return url;
+    }
+
+    /**
+     * Terrible refactor in progress.
+     * This code is used by both WDL and Nextflow to deal with the maps that we create for them.
+     *
+     * @param mainDescName    the filename of the main desciptor, used in the DAG list to indicate which tasks live in which descriptors
+     * @param type            are we handling DAG or tools listing
+     * @param dao             data access to tools
+     * @param callType        ?
+     * @param toolType        labels nodes of the DAG
+     * @param toolInfoMap     map from names of tools to their dependencies (processes that had to come before) and to actual Docker containers that are used
+     * @param namespaceToPath ?
+     * @return the actual JSON output of either a DAG or tool listing
+     */
+    default String convertMapsToContent(final String mainDescName, final Type type, ToolDAO dao, final String callType,
+        final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
+
+        // Initialize data structures for DAG
+        List<Pair<String, String>> nodePairs = new ArrayList<>();
+        Map<String, String> callToType = new HashMap<>();
+
+        // Initialize data structures for Tool table
+        Map<String, Triple<String, String, String>> nodeDockerInfo = new HashMap<>(); // map of stepId -> (run path, docker image, docker url)
+
+        // Create nodePairs, callToType, toolID, and toolDocker
+        for (Map.Entry<String, ToolInfo> entry : toolInfoMap.entrySet()) {
+            String callId = entry.getKey();
+            String docker = entry.getValue().dockerContainer;
+            nodePairs.add(new MutablePair<>(callId, docker));
+            if (Strings.isNullOrEmpty(docker)) {
+                callToType.put(callId, callType);
+            } else {
+                callToType.put(callId, toolType);
+            }
+            String dockerUrl = null;
+            if (!Strings.isNullOrEmpty(docker)) {
+                dockerUrl = getURLFromEntry(docker, dao);
+            }
+
+            // Determine if call is imported
+            String[] callName = callId.replaceFirst("^dockstore_", "").split("\\.");
+
+            if (callName.length > 1) {
+                nodeDockerInfo.put(callId, new MutableTriple<>(namespaceToPath.get(callName[0]), docker, dockerUrl));
+            } else {
+                nodeDockerInfo.put(callId, new MutableTriple<>(mainDescName, docker, dockerUrl));
+            }
+        }
+
+        // Determine start node edges
+        for (Pair<String, String> node : nodePairs) {
+            ToolInfo toolInfo = toolInfoMap.get(node.getLeft());
+            if (toolInfo.toolDependencyList.size() == 0) {
+                toolInfo.toolDependencyList.add("UniqueBeginKey");
+            }
+        }
+        nodePairs.add(new MutablePair<>("UniqueBeginKey", ""));
+
+        // Determine end node edges
+        Set<String> internalNodes = new HashSet<>(); // Nodes that are not leaf nodes
+        Set<String> leafNodes = new HashSet<>(); // Leaf nodes
+
+        for (Map.Entry<String, ToolInfo> entry : toolInfoMap.entrySet()) {
+            List<String> dependencies = entry.getValue().toolDependencyList;
+            internalNodes.addAll(dependencies);
+            leafNodes.add(entry.getKey());
+        }
+
+        // Find leaf nodes by removing internal nodes
+        leafNodes.removeAll(internalNodes);
+
+        List<String> endDependencies = new ArrayList<>(leafNodes);
+
+        toolInfoMap.put("UniqueEndKey", new ToolInfo(null, endDependencies));
+        nodePairs.add(new MutablePair<>("UniqueEndKey", ""));
+
+        // Create JSON for DAG/table
+        if (type == Type.DAG) {
+            return setupJSONDAG(nodePairs, toolInfoMap, callToType, nodeDockerInfo);
+        } else if (type == Type.TOOLS) {
+            return getJSONTableToolContent(nodeDockerInfo);
+        }
+
+        return null;
+    }
+
+    enum Type {
+        DAG, TOOLS
+    }
+
+    class ToolInfo {
+
+        /**
+         * Currently, the id of a docker container as used by docker pull.
+         * Due to some confusion, this is used by nfl and wdl, but not cwl.
+         */
+        String dockerContainer;
+        /**
+         * A list if ids for tools, processes that had to come before
+         */
+        List<String> toolDependencyList;
+        ToolInfo(String dockerContainer, List<String> toolDependencyList) {
+            this.dockerContainer = dockerContainer;
+            this.toolDependencyList = toolDependencyList;
+        }
     }
 }

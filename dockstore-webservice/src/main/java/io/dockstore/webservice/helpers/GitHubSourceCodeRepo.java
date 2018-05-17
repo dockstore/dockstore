@@ -180,7 +180,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // need to double-check whether this is a symlink by getting the specific file which sucks
             GHContent fileContent = repo.getFileContent(content.getPath(), reference);
             // this is deprecated, but this seems to be the only way to get the actual content, rather than the content on the symbolic link
-            return Pair.of(fileContent, fileContent.getContent());
+            try {
+                return Pair.of(fileContent, fileContent.getContent());
+            } catch (NullPointerException ex) {
+                LOG.info("looks like we were unable to retrieve " + fileName + " at " + reference + " , possible submodule reference?");
+                // seems to be thrown on submodules with the new library
+                return null;
+            }
         }
 
         return null;
@@ -356,7 +362,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 }
 
             } catch (Exception ex) {
-                LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow");
+                LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
             }
 
 
