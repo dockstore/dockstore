@@ -51,6 +51,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotEmpty
     private List<String> githubClientID;
 
+    @NotEmpty
     private String googleClientID;
 
     @NotEmpty
@@ -72,8 +73,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotEmpty
     private List<String> githubClientSecret;
 
+    @NotEmpty
     private String googleRedirectURI;
 
+    @NotEmpty
     private String googleClientSecret;
 
     @NotEmpty
