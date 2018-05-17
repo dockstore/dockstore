@@ -101,8 +101,12 @@ public class WDLHandler implements LanguageHandlerInterface {
                     });
                 }
             });
-            entry.setAuthor(Joiner.on(", ").join(authors));
-            entry.setEmail(Joiner.on(", ").join(emails));
+            if (!authors.isEmpty()) {
+                entry.setAuthor(Joiner.on(", ").join(authors));
+            }
+            if (!emails.isEmpty()) {
+                entry.setEmail(Joiner.on(", ").join(emails));
+            }
         } catch (WdlParser.SyntaxError syntaxError) {
             LOG.info("Invalid WDL file.");
         }
