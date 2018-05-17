@@ -87,18 +87,19 @@ public class WDLHandler implements LanguageHandlerInterface {
             // rummage through tasks, each task should have at most one meta
             body.stream().filter(node -> node instanceof WdlParser.Ast && ((WdlParser.Ast)node).getName().equals("Task")).forEach(node -> {
                 List<WdlParser.Ast> meta = extractTargetFromAST(node, "Meta");
-                Map<String, WdlParser.AstNode> attributes = meta.get(0).getAttributes();
-                attributes.values().forEach(value -> {
-                    String email = extractRuntimeAttributeFromAST(value, "email");
-                    if (email != null) {
-                        emails.add(email);
-                    }
-                    String author = extractRuntimeAttributeFromAST(value, "author");
-                    if (author != null) {
-                        authors.add(author);
-                    }
-                });
-
+                if (meta != null) {
+                    Map<String, WdlParser.AstNode> attributes = meta.get(0).getAttributes();
+                    attributes.values().forEach(value -> {
+                        String email = extractRuntimeAttributeFromAST(value, "email");
+                        if (email != null) {
+                            emails.add(email);
+                        }
+                        String author = extractRuntimeAttributeFromAST(value, "author");
+                        if (author != null) {
+                            authors.add(author);
+                        }
+                    });
+                }
             });
             entry.setAuthor(Joiner.on(", ").join(authors));
             entry.setEmail(Joiner.on(", ").join(emails));
