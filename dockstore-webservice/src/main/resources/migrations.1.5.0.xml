@@ -81,4 +81,15 @@
         <addForeignKeyConstraint baseColumnNames="versioneditor_id" baseTableName="workflowversion" constraintName="versionEditorForWorkflows" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
         <addForeignKeyConstraint baseColumnNames="versioneditor_id" baseTableName="tag" constraintName="versionEditorForTools" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
+
+    <!-- add commit id -->
+    <changeSet author="dyuen (generated)" id="add commit ids to versions">
+        <addColumn tableName="tag">
+            <column name="commitid" type="text"/>
+        </addColumn>
+        <addColumn tableName="workflowversion">
+            <column name="commitid" type="text"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
