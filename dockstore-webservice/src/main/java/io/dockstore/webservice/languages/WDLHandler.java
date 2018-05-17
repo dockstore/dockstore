@@ -96,10 +96,10 @@ public class WDLHandler implements LanguageHandlerInterface {
                     });
                 }
             });
-            if (!authors.isEmpty()) {
+            if (!authors.isEmpty() || entry.getAuthor() == null) {
                 entry.setAuthor(Joiner.on(", ").join(authors));
             }
-            if (!emails.isEmpty()) {
+            if (!emails.isEmpty() || entry.getEmail() == null) {
                 entry.setEmail(Joiner.on(", ").join(emails));
             }
         } catch (WdlParser.SyntaxError syntaxError) {
