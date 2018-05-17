@@ -467,6 +467,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
     }
 
+    @Override
+    String getCommitID(String repositoryId, Version version) {
+        GHRepository repo;
+        try {
+            repo = github.getRepository(repositoryId);
+            GHRef[] refs = repo.getRefs();
+
+            for (GHRef ref : refs) {
+                String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
+                if (reference.equals(version.getReference())) {
+                    return ref.getObject().getSha();
+                }
+            }
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            // this is not so critical to warrant a http error code
+        }
+        return null;
+    }
+
     /**
      * Updates a user object with metadata from GitHub
      * @param user the user to be updated
