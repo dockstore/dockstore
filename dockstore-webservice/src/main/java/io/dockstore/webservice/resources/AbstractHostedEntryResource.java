@@ -116,7 +116,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @UnitOfWork
     public T editHosted(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
+        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true, type = "SourceFile") Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
         checkUser(user, entry);
@@ -127,7 +127,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         if (!isValidVersion) {
             throw new WebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
         }
-        version.setValid(isValidVersion);
+        version.setValid(true);
         version.setVersionEditor(user);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
