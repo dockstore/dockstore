@@ -52,6 +52,7 @@ import org.junit.runner.Description;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -591,7 +592,7 @@ public class GeneralIT extends BaseIT {
         toolsApi.refresh(toolTest.getId());
 
         DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId());
-        assertTrue("Author should be set, even if tag name and tag reference are mismatched.", refreshedTool.getAuthor() != null);
+        assertNotNull("Author should be set, even if tag name and tag reference are mismatched.", refreshedTool.getAuthor());
     }
 
     /**
