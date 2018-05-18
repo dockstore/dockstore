@@ -208,6 +208,7 @@ public abstract class SourceCodeRepoInterface {
             return entry;
         }
 
+        // for tools if a default version is set, this actually returns the tag name and not the tag repository
         String branch = getMainBranch(entry, repositoryId);
 
         if (branch == null) {
@@ -228,7 +229,8 @@ public abstract class SourceCodeRepoInterface {
 
             // Find filepath to parse
             for (Tag tag : ((Tool)entry).getVersions()) {
-                if (tag.getReference() != null && tag.getReference().equals(branch)) {
+                if ((entry.getDefaultVersion() == null && tag.getReference() != null && tag.getReference().equals(branch)) ||
+                        (entry.getDefaultVersion() != null && tag.getName() != null && tag.getName().equals(branch))) {
                     sourceFiles = tag.getSourceFiles();
                     if (type == AbstractEntryClient.Type.CWL) {
                         filePath = tag.getCwlPath();
