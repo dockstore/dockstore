@@ -342,15 +342,12 @@ public class Tool extends Entry<Tool, Tag> {
     public void setRegistryProvider(Registry registryThing) {
         switch (registryThing) {
         case GITLAB:
-            this.setRegistry("registry.gitlab.com");
-            break;
         case QUAY_IO:
-            this.setRegistry("quay.io");
+        case DOCKER_HUB:
+        case SEVEN_BRIDGES:
+            this.setRegistry(registryThing.toString());
             break;
         case AMAZON_ECR:
-            break;
-        case DOCKER_HUB:
-            this.setRegistry("registry.hub.docker.com");
             break;
         default:
             break;

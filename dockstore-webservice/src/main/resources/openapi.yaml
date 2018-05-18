@@ -4814,6 +4814,7 @@ components:
             - DOCKER_HUB
             - GITLAB
             - AMAZON_ECR
+            - SEVEN_BRIDGES
       description: >-
         This describes one entry in the dockstore. Logically, this currently
         means one tuple of registry (either quay or docker hub), organization,
