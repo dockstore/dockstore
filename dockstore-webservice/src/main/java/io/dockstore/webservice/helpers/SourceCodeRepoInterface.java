@@ -229,8 +229,8 @@ public abstract class SourceCodeRepoInterface {
 
             // Find filepath to parse
             for (Tag tag : ((Tool)entry).getVersions()) {
-                if ((entry.getDefaultVersion() == null && tag.getReference() != null && tag.getReference().equals(branch)) ||
-                        (entry.getDefaultVersion() != null && tag.getName() != null && tag.getName().equals(branch))) {
+                if ((entry.getDefaultVersion() == null && tag.getReference() != null && tag.getReference().equals(branch))
+                        || (entry.getDefaultVersion() != null && tag.getName() != null && tag.getName().equals(branch))) {
                     sourceFiles = tag.getSourceFiles();
                     if (type == AbstractEntryClient.Type.CWL) {
                         filePath = tag.getCwlPath();
