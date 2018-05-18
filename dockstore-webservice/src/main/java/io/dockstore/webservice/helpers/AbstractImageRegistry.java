@@ -347,8 +347,6 @@ public abstract class AbstractImageRegistry {
             }
         }
 
-
-
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
         if (sourceCodeRepoInterface != null) {
             // Grab files for each version/tag and check if valid
@@ -358,21 +356,22 @@ public abstract class AbstractImageRegistry {
                 updateFiles(tool, tag, fileDAO, sourceCodeRepoInterface, sourceCodeRepoInterface.gitUsername);
                 // Grab and parse files to get tool information
                 // Add for new descriptor types
-
-                //Check if default version is set
-                // If not set or invalid, set tag of interest to tag stored in main tag
-                // If set and valid, set tag of interest to tag stored in default version
-
-                if (tool.getDefaultCwlPath() != null) {
-                    LOG.info(sourceCodeRepoInterface.gitUsername + " : Parsing CWL...");
-                    sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.CWL);
-                }
-
-                if (tool.getDefaultWdlPath() != null) {
-                    LOG.info(sourceCodeRepoInterface.gitUsername + " : Parsing WDL...");
-                    sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.WDL);
-                }
             }
+
+            //Check if default version is set
+            // If not set or invalid, set tag of interest to tag stored in main tag
+            // If set and valid, set tag of interest to tag stored in default version
+
+            if (tool.getDefaultCwlPath() != null) {
+                LOG.info(sourceCodeRepoInterface.gitUsername + " : Parsing CWL...");
+                sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.CWL);
+            }
+
+            if (tool.getDefaultWdlPath() != null) {
+                LOG.info(sourceCodeRepoInterface.gitUsername + " : Parsing WDL...");
+                sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.WDL);
+            }
+
         }
         FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
         toolDAO.create(tool);
