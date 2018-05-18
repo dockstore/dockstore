@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
-import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Registry;
 import io.dockstore.common.RegressionTest;
@@ -51,9 +50,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
 import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
@@ -78,12 +74,6 @@ public class GeneralRegressionIT extends BaseIT {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) {
-            System.out.println("Starting test: " + description.getMethodName());
-        }
-    };
     static URL url;
     static File dockstore;
 

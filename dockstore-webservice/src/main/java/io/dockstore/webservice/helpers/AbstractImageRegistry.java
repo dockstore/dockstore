@@ -376,7 +376,6 @@ public abstract class AbstractImageRegistry {
         }
         FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
         toolDAO.create(tool);
-
     }
 
     private void updateFiles(Tool tool, Tag tag, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {

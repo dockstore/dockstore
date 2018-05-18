@@ -20,12 +20,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import io.dockstore.common.Bridge;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -66,14 +69,106 @@ public class WDLHandler implements LanguageHandlerInterface {
 
             if (ast == null) {
                 LOG.info("Error with WDL file.");
+                return entry;
             } else {
                 LOG.info("Repository has Dockstore.wdl");
+            }
+
+            Set<String> authors = new HashSet<>();
+            Set<String> emails = new HashSet<>();
+
+            // go rummaging through tasks to look for possible emails and authors
+            WdlParser.AstList body = (WdlParser.AstList)ast.getAttribute("body");
+            // rummage through tasks, each task should have at most one meta
+            body.stream().filter(node -> node instanceof WdlParser.Ast && ((WdlParser.Ast)node).getName().equals("Task")).forEach(node -> {
+                List<WdlParser.Ast> meta = extractTargetFromAST(node, "Meta");
+                if (meta != null) {
+                    Map<String, WdlParser.AstNode> attributes = meta.get(0).getAttributes();
+                    attributes.values().forEach(value -> {
+                        String email = extractRuntimeAttributeFromAST(value, "email");
+                        if (email != null) {
+                            emails.add(email);
+                        }
+                        String author = extractRuntimeAttributeFromAST(value, "author");
+                        if (author != null) {
+                            authors.add(author);
+                        }
+                    });
+                }
+            });
+            if (!authors.isEmpty() || entry.getAuthor() == null) {
+                entry.setAuthor(Joiner.on(", ").join(authors));
+            }
+            if (!emails.isEmpty() || entry.getEmail() == null) {
+                entry.setEmail(Joiner.on(", ").join(emails));
             }
         } catch (WdlParser.SyntaxError syntaxError) {
             LOG.info("Invalid WDL file.");
         }
 
         return entry;
+    }
+
+    private String extractRuntimeAttributeFromAST(WdlParser.AstNode node, String key) {
+        if (node == null) {
+            return null;
+        }
+        if (node instanceof WdlParser.AstList) {
+            WdlParser.AstList astList = (WdlParser.AstList)node;
+            for (WdlParser.AstNode listMember : astList) {
+                String result = extractRuntimeAttributeFromAST(listMember, key);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
+        if (node instanceof WdlParser.Ast) {
+            WdlParser.Ast nodeAst = (WdlParser.Ast)node;
+            if (nodeAst.getAttribute("key") instanceof WdlParser.Terminal && (((WdlParser.Terminal)nodeAst.getAttribute("key"))
+                .getSourceString().equalsIgnoreCase(key))) {
+                return ((WdlParser.Terminal)nodeAst.getAttribute("value")).getSourceString();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Grabs the path in the AST to the desired child node
+     *
+     * @param node    a potential parent of the target node
+     * @param keyword keyword to look for
+     * @return a list of the nodes in the path to the keyword node, terminal first
+     */
+    private List<WdlParser.Ast> extractTargetFromAST(WdlParser.AstNode node, String keyword) {
+        if (node == null) {
+            return null;
+        }
+        if (node instanceof WdlParser.Ast) {
+            WdlParser.Ast ast = (WdlParser.Ast)node;
+            if (ast.getName().equalsIgnoreCase(keyword)) {
+                return Lists.newArrayList(ast);
+            }
+            Map<String, WdlParser.AstNode> attributes = ast.getAttributes();
+            for (java.util.Map.Entry<String, WdlParser.AstNode> entry : attributes.entrySet()) {
+                if (entry.getValue() instanceof WdlParser.Ast) {
+                    List<WdlParser.Ast> target = extractTargetFromAST(entry.getValue(), keyword);
+                    if (target != null) {
+                        target.add(ast);
+                        return target;
+                    }
+                } else if (entry.getValue() instanceof WdlParser.AstList) {
+                    for (WdlParser.AstNode listNode : ((WdlParser.AstList)entry.getValue())) {
+                        List<WdlParser.Ast> target = extractTargetFromAST(listNode, keyword);
+                        if (target != null) {
+                            target.add(ast);
+                            return target;
+                        }
+                    }
+                }
+            }
+
+        }
+        return null;
     }
 
     @Override
@@ -131,16 +226,17 @@ public class WDLHandler implements LanguageHandlerInterface {
     /**
      * This method will get the content for tool tab with descriptor type = WDL
      * It will then call another method to transform the content into JSON string and return
-     * @param mainDescName the name of the main descriptor
-     * @param mainDescriptor the content of the main descriptor
+     *
+     * @param mainDescName         the name of the main descriptor
+     * @param mainDescriptor       the content of the main descriptor
      * @param secondaryDescContent the content of the secondary descriptors in a map, looks like file paths -> content
-     * @param type tools or DAG
-     * @param dao used to retrieve information on tools
+     * @param type                 tools or DAG
+     * @param dao                  used to retrieve information on tools
      * @return either a list of tools or a json map
      */
     @Override
-    public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, LanguageHandlerInterface.Type type,
-        ToolDAO dao) {
+    public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent,
+        LanguageHandlerInterface.Type type, ToolDAO dao) {
         // Initialize general variables
         Bridge bridge = new Bridge();
         bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
@@ -201,6 +297,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     /**
      * Odd un-used method that seems like it could be useful
+     *
      * @param workflowFile
      * @return
      */
@@ -208,4 +305,5 @@ public class WDLHandler implements LanguageHandlerInterface {
         Bridge bridge = new Bridge();
         return bridge.getImportFiles(workflowFile);
     }
+
 }
