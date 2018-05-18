@@ -348,14 +348,15 @@ public abstract class AbstractImageRegistry {
             }
         }
 
-        // Grab files for each version/tag and check if valid
-        updateFiles(tool, client, fileDAO, githubToken, bitbucketToken, gitlabToken);
+
 
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
         final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
                 .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
                         gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
         if (sourceCodeRepo != null) {
+            // Grab files for each version/tag and check if valid
+            updateFiles(tool, fileDAO, sourceCodeRepo, githubToken.getUsername());
             // Grab and parse files to get tool information
             // Add for new descriptor types
 
@@ -375,19 +376,17 @@ public abstract class AbstractImageRegistry {
         }
         FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
         toolDAO.create(tool);
-
     }
 
-    private static void updateFiles(Tool tool, final HttpClient client, final FileDAO fileDAO, final Token githubToken,
-        final Token bitbucketToken, final Token gitlabToken) {
+    private static void updateFiles(Tool tool, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {
         Set<Tag> tags = tool.getTags();
 
         // For each tag, will download files to db and determine if the tag is valid
         for (Tag tag : tags) {
-            LOG.info(githubToken.getUsername() + " : Updating files for tag {}", tag.getName());
+            LOG.info(username + " : Updating files for tag {}", tag.getName());
 
             // Get all of the required sourcefiles for the given tag
-            List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, gitlabToken, tool, tag);
+            List<SourceFile> newFiles = loadFiles(sourceCodeRepo, tool, tag);
 
             // Remove all existing sourcefiles
             tag.getSourceFiles().clear();
@@ -404,16 +403,16 @@ public abstract class AbstractImageRegistry {
 
                 if (file.getType() == SourceFile.FileType.DOCKERFILE) {
                     hasDockerfile = true;
-                    LOG.info(githubToken.getUsername() + " : HAS Dockerfile");
+                    LOG.info(username + " : HAS Dockerfile");
                 }
                 // Add for new descriptor types
                 if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
                     hasCwl = true;
-                    LOG.info(githubToken.getUsername() + " : HAS Dockstore.cwl");
+                    LOG.info(username + " : HAS Dockstore.cwl");
                 }
                 if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL) {
                     hasWdl = true;
-                    LOG.info(githubToken.getUsername() + " : HAS Dockstore.wdl");
+                    LOG.info(username + " : HAS Dockstore.wdl");
                 }
             }
 
@@ -429,25 +428,13 @@ public abstract class AbstractImageRegistry {
     /**
      * Given a container and tags, load up required files from git repository
      *
-     * @param client
-     * @param bitbucketToken
-     * @param githubToken
      * @param c
      * @param tag
      * @return list of SourceFiles containing cwl and dockerfile.
      */
-    private static List<SourceFile> loadFiles(HttpClient client, Token bitbucketToken, Token githubToken, Token gitlabToken, Tool c,
+    private static List<SourceFile> loadFiles(SourceCodeRepoInterface sourceCodeRepo, Tool c,
         Tag tag) {
         List<SourceFile> files = new ArrayList<>();
-
-        final String bitbucketTokenContent = bitbucketToken == null ? null : bitbucketToken.getContent();
-        final String gitlabTokenContent = gitlabToken == null ? null : gitlabToken.getContent();
-        final String githubTokenContent = githubToken == null ? null : githubToken.getContent();
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-            .createSourceCodeRepo(c.getGitUrl(), client, bitbucketTokenContent, gitlabTokenContent, githubTokenContent);
-        if (sourceCodeRepo == null) {
-            return files;
-        }
 
         String repositoryId = sourceCodeRepo.getRepositoryId(c);
         // determine type of git reference for tag

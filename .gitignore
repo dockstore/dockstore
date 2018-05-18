@@ -36,6 +36,7 @@ dockstore-integration-testing/target/
 dockstore-integration-testing/cromwell-executions/
 dockstore-integration-testing/cromwell-input/
 dockstore-integration-testing/datastore/
+reports/target/
 
 # confidential testing files
 # The dockstore CLI config file for testing confidential data
