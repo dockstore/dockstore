@@ -60,7 +60,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="gluu (generated)" id="add-unique-fileformat-contstraint">
+    <changeSet author="gluu (generated)" id="add-unique-fileformat-constraint">
         <addUniqueConstraint columnNames="value" constraintName="unique_fileformat" tableName="fileformat"/>
     </changeSet>
     <changeSet author="gluu (generated)" id="add-fk-fileformatid-with-version_input_fileformat">
@@ -69,7 +69,17 @@
     <changeSet author="gluu (generated)" id="add-fk-fileformatid-with-version_output_fileformat">
         <addForeignKeyConstraint baseColumnNames="fileformatid" baseTableName="version_output_fileformat" constraintName="fk_fileformatid_with_version_output_fileformat" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="fileformat"/>
     </changeSet>
-  
+    <changeSet author="gluu (generated)" id="add-dbcreatedate-column">
+        <addColumn tableName="fileformat">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="gluu (generated)" id="add-dbupdatedate-column">
+        <addColumn tableName="fileformat">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+    
     <!-- adding support for tracking who edited a revision of a hosted tool or workflow -->
     <changeSet author="dyuen (generated)" id="version editor">
         <addColumn tableName="tag">
@@ -81,4 +91,5 @@
         <addForeignKeyConstraint baseColumnNames="versioneditor_id" baseTableName="workflowversion" constraintName="versionEditorForWorkflows" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
         <addForeignKeyConstraint baseColumnNames="versioneditor_id" baseTableName="tag" constraintName="versionEditorForTools" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
+
 </databaseChangeLog>
