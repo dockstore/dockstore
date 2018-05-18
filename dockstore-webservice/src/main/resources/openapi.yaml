@@ -5421,6 +5421,12 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        commitID:
+          type: string
+          position: 22
+          description: >-
+            This is the commit id for the source control that the files belong
+            to
       description: This describes one tag associated with a container.
     Token:
       type: object
@@ -6120,4 +6126,10 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        commitID:
+          type: string
+          position: 22
+          description: >-
+            This is the commit id for the source control that the files belong
+            to
       description: This describes one workflow version associated with a workflow.

@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -354,14 +353,8 @@ public abstract class AbstractImageRegistry {
         if (sourceCodeRepoInterface != null) {
             // Grab files for each version/tag and check if valid
             Set<Tag> tags = tool.getTags();
-            String repositoryId = sourceCodeRepoInterface.getRepositoryId(tool);
             for (Tag tag : tags) {
                 // check to see whether the commit id has changed
-                // determine commit id to find out whether it is different, can skip refresh if it has not changed
-                String commitID = sourceCodeRepoInterface.getCommitID(repositoryId, tag);
-                if (commitID != null && Objects.equals(tag.getCommitID(), commitID)) {
-                    continue;
-                }
                 updateFiles(tool, tag, fileDAO, sourceCodeRepoInterface, sourceCodeRepoInterface.gitUsername);
                 // Grab and parse files to get tool information
                 // Add for new descriptor types
