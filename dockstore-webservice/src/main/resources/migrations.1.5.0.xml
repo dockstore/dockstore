@@ -65,8 +65,8 @@
             <column name="dbupdatedate" type="timestamp"/>
         </addColumn>
     </changeSet>
-    
-    <!-- adding support for tracking who edited a revisidon of a hosted tool or workflow -->
+
+    <!-- adding support for tracking who edited a revision of a hosted tool or workflow -->
     <changeSet author="dyuen (generated)" id="version editor">
         <addColumn tableName="tag">
             <column name="versioneditor_id" type="int8"/>
