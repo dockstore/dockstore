@@ -46,7 +46,7 @@ public class FileFormat implements Comparable<FileFormat> {
     @ApiModelProperty(value = "Implementation specific ID for file format in this web service", position = 0)
     private long id;
 
-    @Column(unique = true)
+    @Column(unique = true, columnDefinition = "text")
     @ApiModelProperty(value = "String representation of the file format", required = true, position = 1)
     private String value;
 

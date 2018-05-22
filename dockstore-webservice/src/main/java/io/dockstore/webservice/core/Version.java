@@ -37,8 +37,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -77,12 +77,16 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "Implementation specific, can be a quay.io or docker hub tag name", required = true, position = 6)
     protected String name;
 
+    @Column(columnDefinition = "text")
+    @ApiModelProperty(value = "This is the commit id for the source control that the files belong to", position = 22)
+    String commitID;
+
     @Column
     @JsonProperty("last_modified")
     @ApiModelProperty(value = "The last time this image was modified in the image registry", position = 1)
     Date lastModified;
 
-    @Column(columnDefinition = "text", nullable = false)
+    @Column(columnDefinition = "text default 'UNSET'", nullable = false)
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "This indicates the type of git (or other source control) reference")
     private ReferenceType referenceType = ReferenceType.UNSET;
@@ -108,6 +112,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @Column(columnDefinition =  "boolean default false")
     @ApiModelProperty(value = "Whether this version has been verified or not", position = 8)
     private boolean verified;
+
     @Column
     @ApiModelProperty(value = "Verified source for the version", position = 9)
     private String verifiedSource;
@@ -309,13 +314,21 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.versionEditor = versionEditor;
     }
 
+    public String getCommitID() {
+        return commitID;
+    }
+
+    public void setCommitID(String commitID) {
+        this.commitID = commitID;
+    }
+
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }
 
     public enum ReferenceType { COMMIT, TAG, BRANCH, NOT_APPLICABLE, UNSET }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, lastModified, reference, hidden, valid, name);
+        return Objects.hash(id, lastModified, reference, hidden, valid, name, commitID);
     }
 
     @Override
@@ -328,8 +341,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         }
         final Version other = (Version)obj;
         return Objects.equals(this.id, other.id) && Objects.equals(this.lastModified, other.lastModified) && Objects
-            .equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects
-            .equals(this.valid, other.valid) && Objects.equals(this.name, other.name);
+            .equals(this.reference, other.reference) && Objects.equals(this.hidden, other.hidden) && Objects.equals(this.valid, other.valid)
+            && Objects.equals(this.name, other.name) && Objects.equals(this.commitID, other.commitID);
     }
 
     @Override
@@ -337,6 +350,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return ComparisonChain.start().compare(this.id, that.id, Ordering.natural().nullsLast())
             .compare(this.lastModified, that.lastModified, Ordering.natural().nullsLast())
             .compare(this.reference, that.reference, Ordering.natural().nullsLast())
-            .compare(this.name, that.name, Ordering.natural().nullsLast()).result();
+            .compare(this.name, that.name, Ordering.natural().nullsLast())
+            .compare(this.commitID, that.commitID, Ordering.natural().nullsLast()).result();
     }
 }

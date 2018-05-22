@@ -215,6 +215,12 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    String getCommitID(String repositoryId, Version version) {
+        //TODO: optimize here for bitbucket by returning actual sha1
+        return null;
+    }
+
+    @Override
     public Workflow initializeWorkflow(String repositoryId) {
         Workflow workflow = new Workflow();
 
