@@ -250,7 +250,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value) {
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
+        boolean unwrap = !value.getAcceptableMediaTypes().stream().anyMatch(acceptableMediaType -> acceptableMediaType.toString().equals(MediaType.APPLICATION_JSON));
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap);
     }
 
     @SuppressWarnings("CheckStyle")
