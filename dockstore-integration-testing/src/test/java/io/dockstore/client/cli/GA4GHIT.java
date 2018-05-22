@@ -144,6 +144,25 @@ public abstract class GA4GHIT {
         assertDescriptor(MAPPER.writeValueAsString(responseObject));
     }
 
+    // Use relative-paths endpoint to return of the test parameter file
+    @Test
+    public void toolsIdVersionsVersionIdTypeDescriptorRelativePathTestFile() throws Exception {
+        Response response = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor/%2Ftest.cwl.json");
+        String responseObject = response.readEntity(String.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(responseObject.equals("potato"));
+        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor/%2Ftest.potato.json").request().get();
+        assertThat(response2.getStatus()).isEqualTo(204);
+        Response response3 = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Ftest.wdl.json");
+        String responseObject3 = response3.readEntity(String.class);
+        assertThat(response3.getStatus()).isEqualTo(200);
+        assertThat(responseObject3.equals("potato"));
+        Response response4 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Ftest.potato.json").request().get();
+        assertThat(response4.getStatus()).isEqualTo(204);
+    }
+
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
         ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
