@@ -330,7 +330,7 @@ public class Tool extends Entry<Tool, Tag> {
         // Deal with registries with custom registry paths
         if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
             return Registry.AMAZON_ECR;
-        } else if (this.registry.matches("^([a-zA-Z0-9-_]+)?images\\.sbgenomics\\.com")) {
+        } else if (this.registry.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
             return Registry.SEVEN_BRIDGES;
         } else {
             return null;
