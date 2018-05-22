@@ -251,8 +251,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value) throws NotFoundException {
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
+        ContainerRequestContext value) {
+        boolean unwrap = !value.getAcceptableMediaTypes().contains(MediaType.APPLICATION_JSON_TYPE);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap);
     }
 
     @SuppressWarnings("CheckStyle")
