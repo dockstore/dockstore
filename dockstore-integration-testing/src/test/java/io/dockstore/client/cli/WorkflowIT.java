@@ -161,6 +161,10 @@ public class WorkflowIT extends BaseIT {
         assertEquals("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
                 .filter(WorkflowVersion::isValid).count(), 4,
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
+
+        // check on commit ids for github
+        boolean allHaveCommitIds = refreshGithub.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
+        assertTrue("not all workflows seem to have commit ids", allHaveCommitIds);
     }
 
     @Test
@@ -499,6 +503,10 @@ public class WorkflowIT extends BaseIT {
         assertEquals("did not import symbolic links to folders properly", 5,
             registeredTool.getTags().stream().filter(tag -> Objects.equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles()
                 .size());
+        // check that commit ids look properly recorded
+        // check on commit ids for github
+        boolean allHaveCommitIds = registeredTool.getTags().stream().noneMatch(version -> version.getCommitID().isEmpty());
+        assertTrue("not all tools seem to have commit ids", allHaveCommitIds);
     }
 
     /**
