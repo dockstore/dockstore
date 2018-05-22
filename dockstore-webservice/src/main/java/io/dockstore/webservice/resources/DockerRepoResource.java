@@ -40,8 +40,6 @@ import javax.ws.rs.core.Response;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.repackaged.com.google.common.base.Strings;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -65,6 +63,7 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
@@ -98,7 +97,6 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Produces(MediaType.APPLICATION_JSON)
 public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface {
 
-    private static final String TARGET_URL = "https://quay.io/api/v1/";
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
 
     private final UserDAO userDAO;
@@ -240,6 +238,10 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         // with Docker Hub support it is now possible that there is no quayToken
         checkTokens(quayToken, githubToken, bitbucketToken, gitlabToken);
 
+        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+            .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                gitlabToken == null ? null : gitlabToken.getContent(), githubToken == null ? null : githubToken.getContent());
+
         // Get all registries
         ImageRegistryFactory factory = new ImageRegistryFactory(client, objectMapper, quayToken);
         final AbstractImageRegistry abstractImageRegistry = factory.createImageRegistry(tool.getRegistryProvider());
@@ -249,7 +251,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
                 HttpStatus.SC_NOT_FOUND);
         }
         return abstractImageRegistry
-            .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, client, githubToken, bitbucketToken, gitlabToken);
+            .refreshTool(containerId, userId, userDAO, toolDAO, tagDAO, fileDAO, fileFormatDAO, sourceCodeRepo);
     }
 
     @GET
@@ -670,52 +672,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @GET
     @Timed
     @UnitOfWork
-    @Path("/builds")
-    @ApiOperation(value = "Get the list of repository builds.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "For TESTING purposes. Also useful for getting more information about the repository.\n Enter full path without quay.io", response = String.class, hidden = true)
-    public String builds(@ApiParam(hidden = true) @Auth User user, @QueryParam("repository") String repo,
-            @QueryParam("userId") long userId) {
-        checkUser(user, userId);
-
-        List<Token> tokens = tokenDAO.findByUserId(userId);
-        StringBuilder builder = new StringBuilder();
-        for (Token token : tokens) {
-            if (token.getTokenSource().equals(TokenType.QUAY_IO)) {
-                String url = TARGET_URL + "repository/" + repo + "/build/";
-                Optional<String> asString = ResourceUtilities.asString(url, token.getContent(), client);
-
-                if (asString.isPresent()) {
-                    String json = asString.get();
-                    LOG.info(user.getUsername() + ": RESOURCE CALL: {}", url);
-
-                    Gson gson = new Gson();
-                    Map<String, ArrayList> map = gson.fromJson(json, new TypeToken<Map<String, ArrayList>>() { }.getType());
-
-                    Map<String, Map<String, String>> map2;
-
-                    if (!map.get("builds").isEmpty()) {
-                        map2 = (Map<String, Map<String, String>>)map.get("builds").get(0);
-
-                        String gitURL = map2.get("trigger_metadata").get("git_url");
-                        LOG.info(user.getUsername() + ": " + gitURL);
-
-                        ArrayList<String> tags = (ArrayList<String>)map2.get("tags");
-                        for (String tag : tags) {
-                            LOG.info(user.getUsername() + ": " + tag);
-                        }
-                    }
-
-                    builder.append(asString.get());
-                }
-                builder.append('\n');
-            }
-        }
-
-        return builder.toString();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/search")
     @ApiOperation(value = "Search for matching registered containers.", notes = "Search on the name (full path name) and description. NO authentication", response = Tool.class, responseContainer = "List", tags = {
             "containers" })
@@ -978,7 +934,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     }
 
     private String convertHttpsToSsh(String url) {
-        Pattern p = Pattern.compile("^(https?:)?\\/\\/(www\\.)?(github\\.com|bitbucket\\.org|gitlab\\.com)\\/([\\w-\\.]+)\\/([\\w-\\.]+)$");
+        Pattern p = Pattern.compile("^(https?:)?//(www\\.)?(github\\.com|bitbucket\\.org|gitlab\\.com)/([\\w-.]+)/([\\w-.]+)$");
         Matcher m = p.matcher(url);
         if (!m.find()) {
             LOG.info("Cannot parse HTTPS url: " + url);
@@ -1004,7 +960,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
      * @return is url of the format git@source:gitUsername/gitRepository
      */
     private static boolean isGit(String url) {
-        Pattern p = Pattern.compile("git\\@(\\S+):(\\S+)/(\\S+)\\.git");
+        Pattern p = Pattern.compile("git@(\\S+):(\\S+)/(\\S+)\\.git");
         Matcher m = p.matcher(url);
         return m.matches();
     }

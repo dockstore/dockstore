@@ -48,6 +48,7 @@ import okhttp3.OkUrlFactory;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.http.HttpStatus;
 import org.kohsuke.github.AbuseLimitHandler;
 import org.kohsuke.github.GHBranch;
@@ -261,7 +262,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         GHRateLimit startRateLimit = getGhRateLimitQuietly();
 
         // when getting a full workflow, look for versions and check each version for valid workflows
-        List<Pair<String, Date>> references = new ArrayList<>();
+        List<Triple<String, Date, String>> references = new ArrayList<>();
         try {
             repository = github.getRepository(repositoryId);
             final Date epochStart = new Date(0);
@@ -269,6 +270,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             for (GHRef ref : refs) {
                 Date branchDate = new Date(0);
                 String refName = ref.getRef();
+                String sha = null;
                 if (refName.startsWith("refs/heads/")) {
                     refName = StringUtils.removeStart(refName, "refs/heads/");
                 } else if (refName.startsWith("refs/tags/")) {
@@ -278,7 +280,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     continue;
                 }
                 try {
-                    String sha = ref.getObject().getSha();
+                    sha = ref.getObject().getSha();
                     if (ref.getObject().getType().equals("tag")) {
                         GHTagObject tagObject = repository.getTagObject(sha);
                         sha = tagObject.getObject().getSha();
@@ -295,13 +297,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 } catch (IOException e) {
                     LOG.info("unable to retrieve commit date for branch " + refName);
                 }
-                references.add(Pair.of(refName, branchDate));
+                references.add(Triple.of(refName, branchDate, sha));
             }
         } catch (IOException e) {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
-        Optional<Date> max = references.stream().map(Pair::getRight).max(Comparator.naturalOrder());
+        Optional<Date> max = references.stream().map(Triple::getMiddle).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
         max.ifPresent(date -> {
             long time = max.get().getTime();
@@ -309,11 +311,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         });
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
-        for (Pair<String, Date> ref : references) {
+        for (Triple<String, Date, String> ref : references) {
             LOG.info(gitUsername + ": Looking at reference: " + ref.toString());
             // Initialize the workflow version
-            WorkflowVersion version = initializeWorkflowVersion(ref.getKey(), existingWorkflow, existingDefaults);
-            version.setLastModified(ref.getRight());
+            WorkflowVersion version = initializeWorkflowVersion(ref.getLeft(), existingWorkflow, existingDefaults);
+            version.setLastModified(ref.getMiddle());
+            version.setCommitID(ref.getRight());
             String calculatedPath = version.getWorkflowPath();
 
             SourceFile.FileType identifiedType = workflow.getFileType();
@@ -321,7 +324,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             // Grab workflow file from github
             try {
                 // Get contents of descriptor file and store
-                String decodedContent = this.readFileFromRepo(calculatedPath, ref.getKey(), repository);
+                String decodedContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
                 if (decodedContent != null) {
                     boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(decodedContent);
                     // if we have a valid workflow document
@@ -336,7 +339,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
                     if (!version.isDirtyBit() && workflow.getDefaultTestParameterFilePath() != null) {
-                        String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.getKey(), repository);
+                        String testJsonContent = this.readFileFromRepo(workflow.getDefaultTestParameterFilePath(), ref.getLeft(), repository);
                         if (testJsonContent != null) {
                             SourceFile testJson = new SourceFile();
 
@@ -465,6 +468,26 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
             // this is not so critical to warrant a http error code
         }
+    }
+
+    @Override
+    String getCommitID(String repositoryId, Version version) {
+        GHRepository repo;
+        try {
+            repo = github.getRepository(repositoryId);
+            GHRef[] refs = repo.getRefs();
+
+            for (GHRef ref : refs) {
+                String reference = StringUtils.removePattern(ref.getRef(), "refs/.+?/");
+                if (reference.equals(version.getReference())) {
+                    return ref.getObject().getSha();
+                }
+            }
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            // this is not so critical to warrant a http error code
+        }
+        return null;
     }
 
     /**

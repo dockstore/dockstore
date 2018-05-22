@@ -51,4 +51,14 @@ public class WDLParseTest {
         Assert.assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
         Assert.assertTrue("incorrect email", entry.getEmail().isEmpty());
     }
+
+    @Test
+    public void testWDLMetadataExampleWithWorkflowMeta() throws IOException {
+        String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
+        LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
+        Entry entry = sInterface
+            .parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
+        Assert.assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
+        Assert.assertTrue("incorrect email", entry.getDescription().equals("This is a cool workflow"));
+    }
 }

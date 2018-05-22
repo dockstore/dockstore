@@ -151,7 +151,10 @@ public abstract class AbstractImageRegistry {
         // Get tags and update for each tool
         for (Tool tool : newDBTools) {
             List<Tag> toolTags = getTags(tool);
-            updateTags(toolTags, tool, githubToken, bitbucketToken, gitlabToken, tagDAO, fileDAO, toolDAO, fileFormatDAO, client);
+            final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
+                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
+                    gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
+            updateTags(toolTags, tool, sourceCodeRepo, tagDAO, fileDAO, toolDAO, fileFormatDAO);
         }
 
         return newDBTools;
@@ -164,7 +167,7 @@ public abstract class AbstractImageRegistry {
      */
     @SuppressWarnings("checkstyle:parameternumber")
     public Tool refreshTool(final long toolId, final Long userId, final UserDAO userDAO, final ToolDAO toolDAO, final TagDAO tagDAO,
-            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, final HttpClient client, final Token githubToken, final Token bitbucketToken, final Token gitlabToken) {
+            final FileDAO fileDAO, final FileFormatDAO fileFormatDAO, SourceCodeRepoInterface sourceCodeRepoInterface) {
 
         // Find tool of interest and store in a List (Allows for reuse of code)
         Tool tool = toolDAO.findById(toolId);
@@ -223,7 +226,7 @@ public abstract class AbstractImageRegistry {
 
         // Get tags and update for each tool
         List<Tag> toolTags = getTags(tool);
-        updateTags(toolTags, tool, githubToken, bitbucketToken, gitlabToken, tagDAO, fileDAO, toolDAO, fileFormatDAO, client);
+        updateTags(toolTags, tool, sourceCodeRepoInterface, tagDAO, fileDAO, toolDAO, fileFormatDAO);
 
         // Return the updated tool
         return newDBTools.get(0);
@@ -234,23 +237,19 @@ public abstract class AbstractImageRegistry {
      *
      * @param newTags
      * @param tool
-     * @param githubToken
-     * @param bitbucketToken
      * @param tagDAO
      * @param fileDAO
      * @param toolDAO
-     * @param client
      */
-    @SuppressWarnings("checkstyle:parameternumber")
-    private void updateTags(List<Tag> newTags, Tool tool, Token githubToken, Token bitbucketToken, Token gitlabToken, final TagDAO tagDAO,
-        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO, final HttpClient client) {
+    private void updateTags(List<Tag> newTags, Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
+        final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
 
         if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
-                LOG.info(githubToken.getUsername() + " : Tags for tool {} did not get updated because new tags were not found",
+                LOG.info(sourceCodeRepoInterface.gitUsername + " : Tags for tool {} did not get updated because new tags were not found",
                         tool.getPath());
                 return;
             }
@@ -318,7 +317,7 @@ public abstract class AbstractImageRegistry {
             for (Tag tag : existingTags) {
                 // create and add a tag if it does not already exist
                 if (!tool.getTags().contains(tag)) {
-                    LOG.info(githubToken.getUsername() + " : Updating tag {}", tag.getName());
+                    LOG.info(sourceCodeRepoInterface.gitUsername + " : Updating tag {}", tag.getName());
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
@@ -333,7 +332,7 @@ public abstract class AbstractImageRegistry {
 
             // delete tool if it has no users
             for (Tag t : toDelete) {
-                LOG.info(githubToken.getUsername() + " : DELETING tag: {}", t.getName());
+                LOG.info(sourceCodeRepoInterface.gitUsername + " : DELETING tag: {}", t.getName());
                 t.getSourceFiles().clear();
                 // tagDAO.delete(t);
                 tool.getTags().remove(t);
@@ -348,80 +347,76 @@ public abstract class AbstractImageRegistry {
             }
         }
 
-
-
         // Now grab default/main tag to grab general information (defaults to github/bitbucket "main branch")
-        final SourceCodeRepoInterface sourceCodeRepo = SourceCodeRepoFactory
-                .createSourceCodeRepo(tool.getGitUrl(), client, bitbucketToken == null ? null : bitbucketToken.getContent(),
-                        gitlabToken == null ? null : gitlabToken.getContent(), githubToken.getContent());
-        if (sourceCodeRepo != null) {
+        if (sourceCodeRepoInterface != null) {
             // Grab files for each version/tag and check if valid
-            updateFiles(tool, fileDAO, sourceCodeRepo, githubToken.getUsername());
-            // Grab and parse files to get tool information
-            // Add for new descriptor types
+            Set<Tag> tags = tool.getTags();
+            for (Tag tag : tags) {
+                // check to see whether the commit id has changed
+                updateFiles(tool, tag, fileDAO, sourceCodeRepoInterface, sourceCodeRepoInterface.gitUsername);
+                // Grab and parse files to get tool information
+                // Add for new descriptor types
+            }
 
             //Check if default version is set
             // If not set or invalid, set tag of interest to tag stored in main tag
             // If set and valid, set tag of interest to tag stored in default version
 
             if (tool.getDefaultCwlPath() != null) {
-                LOG.info(githubToken.getUsername() + " : Parsing CWL...");
-                sourceCodeRepo.updateEntryMetadata(tool, LanguageType.CWL);
+                LOG.info(sourceCodeRepoInterface.gitUsername + " : Parsing CWL...");
+                sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.CWL);
             }
 
             if (tool.getDefaultWdlPath() != null) {
-                LOG.info(githubToken.getUsername() + " : Parsing WDL...");
-                sourceCodeRepo.updateEntryMetadata(tool, LanguageType.WDL);
+                LOG.info(sourceCodeRepoInterface.gitUsername + " : Parsing WDL...");
+                sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.WDL);
             }
+
         }
         FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
         toolDAO.create(tool);
     }
 
-    private static void updateFiles(Tool tool, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {
-        Set<Tag> tags = tool.getTags();
-
+    private void updateFiles(Tool tool, Tag tag, final FileDAO fileDAO, SourceCodeRepoInterface sourceCodeRepo, String username) {
         // For each tag, will download files to db and determine if the tag is valid
-        for (Tag tag : tags) {
-            LOG.info(username + " : Updating files for tag {}", tag.getName());
+        LOG.info(username + " : Updating files for tag {}", tag.getName());
 
-            // Get all of the required sourcefiles for the given tag
-            List<SourceFile> newFiles = loadFiles(sourceCodeRepo, tool, tag);
+        // Get all of the required sourcefiles for the given tag
+        List<SourceFile> newFiles = loadFiles(sourceCodeRepo, tool, tag);
 
-            // Remove all existing sourcefiles
-            tag.getSourceFiles().clear();
+        // Remove all existing sourcefiles
+        tag.getSourceFiles().clear();
 
+        // Add for new descriptor types
+        boolean hasCwl = false;
+        boolean hasWdl = false;
+        boolean hasDockerfile = false;
+
+        for (SourceFile newFile : newFiles) {
+            long id = fileDAO.create(newFile);
+            SourceFile file = fileDAO.findById(id);
+            tag.addSourceFile(file);
+
+            if (file.getType() == SourceFile.FileType.DOCKERFILE) {
+                hasDockerfile = true;
+                LOG.info(username + " : HAS Dockerfile");
+            }
             // Add for new descriptor types
-            boolean hasCwl = false;
-            boolean hasWdl = false;
-            boolean hasDockerfile = false;
-
-            for (SourceFile newFile : newFiles) {
-                long id = fileDAO.create(newFile);
-                SourceFile file = fileDAO.findById(id);
-                tag.addSourceFile(file);
-
-                if (file.getType() == SourceFile.FileType.DOCKERFILE) {
-                    hasDockerfile = true;
-                    LOG.info(username + " : HAS Dockerfile");
-                }
-                // Add for new descriptor types
-                if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
-                    hasCwl = true;
-                    LOG.info(username + " : HAS Dockstore.cwl");
-                }
-                if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL) {
-                    hasWdl = true;
-                    LOG.info(username + " : HAS Dockstore.wdl");
-                }
+            if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
+                hasCwl = true;
+                LOG.info(username + " : HAS Dockstore.cwl");
             }
-
-            // Private tools don't require a dockerfile
-            if (tool.isPrivateAccess()) {
-                tag.setValid((hasCwl || hasWdl));
-            } else {
-                tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL) {
+                hasWdl = true;
+                LOG.info(username + " : HAS Dockstore.wdl");
             }
+        }
+
+        // Private tools don't require a dockerfile
+        if (tool.isPrivateAccess()) {
+            tag.setValid((hasCwl || hasWdl));
+        } else {
+            tag.setValid((hasCwl || hasWdl) && hasDockerfile);
         }
     }
 
@@ -432,13 +427,14 @@ public abstract class AbstractImageRegistry {
      * @param tag
      * @return list of SourceFiles containing cwl and dockerfile.
      */
-    private static List<SourceFile> loadFiles(SourceCodeRepoInterface sourceCodeRepo, Tool c,
-        Tag tag) {
+    private List<SourceFile> loadFiles(SourceCodeRepoInterface sourceCodeRepo, Tool c, Tag tag) {
         List<SourceFile> files = new ArrayList<>();
 
         String repositoryId = sourceCodeRepo.getRepositoryId(c);
+        String commitID = sourceCodeRepo.getCommitID(repositoryId, tag);
         // determine type of git reference for tag
         sourceCodeRepo.updateReferenceType(repositoryId, tag);
+        tag.setCommitID(commitID);
 
         // Add for new descriptor types
         for (SourceFile.FileType f : SourceFile.FileType.values()) {
