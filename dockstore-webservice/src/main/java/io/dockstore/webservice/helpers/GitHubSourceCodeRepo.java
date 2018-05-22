@@ -419,7 +419,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
         // Determine which branch to use for tool info
         if (entry.getDefaultVersion() != null) {
-            mainBranch = entry.getDefaultVersion();
+            mainBranch = getBranchNameFromDefaultVersion(entry);
         }
 
         return mainBranch;

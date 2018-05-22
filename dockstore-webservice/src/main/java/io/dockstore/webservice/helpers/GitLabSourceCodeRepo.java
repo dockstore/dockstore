@@ -232,7 +232,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public String getMainBranch(Entry entry, String repositoryId) {
         if (entry.getDefaultVersion() != null) {
-            return entry.getDefaultVersion();
+            return getBranchNameFromDefaultVersion(entry);
         } else {
             String projectsUrl = GITLAB_API_URL + "projects";
             // I think I have to pass tokens with ?private_token=...
