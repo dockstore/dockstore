@@ -52,6 +52,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private List<String> githubClientID;
 
     @NotEmpty
+    private String googleClientID;
+
+    @NotEmpty
     private String gitlabClientID;
 
     @NotEmpty
@@ -64,10 +67,17 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String quayRedirectURI;
 
     @NotEmpty
+    @JsonProperty
     private String githubRedirectURI;
 
     @NotEmpty
     private List<String> githubClientSecret;
+
+    @NotEmpty
+    private String googleRedirectURI;
+
+    @NotEmpty
+    private String googleClientSecret;
 
     @NotEmpty
     private String gitlabRedirectURI;
@@ -321,6 +331,33 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setSqsURL(String sqsURL) {
         this.sqsURL = sqsURL;
+    }
+
+    @JsonProperty
+    public String getGoogleClientID() {
+        return googleClientID;
+    }
+
+    public void setGoogleClientID(String googleClientID) {
+        this.googleClientID = googleClientID;
+    }
+
+    @JsonProperty
+    public String getGoogleRedirectURI() {
+        return googleRedirectURI;
+    }
+
+    public void setGoogleRedirectURI(String googleRedirectURI) {
+        this.googleRedirectURI = googleRedirectURI;
+    }
+
+    @JsonProperty
+    public String getGoogleClientSecret() {
+        return googleClientSecret;
+    }
+
+    public void setGoogleClientSecret(String googleClientSecret) {
+        this.googleClientSecret = googleClientSecret;
     }
 
     public class ElasticSearchConfig {

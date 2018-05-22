@@ -1242,11 +1242,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: string
-        description: code
+        $ref: '#/components/requestBodies/addTokenBody'
   /auth/tokens/github.com:
     get:
       tags:
@@ -1297,6 +1293,24 @@ paths:
                 $ref: '#/components/schemas/Token'
       security:
         - BEARER: []
+  /auth/tokens/google:
+    post:
+      tags:
+        - tokens
+      summary: Allow satellizer to post a new Google token to dockstore
+      description: A post method is required by satellizer to send the Google token
+      operationId: addGoogleToken
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/addTokenBody'
   /auth/tokens/quay.io:
     get:
       tags:
@@ -4687,6 +4701,12 @@ components:
       description: >-
         This is here to appease Swagger. It requires PUT methods to have a body,
         even if it is empty. Please leave it empty.
+    addTokenBody:
+      content:
+        application/json:
+          schema:
+            type: string
+      description: code
     Workflow:
       content:
         application/json:

@@ -13,7 +13,10 @@ gitlabClientID: <fill me in>
 gitlabClientSecret: <fill me in>
 gitlabRedirectURI: <fill me in>
 
-
+googleClientID: <fill me in>
+googleClientSecret: <fill me in>
+# port should match the port where the UI is being hosted, 4200 by default
+googleRedirectURI: <fill me in>
         
 # the following values describe where the webservice is being run (and on what port and using what scheme) to configure swagger
 hostname: <fill me in>
