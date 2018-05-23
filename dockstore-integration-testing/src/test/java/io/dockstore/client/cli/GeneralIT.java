@@ -51,6 +51,8 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -104,8 +106,8 @@ public class GeneralIT extends BaseIT {
         c.setToolname("test5");
         c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
         Tag tag = new Tag();
-        tag.setName("master");
-        tag.setReference("refs/heads/master");
+        tag.setName("1.0");
+        tag.setReference("master");
         tag.setValid(true);
         tag.setImageId("123456");
         // construct source files
@@ -572,6 +574,25 @@ public class GeneralIT extends BaseIT {
         //check if the tag's dockerfile path have the same cwl path or not in the database
         final String path = getPathfromDB("cwlpath");
         assertTrue("the cwl path should be changed to /test1.cwl", path.equals("/test1.cwl"));
+    }
+
+    /**
+     * Tests that if a tool has a tag with mismatching tag name and tag reference, and it is set as the default tag
+     * then the author metadata is properly grabbed.
+     */
+    @Test
+    public void testParseMetadataFromToolWithTagNameAndReferenceMismatch() {
+        // Setup webservice and get tool api
+        ContainersApi toolsApi = setupWebService();
+
+        // Create tool with mismatching tag name and tag reference
+        DockstoreTool tool = getContainer();
+        tool.setDefaultVersion("1.0");
+        DockstoreTool toolTest = toolsApi.registerManual(tool);
+        toolsApi.refresh(toolTest.getId());
+
+        DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId());
+        assertNotNull("Author should be set, even if tag name and tag reference are mismatched.", refreshedTool.getAuthor());
     }
 
     /**

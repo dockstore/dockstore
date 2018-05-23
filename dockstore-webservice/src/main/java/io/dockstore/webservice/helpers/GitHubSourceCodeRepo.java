@@ -412,13 +412,14 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Determine the default branch on Github
                 mainBranch = repository.getDefaultBranch();
             } catch (IOException e) {
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId);
                 return null;
             }
         }
 
         // Determine which branch to use for tool info
         if (entry.getDefaultVersion() != null) {
-            mainBranch = entry.getDefaultVersion();
+            mainBranch = getBranchNameFromDefaultVersion(entry);
         }
 
         return mainBranch;
