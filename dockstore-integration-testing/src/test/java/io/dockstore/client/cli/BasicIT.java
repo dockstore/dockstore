@@ -1333,7 +1333,55 @@ public class BasicIT extends BaseIT {
                         "--private", "false", "--script" });
         }
 
-        /**
+    /**
+     * This tests that you can manually publish a private only registry (Seven Bridges), but you can't change the tool to public
+     */
+    @Test
+    public void testManualPublishSevenBridgesTool() {
+        // Setup database
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manual publish
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.SEVEN_BRIDGES.name(),
+                "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "images.sbgenomics.com", "--script" });
+
+        // Check that tool is published and has correct values
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
+        Assert.assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
+
+        // Update tool to public (shouldn't work)
+        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry", "images.sbgenomics.com/notarealnamespace/notarealname/alternate",
+                "--private", "false", "--script" });
+    }
+
+    /**
+     * This tests that you can't manually publish a private only registry (Seven Bridges) with an incorrect registry path
+     */
+    @Test
+    public void testManualPublishSevenBridgesToolIncorrectRegistryPath() {
+        // Setup database
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manual publish correct path
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.SEVEN_BRIDGES.name(),
+                "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "test-images.sbgenomics.com", "--script" });
+
+        // Check that tool is published and has correct values
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test-images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
+        Assert.assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
+
+        // Manual publish incorrect path
+        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.SEVEN_BRIDGES.name(),
+                "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "testimages.sbgenomics.com", "--script" });
+
+    }
+
+    /**
          * This tests that you can't manually publish a private only registry as public
          */
         @Test
