@@ -14,13 +14,12 @@
   ~    limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.5.0-SNAPSHOT</version>
+    <version>1.5.0-alpha.1</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -70,7 +69,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.4.1</tag>
+        <tag>1.5.0-alpha.1</tag>
     </scm>
 
     <repositories>
@@ -953,7 +952,7 @@
                         <id>enforce</id>
                         <configuration>
                             <rules>
-                                <DependencyConvergence/>
+                                <DependencyConvergence />
                                 <requirePluginVersions>
                                     <message>Best Practice is to always define plugin versions!</message>
                                 </requirePluginVersions>
@@ -964,14 +963,14 @@
                                         <exclude>io.dockstore:*</exclude>
                                     </excludes>
                                 </requireReleaseDeps>
-                                <requireUpperBoundDeps/>
+                                <requireUpperBoundDeps />
                                 <requireMavenVersion>
                                     <version>3.3.9</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
                                     <version>1.8.0</version>
                                 </requireJavaVersion>
-                                <banDuplicatePomDependencyVersions/>
+                                <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
                                     <!-- currently, some of these dependencies are brought in transitively -->
                                     <searchTransitive>false</searchTransitive>
