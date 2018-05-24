@@ -147,7 +147,7 @@ public abstract class GA4GHIT {
     }
 
     /**
-     * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Tests PLAIN GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
      * Tool with nested cwl test parameter file
      * Tool with non-existent cwl test parameter file
      * Tool with nested wdl test parameter file
@@ -155,21 +155,42 @@ public abstract class GA4GHIT {
      * @throws Exception
      */
     @Test
-    public void RelativePathEndpointToolTestParameterFile() throws Exception {
+    public void RelativePathEndpointToolTestParameterFilePLAIN() {
         Response response = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
-        assertThat(response.getStatus()).isEqualTo(200);
-        assertThat(responseObject.equals("potato"));
+        assertEquals(200, response.getStatus());
+        assertEquals("nestedPotato", responseObject);
         Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Ftest.potato.json").request().get();
-        assertThat(response2.getStatus()).isEqualTo(404);
+        assertEquals(404, response2.getStatus());
         Response response3 = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Fnested%2Ftest.wdl.json");
         String responseObject3 = response3.readEntity(String.class);
-        assertThat(response3.getStatus()).isEqualTo(200);
-        assertThat(responseObject3.equals("potato"));
+        assertEquals(200, response3.getStatus());
+        assertEquals("nestedPotato", responseObject3);
         Response response4 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request().get();
-        assertThat(response4.getStatus()).isEqualTo(404);
+        assertEquals(404, response4.getStatus());
+    }
+
+    /**
+     * Tests JSON GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Tool with nested cwl test parameter file
+     * Tool with non-existent cwl test parameter file
+     * Tool with nested wdl test parameter file
+     * Tool with non-existent wdl test parameter file
+     */
+    @Test
+    public void RelativePathEndpointToolTestParameterFileJSON() {
+        Response response = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+        ToolTests responseObject = response.readEntity(ToolTests.class);
+        assertEquals(200, response.getStatus());
+        assertEquals("nestedPotato", responseObject.getTest());
+        Response response2 = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Fnested%2Ftest.wdl.json");
+        ToolTests responseObject2 = response2.readEntity(ToolTests.class);
+        assertEquals(200, response2.getStatus());
+        assertEquals("nestedPotato", responseObject2.getTest());
     }
 
     /**
@@ -178,48 +199,62 @@ public abstract class GA4GHIT {
      * @throws Exception
      */
     @Test
-    public void RelativePathEndpointToolContainerfile() throws Exception {
+    public void RelativePathEndpointToolContainerfile() {
         Response response = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2FDockerfile");
         String responseObject = response.readEntity(String.class);
-        assertThat(response.getStatus()).isEqualTo(200);
-        assertThat(responseObject.equals("potato"));
+        assertEquals(200, response.getStatus());
+        assertEquals("potato", responseObject);
     }
 
     /**
-     * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Tests PLAIN GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
      * Workflow with nested cwl test parameter file
      * Workflow with non-existent wdl test parameter file
      * Workflow with non-nested cwl test parameter file
      * @throws Exception
      */
     @Test
-    public void RelativePathEndpointWorkflowTestParameterFile() throws Exception {
+    public void RelativePathEndpointWorkflowTestParameterFilePLAIN() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
         // Check responses
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
-        assertThat(response.getStatus()).isEqualTo(200);
-        assertThat(responseObject.equals("nestedPotato"));
+        assertEquals(200, response.getStatus());
+        assertEquals("nestedPotato", responseObject);
         Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request().get();
-        assertThat(response2.getStatus()).isEqualTo(404);
+        assertEquals(404, response2.getStatus());
         Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Ftest.cwl.json");
         String responseObject3 = response3.readEntity(String.class);
-        assertThat(response3.getStatus()).isEqualTo(200);
-        assertThat(responseObject3.equals("potato"));
+        assertEquals(200, response3.getStatus());
+        assertEquals("potato", responseObject3);
+    }
 
-        Response response4 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
-        ToolTests responseObject4 = response4.readEntity(ToolTests.class);
-        assertEquals(200, response4.getStatus());
-        assertEquals("nestedPotato", responseObject4.getTest());
-        Response response5 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
-        assertEquals(404, response5.getStatus());
-        Response response6 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
-        ToolTests responseObject6 = response6.readEntity(ToolTests.class);
-        assertEquals(200, response6.getStatus());
-        assertEquals("potato", responseObject6.getTest());
+    /**
+     * Tests JSON GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Workflow with nested cwl test parameter file
+     * Workflow with non-existent wdl test parameter file
+     * Workflow with non-nested cwl test parameter file
+     * @throws Exception
+     */
+    @Test
+    public void RelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
+        // Insert the 4 workflows into the database using migrations
+        CommonTestUtilities.setupTestWorkflow(SUPPORT);
+
+        // Check responses
+        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+        ToolTests responseObject = response.readEntity(ToolTests.class);
+        assertEquals(200, response.getStatus());
+        assertEquals("nestedPotato", responseObject.getTest());
+        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
+        assertEquals(404, response2.getStatus());
+        Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
+        ToolTests responseObject3 = response3.readEntity(ToolTests.class);
+        assertEquals(200, response3.getStatus());
+        assertEquals("potato", responseObject3.getTest());
     }
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
