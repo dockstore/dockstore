@@ -229,11 +229,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     private SourceFile.FileType getFileType(String format) {
         SourceFile.FileType type;
-        if (StringUtils.containsIgnoreCase(format, "TEST_CWL")) {
-            type = SourceFile.FileType.CWL_TEST_JSON;
-        } else if (StringUtils.containsIgnoreCase(format, "TEST_WDL")) {
-            type = SourceFile.FileType.WDL_TEST_JSON;
-        } else if (StringUtils.containsIgnoreCase(format, "CWL")) {
+        if (StringUtils.containsIgnoreCase(format, "CWL")) {
             type = DOCKSTORE_CWL;
         } else if (StringUtils.containsIgnoreCase(format, "WDL")) {
             type = DOCKSTORE_WDL;
