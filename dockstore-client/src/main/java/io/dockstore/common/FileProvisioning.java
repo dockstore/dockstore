@@ -278,8 +278,8 @@ public class FileProvisioning {
                 Optional<ImmutablePair<String, String>> newTarget = findSupportedTargetPath(plugins, list);
                 if (newTarget.isPresent()) {
                     ImmutablePair<String, String> immutablePair = newTarget.get();
-                    targetPath = immutablePair.right;
-                    scheme = immutablePair.left;
+                    targetPath = immutablePair.left;
+                    scheme = immutablePair.right;
                     break;
                 }
             }

@@ -1,6 +1,7 @@
 package io.dockstore.provision;
 
 import java.util.List;
+import java.util.Set;
 
 import ro.fortsoft.pf4j.ExtensionPoint;
 
@@ -39,4 +40,10 @@ public interface PreProvisionInterface extends ExtensionPoint {
      * @return a list of targetPaths
      */
     List<String> prepareDownload(String targetPath);
+
+    /**
+     * Returns whether a particular file path should be handled by this plugin
+     * @return return schemes that this provision interface handles (ex: http, https, ftp, syn, icgc)
+     */
+    Set<String> schemesHandled();
 }
