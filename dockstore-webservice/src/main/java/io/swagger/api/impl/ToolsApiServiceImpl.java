@@ -440,9 +440,13 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
 
                 // If there's a relative path specified, only keep the file(s) that match the path specified
-                if (!relativePath.isEmpty() || relativePath != null) {
-                    testSourceFiles.removeIf(sourceFile -> !sourceFile.getPath().equals(relativePath));
-                    if (testSourceFiles.isEmpty()) {
+                if (relativePath != null) {
+                    Optional<SourceFile> sourceFile = testSourceFiles.stream().filter(file -> file.getPath().equals(relativePath)).findFirst();
+                    if (sourceFile.isPresent()) {
+                        ToolTests toolTest = ToolsImplCommon.sourceFileToToolTests(sourceFile.get());
+                        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
+                            unwrap ? toolTest.getTest() : toolTest).build();
+                    } else {
                         return Response.status(Response.Status.NO_CONTENT).build();
                     }
                 }

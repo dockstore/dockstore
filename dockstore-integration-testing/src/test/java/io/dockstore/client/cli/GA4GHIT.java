@@ -40,6 +40,7 @@ import org.junit.Test;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gluu
@@ -196,6 +197,17 @@ public abstract class GA4GHIT {
         String responseObject3 = response3.readEntity(String.class);
         assertThat(response3.getStatus()).isEqualTo(200);
         assertThat(responseObject3.equals("potato"));
+
+        Response response4 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/TEST_CWL_FILE/descriptor/%2Fnested%2Ftest.cwl.json");
+        ToolTests responseObject4 = response4.readEntity(ToolTests.class);
+        assertEquals(200, response4.getStatus());
+        assertEquals("nestedPotato", responseObject4.getTest());
+        Response response5 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/TEST_WDL_FILE/descriptor/%2Ftest.potato.json").request().get();
+        assertEquals(204, response5.getStatus());
+        Response response6 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/TEST_CWL_FILE/descriptor/%2Ftest.cwl.json");
+        ToolTests responseObject6 = response6.readEntity(ToolTests.class);
+        assertEquals(200, response6.getStatus());
+        assertEquals("potato", responseObject6.getTest());
     }
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
