@@ -247,8 +247,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value) throws NotFoundException {
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
+        ContainerRequestContext value) {
+        boolean unwrap = !value.getAcceptableMediaTypes().contains(MediaType.APPLICATION_JSON_TYPE);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap);
     }
 
     @SuppressWarnings("CheckStyle")
@@ -475,8 +476,27 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
                         ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
-                        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                            .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
+                        if (toolDescriptor == null) {
+                            // Then this source file is probably not a descriptor.  Trying test parameter file
+                            ToolTests toolTest = ToolsImplCommon.sourceFileToToolTests(entity);
+                            if (toolTest == null) {
+                                // Then this source file is probably not a test parameter file either.  Trying containerfile...
+                                final ToolContainerfile toolContainerfile = (ToolContainerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
+                                if (!toolContainerfile.getUrl().contains(relativePath)) {
+                                    // Congrats on making it here, not sure how that was possible
+                                    return Response.status(Response.Status.NOT_FOUND).build();
+                                } else {
+                                    return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                                        .entity(unwrap ? toolContainerfile.getContainerfile() : toolContainerfile).build();
+                                }
+                            } else {
+                                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
+                                    unwrap ? toolTest.getTest() : toolTest).build();
+                            }
+                        } else {
+                            return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                                .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
+                        }
                     }
                 }
             }
