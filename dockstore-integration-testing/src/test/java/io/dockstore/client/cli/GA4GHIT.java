@@ -30,6 +30,7 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolTests;
 import io.swagger.model.Error;
+import io.swagger.model.Tool;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
@@ -148,19 +149,43 @@ public abstract class GA4GHIT {
     @Test
     public void toolsIdVersionsVersionIdTypeDescriptorRelativePathTestFile() throws Exception {
         Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor/%2Ftest.cwl.json");
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(responseObject.equals("potato"));
         Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor/%2Ftest.potato.json").request().get();
         assertThat(response2.getStatus()).isEqualTo(204);
         Response response3 = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Ftest.wdl.json");
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Fnested%2Ftest.wdl.json");
         String responseObject3 = response3.readEntity(String.class);
         assertThat(response3.getStatus()).isEqualTo(200);
         assertThat(responseObject3.equals("potato"));
         Response response4 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Ftest.potato.json").request().get();
         assertThat(response4.getStatus()).isEqualTo(204);
+    }
+
+    /**
+     * This tests if the 4 workflows with a combination of different repositories and either same or matching workflow name
+     * can be retrieved separately.  In the test database, the author happens to uniquely identify the workflows.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void toolsIdGetstff() throws Exception {
+        // Insert the 4 workflows into the database using migrations
+        CommonTestUtilities.setupTestWorkflow(SUPPORT);
+
+        // Check responses
+        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_TEST_CWL_FILE/descriptor/%2Fnested%2Ftest.cwl.json");
+        String responseObject = response.readEntity(String.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(responseObject.equals("nestedPotato"));
+        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Ftest.potato.json").request().get();
+        assertThat(response2.getStatus()).isEqualTo(204);
+        Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_TEST_CWL_FILE/descriptor/%2Ftest.cwl.json");
+        String responseObject3 = response3.readEntity(String.class);
+        assertThat(response3.getStatus()).isEqualTo(200);
+        assertThat(responseObject3.equals("potato"));
     }
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
