@@ -477,10 +477,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                         final SourceFile entity = first1.get();
                         ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
                         if (toolDescriptor == null) {
-                            // Then this source file is probably not a descriptor!  Let's try test parameter file
+                            // Then this source file is probably not a descriptor.  Trying test parameter file
                             ToolTests toolTest = ToolsImplCommon.sourceFileToToolTests(entity);
                             if (toolTest == null) {
-                                // Then this source file is probably not a descriptor!  Let's try container file
+                                // Then this source file is probably not a test parameter file either.  Trying containerfile...
                                 final ToolContainerfile toolContainerfile = (ToolContainerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
                                 if (!toolContainerfile.getUrl().contains(relativePath)) {
                                     // Congrats on making it here, not sure how that was possible
