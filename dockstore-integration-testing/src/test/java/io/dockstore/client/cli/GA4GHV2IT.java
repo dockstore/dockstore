@@ -141,6 +141,44 @@ public class GA4GHV2IT extends GA4GHIT {
         assertDescriptor(MAPPER.writeValueAsString(responseObject));
     }
 
+    /**
+     * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Tool with non-encoded nested cwl test parameter file
+     * @throws Exception
+     */
+    @Test
+    public void RelativePathEndpointToolTestParameterFileEscaped() throws Exception {
+        Response response5 = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor//nested/test.cwl.json");
+        String responseObject5= response5.readEntity(String.class);
+        assertThat(response5.getStatus()).isEqualTo(200);
+        assertThat(responseObject5.equals("potato"));
+    }
+
+    /**
+     * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Workflow with non-encoded nested cwl test parameter file
+     * Workflow with non-encoded non-nested cwl test parameter file
+     * @throws Exception
+     */
+    @Test
+    public void RelativePathEndpointWorkflowTestParameterFileEscaped() throws Exception {
+        // Insert the 4 workflows into the database using migrations
+        CommonTestUtilities.setupTestWorkflow(SUPPORT);
+
+        // Check responses
+        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_TEST_CWL_FILE/descriptor//nested/test.cwl.json");
+        String responseObject = response.readEntity(String.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(responseObject.equals("nestedPotato"));
+        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Ftest.potato.json").request().get();
+        assertThat(response2.getStatus()).isEqualTo(204);
+        Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_TEST_CWL_FILE/descriptor//test.cwl.json");
+        String responseObject3 = response3.readEntity(String.class);
+        assertThat(response3.getStatus()).isEqualTo(200);
+        assertThat(responseObject3.equals("potato"));
+    }
+
     private void toolsIdVersionsVersionIdTypeFileCWL() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/files");
         List<ToolFile> responseObject = response.readEntity(new GenericType<List<ToolFile>>() {

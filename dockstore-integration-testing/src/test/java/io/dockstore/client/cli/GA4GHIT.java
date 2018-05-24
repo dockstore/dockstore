@@ -145,9 +145,18 @@ public abstract class GA4GHIT {
         assertDescriptor(MAPPER.writeValueAsString(responseObject));
     }
 
-    // Use relative-paths endpoint to return of the test parameter file
+    //
+
+    /**
+     * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Tool with nested cwl test parameter file
+     * Tool with non-existent cwl test parameter file
+     * Tool with nested wdl test parameter file
+     * Tool with non-existent wdl test parameter file
+     * @throws Exception
+     */
     @Test
-    public void toolsIdVersionsVersionIdTypeDescriptorRelativePathTestFile() throws Exception {
+    public void RelativePathEndpointToolTestParameterFile() throws Exception {
         Response response = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
@@ -165,13 +174,14 @@ public abstract class GA4GHIT {
     }
 
     /**
-     * This tests if the 4 workflows with a combination of different repositories and either same or matching workflow name
-     * can be retrieved separately.  In the test database, the author happens to uniquely identify the workflows.
-     *
+     * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Workflow with nested cwl test parameter file
+     * Workflow with non-existent wdl test parameter file
+     * Workflow with non-nested cwl test parameter file
      * @throws Exception
      */
     @Test
-    public void toolsIdGetstff() throws Exception {
+    public void RelativePathEndpointWorkflowTestParameterFile() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
