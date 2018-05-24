@@ -439,18 +439,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
                 }
 
-                // If there's a relative path specified, only keep the file(s) that match the path specified
-                if (relativePath != null) {
-                    Optional<SourceFile> sourceFile = testSourceFiles.stream().filter(file -> file.getPath().equals(relativePath)).findFirst();
-                    if (sourceFile.isPresent()) {
-                        ToolTests toolTest = ToolsImplCommon.sourceFileToToolTests(sourceFile.get());
-                        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
-                            unwrap ? toolTest.getTest() : toolTest).build();
-                    } else {
-                        return Response.status(Response.Status.NO_CONTENT).build();
-                    }
-                }
-
                 List<ToolTests> toolTestsList = new ArrayList<>();
                 for (SourceFile file : testSourceFiles) {
                     ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
@@ -492,8 +480,27 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     if (first1.isPresent()) {
                         final SourceFile entity = first1.get();
                         ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
-                        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                            .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
+                        if (toolDescriptor == null) {
+                            // Then this source file is probably not a descriptor!  Let's try test parameter file
+                            ToolTests toolTest = ToolsImplCommon.sourceFileToToolTests(entity);
+                            if (toolTest == null) {
+                                // Then this source file is probably not a descriptor!  Let's try container file
+                                final ToolContainerfile toolContainerfile = (ToolContainerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
+                                if (!toolContainerfile.getUrl().contains(relativePath)) {
+                                    // Congrats on making it here, not sure how that was possible
+                                    return Response.status(Response.Status.NOT_FOUND).build();
+                                } else {
+                                    return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                                        .entity(unwrap ? toolContainerfile.getContainerfile() : toolContainerfile).build();
+                                }
+                            } else {
+                                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
+                                    unwrap ? toolTest.getTest() : toolTest).build();
+                            }
+                        } else {
+                            return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                                .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
+                        }
                     }
                 }
             }

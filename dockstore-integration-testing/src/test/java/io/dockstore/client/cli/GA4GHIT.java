@@ -146,8 +146,6 @@ public abstract class GA4GHIT {
         assertDescriptor(MAPPER.writeValueAsString(responseObject));
     }
 
-    //
-
     /**
      * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
      * Tool with nested cwl test parameter file
@@ -159,19 +157,33 @@ public abstract class GA4GHIT {
     @Test
     public void RelativePathEndpointToolTestParameterFile() throws Exception {
         Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor/%2Fnested%2Ftest.cwl.json");
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(responseObject.equals("potato"));
-        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_CWL_FILE/descriptor/%2Ftest.potato.json").request().get();
-        assertThat(response2.getStatus()).isEqualTo(204);
+        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Ftest.potato.json").request().get();
+        assertThat(response2.getStatus()).isEqualTo(404);
         Response response3 = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Fnested%2Ftest.wdl.json");
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Fnested%2Ftest.wdl.json");
         String responseObject3 = response3.readEntity(String.class);
         assertThat(response3.getStatus()).isEqualTo(200);
         assertThat(responseObject3.equals("potato"));
-        Response response4 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Ftest.potato.json").request().get();
-        assertThat(response4.getStatus()).isEqualTo(204);
+        Response response4 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request().get();
+        assertThat(response4.getStatus()).isEqualTo(404);
+    }
+
+    /**
+     * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
+     * Tool with a dockerfile
+     * @throws Exception
+     */
+    @Test
+    public void RelativePathEndpointToolContainerfile() throws Exception {
+        Response response = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2FDockerfile");
+        String responseObject = response.readEntity(String.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(responseObject.equals("potato"));
     }
 
     /**
@@ -187,24 +199,24 @@ public abstract class GA4GHIT {
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
         // Check responses
-        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_TEST_CWL_FILE/descriptor/%2Fnested%2Ftest.cwl.json");
+        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(responseObject.equals("nestedPotato"));
-        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_TEST_WDL_FILE/descriptor/%2Ftest.potato.json").request().get();
-        assertThat(response2.getStatus()).isEqualTo(204);
-        Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_TEST_CWL_FILE/descriptor/%2Ftest.cwl.json");
+        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request().get();
+        assertThat(response2.getStatus()).isEqualTo(404);
+        Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Ftest.cwl.json");
         String responseObject3 = response3.readEntity(String.class);
         assertThat(response3.getStatus()).isEqualTo(200);
         assertThat(responseObject3.equals("potato"));
 
-        Response response4 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/TEST_CWL_FILE/descriptor/%2Fnested%2Ftest.cwl.json");
+        Response response4 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         ToolTests responseObject4 = response4.readEntity(ToolTests.class);
         assertEquals(200, response4.getStatus());
         assertEquals("nestedPotato", responseObject4.getTest());
-        Response response5 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/TEST_WDL_FILE/descriptor/%2Ftest.potato.json").request().get();
-        assertEquals(204, response5.getStatus());
-        Response response6 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/TEST_CWL_FILE/descriptor/%2Ftest.cwl.json");
+        Response response5 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
+        assertEquals(404, response5.getStatus());
+        Response response6 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
         ToolTests responseObject6 = response6.readEntity(ToolTests.class);
         assertEquals(200, response6.getStatus());
         assertEquals("potato", responseObject6.getTest());
