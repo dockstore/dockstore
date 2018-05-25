@@ -479,7 +479,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             default:
                 String searchPath;
                 if (relativePath != null) {
-                    searchPath = entryVersion.get().getWorkingDirectory() + "/" + cleanRelativePath(relativePath);
+                    searchPath = cleanRelativePath(relativePath);
                 } else {
                     // use the primary descriptor
                     if (entry instanceof Tool) {
@@ -502,7 +502,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
                 if (first1.isPresent()) {
                     final SourceFile entity = first1.get();
-                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(urlBuilt, entity);
+                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(
+                        urlBuilt + (relativePath != null ?  "/" + entryVersion.get().getWorkingDirectory() : "") + "/", entity);
                     if (toolDescriptor == null) {
                         return Response.status(Response.Status.NOT_FOUND).build();
                     }

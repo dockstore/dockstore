@@ -18,6 +18,8 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -39,10 +41,12 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tool;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -108,7 +112,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testTargettedRefresh() throws ApiException {
+    public void testTargettedRefresh() throws ApiException, URISyntaxException, IOException {
         // need to promote user to admin to refresh all stubs
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
@@ -150,6 +154,20 @@ public class WorkflowIT extends BaseIT {
         assertTrue("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
                         .filter(WorkflowVersion::isValid).count(),
                 refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count() == 4);
+
+        workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+        // check on URLs for workflows via ga4gh calls
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        ToolDescriptor toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
+        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find secondary descriptor content from generated URL", !content.isEmpty());
 
 
     }
@@ -474,7 +492,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testRelativeSecondaryFileOperations() throws ApiException {
+    public void testRelativeSecondaryFileOperations() throws ApiException, URISyntaxException, IOException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
@@ -504,5 +522,24 @@ public class WorkflowIT extends BaseIT {
         assertTrue("should find 3 imports, found " + newMasterImports.size(), newMasterImports.size() == 3);
         final List<SourceFile> newRootImports = workflowApi.secondaryCwl(workflow.getId(), "rootTest");
         assertTrue("should find 3 imports, found " + newRootImports.size(), newRootImports.size() == 3);
+
+        workflowApi.publish(workflow.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+        // check on URLs for workflows via ga4gh calls
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        ToolDescriptor toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
+        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find secondary descriptor content from generated URL", !content.isEmpty());
+        // ignore extra separators
+        toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "/adtex.cwl");
+        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find secondary descriptor content from generated URL", !content.isEmpty());
     }
 }
