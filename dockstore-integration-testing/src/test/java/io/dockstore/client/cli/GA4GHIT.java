@@ -154,7 +154,7 @@ public abstract class GA4GHIT {
      * @throws Exception
      */
     @Test
-    public void RelativePathEndpointToolTestParameterFilePLAIN() {
+    public void relativePathEndpointToolTestParameterFilePLAIN() {
         Response response = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
@@ -179,7 +179,7 @@ public abstract class GA4GHIT {
      * Tool with non-existent wdl test parameter file
      */
     @Test
-    public void RelativePathEndpointToolTestParameterFileJSON() {
+    public void relativePathEndpointToolTestParameterFileJSON() {
         Response response = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         ToolTests responseObject = response.readEntity(ToolTests.class);
@@ -198,7 +198,7 @@ public abstract class GA4GHIT {
      * @throws Exception
      */
     @Test
-    public void RelativePathEndpointToolContainerfile() {
+    public void relativePathEndpointToolContainerfile() {
         Response response = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2FDockerfile");
         String responseObject = response.readEntity(String.class);
@@ -214,7 +214,7 @@ public abstract class GA4GHIT {
      * @throws Exception
      */
     @Test
-    public void RelativePathEndpointWorkflowTestParameterFilePLAIN() throws Exception {
+    public void relativePathEndpointWorkflowTestParameterFilePLAIN() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -239,7 +239,7 @@ public abstract class GA4GHIT {
      * @throws Exception
      */
     @Test
-    public void RelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
+    public void relativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 

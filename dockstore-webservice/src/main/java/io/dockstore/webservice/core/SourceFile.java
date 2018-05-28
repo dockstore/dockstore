@@ -44,6 +44,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "sourcefile")
 @SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile {
+
+    public static final EnumSet<FileType> TEST_FILE_TYPES = EnumSet.of(FileType.CWL_TEST_JSON, FileType.WDL_TEST_JSON, FileType.NEXTFLOW_TEST_PARAMS);
+
     /**
      * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
      *
@@ -52,8 +55,6 @@ public class SourceFile {
         // Add supported descriptor types here
         DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS
     }
-
-    public static EnumSet<FileType> TestJsonTypes = EnumSet.of(FileType.CWL_TEST_JSON, FileType.WDL_TEST_JSON, FileType.NEXTFLOW_TEST_PARAMS);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

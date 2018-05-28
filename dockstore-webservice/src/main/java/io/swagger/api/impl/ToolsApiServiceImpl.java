@@ -24,6 +24,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -434,7 +435,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             urlBuilt = extractHTTPPrefix(gitUrl, entryVersion.get().getReference(), BITBUCKET_PREFIX, "https://bitbucket.org/");
         } else {
             LOG.error("Found a git url neither from BitBucket or GitHub " + gitUrl);
-            urlBuilt = null;
+            urlBuilt = "https://unimplemented_git_repository/";
         }
 
         if (convertedToolVersion.isPresent()) {
@@ -478,37 +479,50 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                         .entity(unwrap ? dockerfile.getContainerfile() : containerfilesList).build();
                 }
             default:
+                Set<String> primaryDescriptors = new HashSet<>();
+                String path;
+                // figure out primary descriptors and use them if no relative path is specified
+                if (entry instanceof Tool) {
+                    if (type == DOCKSTORE_WDL) {
+                        path = ((Tag)entryVersion.get()).getWdlPath();
+                        primaryDescriptors.add(path);
+                    } else if (type == DOCKSTORE_CWL) {
+                        path = ((Tag)entryVersion.get()).getCwlPath();
+                        primaryDescriptors.add(path);
+                    } else {
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    }
+                } else {
+                    path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
+                    primaryDescriptors.add(path);
+                }
                 String searchPath;
                 if (relativePath != null) {
                     searchPath = cleanRelativePath(relativePath);
                 } else {
-                    // use the primary descriptor
-                    if (entry instanceof Tool) {
-                        if (type == DOCKSTORE_WDL) {
-                            searchPath = ((Tag)entryVersion.get()).getWdlPath();
-                        } else if (type == DOCKSTORE_CWL) {
-                            searchPath = ((Tag)entryVersion.get()).getCwlPath();
-                        } else {
-                            return Response.status(Response.Status.NOT_FOUND).build();
-                        }
-                    } else {
-                        searchPath = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
-                    }
+                    searchPath = path;
                 }
+
                 final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
                 // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
                 // so in this stream we need to standardize relative to the main descriptor
                 Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
                 if (correctSourceFile.isPresent()) {
-                    final SourceFile entity = correctSourceFile.get();
-                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(
-                        urlBuilt + (relativePath != null ? StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/")
-                            : ""), entity);
+                    SourceFile sourceFile = correctSourceFile.get();
+                    // annoyingly, test json, Dockerfiles, primaries include a fullpath whereas secondary descriptors
+                    // are just relative to the main descriptor this affects the url that needs to be built
+                    // in a non-hotfix, this could re-use code from the file listing
+                    StringBuilder sourceFileUrl = new StringBuilder(urlBuilt);
+                    if (!SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType()) && sourceFile.getType() != SourceFile.FileType.DOCKERFILE
+                        && !primaryDescriptors.contains(sourceFile.getPath())) {
+                        sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
+                    }
+                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
                     if (toolDescriptor == null) {
                         return Response.status(Response.Status.NOT_FOUND).build();
                     }
                     return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? entity.getContent() : toolDescriptor).build();
+                        .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }
             }
         }
@@ -517,8 +531,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     /**
      * Return a matching source file
-     * @param sourceFiles files to look through
-     * @param searchPath file to look for
+     *
+     * @param sourceFiles      files to look through
+     * @param searchPath       file to look for
      * @param workingDirectory working directory if relevant
      * @return
      */
@@ -526,15 +541,16 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         // ignore leading slashes
         searchPath = cleanRelativePath(searchPath);
 
-        for(SourceFile sourceFile : sourceFiles) {
+        for (SourceFile sourceFile : sourceFiles) {
             String calculatedPath = sourceFile.getPath();
             // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
             // so we need to standardize relative to the main descriptor
-            if (SourceFile.TestJsonTypes.contains(sourceFile.getType())) {
+            if (SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType())) {
                 calculatedPath = StringUtils.removeStart(cleanRelativePath(sourceFile.getPath()), cleanRelativePath(workingDirectory));
             }
             calculatedPath = cleanRelativePath(calculatedPath);
-            if (searchPath.equalsIgnoreCase(calculatedPath)) {
+            if (searchPath.equalsIgnoreCase(calculatedPath) || searchPath
+                .equalsIgnoreCase(StringUtils.removeStart(calculatedPath, workingDirectory + "/"))) {
                 return Optional.of(sourceFile);
             }
         }

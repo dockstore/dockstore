@@ -80,7 +80,7 @@ public class WorkflowIT extends BaseIT {
 
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
-    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = "DockstoreTestUser2/dockstore-cgpmap";
+    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = Registry.QUAY_IO.toString() + "/dockstoretestuser2/dockstore-cgpmap";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -164,10 +164,7 @@ public class WorkflowIT extends BaseIT {
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
-        toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
-        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find secondary descriptor content from generated URL", !content.isEmpty());
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
 
 
     }
@@ -402,7 +399,7 @@ public class WorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException {
+    public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {
         final ApiClient webClient = getWebClient();
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -426,6 +423,41 @@ public class WorkflowIT extends BaseIT {
             .equals(tag.getName(), "test.v1")).findFirst().get().getSourceFiles().size() == 5);
         assertTrue("did not import symbolic links to folders properly", registeredTool.getTags().stream().filter(tag -> Objects
             .equals(tag.getName(), "symbolic.v1")).findFirst().get().getSourceFiles().size() == 5);
+
+        // check on URLs for workflows via ga4gh calls
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        ToolDescriptor toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        // check slashed paths
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "/cgpmap-bamOut.cwl");
+        // check paths without slash
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "cgpmap-bamOut.cwl");
+        // check other secondaries and the dockerfile
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "includes/doc.yml");
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "mixins/hints.yml");
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "mixins/requirements.yml");
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "/Dockerfile");
+    }
+
+    /**
+     * Checks that a file can be received from TRS and passes through a valid URL to github, bitbucket, etc.
+     * @param ga4Ghv2Api
+     * @param dockstoreTestUser2RelativeImportsTool
+     * @param reference
+     * @param filename
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    private void checkForRelativeFile(Ga4GhApi ga4Ghv2Api, String dockstoreTestUser2RelativeImportsTool, String reference, String filename)
+        throws IOException, URISyntaxException {
+        ToolDescriptor toolDescriptor;
+        String content;
+        toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", dockstoreTestUser2RelativeImportsTool, reference, filename);
+        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find " + filename + " from generated URL", !content.isEmpty());
     }
 
     /**
@@ -532,14 +564,8 @@ public class WorkflowIT extends BaseIT {
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
-        toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
-        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find secondary descriptor content from generated URL", !content.isEmpty());
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
         // ignore extra separators
-        toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "/adtex.cwl");
-        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find secondary descriptor content from generated URL", !content.isEmpty());
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "/adtex.cwl");
     }
 }
