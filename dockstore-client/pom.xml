@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.4.2-SNAPSHOT</version>
+        <version>1.4.3-SNAPSHOT</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
