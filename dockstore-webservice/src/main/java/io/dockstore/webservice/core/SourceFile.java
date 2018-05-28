@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.EnumSet;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -43,6 +44,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "sourcefile")
 @SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile {
+
+    public static final EnumSet<FileType> TEST_FILE_TYPES = EnumSet.of(FileType.CWL_TEST_JSON, FileType.WDL_TEST_JSON, FileType.NEXTFLOW_TEST_PARAMS);
+
     /**
      * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
      *
