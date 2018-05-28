@@ -400,6 +400,8 @@ public class ToolClient extends AbstractEntryClient {
                     errorMessage(registry + " requires a custom Docker path to be set.", Client.CLIENT_ERROR);
                 } else if ("AMAZON_ECR".equals(registry) && !customDockerPath.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
                     errorMessage(registry + " must be of the form *.dkr.ecr.*.amazonaws.com, where * can be any alphanumeric character.", Client.CLIENT_ERROR);
+                } else if ("SEVEN_BRIDGES".equals(registry) && !customDockerPath.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
+                    errorMessage(registry + " must be of the form *images.sbgenomics.com or images.sbgenomics.com, where * can be any alphanumeric character.", Client.CLIENT_ERROR);
                 }
             }
 

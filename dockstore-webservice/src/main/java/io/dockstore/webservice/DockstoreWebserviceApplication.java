@@ -73,6 +73,7 @@ import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.db.DataSourceFactory;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
+import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
@@ -204,6 +205,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 configuration.getQuayRedirectURI());
         environment.jersey().register(resource2);
         environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, true);
+        environment.jersey().register(new JsonProcessingExceptionMapper(true));
+
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
 

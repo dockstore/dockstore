@@ -327,9 +327,11 @@ public class Tool extends Entry<Tool, Tag> {
             }
         }
 
-        // Deal with Amazon ECR
+        // Deal with registries with custom registry paths
         if (this.registry.matches("^[a-zA-Z0-9]+\\.dkr\\.ecr\\.[a-zA-Z0-9]+\\.amazonaws\\.com")) {
             return Registry.AMAZON_ECR;
+        } else if (this.registry.matches("^([a-zA-Z0-9]+-)?images\\.sbgenomics\\.com")) {
+            return Registry.SEVEN_BRIDGES;
         } else {
             return null;
         }
@@ -342,15 +344,12 @@ public class Tool extends Entry<Tool, Tag> {
     public void setRegistryProvider(Registry registryThing) {
         switch (registryThing) {
         case GITLAB:
-            this.setRegistry("registry.gitlab.com");
-            break;
         case QUAY_IO:
-            this.setRegistry("quay.io");
-            break;
-        case AMAZON_ECR:
-            break;
         case DOCKER_HUB:
-            this.setRegistry("registry.hub.docker.com");
+            this.setRegistry(registryThing.toString());
+            break;
+        case SEVEN_BRIDGES:
+        case AMAZON_ECR:
             break;
         default:
             break;

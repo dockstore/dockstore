@@ -30,11 +30,8 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
-import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Table;
 import com.google.gson.Gson;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -43,7 +40,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.model.DescriptorType;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
@@ -52,14 +48,8 @@ import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKERFILE;
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
-import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
 
 /**
  * Utility methods for interacting with GA4GH tools and workflows
@@ -67,73 +57,49 @@ import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
  */
 public final class ToolsImplCommon {
     private static final Logger LOG = LoggerFactory.getLogger(ToolsImplCommon.class);
-    private static final String GITHUB_PREFIX = "git@github.com:";
-    private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
 
     private ToolsImplCommon() { }
 
-    /**
-     * Build a descriptor and attach it to a version
-     *
-     * @param url  url to set for the descriptor
-     * @param file a file with content for the descriptor
-     */
-    private static ToolDescriptor buildSourceFile(String url, SourceFile file) {
-        ToolDescriptor descriptor = new ToolDescriptor();
-        if (file.getType() == DOCKSTORE_CWL) {
-            descriptor.setType(DescriptorType.CWL);
-        } else if (file.getType() == DOCKSTORE_WDL) {
-            descriptor.setType(DescriptorType.WDL);
-        }  else if (file.getType() == SourceFile.FileType.NEXTFLOW) {
-            descriptor.setType(DescriptorType.NFL);
-        }  else if (file.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
-            descriptor.setType(DescriptorType.NFL);
-        }
-        descriptor.setDescriptor(file.getContent());
-
-        List<String> splitPathList = Lists.newArrayList(url.split("/"));
-        splitPathList.remove(splitPathList.size() - 1);
-        splitPathList.add(StringUtils.stripStart(file.getPath(), "/"));
-        final String join = Joiner.on("/").join(splitPathList);
-
-        descriptor.setUrl(join);
-        return descriptor;
-    }
 
     /**
      * This converts a Dockstore's SourceFile to a GA4GH ToolDescriptor
      *
+     * @param urlWithWorkDirectory
      * @param sourceFile The Dockstore SourceFile
-     * @return The converted GA4GH ToolDescriptor
+     * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
-    static ToolDescriptor sourceFileToToolDescriptor(SourceFile sourceFile) {
+    static Object sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile) {
+        String processedSourceFilePath = StringUtils.prependIfMissing(sourceFile.getPath(), "/");
+        String url = StringUtils.removeEnd(urlWithWorkDirectory, "/") + processedSourceFilePath;
+
+        if (sourceFile.getType().equals(SourceFile.FileType.DOCKERFILE)) {
+            ToolContainerfile file = new ToolContainerfile();
+            file.setContainerfile(sourceFile.getContent());
+            file.setUrl(url);
+            return file;
+        } else if (sourceFile.getType().equals(SourceFile.FileType.CWL_TEST_JSON) || sourceFile.getType().equals(SourceFile.FileType.WDL_TEST_JSON) ||
+            sourceFile.getType().equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
+            ToolTests file = new ToolTests();
+            file.setTest(sourceFile.getContent());
+            file.setUrl(url);
+            return file;
+        }
         ToolDescriptor toolDescriptor = new ToolDescriptor();
         toolDescriptor.setDescriptor(sourceFile.getContent());
-        toolDescriptor.setUrl(sourceFile.getPath());
+        toolDescriptor.setUrl(url);
         if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
             toolDescriptor.setType(DescriptorType.CWL);
         } else if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_WDL)) {
             toolDescriptor.setType(DescriptorType.WDL);
-        } else {
+        } else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW) {
+            toolDescriptor.setType(DescriptorType.NFL);
+        }  else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
+            toolDescriptor.setType(DescriptorType.NFL);
+        }else {
             LOG.error("This source file is not a recognized descriptor.");
             return null;
         }
         return toolDescriptor;
-    }
-
-    /**
-     * @param gitUrl       The git formatted url for the repo
-     * @param reference    the git tag or branch
-     * @param githubPrefix the prefix for the git formatted url to strip out
-     * @param builtPrefix  the prefix to use to start the extracted prefix
-     * @return the prefix to access these files
-     */
-    private static String extractHTTPPrefix(String gitUrl, String reference, String githubPrefix, String builtPrefix) {
-        StringBuilder urlBuilder = new StringBuilder();
-        urlBuilder.append(builtPrefix);
-        final String substring = gitUrl.substring(githubPrefix.length(), gitUrl.lastIndexOf(".git"));
-        urlBuilder.append(substring).append('/').append(reference);
-        return urlBuilder.toString();
     }
 
     /**
@@ -142,10 +108,7 @@ public final class ToolsImplCommon {
      * @param container our data object
      * @return standardised data object
      */
-    public static Pair<Tool, Table<String, SourceFile.FileType, Object>> convertEntryToTool(Entry container,
-        DockstoreWebserviceConfiguration config) {
-        Table<String, SourceFile.FileType, Object> fileTable = HashBasedTable.create();
-
+    public static Tool convertEntryToTool(Entry container, DockstoreWebserviceConfiguration config) {
         String url;
         String newID = getNewId(container);
         url = getUrlFromId(config, newID);
@@ -162,12 +125,9 @@ public final class ToolsImplCommon {
             checkerWorkflowPath = "";
         }
         tool.setCheckerUrl(checkerWorkflowPath);
-        if (tool.getCheckerUrl().isEmpty() || tool.getCheckerUrl() == null) {
-            tool.setHasChecker(false);
-        } else {
-            tool.setHasChecker(true);
-        }
-        Set inputVersions;
+        boolean hasChecker = !(tool.getCheckerUrl().isEmpty() || tool.getCheckerUrl() == null);
+        tool.setHasChecker(hasChecker);
+        Set<? extends Version> inputVersions;
         // tool specific
         io.dockstore.webservice.core.Tool castedContainer = null;
         if (container instanceof io.dockstore.webservice.core.Tool) {
@@ -199,7 +159,7 @@ public final class ToolsImplCommon {
 
         // handle verified information
         tool = setVerified(tool, inputVersions);
-        for (Version version : (Set<Version>)inputVersions) {
+        for (Version version : inputVersions) {
             // tags with no names make no sense here
             // also hide hidden tags
             if (version.getName() == null || version.isHidden()) {
@@ -226,71 +186,27 @@ public final class ToolsImplCommon {
                 return null;
             }
             toolVersion.setId(tool.getId() + ":" + version.getName());
-            String urlBuilt;
-            String gitUrl = container.getGitUrl();
-            if (gitUrl.startsWith(GITHUB_PREFIX)) {
-                urlBuilt = extractHTTPPrefix(gitUrl, version.getReference(), GITHUB_PREFIX, "https://raw.githubusercontent.com/");
-            } else if (gitUrl.startsWith(BITBUCKET_PREFIX)) {
-                urlBuilt = extractHTTPPrefix(gitUrl, version.getReference(), BITBUCKET_PREFIX, "https://bitbucket.org/");
-            } else {
-                LOG.error("Found a git url neither from BitBucket or GitHub " + gitUrl);
-                urlBuilt = null;
-            }
 
             final Set<SourceFile> sourceFiles = version.getSourceFiles();
             for (SourceFile file : sourceFiles) {
-                if (version instanceof Tag) {
-                    switch (file.getType()) {
-                    case DOCKERFILE:
-                        ToolContainerfile dockerfile = new ToolContainerfile();
-                        dockerfile.setContainerfile(file.getContent());
-                        dockerfile.setUrl(urlBuilt + ((Tag)version).getDockerfilePath());
-                        toolVersion.setContainerfile(true);
-                        fileTable.put(version.getName(), DOCKERFILE, dockerfile);
-                        break;
-                    case DOCKSTORE_CWL:
-                        if (((Tag)version).getCwlPath().equalsIgnoreCase(file.getPath())) {
-                            toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
-                            fileTable.put(version.getName(), DOCKSTORE_CWL, buildSourceFile(urlBuilt + ((Tag)version).getCwlPath(), file));
-                        }
-                        break;
-                    case DOCKSTORE_WDL:
-                        toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
-                        fileTable.put(version.getName(), DOCKSTORE_WDL, buildSourceFile(urlBuilt + ((Tag)version).getWdlPath(), file));
-                        break;
-                    default:
-                        // Unhandled file type is apparently ignored
-                        break;
-                    }
-                } else if (version instanceof WorkflowVersion) {
-                    switch (file.getType()) {
-                    case DOCKSTORE_CWL:
-                        // get the "main" workflow file
-                        if (((WorkflowVersion)version).getWorkflowPath().equalsIgnoreCase(file.getPath())) {
-                            toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
-                            fileTable.put(version.getName(), DOCKSTORE_CWL,
-                                buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
-                        }
-                        break;
-                    case DOCKSTORE_WDL:
-                        toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
-                        fileTable.put(version.getName(), DOCKSTORE_WDL,
-                            buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
-                        break;
-                    case NEXTFLOW:
-                        toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
-                        fileTable.put(version.getName(), SourceFile.FileType.NEXTFLOW,
-                            buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
-                        break;
-                    case NEXTFLOW_CONFIG:
-                        toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
-                        fileTable.put(version.getName(), SourceFile.FileType.NEXTFLOW_CONFIG,
-                            buildSourceFile(urlBuilt + ((WorkflowVersion)version).getWorkflowPath(), file));
-                        break;
-                    default:
-                        // Unhandled file type is apparently ignored
-                        break;
-                    }
+                switch (file.getType()) {
+                case DOCKSTORE_CWL:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.CWL);
+                    break;
+                case DOCKSTORE_WDL:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.WDL);
+                    break;
+                case NEXTFLOW:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
+                    break;
+                case NEXTFLOW_CONFIG:
+                    toolVersion.addDescriptorTypeItem(DescriptorType.NFL);
+                    break;
+                case DOCKERFILE:
+                    toolVersion.setContainerfile(true);
+                default:
+                    // Unhandled file type is apparently ignored
+                    break;
                 }
             }
 
@@ -309,7 +225,7 @@ public final class ToolsImplCommon {
                 tool.getVersions().add(toolVersion);
             }
         }
-        return new ImmutablePair<>(tool, fileTable);
+        return tool;
     }
 
     /**
@@ -360,7 +276,7 @@ public final class ToolsImplCommon {
      * @param versions The Dockstore versions (Tags or WorkflowVersions)
      * @return The modified Tool with verified set
      */
-    private static Tool setVerified(Tool tool, Set<Version> versions) {
+    private static Tool setVerified(Tool tool, Set<? extends Version> versions) {
         tool.setVerified(versions.stream().anyMatch(Version::isVerified));
         final List<String> collect = versions.stream().filter(Version::isVerified).map(Version::getVerifiedSource)
             .collect(Collectors.toList());

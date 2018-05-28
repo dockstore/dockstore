@@ -292,7 +292,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
         // Is default version set?
         if (entry.getDefaultVersion() != null) {
-            branch = entry.getDefaultVersion();
+            branch = getBranchNameFromDefaultVersion(entry);
         } else {
             // If default version is not set, need to find the main branch
 
