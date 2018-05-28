@@ -40,7 +40,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.swagger.api.NotFoundException;
 import io.swagger.api.impl.ToolsImplCommon;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -100,27 +99,27 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response toolsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
+    public Response toolsOrgGet(String organization, SecurityContext securityContext) {
         return Response.ok().entity(getPublishedByOrganization(organization)).build();
     }
 
     private List<io.swagger.model.Tool> workflowOrgGetList(String organization) {
         List<Workflow> published = workflowDAO.findPublishedByOrganization(organization);
-        return published.stream().map(c -> ToolsImplCommon.convertEntryToTool(c, config).getLeft()).collect(Collectors.toList());
+        return published.stream().map(c -> ToolsImplCommon.convertEntryToTool(c, config)).collect(Collectors.toList());
     }
 
     private List<io.swagger.model.Tool> entriesOrgGetList(String organization) {
         List<Tool> published = toolDAO.findPublishedByNamespace(organization);
-        return published.stream().map(c -> ToolsImplCommon.convertEntryToTool(c, config).getLeft()).collect(Collectors.toList());
+        return published.stream().map(c -> ToolsImplCommon.convertEntryToTool(c, config)).collect(Collectors.toList());
     }
 
     @Override
-    public Response workflowsOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
+    public Response workflowsOrgGet(String organization, SecurityContext securityContext) {
         return Response.ok(workflowOrgGetList(organization)).build();
     }
 
     @Override
-    public Response entriesOrgGet(String organization, SecurityContext securityContext) throws NotFoundException {
+    public Response entriesOrgGet(String organization, SecurityContext securityContext) {
         return Response.ok(entriesOrgGetList(organization)).build();
     }
 
@@ -142,7 +141,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     }
 
     @Override
-    public Response toolsIndexGet(SecurityContext securityContext) throws NotFoundException {
+    public Response toolsIndexGet(SecurityContext securityContext) {
         List<Entry> published = getPublished();
         if (!config.getEsConfiguration().getHostname().isEmpty() && !published.isEmpty()) {
 

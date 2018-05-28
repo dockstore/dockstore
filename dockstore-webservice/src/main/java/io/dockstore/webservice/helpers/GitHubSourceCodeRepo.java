@@ -418,22 +418,25 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public String getMainBranch(Entry entry, String repositoryId) {
-        // Determine which branch to use for tool info
-        if (entry.getDefaultVersion() != null) {
-            return entry.getDefaultVersion();
-        }
+        String mainBranch = null;
 
         // Get repository based on username and repo id
         if (repositoryId != null) {
             try {
                 GHRepository repository = github.getRepository(repositoryId);
                 // Determine the default branch on Github
-                return repository.getDefaultBranch();
+                mainBranch = repository.getDefaultBranch();
             } catch (IOException e) {
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId);
                 return null;
             }
         }
-        return null;
+        // Determine which branch to use for tool info
+        if (entry.getDefaultVersion() != null) {
+            mainBranch = getBranchNameFromDefaultVersion(entry);
+        }
+
+        return mainBranch;
     }
 
     @Override

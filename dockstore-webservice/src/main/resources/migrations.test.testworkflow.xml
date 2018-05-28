@@ -36,6 +36,18 @@
             <column name="path" value="cwl/tar-param.cwl"/>
             <column name="type" value="DOCKSTORE_CWL"/>
         </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="35"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/test.cwl.json"/>
+            <column name="type" value="CWL_TEST_JSON"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="36"/>
+            <column name="content" value="nestedPotato"/>
+            <column name="path" value="/nested/test.cwl.json"/>
+            <column name="type" value="CWL_TEST_JSON"/>
+        </insert>
     </changeSet>
     <changeSet author="gluu (generated)" id="1518537418938-110">
         <insert tableName="version_sourcefile">
@@ -49,6 +61,14 @@
         <insert tableName="version_sourcefile">
             <column name="versionid" valueNumeric="32"/>
             <column name="sourcefileid" valueNumeric="34"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="32"/>
+            <column name="sourcefileid" valueNumeric="35"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="32"/>
+            <column name="sourcefileid" valueNumeric="36"/>
         </insert>
     </changeSet>
     <changeSet author="gluu (generated)" id="1518537418938-111">

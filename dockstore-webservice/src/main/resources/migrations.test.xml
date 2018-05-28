@@ -349,6 +349,18 @@
             <column name="path" value="/test.wdl.json"/>
             <column name="type" value="NEXTFLOW_TEST_PARAMS"/>
         </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9009"/>
+            <column name="content" value="nestedPotato"/>
+            <column name="path" value="/nested/test.cwl.json"/>
+            <column name="type" value="CWL_TEST_JSON"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9010"/>
+            <column name="content" value="nestedPotato"/>
+            <column name="path" value="/nested/test.wdl.json"/>
+            <column name="type" value="WDL_TEST_JSON"/>
+        </insert>
     </changeSet>
     <changeSet author="gluu" id="insert_version_sourcefiles">
         <insert tableName="version_sourcefile">
@@ -382,6 +394,14 @@
         <insert tableName="version_sourcefile">
             <column name="versionid" valueNumeric="1"/>
             <column name="sourcefileid" value="9008"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9009"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9010"/>
         </insert>
     </changeSet>
     <changeSet author="dyuen" id="custom_test_sequence1">

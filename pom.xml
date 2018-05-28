@@ -69,7 +69,7 @@
         <connection>${github.url}</connection>
         <developerConnection>${github.url}</developerConnection>
         <url>${github.url}</url>
-        <tag>1.4.1</tag>
+        <tag>1.4.3</tag>
     </scm>
 
     <repositories>

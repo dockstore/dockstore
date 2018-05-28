@@ -24,6 +24,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,7 +41,6 @@ import javax.ws.rs.core.SecurityContext;
 import avro.shaded.com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Table;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -55,15 +55,12 @@ import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.swagger.api.ToolsApiService;
-import io.swagger.model.DescriptorType;
 import io.swagger.model.Error;
 import io.swagger.model.ToolContainerfile;
-import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolFile;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +72,8 @@ import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
 import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 
 public class ToolsApiServiceImpl extends ToolsApiService {
-
+    private static final String GITHUB_PREFIX = "git@github.com:";
+    private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
     private static final int DEFAULT_PAGE_SIZE = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(ToolsApiServiceImpl.class);
@@ -122,7 +120,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             // check whether this is registered
             response = Response.status(Response.Status.UNAUTHORIZED).build();
         } else {
-            io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(container, config).getLeft();
+            io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(container, config);
             assert (tool != null);
             // filter out other versions if we're narrowing to a specific version
             if (version != null) {
@@ -246,7 +244,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value) {
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
+        boolean unwrap = !value.getAcceptableMediaTypes().contains(MediaType.APPLICATION_JSON_TYPE);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap);
     }
 
     @SuppressWarnings("CheckStyle")
@@ -305,7 +304,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
             }
             // if passing, for each container that matches the criteria, convert to standardised format and return
-            io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config).getLeft();
+            io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(c, config);
             if (tool != null) {
                 results.add(tool);
             }
@@ -364,6 +363,21 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     /**
+     * @param gitUrl       The git formatted url for the repo
+     * @param reference    the git tag or branch
+     * @param githubPrefix the prefix for the git formatted url to strip out
+     * @param builtPrefix  the prefix to use to start the extracted prefix
+     * @return the prefix to access these files
+     */
+    private static String extractHTTPPrefix(String gitUrl, String reference, String githubPrefix, String builtPrefix) {
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append(builtPrefix);
+        final String substring = gitUrl.substring(githubPrefix.length(), gitUrl.lastIndexOf(".git"));
+        urlBuilder.append(substring).append(builtPrefix.contains("bitbucket.org") ? "/raw/" : '/').append(reference);
+        return urlBuilder.toString();
+    }
+
+    /**
      * @param registryId   registry id
      * @param versionId    git reference
      * @param type         type of file
@@ -389,23 +403,42 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        final Pair<io.swagger.model.Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = ToolsImplCommon
-            .convertEntryToTool(entry, config);
+        final io.swagger.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config);
 
         String finalVersionId = versionId;
-        if (toolTablePair == null || toolTablePair.getKey().getVersions() == null) {
+        if (convertedTool == null || convertedTool.getVersions() == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        io.swagger.model.Tool convertedTool = toolTablePair.getKey();
-        final Optional<ToolVersion> first = convertedTool.getVersions().stream()
+        final Optional<ToolVersion> convertedToolVersion = convertedTool.getVersions().stream()
             .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
-        Optional<? extends Version> oldFirst = entry.getVersions().stream()
-            .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+        Optional<? extends Version> entryVersion;
+        if (entry instanceof Tool) {
+            Tool toolEntry = (Tool)entry;
+            entryVersion = toolEntry.getVersions().stream().filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId))
+                .findFirst();
+        } else {
+            Workflow workflowEntry = (Workflow)entry;
+            entryVersion = workflowEntry.getVersions().stream()
+                .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
+        }
 
-        final Table<String, SourceFile.FileType, Object> table = toolTablePair.getValue();
-        if (first.isPresent() && oldFirst.isPresent()) {
-            final ToolVersion toolVersion = first.get();
-            final String toolVersionName = toolVersion.getName();
+        if (!entryVersion.isPresent()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        String urlBuilt;
+        String gitUrl = entry.getGitUrl();
+        if (gitUrl.startsWith(GITHUB_PREFIX)) {
+            urlBuilt = extractHTTPPrefix(gitUrl, entryVersion.get().getReference(), GITHUB_PREFIX, "https://raw.githubusercontent.com/");
+        } else if (gitUrl.startsWith(BITBUCKET_PREFIX)) {
+            urlBuilt = extractHTTPPrefix(gitUrl, entryVersion.get().getReference(), BITBUCKET_PREFIX, "https://bitbucket.org/");
+        } else {
+            LOG.error("Found a git url neither from BitBucket or GitHub " + gitUrl);
+            urlBuilt = "https://unimplemented_git_repository/";
+        }
+
+        if (convertedToolVersion.isPresent()) {
+            final ToolVersion toolVersion = convertedToolVersion.get();
             switch (type) {
             case WDL_TEST_JSON:
             case CWL_TEST_JSON:
@@ -414,7 +447,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 List<SourceFile> testSourceFiles = new ArrayList<>();
                 try {
                     testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type));
-                } catch (CustomWebApplicationException e){
+                } catch (CustomWebApplicationException e) {
                     LOG.warn("intentionally ignoring failure to get test parameters", e);
                 }
                 try {
@@ -432,45 +465,95 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull).collect(Collectors.joining("\n"))
                         : toolTestsList).build();
             case DOCKERFILE:
-                final ToolContainerfile dockerfile = (ToolContainerfile)table.get(toolVersionName, SourceFile.FileType.DOCKERFILE);
-                List<ToolContainerfile> containerfilesList = new ArrayList<>();
-                containerfilesList.add(dockerfile);
-                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                    .entity(unwrap ? dockerfile.getContainerfile() : containerfilesList).build();
+                Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
+                    .filter(sourcefile -> ((SourceFile)sourcefile).getType() == SourceFile.FileType.DOCKERFILE).findFirst();
+                if (potentialDockerfile.isPresent()) {
+                    ToolContainerfile dockerfile = new ToolContainerfile();
+                    dockerfile.setContainerfile(potentialDockerfile.get().getContent());
+                    dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
+                    toolVersion.setContainerfile(true);
+                    List<ToolContainerfile> containerfilesList = new ArrayList<>();
+                    containerfilesList.add(dockerfile);
+                    return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                        .entity(unwrap ? dockerfile.getContainerfile() : containerfilesList).build();
+                }
             default:
-                if (relativePath == null) {
-                    if ((type == DOCKSTORE_WDL) && (
-                        ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL)).getType()
-                            == DescriptorType.WDL)) {
-                        final ToolDescriptor descriptor = (ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_WDL);
-                        return Response.status(Response.Status.OK).entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
-                    } else if (type == DOCKSTORE_CWL && (
-                        ((ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL)).getType()
-                            == DescriptorType.CWL)) {
-                        final ToolDescriptor descriptor = (ToolDescriptor)table.get(toolVersionName, SourceFile.FileType.DOCKSTORE_CWL);
-                        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                            .entity(unwrap ? descriptor.getDescriptor() : descriptor).build();
+                Set<String> primaryDescriptors = new HashSet<>();
+                String path;
+                // figure out primary descriptors and use them if no relative path is specified
+                if (entry instanceof Tool) {
+                    if (type == DOCKSTORE_WDL) {
+                        path = ((Tag)entryVersion.get()).getWdlPath();
+                        primaryDescriptors.add(path);
+                    } else if (type == DOCKSTORE_CWL) {
+                        path = ((Tag)entryVersion.get()).getCwlPath();
+                        primaryDescriptors.add(path);
+                    } else {
+                        return Response.status(Response.Status.NOT_FOUND).build();
                     }
-                    return Response.status(Response.Status.NOT_FOUND).build();
                 } else {
-                    final Set<SourceFile> sourceFiles = oldFirst.get().getSourceFiles();
-                    Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(relativePath))
-                        .findFirst();
-                    if (!first1.isPresent()) {
-                        first1 = sourceFiles.stream()
-                            .filter(file -> (cleanRelativePath(file.getPath()).equalsIgnoreCase(cleanRelativePath(relativePath))))
-                            .findFirst();
+                    path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
+                    primaryDescriptors.add(path);
+                }
+                String searchPath;
+                if (relativePath != null) {
+                    searchPath = cleanRelativePath(relativePath);
+                } else {
+                    searchPath = path;
+                }
+
+                final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
+                // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+                // so in this stream we need to standardize relative to the main descriptor
+                Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
+                if (correctSourceFile.isPresent()) {
+                    SourceFile sourceFile = correctSourceFile.get();
+                    // annoyingly, test json, Dockerfiles, primaries include a fullpath whereas secondary descriptors
+                    // are just relative to the main descriptor this affects the url that needs to be built
+                    // in a non-hotfix, this could re-use code from the file listing
+                    StringBuilder sourceFileUrl = new StringBuilder(urlBuilt);
+                    if (!SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType()) && sourceFile.getType() != SourceFile.FileType.DOCKERFILE
+                        && !primaryDescriptors.contains(sourceFile.getPath())) {
+                        sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
                     }
-                    if (first1.isPresent()) {
-                        final SourceFile entity = first1.get();
-                        ToolDescriptor toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(entity);
-                        return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                            .entity(unwrap ? toolDescriptor.getDescriptor() : toolDescriptor).build();
+                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
+                    if (toolDescriptor == null) {
+                        return Response.status(Response.Status.NOT_FOUND).build();
                     }
+                    return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                        .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }
             }
         }
         return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    /**
+     * Return a matching source file
+     *
+     * @param sourceFiles      files to look through
+     * @param searchPath       file to look for
+     * @param workingDirectory working directory if relevant
+     * @return
+     */
+    private Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPath, String workingDirectory) {
+        // ignore leading slashes
+        searchPath = cleanRelativePath(searchPath);
+
+        for (SourceFile sourceFile : sourceFiles) {
+            String calculatedPath = sourceFile.getPath();
+            // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+            // so we need to standardize relative to the main descriptor
+            if (SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType())) {
+                calculatedPath = StringUtils.removeStart(cleanRelativePath(sourceFile.getPath()), cleanRelativePath(workingDirectory));
+            }
+            calculatedPath = cleanRelativePath(calculatedPath);
+            if (searchPath.equalsIgnoreCase(calculatedPath) || searchPath
+                .equalsIgnoreCase(StringUtils.removeStart(calculatedPath, workingDirectory + "/"))) {
+                return Optional.of(sourceFile);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override

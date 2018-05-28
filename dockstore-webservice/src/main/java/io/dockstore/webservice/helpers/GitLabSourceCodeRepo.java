@@ -191,7 +191,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public String getMainBranch(Entry entry, String repositoryId) {
         if (entry.getDefaultVersion() != null) {
-            return entry.getDefaultVersion();
+            return getBranchNameFromDefaultVersion(entry);
         } else {
             try {
                 GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);

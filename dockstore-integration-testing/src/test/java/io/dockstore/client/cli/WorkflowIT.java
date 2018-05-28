@@ -18,6 +18,8 @@ package io.dockstore.client.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,10 +48,12 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.User;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -84,6 +88,7 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/galaxy-workflows";
 
 
+    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = Registry.QUAY_IO.toString() + "/dockstoretestuser2/dockstore-cgpmap";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -115,7 +120,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testTargettedRefresh() throws ApiException {
+    public void testTargettedRefresh() throws ApiException, URISyntaxException, IOException {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
@@ -161,6 +166,17 @@ public class WorkflowIT extends BaseIT {
         assertEquals("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
                 .filter(WorkflowVersion::isValid).count(), 4,
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
+        workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+        // check on URLs for workflows via ga4gh calls
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        ToolDescriptor toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
+
 
         // check on commit ids for github
         boolean allHaveCommitIds = refreshGithub.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
@@ -473,7 +489,7 @@ public class WorkflowIT extends BaseIT {
      * @throws ApiException
      */
     @Test
-    public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException {
+    public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {
         final ApiClient webClient = getWebClient();
         ContainersApi toolApi = new ContainersApi(webClient);
 
@@ -507,6 +523,41 @@ public class WorkflowIT extends BaseIT {
         // check on commit ids for github
         boolean allHaveCommitIds = registeredTool.getTags().stream().noneMatch(version -> version.getCommitID().isEmpty());
         assertTrue("not all tools seem to have commit ids", allHaveCommitIds);
+
+        // check on URLs for workflows via ga4gh calls
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        ToolDescriptor toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        // check slashed paths
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "/cgpmap-bamOut.cwl");
+        // check paths without slash
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "cgpmap-bamOut.cwl");
+        // check other secondaries and the dockerfile
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "includes/doc.yml");
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "mixins/hints.yml");
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "mixins/requirements.yml");
+        checkForRelativeFile(ga4Ghv2Api, DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1", "/Dockerfile");
+    }
+
+    /**
+     * Checks that a file can be received from TRS and passes through a valid URL to github, bitbucket, etc.
+     * @param ga4Ghv2Api
+     * @param dockstoreTestUser2RelativeImportsTool
+     * @param reference
+     * @param filename
+     * @throws IOException
+     * @throws URISyntaxException
+     */
+    private void checkForRelativeFile(Ga4GhApi ga4Ghv2Api, String dockstoreTestUser2RelativeImportsTool, String reference, String filename)
+        throws IOException, URISyntaxException {
+        ToolDescriptor toolDescriptor;
+        String content;
+        toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", dockstoreTestUser2RelativeImportsTool, reference, filename);
+        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find " + filename + " from generated URL", !content.isEmpty());
     }
 
     /**
@@ -573,7 +624,7 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testRelativeSecondaryFileOperations() throws ApiException {
+    public void testRelativeSecondaryFileOperations() throws ApiException, URISyntaxException, IOException {
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
@@ -616,5 +667,18 @@ public class WorkflowIT extends BaseIT {
         assertEquals("should find 3 imports, found " + newMasterImports.size(), 3, newMasterImports.size());
         final List<SourceFile> newRootImports = workflowApi.secondaryCwl(workflow.getId(), "rootTest");
         assertEquals("should find 3 imports, found " + newRootImports.size(), 3, newRootImports.size());
+
+        workflowApi.publish(workflow.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+        // check on URLs for workflows via ga4gh calls
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        ToolDescriptor toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
+        // ignore extra separators
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "/adtex.cwl");
     }
 }
