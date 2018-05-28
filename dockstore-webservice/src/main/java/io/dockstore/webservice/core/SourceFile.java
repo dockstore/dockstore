@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.EnumSet;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -51,6 +52,8 @@ public class SourceFile {
         // Add supported descriptor types here
         DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS
     }
+
+    public static EnumSet<FileType> TestJsonTypes = EnumSet.of(FileType.CWL_TEST_JSON, FileType.WDL_TEST_JSON, FileType.NEXTFLOW_TEST_PARAMS);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

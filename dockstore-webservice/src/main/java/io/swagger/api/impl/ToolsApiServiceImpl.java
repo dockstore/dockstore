@@ -244,7 +244,8 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value) {
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE));
+        boolean unwrap = !value.getAcceptableMediaTypes().contains(MediaType.APPLICATION_JSON_TYPE);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap);
     }
 
     @SuppressWarnings("CheckStyle")
@@ -495,15 +496,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     }
                 }
                 final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
-                Optional<SourceFile> first1 = sourceFiles.stream().filter(file -> file.getPath().equalsIgnoreCase(searchPath)).findFirst();
-                if (!first1.isPresent()) {
-                    first1 = sourceFiles.stream()
-                        .filter(file -> (cleanRelativePath(file.getPath()).equalsIgnoreCase(cleanRelativePath(searchPath)))).findFirst();
-                }
-                if (first1.isPresent()) {
-                    final SourceFile entity = first1.get();
+                // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+                // so in this stream we need to standardize relative to the main descriptor
+                Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
+                if (correctSourceFile.isPresent()) {
+                    final SourceFile entity = correctSourceFile.get();
                     Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(
-                        urlBuilt + (relativePath != null ?  "/" + entryVersion.get().getWorkingDirectory() : "") + "/", entity);
+                        urlBuilt + (relativePath != null ? StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/")
+                            : ""), entity);
                     if (toolDescriptor == null) {
                         return Response.status(Response.Status.NOT_FOUND).build();
                     }
@@ -513,6 +513,32 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             }
         }
         return Response.status(Response.Status.NOT_FOUND).build();
+    }
+
+    /**
+     * Return a matching source file
+     * @param sourceFiles files to look through
+     * @param searchPath file to look for
+     * @param workingDirectory working directory if relevant
+     * @return
+     */
+    private Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPath, String workingDirectory) {
+        // ignore leading slashes
+        searchPath = cleanRelativePath(searchPath);
+
+        for(SourceFile sourceFile : sourceFiles) {
+            String calculatedPath = sourceFile.getPath();
+            // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+            // so we need to standardize relative to the main descriptor
+            if (SourceFile.TestJsonTypes.contains(sourceFile.getType())) {
+                calculatedPath = StringUtils.removeStart(cleanRelativePath(sourceFile.getPath()), cleanRelativePath(workingDirectory));
+            }
+            calculatedPath = cleanRelativePath(calculatedPath);
+            if (searchPath.equalsIgnoreCase(calculatedPath)) {
+                return Optional.of(sourceFile);
+            }
+        }
+        return Optional.empty();
     }
 
     @Override

@@ -47,6 +47,7 @@ import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,21 +69,24 @@ public final class ToolsImplCommon {
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
     static Object sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile) {
+        String processedSourceFilePath = StringUtils.prependIfMissing(sourceFile.getPath(), "/");
+        String url = StringUtils.removeEnd(urlWithWorkDirectory, "/") + processedSourceFilePath;
+
         if (sourceFile.getType().equals(SourceFile.FileType.DOCKERFILE)) {
             ToolContainerfile file = new ToolContainerfile();
             file.setContainerfile(sourceFile.getContent());
-            file.setUrl(urlWithWorkDirectory + sourceFile.getPath());
+            file.setUrl(url);
             return file;
         } else if (sourceFile.getType().equals(SourceFile.FileType.CWL_TEST_JSON) || sourceFile.getType().equals(SourceFile.FileType.WDL_TEST_JSON) ||
             sourceFile.getType().equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
             ToolTests file = new ToolTests();
             file.setTest(sourceFile.getContent());
-            file.setUrl(urlWithWorkDirectory + sourceFile.getPath());
+            file.setUrl(url);
             return file;
         }
         ToolDescriptor toolDescriptor = new ToolDescriptor();
         toolDescriptor.setDescriptor(sourceFile.getContent());
-        toolDescriptor.setUrl(urlWithWorkDirectory + sourceFile.getPath());
+        toolDescriptor.setUrl(url);
         if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
             toolDescriptor.setType(DescriptorType.CWL);
         } else if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_WDL)) {
