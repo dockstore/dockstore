@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.google.common.collect.Table;
 import com.google.gson.Gson;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
@@ -35,7 +34,6 @@ import io.swagger.model.Tool;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -65,7 +63,7 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        ToolDescriptor actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFile);
+        ToolDescriptor actualToolDescriptor = (ToolDescriptor)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile);
         ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
         expectedToolDescriptor.setType(DescriptorType.WDL);
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
@@ -80,7 +78,7 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        ToolDescriptor actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFile);
+        ToolDescriptor actualToolDescriptor = (ToolDescriptor)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile);
         ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
         expectedToolDescriptor.setType(DescriptorType.CWL);
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
@@ -94,15 +92,14 @@ public class ToolsImplCommonTest {
      * One workflow version is hidden and not verified
      * This tests all properties including the verified and verified sources but not meta-version.
      * Tests a tool with/without a toolname
-     * @throws Exception
      */
     @Test
-    public void convertDockstoreToolToTool() throws Exception {
+    public void convertDockstoreToolToTool() {
         convertDockstoreToolToTool("potato");
         convertDockstoreToolToTool(null);
     }
 
-    public void convertDockstoreToolToTool(String toolname) {
+    private void convertDockstoreToolToTool(String toolname) {
         io.dockstore.webservice.core.Tool tool = new io.dockstore.webservice.core.Tool();
         tool.setMode(ToolMode.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
         tool.setName("test6");
@@ -183,8 +180,7 @@ public class ToolsImplCommonTest {
         List<ToolVersion> expectedToolVersions = new ArrayList<>();
         expectedToolVersions.add(expectedToolVersion);
         expectedTool.setVersions(expectedToolVersions);
-        Pair<Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = ToolsImplCommon.convertEntryToTool(tool, actualConfig);
-        Tool actualTool = toolTablePair.getLeft();
+        Tool actualTool = ToolsImplCommon.convertEntryToTool(tool, actualConfig);
         actualTool.setMetaVersion(null);
         actualTool.getVersions().parallelStream().forEach(version -> version.setMetaVersion(null));
         Assert.assertEquals(expectedTool, actualTool);
@@ -265,8 +261,7 @@ public class ToolsImplCommonTest {
         workflow.setLastUpdated(null);
         workflow.setGitUrl("git@github.com:ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow.git");
         workflow.setCheckerWorkflow(workflow);
-        Pair<Tool, Table<String, SourceFile.FileType, Object>> toolTablePair = ToolsImplCommon.convertEntryToTool(workflow, actualConfig);
-        Tool actualTool = toolTablePair.getLeft();
+        Tool actualTool = ToolsImplCommon.convertEntryToTool(workflow, actualConfig);
         ToolVersion expectedToolVersion1 = new ToolVersion();
         expectedToolVersion1.setName(REFERENCE2);
         if (toolname != null) {
