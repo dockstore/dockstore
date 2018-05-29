@@ -333,7 +333,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");
             } catch (IOException e) {
                 LOG.error("Retrieving accessToken was unsuccessful");
-                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Could not retrieve google.com token based on code", HttpStatus.SC_BAD_REQUEST);
             }
         }
         GoogleCredential credential =
@@ -347,7 +347,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             Token googleToken = null;
             String googleLoginName = GoogleHelper.GOOGLE_USERNAME_PREFIX + userinfo.getName();
             User user = userDAO.findByUsername(googleLoginName);
-            if (user == null && !authUser.isPresent()) {
+            List<Token> googleByUsername = tokenDAO.findTokenByUsername(GoogleHelper.GOOGLE_USERNAME_PREFIX + userinfo.getName(), TokenType.GOOGLE_COM);
+            if (user == null && !authUser.isPresent() && googleByUsername.isEmpty()) {
                 user = new User();
                 // Pull user information from Google
                 GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
@@ -360,8 +361,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             } else {
                 if (authUser.isPresent()) {
                     userID = authUser.get().getId();
-                } else {
+                } else if (user != null) {
                     userID = user.getId();
+                } else {
+                    userID = googleByUsername.get(0).getUserId();
                 }
                 List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
                 if (!tokens.isEmpty()) {
@@ -439,7 +442,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
 
         User user = userDAO.findByUsername(githubLogin);
-        if (user == null && authUser == null) {
+        List<Token> githubByUsername = tokenDAO.findTokenByUsername(githubLogin, TokenType.GITHUB_COM);
+
+        if (user == null && authUser == null && githubByUsername.isEmpty()) {
             user = new User();
             user.setUsername(githubLogin);
 
@@ -458,8 +463,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         } else {
             if (authUser != null) {
                 userID = authUser.getId();
-            } else {
+            } else if (user != null) {
                 userID = user.getId();
+            } else {
+                userID = githubByUsername.get(0).getUserId();
             }
             List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
             if (!tokens.isEmpty()) {
