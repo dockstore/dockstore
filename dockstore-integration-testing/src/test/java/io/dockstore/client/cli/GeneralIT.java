@@ -17,10 +17,8 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -78,8 +76,6 @@ public class GeneralIT extends BaseIT {
      * This method will create and register a new container for testing
      *
      * @return DockstoreTool
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     private DockstoreTool getContainer() {
@@ -88,7 +84,7 @@ public class GeneralIT extends BaseIT {
         c.setName("testUpdatePath");
         c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
         c.setDefaultDockerfilePath("/Dockerfile");
-        c.setDefaultCwlPath("/Dockstore.cwl");
+        c.setDefaultCwlPath("/dockstore.cwl");
         c.setRegistryString(Registry.DOCKER_HUB.toString());
         c.setIsPublished(false);
         c.setNamespace("testPath");
@@ -99,11 +95,13 @@ public class GeneralIT extends BaseIT {
         tag.setReference("master");
         tag.setValid(true);
         tag.setImageId("123456");
+        tag.setCwlPath(c.getDefaultCwlPath());
+        tag.setWdlPath(c.getDefaultWdlPath());
         // construct source files
         SourceFile fileCWL = new SourceFile();
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        fileCWL.setPath("/Dockstore.cwl");
+        fileCWL.setPath("/dockstore.cwl");
         List<SourceFile> list = new ArrayList<>();
         list.add(fileCWL);
         tag.setSourceFiles(list);
