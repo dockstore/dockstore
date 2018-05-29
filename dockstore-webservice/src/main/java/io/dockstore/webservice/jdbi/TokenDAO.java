@@ -19,6 +19,7 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -87,5 +88,9 @@ public class TokenDAO extends AbstractDAO<Token> {
 
     public Token findByContent(String content) {
         return uniqueResult(namedQuery("io.dockstore.webservice.core.Token.findByContent").setParameter("content", content));
+    }
+
+    public List<Token> findTokenByUsername(String username, TokenType tokenSource) {
+        return list(namedQuery("io.dockstore.webservice.core.Token.findTokenByUsername").setParameter("username", username).setParameter("token", tokenSource));
     }
 }
