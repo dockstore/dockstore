@@ -140,16 +140,38 @@ public class User implements Principal, Comparable<User> {
      * @param tokenDAO
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
-        List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
-        List<Token> googleByUserId = tokenDAO.findGoogleByUserId(getId());
-        if (githubByUserId.isEmpty() && googleByUserId.isEmpty()) {
-            throw new CustomWebApplicationException("No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
+        updateGithubMetadata(tokenDAO);
+    }
+
+    /**
+     * Updates the given user with metadata depending on the source
+     *
+     * @param tokenDAO
+     */
+    public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source) {
+        if (source == null || source.equals(TokenType.GITHUB_COM)) {
+            updateGithubMetadata(tokenDAO);
+        } else {
+            updateGoogleMetadata(tokenDAO);
         }
-        if (!githubByUserId.isEmpty()) {
+    }
+
+    public void updateGithubMetadata(final TokenDAO tokenDAO) {
+        List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
+        if (githubByUserId.isEmpty()) {
+            throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.", HttpStatus.SC_FORBIDDEN);
+        } else {
             Token githubToken = githubByUserId.get(0);
-            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
+            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo) SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
             sourceCodeRepo.checkSourceCodeValidity();
             sourceCodeRepo.getUserMetadata(this);
+        }
+    }
+
+    public void updateGoogleMetadata(final TokenDAO tokenDAO) {
+        List<Token> googleByUserId = tokenDAO.findGoogleByUserId(getId());
+        if (googleByUserId.isEmpty()) {
+            throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.", HttpStatus.SC_FORBIDDEN);
         } else {
             Token googleToken = googleByUserId.get(0);
             GoogleHelper.updateGoogleUserData(googleToken.getContent(), this);
