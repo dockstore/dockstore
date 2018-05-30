@@ -49,6 +49,7 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.vfs2.AllFileSelector;
@@ -382,8 +383,7 @@ public class FileProvisioning {
             String scheme = objectIdentifier.getScheme().toLowerCase();
             if (scheme != null) {
                 for (ProvisionInterface provisionInterface : pluginList) {
-                    if (provisionInterface.schemesHandled().contains(scheme.toUpperCase()) || provisionInterface.schemesHandled()
-                            .contains(scheme.toLowerCase())) {
+                    if (StringUtils.containsIgnoreCase(provisionInterface.schemesHandled().iterator().next(), scheme)) {
                         return Optional.of(new ImmutablePair<>(target, scheme));
                     }
                 }

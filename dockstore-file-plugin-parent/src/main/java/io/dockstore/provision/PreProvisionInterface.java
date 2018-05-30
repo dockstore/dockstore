@@ -43,7 +43,7 @@ public interface PreProvisionInterface extends ExtensionPoint {
 
     /**
      * Returns whether a particular file path should be handled by this plugin
-     * @return return schemes that this provision interface handles (ex: http, https, ftp, syn, icgc)
+     * @return return schemes that this preprovisioning interface handles (ex: dos)
      */
     Set<String> schemesHandled();
 }
