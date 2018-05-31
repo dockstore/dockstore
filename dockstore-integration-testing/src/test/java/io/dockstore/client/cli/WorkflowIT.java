@@ -417,9 +417,10 @@ public class WorkflowIT extends BaseIT {
         // Refresh the workflow
         workflowApi.refresh(githubWorkflow.getId());
 
+        // Confirm that correct number of sourcefiles are found
         githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId());
         List<WorkflowVersion> versions = githubWorkflow.getWorkflowVersions();
-        assertEquals("There should be one version", 1, versions.size() );
+        assertEquals("There should be one version", 1, versions.size());
         WorkflowVersion version = versions.get(0);
         assertEquals("There should be three sourcefiles", 3, version.getSourceFiles().size());
     }

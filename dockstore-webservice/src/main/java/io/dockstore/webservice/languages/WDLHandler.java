@@ -119,8 +119,6 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
             }
 
-
-
             for (String importPath : importPaths) {
                 SourceFile importFile = new SourceFile();
 
