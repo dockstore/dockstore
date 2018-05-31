@@ -57,6 +57,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -387,6 +388,40 @@ public class WorkflowIT extends BaseIT {
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
         assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 6);
+    }
+
+    /**
+     * This tests that a nested WDL workflow (three levels) is properly parsed
+     * @throws ApiException
+     */
+    @Test
+    public void testNestedWdlWorkflow() throws ApiException {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Set up postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manually register workflow github
+        Workflow githubWorkflow = workflowApi
+                .manualRegister("github", "DockstoreTestUser2/nested-wdl", "/Dockstore.wdl", "altname", "wdl", "/test.json");
+
+        // Assert some things
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertTrue("No workflows are in full mode", count == 0);
+
+        // Refresh the workflow
+        workflowApi.refresh(githubWorkflow.getId());
+
+        githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId());
+        List<WorkflowVersion> versions = githubWorkflow.getWorkflowVersions();
+        assertEquals("There should be one version", 1, versions.size() );
+        WorkflowVersion version = versions.get(0);
+        assertEquals("There should be three sourcefiles", 3, version.getSourceFiles().size());
     }
 
 

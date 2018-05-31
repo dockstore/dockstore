@@ -119,6 +119,8 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
             }
 
+
+
             for (String importPath : importPaths) {
                 SourceFile importFile = new SourceFile();
 
@@ -131,6 +133,10 @@ public class WDLHandler implements LanguageHandlerInterface {
                 importFile.setPath(importPath);
                 importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
                 imports.put(importFile.getPath(), importFile);
+            }
+
+            for (SourceFile sf : imports.values()) {
+                imports.putAll(processImports(sf.getContent(), version, sourceCodeRepoInterface));
             }
         } catch (IOException e) {
             throw new CustomWebApplicationException("Internal server error, out of space",
