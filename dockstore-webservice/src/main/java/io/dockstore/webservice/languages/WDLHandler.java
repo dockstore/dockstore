@@ -157,9 +157,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             throw new CustomWebApplicationException("Internal server error, out of space",
                 HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
         } finally {
-            if (tempDesc != null) {
-                FileUtils.deleteQuietly(tempDesc);
-            }
+            FileUtils.deleteQuietly(tempDesc);
         }
 
         return imports;
