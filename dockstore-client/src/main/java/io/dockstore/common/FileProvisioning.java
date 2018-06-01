@@ -379,14 +379,20 @@ public class FileProvisioning {
      */
     static Optional<ImmutablePair<String, String>> findSupportedTargetPath(List<ProvisionInterface> pluginList, List<String> targetPaths) {
         for (String target : targetPaths) {
-            URI objectIdentifier = URI.create(target);    // throws IllegalArgumentException if it isn't a valid URI
-            String scheme = objectIdentifier.getScheme().toLowerCase();
-            if (scheme != null) {
-                for (ProvisionInterface provisionInterface : pluginList) {
-                    if (StringUtils.containsIgnoreCase(provisionInterface.schemesHandled().iterator().next(), scheme)) {
-                        return Optional.of(new ImmutablePair<>(target, scheme));
+            try {
+                URI objectIdentifier = URI.create(target);    // throws IllegalArgumentException if it isn't a valid URI
+                String scheme = (objectIdentifier.getScheme() != null) ? objectIdentifier.getScheme().toLowerCase() : null;
+                if (scheme != null) {
+                    for (ProvisionInterface provisionInterface : pluginList) {
+                        for (String currentScheme : provisionInterface.schemesHandled()) {
+                            if (StringUtils.containsIgnoreCase(currentScheme, scheme)) {
+                                return Optional.of(new ImmutablePair<>(target, scheme));
+                            }
+                        }
                     }
                 }
+            } catch (IllegalArgumentException e) {
+                LOG.info("Bad target");
             }
         }
         return Optional.empty();
