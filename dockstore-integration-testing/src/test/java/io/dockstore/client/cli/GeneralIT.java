@@ -24,6 +24,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToilCompatibleTest;
+import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -54,7 +55,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author aduncan
  */
-@Category({ConfidentialTest.class})
+@Category({ConfidentialTest.class, ToolTest.class})
 public class GeneralIT extends BaseIT {
 
     @Rule

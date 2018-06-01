@@ -37,6 +37,16 @@ jobs:
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true 
     - stage: integration-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=tool-integration-tests
+    - stage: integration-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=workflow-integration-tests
+    - stage: integration-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=other-integration-tests
     - stage: integration-tests
       env:
         - TESTING_PROFILE=toil-integration-tests

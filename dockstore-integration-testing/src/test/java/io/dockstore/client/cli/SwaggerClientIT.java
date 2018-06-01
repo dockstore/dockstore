@@ -140,7 +140,7 @@ public class SwaggerClientIT {
         return getWebClient(correctUser, true);
     }
 
-    private static ApiClient getWebClient(boolean correctUser, boolean admin) throws IOException, TimeoutException {
+    private static ApiClient getWebClient(boolean correctUser, boolean admin) {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();

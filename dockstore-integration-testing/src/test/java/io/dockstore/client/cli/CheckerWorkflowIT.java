@@ -19,6 +19,7 @@ package io.dockstore.client.cli;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
+import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -44,7 +45,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author agduncan
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, WorkflowTest.class})
 public class CheckerWorkflowIT extends BaseIT {
 
     @Rule

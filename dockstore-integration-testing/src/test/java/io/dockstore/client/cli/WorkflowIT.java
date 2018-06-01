@@ -33,6 +33,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.WorkflowTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -75,7 +76,7 @@ import static org.junit.Assert.assertTrue;
  * {@link io.dockstore.client.cli.BaseIT}
  * @author dyuen
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, WorkflowTest.class})
 public class WorkflowIT extends BaseIT {
 
     private static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";

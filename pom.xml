@@ -1146,6 +1146,33 @@
             </properties>
         </profile>
         <profile>
+            <id>workflow-integration-tests</id>
+            <!-- Only run integration tests for workflows -->
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.WorkflowTest</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>tool-integration-tests</id>
+            <!-- Only run integration tests for tools -->
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <groups>io.dockstore.common.ToolTest</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>other-integration-tests</id>
+            <!-- Only run integration tests not for tools or workflows -->
+            <properties>
+                <skipTests>true</skipTests>
+                <skipITs>false</skipITs>
+                <excludeGroups>io.dockstore.common.ToolTest,io.dockstore.common.WorkflowTest</excludeGroups>
+            </properties>
+        </profile>
+        <profile>
             <id>unit-tests</id>
             <!-- run all non-integration tests -->
             <properties>
