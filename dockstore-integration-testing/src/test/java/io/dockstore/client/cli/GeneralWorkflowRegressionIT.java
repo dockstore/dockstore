@@ -292,19 +292,13 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     }
 
     @Test
-    public void testUpdateWorkflowPath() throws IOException, TimeoutException, ApiException {
+    public void testUpdateWorkflowPath() throws ApiException {
         // Set up webservice
         ApiClient webClient = WorkflowIT.getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-
-        // Get workflows
-        usersApi.refreshWorkflows(userId);
 
         Workflow githubWorkflow = workflowApi
                 .manualRegister("github", "DockstoreTestUser2/test_lastmodified", "/Dockstore.cwl", "test-update-workflow", "cwl",
