@@ -123,25 +123,8 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        // Set up webservice
         ApiClient client = getWebClient();
-
-        //Set up user api and get the container api
-        UsersApi usersApi = new UsersApi(client);
-        final Long userId = usersApi.getUser().getId();
-        List<DockstoreTool> tools = usersApi.refresh(userId);
-
-        // The number of tools in the database should equal the number returned by refresh
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from tool", new ScalarHandler<>());
-        assertEquals("there should be " + count + " tools returned by refresh, there are " + tools.size(), count, tools.size());
-
         ContainersApi toolsApi = new ContainersApi(client);
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-
         return toolsApi;
     }
 
