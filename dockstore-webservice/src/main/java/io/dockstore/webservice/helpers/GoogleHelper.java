@@ -18,7 +18,6 @@ import java.security.GeneralSecurityException;
  */
 public final class GoogleHelper {
     // Prefix for Dockstore usernames where the account was originally registered with Google
-    public static final String GOOGLE_USERNAME_PREFIX = "google/";
     public static final String GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     public static final String GOOGLE_ENCODED_URL = "https://www.googleapis.com/oauth2/v4/token";
 
@@ -49,7 +48,7 @@ public final class GoogleHelper {
      * @param user      The pre-updated User object
      */
     public static void updateUserFromGoogleUserinfoplus(Userinfoplus userinfo, User user) {
-        user.setUsername(GoogleHelper.GOOGLE_USERNAME_PREFIX + userinfo.getName());
+        user.setUsername(userinfo.getEmail());
         user.setEmail(userinfo.getEmail());
         user.setAvatarUrl(userinfo.getPicture());
     }
