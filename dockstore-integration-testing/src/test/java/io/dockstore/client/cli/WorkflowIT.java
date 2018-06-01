@@ -23,6 +23,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.AbstractEntryClient;
@@ -61,6 +62,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
@@ -420,9 +422,21 @@ public class WorkflowIT extends BaseIT {
         // Confirm that correct number of sourcefiles are found
         githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId());
         List<WorkflowVersion> versions = githubWorkflow.getWorkflowVersions();
-        assertEquals("There should be one version", 1, versions.size());
-        WorkflowVersion version = versions.get(0);
-        assertEquals("There should be three sourcefiles", 3, version.getSourceFiles().size());
+        assertEquals("There should be two versions", 2, versions.size());
+
+        Optional<WorkflowVersion> loopVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "infinite-loop")).findFirst();
+        if (loopVersion.isPresent()) {
+            assertEquals("There should be two sourcefiles", 2, loopVersion.get().getSourceFiles().size());
+        } else {
+            fail("Could not find version infinite-loop");
+        }
+
+        Optional<WorkflowVersion> masterVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "master")).findFirst();
+        if (loopVersion.isPresent()) {
+            assertEquals("There should be three sourcefiles", 3, masterVersion.get().getSourceFiles().size());
+        } else {
+            fail("Could not find version master");
+        }
     }
 
 

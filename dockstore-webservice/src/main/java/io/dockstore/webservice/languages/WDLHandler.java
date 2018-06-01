@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,9 +97,13 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
+        return processImports(content, version, sourceCodeRepoInterface, new ArrayList<>());
+    }
+
+    public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, List<String> alreadyImported) {
         Map<String, SourceFile> imports = new HashMap<>();
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
-        final File tempDesc;
+        File tempDesc = null;
         try {
             tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
             Files.asCharSink(tempDesc, StandardCharsets.UTF_8).write(content);
@@ -120,25 +125,41 @@ public class WDLHandler implements LanguageHandlerInterface {
             }
 
             for (String importPath : importPaths) {
-                SourceFile importFile = new SourceFile();
-
-                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
-                if (fileResponse == null) {
-                    SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
-                    continue;
+                boolean toAdd = true;
+                for (String path : alreadyImported) {
+                    if (Objects.equals(path, importPath)) {
+                        toAdd = false;
+                        break;
+                    }
                 }
-                importFile.setContent(fileResponse);
-                importFile.setPath(importPath);
-                importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                imports.put(importFile.getPath(), importFile);
+
+                if (toAdd) {
+                    SourceFile importFile = new SourceFile();
+
+                    final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
+                    if (fileResponse == null) {
+                        SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
+                        continue;
+                    }
+                    importFile.setContent(fileResponse);
+                    importFile.setPath(importPath);
+                    importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                    imports.put(importFile.getPath(), importFile);
+                }
             }
 
+            importPaths.addAll(alreadyImported);
+
             for (SourceFile sf : imports.values()) {
-                imports.putAll(processImports(sf.getContent(), version, sourceCodeRepoInterface));
+                imports.putAll(processImports(sf.getContent(), version, sourceCodeRepoInterface, importPaths));
             }
         } catch (IOException e) {
             throw new CustomWebApplicationException("Internal server error, out of space",
                 HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
+        } finally {
+            if (tempDesc != null) {
+                FileUtils.deleteQuietly(tempDesc);
+            }
         }
 
         return imports;
