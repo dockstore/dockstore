@@ -61,19 +61,9 @@ public class ToolsWorkflowTestIT extends BaseIT {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
-    private WorkflowsApi setupWebService() throws IOException, TimeoutException, ApiException {
+    private WorkflowsApi setupWebService() throws ApiException {
         ApiClient webClient = WorkflowIT.getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
-        UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-
-        // Get workflows
-        usersApi.refreshWorkflows(userId);
-
         return workflowApi;
     }
 
