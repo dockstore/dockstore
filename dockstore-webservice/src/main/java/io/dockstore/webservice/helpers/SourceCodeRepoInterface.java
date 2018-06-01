@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -281,6 +282,31 @@ public abstract class SourceCodeRepoInterface {
     public abstract String getMainBranch(Entry entry, String repositoryId);
 
     /**
+
+    /**
+     * Returns the branch name for the default version
+     * @param entry
+     * @return
+     */
+    String getBranchNameFromDefaultVersion(Entry entry) {
+        String defaultVersion = entry.getDefaultVersion();
+        if (entry instanceof Tool) {
+            for (Tag tag : ((Tool)entry).getVersions()) {
+                if (Objects.equals(tag.getName(), defaultVersion)) {
+                    return tag.getReference();
+                }
+            }
+        } else if (entry instanceof Workflow) {
+            for (WorkflowVersion workflowVersion : ((Workflow)entry).getVersions()) {
+                if (Objects.equals(workflowVersion.getName(), defaultVersion)) {
+                    return workflowVersion.getReference();
+                }
+            }
+        }
+        return null;
+    }
+
+    /*
      * Initializes workflow version for given branch
      *
      * @param branch

@@ -462,7 +462,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     private String getRequirementOrHint(List<Object> requirements, List<Object> hints, String dockerPull) {
         dockerPull = getDockerRequirement(requirements, dockerPull);
         if (dockerPull == null) {
-            dockerPull = getDockerRequirement(hints, null);
+            dockerPull = getDockerHint(hints, dockerPull);
         }
         return dockerPull;
     }
@@ -516,6 +516,28 @@ public class CWLHandler implements LanguageHandlerInterface {
             for (Object requirement : requirements) {
                 Object dockerRequirement = ((Map)requirement).get("class");
                 Object dockerPull = ((Map)requirement).get("dockerPull");
+                if (Objects.equals(dockerRequirement, "DockerRequirement") && dockerPull != null) {
+                    return dockerPull.toString();
+                }
+            }
+        }
+
+        return currentDefault;
+    }
+
+    /**
+     * Given a list of CWL hints, will return the DockerPull information if present.
+     * If not will return the current docker path (currentDefault)
+     *
+     * @param hints
+     * @param currentDefault
+     * @return
+     */
+    private String getDockerHint(List<Object> hints, String currentDefault) {
+        if (hints != null) {
+            for (Object hint : hints) {
+                Object dockerRequirement = ((Map)hint).get("class");
+                Object dockerPull = ((Map)hint).get("dockerPull");
                 if (Objects.equals(dockerRequirement, "DockerRequirement") && dockerPull != null) {
                     return dockerPull.toString();
                 }

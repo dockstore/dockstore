@@ -937,6 +937,7 @@
                     </execution>
                 </executions>
             </plugin>
+	    <!-- swagger2openapi install fails too often
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -959,6 +960,7 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
         </plugins>
     </build>
 

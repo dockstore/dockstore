@@ -57,7 +57,17 @@ public class ToolVersionV1  {
             // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
             this.dockerfile = toolVersion.isContainerfile();
             this.verified = toolVersion.isVerified();
-
+            // descriptor type seems to have issues, maybe because nextflow didn't exist
+            List<DescriptorType> newTypes = toolVersion.getDescriptorType();
+            descriptorType.clear();
+            for(DescriptorType type : newTypes) {
+                if (type == DescriptorType.CWL) {
+                    descriptorType.add(DescriptorTypeEnum.CWL);
+                }
+                if (type == DescriptorType.WDL) {
+                    descriptorType.add(DescriptorTypeEnum.WDL);
+                }
+            }
         } catch (IllegalAccessException | InvocationTargetException e) {
             LOG.error("unable to backwards convert toolVersion");
             throw new RuntimeException(e);
