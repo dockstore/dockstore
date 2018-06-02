@@ -15,6 +15,7 @@
  */
 package io.dockstore.client.cli;
 
+import java.util.Collections;
 import java.util.List;
 
 import avro.shaded.com.google.common.base.Joiner;
@@ -24,6 +25,7 @@ import com.beust.jcommander.ParameterException;
 import com.beust.jcommander.Parameters;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.TabExpansionUtil;
+import io.dockstore.provision.PreProvisionInterface;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.slf4j.Logger;
@@ -98,7 +100,7 @@ public final class PluginClient {
         PluginManager pluginManager = FileProvisionUtil.getPluginManager(configFile);
         List<PluginWrapper> plugins = pluginManager.getStartedPlugins();
         StringBuilder builder = new StringBuilder();
-        builder.append("PluginId\tPlugin Version\tPlugin Path\tSchemes handled\n");
+        builder.append("PluginId\tPlugin Version\tPlugin Path\tSchemes handled\tPlugin Type\n");
         for (PluginWrapper plugin : plugins) {
             builder.append(plugin.getPluginId());
             builder.append("\t");
@@ -108,7 +110,12 @@ public final class PluginClient {
                     .append("(.zip)");
             builder.append("\t");
             List<ProvisionInterface> extensions = pluginManager.getExtensions(ProvisionInterface.class, plugin.getPluginId());
+            List<PreProvisionInterface> preProvisionExtensions = pluginManager.getExtensions(PreProvisionInterface.class, plugin.getPluginId());
             extensions.forEach(extension -> Joiner.on(',').appendTo(builder, extension.schemesHandled()));
+            preProvisionExtensions.forEach(extension -> Joiner.on(',').appendTo(builder, extension.schemesHandled()));
+            builder.append("\t");
+            extensions.forEach(extension -> Joiner.on(',').appendTo(builder, Collections.singleton("Normal")));
+            preProvisionExtensions.forEach(extension -> Joiner.on(',').appendTo(builder, Collections.singleton("PreProvision")));
             builder.append("\n");
         }
         out(TabExpansionUtil.aligned(builder.toString()));

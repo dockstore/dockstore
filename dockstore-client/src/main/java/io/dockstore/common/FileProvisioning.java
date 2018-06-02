@@ -42,12 +42,14 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.dockstore.client.cli.Client;
+import io.dockstore.provision.PreProvisionInterface;
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.vfs2.AllFileSelector;
@@ -77,6 +79,7 @@ public class FileProvisioning {
     private final boolean cache;
 
     private List<ProvisionInterface> plugins = new ArrayList<>();
+    private List<PreProvisionInterface> preProvisionPlugins = new ArrayList<>();
 
     private INIConfiguration config;
 
@@ -91,6 +94,7 @@ public class FileProvisioning {
             PluginManager pluginManager = FileProvisionUtil.getPluginManager(config);
 
             this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
+            this.preProvisionPlugins = pluginManager.getExtensions(PreProvisionInterface.class);
 
             List<PluginWrapper> pluginWrappers = pluginManager.getPlugins();
             for (PluginWrapper pluginWrapper : pluginWrappers) {
@@ -270,6 +274,16 @@ public class FileProvisioning {
         URI objectIdentifier = URI.create(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
         if (objectIdentifier.getScheme() != null) {
             String scheme = objectIdentifier.getScheme().toLowerCase();
+            for (PreProvisionInterface plugin : preProvisionPlugins) {
+                List<String> list = plugin.prepareDownload(targetPath);
+                Optional<ImmutablePair<String, String>> newTarget = findSupportedTargetPath(plugins, list);
+                if (newTarget.isPresent()) {
+                    ImmutablePair<String, String> immutablePair = newTarget.get();
+                    targetPath = immutablePair.left;
+                    scheme = immutablePair.right;
+                    break;
+                }
+            }
             for (ProvisionInterface provision : plugins) {
                 if (provision.schemesHandled().contains(scheme.toUpperCase()) || provision.schemesHandled()
                         .contains(scheme.toLowerCase())) {
@@ -353,6 +367,35 @@ public class FileProvisioning {
                 }
             }
         }
+    }
+
+    /**
+     * Returns the first target path and its scheme in <code>targetPaths</code>
+     * whose scheme is handled by a plugin in <code>pluginList</code>.
+     *
+     * @param pluginList     a list of plugins
+     * @param targetPaths    a list of targetPaths
+     * @return the first targetPath and scheme with a supported scheme, or <code>Optional.empty()</code>
+     */
+    static Optional<ImmutablePair<String, String>> findSupportedTargetPath(List<ProvisionInterface> pluginList, List<String> targetPaths) {
+        for (String target : targetPaths) {
+            try {
+                URI objectIdentifier = URI.create(target);    // throws IllegalArgumentException if it isn't a valid URI
+                String scheme = (objectIdentifier.getScheme() != null) ? objectIdentifier.getScheme().toLowerCase() : null;
+                if (scheme != null) {
+                    for (ProvisionInterface provisionInterface : pluginList) {
+                        for (String currentScheme : provisionInterface.schemesHandled()) {
+                            if (StringUtils.containsIgnoreCase(currentScheme, scheme)) {
+                                return Optional.of(new ImmutablePair<>(target, scheme));
+                            }
+                        }
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                LOG.info("Bad target");
+            }
+        }
+        return Optional.empty();
     }
 
     private void handleDownloadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision) {
