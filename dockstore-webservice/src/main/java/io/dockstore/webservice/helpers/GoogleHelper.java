@@ -6,6 +6,7 @@ import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.GoogleInfo;
 import io.dockstore.webservice.core.User;
 import org.apache.http.HttpStatus;
 
@@ -48,8 +49,13 @@ public final class GoogleHelper {
      * @param user      The pre-updated User object
      */
     public static void updateUserFromGoogleUserinfoplus(Userinfoplus userinfo, User user) {
-        user.setUsername(userinfo.getEmail());
-        user.setEmail(userinfo.getEmail());
-        user.setAvatarUrl(userinfo.getPicture());
+        GoogleInfo googleInfo = user.getGoogleUserInfo();
+        if (googleInfo == null) {
+            googleInfo = new GoogleInfo();
+        }
+        googleInfo.setName(userinfo.getName());
+        googleInfo.setEmail(userinfo.getEmail());
+        googleInfo.setPicture(userinfo.getPicture());
+        user.setGoogleUserInfo(googleInfo);
     }
 }

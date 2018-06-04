@@ -36,11 +36,13 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -99,6 +101,10 @@ public class User implements Principal, Comparable<User> {
     @Column
     @ApiModelProperty(value = "URL of user avatar on Github.", position = 7)
     private String avatarUrl;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @ApiModelProperty(value = "Google information of the user")
+    private GoogleInfo googleUserInfo;
 
     // database timestamps
     @Column(updatable = false)
@@ -309,5 +315,13 @@ public class User implements Principal, Comparable<User> {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("id", id).add("username", username).add("isAdmin", isAdmin).toString();
+    }
+
+    public GoogleInfo getGoogleUserInfo() {
+        return googleUserInfo;
+    }
+
+    public void setGoogleUserInfo(GoogleInfo googleUserInfo) {
+        this.googleUserInfo = googleUserInfo;
     }
 }
