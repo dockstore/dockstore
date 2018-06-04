@@ -345,9 +345,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             long userID;
             Token dockstoreToken = null;
             Token googleToken = null;
-            String googleLoginName = GoogleHelper.GOOGLE_USERNAME_PREFIX + userinfo.getName();
+            String googleLoginName = userinfo.getEmail();
             User user = userDAO.findByUsername(googleLoginName);
-            List<Token> googleByUsername = tokenDAO.findTokenByUsername(GoogleHelper.GOOGLE_USERNAME_PREFIX + userinfo.getName(), TokenType.GOOGLE_COM);
+            List<Token> googleByUsername = tokenDAO.findTokenByUsername(userinfo.getEmail(), TokenType.GOOGLE_COM);
             if (user == null && !authUser.isPresent() && googleByUsername.isEmpty()) {
                 user = new User();
                 // Pull user information from Google
