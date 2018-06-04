@@ -162,7 +162,7 @@ public final class Helper {
                 // due to an earlier glitch, there can be multiple files with the same path
                 // take the newest file (date can be null if this is a first refresh) and erase the others
                 Map<String, SourceFile> newestFile = new HashMap<>();
-                for(SourceFile file : cwlTestJson) {
+                for (SourceFile file : cwlTestJson) {
                     if (newestFile.containsKey(file.getPath())) {
                         SourceFile existingFile = newestFile.get(file.getPath());
                         if (file.getDbUpdateDate().after(existingFile.getDbUpdateDate())) {
@@ -173,7 +173,7 @@ public final class Helper {
                     }
                 }
                 // delete older duplicates from tag
-                for(SourceFile file : cwlTestJson) {
+                for (SourceFile file : cwlTestJson) {
                     if (newestFile.get(file.getPath()) == file) {
                         continue;
                     }
