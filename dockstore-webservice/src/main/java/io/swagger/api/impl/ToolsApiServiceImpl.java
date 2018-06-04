@@ -22,6 +22,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -572,7 +574,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
                 primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
                 Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type);
+                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, workflowVersion.getWorkingDirectory());
                 return Response.ok().entity(toolFiles).build();
             } else {
                 return Response.noContent().build();
@@ -587,7 +589,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 primaryDescriptorPaths.add(tag.getCwlPath());
                 primaryDescriptorPaths.add(tag.getWdlPath());
                 Set<SourceFile> sourceFiles = tag.getSourceFiles();
-                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type);
+                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, tag.getWorkingDirectory());
                 return Response.ok().entity(toolFiles).build();
             } else {
                 return Response.noContent().build();
@@ -630,19 +632,24 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * @param mainDescriptor The main descriptor path, used to determine if the file is a primary or secondary descriptor
      * @return A list of ToolFile for the Tool
      */
-    private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type) {
+    private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type, String workingDirectory) {
         List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
-        List<ToolFile> toolFiles = filteredSourceFiles.stream().map(file -> {
+        return filteredSourceFiles.stream().map(file -> {
             ToolFile toolFile = new ToolFile();
             toolFile.setPath(file.getPath());
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
             if (fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) && mainDescriptor.contains(file.getPath())) {
                 fileTypeEnum = ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
             }
+            if (!fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR)) {
+                Path pathBase = Paths.get(workingDirectory.isEmpty() ? "/" : StringUtils.prependIfMissing(workingDirectory, "/"));
+                Path specificPath = Paths.get(file.getPath());
+                Path pathRelative = pathBase.relativize(specificPath);
+                toolFile.setPath(pathRelative.toString());
+            }
             toolFile.setFileType(fileTypeEnum);
             return toolFile;
-        }).filter(Objects::nonNull).sorted(Comparator.comparing(ToolFile::getPath)).collect(Collectors.toList());
-        return toolFiles;
+        }).sorted(Comparator.comparing(ToolFile::getPath)).collect(Collectors.toList());
     }
 
     /**
