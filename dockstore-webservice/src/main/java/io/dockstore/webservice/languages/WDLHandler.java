@@ -96,11 +96,10 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
-        return processImports(content, version, sourceCodeRepoInterface, new HashSet<>());
+        return processImports(content, version, sourceCodeRepoInterface, new HashMap<>());
     }
 
-    private Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> alreadyImported) {
-        Map<String, SourceFile> imports = new HashMap<>();
+    private Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
         File tempDesc = null;
         try {
@@ -109,7 +108,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
             // Use matcher to get imports
             List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
-            HashSet<String> importPaths = new HashSet<>();
+            HashSet<String> currentFileImports = new HashSet<>();
             Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
 
             for (String line : lines) {
@@ -118,13 +117,13 @@ public class WDLHandler implements LanguageHandlerInterface {
                 while (m.find()) {
                     String match = m.group(1);
                     if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
-                        importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
+                        currentFileImports.add(match.replaceFirst("file://", "")); // remove file:// from path
                     }
                 }
             }
 
-            for (String importPath : importPaths) {
-                if (!alreadyImported.contains(importPath)) {
+            for (String importPath : currentFileImports) {
+                if (!imports.containsKey(importPath)) {
                     SourceFile importFile = new SourceFile();
 
                     final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
@@ -136,14 +135,10 @@ public class WDLHandler implements LanguageHandlerInterface {
                     importFile.setPath(importPath);
                     importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
                     imports.put(importFile.getPath(), importFile);
+                    imports.putAll(processImports(importFile.getContent(), version, sourceCodeRepoInterface, imports));
                 }
             }
 
-            importPaths.addAll(alreadyImported);
-
-            for (SourceFile sf : imports.values()) {
-                imports.putAll(processImports(sf.getContent(), version, sourceCodeRepoInterface, importPaths));
-            }
         } catch (IOException e) {
             throw new CustomWebApplicationException("Internal server error, out of space",
                 HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
