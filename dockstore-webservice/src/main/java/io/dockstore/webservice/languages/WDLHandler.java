@@ -108,7 +108,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
             // Use matcher to get imports
             List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
-            HashSet<String> currentFileImports = new HashSet<>();
+            Set<String> currentFileImports = new HashSet<>();
             Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
 
             for (String line : lines) {
