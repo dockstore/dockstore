@@ -96,10 +96,10 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
-        return processImports(content, version, sourceCodeRepoInterface, new ArrayList<>());
+        return processImports(content, version, sourceCodeRepoInterface, new HashSet<>());
     }
 
-    public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, List<String> alreadyImported) {
+    private Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Set<String> alreadyImported) {
         Map<String, SourceFile> imports = new HashMap<>();
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
         File tempDesc = null;
@@ -109,7 +109,7 @@ public class WDLHandler implements LanguageHandlerInterface {
 
             // Use matcher to get imports
             List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
-            ArrayList<String> importPaths = new ArrayList<>();
+            HashSet<String> importPaths = new HashSet<>();
             Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
 
             for (String line : lines) {
@@ -124,7 +124,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             }
 
             for (String importPath : importPaths) {
-                if (alreadyImported.indexOf(importPath) == -1) {
+                if (!alreadyImported.contains(importPath)) {
                     SourceFile importFile = new SourceFile();
 
                     final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
