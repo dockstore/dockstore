@@ -114,6 +114,14 @@ public class SourceFile {
         this.path = path;
     }
 
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(id, type, content);
