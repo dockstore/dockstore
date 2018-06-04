@@ -414,7 +414,7 @@ public class WorkflowIT extends BaseIT {
         // Assert some things
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("No workflows are in full mode", count == 0);
+        assertEquals("No workflows are in full mode", 0,count);
 
         // Refresh the workflow
         workflowApi.refresh(githubWorkflow.getId());
@@ -432,7 +432,7 @@ public class WorkflowIT extends BaseIT {
         }
 
         Optional<WorkflowVersion> masterVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "master")).findFirst();
-        if (loopVersion.isPresent()) {
+        if (masterVersion.isPresent()) {
             assertEquals("There should be three sourcefiles", 3, masterVersion.get().getSourceFiles().size());
         } else {
             fail("Could not find version master");

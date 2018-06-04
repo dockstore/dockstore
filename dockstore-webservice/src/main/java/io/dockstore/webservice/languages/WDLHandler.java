@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -125,15 +124,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             }
 
             for (String importPath : importPaths) {
-                boolean toAdd = true;
-                for (String path : alreadyImported) {
-                    if (Objects.equals(path, importPath)) {
-                        toAdd = false;
-                        break;
-                    }
-                }
-
-                if (toAdd) {
+                if (alreadyImported.indexOf(importPath) == -1) {
                     SourceFile importFile = new SourceFile();
 
                     final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
