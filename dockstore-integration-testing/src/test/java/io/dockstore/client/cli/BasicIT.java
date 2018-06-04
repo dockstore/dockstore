@@ -1110,7 +1110,7 @@ public class BasicIT extends BaseIT {
             "quay.io/dockstoretestuser/test_input_json" });
         final List<Long> testJsonCounts = testingPostgres
             .runSelectStatement("select count(*) from sourcefile s, version_sourcefile vs where (s.type = 'CWL_TEST_JSON' or s.type = 'WDL_TEST_JSON') and s.id = vs.sourcefileid group by vs.versionid", new ColumnListHandler<>());
-        Assert.assertTrue("there should be tree sets of test json sourcefiles " + testJsonCounts.size(), testJsonCounts.size() == 3);
+        Assert.assertTrue("there should be at least three sets of test json sourcefiles " + testJsonCounts.size(), testJsonCounts.size() >= 3);
         for(Long testJsonCount : testJsonCounts) {
             Assert.assertTrue("there should be at most two test json for each version", testJsonCount <= 2);
         }
