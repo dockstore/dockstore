@@ -54,7 +54,7 @@ import wdl4s.parser.WdlParser;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-
+    public static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
     @Override
     public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
@@ -109,10 +109,9 @@ public class WDLHandler implements LanguageHandlerInterface {
             // Use matcher to get imports
             List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
             Set<String> currentFileImports = new HashSet<>();
-            Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
 
             for (String line : lines) {
-                Matcher m = p.matcher(line);
+                Matcher m = IMPORT_PATTERN.matcher(line);
 
                 while (m.find()) {
                     String match = m.group(1);
