@@ -1167,7 +1167,7 @@
         </profile>
         <profile>
             <id>other-integration-tests</id>
-            <!-- Only run integration tests not for tools or workflows -->
+            <!-- Only run integration tests not related to only tools or workflows. This is a catch all. -->
             <properties>
                 <skipTests>true</skipTests>
                 <skipITs>false</skipITs>
