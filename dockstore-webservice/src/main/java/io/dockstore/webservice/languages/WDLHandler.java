@@ -54,7 +54,7 @@ import wdl4s.parser.WdlParser;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-
+    public static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
     @Override
     public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
@@ -96,45 +96,53 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
-        Map<String, SourceFile> imports = new HashMap<>();
+        return processImports(content, version, sourceCodeRepoInterface, new HashMap<>());
+    }
+
+    private Map<String, SourceFile> processImports(String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
-        final File tempDesc;
+        File tempDesc = null;
         try {
             tempDesc = File.createTempFile("temp", ".wdl", Files.createTempDir());
             Files.asCharSink(tempDesc, StandardCharsets.UTF_8).write(content);
 
             // Use matcher to get imports
             List<String> lines = FileUtils.readLines(tempDesc, StandardCharsets.UTF_8);
-            ArrayList<String> importPaths = new ArrayList<>();
-            Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
+            Set<String> currentFileImports = new HashSet<>();
 
             for (String line : lines) {
-                Matcher m = p.matcher(line);
+                Matcher m = IMPORT_PATTERN.matcher(line);
 
                 while (m.find()) {
                     String match = m.group(1);
                     if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
-                        importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
+                        currentFileImports.add(match.replaceFirst("file://", "")); // remove file:// from path
                     }
                 }
             }
 
-            for (String importPath : importPaths) {
-                SourceFile importFile = new SourceFile();
+            for (String importPath : currentFileImports) {
+                if (!imports.containsKey(importPath)) {
+                    SourceFile importFile = new SourceFile();
 
-                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
-                if (fileResponse == null) {
-                    SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
-                    continue;
+                    final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(fileType, version, importPath);
+                    if (fileResponse == null) {
+                        SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
+                        continue;
+                    }
+                    importFile.setContent(fileResponse);
+                    importFile.setPath(importPath);
+                    importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                    imports.put(importFile.getPath(), importFile);
+                    imports.putAll(processImports(importFile.getContent(), version, sourceCodeRepoInterface, imports));
                 }
-                importFile.setContent(fileResponse);
-                importFile.setPath(importPath);
-                importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
-                imports.put(importFile.getPath(), importFile);
             }
+
         } catch (IOException e) {
             throw new CustomWebApplicationException("Internal server error, out of space",
                 HttpStatus.SC_INSUFFICIENT_SPACE_ON_RESOURCE);
+        } finally {
+            FileUtils.deleteQuietly(tempDesc);
         }
 
         return imports;

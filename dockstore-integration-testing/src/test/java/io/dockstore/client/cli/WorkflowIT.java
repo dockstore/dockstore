@@ -23,6 +23,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import io.dockstore.client.cli.nested.AbstractEntryClient;
@@ -57,9 +58,11 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
@@ -387,6 +390,53 @@ public class WorkflowIT extends BaseIT {
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
         assertTrue("There should be 5 valid version tags, there are " + count4, count4 == 6);
+    }
+
+    /**
+     * This tests that a nested WDL workflow (three levels) is properly parsed
+     * @throws ApiException
+     */
+    @Test
+    public void testNestedWdlWorkflow() throws ApiException {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Set up postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manually register workflow github
+        Workflow githubWorkflow = workflowApi
+                .manualRegister("github", "DockstoreTestUser2/nested-wdl", "/Dockstore.wdl", "altname", "wdl", "/test.json");
+
+        // Assert some things
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertEquals("No workflows are in full mode", 0,count);
+
+        // Refresh the workflow
+        workflowApi.refresh(githubWorkflow.getId());
+
+        // Confirm that correct number of sourcefiles are found
+        githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId());
+        List<WorkflowVersion> versions = githubWorkflow.getWorkflowVersions();
+        assertEquals("There should be two versions", 2, versions.size());
+
+        Optional<WorkflowVersion> loopVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "infinite-loop")).findFirst();
+        if (loopVersion.isPresent()) {
+            assertEquals("There should be two sourcefiles", 2, loopVersion.get().getSourceFiles().size());
+        } else {
+            fail("Could not find version infinite-loop");
+        }
+
+        Optional<WorkflowVersion> masterVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "master")).findFirst();
+        if (masterVersion.isPresent()) {
+            assertEquals("There should be three sourcefiles", 3, masterVersion.get().getSourceFiles().size());
+        } else {
+            fail("Could not find version master");
+        }
     }
 
 
