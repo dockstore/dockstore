@@ -85,10 +85,7 @@ before_install:
 #- npm install -g swagger2openapi@2.11.16
 # decrypt migration before initial build
 - scripts/decrypt.sh
-# pre-build to check dependencies and look for out-of-sync swagger
-- mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
-# turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
-#- scripts/check-swagger.sh
+- scripts/check-swagger.sh
 
 install:
 - docker version

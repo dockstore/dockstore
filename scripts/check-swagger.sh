@@ -9,12 +9,15 @@ set -o nounset
 set -o xtrace
 
 if [ "${TESTING_PROFILE}" = "unit-tests" ]; then
-    exit 0;
+    # pre-build to check dependencies and look for out-of-sync swagger
+    mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
+#    exit 0;
 fi
 
-cp dockstore-webservice/src/main/resources/swagger.yaml generated.yaml
-git checkout dockstore-webservice/src/main/resources/swagger.yaml
-go get -v github.com/bronze1man/yaml2json
-cat dockstore-webservice/src/main/resources/swagger.yaml | yaml2json | python -m json.tool > t1.json
-cat generated.yaml | yaml2json | python -m json.tool > t2.json
-diff t1.json t2.json
+# turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
+#cp dockstore-webservice/src/main/resources/swagger.yaml generated.yaml
+#git checkout dockstore-webservice/src/main/resources/swagger.yaml
+#go get -v github.com/bronze1man/yaml2json
+#cat dockstore-webservice/src/main/resources/swagger.yaml | yaml2json | python -m json.tool > t1.json
+#cat generated.yaml | yaml2json | python -m json.tool > t2.json
+#diff t1.json t2.json
