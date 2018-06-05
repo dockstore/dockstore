@@ -16,6 +16,8 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Date;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.ws.rs.Path;
@@ -31,6 +33,7 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 
@@ -106,9 +109,27 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         return tool;
     }
 
-    //TODO: Need to implement this when we extend hosted tool support
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
-        return true;
+        // Requires either a valid CWL or WDL
+        // Test CWL
+        boolean isValidCWL = false;
+        String cwlPrimaryDescriptorPath = "/Dockstore.cwl";
+        Optional<SourceFile> cwlPrimaryDescriptor = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), cwlPrimaryDescriptorPath)).findFirst();
+
+        if (cwlPrimaryDescriptor.isPresent()) {
+            isValidCWL = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).isValidWorkflow(cwlPrimaryDescriptor.get().getContent());
+        }
+
+        // Test WDL
+        boolean isValidWDL = false;
+        String wdlPrimaryDescriptorPath = "/Dockstore.wdl";
+        Optional<SourceFile> wdlPrimaryDescriptor = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), wdlPrimaryDescriptorPath)).findFirst();
+
+        if (cwlPrimaryDescriptor.isPresent()) {
+            isValidWDL = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).isValidWorkflow(wdlPrimaryDescriptor.get().getContent());
+        }
+
+        return isValidCWL || isValidWDL;
     }
 }
