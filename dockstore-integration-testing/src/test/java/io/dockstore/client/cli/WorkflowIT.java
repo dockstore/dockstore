@@ -43,6 +43,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
+import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -617,5 +618,12 @@ public class WorkflowIT extends BaseIT {
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
         // ignore extra separators
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "/adtex.cwl");
+        // test json should use relative path with ".."
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "../test.json");
+        List<ToolFile> toolFiles = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        assertTrue("should have at least 5 files", toolFiles.size() >= 5);
+        assertTrue("all files should have relative paths", toolFiles.stream().filter(toolFile -> !toolFile.getPath().startsWith("/")).count() >= 5);
+
     }
 }
