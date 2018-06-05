@@ -35,6 +35,7 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Tool;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
@@ -49,7 +50,7 @@ import org.junit.experimental.categories.Category;
 /**
  * Tests CRUD style operations for tools and workflows hosted directly on Dockstore
  *
- * @author dyuen
+ * @author dyuen,agduncan
  */
 @Category(ConfidentialTest.class)
 public class CRUDClientIT extends BaseIT {
@@ -177,7 +178,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     /**
-     * Ensures that only valid descriptor types can be used to create a hosted workflow
+     * Ensures that only valid descriptor types can be used to create a hosted tool
      */
     @Test
     public void testToolCreationInvalidDescriptorType(){
@@ -187,6 +188,72 @@ public class CRUDClientIT extends BaseIT {
         api.createHostedTool("awesomeToolWdl", "wdl", "quay.io");
         thrown.expect(ApiException.class);
         api.createHostedTool("awesomeToolCwll", "cwll", "quay.io");
+    }
+
+    /**
+     * Ensures that hosted tools cannot be refreshed (this tests individual refresh)
+     */
+    @Test
+    public void testRefreshingHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io");
+        thrown.expect(ApiException.class);
+        containersApi.refresh(hostedTool.getId());
+    }
+
+    /**
+     * Ensures that hosted tools cannot be updated
+     */
+    @Test
+    public void testUpdatingHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io");
+        DockstoreTool newTool = new DockstoreTool();
+        thrown.expect(ApiException.class);
+        containersApi.updateContainer(hostedTool.getId(), newTool);
+    }
+
+    /**
+     * Ensures that hosted tools cannot have new test parameter files added
+     */
+    @Test
+    public void testAddingTestParameterFilesHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io");
+        thrown.expect(ApiException.class);
+        containersApi.addTestParameterFiles(hostedTool.getId(), new ArrayList<>(), "cwl", "", "1");
+    }
+
+    /**
+     * Ensures that hosted tools cannot have their test parameter files deleted
+     */
+    @Test
+    public void testDeletingTestParameterFilesHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io");
+        thrown.expect(ApiException.class);
+        containersApi.deleteTestParameterFiles(hostedTool.getId(), new ArrayList<>(), "cwl", "1");
+    }
+
+    /**
+     * Ensures that only valid descriptor types can be used to create a hosted workflow
+     */
+    @Test
+    public void testWorkflowCreationInvalidDescriptorType(){
+        ApiClient webClient = getWebClient();
+        HostedApi api = new HostedApi(webClient);
+        api.createHostedWorkflow("awesomeToolCwl", "cwl", null);
+        api.createHostedWorkflow("awesomeToolWdl", "wdl", null);
+        thrown.expect(ApiException.class);
+        api.createHostedWorkflow("awesomeToolCwll", "cwll", null);
     }
 
     /**

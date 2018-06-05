@@ -126,7 +126,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         String wdlPrimaryDescriptorPath = "/Dockstore.wdl";
         Optional<SourceFile> wdlPrimaryDescriptor = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), wdlPrimaryDescriptorPath)).findFirst();
 
-        if (cwlPrimaryDescriptor.isPresent()) {
+        if (wdlPrimaryDescriptor.isPresent()) {
             isValidWDL = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).isValidWorkflow(wdlPrimaryDescriptor.get().getContent());
         }
 
