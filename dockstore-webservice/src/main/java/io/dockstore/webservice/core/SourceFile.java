@@ -39,6 +39,7 @@ import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
 import com.google.common.base.MoreObjects;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -138,6 +139,16 @@ public class SourceFile implements Comparable<SourceFile> {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    @JsonIgnore
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    @JsonIgnore
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
     }
 
     @Override
