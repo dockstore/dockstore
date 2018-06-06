@@ -22,6 +22,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
@@ -42,7 +43,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  *
  * @author aduncan
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, ToolTest.class})
 public class BasicIT extends BaseIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();

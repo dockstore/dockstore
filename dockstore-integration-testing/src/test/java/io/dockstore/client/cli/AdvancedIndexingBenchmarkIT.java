@@ -35,6 +35,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import io.dockstore.common.BenchmarkTest;
 import io.dockstore.common.Registry;
+import io.dockstore.common.ToolTest;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -65,7 +66,7 @@ import static junit.framework.TestCase.assertTrue;
  *
  * @author gluu
  */
-@Category(BenchmarkTest.class)
+@Category({BenchmarkTest.class, ToolTest.class})
 @Ignore("more like benchmarking than a test per say")
 public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
