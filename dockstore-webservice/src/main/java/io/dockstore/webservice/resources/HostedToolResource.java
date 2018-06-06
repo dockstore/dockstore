@@ -33,7 +33,6 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 
@@ -66,15 +65,15 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted tool", response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, String descriptorType) {
-        return super.createHosted(user, registry, name, descriptorType);
+    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace) {
+        return super.createHosted(user, registry, name, descriptorType, namespace);
     }
 
     @Override
-    protected Tool getEntry(User user, String registry, String name, String descriptorType) {
+    protected Tool getEntry(User user, String registry, String name, String descriptorType, String namespace) {
         Tool tool = new Tool();
         tool.setRegistry(registry);
-        tool.setNamespace(user.getUsername());
+        tool.setNamespace(namespace);
         tool.setName(name);
         tool.setMode(ToolMode.HOSTED);
         tool.getUsers().add(user);
@@ -112,24 +111,30 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
         // Requires either a valid CWL or WDL
-        // Test CWL
         boolean isValidCWL = false;
         String cwlPrimaryDescriptorPath = "/Dockstore.cwl";
         Optional<SourceFile> cwlPrimaryDescriptor = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), cwlPrimaryDescriptorPath)).findFirst();
 
         if (cwlPrimaryDescriptor.isPresent()) {
-            isValidCWL = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).isValidWorkflow(cwlPrimaryDescriptor.get().getContent());
+            isValidCWL = true;
         }
 
-        // Test WDL
         boolean isValidWDL = false;
         String wdlPrimaryDescriptorPath = "/Dockstore.wdl";
         Optional<SourceFile> wdlPrimaryDescriptor = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), wdlPrimaryDescriptorPath)).findFirst();
 
         if (wdlPrimaryDescriptor.isPresent()) {
-            isValidWDL = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).isValidWorkflow(wdlPrimaryDescriptor.get().getContent());
+            isValidWDL = true;
         }
 
-        return isValidCWL || isValidWDL;
+        boolean hasDockerfile = false;
+        String dockerfilePath = "/Dockerfile";
+        Optional<SourceFile> dockerfile = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), dockerfilePath)).findFirst();
+
+        if (dockerfile.isPresent()) {
+            hasDockerfile = true;
+        }
+
+        return (isValidCWL || isValidWDL) && hasDockerfile;
     }
 }

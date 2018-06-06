@@ -1176,6 +1176,11 @@ paths:
         description: "For tools, the Docker registry"
         required: false
         type: "string"
+      - name: "namespace"
+        in: "query"
+        description: "For tools, the Docker namespace"
+        required: false
+        type: "string"
       - name: "name"
         in: "query"
         description: "name"
@@ -3188,6 +3193,11 @@ paths:
         description: "For tools, the Docker registry"
         required: false
         type: "string"
+      - name: "namespace"
+        in: "query"
+        description: "For tools, the Docker namespace"
+        required: false
+        type: "string"
       - name: "name"
         in: "query"
         description: "name"
@@ -3257,7 +3267,7 @@ paths:
         schema:
           type: "array"
           items:
-            $ref: "#/definitions/SourceFile"
+            type: "object"
       responses:
         200:
           description: "successful operation"
