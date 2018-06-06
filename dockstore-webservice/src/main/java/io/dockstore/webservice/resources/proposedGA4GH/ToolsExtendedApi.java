@@ -15,12 +15,16 @@
  */
 package io.dockstore.webservice.resources.proposedGA4GH;
 
+import java.util.Map;
+
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
@@ -37,6 +41,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import io.swagger.api.NotFoundException;
+import io.swagger.model.Error;
 import io.swagger.model.ToolV1;
 import org.apache.http.HttpStatus;
 
@@ -124,5 +129,27 @@ public class ToolsExtendedApi {
     public Response entriesOrgGet(
             @Context SecurityContext securityContext) {
         return delegate.organizationsGet(securityContext);
+    }
+
+    @POST
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Path("/{id}/versions/{version_id}/{type}/tests/{relative_path : .+}")
+    @Produces({ "application/json" })
+    @io.swagger.annotations.ApiOperation(value = "Annotate test JSON with information on whether it ran successfully on particular platforms plus metadata", notes = "Test JSON can be annotated with whether they ran correctly keyed by platform and associated with some metadata ", response = Map.class, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    @io.swagger.annotations.ApiResponses(value = {
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "The tool test JSON response.", response = Map.class),
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "The tool test cannot be found to annotate.", response = Error.class) })
+    @SuppressWarnings("checkstyle:parameternumber")
+    public Response toolsIdVersionsVersionIdTypeTestsPost(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "The type of the underlying descriptor. Allowable values include \"CWL\", \"WDL\", \"NFL\".", required = true) @PathParam("type") String type,
+        @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
+        @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
+        @ApiParam(value = "A relative path to the test json as retrieved from the files endpoint or the tests endpoint", required = true) @PathParam("relative_path") String relativePath,
+        @ApiParam(value = "Platform to report on", required = true) @QueryParam("platform") String platform,
+        @ApiParam(value = "Verification status, omit to delete key") @QueryParam("verified") Boolean verified,
+        @ApiParam(value = "Additional information on the verification (notes, explanation)", required = true) @QueryParam("metadata") String metadata,
+        @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
+        return delegate.setSourceFileMetadata(type, id, versionId, platform, relativePath, verified, metadata);
     }
 }

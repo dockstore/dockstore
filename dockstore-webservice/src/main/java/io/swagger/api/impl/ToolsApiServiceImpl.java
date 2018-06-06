@@ -153,7 +153,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         return buildToolResponse(entry, versionId, false);
     }
 
-    private Entry<?,?> getEntry(ParsedRegistryID parsedID) {
+    public Entry<?,?> getEntry(ParsedRegistryID parsedID) {
         Entry<?,?> entry;
         String entryPath = parsedID.getPath();
         String entryName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
@@ -536,7 +536,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * @param workingDirectory working directory if relevant
      * @return
      */
-    private Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPath, String workingDirectory) {
+    public Optional<SourceFile> lookForFilePath(Set<SourceFile> sourceFiles, String searchPath, String workingDirectory) {
         // ignore leading slashes
         searchPath = cleanRelativePath(searchPath);
 
@@ -708,14 +708,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
      * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it.
      */
-    private class ParsedRegistryID {
+    public static class ParsedRegistryID {
         private boolean tool = true;
         private String registry;
         private String organization;
         private String name;
         private String toolName;
 
-        ParsedRegistryID(String id) {
+        public ParsedRegistryID(String id) {
             try {
                 id = URLDecoder.decode(id, StandardCharsets.UTF_8.displayName());
             } catch (UnsupportedEncodingException e) {

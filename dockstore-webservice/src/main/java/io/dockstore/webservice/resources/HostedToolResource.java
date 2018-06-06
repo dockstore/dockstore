@@ -16,6 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 import javax.ws.rs.Path;
@@ -81,7 +82,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     @ApiOperation(nickname = "editHostedTool", value = "Non-idempotent operation for creating new revisions of hosted tools", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted tools", response = Tool.class)
-    public Tool editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
+    public Tool editHosted(User user, Long entryId, List<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
     }
 

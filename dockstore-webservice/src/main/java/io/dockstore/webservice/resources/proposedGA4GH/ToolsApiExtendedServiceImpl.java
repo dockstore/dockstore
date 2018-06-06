@@ -25,6 +25,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -35,11 +37,16 @@ import com.google.common.io.Resources;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.api.impl.ToolsImplCommon;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -198,5 +205,51 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             }
         }
         return Response.ok().entity(0).build();
+    }
+
+    @Override
+    public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String relativePath, Boolean verified,
+        String metadata) {
+        ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
+        ToolsApiServiceImpl.ParsedRegistryID parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
+        Entry entry = impl.getEntry(parsedID);
+        Optional<? extends Version> versionOptional;
+
+        if (entry instanceof Workflow) {
+            Workflow workflow = (Workflow)entry;
+            Set<WorkflowVersion> workflowVersions = workflow.getWorkflowVersions();
+            versionOptional = workflowVersions.stream().filter(workflowVersion -> workflowVersion.getName().equals(versionId)).findFirst();
+        } else if (entry instanceof Tool) {
+            Tool tool = (Tool)entry;
+            Set<Tag> versions = tool.getVersions();
+            versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
+        } else {
+            return Response.noContent().build();
+        }
+        if (versionOptional.isPresent()) {
+            Version version = versionOptional.get();
+            // so in this stream we need to standardize relative to the main descriptor
+            Optional<SourceFile> correctSourceFile = impl
+                .lookForFilePath(version.getSourceFiles(), relativePath, version.getWorkingDirectory());
+            if (correctSourceFile.isPresent()) {
+                SourceFile sourceFile = correctSourceFile.get();
+                if (!(SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType()))) {
+                    throw new CustomWebApplicationException("File was not a test parameter file", HttpStatus.SC_BAD_REQUEST);
+                }
+                if (verified == null) {
+                    sourceFile.getVerifiedBySource().remove(platform);
+                } else {
+                    SourceFile.VerificationInformation verificationInformation = new SourceFile.VerificationInformation();
+                    verificationInformation.metadata = metadata;
+                    verificationInformation.verified = verified;
+                    sourceFile.getVerifiedBySource().put(platform, verificationInformation);
+                }
+                // denormalizes verification out to the version level for performance
+                // not sure why the cast is needed
+                version.setVerified(version.getSourceFiles().stream().anyMatch(file -> ((SourceFile)file).getVerifiedBySource().values().stream().anyMatch(innerEntry -> innerEntry.verified)));
+                return Response.ok().entity(sourceFile.getVerifiedBySource()).build();
+            }
+        }
+        throw new CustomWebApplicationException("Could not submit verification information", HttpStatus.SC_BAD_REQUEST);
     }
 }

@@ -128,6 +128,10 @@ public class User implements Principal, Comparable<User> {
     @JsonIgnore
     private final Set<Entry> starredEntries;
 
+    @Column
+    @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
+    private boolean curator;
+
     public User() {
         groups = new HashSet<>(0);
         entries = new HashSet<>(0);
@@ -287,5 +291,13 @@ public class User implements Principal, Comparable<User> {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("id", id).add("username", username).add("isAdmin", isAdmin).toString();
+    }
+
+    public boolean isCurator() {
+        return curator;
+    }
+
+    public void setCurator(boolean curator) {
+        this.curator = curator;
     }
 }

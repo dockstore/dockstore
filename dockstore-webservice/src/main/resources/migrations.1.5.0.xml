@@ -87,4 +87,25 @@
             <column name="commitid" type="text"/>
         </addColumn>
     </changeSet>
+
+    <!-- add verification map to sourcefiles -->
+     <changeSet author="dyuen (generated)" id="verification_metadata">
+        <createTable tableName="sourcefile_verified">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="sourcefile_verified_pkey"/>
+            </column>
+            <column name="metadata" type="TEXT"/>
+            <column name="verified" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="source" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="sourcefile_verified_pkey"/>
+            </column>
+        </createTable>
+        <addColumn tableName="enduser">
+            <column name="curator" type="bool" defaultValue='false'/>
+        </addColumn>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="sourcefile_verified" constraintName="foreign_key" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="sourcefile"/>
+    </changeSet>
+
 </databaseChangeLog>

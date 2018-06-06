@@ -17,6 +17,7 @@ package io.dockstore.webservice.resources;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -116,7 +117,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @UnitOfWork
     public T editHosted(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
+        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) List<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
         checkUser(user, entry);
@@ -182,7 +183,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return entry;
     }
 
-    private Set<SourceFile> handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
+    private Set<SourceFile> handleSourceFileMerger(Long entryId, List<SourceFile> sourceFiles, T entry, U tag) {
         Set<U> versions = entry.getVersions();
         Map<String, SourceFile> map = new HashMap<>();
 
