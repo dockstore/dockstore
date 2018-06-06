@@ -37,6 +37,16 @@ jobs:
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true 
     - stage: integration-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=tool-integration-tests
+    - stage: integration-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=workflow-integration-tests
+    - stage: integration-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=other-integration-tests
     - stage: integration-tests
       env:
         - TESTING_PROFILE=toil-integration-tests
@@ -54,6 +64,18 @@ jobs:
     - stage: coverage
       if: branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=tool-integration-tests
+    - stage: coverage
+      if: branch IN (master, develop)
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=workflow-integration-tests
+    - stage: coverage
+      if: branch IN (master, develop)
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=other-integration-tests
 # build lifecycle is before_install, install, before_script, script, after_script
 
 before_install:
@@ -63,10 +85,7 @@ before_install:
 #- npm install -g swagger2openapi@2.11.16
 # decrypt migration before initial build
 - scripts/decrypt.sh
-# pre-build to check dependencies and look for out-of-sync swagger
-- mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
-# turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
-#- scripts/check-swagger.sh
+- scripts/check-swagger.sh
 
 install:
 - docker version

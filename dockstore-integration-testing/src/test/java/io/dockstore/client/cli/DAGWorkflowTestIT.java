@@ -26,6 +26,7 @@ import java.util.concurrent.TimeoutException;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
@@ -46,7 +47,7 @@ import org.junit.experimental.categories.Category;
 /**
  * Created by jpatricia on 24/06/16.
  */
-@Category({ConfidentialTest.class})
+@Category({ConfidentialTest.class, WorkflowTest.class})
 public class DAGWorkflowTestIT extends BaseIT {
 
     @Before
@@ -61,24 +62,14 @@ public class DAGWorkflowTestIT extends BaseIT {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
-    private WorkflowsApi setupWebService() throws IOException, TimeoutException, ApiException {
+    private WorkflowsApi setupWebService() throws ApiException {
         ApiClient webClient = WorkflowIT.getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
-        UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-
-        // Get workflows
-        usersApi.refreshWorkflows(userId);
-
         return workflowApi;
     }
 
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
-            throws IOException, TimeoutException, ApiException {
+            throws IOException, ApiException {
         final String TEST_WORKFLOW_NAME = "test-workflow";
         WorkflowsApi workflowApi = setupWebService();
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");

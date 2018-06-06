@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 import java.io.IOException;
 
 import io.dockstore.common.TestUtility;
+import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,11 +27,13 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.experimental.categories.Category;
 
 /**
  * @author gluu
  * @since 16/01/18
  */
+@Category({ ToolTest.class })
 public class NotificationsIT extends BaseIT {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
