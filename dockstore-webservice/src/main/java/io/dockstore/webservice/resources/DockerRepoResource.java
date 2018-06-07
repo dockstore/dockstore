@@ -560,7 +560,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             }
 
             // Can publish a tool IF it has at least one valid tag (or is manual) and a git url
-            if (validTag && !c.getGitUrl().isEmpty()) {
+            if (validTag && (!c.getGitUrl().isEmpty()) || Objects.equals(c.getMode(), ToolMode.HOSTED)) {
                 c.setIsPublished(true);
                 if (checker != null) {
                     checker.setIsPublished(true);
