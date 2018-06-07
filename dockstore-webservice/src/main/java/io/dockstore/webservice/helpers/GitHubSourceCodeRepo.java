@@ -38,7 +38,10 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.TokenType;
+import io.dockstore.webservice.core.TokenTypeConverter;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -500,7 +503,13 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         try {
             GHMyself myself = github.getMyself();
             user.setBio(myself.getBlog()); // ? not sure about this mapping in the new api
+            User.Profile profile = new User.Profile();
             user.setCompany(myself.getCompany());
+            profile.name = myself.getName();
+            profile.email = myself.getEmail();
+            profile.avatarURL = myself.getAvatarUrl();
+            Map<String, User.Profile> userProfile = user.getUserProfile();
+            userProfile.put(TokenType.GITHUB_COM.toString(), profile);
             user.setEmail(myself.getEmail());
             user.setLocation(myself.getLocation());
             user.setAvatarUrl(myself.getAvatarUrl());

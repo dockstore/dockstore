@@ -16,33 +16,8 @@
 
 package io.dockstore.webservice.core;
 
-import java.security.Principal;
-import java.sql.Timestamp;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToOne;
-import javax.persistence.OrderBy;
-import javax.persistence.Table;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -55,6 +30,34 @@ import io.swagger.annotations.ApiModelProperty;
 import org.apache.http.HttpStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.MapKeyColumn;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OrderBy;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+import java.security.Principal;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Stores end user information
@@ -102,9 +105,11 @@ public class User implements Principal, Comparable<User> {
     @ApiModelProperty(value = "URL of user avatar on Github.", position = 7)
     private String avatarUrl;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @ApiModelProperty(value = "Google information of the user")
-    private GoogleInfo googleUserInfo;
+    @ElementCollection(targetClass = Profile.class)
+    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "id", "token_type" }))
+    @MapKeyColumn(name = "token_type", columnDefinition = "text")
+    @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
+    private Map<String, Profile> userProfile = new HashMap<>();
 
     // database timestamps
     @Column(updatable = false)
@@ -317,11 +322,21 @@ public class User implements Principal, Comparable<User> {
         return MoreObjects.toStringHelper(this).add("id", id).add("username", username).add("isAdmin", isAdmin).toString();
     }
 
-    public GoogleInfo getGoogleUserInfo() {
-        return googleUserInfo;
+    public Map<String, Profile> getUserProfile() {
+        return userProfile;
     }
 
-    public void setGoogleUserInfo(GoogleInfo googleUserInfo) {
-        this.googleUserInfo = googleUserInfo;
+    public void setUserProfile(Map<String, Profile> userProfile) {
+        this.userProfile = userProfile;
+    }
+
+    @Embeddable
+    public static class Profile {
+        @Column(columnDefinition = "text")
+        public String email;
+        @Column(columnDefinition = "text")
+        public String name;
+        @Column(columnDefinition = "text")
+        public String avatarURL;
     }
 }
