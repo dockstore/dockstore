@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -387,13 +388,22 @@ public abstract class AbstractImageRegistry {
         // Get all of the required sourcefiles for the given tag
         List<SourceFile> newFiles = loadFiles(sourceCodeRepo, tool, tag);
 
-        // Remove all existing sourcefiles
-        tag.getSourceFiles().clear();
-
         // Add for new descriptor types
         boolean hasCwl = false;
         boolean hasWdl = false;
         boolean hasDockerfile = false;
+
+        // copy content over to existing files
+        for(SourceFile oldFile : tag.getSourceFiles()) {
+            for(SourceFile newFile : newFiles) {
+                if (Objects.equals(oldFile.getPath(), newFile.getPath())) {
+                    oldFile.setContent(newFile.getContent());
+                    newFiles.remove(newFile);
+                    break;
+                }
+            }
+        }
+        // create actual new files, newfiles should only have the new ones
 
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
