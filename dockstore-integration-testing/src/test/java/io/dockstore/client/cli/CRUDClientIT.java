@@ -33,9 +33,9 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import io.swagger.client.model.Tool;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
@@ -87,13 +87,17 @@ public class CRUDClientIT extends BaseIT {
     public void testToolEditing(){
         HostedApi api = new HostedApi(getWebClient());
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
-        SourceFile file = new SourceFile();
-        file.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
-        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        file.setPath("/Dockstore.cwl");
-        DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file));
+        SourceFile descriptorFile = new SourceFile();
+        descriptorFile.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
+        descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        descriptorFile.setPath("/Dockstore.cwl");
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        dockerfile.setPath("/Dockerfile");
+        DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
         Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
         SourceFile file2 = new SourceFile();
         file2.setContent("{\"message\": \"Hello world!\"}");
@@ -102,21 +106,26 @@ public class CRUDClientIT extends BaseIT {
         // add one file and include the old one implicitly
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file2));
         first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        Assert.assertEquals("correct number of source files", 3, first.get().getSourceFiles().size());
 
         // delete a file
         file2.setContent(null);
 
-        dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file,file2));
+        dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, file2, dockerfile));
         first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
-        dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "0");
+        dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "1");
         Assert.assertEquals("should only be two revisions", 2, dockstoreTool.getTags().size());
 
         //check that all revisions have editing users
         long count = dockstoreTool.getTags().stream().filter(tag -> tag.getVersionEditor() != null).count();
         Assert.assertEquals("all versions do not seem to have editors", count, dockstoreTool.getTags().size());
+
+        // Publish tool
+        ContainersApi containersApi = new ContainersApi(getWebClient());
+        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        containersApi.publish(dockstoreTool.getId(), pub);
     }
 
     @Test
@@ -169,12 +178,18 @@ public class CRUDClientIT extends BaseIT {
         first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
-        dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "0");
-        Assert.assertEquals("should only be two revisions", 3, dockstoreWorkflow.getWorkflowVersions().size());
+        dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "1");
+        Assert.assertEquals("should only be three revisions", 3, dockstoreWorkflow.getWorkflowVersions().size());
 
         //check that all revisions have editing users
         long count = dockstoreWorkflow.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
         Assert.assertEquals("all versions do not seem to have editors", count, dockstoreWorkflow.getWorkflowVersions().size());
+
+        // Publish workflow
+        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient());
+        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        workflowsApi.publish(dockstoreWorkflow.getId(), pub);
+
     }
 
     /**
