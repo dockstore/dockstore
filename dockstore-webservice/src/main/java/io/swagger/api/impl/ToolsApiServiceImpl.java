@@ -460,8 +460,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
 
                 List<ToolTests> toolTestsList = new ArrayList<>();
+
                 for (SourceFile file : testSourceFiles) {
-                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
+                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
                     toolTestsList.add(toolTests);
                 }
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
