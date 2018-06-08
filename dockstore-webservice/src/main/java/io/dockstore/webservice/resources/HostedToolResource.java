@@ -17,6 +17,7 @@ package io.dockstore.webservice.resources;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.ws.rs.Path;
@@ -64,15 +65,15 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted tool", response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, String descriptorType) {
-        return super.createHosted(user, registry, name, descriptorType);
+    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace) {
+        return super.createHosted(user, registry, name, descriptorType, namespace);
     }
 
     @Override
-    protected Tool getEntry(User user, String registry, String name, String descriptorType) {
+    protected Tool getEntry(User user, String registry, String name, String descriptorType, String namespace) {
         Tool tool = new Tool();
         tool.setRegistry(registry);
-        tool.setNamespace(user.getUsername());
+        tool.setNamespace(namespace);
         tool.setName(name);
         tool.setMode(ToolMode.HOSTED);
         tool.getUsers().add(user);
@@ -107,9 +108,11 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         return tool;
     }
 
-    //TODO: Need to implement this when we extend hosted tool support
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
-        return true;
+        boolean isValidCWL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.cwl"));
+        boolean isValidWDL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.wdl"));
+        boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
+        return (isValidCWL || isValidWDL) && hasDockerfile;
     }
 }

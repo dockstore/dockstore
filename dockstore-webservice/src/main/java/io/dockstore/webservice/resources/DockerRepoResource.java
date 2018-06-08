@@ -193,7 +193,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
         checkUser(user, c);
-
+        checkNotHosted(c);
         // Update user data
         User dbUser = userDAO.findById(user.getId());
         dbUser.updateUserMetadata(tokenDAO);
@@ -295,7 +295,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
-
+        checkNotHosted(c);
         checkUser(user, c);
 
         Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
@@ -357,6 +357,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         //use helper to check the user and the entry
         checkEntry(c);
+        checkNotHosted(c);
         checkUser(user, c);
 
         //update the workflow path in all workflowVersions
@@ -558,7 +559,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             }
 
             // Can publish a tool IF it has at least one valid tag (or is manual) and a git url
-            if (validTag && !c.getGitUrl().isEmpty()) {
+            if (validTag && (!c.getGitUrl().isEmpty()) || Objects.equals(c.getMode(), ToolMode.HOSTED)) {
                 c.setIsPublished(true);
                 if (checker != null) {
                     checker.setIsPublished(true);
@@ -837,7 +838,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-
+        checkNotHosted(tool);
         Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (!firstTag.isPresent()) {
@@ -869,6 +870,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL") @QueryParam("descriptorType") String descriptorType) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
+        checkNotHosted(tool);
 
         Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
@@ -1003,5 +1005,11 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             }
         }
         return false;
+    }
+
+    public void checkNotHosted(Tool tool) {
+        if (tool.getMode() == ToolMode.HOSTED) {
+            throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 }
