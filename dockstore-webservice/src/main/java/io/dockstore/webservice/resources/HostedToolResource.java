@@ -17,7 +17,6 @@ package io.dockstore.webservice.resources;
 
 import java.util.Date;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.ws.rs.Path;
