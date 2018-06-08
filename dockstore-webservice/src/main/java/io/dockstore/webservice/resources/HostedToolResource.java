@@ -110,31 +110,9 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
 
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
-        // Requires either a valid CWL or WDL
-        boolean isValidCWL = false;
-        String cwlPrimaryDescriptorPath = "/Dockstore.cwl";
-        Optional<SourceFile> cwlPrimaryDescriptor = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), cwlPrimaryDescriptorPath)).findFirst();
-
-        if (cwlPrimaryDescriptor.isPresent()) {
-            isValidCWL = true;
-        }
-
-        boolean isValidWDL = false;
-        String wdlPrimaryDescriptorPath = "/Dockstore.wdl";
-        Optional<SourceFile> wdlPrimaryDescriptor = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), wdlPrimaryDescriptorPath)).findFirst();
-
-        if (wdlPrimaryDescriptor.isPresent()) {
-            isValidWDL = true;
-        }
-
-        boolean hasDockerfile = false;
-        String dockerfilePath = "/Dockerfile";
-        Optional<SourceFile> dockerfile = sourceFiles.stream().filter(sf -> Objects.equals(sf.getPath(), dockerfilePath)).findFirst();
-
-        if (dockerfile.isPresent()) {
-            hasDockerfile = true;
-        }
-
+        boolean isValidCWL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.cwl"));
+        boolean isValidWDL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.wdl"));
+        boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
         return (isValidCWL || isValidWDL) && hasDockerfile;
     }
 }

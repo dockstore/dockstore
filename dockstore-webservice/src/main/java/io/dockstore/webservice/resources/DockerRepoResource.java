@@ -34,7 +34,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -1010,7 +1009,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
     public void checkNotHosted(Tool tool) {
         if (tool.getMode() == ToolMode.HOSTED) {
-            throw new WebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }
     }
 }
