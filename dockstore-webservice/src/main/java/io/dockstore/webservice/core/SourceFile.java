@@ -28,6 +28,7 @@ import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -38,8 +39,8 @@ import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
-import com.google.common.base.MoreObjects;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -94,7 +95,7 @@ public class SourceFile implements Comparable<SourceFile> {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    @ElementCollection(targetClass = VerificationInformation.class)
+    @ElementCollection(targetClass = VerificationInformation.class, fetch = FetchType.EAGER)
     @JoinTable(name = "sourcefile_verified", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = {
         "id", "source" }))
     @MapKeyColumn(name = "source", columnDefinition = "text")

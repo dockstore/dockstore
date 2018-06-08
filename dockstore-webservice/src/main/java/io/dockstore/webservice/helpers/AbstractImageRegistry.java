@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -388,23 +389,30 @@ public abstract class AbstractImageRegistry {
         // Get all of the required sourcefiles for the given tag
         List<SourceFile> newFiles = loadFiles(sourceCodeRepo, tool, tag);
 
+        Set<SourceFile> oldFilesTempSet = new HashSet<>(tag.getSourceFiles());
+
         // Add for new descriptor types
         boolean hasCwl = false;
         boolean hasWdl = false;
         boolean hasDockerfile = false;
 
         // copy content over to existing files
-        for(SourceFile oldFile : tag.getSourceFiles()) {
-            for(SourceFile newFile : newFiles) {
+        for(SourceFile oldFile : oldFilesTempSet) {
+            boolean found = false;
+            for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getPath(), newFile.getPath())) {
                     oldFile.setContent(newFile.getContent());
                     newFiles.remove(newFile);
+                    found = true;
                     break;
                 }
             }
+            if (!found) {
+                tag.getSourceFiles().remove(oldFile);
+            }
         }
-        // create actual new files, newfiles should only have the new ones
 
+        // create actual new files, newfiles should only have the new ones
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
