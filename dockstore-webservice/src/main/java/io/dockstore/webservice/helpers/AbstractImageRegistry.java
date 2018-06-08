@@ -391,11 +391,6 @@ public abstract class AbstractImageRegistry {
 
         Set<SourceFile> oldFilesTempSet = new HashSet<>(tag.getSourceFiles());
 
-        // Add for new descriptor types
-        boolean hasCwl = false;
-        boolean hasWdl = false;
-        boolean hasDockerfile = false;
-
         // copy content over to existing files
         for(SourceFile oldFile : oldFilesTempSet) {
             boolean found = false;
@@ -417,21 +412,13 @@ public abstract class AbstractImageRegistry {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
             tag.addSourceFile(file);
-
-            if (file.getType() == SourceFile.FileType.DOCKERFILE) {
-                hasDockerfile = true;
-                LOG.info(username + " : HAS Dockerfile");
-            }
-            // Add for new descriptor types
-            if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
-                hasCwl = true;
-                LOG.info(username + " : HAS Dockstore.cwl");
-            }
-            if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL) {
-                hasWdl = true;
-                LOG.info(username + " : HAS Dockstore.wdl");
-            }
         }
+
+        // need to go through all files for the booleans
+        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKERFILE);
+        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
+        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
+
 
         // Private tools don't require a dockerfile
         if (tool.isPrivateAccess()) {

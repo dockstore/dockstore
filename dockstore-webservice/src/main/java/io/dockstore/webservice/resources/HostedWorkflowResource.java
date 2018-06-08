@@ -16,7 +16,6 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -85,7 +84,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Override
     @ApiOperation(nickname = "editHostedWorkflow", value = "Non-idempotent operation for creating new revisions of hosted workflows", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted workflows", response = Workflow.class)
-    public Workflow editHosted(User user, Long entryId, List<SourceFile> sourceFiles) {
+    public Workflow editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
     }
 

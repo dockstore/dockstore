@@ -20,7 +20,6 @@ import java.sql.Timestamp;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -152,22 +151,7 @@ public class SourceFile implements Comparable<SourceFile> {
         return dbUpdateDate;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, type, content, path);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        final SourceFile other = (SourceFile)obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.type, other.type) && Objects.equals(this.path, other.path) && Objects.equals(this.content, other.content);
-    }
+    // removed overridden hashcode and equals, resulted in issue due to https://hibernate.atlassian.net/browse/HHH-3799
 
     @Override
     public int compareTo(@NotNull SourceFile that) {
