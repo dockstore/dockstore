@@ -44,12 +44,20 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(SamPermissionsImpl.class);
 
+    /**
+     * A map of SAM policy names to Dockstore roles.
+     */
     private static Map<String, Role> samPermissionMap = new HashMap<>();
     static {
-        samPermissionMap.put("owner", Role.OWNER);
-        samPermissionMap.put("writer", Role.WRITER);
-        samPermissionMap.put("reader", Role.READER);
+        samPermissionMap.put(SamConstants.OWNER_POLICY, Role.OWNER);
+        samPermissionMap.put(SamConstants.WRITE_POLICY, Role.WRITER);
+        samPermissionMap.put(SamConstants.READ_POLICY, Role.READER);
     }
+
+    /**
+     * A map of Dockstore roles to SAM policy names. Created by swapping the keys and values
+     * in the <code>samPermissionMap</code>.
+     */
     private static Map<Role, String> permissionSamMap =
             samPermissionMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, c -> c.getKey()));
 

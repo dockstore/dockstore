@@ -26,7 +26,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>https://sam.dsde-prod.broadinstitute.org/api-docs.yaml</inputSpec>
+                            <inputSpec>https://raw.githubusercontent.com/broadinstitute/sam/de13d1d254ffe22c0a7f0f7bda80eb43e3cfabad/src/main/resources/swagger/api-docs.yaml</inputSpec>
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
