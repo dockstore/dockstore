@@ -97,17 +97,18 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @UnitOfWork
     public T createHosted(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "For tools, the Docker registry") @QueryParam("registry") String registry,
+        @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace,
         @ApiParam(value = "name", required = true) @QueryParam("name") String name,
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
         checkType(descriptorType);
-        T entry = getEntry(user, registry, name, descriptorType);
+        T entry = getEntry(user, registry, name, descriptorType, namespace);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
         elasticManager.handleIndexUpdate(byId, ElasticMode.UPDATE);
         return byId;
     }
 
-    protected abstract T getEntry(User user, String registry, String name, String descriptorType);
+    protected abstract T getEntry(User user, String registry, String name, String descriptorType, String namespace);
 
     @PATCH
     @io.swagger.jaxrs.PATCH
@@ -224,7 +225,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             }
         } else {
             // for brand new hosted tools
-            tag.setName("0");
+            tag.setName("1");
             sourceFiles.forEach(f -> map.put(f.getPath(), f));
         }
 

@@ -1176,6 +1176,11 @@ paths:
         description: "For tools, the Docker registry"
         required: false
         type: "string"
+      - name: "namespace"
+        in: "query"
+        description: "For tools, the Docker namespace"
+        required: false
+        type: "string"
       - name: "name"
         in: "query"
         description: "name"
@@ -3186,6 +3191,11 @@ paths:
       - name: "registry"
         in: "query"
         description: "For tools, the Docker registry"
+        required: false
+        type: "string"
+      - name: "namespace"
+        in: "query"
+        description: "For tools, the Docker namespace"
         required: false
         type: "string"
       - name: "name"

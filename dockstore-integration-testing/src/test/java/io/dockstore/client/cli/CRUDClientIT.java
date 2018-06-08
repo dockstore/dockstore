@@ -33,6 +33,7 @@ import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
@@ -49,7 +50,7 @@ import org.junit.experimental.categories.Category;
 /**
  * Tests CRUD style operations for tools and workflows hosted directly on Dockstore
  *
- * @author dyuen
+ * @author dyuen,agduncan
  */
 @Category(ConfidentialTest.class)
 public class CRUDClientIT extends BaseIT {
@@ -73,7 +74,7 @@ public class CRUDClientIT extends BaseIT {
     public void testToolCreation(){
         ApiClient webClient = getWebClient();
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io");
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         Assert.assertNotNull("tool was not created properly", hostedTool);
         Assert.assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
@@ -85,14 +86,18 @@ public class CRUDClientIT extends BaseIT {
     @Test
     public void testToolEditing(){
         HostedApi api = new HostedApi(getWebClient());
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io");
-        SourceFile file = new SourceFile();
-        file.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
-        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        file.setPath("/Dockstore.cwl");
-        DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file));
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        SourceFile descriptorFile = new SourceFile();
+        descriptorFile.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
+        descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        descriptorFile.setPath("/Dockstore.cwl");
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        dockerfile.setPath("/Dockerfile");
+        DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
         Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
         SourceFile file2 = new SourceFile();
         file2.setContent("{\"message\": \"Hello world!\"}");
@@ -101,28 +106,33 @@ public class CRUDClientIT extends BaseIT {
         // add one file and include the old one implicitly
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file2));
         first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        Assert.assertEquals("correct number of source files", 3, first.get().getSourceFiles().size());
 
         // delete a file
         file2.setContent(null);
 
-        dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file,file2));
+        dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, file2, dockerfile));
         first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
-        Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
-        dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "0");
+        dockstoreTool = api.deleteHostedToolVersion(hostedTool.getId(), "1");
         Assert.assertEquals("should only be two revisions", 2, dockstoreTool.getTags().size());
 
         //check that all revisions have editing users
         long count = dockstoreTool.getTags().stream().filter(tag -> tag.getVersionEditor() != null).count();
         Assert.assertEquals("all versions do not seem to have editors", count, dockstoreTool.getTags().size());
+
+        // Publish tool
+        ContainersApi containersApi = new ContainersApi(getWebClient());
+        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        containersApi.publish(dockstoreTool.getId(), pub);
     }
 
     @Test
     public void testWorkflowCreation(){
         ApiClient webClient = getWebClient();
         HostedApi api = new HostedApi(webClient);
-        Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", "cwl", null);
+        Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", "cwl", null, null);
         Assert.assertNotNull("workflow was not created properly", hostedTool);
         Assert.assertTrue("workflow was not created with a valid if", hostedTool.getId() != 0);
         // can get it back with regular api
@@ -134,7 +144,7 @@ public class CRUDClientIT extends BaseIT {
     @Test
     public void testWorkflowEditing(){
         HostedApi api = new HostedApi(getWebClient());
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", "cwl", null, null);
         SourceFile file = new SourceFile();
         file.setContent("cwlVersion: v1.0\\nclass: Workflow\\ninputs:\\ninp: File\\nex: string\\noutputs:\\nclassout:\\ntype: File\\noutputSource: compile/classfile\\nsteps:\\nuntar:\\nrun: tar-param.cwl\\nin:\\ntarfile: inp\\nextractfile: ex\\nout: [example_out]\\ncompile:\\nrun: arguments.cwl\\nin:\\nsrc: untar/example_out\\nout: [classfile]");
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -168,25 +178,97 @@ public class CRUDClientIT extends BaseIT {
         first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
-        dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "0");
-        Assert.assertEquals("should only be two revisions", 3, dockstoreWorkflow.getWorkflowVersions().size());
+        dockstoreWorkflow = api.deleteHostedWorkflowVersion(hostedWorkflow.getId(), "1");
+        Assert.assertEquals("should only be three revisions", 3, dockstoreWorkflow.getWorkflowVersions().size());
 
         //check that all revisions have editing users
         long count = dockstoreWorkflow.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
         Assert.assertEquals("all versions do not seem to have editors", count, dockstoreWorkflow.getWorkflowVersions().size());
+
+        // Publish workflow
+        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient());
+        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+        workflowsApi.publish(dockstoreWorkflow.getId(), pub);
+
+    }
+
+    /**
+     * Ensures that only valid descriptor types can be used to create a hosted tool
+     */
+    @Test
+    public void testToolCreationInvalidDescriptorType(){
+        ApiClient webClient = getWebClient();
+        HostedApi api = new HostedApi(webClient);
+        api.createHostedTool("awesomeToolCwl", "cwl", "quay.io", "coolNamespace");
+        api.createHostedTool("awesomeToolWdl", "wdl", "quay.io", "coolNamespace");
+        thrown.expect(ApiException.class);
+        api.createHostedTool("awesomeToolCwll", "cwll", "quay.io", "coolNamespace");
+    }
+
+    /**
+     * Ensures that hosted tools cannot be refreshed (this tests individual refresh)
+     */
+    @Test
+    public void testRefreshingHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        thrown.expect(ApiException.class);
+        containersApi.refresh(hostedTool.getId());
+    }
+
+    /**
+     * Ensures that hosted tools cannot be updated
+     */
+    @Test
+    public void testUpdatingHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        DockstoreTool newTool = new DockstoreTool();
+        thrown.expect(ApiException.class);
+        containersApi.updateContainer(hostedTool.getId(), newTool);
+    }
+
+    /**
+     * Ensures that hosted tools cannot have new test parameter files added
+     */
+    @Test
+    public void testAddingTestParameterFilesHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        thrown.expect(ApiException.class);
+        containersApi.addTestParameterFiles(hostedTool.getId(), new ArrayList<>(), "cwl", "", "1");
+    }
+
+    /**
+     * Ensures that hosted tools cannot have their test parameter files deleted
+     */
+    @Test
+    public void testDeletingTestParameterFilesHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        thrown.expect(ApiException.class);
+        containersApi.deleteTestParameterFiles(hostedTool.getId(), new ArrayList<>(), "cwl", "1");
     }
 
     /**
      * Ensures that only valid descriptor types can be used to create a hosted workflow
      */
     @Test
-    public void testToolCreationInvalidDescriptorType(){
+    public void testWorkflowCreationInvalidDescriptorType(){
         ApiClient webClient = getWebClient();
         HostedApi api = new HostedApi(webClient);
-        api.createHostedTool("awesomeToolCwl", "cwl", "quay.io");
-        api.createHostedTool("awesomeToolWdl", "wdl", "quay.io");
+        api.createHostedWorkflow("awesomeToolCwl", "cwl", null, null);
+        api.createHostedWorkflow("awesomeToolWdl", "wdl", null, null);
         thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeToolCwll", "cwll", "quay.io");
+        api.createHostedWorkflow("awesomeToolCwll", "cwll", null, null);
     }
 
     /**
@@ -197,7 +279,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null, null);
         thrown.expect(ApiException.class);
         workflowApi.refresh(hostedWorkflow.getId());
     }
@@ -211,7 +293,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null, null);
         thrown.expect(ApiException.class);
         workflowApi.restub(hostedWorkflow.getId());
     }
@@ -224,7 +306,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null, null);
         Workflow newWorkflow = new Workflow();
         thrown.expect(ApiException.class);
         workflowApi.updateWorkflow(hostedWorkflow.getId(), newWorkflow);
@@ -238,7 +320,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null, null);
         Workflow newWorkflow = new Workflow();
         thrown.expect(ApiException.class);
         workflowApi.updateWorkflowPath(hostedWorkflow.getId(), newWorkflow);
@@ -252,7 +334,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null, null);
         thrown.expect(ApiException.class);
         workflowApi.addTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "", "1");
     }
@@ -265,7 +347,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null, null);
         thrown.expect(ApiException.class);
         workflowApi.deleteTestParameterFiles(hostedWorkflow.getId(), new ArrayList<>(), "1");
     }
