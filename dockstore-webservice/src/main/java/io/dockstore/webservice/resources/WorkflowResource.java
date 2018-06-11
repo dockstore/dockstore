@@ -35,6 +35,8 @@ import java.util.stream.Collectors;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -42,7 +44,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
@@ -95,6 +99,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -720,6 +725,43 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
+        checkCanRead(user, workflow);
+        return workflow;
+    }
+
+    /**
+     * Adds the GET value to the Allow header if the <code>user</code> has permission to read <code>workflow</code>.
+     *
+     * @param user
+     * @param path
+     * @return
+     */
+    @OPTIONS
+    @Timed
+    @UnitOfWork
+    @Path("/path/workflow/{repository}")
+    @ApiOperation(value = "Options for a workflow by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Permissions for the endpoint")
+    public Response getWorkflowByPathOptions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        final ArrayList<String> headers = new ArrayList<>();
+        headers.add(HttpMethod.OPTIONS);
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        try {
+            checkCanRead(user, workflow);
+            headers.add(HttpMethod.GET);
+        } catch (CustomWebApplicationException ex) {
+            // Silently fail; just don't add GET to the allowed methods
+        }
+        return Response.ok().header(HttpHeaders.ALLOW, StringUtils.join(headers, ',')).build();
+    }
+
+    /**
+     * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user
+     * does not have permission, throws a {@link CustomWebApplicationException}.
+     * @param user
+     * @param workflow
+     */
+    private void checkCanRead(User user, Workflow workflow) {
         try {
             checkUser(user, workflow);
         } catch (CustomWebApplicationException ex) {
@@ -727,7 +769,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                 throw ex;
             }
         }
-        return workflow;
     }
 
     @GET

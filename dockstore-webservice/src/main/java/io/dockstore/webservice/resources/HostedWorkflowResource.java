@@ -78,32 +78,24 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     @Override
     public void checkUserCanRead(User user, Entry entry) {
-        try {
-            checkUser(user, entry);
-        } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ)) {
-                throw ex;
-            }
-        }
+        checkUserCanDoAction(user, entry, Role.Action.READ);
     }
 
     @Override
     public void checkUserCanUpdate(User user, Entry entry) {
-        try {
-            checkUser(user, entry);
-        } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.WRITE)) {
-                throw ex;
-            }
-        }
+        checkUserCanDoAction(user, entry, Role.Action.WRITE);
     }
 
     @Override
     public void checkUserCanDelete(User user, Entry entry) {
+        checkUserCanDoAction(user, entry, Role.Action.DELETE);
+    }
+
+    private void checkUserCanDoAction(User user, Entry entry, Role.Action action) {
         try {
-            checkUser(user, entry);
+            checkUser(user, entry); // Checks if owner, which has all permissions.
         } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.DELETE)) {
+            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, action)) {
                 throw ex;
             }
         }
