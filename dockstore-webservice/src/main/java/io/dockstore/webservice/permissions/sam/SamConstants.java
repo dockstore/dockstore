@@ -1,6 +1,6 @@
 package io.dockstore.webservice.permissions.sam;
 
-import io.dockstore.webservice.permissions.Action;
+import io.dockstore.webservice.permissions.Role;
 
 /**
  * Constant for values that exist in SAM. These values are
@@ -42,7 +42,7 @@ public interface SamConstants {
      */
     String WORKFLOW_PREFIX = "#workflow/";
 
-    static String toSamAction(Action action) {
+    static String toSamAction(Role.Action action) {
         switch (action) {
         case WRITE:
             return SamActions.WRITE.toString();

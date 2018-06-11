@@ -54,7 +54,6 @@ import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
 import io.dockstore.webservice.permissions.PermissionsInterface;
-import io.dockstore.webservice.permissions.Action;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.permissions.Permission;
 import io.dockstore.webservice.permissions.Role;
@@ -724,7 +723,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         try {
             checkUser(user, workflow);
         } catch (CustomWebApplicationException ex) {
-            if (!permissionsInterface.canDoAction(user, workflow, Action.READ)) {
+            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.READ)) {
                 throw ex;
             }
         }
@@ -769,20 +768,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
         this.permissionsInterface.removePermission(workflow, user, email, role);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/path/workflow/{repository}/actions")
-    @ApiOperation(value = "Determine if user can perform an action on a workflow", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "", response = Boolean.class)
-    public Boolean canPerformAction(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-            @ApiParam(value = "action", required = true) @QueryParam("action") Action action) {
-        Workflow workflow = workflowDAO.findByPath(path, false);
-        checkEntry(workflow);
-        return this.permissionsInterface.canDoAction(user, workflow, action);
     }
 
     @GET

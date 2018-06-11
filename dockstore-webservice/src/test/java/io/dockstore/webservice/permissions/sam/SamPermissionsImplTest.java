@@ -9,7 +9,6 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.permissions.Action;
 import io.dockstore.webservice.permissions.Permission;
 import io.dockstore.webservice.permissions.Role;
 import io.swagger.sam.client.ApiClient;
@@ -120,28 +119,28 @@ public class SamPermissionsImplTest {
 
     @Test
     public void testCanRead() throws ApiException {
-        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME, Action.READ.toString())).thenReturn(Boolean.TRUE);
-        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + GOO_WORKFLOW_NAME, Action.READ.toString())).thenReturn(Boolean.FALSE);
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME, Role.Action.READ.toString())).thenReturn(Boolean.TRUE);
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + GOO_WORKFLOW_NAME, Role.Action.READ.toString())).thenReturn(Boolean.FALSE);
         when(samPermissionsImpl.getResourcesApi(userMock)).thenReturn(resourcesApiMock);
 
         Workflow fooWorkflow = Mockito.mock(Workflow.class);
         when(fooWorkflow.getWorkflowPath()).thenReturn(FOO_WORKFLOW_NAME, GOO_WORKFLOW_NAME);
-        Assert.assertTrue(samPermissionsImpl.canDoAction(userMock, fooWorkflow, Action.READ));
+        Assert.assertTrue(samPermissionsImpl.canDoAction(userMock, fooWorkflow, Role.Action.READ));
         Workflow gooWorkflow = Mockito.mock(Workflow.class);
-        Assert.assertFalse(samPermissionsImpl.canDoAction(userMock, gooWorkflow, Action.READ));
+        Assert.assertFalse(samPermissionsImpl.canDoAction(userMock, gooWorkflow, Role.Action.READ));
     }
 
     @Test
     public void testCanWrite() throws ApiException {
-        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME, Action.WRITE.toString())).thenReturn(Boolean.TRUE);
-        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + GOO_WORKFLOW_NAME, Action.WRITE.toString())).thenReturn(Boolean.FALSE);
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME, Role.Action.WRITE.toString())).thenReturn(Boolean.TRUE);
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + GOO_WORKFLOW_NAME, Role.Action.WRITE.toString())).thenReturn(Boolean.FALSE);
         when(samPermissionsImpl.getResourcesApi(userMock)).thenReturn(resourcesApiMock);
 
         when(fooWorkflow.getWorkflowPath()).thenReturn(FOO_WORKFLOW_NAME);
-        Assert.assertTrue(samPermissionsImpl.canDoAction(userMock, fooWorkflow, Action.WRITE));
+        Assert.assertTrue(samPermissionsImpl.canDoAction(userMock, fooWorkflow, Role.Action.WRITE));
         Workflow gooWorkflow = Mockito.mock(Workflow.class);
         when(gooWorkflow.getWorkflowPath()).thenReturn(GOO_WORKFLOW_NAME);
-        Assert.assertFalse(samPermissionsImpl.canDoAction(userMock, gooWorkflow, Action.WRITE));
+        Assert.assertFalse(samPermissionsImpl.canDoAction(userMock, gooWorkflow, Role.Action.WRITE));
     }
 
     @Test

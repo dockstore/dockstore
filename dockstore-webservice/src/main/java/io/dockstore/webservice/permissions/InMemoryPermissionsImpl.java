@@ -114,7 +114,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public boolean canDoAction(User user, Workflow workflow, Action action) {
+    public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
         return getPermission(user, workflow).map(p -> {
             switch (p) {
             case OWNER:
@@ -122,10 +122,10 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
                 return true;
             case WRITER:
                 // If writer, can't delete or share
-                return action != Action.DELETE && action != Action.SHARE;
+                return action != Role.Action.DELETE && action != Role.Action.SHARE;
             case READER:
                 // If reader, can't write, delete, nor share
-                return action == Action.READ;
+                return action == Role.Action.READ;
             default:
                 return false;
             }

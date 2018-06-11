@@ -23,7 +23,6 @@ import javax.ws.rs.Path;
 
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.permissions.Action;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -37,6 +36,7 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 
@@ -81,7 +81,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         try {
             checkUser(user, entry);
         } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Action.READ)) {
+            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.READ)) {
                 throw ex;
             }
         }
@@ -92,7 +92,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         try {
             checkUser(user, entry);
         } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Action.WRITE)) {
+            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.WRITE)) {
                 throw ex;
             }
         }
@@ -103,7 +103,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         try {
             checkUser(user, entry);
         } catch (CustomWebApplicationException ex) {
-            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Action.DELETE)) {
+            if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.DELETE)) {
                 throw ex;
             }
         }

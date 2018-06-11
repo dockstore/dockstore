@@ -38,7 +38,7 @@ public class NoOpPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public boolean canDoAction(User user, Workflow workflow, Action action) {
+    public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
         return false;
     }
 }

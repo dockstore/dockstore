@@ -112,5 +112,5 @@ public interface PermissionsInterface {
      * @param action
      * @return
      */
-    boolean canDoAction(User user, Workflow workflow, Action action);
+    boolean canDoAction(User user, Workflow workflow, Role.Action action);
 }

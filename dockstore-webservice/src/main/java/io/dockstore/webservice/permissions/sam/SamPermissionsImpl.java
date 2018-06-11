@@ -17,7 +17,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
-import io.dockstore.webservice.permissions.Action;
 import io.dockstore.webservice.permissions.Permission;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
@@ -178,7 +177,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public boolean canDoAction(User user, Workflow workflow, Action action) {
+    public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
         ResourcesApi resourcesApi = getResourcesApi(user);
         String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
         try {
