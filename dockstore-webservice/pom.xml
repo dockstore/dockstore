@@ -816,7 +816,7 @@
                             </locations>
                             <swaggerDirectory>${pom.basedir}/src/main/resources</swaggerDirectory>
                             <swaggerFileName>swagger</swaggerFileName>
-                            <outputFormats>yaml</outputFormats>
+                            <outputFormats>json,yaml</outputFormats>
                             <basePath>/</basePath>
                             <!-- "can be used to strictly use the official Swagger reader in order to generate the exact same output as Swagger''s runtime generation (with all its bugs). "
                             <swaggerApiReader>com.github.kongchen.swagger.docgen.reader.SwaggerReader</swaggerApiReader>
@@ -937,30 +937,23 @@
                     </execution>
                 </executions>
             </plugin>
-	    <!-- swagger2openapi install fails too often
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <executions>
                     <execution>
-                        <id>swagger2openapi)</id>
+                        <id>process-openapi</id>
                         <goals>
                             <goal>exec</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <phase>install</phase>
                         <configuration>
-                            <executable>swagger2openapi</executable>
-                            <arguments>
-                                <argument>src/main/resources/swagger.yaml</argument>
-                                <argument>-o</argument>
-                                <argument>src/main/resources/openapi.yaml</argument>
-                            </arguments>
+                            <executable>src/main/resources/swagger2open.sh</executable>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            -->
         </plugins>
     </build>
 

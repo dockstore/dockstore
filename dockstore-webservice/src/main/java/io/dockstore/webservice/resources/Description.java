@@ -30,6 +30,7 @@ import io.swagger.models.Swagger;
 import io.swagger.models.auth.ApiKeyAuthDefinition;
 import io.swagger.models.auth.In;
 
+
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
@@ -40,7 +41,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Provider
 @SwaggerDefinition(info = @Info(description =
         "This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as "
-                + "CWL documents and Dockerfiles used to build those images", version = "1.3.0", title = "Dockstore API", contact = @Contact(name = "Dockstore@ga4gh", email = "theglobalalliance@genomicsandhealth.org", url = "https://github.com/ga4gh/dockstore"), license = @License(name = " GNU Lesser General Public License", url = "https://www.gnu.org/licenses/lgpl-3.0.en.html")), consumes = "application/json", produces = "application/json", tags = {
+                + "CWL documents and Dockerfiles used to build those images", version = "1.4.1", title = "Dockstore API", termsOfService = "https://www.ga4gh.org/policies/termsandconditions.html", contact = @Contact(name = "Dockstore@ga4gh", email = "theglobalalliance@genomicsandhealth.org", url = "https://github.com/ga4gh/dockstore"), license = @License(name = " GNU Lesser General Public License", url = "https://www.gnu.org/licenses/lgpl-3.0.en.html")), consumes = "application/json", produces = "application/json", tags = {
         @Tag(name = "containers", description = "List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile))"),
         @Tag(name = "containertags", description = "List and modify tags for containers"),
         @Tag(name = "GA4GHV1", description = "A curated subset of resources proposed as a common standard for tool repositories"),
