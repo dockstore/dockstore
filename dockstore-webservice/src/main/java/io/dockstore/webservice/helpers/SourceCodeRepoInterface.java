@@ -288,7 +288,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return
      */
-    String getBranchNameFromDefaultVersion(Entry entry) {
+    public String getBranchNameFromDefaultVersion(Entry entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
             for (Tag tag : ((Tool)entry).getVersions()) {
