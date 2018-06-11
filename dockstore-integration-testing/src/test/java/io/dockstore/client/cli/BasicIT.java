@@ -16,6 +16,8 @@
 
 package io.dockstore.client.cli;
 
+import java.util.List;
+
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -23,6 +25,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dropwizard.testing.ResourceHelpers;
+import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1096,8 +1099,21 @@ public class BasicIT extends BaseIT {
                 "--script" });
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertTrue("there should be three sourcefiles that are test parameter files, there are " + count5, count5 == 2);
+        Assert.assertTrue("there should be two sourcefiles that are test parameter files, there are " + count5, count5 == 2);
 
+        // refreshing again with the default paths set should not create extra redundant test parameter files
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry",
+            "quay.io/dockstoretestuser/test_input_json", "--test-cwl-path", "test.cwl.json" });
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry",
+            "quay.io/dockstoretestuser/test_input_json", "--test-wdl-path", "test.wdl.json" });
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
+            "quay.io/dockstoretestuser/test_input_json" });
+        final List<Long> testJsonCounts = testingPostgres
+            .runSelectStatement("select count(*) from sourcefile s, version_sourcefile vs where (s.type = 'CWL_TEST_JSON' or s.type = 'WDL_TEST_JSON') and s.id = vs.sourcefileid group by vs.versionid", new ColumnListHandler<>());
+        Assert.assertTrue("there should be at least three sets of test json sourcefiles " + testJsonCounts.size(), testJsonCounts.size() >= 3);
+        for(Long testJsonCount : testJsonCounts) {
+            Assert.assertTrue("there should be at most two test json for each version", testJsonCount <= 2);
+        }
     }
 
     /**

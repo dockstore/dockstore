@@ -29,6 +29,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -112,6 +113,16 @@ public class SourceFile {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    @JsonIgnore
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    @JsonIgnore
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
     }
 
     @Override

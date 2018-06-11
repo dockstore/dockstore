@@ -17,6 +17,7 @@
 package io.dockstore.webservice.helpers;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +69,7 @@ public final class Helper {
             List<SourceFile> newFiles = loadFiles(client, bitbucketToken, githubToken, gitlabToken, tool, tag);
 
             // Remove all existing sourcefiles
+            // TODO: this should really do an update rather than a erase and create
             tag.getSourceFiles().clear();
 
             // Add for new descriptor types
@@ -157,7 +159,28 @@ public final class Helper {
                 // If test json, must grab all
                 List<SourceFile> cwlTestJson = tag.getSourceFiles().stream().filter((SourceFile u) -> u.getType() == f)
                     .collect(Collectors.toList());
-                cwlTestJson.forEach(file -> sourceCodeRepo.readFile(tag, files, f, file.getPath()));
+                // due to an earlier glitch, there can be multiple files with the same path
+                // take the newest file (date can be null if this is a first refresh) and erase the others
+                Map<String, SourceFile> newestFile = new HashMap<>();
+                for (SourceFile file : cwlTestJson) {
+                    if (newestFile.containsKey(file.getPath())) {
+                        SourceFile existingFile = newestFile.get(file.getPath());
+                        if (file.getDbUpdateDate().after(existingFile.getDbUpdateDate())) {
+                            newestFile.put(file.getPath(), file);
+                        }
+                    } else {
+                        newestFile.put(file.getPath(), file);
+                    }
+                }
+                // delete older duplicates from tag
+                for (SourceFile file : cwlTestJson) {
+                    if (newestFile.get(file.getPath()) == file) {
+                        continue;
+                    }
+                    tag.getSourceFiles().remove(file);
+                }
+
+                newestFile.values().forEach(file -> sourceCodeRepo.readFile(tag, files, f, file.getPath()));
             }
         }
         return files;

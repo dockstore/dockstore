@@ -345,7 +345,7 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        ToolTests actualToolTests = ToolsImplCommon.sourceFileToToolTests(sourceFile);
+        ToolTests actualToolTests = ToolsImplCommon.sourceFileToToolTests("", sourceFile);
         ToolTests expectedToolTests = new ToolTests();
         expectedToolTests.setTest(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");

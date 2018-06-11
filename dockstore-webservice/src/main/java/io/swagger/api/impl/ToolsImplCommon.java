@@ -384,16 +384,17 @@ public final class ToolsImplCommon {
     /**
      * Converts a Dockstore SourceFile to GA4GH ToolTests
      *
+     * @param urlWithWorkDirectory
      * @param sourceFile The Dockstore SourceFile to convert
      * @return The resulting GA4GH ToolTests
      */
-    static ToolTests sourceFileToToolTests(SourceFile sourceFile) {
+    static ToolTests sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
         if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
             LOG.error("This source file is not a recognized test file.");
         }
         ToolTests toolTests = new ToolTests();
-        toolTests.setUrl(sourceFile.getPath());
+        toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
         toolTests.setTest(sourceFile.getContent());
         return toolTests;
     }

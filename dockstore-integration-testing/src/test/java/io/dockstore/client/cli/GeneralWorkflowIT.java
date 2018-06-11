@@ -828,6 +828,7 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests manually publishing a gitlab workflow
      */
     @Test
+    @Ignore("Broken on hotfix due to 'API V3 is no longer supported. Use API V4 instead'")
     public void testManualPublishGitlab() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
