@@ -44,6 +44,7 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolFile;
+import io.swagger.client.model.ToolTests;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -624,6 +625,13 @@ public class WorkflowIT extends BaseIT {
             .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         assertTrue("should have at least 5 files", toolFiles.size() >= 5);
         assertTrue("all files should have relative paths", toolFiles.stream().filter(toolFile -> !toolFile.getPath().startsWith("/")).count() >= 5);
-
+        // check on urls created for test files
+        List<ToolTests> toolTests = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        assertTrue("could not find tool tests", toolTests.size() > 0);
+        for(ToolTests test: toolTests) {
+            content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
+            Assert.assertTrue("could not find content from generated test JSON URL", !content.isEmpty());
+        }
     }
 }
