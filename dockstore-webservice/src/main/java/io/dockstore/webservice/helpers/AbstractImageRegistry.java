@@ -392,7 +392,7 @@ public abstract class AbstractImageRegistry {
         Set<SourceFile> oldFilesTempSet = new HashSet<>(tag.getSourceFiles());
 
         // copy content over to existing files
-        for(SourceFile oldFile : oldFilesTempSet) {
+        for (SourceFile oldFile : oldFilesTempSet) {
             boolean found = false;
             for (SourceFile newFile : newFiles) {
                 if (Objects.equals(oldFile.getPath(), newFile.getPath())) {
