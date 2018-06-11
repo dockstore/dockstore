@@ -85,26 +85,6 @@ public class User implements Principal, Comparable<User> {
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
     private boolean isAdmin;
 
-    @Column
-    @ApiModelProperty(value = "Company of user", position = 3)
-    private String company;
-
-    @Column
-    @ApiModelProperty(value = "Bio of user", position = 4)
-    private String bio;
-
-    @Column
-    @ApiModelProperty(value = "Location of user", position = 5)
-    private String location;
-
-    @Column
-    @ApiModelProperty(value = "Email of user", position = 6)
-    private String email;
-
-    @Column
-    @ApiModelProperty(value = "URL of user avatar on Github.", position = 7)
-    private String avatarUrl;
-
     @ElementCollection(targetClass = Profile.class)
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "id", "token_type" }))
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
@@ -248,50 +228,10 @@ public class User implements Principal, Comparable<User> {
         return starredEntries.remove(entry);
     }
 
-    public String getAvatarUrl() {
-        return avatarUrl;
-    }
-
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
-    }
-
     @Override
     @ApiModelProperty(position = 8)
     public String getName() {
         return getUsername();
-    }
-
-    public String getCompany() {
-        return company;
-    }
-
-    public void setCompany(String company) {
-        this.company = company;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     @Override
@@ -330,13 +270,29 @@ public class User implements Principal, Comparable<User> {
         this.userProfile = userProfile;
     }
 
+    /**
+     * The profile of a user using a token (Google profile, GitHub profile, etc)
+     * The order of the properties are important, the UI lists these properties in this order
+     */
     @Embeddable
     public static class Profile {
         @Column(columnDefinition = "text")
-        public String email;
-        @Column(columnDefinition = "text")
         public String name;
         @Column(columnDefinition = "text")
+        public String email;
+        @Column(columnDefinition = "text")
         public String avatarURL;
+        @Column(columnDefinition = "text")
+        public String company;
+        @Column(columnDefinition = "text")
+        public String location;
+        @Column(columnDefinition = "text")
+        public String bio;
+        @Column(updatable = false)
+        @CreationTimestamp
+        private Timestamp dbCreateDate;
+        @Column()
+        @UpdateTimestamp
+        private Timestamp dbUpdateDate;
     }
 }
