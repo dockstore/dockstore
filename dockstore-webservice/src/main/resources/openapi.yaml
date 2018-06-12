@@ -17,11 +17,11 @@ info:
     name: ' GNU Lesser General Public License'
     url: 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
 tags:
-  - name: NIHdatacommons
   - name: GA4GH
     description: >-
       A curated subset of resources proposed as a common standard for tool
       repositories
+  - name: NIHdatacommons
   - name: GA4GHV1
     description: >-
       A curated subset of resources proposed as a common standard for tool
@@ -55,7 +55,6 @@ paths:
   /api/ga4gh/v1/metadata:
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: Return some metadata that is useful for describing this registry
       description: Return some metadata that is useful for describing this registry
@@ -73,7 +72,6 @@ paths:
   /api/ga4gh/v1/tool-classes:
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: List all tool types
       description: 'This endpoint returns all tool-classes available '
@@ -95,7 +93,6 @@ paths:
   /api/ga4gh/v1/tools:
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: List all tools
       description: >-
@@ -184,7 +181,6 @@ paths:
   '/api/ga4gh/v1/tools/{id}':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: 'List one specific tool, acts as an anchor for self references'
       description: >-
@@ -213,7 +209,6 @@ paths:
   '/api/ga4gh/v1/tools/{id}/versions':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: List versions of a tool
       description: Returns all versions of the specified tool
@@ -244,7 +239,6 @@ paths:
   '/api/ga4gh/v1/tools/{id}/versions/{version_id}':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: 'List one specific tool version, acts as an anchor for self references'
       description: This endpoint returns one specific tool version
@@ -279,7 +273,6 @@ paths:
   '/api/ga4gh/v1/tools/{id}/versions/{version_id}/dockerfile':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: Get the dockerfile for the specified image.
       description: Returns the dockerfile for the specified image.
@@ -323,7 +316,6 @@ paths:
   '/api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: Get the tool descriptor (CWL/WDL) for the specified tool.
       description: Returns the CWL or WDL descriptor for the specified tool.
@@ -382,7 +374,6 @@ paths:
   '/api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: Get additional tool descriptor files (CWL/WDL) relative to the main file
       description: >-
@@ -452,7 +443,6 @@ paths:
   '/api/ga4gh/v1/tools/{id}/versions/{version_id}/{type}/tests':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GHV1
       summary: Get an array of test JSONs suitable for use with this descriptor type.
       description: ''
@@ -519,7 +509,6 @@ paths:
   '/api/ga4gh/v2/extended/containers/{organization}':
     get:
       tags:
-  - name: NIHdatacommons
         - extendedGA4GH
       summary: List entries of an organization
       description: 'This endpoint returns entries of an organization. '
@@ -548,7 +537,6 @@ paths:
   /api/ga4gh/v2/extended/organizations:
     get:
       tags:
-  - name: NIHdatacommons
         - extendedGA4GH
       summary: List all organizations
       description: 'This endpoint returns list of all organizations. '
@@ -570,7 +558,6 @@ paths:
   /api/ga4gh/v2/extended/tools/entry/_search:
     post:
       tags:
-  - name: NIHdatacommons
         - extendedGA4GH
       summary: Search the index of tools
       description: >-
@@ -594,7 +581,6 @@ paths:
   /api/ga4gh/v2/extended/tools/index:
     post:
       tags:
-  - name: NIHdatacommons
         - extendedGA4GH
       summary: Update the index of tools
       description: 'This endpoint updates the index for all published tools and workflows. '
@@ -612,7 +598,6 @@ paths:
   '/api/ga4gh/v2/extended/tools/{organization}':
     get:
       tags:
-  - name: NIHdatacommons
         - extendedGA4GH
       summary: List tools of an organization
       description: 'This endpoint returns tools of an organization. '
@@ -641,7 +626,6 @@ paths:
   '/api/ga4gh/v2/extended/workflows/{organization}':
     get:
       tags:
-  - name: NIHdatacommons
         - extendedGA4GH
       summary: List workflows of an organization
       description: 'This endpoint returns workflows of an organization. '
@@ -670,7 +654,6 @@ paths:
   /api/ga4gh/v2/metadata:
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: Return some metadata that is useful for describing this registry
       description: Return some metadata that is useful for describing this registry
@@ -688,7 +671,6 @@ paths:
   /api/ga4gh/v2/toolClasses:
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: List all tool types
       description: 'This endpoint returns all tool-classes available '
@@ -710,7 +692,6 @@ paths:
   /api/ga4gh/v2/tools:
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: List all tools
       description: >-
@@ -800,7 +781,6 @@ paths:
   '/api/ga4gh/v2/tools/{id}':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: 'List one specific tool, acts as an anchor for self references'
       description: >-
@@ -838,7 +818,6 @@ paths:
   '/api/ga4gh/v2/tools/{id}/versions':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: List versions of a tool
       description: Returns all versions of the specified tool
@@ -869,7 +848,6 @@ paths:
   '/api/ga4gh/v2/tools/{id}/versions/{version_id}':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: 'List one specific tool version, acts as an anchor for self references'
       description: This endpoint returns one specific tool version
@@ -913,7 +891,6 @@ paths:
   '/api/ga4gh/v2/tools/{id}/versions/{version_id}/containerfile':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: Get the container specification(s) for the specified image.
       description: >-
@@ -965,7 +942,6 @@ paths:
   '/api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: Get the tool descriptor for the specified tool
       description: >-
@@ -1022,7 +998,6 @@ paths:
   '/api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path}':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: Get additional tool descriptor files relative to the main file
       description: >-
@@ -1094,7 +1069,6 @@ paths:
   '/api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: Get a list of objects that contain the relative path and file type
       description: >-
@@ -1154,7 +1128,6 @@ paths:
   '/api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/tests':
     get:
       tags:
-  - name: NIHdatacommons
         - GA4GH
       summary: Get a list of test JSONs
       description: >-
@@ -1215,7 +1188,6 @@ paths:
   /auth/tokens/bitbucket.org:
     get:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: 'Add a new bitbucket.org token, used by quay.io redirect'
       description: >-
@@ -1241,7 +1213,6 @@ paths:
   /auth/tokens/bitbucket.org/refresh:
     get:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: Refresh Bitbucket token
       description: >-
@@ -1260,7 +1231,6 @@ paths:
   /auth/tokens/github:
     post:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: Allow satellizer to post a new GitHub token to dockstore
       description: A post method is required by saetillizer to send the GitHub token
@@ -1279,7 +1249,6 @@ paths:
   /auth/tokens/github.com:
     get:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: 'Add a new github.com token, used by github.com redirect'
       description: >-
@@ -1305,7 +1274,6 @@ paths:
   /auth/tokens/gitlab.com:
     get:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: Add a new gitlab.com token
       description: >-
@@ -1331,7 +1299,6 @@ paths:
   /auth/tokens/google:
     post:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: Allow satellizer to post a new Google token to dockstore
       description: A post method is required by satellizer to send the Google token
@@ -1350,7 +1317,6 @@ paths:
   /auth/tokens/quay.io:
     get:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: Add a new quay IO token
       description: >-
@@ -1376,7 +1342,6 @@ paths:
   '/auth/tokens/{tokenId}':
     get:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: Get a specific token by id
       description: Get a specific token by id
@@ -1404,7 +1369,6 @@ paths:
         - BEARER: []
     delete:
       tags:
-  - name: NIHdatacommons
         - tokens
       summary: Deletes a token
       description: ''
@@ -1425,7 +1389,6 @@ paths:
   /containers/dockerRegistryList:
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get the list of docker registries supported on Dockstore.
       description: Does not need authentication
@@ -1442,7 +1405,6 @@ paths:
   /containers/hostedEntry:
     post:
       tags:
-  - name: NIHdatacommons
         - hosted
       summary: Create a hosted tool
       description: Create a hosted tool
@@ -1478,7 +1440,6 @@ paths:
   '/containers/hostedEntry/{entryId}':
     delete:
       tags:
-  - name: NIHdatacommons
         - hosted
       summary: Delete a revision of a hosted tool
       description: Delete a revision of a hosted tool
@@ -1508,7 +1469,6 @@ paths:
         - BEARER: []
     patch:
       tags:
-  - name: NIHdatacommons
         - hosted
       summary: Non-idempotent operation for creating new revisions of hosted tools
       description: Non-idempotent operation for creating new revisions of hosted tools
@@ -1531,11 +1491,10 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/SourceFileArray'
+        $ref: '#/components/requestBodies/editHostedToolBody'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: List all published containers belonging to the specified namespace
       description: NO authentication
@@ -1559,7 +1518,6 @@ paths:
   '/containers/path/tool/{repository}':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a tool by the specific tool path
       description: Lists info of tool. Enter full path (include quay.io in path).
@@ -1583,7 +1541,6 @@ paths:
   '/containers/path/tool/{repository}/published':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a published tool by the specific tool path
       description: Lists info of tool. Enter full path (include quay.io in path).
@@ -1605,7 +1562,6 @@ paths:
   '/containers/path/{containerId}/tags':
     get:
       tags:
-  - name: NIHdatacommons
         - containertags
       summary: Get tags  for a container by id
       description: Lists tags for a container. Enter full path (include quay.io in path).
@@ -1633,7 +1589,6 @@ paths:
   '/containers/path/{repository}':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a list of tools by path
       description: Lists info of tool. Enter full path (include quay.io in path).
@@ -1659,7 +1614,6 @@ paths:
   '/containers/path/{repository}/published':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a list of published tools by path
       description: NO authentication
@@ -1681,7 +1635,6 @@ paths:
   /containers/published:
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: List all published containers.
       description: NO authentication
@@ -1698,7 +1651,6 @@ paths:
   '/containers/published/{containerId}':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a published container
       description: NO authentication
@@ -1721,7 +1673,6 @@ paths:
   /containers/registerManual:
     post:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: 'Register an image manually, along with tags'
       description: Register an image manually.
@@ -1745,7 +1696,6 @@ paths:
   '/containers/schema/{containerId}/published':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a published container's schema by ID
       description: NO authentication
@@ -1772,7 +1722,6 @@ paths:
   /containers/search:
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Search for matching registered containers.
       description: Search on the name (full path name) and description. NO authentication
@@ -1795,7 +1744,6 @@ paths:
   '/containers/{containerId}':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a registered repo
       description: ''
@@ -1819,7 +1767,6 @@ paths:
         - BEARER: []
     put:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Update the tool with the given tool.
       description: ''
@@ -1845,7 +1792,6 @@ paths:
         $ref: '#/components/requestBodies/DockstoreTool'
     delete:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Delete a tool
       description: ''
@@ -1866,7 +1812,6 @@ paths:
   '/containers/{containerId}/cwl':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get the corresponding Dockstore.cwl file on Github.
       description: Does not need authentication
@@ -1894,7 +1839,6 @@ paths:
   '/containers/{containerId}/cwl/{relative-path}':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get the corresponding Dockstore.cwl file on Github.
       description: Does not need authentication
@@ -1927,7 +1871,6 @@ paths:
   '/containers/{containerId}/dockerfile':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get the corresponding Dockerfile on Github.
       description: Does not need authentication
@@ -1955,7 +1898,6 @@ paths:
   '/containers/{containerId}/labels':
     put:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Update the labels linked to a container.
       description: >-
@@ -1990,7 +1932,6 @@ paths:
   '/containers/{containerId}/publish':
     post:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Publish or unpublish a container
       description: >-
@@ -2019,7 +1960,6 @@ paths:
   '/containers/{containerId}/refresh':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Refresh one particular repo
       description: ''
@@ -2044,7 +1984,6 @@ paths:
   '/containers/{containerId}/requestDOI/{tagId}':
     post:
       tags:
-  - name: NIHdatacommons
         - containertags
       summary: Request a DOI for this version of a tool
       description: ''
@@ -2078,7 +2017,6 @@ paths:
   '/containers/{containerId}/secondaryCwl':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a list of secondary CWL files from Git.
       description: Does not need authentication
@@ -2108,7 +2046,6 @@ paths:
   '/containers/{containerId}/secondaryWdl':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get a list of secondary WDL files from Git.
       description: Does not need authentication
@@ -2138,7 +2075,6 @@ paths:
   '/containers/{containerId}/star':
     put:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Stars a tool.
       description: ''
@@ -2161,7 +2097,6 @@ paths:
   '/containers/{containerId}/starredUsers':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Returns list of users who starred the given tool
       description: ''
@@ -2186,7 +2121,6 @@ paths:
   '/containers/{containerId}/tags':
     post:
       tags:
-  - name: NIHdatacommons
         - containertags
       summary: Add new tags linked to a container
       description: >-
@@ -2223,7 +2157,6 @@ paths:
         required: true
     put:
       tags:
-  - name: NIHdatacommons
         - containertags
       summary: Update the tags linked to a container
       description: >-
@@ -2261,7 +2194,6 @@ paths:
   '/containers/{containerId}/tags/{tagId}':
     delete:
       tags:
-  - name: NIHdatacommons
         - containertags
       summary: Delete tag linked to a container
       description: >-
@@ -2291,7 +2223,6 @@ paths:
   '/containers/{containerId}/testParameterFiles':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get the corresponding wdl test parameter files.
       description: Does not need authentication
@@ -2330,7 +2261,6 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
     put:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Add test parameter files for a given tag.
       description: ''
@@ -2382,7 +2312,6 @@ paths:
         $ref: '#/components/requestBodies/updateLabelsBody'
     delete:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Delete test parameter files for a given tag.
       description: ''
@@ -2433,7 +2362,6 @@ paths:
   '/containers/{containerId}/unstar':
     delete:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Unstars a tool.
       description: ''
@@ -2454,7 +2382,6 @@ paths:
   '/containers/{containerId}/updateTagPaths':
     put:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Change the workflow paths
       description: >-
@@ -2483,7 +2410,6 @@ paths:
   '/containers/{containerId}/users':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get users of a container
       description: ''
@@ -2510,7 +2436,6 @@ paths:
   '/containers/{containerId}/verifiedSources':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get the corresponding Dockstore.cwl file on Github.
       description: Does not need authentication
@@ -2533,7 +2458,6 @@ paths:
   '/containers/{containerId}/verify/{tagId}':
     put:
       tags:
-  - name: NIHdatacommons
         - containertags
       summary: Verify or unverify a version . ADMIN ONLY
       description: ''
@@ -2569,7 +2493,6 @@ paths:
   '/containers/{containerId}/wdl':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get the corresponding Dockstore.wdl file on Github.
       description: Does not need authentication
@@ -2597,7 +2520,6 @@ paths:
   '/containers/{containerId}/wdl/{relative-path}':
     get:
       tags:
-  - name: NIHdatacommons
         - containers
       summary: Get the corresponding Dockstore.wdl file on Github.
       description: Does not need authentication
@@ -2630,7 +2552,6 @@ paths:
   /integration.bitbucket.org:
     get:
       tags:
-  - name: NIHdatacommons
         - integration.bitbucket.org
       summary: Display an authorization link for bitbucket.org
       description: >-
@@ -2647,7 +2568,6 @@ paths:
   /integration.github.com:
     get:
       tags:
-  - name: NIHdatacommons
         - integration.github.com
       summary: Display an authorization link for github.com
       description: >-
@@ -2664,7 +2584,6 @@ paths:
   /integration.gitlab.com:
     get:
       tags:
-  - name: NIHdatacommons
         - integration.gitlab.com
       summary: Display an authorization link for gitlab.com
       description: >-
@@ -2681,7 +2600,6 @@ paths:
   /integration.quay.io:
     get:
       tags:
-  - name: NIHdatacommons
         - integration.quay.io
       summary: Display an authorization link for quay.io
       description: More notes about this method
@@ -2696,7 +2614,6 @@ paths:
   /metadata/descriptorLanguageList:
     get:
       tags:
-  - name: NIHdatacommons
         - metadata
       summary: Get the list of descriptor languages supported on Dockstore.
       description: Does not need authentication
@@ -2713,7 +2630,6 @@ paths:
   /metadata/dockerRegistryList:
     get:
       tags:
-  - name: NIHdatacommons
         - metadata
       summary: Get the list of docker registries supported on Dockstore.
       description: Does not need authentication
@@ -2730,7 +2646,6 @@ paths:
   /metadata/okHttpCachePerformance:
     get:
       tags:
-  - name: NIHdatacommons
         - metadata
       summary: Get measures of cache performance.
       description: Does not need authentication
@@ -2747,7 +2662,6 @@ paths:
   /metadata/rss:
     get:
       tags:
-  - name: NIHdatacommons
         - metadata
       summary: List all tools and workflows in creation order
       description: NO authentication
@@ -2762,7 +2676,6 @@ paths:
   /metadata/runner_dependencies:
     get:
       tags:
-  - name: NIHdatacommons
         - metadata
       summary: Returns the file containing runner dependencies
       description: ''
@@ -2813,7 +2726,6 @@ paths:
   /metadata/sitemap:
     get:
       tags:
-  - name: NIHdatacommons
         - metadata
       summary: List all workflow and tool paths.
       description: NO authentication
@@ -2831,7 +2743,6 @@ paths:
   /metadata/sourceControlList:
     get:
       tags:
-  - name: NIHdatacommons
         - metadata
       summary: Get the list of source controls supported on Dockstore.
       description: Does not need authentication
@@ -2848,7 +2759,6 @@ paths:
   /users:
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: List all known users
       description: List all users. Admin only.
@@ -2867,7 +2777,6 @@ paths:
   /users/groups:
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: List all groups
       description: ''
@@ -2885,7 +2794,6 @@ paths:
         - BEARER: []
     post:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Create user group
       description: ''
@@ -2908,7 +2816,6 @@ paths:
   '/users/groups/{groupId}':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: List a group
       description: ''
@@ -2932,7 +2839,6 @@ paths:
         - BEARER: []
     delete:
       tags:
-  - name: NIHdatacommons
         - users
       summary: 'Deletes a group, admin only'
       description: ''
@@ -2953,7 +2859,6 @@ paths:
   '/users/groups/{groupId}/users':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get users that belongs to a group
       description: ''
@@ -2980,7 +2885,6 @@ paths:
   /users/starredTools:
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get the logged-in user's starred tools
       description: ''
@@ -2999,7 +2903,6 @@ paths:
   /users/starredWorkflows:
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get the logged-in user's starred workflows
       description: ''
@@ -3018,7 +2921,6 @@ paths:
   /users/updateUserMetadata:
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Update metadata of all users
       description: Update all users metadata. Admin only.
@@ -3037,7 +2939,6 @@ paths:
   /users/user:
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get the logged-in user
       description: ''
@@ -3054,7 +2955,6 @@ paths:
   /users/user/updateUserMetadata:
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Update metadata for logged in user
       description: Update metadata for logged in user.
@@ -3071,7 +2971,6 @@ paths:
   '/users/username/{username}':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get user
       description: ''
@@ -3095,7 +2994,6 @@ paths:
   '/users/{userId}':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get user with id
       description: ''
@@ -3120,7 +3018,6 @@ paths:
   '/users/{userId}/containers':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: List repos owned by the logged-in user
       description: Lists all registered and unregistered containers owned by the user
@@ -3147,7 +3044,6 @@ paths:
   '/users/{userId}/containers/published':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: List all published containers from a user
       description: Get user's published containers only
@@ -3174,7 +3070,6 @@ paths:
   '/users/{userId}/containers/refresh':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Refresh repos owned by the logged-in user
       description: Updates some metadata
@@ -3201,7 +3096,6 @@ paths:
   '/users/{userId}/containers/{organization}/refresh':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Refresh repos owned by the logged-in user with specified organization
       description: Refresh all tools in an organization
@@ -3234,7 +3128,6 @@ paths:
   '/users/{userId}/groups':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get groups that the user belongs to
       description: ''
@@ -3260,7 +3153,6 @@ paths:
         - BEARER: []
     put:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Add a group to a user
       description: ''
@@ -3292,7 +3184,6 @@ paths:
   '/users/{userId}/groups/{groupId}':
     delete:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Remove a user from a group
       description: ''
@@ -3326,7 +3217,6 @@ paths:
   '/users/{userId}/tokens':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get tokens with user id
       description: ''
@@ -3353,7 +3243,6 @@ paths:
   '/users/{userId}/tokens/dockstore':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get Dockstore tokens with user id
       description: ''
@@ -3380,7 +3269,6 @@ paths:
   '/users/{userId}/tokens/github.com':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get Github tokens with user id
       description: ''
@@ -3407,7 +3295,6 @@ paths:
   '/users/{userId}/tokens/gitlab.com':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get Gitlab tokens with user id
       description: ''
@@ -3434,7 +3321,6 @@ paths:
   '/users/{userId}/tokens/quay.io':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Get Quay tokens with user id
       description: ''
@@ -3461,7 +3347,6 @@ paths:
   '/users/{userId}/workflows':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: List workflows owned by the logged-in user
       description: Lists all registered and unregistered workflows owned by the user
@@ -3488,7 +3373,6 @@ paths:
   '/users/{userId}/workflows/published':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: List all published workflows from a user
       description: Get user's published workflows only
@@ -3515,7 +3399,6 @@ paths:
   '/users/{userId}/workflows/refresh':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: Refresh workflows owned by the logged-in user
       description: Updates some metadata
@@ -3542,7 +3425,6 @@ paths:
   '/users/{userId}/workflows/{organization}/refresh':
     get:
       tags:
-  - name: NIHdatacommons
         - users
       summary: >-
         Refresh workflows owned by the logged-in user with specified
@@ -3577,7 +3459,6 @@ paths:
   /workflows/hostedEntry:
     post:
       tags:
-  - name: NIHdatacommons
         - hosted
       summary: Create a hosted workflow
       description: Create a hosted workflow
@@ -3613,7 +3494,6 @@ paths:
   '/workflows/hostedEntry/{entryId}':
     delete:
       tags:
-  - name: NIHdatacommons
         - hosted
       summary: Delete a revision of a hosted workflow
       description: Delete a revision of a hosted workflow
@@ -3643,7 +3523,6 @@ paths:
         - BEARER: []
     patch:
       tags:
-  - name: NIHdatacommons
         - hosted
       summary: Non-idempotent operation for creating new revisions of hosted workflows
       description: Non-idempotent operation for creating new revisions of hosted workflows
@@ -3666,11 +3545,10 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/SourceFileArray'
+        $ref: '#/components/requestBodies/editHostedToolBody'
   /workflows/manualRegister:
     post:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Manually register a workflow
       description: Manually register workflow (public or private).
@@ -3724,7 +3602,6 @@ paths:
   '/workflows/organization/{organization}/published':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: List all published workflows belonging to the specified namespace
       description: NO authentication
@@ -3748,7 +3625,6 @@ paths:
   '/workflows/path/entry/{repository}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get an entry by path
       description: Gets an entry from the path. Enter full path.
@@ -3772,7 +3648,6 @@ paths:
   '/workflows/path/entry/{repository}/published':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get an entry by path
       description: Gets a published entry from the path. Enter full path.
@@ -3796,7 +3671,6 @@ paths:
   '/workflows/path/workflow/{repository}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get a workflow by path
       description: Lists info of workflow. Enter full path.
@@ -3820,7 +3694,6 @@ paths:
   '/workflows/path/workflow/{repository}/published':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get a published workflow by path
       description: Lists info of workflow. Enter full path.
@@ -3842,7 +3715,6 @@ paths:
   '/workflows/path/{repository}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get a list of workflows by path
       description: Lists info of workflow. Enter full path.
@@ -3868,7 +3740,6 @@ paths:
   /workflows/published:
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: List all published workflows.
       description: NO authentication
@@ -3885,7 +3756,6 @@ paths:
   '/workflows/published/{workflowId}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get a published workflow
       description: NO authentication
@@ -3908,7 +3778,6 @@ paths:
   /workflows/search:
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Search for matching published workflows.
       description: Search on the name (full path name) and description. NO authentication
@@ -3931,7 +3800,6 @@ paths:
   '/workflows/{entryId}/registerCheckerWorkflow/{descriptorType}':
     post:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: >-
         Register a checker workflow and associates it with the given
@@ -3983,7 +3851,6 @@ paths:
   '/workflows/{workflowId}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get a registered workflow
       description: ''
@@ -4007,7 +3874,6 @@ paths:
         - BEARER: []
     put:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Update the workflow with the given workflow.
       description: ''
@@ -4034,7 +3900,6 @@ paths:
   '/workflows/{workflowId}/cwl':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding Dockstore.cwl file on Github.
       description: Does not need authentication
@@ -4062,7 +3927,6 @@ paths:
   '/workflows/{workflowId}/cwl/{relative-path}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding Dockstore.cwl file on Github.
       description: Does not need authentication
@@ -4095,7 +3959,6 @@ paths:
   '/workflows/{workflowId}/dag/{workflowVersionId}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the DAG for a given workflow version
       description: ''
@@ -4125,7 +3988,6 @@ paths:
   '/workflows/{workflowId}/labels':
     put:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Update the labels linked to a workflow.
       description: >-
@@ -4160,7 +4022,6 @@ paths:
   '/workflows/{workflowId}/nextflow':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding nextflow.config file on Github.
       description: Does not need authentication
@@ -4188,7 +4049,6 @@ paths:
   '/workflows/{workflowId}/nextflow/{relative-path}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding nextflow documents on Github.
       description: Does not need authentication
@@ -4221,7 +4081,6 @@ paths:
   '/workflows/{workflowId}/publish':
     post:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Publish or unpublish a workflow
       description: Publish/publish a workflow (public or private).
@@ -4248,7 +4107,6 @@ paths:
   '/workflows/{workflowId}/refresh':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Refresh one particular workflow. Always do a full refresh when targeted
       description: ''
@@ -4273,7 +4131,6 @@ paths:
   '/workflows/{workflowId}/requestDOI/{workflowVersionId}':
     put:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Request a DOI for this version of a workflow
       description: ''
@@ -4307,7 +4164,6 @@ paths:
   '/workflows/{workflowId}/resetVersionPaths':
     put:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Change the workflow paths
       description: >-
@@ -4336,7 +4192,6 @@ paths:
   '/workflows/{workflowId}/restub':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Restub a workflow
       description: 'Restubs a full, unpublished workflow.'
@@ -4361,7 +4216,6 @@ paths:
   '/workflows/{workflowId}/secondaryCwl':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding cwl documents on Github.
       description: Does not need authentication
@@ -4391,7 +4245,6 @@ paths:
   '/workflows/{workflowId}/secondaryNextflow':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding Nextflow documents on Github.
       description: Does not need authentication
@@ -4421,7 +4274,6 @@ paths:
   '/workflows/{workflowId}/secondaryWdl':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding wdl documents on Github.
       description: Does not need authentication
@@ -4451,7 +4303,6 @@ paths:
   '/workflows/{workflowId}/star':
     put:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Stars a workflow.
       description: ''
@@ -4474,7 +4325,6 @@ paths:
   '/workflows/{workflowId}/starredUsers':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Returns list of users who starred the given Workflow
       description: ''
@@ -4499,7 +4349,6 @@ paths:
   '/workflows/{workflowId}/testParameterFiles':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding test parameter files.
       description: Does not need authentication
@@ -4528,7 +4377,6 @@ paths:
                   $ref: '#/components/schemas/SourceFile'
     put:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Add test parameter files for a given version.
       description: ''
@@ -4571,7 +4419,6 @@ paths:
         $ref: '#/components/requestBodies/updateLabelsBody'
     delete:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Delete test parameter files for a given version.
       description: ''
@@ -4613,7 +4460,6 @@ paths:
   '/workflows/{workflowId}/tools/{workflowVersionId}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the Tools for a given workflow version
       description: ''
@@ -4643,7 +4489,6 @@ paths:
   '/workflows/{workflowId}/unstar':
     delete:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Unstars a workflow.
       description: ''
@@ -4664,7 +4509,6 @@ paths:
   '/workflows/{workflowId}/users':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get users of a workflow
       description: ''
@@ -4691,7 +4535,6 @@ paths:
   '/workflows/{workflowId}/verifiedSources':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get a semicolon delimited list of verified sources
       description: Does not need authentication
@@ -4714,7 +4557,6 @@ paths:
   '/workflows/{workflowId}/verify/{workflowVersionId}':
     put:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Verify or unverify a workflow. ADMIN ONLY
       description: ''
@@ -4750,7 +4592,6 @@ paths:
   '/workflows/{workflowId}/wdl':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding Dockstore.wdl file on Github.
       description: Does not need authentication
@@ -4778,7 +4619,6 @@ paths:
   '/workflows/{workflowId}/wdl/{relative-path}':
     get:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Get the corresponding Dockstore.wdl file on Github.
       description: Does not need authentication
@@ -4811,7 +4651,6 @@ paths:
   '/workflows/{workflowId}/workflowVersions':
     put:
       tags:
-  - name: NIHdatacommons
         - workflows
       summary: Update the workflow versions linked to a workflow
       description: >-
@@ -4869,6 +4708,17 @@ components:
           schema:
             type: string
       description: code
+    editHostedToolBody:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
+      required: true
     Workflow:
       content:
         application/json:
@@ -4882,17 +4732,6 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
-      required: true
-    SourceFileArray:
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/SourceFile'
-      description: >-
-        Set of updated sourcefiles, add files by adding new files with unknown
-        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:
@@ -5107,7 +4946,6 @@ components:
           format: date-time
           description: Implementation specific timestamp for last built
         tags:
-  - name: NIHdatacommons
           type: array
           description: >-
             Implementation specific tracking of valid build tags for the docker
