@@ -22,6 +22,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -457,8 +459,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
 
                 List<ToolTests> toolTestsList = new ArrayList<>();
+
                 for (SourceFile file : testSourceFiles) {
-                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
+                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
                     toolTestsList.add(toolTests);
                 }
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
@@ -506,6 +509,24 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
                 // so in this stream we need to standardize relative to the main descriptor
                 Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
+                if (correctSourceFile.isPresent()) {
+                    SourceFile sourceFile = correctSourceFile.get();
+                    // annoyingly, test json, Dockerfiles, primaries include a fullpath whereas secondary descriptors
+                    // are just relative to the main descriptor this affects the url that needs to be built
+                    // in a non-hotfix, this could re-use code from the file listing
+                    StringBuilder sourceFileUrl = new StringBuilder(urlBuilt);
+                    if (!SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType()) && sourceFile.getType() != SourceFile.FileType.DOCKERFILE
+                        && !primaryDescriptors.contains(sourceFile.getPath())) {
+                        sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
+                    }
+                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
+                    if (toolDescriptor == null) {
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    }
+                }
+
+                // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+                // so in this stream we need to standardize relative to the main descriptor
                 if (correctSourceFile.isPresent()) {
                     SourceFile sourceFile = correctSourceFile.get();
                     // annoyingly, test json, Dockerfiles, primaries include a fullpath whereas secondary descriptors
@@ -571,7 +592,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 // Matching the workflow path in a workflow automatically indicates that the file is a primary descriptor
                 primaryDescriptorPaths.add(workflowVersion.getWorkflowPath());
                 Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
-                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type);
+                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, workflowVersion.getWorkingDirectory());
                 return Response.ok().entity(toolFiles).build();
             } else {
                 return Response.noContent().build();
@@ -586,7 +607,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 primaryDescriptorPaths.add(tag.getCwlPath());
                 primaryDescriptorPaths.add(tag.getWdlPath());
                 Set<SourceFile> sourceFiles = tag.getSourceFiles();
-                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type);
+                List<ToolFile> toolFiles = getToolFiles(sourceFiles, primaryDescriptorPaths, type, tag.getWorkingDirectory());
                 return Response.ok().entity(toolFiles).build();
             } else {
                 return Response.noContent().build();
@@ -629,7 +650,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * @param mainDescriptor The main descriptor path, used to determine if the file is a primary or secondary descriptor
      * @return A list of ToolFile for the Tool
      */
-    private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type) {
+    private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type, String workingDirectory) {
         List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
         return filteredSourceFiles.stream().map(file -> {
             ToolFile toolFile = new ToolFile();
@@ -637,6 +658,12 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
             if (fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) && mainDescriptor.contains(file.getPath())) {
                 fileTypeEnum = ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
+            }
+            if (!fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR)) {
+                Path pathBase = Paths.get(workingDirectory.isEmpty() ? "/" : StringUtils.prependIfMissing(workingDirectory, "/"));
+                Path specificPath = Paths.get(file.getPath());
+                Path pathRelative = pathBase.relativize(specificPath);
+                toolFile.setPath(pathRelative.toString());
             }
             toolFile.setFileType(fileTypeEnum);
             return toolFile;
@@ -708,7 +735,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * If workflow, the id will look something like "#workflow/DockstoreTestUser/dockstore-whalesay/dockstore-whalesay-wdl"
      * Both cases have registry/organization/name/toolName but workflows have a "#workflow" prepended to it.
      */
-    private class ParsedRegistryID {
+    public class ParsedRegistryID {
         private boolean tool = true;
         private String registry;
         private String organization;

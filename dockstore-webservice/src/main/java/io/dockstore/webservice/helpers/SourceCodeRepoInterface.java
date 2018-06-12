@@ -38,6 +38,7 @@ import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -288,7 +289,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return
      */
-    String getBranchNameFromDefaultVersion(Entry entry) {
+    public String getBranchNameFromDefaultVersion(Entry entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
             for (Tag tag : ((Tool)entry).getVersions()) {
@@ -352,12 +353,13 @@ public abstract class SourceCodeRepoInterface {
      * @param version
      * @return workflow version
      */
-    WorkflowVersion combineVersionAndSourcefile(String repositoryId, SourceFile sourceFile, Workflow workflow, SourceFile.FileType identifiedType,
-        WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
+    WorkflowVersion combineVersionAndSourcefile(String repositoryId, SourceFile sourceFile, Workflow workflow,
+        SourceFile.FileType identifiedType, WorkflowVersion version, Map<String, WorkflowVersion> existingDefaults) {
         Set<SourceFile> sourceFileSet = new HashSet<>();
 
         if (sourceFile != null && sourceFile.getContent() != null) {
-            final Map<String, SourceFile> stringSourceFileMap = this.resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version);
+            final Map<String, SourceFile> stringSourceFileMap = this
+                .resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version);
             sourceFileSet.addAll(stringSourceFileMap.values());
         }
 
@@ -367,8 +369,9 @@ public abstract class SourceCodeRepoInterface {
             SourceFile.FileType workflowDescriptorType = workflow.getTestParameterType();
 
             List<SourceFile> testParameterFiles = existingVersion.getSourceFiles().stream()
-                    .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
-            testParameterFiles.forEach(file -> this.readFile(repositoryId, existingVersion, sourceFileSet, workflowDescriptorType, file.getPath()));
+                .filter((SourceFile u) -> u.getType() == workflowDescriptorType).collect(Collectors.toList());
+            testParameterFiles
+                .forEach(file -> this.readFile(repositoryId, existingVersion, sourceFileSet, workflowDescriptorType, file.getPath()));
         }
 
         // If source file is found and valid then add it
@@ -376,6 +379,11 @@ public abstract class SourceCodeRepoInterface {
             version.getSourceFiles().add(sourceFile);
         }
 
+        // look for a mutated version and delete it first (can happen due to leading slash)
+        Set<SourceFile> collect = sourceFileSet.stream().filter(
+            file -> file.getPath().equals(sourceFile.getPath()) || file.getPath()
+                .equals(StringUtils.stripStart(sourceFile.getPath(), "/"))).collect(Collectors.toSet());
+        sourceFileSet.removeAll(collect);
         // add extra source files here (dependencies from "main" descriptor)
         if (sourceFileSet.size() > 0) {
             version.getSourceFiles().addAll(sourceFileSet);
