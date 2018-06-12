@@ -101,6 +101,9 @@ before_cache:
 - rm -rf /home/travis/.m2/repository/io/dockstore
 - rm -rf $HOME/.m2/repository/.cache/download-maven-plugin directory
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
+
 notifications:
   webhooks:
     urls:
