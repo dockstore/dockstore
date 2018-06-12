@@ -747,6 +747,7 @@ public class WorkflowIT extends BaseIT {
             .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         assertTrue("should have at least 5 files", toolFiles.size() >= 5);
         assertTrue("all files should have relative paths", toolFiles.stream().filter(toolFile -> !toolFile.getPath().startsWith("/")).count() >= 5);
+
         // check on urls created for test files
         List<ToolTests> toolTests = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");

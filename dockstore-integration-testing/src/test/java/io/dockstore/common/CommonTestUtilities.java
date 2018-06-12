@@ -100,6 +100,8 @@ public final class CommonTestUtilities {
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIG_PATH);
+        // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
+        getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
@@ -126,6 +128,8 @@ public final class CommonTestUtilities {
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
         cleanStatePrivate2(support, CONFIG_PATH, isNewApplication);
+        // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
+        getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
