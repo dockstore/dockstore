@@ -1144,7 +1144,7 @@ public class BasicIT extends BaseIT {
             "--script" });
         final long count5 = testingPostgres
             .runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertEquals("there should be three sourcefiles that are test parameter files, there are " + count5, 2, count5);
+        Assert.assertTrue("there should be two sourcefiles that are test parameter files, there are " + count5, count5 == 2);
 
         // refreshing again with the default paths set should not create extra redundant test parameter files
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry",

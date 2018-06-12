@@ -830,6 +830,7 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     @Category(SlowTest.class)
+    @Ignore("Broken on hotfix due to 'API V3 is no longer supported. Use API V4 instead'")
     public void testManualPublishGitlab() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();

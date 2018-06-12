@@ -459,8 +459,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
 
                 List<ToolTests> toolTestsList = new ArrayList<>();
+
                 for (SourceFile file : testSourceFiles) {
-                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(file);
+                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
                     toolTestsList.add(toolTests);
                 }
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
@@ -508,6 +509,24 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
                 // so in this stream we need to standardize relative to the main descriptor
                 Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
+                if (correctSourceFile.isPresent()) {
+                    SourceFile sourceFile = correctSourceFile.get();
+                    // annoyingly, test json, Dockerfiles, primaries include a fullpath whereas secondary descriptors
+                    // are just relative to the main descriptor this affects the url that needs to be built
+                    // in a non-hotfix, this could re-use code from the file listing
+                    StringBuilder sourceFileUrl = new StringBuilder(urlBuilt);
+                    if (!SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType()) && sourceFile.getType() != SourceFile.FileType.DOCKERFILE
+                        && !primaryDescriptors.contains(sourceFile.getPath())) {
+                        sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
+                    }
+                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
+                    if (toolDescriptor == null) {
+                        return Response.status(Response.Status.NOT_FOUND).build();
+                    }
+                }
+
+                // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+                // so in this stream we need to standardize relative to the main descriptor
                 if (correctSourceFile.isPresent()) {
                     SourceFile sourceFile = correctSourceFile.get();
                     // annoyingly, test json, Dockerfiles, primaries include a fullpath whereas secondary descriptors
