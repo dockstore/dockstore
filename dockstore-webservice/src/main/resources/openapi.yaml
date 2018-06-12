@@ -1491,7 +1491,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/editHostedToolBody'
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -3545,7 +3545,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/editHostedToolBody'
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -4708,17 +4708,6 @@ components:
           schema:
             type: string
       description: code
-    editHostedToolBody:
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              type: object
-      description: >-
-        Set of updated sourcefiles, add files by adding new files with unknown
-        paths, delete files by including them with emptied content
-      required: true
     Workflow:
       content:
         application/json:
@@ -4732,6 +4721,17 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
+      required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:
@@ -4800,10 +4800,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -4816,6 +4812,10 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -4991,10 +4991,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5007,6 +5003,10 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -5798,10 +5798,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5814,6 +5810,10 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
