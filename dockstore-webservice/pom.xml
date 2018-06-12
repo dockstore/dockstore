@@ -816,7 +816,7 @@
                             </locations>
                             <swaggerDirectory>${pom.basedir}/src/main/resources</swaggerDirectory>
                             <swaggerFileName>swagger</swaggerFileName>
-                            <outputFormats>json,yaml</outputFormats>
+                            <outputFormats>yaml</outputFormats>
                             <basePath>/</basePath>
                             <!-- "can be used to strictly use the official Swagger reader in order to generate the exact same output as Swagger''s runtime generation (with all its bugs). "
                             <swaggerApiReader>com.github.kongchen.swagger.docgen.reader.SwaggerReader</swaggerApiReader>
