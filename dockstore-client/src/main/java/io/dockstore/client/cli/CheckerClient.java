@@ -390,7 +390,8 @@ public class CheckerClient extends WorkflowClient {
 
     /**
      * Retrieve the checker workflow from an entry
-     * @param entry
+     * @param entry The entry of interest
+     * @param authRequired If true won't look for published workflows first, if false then it will
      * @return checker workflow
      */
     private Workflow getCheckerWorkflowFromEntry(Entry entry, boolean authRequired) {
@@ -404,14 +405,7 @@ public class CheckerClient extends WorkflowClient {
                 if (authRequired) {
                     checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
                 } else {
-                    try {
-                        checkerWorkflow = workflowsApi.getPublishedWorkflow(entry.getCheckerId());
-                    } catch (ApiException e) {
-                        if (e.getResponseBody().contains("Entry not found")) {
-                            LOG.info("Unable to locate entry without credentials, trying again as authenticated user");
-                            checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
-                        }
-                    }
+                    checkerWorkflow = getDockstoreWorkflowById(entry.getCheckerId());
                 }
             }
         }

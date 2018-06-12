@@ -286,13 +286,13 @@ public class WorkflowClient extends AbstractEntryClient {
         // User may enter the version, so we have to extract the path
         String[] parts = entry.split(":");
         String path = parts[0];
-        Workflow workflow = getDockstoreWorkflow(path);
+        Workflow workflow = getDockstoreWorkflowByPath(path);
         String descriptor = workflow.getDescriptorType();
         LanguageClientInterface languageCLient = convertCLIStringToEnum(descriptor);
         return languageCLient.generateInputJson(entry, json);
     }
 
-    private Workflow getDockstoreWorkflow(String path) {
+    protected Workflow getDockstoreWorkflowByPath(String path) {
         // simply getting published descriptors does not require permissions
         Workflow workflow = null;
         try {
@@ -305,6 +305,24 @@ public class WorkflowClient extends AbstractEntryClient {
         } finally {
             if (workflow == null) {
                 errorMessage("No workflow found with path " + path, Client.ENTRY_NOT_FOUND);
+            }
+        }
+        return workflow;
+    }
+
+    protected Workflow getDockstoreWorkflowById(Long id) {
+        // simply getting published descriptors does not require permissions
+        Workflow workflow = null;
+        try {
+            workflow = workflowsApi.getPublishedWorkflow(id);
+        } catch (ApiException e) {
+            if (e.getResponseBody().contains("Entry not found")) {
+                LOG.info("Unable to locate entry without credentials, trying again as authenticated user");
+                workflow = workflowsApi.getWorkflow(id);
+            }
+        } finally {
+            if (workflow == null) {
+                errorMessage("No workflow found with id " + id, Client.ENTRY_NOT_FOUND);
             }
         }
         return workflow;
@@ -339,7 +357,7 @@ public class WorkflowClient extends AbstractEntryClient {
                     String[] parts = entry.split(":");
                     String path = parts[0];
                     try {
-                        Workflow workflow = getDockstoreWorkflow(path);
+                        Workflow workflow = getDockstoreWorkflowByPath(path);
                         String descriptor = workflow.getDescriptorType();
                         LanguageClientInterface languageClientInterface = convertCLIStringToEnum(descriptor);
 
@@ -1024,7 +1042,7 @@ public class WorkflowClient extends AbstractEntryClient {
         String version = (parts.length > 1) ? parts[1] : "master";
         SourceFile file = new SourceFile();
         // simply getting published descriptors does not require permissions
-        Workflow workflow = getDockstoreWorkflow(path);
+        Workflow workflow = getDockstoreWorkflowByPath(path);
 
         boolean valid = false;
         for (WorkflowVersion workflowVersion : workflow.getWorkflowVersions()) {
@@ -1062,7 +1080,7 @@ public class WorkflowClient extends AbstractEntryClient {
         String path = parts[0];
         String version = (parts.length > 1) ? parts[1] : "master";
 
-        Workflow workflow = getDockstoreWorkflow(path);
+        Workflow workflow = getDockstoreWorkflowByPath(path);
 
         List<SourceFile> result = new ArrayList<>();
         if (workflow != null) {
