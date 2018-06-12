@@ -1,9 +1,9 @@
 #!/bin/sh
 
 # Using https://mermade.org.uk/openapi-converter, generate openapi schema sources.
-STATE=`curl -F "filename=@src/main/resources/swagger.yaml" https://mermade.org.uk/api/v1/convert -o src/main/resources/open_api.yaml -w "%{http_code}"`
-eval "$STATE"
-if [ \( "$?" = 0 \) -o \(  "$STATE" = "200" \) ]; then
+HTTP_STATUS=`curl -F "filename=@src/main/resources/swagger.yaml" https://mermade.org.uk/api/v1/convert -o src/main/resources/open_api.yaml -w "%{http_code}"`
+eval "$HTTP_STATUS"
+if [ \( "$?" = 0 \) -o \(  "$HTTP_STATUS" = "200" \) ]; then
   # Parse out position variable not compatible with open-api schemas
   sed '/position/d;s/\<html><body><pre>//;w src/main/resources/openapi1.yaml' src/main/resources/open_api.yaml
   # Aggregate correct url for dockstore api. Using pipe instead of forward slash, avoid dealing with scape chars
@@ -17,6 +17,6 @@ if [ \( "$?" = 0 \) -o \(  "$STATE" = "200" \) ]; then
   # Clean directory from excess files.
   rm src/main/resources/open_api.yaml src/main/resources/openapi1.yaml src/main/resources/openapi2.yaml
 else
-  echo "URL not available, graciously terminate"
+  echo "Error converting swagger to openapi; skipping openapi generation"
 fi
 exit 0

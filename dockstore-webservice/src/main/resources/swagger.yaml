@@ -6,7 +6,7 @@ info:
     \ used to build those images"
   version: "1.4.1"
   title: "Dockstore API"
-  termsOfService: "https://www.ga4gh.org/policies/termsandconditions.html"
+  termsOfService: ""
   contact:
     name: "Dockstore@ga4gh"
     url: "https://github.com/ga4gh/dockstore"
