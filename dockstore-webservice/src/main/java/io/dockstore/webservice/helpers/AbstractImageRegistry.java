@@ -286,10 +286,13 @@ public abstract class AbstractImageRegistry {
                             oldTag.setCwlPath(tool.getDefaultCwlPath());
                             oldTag.setWdlPath(tool.getDefaultWdlPath());
                             oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
-                            if (tool.getDefaultTestCwlParameterFile() != null) {
+                            //TODO: keep an eye on this, this used to always create new test params no matter what
+                            if (tool.getDefaultTestCwlParameterFile() != null && oldTag.getSourceFiles().stream()
+                                .noneMatch(file -> file.getPath().equals(tool.getDefaultTestCwlParameterFile()))) {
                                 oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
                             }
-                            if (tool.getDefaultTestWdlParameterFile() != null) {
+                            if (tool.getDefaultTestWdlParameterFile() != null && oldTag.getSourceFiles().stream()
+                                .noneMatch(file -> file.getPath().equals(tool.getDefaultTestWdlParameterFile()))) {
                                 oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
                             }
                         }

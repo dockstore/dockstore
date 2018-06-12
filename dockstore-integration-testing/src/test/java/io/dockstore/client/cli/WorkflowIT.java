@@ -50,6 +50,8 @@ import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tool;
 import io.swagger.client.model.User;
 import io.swagger.client.model.ToolDescriptor;
+import io.swagger.client.model.ToolFile;
+import io.swagger.client.model.ToolTests;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -70,6 +72,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Extra confidential integration tests, focus on testing workflow interactions
@@ -178,6 +181,16 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
 
+
+        workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+        // check on URLs for workflows via ga4gh calls
+        toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
+        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
 
         // check on commit ids for github
         boolean allHaveCommitIds = refreshGithub.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
@@ -482,6 +495,53 @@ public class WorkflowIT extends BaseIT {
         assertEquals("There should be 5 valid version tags, there are " + count4, 6, count4);
     }
 
+    /**
+     * This tests that a nested WDL workflow (three levels) is properly parsed
+     * @throws ApiException
+     */
+    @Test
+    public void testNestedWdlWorkflow() throws ApiException {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long userId = usersApi.getUser().getId();
+
+        // Set up postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manually register workflow github
+        Workflow githubWorkflow = workflowApi
+                .manualRegister("github", "DockstoreTestUser2/nested-wdl", "/Dockstore.wdl", "altname", "wdl", "/test.json");
+
+        // Assert some things
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
+        assertEquals("No workflows are in full mode", 0,count);
+
+        // Refresh the workflow
+        workflowApi.refresh(githubWorkflow.getId());
+
+        // Confirm that correct number of sourcefiles are found
+        githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId());
+        List<WorkflowVersion> versions = githubWorkflow.getWorkflowVersions();
+        assertEquals("There should be two versions", 2, versions.size());
+
+        Optional<WorkflowVersion> loopVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "infinite-loop")).findFirst();
+        if (loopVersion.isPresent()) {
+            assertEquals("There should be two sourcefiles", 2, loopVersion.get().getSourceFiles().size());
+        } else {
+            fail("Could not find version infinite-loop");
+        }
+
+        Optional<WorkflowVersion> masterVersion = versions.stream().filter(version -> Objects.equals(version.getReference(), "master")).findFirst();
+        if (masterVersion.isPresent()) {
+            assertEquals("There should be three sourcefiles", 3, masterVersion.get().getSourceFiles().size());
+        } else {
+            fail("Could not find version master");
+        }
+    }
+
 
     /**
      * Tests manual registration of a tool and check that descriptors are downloaded properly.
@@ -681,5 +741,19 @@ public class WorkflowIT extends BaseIT {
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "adtex.cwl");
         // ignore extra separators
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "/adtex.cwl");
+        // test json should use relative path with ".."
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", "../test.json");
+        List<ToolFile> toolFiles = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        assertTrue("should have at least 5 files", toolFiles.size() >= 5);
+        assertTrue("all files should have relative paths", toolFiles.stream().filter(toolFile -> !toolFile.getPath().startsWith("/")).count() >= 5);
+        // check on urls created for test files
+        List<ToolTests> toolTests = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        assertTrue("could not find tool tests", toolTests.size() > 0);
+        for(ToolTests test: toolTests) {
+            content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
+            Assert.assertTrue("could not find content from generated test JSON URL", !content.isEmpty());
+        }
     }
 }
