@@ -40,7 +40,6 @@ import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
