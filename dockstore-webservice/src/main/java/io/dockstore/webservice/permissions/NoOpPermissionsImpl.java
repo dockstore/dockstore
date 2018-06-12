@@ -33,11 +33,6 @@ public class NoOpPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public void initializePermission(Workflow workflow, User user) {
-
-    }
-
-    @Override
     public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
         return false;
     }

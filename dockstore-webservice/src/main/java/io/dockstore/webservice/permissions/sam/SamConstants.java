@@ -12,6 +12,11 @@ public interface SamConstants {
     String WRITE_POLICY = "writer";
     String OWNER_POLICY = "owner";
 
+    // SAM role names
+    String READ_ROLE = "reader";
+    String WRITE_ROLE = "writer";
+    String OWNER_ROLE = "owner";
+
     enum SamActions {
         DELETE("delete"),
         READ_POLICIES("read_policies"),

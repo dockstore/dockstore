@@ -1,6 +1,7 @@
 package io.dockstore.webservice.permissions.sam;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,6 @@ import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * An implementation of the {@link PermissionsInterface} that makes
@@ -157,8 +157,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
-    @Override
-    public void initializePermission(Workflow workflow, User user) {
+    private void initializePermission(Workflow workflow, User user) {
         ResourcesApi resourcesApi = getResourcesApi(user);
         String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
         try {
@@ -213,7 +212,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     /**
      * Gets a non-expired access token, which may entail refreshing the token. If the token
-     * is refreshed, the access token is updated in the user table.
+     * is refreshed, the access token is updated in the token table.
      *
      * @param user
      * @return
@@ -235,8 +234,13 @@ public class SamPermissionsImpl implements PermissionsInterface {
         return Optional.empty();
     }
 
+    /**
+     * Converts the response from SAM into a list of Dockstore {@link Permission}
+     * @param accessPolicyList
+     * @return
+     */
     List<Permission> accessPolicyResponseEntryToUserPermissions(List<AccessPolicyResponseEntry> accessPolicyList) {
-        return accessPolicyList.stream().map(accessPolicy -> {
+        final List<Permission> permissionList = accessPolicyList.stream().map(accessPolicy -> {
             Role role = samPermissionMap.get(accessPolicy.getPolicy().getRoles().get(0));
             return accessPolicy.getPolicy().getMemberEmails().stream().map(email -> {
                 Permission permission = new Permission();
@@ -245,6 +249,28 @@ public class SamPermissionsImpl implements PermissionsInterface {
                 return permission;
             });
         }).flatMap(s -> s).collect(Collectors.toList());
+        return removeDuplicateEmails(permissionList);
+
+    }
+
+    /**
+     * Removes duplicate emails from <code>permissionList</code>. If there are duplicates,
+     * leaves the one with the most privileged role.
+     *
+     * The Dockstore UI will be simplified to only show one role; while the SAM API support
+     * @param permissionList
+     * @return
+     */
+    private List<Permission> removeDuplicateEmails(List<Permission> permissionList) {
+        // A map of email to permissions.
+        final Map<String, Permission> map = new HashMap<>();
+        permissionList.stream().forEach(permission -> {
+            final Permission existing = map.get(permission.getEmail());
+            if (existing == null || existing.getRole().ordinal() > permission.getRole().ordinal()) {
+                map.put(permission.getEmail(), permission);
+            }
+        });
+        return new ArrayList<>(map.values());
     }
 
     <T> Optional<T> readValue(ApiException e, Class<T> clazz) {

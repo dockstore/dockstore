@@ -741,6 +741,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/path/workflow/{repository}")
     @ApiOperation(value = "Options for a workflow by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Permissions for the endpoint")
+    @SuppressWarnings("checkstyle:emptycatchblock")
     public Response getWorkflowByPathOptions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final ArrayList<String> headers = new ArrayList<>();
         headers.add(HttpMethod.OPTIONS);
@@ -749,6 +750,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         try {
             checkCanRead(user, workflow);
             headers.add(HttpMethod.GET);
+
         } catch (CustomWebApplicationException ex) {
             // Silently fail; just don't add GET to the allowed methods
         }

@@ -102,20 +102,8 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public void initializePermission(Workflow workflow, User user) {
-        Optional<Role> permission = getPermission(user, workflow);
-        if (permission.isPresent()) {
-            throw new CustomWebApplicationException("Permissions already exist", HttpStatus.SC_BAD_REQUEST);
-        }
-        Permission userPermission = new Permission();
-        userPermission.setEmail(user.getEmail());
-        userPermission.setRole(Role.OWNER);
-        setPermission(workflow, user, userPermission);
-    }
-
-    @Override
     public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
-        return getPermission(user, workflow).map(p -> {
+        return getRole(user, workflow).map(p -> {
             switch (p) {
             case OWNER:
                 // If owner, can do anything
@@ -132,7 +120,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
         }).orElse(false);
     }
 
-    private Optional<Role> getPermission(User requester, Workflow workflow) {
+    private Optional<Role> getRole(User requester, Workflow workflow) {
         final Map<String, Role> userPermissionsMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
         if (userPermissionsMap == null) {
             return Optional.empty();

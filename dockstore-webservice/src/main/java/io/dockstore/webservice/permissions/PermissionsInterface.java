@@ -90,20 +90,6 @@ public interface PermissionsInterface {
     void removePermission(Workflow workflow, User user, String email, Role role);
 
     /**
-     * Initializes permissions for <code>workflow</code>, making <code>user</code> the owner.
-     *
-     * <p>
-     *     Any authenticated user can make this call! It will fail if the permissions
-     *     have already been initialized.
-     * </p>
-     *
-     *
-     * @param workflow
-     * @param user
-     */
-    void initializePermission(Workflow workflow, User user);
-
-    /**
      * Indicates whether the <code>user</code> can perform the given <code>action</code> on the
      * specified <code>workflow</code>.
      *

@@ -16,10 +16,25 @@
 
 package io.dockstore.webservice.permissions;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public enum Role {
-    OWNER,
-    WRITER,
-    READER;
+    // More privileged roles should be first, as we compare with ordinal
+    OWNER(Action.WRITE, Action.READ, Action.DELETE, Action.SHARE),
+    WRITER(Action.WRITE, Action.READ),
+    READER(Action.READ);
+
+    private final Set<Action> actions;
+
+    Role(Action... actions) {
+        this.actions = new HashSet<>(Arrays.asList(actions));
+    }
+
+    boolean hasAction(Action action) {
+        return this.actions.contains(action);
+    }
 
     public enum Action {
         WRITE("write"),
