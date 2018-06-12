@@ -854,7 +854,8 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests getting branches and tags from gitlab repositories
      */
     @Test
-    public void testTagAndBranchTracking() {
+    @Category(SlowTest.class)
+    public void testGitLabTagAndBranchTracking() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
