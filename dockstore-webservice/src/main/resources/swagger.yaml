@@ -3451,8 +3451,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
-      security:
-      - BEARER: []
   /workflows/path/workflow/{repository}:
     get:
       tags:
