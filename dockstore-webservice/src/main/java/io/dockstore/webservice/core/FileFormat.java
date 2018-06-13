@@ -28,6 +28,10 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.sql.Timestamp;
 
 /**
  * This describes a input or output file format that is associated with an entry in the dockstore
@@ -49,6 +53,15 @@ public class FileFormat implements Comparable<FileFormat> {
     @Column(unique = true, columnDefinition = "text")
     @ApiModelProperty(value = "String representation of the file format", required = true, position = 1)
     private String value;
+
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     public String getValue() {
         return value;

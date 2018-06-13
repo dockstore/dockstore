@@ -53,7 +53,7 @@ import wdl4s.parser.WdlParser;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-
+    public static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
     @Override
     public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
@@ -196,37 +196,44 @@ public class WDLHandler implements LanguageHandlerInterface {
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface) {
-        Map<String, SourceFile> imports = new HashMap<>();
+        return processImports(repositoryId, content, version, sourceCodeRepoInterface, new HashMap<>());
+    }
+
+    private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
 
         // Use matcher to get imports
         String[] lines = StringUtils.split(content, '\n');
-        List<String> importPaths = new ArrayList<>();
-        Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"");
+        Set<String> currentFileImports = new HashSet<>();
 
         for (String line : lines) {
-            Matcher m = p.matcher(line);
+            Matcher m = IMPORT_PATTERN.matcher(line);
 
             while (m.find()) {
                 String match = m.group(1);
                 if (!match.startsWith("http://") && !match.startsWith("https://")) { // Don't resolve URLs
-                    importPaths.add(match.replaceFirst("file://", "")); // remove file:// from path
+                    currentFileImports.add(match.replaceFirst("file://", "")); // remove file:// from path
                 }
             }
         }
 
-        for (String importPath : importPaths) {
-            SourceFile importFile = new SourceFile();
+        for (String importPath : currentFileImports) {
+            if (!imports.containsKey(importPath)) {
+                SourceFile importFile = new SourceFile();
 
-            final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, importPath);
-            if (fileResponse == null) {
-                LOG.error("Could not read: " + importPath);
-                continue;
+                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, importPath);
+                if (fileResponse == null) {
+                    SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
+                    continue;
+                }
+                importFile.setContent(fileResponse);
+                importFile.setPath(importPath);
+                importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                imports.put(importFile.getPath(), importFile);
+                imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports));
             }
-            importFile.setContent(fileResponse);
-            importFile.setPath(importPath);
-            importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
-            imports.put(importFile.getPath(), importFile);
+
         }
 
         return imports;

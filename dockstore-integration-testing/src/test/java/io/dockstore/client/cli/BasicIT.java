@@ -16,13 +16,17 @@
 
 package io.dockstore.client.cli;
 
+import java.util.List;
+
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
+import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,7 +46,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  *
  * @author aduncan
  */
-@Category(ConfidentialTest.class)
+@Category({ConfidentialTest.class, ToolTest.class})
 public class BasicIT extends BaseIT {
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -1140,8 +1144,21 @@ public class BasicIT extends BaseIT {
             "--script" });
         final long count5 = testingPostgres
             .runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertEquals("there should be three sourcefiles that are test parameter files, there are " + count5, 2, count5);
+        Assert.assertTrue("there should be two sourcefiles that are test parameter files, there are " + count5, count5 == 2);
 
+        // refreshing again with the default paths set should not create extra redundant test parameter files
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry",
+            "quay.io/dockstoretestuser/test_input_json", "--test-cwl-path", "test.cwl.json" });
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry",
+            "quay.io/dockstoretestuser/test_input_json", "--test-wdl-path", "test.wdl.json" });
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--entry",
+            "quay.io/dockstoretestuser/test_input_json" });
+        final List<Long> testJsonCounts = testingPostgres
+            .runSelectStatement("select count(*) from sourcefile s, version_sourcefile vs where (s.type = 'CWL_TEST_JSON' or s.type = 'WDL_TEST_JSON') and s.id = vs.sourcefileid group by vs.versionid", new ColumnListHandler<>());
+        Assert.assertTrue("there should be at least three sets of test json sourcefiles " + testJsonCounts.size(), testJsonCounts.size() >= 3);
+        for(Long testJsonCount : testJsonCounts) {
+            Assert.assertTrue("there should be at most two test json for each version", testJsonCount <= 2);
+        }
     }
 
     /**
@@ -1380,6 +1397,54 @@ public class BasicIT extends BaseIT {
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry",
             "test.dkr.ecr.test.amazonaws.com/notarealnamespace/notarealname/alternate", "--private", "false", "--script" });
+    }
+
+    /**
+     * This tests that you can manually publish a private only registry (Seven Bridges), but you can't change the tool to public
+     */
+    @Test
+    public void testManualPublishSevenBridgesTool() {
+        // Setup database
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manual publish
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.SEVEN_BRIDGES.name(),
+                "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "images.sbgenomics.com", "--script" });
+
+        // Check that tool is published and has correct values
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
+        Assert.assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
+
+        // Update tool to public (shouldn't work)
+        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry", "images.sbgenomics.com/notarealnamespace/notarealname/alternate",
+                "--private", "false", "--script" });
+    }
+
+    /**
+     * This tests that you can't manually publish a private only registry (Seven Bridges) with an incorrect registry path
+     */
+    @Test
+    public void testManualPublishSevenBridgesToolIncorrectRegistryPath() {
+        // Setup database
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Manual publish correct path
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.SEVEN_BRIDGES.name(),
+                "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "test-images.sbgenomics.com", "--script" });
+
+        // Check that tool is published and has correct values
+        final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test-images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
+        Assert.assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
+
+        // Manual publish incorrect path
+        systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "manual_publish", "--registry", Registry.SEVEN_BRIDGES.name(),
+                "--namespace", "notarealnamespace", "--name", "notarealname", "--git-url", "git@github.com:DockstoreTestUser/dockstore-whalesay.git", "--git-reference",
+                "master", "--toolname", "alternate", "--private", "true", "--tool-maintainer-email", "duncan.andrew.g@gmail.com", "--custom-docker-path", "testimages.sbgenomics.com", "--script" });
+
     }
 
     /**

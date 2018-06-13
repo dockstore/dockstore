@@ -35,4 +35,6 @@ public abstract class ToolsExtendedApiService {
     public abstract Response toolsIndexGet(SecurityContext securityContext) throws NotFoundException;
 
     public abstract Response toolsIndexSearch(String query, MultivaluedMap<String, String> queryParameters, SecurityContext securityContext);
+
+    public abstract Response setSourceFileMetadata(String type, String id, String versionId, String relativePath, String platform, Boolean verified, String metadata);
 }

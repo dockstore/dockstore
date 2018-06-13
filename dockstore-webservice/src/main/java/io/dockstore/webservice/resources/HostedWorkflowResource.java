@@ -65,12 +65,12 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Override
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted workflow", response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, String descriptorType) {
-        return super.createHosted(user, registry, name, descriptorType);
+    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace) {
+        return super.createHosted(user, registry, name, descriptorType, namespace);
     }
 
     @Override
-    protected Workflow getEntry(User user, String registry, String name, String descriptorType) {
+    protected Workflow getEntry(User user, String registry, String name, String descriptorType, String namespace) {
         Workflow workflow = new Workflow();
         workflow.setMode(WorkflowMode.HOSTED);
         workflow.setOrganization(user.getUsername());

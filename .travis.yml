@@ -37,6 +37,16 @@ jobs:
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true 
     - stage: integration-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=tool-integration-tests
+    - stage: integration-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=workflow-integration-tests
+    - stage: integration-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=other-integration-tests
     - stage: integration-tests
       env:
         - TESTING_PROFILE=toil-integration-tests
@@ -54,17 +64,29 @@ jobs:
     - stage: coverage
       if: branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=tool-integration-tests
+    - stage: coverage
+      if: branch IN (master, develop)
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=workflow-integration-tests
+    - stage: coverage
+      if: branch IN (master, develop)
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=other-integration-tests
 # build lifecycle is before_install, install, before_script, script, after_script
 
 before_install:
 # need to clear out old version of the plugin till everything is merged due to https://github.com/maven-download-plugin/maven-download-plugin/issues/80
 - rm -Rf $HOME/.m2/repository/.cache/download-maven-plugin/
-- npm install -g swagger2openapi@2.11.16
+# turn this back on when npm settles down/we find a swagger2openapi replacement
+#- npm install -g swagger2openapi@2.11.16
 # decrypt migration before initial build
 - scripts/decrypt.sh
-# pre-build to check dependencies and look for out-of-sync swagger
-- mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -V
-- scripts/check-swagger.sh
+# turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
+#- scripts/check-swagger.sh
 
 install:
 - docker version
@@ -80,10 +102,8 @@ before_cache:
 - rm -rf /home/travis/.m2/repository/io/dockstore
 - rm -rf $HOME/.m2/repository/.cache/download-maven-plugin directory
 
+after_success:
+  - bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
+  
 notifications:
-  webhooks:
-    urls:
-      - https://webhooks.gitter.im/e/7f1c48703628e3514bb6
-    on_success: change  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: never     # options: [always|never|change] default: always
+  webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN

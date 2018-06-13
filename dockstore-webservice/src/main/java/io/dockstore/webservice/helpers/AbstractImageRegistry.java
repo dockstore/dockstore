@@ -19,9 +19,11 @@ package io.dockstore.webservice.helpers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -286,10 +288,13 @@ public abstract class AbstractImageRegistry {
                             oldTag.setCwlPath(tool.getDefaultCwlPath());
                             oldTag.setWdlPath(tool.getDefaultWdlPath());
                             oldTag.setDockerfilePath(tool.getDefaultDockerfilePath());
-                            if (tool.getDefaultTestCwlParameterFile() != null) {
+                            //TODO: keep an eye on this, this used to always create new test params no matter what
+                            if (tool.getDefaultTestCwlParameterFile() != null && oldTag.getSourceFiles().stream()
+                                .noneMatch(file -> file.getPath().equals(tool.getDefaultTestCwlParameterFile()))) {
                                 oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestCwlParameterFile(), SourceFile.FileType.CWL_TEST_JSON));
                             }
-                            if (tool.getDefaultTestWdlParameterFile() != null) {
+                            if (tool.getDefaultTestWdlParameterFile() != null && oldTag.getSourceFiles().stream()
+                                .noneMatch(file -> file.getPath().equals(tool.getDefaultTestWdlParameterFile()))) {
                                 oldTag.getSourceFiles().add(createSourceFile(tool.getDefaultTestWdlParameterFile(), SourceFile.FileType.WDL_TEST_JSON));
                             }
                         }
@@ -384,33 +389,36 @@ public abstract class AbstractImageRegistry {
         // Get all of the required sourcefiles for the given tag
         List<SourceFile> newFiles = loadFiles(sourceCodeRepo, tool, tag);
 
-        // Remove all existing sourcefiles
-        tag.getSourceFiles().clear();
+        Set<SourceFile> oldFilesTempSet = new HashSet<>(tag.getSourceFiles());
 
-        // Add for new descriptor types
-        boolean hasCwl = false;
-        boolean hasWdl = false;
-        boolean hasDockerfile = false;
+        // copy content over to existing files
+        for (SourceFile oldFile : oldFilesTempSet) {
+            boolean found = false;
+            for (SourceFile newFile : newFiles) {
+                if (Objects.equals(oldFile.getPath(), newFile.getPath())) {
+                    oldFile.setContent(newFile.getContent());
+                    newFiles.remove(newFile);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                tag.getSourceFiles().remove(oldFile);
+            }
+        }
 
+        // create actual new files, newfiles should only have the new ones
         for (SourceFile newFile : newFiles) {
             long id = fileDAO.create(newFile);
             SourceFile file = fileDAO.findById(id);
             tag.addSourceFile(file);
-
-            if (file.getType() == SourceFile.FileType.DOCKERFILE) {
-                hasDockerfile = true;
-                LOG.info(username + " : HAS Dockerfile");
-            }
-            // Add for new descriptor types
-            if (file.getType() == SourceFile.FileType.DOCKSTORE_CWL) {
-                hasCwl = true;
-                LOG.info(username + " : HAS Dockstore.cwl");
-            }
-            if (file.getType() == SourceFile.FileType.DOCKSTORE_WDL) {
-                hasWdl = true;
-                LOG.info(username + " : HAS Dockstore.wdl");
-            }
         }
+
+        // need to go through all files for the booleans
+        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKERFILE);
+        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
+        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
+
 
         // Private tools don't require a dockerfile
         if (tool.isPrivateAccess()) {

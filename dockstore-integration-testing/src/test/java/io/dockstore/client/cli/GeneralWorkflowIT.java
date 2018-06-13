@@ -24,6 +24,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToilCompatibleTest;
+import io.dockstore.common.WorkflowTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -48,7 +49,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  * This test suite will have tests for the workflow mode of the Dockstore Client.
  * Created by aduncan on 05/04/16.
  */
-@Category({ConfidentialTest.class})
+@Category({ConfidentialTest.class, WorkflowTest.class})
 public class GeneralWorkflowIT extends BaseIT {
 
     @Rule
@@ -829,6 +830,7 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     @Category(SlowTest.class)
+    @Ignore("Broken on hotfix due to 'API V3 is no longer supported. Use API V4 instead'")
     public void testManualPublishGitlab() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -852,7 +854,8 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests getting branches and tags from gitlab repositories
      */
     @Test
-    public void testTagAndBranchTracking() {
+    @Category(SlowTest.class)
+    public void testGitLabTagAndBranchTracking() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 

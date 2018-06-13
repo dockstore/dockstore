@@ -28,6 +28,8 @@ public class SimpleAuthorizer implements Authorizer<User> {
     public boolean authorize(User principal, String role) {
         if ("admin".equalsIgnoreCase(role)) {
             return principal.getIsAdmin();
+        } else if  ("curator".equalsIgnoreCase(role)) {
+            return principal.isCurator();
         } else {
             return true;
         }

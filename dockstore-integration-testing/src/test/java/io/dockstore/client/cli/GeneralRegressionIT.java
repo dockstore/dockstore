@@ -143,18 +143,8 @@ public class GeneralRegressionIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        // Set up webservice
         ApiClient client = getWebClient();
-
-        //Set up user api and get the container api
-        UsersApi usersApi = new UsersApi(client);
-        final Long userId = usersApi.getUser().getId();
-        usersApi.refresh(userId);
         ContainersApi toolsApi = new ContainersApi(client);
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-
         return toolsApi;
     }
 

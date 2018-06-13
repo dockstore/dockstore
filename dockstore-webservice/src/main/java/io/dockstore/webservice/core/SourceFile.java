@@ -17,17 +17,28 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
-import java.util.Objects;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
@@ -45,6 +56,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "sourcefile")
 @SuppressWarnings("checkstyle:magicnumber")
 public class SourceFile implements Comparable<SourceFile> {
+
+    public static final EnumSet<FileType> TEST_FILE_TYPES = EnumSet.of(FileType.CWL_TEST_JSON, FileType.WDL_TEST_JSON, FileType.NEXTFLOW_TEST_PARAMS);
+
     /**
      * NextFlow parameter files are described here https://github.com/nextflow-io/nextflow/issues/208
      *
@@ -80,6 +94,21 @@ public class SourceFile implements Comparable<SourceFile> {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    @ElementCollection(targetClass = VerificationInformation.class, fetch = FetchType.EAGER)
+    @JoinTable(name = "sourcefile_verified", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = {
+        "id", "source" }))
+    @MapKeyColumn(name = "source", columnDefinition = "text")
+    @ApiModelProperty(value = "maps from platform to whether an entry successfully ran on it using this test json")
+    private Map<String, VerificationInformation> verifiedBySource = new HashMap<>();
+
+    public Map<String, VerificationInformation> getVerifiedBySource() {
+        return verifiedBySource;
+    }
+
+    public void setVerifiedBySource(Map<String, VerificationInformation> verifiedBySource) {
+        this.verifiedBySource = verifiedBySource;
+    }
+
     public long getId() {
         return id;
     }
@@ -112,30 +141,37 @@ public class SourceFile implements Comparable<SourceFile> {
         this.path = path;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, type, content, path);
+    @JsonIgnore
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-        final SourceFile other = (SourceFile)obj;
-        return Objects.equals(this.id, other.id) && Objects.equals(this.type, other.type) && Objects.equals(this.path, other.path) && Objects.equals(this.content, other.content);
+
+
+    @JsonIgnore
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
     }
 
+    // removed overridden hashcode and equals, resulted in issue due to https://hibernate.atlassian.net/browse/HHH-3799
+
     @Override
-    public int compareTo(SourceFile that) {
+    public int compareTo(@NotNull SourceFile that) {
         return ComparisonChain.start().compare(this.path, that.path).result();
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).toString();
+    }
+
+    /**
+     * Stores verification information for a given (test) file
+     */
+    @Embeddable
+    public static class VerificationInformation {
+        public boolean verified = false;
+        @Column(columnDefinition = "text")
+        public String metadata = "";
     }
 }

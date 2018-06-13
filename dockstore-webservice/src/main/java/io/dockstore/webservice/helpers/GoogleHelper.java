@@ -56,5 +56,6 @@ public final class GoogleHelper {
         profile.name = userinfo.getName();
         Map<String, User.Profile> userProfile = user.getUserProfile();
         userProfile.put(TokenType.GOOGLE_COM.toString(), profile);
+        user.setUsername(userinfo.getEmail());
     }
 }

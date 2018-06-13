@@ -86,7 +86,7 @@ public class User implements Principal, Comparable<User> {
     private boolean isAdmin;
 
     @ElementCollection(targetClass = Profile.class)
-    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "id", "token_type" }))
+    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = {"id", "token_type"}))
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
     private Map<String, Profile> userProfile = new HashMap<>();
@@ -106,7 +106,7 @@ public class User implements Principal, Comparable<User> {
     @JsonIgnore
     private final Set<Group> groups;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
     @JsonIgnore
@@ -118,6 +118,10 @@ public class User implements Principal, Comparable<User> {
     @OrderBy("id")
     @JsonIgnore
     private final Set<Entry> starredEntries;
+
+    @Column
+    @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
+    private boolean curator;
 
     public User() {
         groups = new HashSet<>(0);
@@ -242,7 +246,7 @@ public class User implements Principal, Comparable<User> {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final User other = (User)obj;
+        final User other = (User) obj;
         // do not depend on lazily loaded collections for equality
         return Objects.equals(id, other.id) && Objects.equals(username, other.username) && Objects.equals(isAdmin, other.isAdmin);
     }
@@ -270,6 +274,14 @@ public class User implements Principal, Comparable<User> {
         this.userProfile = userProfile;
     }
 
+    public boolean isCurator() {
+        return curator;
+    }
+
+    public void setCurator(boolean curator) {
+        this.curator = curator;
+    }
+
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)
      * The order of the properties are important, the UI lists these properties in this order
@@ -294,5 +306,7 @@ public class User implements Principal, Comparable<User> {
         @Column()
         @UpdateTimestamp
         private Timestamp dbUpdateDate;
+
+
     }
 }

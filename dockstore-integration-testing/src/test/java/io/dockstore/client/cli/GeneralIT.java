@@ -17,22 +17,19 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
 import io.dockstore.common.ToilCompatibleTest;
+import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -48,6 +45,7 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -55,7 +53,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author aduncan
  */
-@Category({ConfidentialTest.class})
+@Category({ConfidentialTest.class, ToolTest.class})
 public class GeneralIT extends BaseIT {
 
     @Rule
@@ -77,8 +75,6 @@ public class GeneralIT extends BaseIT {
      * This method will create and register a new container for testing
      *
      * @return DockstoreTool
-     * @throws IOException
-     * @throws TimeoutException
      * @throws ApiException
      */
     private DockstoreTool getContainer() {
@@ -87,22 +83,24 @@ public class GeneralIT extends BaseIT {
         c.setName("testUpdatePath");
         c.setGitUrl("https://github.com/DockstoreTestUser2/dockstore-tool-imports");
         c.setDefaultDockerfilePath("/Dockerfile");
-        c.setDefaultCwlPath("/Dockstore.cwl");
+        c.setDefaultCwlPath("/dockstore.cwl");
         c.setRegistryString(Registry.DOCKER_HUB.toString());
         c.setIsPublished(false);
         c.setNamespace("testPath");
         c.setToolname("test5");
         c.setPath("quay.io/dockstoretestuser2/dockstore-tool-imports");
         Tag tag = new Tag();
-        tag.setName("master");
-        tag.setReference("refs/heads/master");
+        tag.setName("1.0");
+        tag.setReference("master");
         tag.setValid(true);
         tag.setImageId("123456");
+        tag.setCwlPath(c.getDefaultCwlPath());
+        tag.setWdlPath(c.getDefaultWdlPath());
         // construct source files
         SourceFile fileCWL = new SourceFile();
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        fileCWL.setPath("/Dockstore.cwl");
+        fileCWL.setPath("/dockstore.cwl");
         List<SourceFile> list = new ArrayList<>();
         list.add(fileCWL);
         tag.setSourceFiles(list);
@@ -124,25 +122,8 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        // Set up webservice
         ApiClient client = getWebClient();
-
-        //Set up user api and get the container api
-        UsersApi usersApi = new UsersApi(client);
-        final Long userId = usersApi.getUser().getId();
-        List<DockstoreTool> tools = usersApi.refresh(userId);
-
-        // The number of tools in the database should equal the number returned by refresh
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        final long count = testingPostgres
-                .runSelectStatement("select count(*) from tool", new ScalarHandler<>());
-        assertEquals("there should be " + count + " tools returned by refresh, there are " + tools.size(), count, tools.size());
-
         ContainersApi toolsApi = new ContainersApi(client);
-
-        // Make publish request (true)
-        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
-
         return toolsApi;
     }
 
@@ -569,6 +550,25 @@ public class GeneralIT extends BaseIT {
         //check if the tag's dockerfile path have the same cwl path or not in the database
         final String path = getPathfromDB("cwlpath");
         assertEquals("the cwl path should be changed to /test1.cwl", "/test1.cwl", path);
+    }
+
+    /**
+     * Tests that if a tool has a tag with mismatching tag name and tag reference, and it is set as the default tag
+     * then the author metadata is properly grabbed.
+     */
+    @Test
+    public void testParseMetadataFromToolWithTagNameAndReferenceMismatch() {
+        // Setup webservice and get tool api
+        ContainersApi toolsApi = setupWebService();
+
+        // Create tool with mismatching tag name and tag reference
+        DockstoreTool tool = getContainer();
+        tool.setDefaultVersion("1.0");
+        DockstoreTool toolTest = toolsApi.registerManual(tool);
+        toolsApi.refresh(toolTest.getId());
+
+        DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId());
+        assertNotNull("Author should be set, even if tag name and tag reference are mismatched.", refreshedTool.getAuthor());
     }
 
     /**

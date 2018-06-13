@@ -25,6 +25,7 @@ import io.dockstore.common.CommonTestUtilities.TestingPostgres;
 import io.dockstore.common.Registry;
 import io.dockstore.common.TestUtility;
 import io.dockstore.common.ToilCompatibleTest;
+import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -44,6 +45,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 /**
  * @author dyuen
  */
+@Category({ ToolTest.class })
 public class ClientIT extends BaseIT {
 
     private final static String firstTool = ResourceHelpers.resourceFilePath("dockstore-tool-helloworld.cwl");
