@@ -1,4 +1,4 @@
-package io.dockstore.webservice.helpers;
+package io.dockstore.common;
 
 import java.util.ArrayList;
 import java.util.Arrays;
