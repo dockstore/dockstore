@@ -253,23 +253,28 @@ public class WorkflowIT extends BaseIT {
                         "test", "cwl", null);
         Workflow refresh = workflowApi.refresh(workflow.getId());
         Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
-
         workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", workflow.getId(), "cwl", "checker-input-cwl.json");
+        workflowApi.refresh(workflow.getId());
 
-        refresh = workflowApi.refresh(workflow.getId());
+        final String FILE_WITH_INCORRECT_CREDENTIALS = ResourceHelpers.resourceFilePath("config_file.txt");
+        final String FILE_WITH_CORRECT_CREDENTIALS = ResourceHelpers.resourceFilePath("config_file2.txt");
 
         // should be able to download properly with correct credentials even though the workflow is not published
         FileUtils.writeStringToFile(new File("md5sum.input"), "foo" , StandardCharsets.UTF_8);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "checker", "download", "--entry", toolpath, "--version", "master",  "--script" });
+        Client.main(new String[] { "--config", FILE_WITH_CORRECT_CREDENTIALS, "checker", "download", "--entry", toolpath, "--version", "master",  "--script" });
 
-        // should be able to download properly with incorrect credentials but the entry is published
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--script" });
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "checker", "download", "--entry", toolpath, "--version", "master",  "--script" });
+        // Publish the workflow
+        Client.main(new String[] { "--config", FILE_WITH_CORRECT_CREDENTIALS, "workflow", "publish", "--entry", toolpath, "--script" });
 
-        // should not be able to download properly with incorrect credentials
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--unpub", "--script" });
+        // should be able to download properly with incorrect credentials because the entry is published
+        Client.main(new String[] { "--config", FILE_WITH_INCORRECT_CREDENTIALS, "checker", "download", "--entry", toolpath, "--version", "master",  "--script" });
+
+        // Unpublish the workflow
+        Client.main(new String[] { "--config", FILE_WITH_CORRECT_CREDENTIALS, "workflow", "publish", "--entry", toolpath, "--unpub", "--script" });
+
+        // should not be able to download properly with incorrect credentials because the entry is not published
         systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "checker", "download", "--entry", toolpath, "--version", "master",  "--script" });
+        Client.main(new String[] { "--config", FILE_WITH_INCORRECT_CREDENTIALS, "checker", "download", "--entry", toolpath, "--version", "master",  "--script" });
     }
 
     @Test
