@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.3.0"
+  version: "1.4.1"
   title: "Dockstore API"
   termsOfService: ""
   contact:
