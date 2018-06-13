@@ -8,7 +8,7 @@ info:
     build those images
   version: 1.4.1
   title: Dockstore API
-  termsOfService: 'https://www.ga4gh.org/policies/termsandconditions.html'
+  termsOfService: ''
   contact:
     name: Dockstore@ga4gh
     url: 'https://github.com/ga4gh/dockstore'
@@ -651,6 +651,86 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolV1'
+  '/api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}':
+    post:
+      tags:
+        - extendedGA4GH
+      summary: >-
+        Annotate test JSON with information on whether it ran successfully on
+        particular platforms plus metadata
+      description: >-
+        Test JSON can be annotated with whether they ran correctly keyed by
+        platform and associated with some metadata 
+      operationId: toolsIdVersionsVersionIdTypeTestsPost
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The type of the underlying descriptor. Allowable values include
+            "CWL", "WDL", "NFL".
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+        - name: relative_path
+          in: path
+          description: >-
+            A relative path to the test json as retrieved from the files
+            endpoint or the tests endpoint
+          required: true
+          schema:
+            type: string
+            pattern: .+
+        - name: platform
+          in: query
+          description: Platform to report on
+          required: true
+          schema:
+            type: string
+        - name: verified
+          in: query
+          description: 'Verification status, omit to delete key'
+          required: false
+          schema:
+            type: boolean
+        - name: metadata
+          in: query
+          description: 'Additional information on the verification (notes, explanation)'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool test JSON response.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        '404':
+          description: The tool test cannot be found to annotate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BEARER: []
   /api/ga4gh/v2/metadata:
     get:
       tags:
@@ -1413,6 +1493,12 @@ paths:
         - name: registry
           in: query
           description: 'For tools, the Docker registry'
+          required: false
+          schema:
+            type: string
+        - name: namespace
+          in: query
+          description: 'For tools, the Docker namespace'
           required: false
           schema:
             type: string
@@ -3470,6 +3556,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: namespace
+          in: query
+          description: 'For tools, the Docker namespace'
+          required: false
+          schema:
+            type: string
         - name: name
           in: query
           description: name
@@ -3666,8 +3758,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-      security:
-        - BEARER: []
   '/workflows/path/workflow/{repository}':
     get:
       tags:
@@ -4800,6 +4890,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -4812,10 +4906,6 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -4991,6 +5081,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5003,10 +5097,6 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -5241,6 +5331,13 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the source file in this web service
+        verifiedBySource:
+          type: object
+          description: >-
+            maps from platform to whether an entry successfully ran on it using
+            this test json
+          additionalProperties:
+            $ref: '#/components/schemas/VerificationInformation'
         type:
           type: string
           description: Enumerates the type of file
@@ -5732,6 +5829,7 @@ components:
     User:
       type: object
       required:
+        - curator
         - isAdmin
       properties:
         id:
@@ -5762,7 +5860,17 @@ components:
           description: URL of user avatar on Github.
         name:
           type: string
+        curator:
+          type: boolean
+          description: Indicates whether this user is a curator
       description: End users for the dockstore
+    VerificationInformation:
+      type: object
+      properties:
+        verified:
+          type: boolean
+        metadata:
+          type: string
     VerifyRequest:
       type: object
       properties:
@@ -5798,6 +5906,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5810,10 +5922,6 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
