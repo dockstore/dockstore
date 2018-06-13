@@ -646,6 +646,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
+            filterContainersForHiddenTags(tool);
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new CustomWebApplicationException(path + " not found", HttpStatus.SC_NOT_FOUND);
