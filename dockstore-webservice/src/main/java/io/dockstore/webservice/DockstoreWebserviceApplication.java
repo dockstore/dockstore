@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
@@ -124,7 +123,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
-            WorkflowVersion.class, FileFormat.class, Userinfoplus.class) {
+            WorkflowVersion.class, FileFormat.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();

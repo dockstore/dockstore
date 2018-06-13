@@ -85,7 +85,7 @@ public class User implements Principal, Comparable<User> {
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
     private boolean isAdmin;
 
-    @ElementCollection(targetClass = Profile.class)
+    @ElementCollection(targetClass = Profile.class, fetch = FetchType.EAGER)
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = {"id", "token_type"}))
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
