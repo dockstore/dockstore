@@ -109,7 +109,7 @@
         <sql dbms="postgresql">
             INSERT INTO user_profile(id, avatarurl, bio, company, email, location, name, token_type) select id, avatarurl, bio, company, email, location, '', 'github.com' from enduser
         </sql>
-        <addForeignKeyConstraint baseColumnNames="id" baseTableName="user_profile" constraintName="fksh3usgj8dg6onw0x0xr84chff" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="user_profile" constraintName="fk_id_with_user_profile" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
         <dropColumn columnName="avatarurl" tableName="enduser"/>
         <dropColumn columnName="bio" tableName="enduser"/>
         <dropColumn columnName="company" tableName="enduser"/>
