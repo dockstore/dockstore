@@ -73,7 +73,6 @@ public class InMemoryPermissionsImplTest {
         permission.setRole(Role.READER);
         permission.setEmail(JOHN_DOE_EXAMPLE_COM);
         inMemoryPermissions.setPermission(fooWorkflow, userMock, permission);
-//        inMemoryPermissions.setPermission(gooWorkflow, userMock, permission);
         Assert.assertTrue(inMemoryPermissions.canDoAction(userMock, fooWorkflow, Role.Action.READ));
         Assert.assertFalse(inMemoryPermissions.canDoAction(userMock, fooWorkflow, Role.Action.WRITE));
     }
