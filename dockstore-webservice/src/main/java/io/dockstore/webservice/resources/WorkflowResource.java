@@ -348,7 +348,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
-
+        Set<User> users = workflow.getUsers();
         elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
         return workflow;
     }

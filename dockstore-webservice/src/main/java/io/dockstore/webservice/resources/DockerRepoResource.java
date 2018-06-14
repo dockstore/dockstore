@@ -211,7 +211,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         if (tool.getCheckerWorkflow() != null) {
             workflowResource.refresh(user, tool.getCheckerWorkflow().getId());
         }
-
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
     }
@@ -472,7 +471,9 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         long id = toolDAO.create(tool);
 
         // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
-        return toolDAO.findById(id);
+        Tool returnTool = toolDAO.findById(id);
+        returnTool.setUsers(null);
+        return returnTool;
     }
 
     /**

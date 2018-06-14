@@ -489,8 +489,12 @@ public class UserResource implements AuthenticatedResourceInterface {
         authUser = userDAO.findById(authUser.getId());
         // Update user data
         authUser.updateUserMetadata(tokenDAO);
-
+        authUser.getUserProfile();
         List<Workflow> finalWorkflows = getWorkflows(authUser);
+        finalWorkflows.stream().forEach(workflow -> {
+            workflow.getUsers().stream().forEach(user -> user.setUserProfile(null));
+            }
+        );
         bulkUpsertWorkflows(authUser);
         return finalWorkflows;
     }
