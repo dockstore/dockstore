@@ -348,7 +348,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
-
         elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
         return workflow;
     }
@@ -423,6 +422,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(c);
 
         checkUser(user, c);
+
+        // This somehow forces users to get loaded
+        LOG.debug(String.valueOf(c.getUsers().size()));
+
         return c;
     }
 
@@ -1053,7 +1056,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         final long workflowID = workflowDAO.create(newWorkflow);
         // need to create nested data models
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
-        workflowFromDB.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
         return workflowDAO.findById(workflowID);
 
