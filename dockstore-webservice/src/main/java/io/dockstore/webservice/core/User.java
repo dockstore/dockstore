@@ -130,46 +130,74 @@ public class User implements Principal, Comparable<User> {
     }
 
     /**
-     * Updates the given user with metadata from Github
+     * Updates the given user with metadata and no source specified (defaults to trying both)
      *
-     * @param tokenDAO
+     * @param tokenDAO  The TokenDAO to access the user's tokens
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
-        updateGithubMetadata(tokenDAO);
+        updateUserMetadata(tokenDAO, null);
     }
 
     /**
-     * Updates the given user with metadata depending on the source
-     *
-     * @param tokenDAO
+     * Updates the given user's profile with metadata depending on the source
+     * If no source is specified try updating both
+     * @param tokenDAO  The TokenDAO to access the user's tokens
+     * @param source    The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
      */
     public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source) {
-        if (source == null || source.equals(TokenType.GITHUB_COM)) {
-            updateGithubMetadata(tokenDAO);
+        if (source == null) {
+            if (!updateGoogleMetadata(tokenDAO) && !updateGithubMetadata(tokenDAO)) {
+                throw new CustomWebApplicationException("No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
+            }
         } else {
-            updateGoogleMetadata(tokenDAO);
+            switch (source) {
+            case GOOGLE_COM:
+                if (!updateGoogleMetadata(tokenDAO)) {
+                    throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.", HttpStatus.SC_FORBIDDEN);
+                }
+                break;
+            case GITHUB_COM:
+                if (!updateGithubMetadata(tokenDAO)) {
+                    throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.", HttpStatus.SC_FORBIDDEN);
+                }
+                break;
+            default:
+                throw new CustomWebApplicationException("Unrecognzied token type: " + source, HttpStatus.SC_BAD_REQUEST);
+            }
         }
     }
 
-    public void updateGithubMetadata(final TokenDAO tokenDAO) {
+    /**
+     * Tries to update the user's GitHub profile
+     * @param tokenDAO  The TokenDAO to access the user's tokens
+     * @return          True if the user has a GitHub token and updating the GitHub profile was successful
+     */
+    public boolean updateGithubMetadata(final TokenDAO tokenDAO) {
         List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
         if (githubByUserId.isEmpty()) {
-            throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.", HttpStatus.SC_FORBIDDEN);
+            return false;
         } else {
             Token githubToken = githubByUserId.get(0);
             GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo) SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
             sourceCodeRepo.checkSourceCodeValidity();
             sourceCodeRepo.getUserMetadata(this);
+            return true;
         }
     }
 
-    public void updateGoogleMetadata(final TokenDAO tokenDAO) {
+    /**
+     * Tries to update the user's Google profile
+     * @param tokenDAO  The TokenDAO to access the user's tokens
+     * @return          True if the user has a Google token and updating the Google profile was successful
+     */
+    public boolean updateGoogleMetadata(final TokenDAO tokenDAO) {
         List<Token> googleByUserId = tokenDAO.findGoogleByUserId(getId());
         if (googleByUserId.isEmpty()) {
-            throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.", HttpStatus.SC_FORBIDDEN);
+            return false;
         } else {
             Token googleToken = googleByUserId.get(0);
             GoogleHelper.updateGoogleUserData(googleToken.getContent(), this);
+            return true;
         }
     }
 
