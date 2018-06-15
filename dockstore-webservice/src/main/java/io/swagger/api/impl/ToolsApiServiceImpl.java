@@ -252,28 +252,27 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @SuppressWarnings("CheckStyle")
     @Override
-    public Response toolsGet(String registryId, String registry, String organization, String name, String toolname, String description,
+    public Response toolsGet(String id, String registry, String organization, String name, String toolname, String description,
         String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) {
         final List<Entry> all = new ArrayList<>();
-        all.addAll(toolDAO.findAllPublished());
-        all.addAll(workflowDAO.findAllPublished());
-        all.sort(Comparator.comparing(Entry::getGitUrl));
+
+        // short circuit id filter, this one is a bit weird because it is a max of one result
+        if (id != null) {
+            ParsedRegistryID parsedID = new ParsedRegistryID(id);
+            Entry entry = getEntry(parsedID);
+            all.add(entry);
+        } else {
+            all.addAll(toolDAO.findAllPublished());
+            all.addAll(workflowDAO.findAllPublished());
+            all.sort(Comparator.comparing(Entry::getGitUrl));
+        }
 
         List<io.swagger.model.Tool> results = new ArrayList<>();
         for (Entry c : all) {
-            if (c instanceof Workflow && (registryId != null || registry != null || organization != null || name != null
-                || toolname != null)) {
-                continue;
-            }
-
+            // filters just for tools
             if (c instanceof Tool) {
                 Tool tool = (Tool)c;
                 // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
-                if (registryId != null) {
-                    if (!registryId.contains(tool.getToolPath())) {
-                        continue;
-                    }
-                }
                 if (registry != null && tool.getRegistry() != null) {
                     if (!tool.getRegistry().contains(registry)) {
                         continue;
@@ -295,6 +294,32 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     }
                 }
             }
+            // filters just for tools
+            if (c instanceof Workflow) {
+                Workflow workflow = (Workflow)c;
+                // check each criteria. This sucks. Can we do this better with reflection? Or should we pre-convert?
+                if (registry != null && workflow.getSourceControl() != null) {
+                    if (!workflow.getSourceControl().toString().contains(registry)) {
+                        continue;
+                    }
+                }
+                if (organization != null && workflow.getOrganization() != null) {
+                    if (!workflow.getOrganization().contains(organization)) {
+                        continue;
+                    }
+                }
+                if (name != null && workflow.getRepository() != null) {
+                    if (!workflow.getRepository().contains(name)) {
+                        continue;
+                    }
+                }
+                if (toolname != null && workflow.getWorkflowName() != null) {
+                    if (!workflow.getWorkflowName().contains(toolname)) {
+                        continue;
+                    }
+                }
+            }
+            // common filters between tools and workflows
             if (description != null && c.getDescription() != null) {
                 if (!c.getDescription().contains(description)) {
                     continue;
@@ -332,7 +357,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         // construct links to other pages
         try {
             List<String> filters = new ArrayList<>();
-            handleParameter(registryId, "id", filters);
+            handleParameter(id, "id", filters);
             handleParameter(organization, "organization", filters);
             handleParameter(name, "name", filters);
             handleParameter(toolname, "toolname", filters);
