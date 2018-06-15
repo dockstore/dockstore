@@ -22,7 +22,7 @@ tags:
       A curated subset of resources proposed as a common standard for tool
       repositories
   - name: NIHdatacommons
-  - name: GA4GHV1
+q  - name: GA4GHV1
     description: >-
       A curated subset of resources proposed as a common standard for tool
       repositories
@@ -1577,7 +1577,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/editHostedToolBody'
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -3637,7 +3637,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/editHostedToolBody'
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -4798,17 +4798,6 @@ components:
           schema:
             type: string
       description: code
-    editHostedToolBody:
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              type: object
-      description: >-
-        Set of updated sourcefiles, add files by adding new files with unknown
-        paths, delete files by including them with emptied content
-      required: true
     Workflow:
       content:
         application/json:
@@ -4822,6 +4811,17 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
+      required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:

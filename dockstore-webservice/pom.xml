@@ -943,21 +943,6 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <executions>
-                    <!-- Compile script to be executable by the next command-->
-                    <execution>
-                        <id>compile-process-openapi</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <phase>compile</phase>
-                        <configuration>
-                            <executable>chmod</executable>
-                            <arguments>
-                                <argument>+x</argument>
-                                <argument>${basedir}/swagger2open.sh</argument>
-                            </arguments>
-                        </configuration>
-                    </execution>
                     <!-- Execute script, translate swagger to open, and clean up-->
                     <execution>
                         <id>process-openapi</id>
