@@ -462,7 +462,7 @@ public class WorkflowIT extends BaseIT {
 
         // check that we can pull down the nextflow workflow via the ga4gh TRS API
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        List<Tool> toolV2s = ga4Ghv2Api.toolsGet(null, null, null, null, null, null, null, null, null);
+        List<Tool> toolV2s = ga4Ghv2Api.toolsGet(null, null, null, null, null, null, null, null, null, null);
         String mtaWorkflowID = "#workflow/github.com/DockstoreTestUser2/mta-nf";
         Tool toolV2 = ga4Ghv2Api.toolsIdGet(mtaWorkflowID);
         assertTrue("could get mta as part of list", toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects

@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.3.0"
+  version: "1.4.4"
   title: "Dockstore API"
   termsOfService: ""
   contact:
@@ -12,8 +12,8 @@ info:
     url: "https://github.com/ga4gh/dockstore"
     email: "theglobalalliance@genomicsandhealth.org"
   license:
-    name: " GNU Lesser General Public License"
-    url: "https://www.gnu.org/licenses/lgpl-3.0.en.html"
+    name: "Apache License Version 2.0"
+    url: "https://github.com/ga4gh/dockstore/blob/develop/LICENSE"
 host: ""
 basePath: "/"
 tags:
@@ -683,6 +683,11 @@ paths:
           \ that the author of the CWL and the image are the same?)."
         required: false
         type: "string"
+      - name: "checker"
+        in: "query"
+        description: "Return only checker workflows"
+        required: false
+        type: "boolean"
       - name: "offset"
         in: "query"
         description: "Start index of paging. Pagination results can be based on numbers\
@@ -908,7 +913,8 @@ paths:
         description: "A relative path to the additional file (same directory or subdirectories),\
           \ for example 'foo.cwl' would return a 'foo.cwl' from the same directory\
           \ as the main descriptor. 'nestedDirectory/foo.cwl' would return the file\
-          \  from a nested subdirectory"
+          \  from a nested subdirectory.  Unencoded paths such 'sampleDirectory/foo.cwl'\
+          \ should also be allowed"
         required: true
         type: "string"
         pattern: ".+"

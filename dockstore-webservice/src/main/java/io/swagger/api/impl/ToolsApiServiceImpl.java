@@ -253,7 +253,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     @SuppressWarnings("CheckStyle")
     @Override
     public Response toolsGet(String id, String registry, String organization, String name, String toolname, String description,
-        String author, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) {
+        String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) {
         final List<Entry> all = new ArrayList<>();
 
         // short circuit id filter, this one is a bit weird because it is a max of one result
@@ -293,6 +293,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                         continue;
                     }
                 }
+                if (checker != null && checker) {
+                    // tools are never checker workflows
+                    continue;
+                }
             }
             // filters just for tools
             if (c instanceof Workflow) {
@@ -315,6 +319,11 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 }
                 if (toolname != null && workflow.getWorkflowName() != null) {
                     if (!workflow.getWorkflowName().contains(toolname)) {
+                        continue;
+                    }
+                }
+                if (checker != null) {
+                    if (workflow.isIsChecker() != checker) {
                         continue;
                     }
                 }
