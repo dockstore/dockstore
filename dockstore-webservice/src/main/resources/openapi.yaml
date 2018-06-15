@@ -2956,6 +2956,16 @@ paths:
       summary: Update metadata for logged in user
       description: Update metadata for logged in user.
       operationId: updateLoggedInUserMetadata
+      parameters:
+        - name: source
+          in: query
+          description: Token source
+          required: false
+          schema:
+            type: string
+            enum:
+              - google.com
+              - github.com
       responses:
         '200':
           description: successful operation
@@ -5232,6 +5242,21 @@ components:
         friendly-name:
           type: string
       description: Describes this registry to better allow for mirroring and indexing.
+    Profile:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        avatarURL:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
     PublishRequest:
       type: object
       properties:
@@ -5813,6 +5838,13 @@ components:
           format: int64
           description: Implementation specific ID for the container in this web service
           readOnly: true
+        userProfile:
+          type: object
+          description: >-
+            Profile information of the user attained from 3rd party sites
+            (GitHub, Google, etc)
+          additionalProperties:
+            $ref: '#/components/schemas/Profile'
         username:
           type: string
           position: 1
@@ -5821,26 +5853,6 @@ components:
           type: boolean
           position: 2
           description: Indicates whether this user is an admin
-        company:
-          type: string
-          position: 3
-          description: Company of user
-        bio:
-          type: string
-          position: 4
-          description: Bio of user
-        location:
-          type: string
-          position: 5
-          description: Location of user
-        email:
-          type: string
-          position: 6
-          description: Email of user
-        avatarUrl:
-          type: string
-          position: 7
-          description: URL of user avatar on Github.
         name:
           type: string
           position: 8

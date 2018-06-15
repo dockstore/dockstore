@@ -352,6 +352,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 user = new User();
                 // Pull user information from Google
                 GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
+                user.setUsername(userinfo.getEmail());
                 userID = userDAO.create(user);
 
 

@@ -489,8 +489,12 @@ public class UserResource implements AuthenticatedResourceInterface {
         authUser = userDAO.findById(authUser.getId());
         // Update user data
         authUser.updateUserMetadata(tokenDAO);
-
+        authUser.getUserProfile();
         List<Workflow> finalWorkflows = getWorkflows(authUser);
+        finalWorkflows.stream().forEach(workflow -> {
+            workflow.getUsers().stream().forEach(user -> user.setUserProfile(null));
+            }
+        );
         bulkUpsertWorkflows(authUser);
         return finalWorkflows;
     }
@@ -566,14 +570,20 @@ public class UserResource implements AuthenticatedResourceInterface {
         return userDAO.findAll();
     }
 
+    /**
+     * TODO: Use enum for the source parameter
+     * @param user      The Authorized user
+     * @param source    token source, currently either the google or github TokenType
+     * @return          The updated user
+     */
     @GET
     @Timed
     @UnitOfWork
     @Path("/user/updateUserMetadata")
     @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update metadata for logged in user.", response = User.class)
-    public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user) {
+    public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
         User dbuser = userDAO.findById(user.getId());
-        dbuser.updateUserMetadata(tokenDAO);
+        dbuser.updateUserMetadata(tokenDAO, source);
         return dbuser;
     }
 }

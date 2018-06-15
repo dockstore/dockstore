@@ -6,11 +6,13 @@ import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import org.apache.http.HttpStatus;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Map;
 
 /**
  * @author gluu
@@ -48,8 +50,12 @@ public final class GoogleHelper {
      * @param user      The pre-updated User object
      */
     public static void updateUserFromGoogleUserinfoplus(Userinfoplus userinfo, User user) {
+        User.Profile profile = new User.Profile();
+        profile.avatarURL = userinfo.getPicture();
+        profile.email = userinfo.getEmail();
+        profile.name = userinfo.getName();
+        Map<String, User.Profile> userProfile = user.getUserProfile();
+        userProfile.put(TokenType.GOOGLE_COM.toString(), profile);
         user.setUsername(userinfo.getEmail());
-        user.setEmail(userinfo.getEmail());
-        user.setAvatarUrl(userinfo.getPicture());
     }
 }

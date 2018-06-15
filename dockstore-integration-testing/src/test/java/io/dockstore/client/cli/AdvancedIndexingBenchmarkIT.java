@@ -144,8 +144,6 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
             TokenDAO tokenDAO = new TokenDAO(sessionFactory);
             User user = new User();
             user.setIsAdmin(true);
-            user.setAvatarUrl("https://avatars3.githubusercontent.com/u/24548904?v=4");
-            user.setCompany("OICR");
             user.setUsername("travistest");
             Token token = new Token();
             token.setUserId(1);
