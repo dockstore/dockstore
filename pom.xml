@@ -1204,7 +1204,9 @@
                             <append>true</append>
                             <excludes>
                                 <exclude>io/dockstore/common/Bridge.*</exclude>
-                                <exclude>io/swagger/**/*</exclude>
+                                <!-- exclude client classes, but not the server classes to help guide tests -->
+                                <exclude>io/swagger/client/**/*</exclude>
+                                <exclude>io/swagger/client/*</exclude>
                                 <exclude>**/*$*</exclude>
                             </excludes>
                         </configuration>
