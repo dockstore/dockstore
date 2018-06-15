@@ -39,7 +39,7 @@ public interface SamConstants {
     /**
      * The resource type under which all Dockstore permissions are stored.
      */
-    String RESOURCE_TYPE = "tool";
+    String RESOURCE_TYPE = "dockstore-tool";
 
     /**
      * The prefix for resource names for workflows. Permissions calls for tools

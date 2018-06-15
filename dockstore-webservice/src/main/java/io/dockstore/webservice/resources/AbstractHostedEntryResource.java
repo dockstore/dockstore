@@ -16,10 +16,13 @@
 package io.dockstore.webservice.resources;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
@@ -75,9 +78,10 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("hosted")
 @Produces(MediaType.APPLICATION_JSON)
 public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U extends Version<U>, W extends EntryDAO<T>, X extends VersionDAO<U>>
-    implements AuthenticatedResourceInterface {
+        implements AuthenticatedResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
+    private static final String PATCH_METHOD = "PATCH";
     final ElasticManager elasticManager;
     private final FileDAO fileDAO;
     private final UserDAO userDAO;
@@ -149,26 +153,43 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return newTool;
     }
 
+    /**
+     * Sets the Allow header to the allowed methods for this endpoint.
+     *
+     * <p>If there is no authorization header, then all possible methods are set:
+     * OPTIONS, DELETE, PATCH, and GET.</p>
+     *
+     * <p>If the authorization header is present, then the OPTIONS method is always set,
+     * and the other headers are set based on the user's permissions.</p>
+     *
+     * @param optionalUser
+     * @param entryId
+     * @return
+     */
     @OPTIONS
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Options for a hosted entry", authorizations = {@Authorization (value = JWT_SECURITY_DEFINITION_NAME)})
-    public Response editHostedOptions(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Options for a hosted entry", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
+    public Response editHostedOptions(@ApiParam(hidden = true) @Auth Optional<User> optionalUser,
             @ApiParam(value = "The entry id.", required = true) @PathParam("entryId") Long entryId) {
-        final ArrayList<String> headers = new ArrayList<>();
+        final List<String> headers = new ArrayList<>();
         headers.add(HttpMethod.OPTIONS);
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
-        if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanDelete(u, e))) {
-            headers.add(HttpMethod.DELETE);
-        }
-        if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanUpdate(u, e))) {
-            headers.add("PATCH"); // Why is there no value for PATCH in HttpHeader?
-        }
-        if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanRead(u, e))) {
-            headers.add(HttpMethod.GET);
-        }
+        headers.addAll(optionalUser.map(user -> {
+            final List<String> list = new ArrayList<>();
+            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanDelete(u, e))) {
+                headers.add(HttpMethod.DELETE);
+            }
+            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanUpdate(u, e))) {
+                headers.add(PATCH_METHOD); // Why is there no value for PATCH in HttpHeader?
+            }
+            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanRead(u, e))) {
+                headers.add(HttpMethod.GET);
+            }
+            return list;
+        }).orElse(Arrays.asList(HttpMethod.GET, HttpMethod.GET, PATCH_METHOD)));
         return Response.ok().header(HttpHeaders.ALLOW, StringUtils.join(headers, ',')).build();
     }
 

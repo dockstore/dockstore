@@ -730,9 +730,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     }
 
     /**
-     * Adds the GET value to the Allow header if the <code>user</code> has permission to read <code>workflow</code>.
+     * Sets the allow header with the allowed HTTP methods for this endpoint.
      *
-     * @param user
+     * <p>If authorization is not present, allowed methods are set to GET and OPTIONS.</p>
+     *
+     * <p>If authorization is present, allowed methods are set to OPTIONS, and if user
+     * has read permission, GET.</p>
+     *
+     * @param optionalUser
      * @param path
      * @return
      */
@@ -742,18 +747,22 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/path/workflow/{repository}")
     @ApiOperation(value = "Options for a workflow by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Permissions for the endpoint")
     @SuppressWarnings("checkstyle:emptycatchblock")
-    public Response getWorkflowByPathOptions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    public Response getWorkflowByPathOptions(@ApiParam(hidden = true) @Auth Optional<User> optionalUser, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         final ArrayList<String> headers = new ArrayList<>();
         headers.add(HttpMethod.OPTIONS);
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        try {
-            checkCanRead(user, workflow);
-            headers.add(HttpMethod.GET);
+        if (optionalUser.isPresent()) {
+            try {
+                checkCanRead(optionalUser.get(), workflow);
+            } catch (CustomWebApplicationException ex) {
+                // Silently fail; just don't add GET to the allowed methods
+            }
 
-        } catch (CustomWebApplicationException ex) {
-            // Silently fail; just don't add GET to the allowed methods
+        } else {
+            headers.add(HttpMethod.GET);
         }
+
         return Response.ok().header(HttpHeaders.ALLOW, StringUtils.join(headers, ',')).build();
     }
 
