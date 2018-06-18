@@ -101,8 +101,8 @@ public class CheckerWorkflowIT extends BaseIT {
         // Check if the output file format is added to the file_formats property
         Assert.assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671"))));
         Assert.assertTrue(refresh.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671")));
-        Assert.assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("fakeFileFormat"))));
-        Assert.assertTrue(refresh.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("fakeFileFormat")));
+        Assert.assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
+        Assert.assertTrue(refresh.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
 
         // Add checker workflow
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-tool.cwl", githubTool.getId(), "cwl", null);
