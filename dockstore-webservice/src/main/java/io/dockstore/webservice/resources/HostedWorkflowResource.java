@@ -77,6 +77,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setRepository(name);
         workflow.setSourceControl(SourceControl.DOCKSTORE);
         workflow.setDescriptorType(descriptorType);
+        workflow.setLastUpdated(new Date());
         workflow.getUsers().add(user);
         return workflow;
     }
