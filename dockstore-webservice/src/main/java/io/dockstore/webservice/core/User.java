@@ -16,20 +16,15 @@
 
 package io.dockstore.webservice.core;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
-import com.google.common.collect.ComparisonChain;
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
-import io.dockstore.webservice.helpers.GoogleHelper;
-import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
-import io.dockstore.webservice.jdbi.TokenDAO;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import org.apache.http.HttpStatus;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import java.security.Principal;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -49,15 +44,21 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.security.Principal;
-import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.ComparisonChain;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
+import io.dockstore.webservice.helpers.GoogleHelper;
+import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
+import io.dockstore.webservice.jdbi.TokenDAO;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import org.apache.http.HttpStatus;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /**
  * Stores end user information
@@ -71,54 +72,46 @@ import java.util.Set;
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User> {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", unique = true, nullable = false)
-    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
-    private long id;
-
-    @Column(nullable = false, unique = true)
-    @ApiModelProperty(value = "Username on dockstore", position = 1)
-    private String username;
-
-    @Column
-    @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
-    private boolean isAdmin;
-
-    @ElementCollection(targetClass = Profile.class)
-    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = {"id", "token_type"}))
-    @MapKeyColumn(name = "token_type", columnDefinition = "text")
-    @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
-    private Map<String, Profile> userProfile = new HashMap<>();
-
-    // database timestamps
-    @Column(updatable = false)
-    @CreationTimestamp
-    private Timestamp dbCreateDate;
-
-    @Column()
-    @UpdateTimestamp
-    private Timestamp dbUpdateDate;
-
     @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Groups that this user belongs to", position = 8)
     @JsonIgnore
     private final Set<Group> groups;
-
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
     @JsonIgnore
     private final Set<Entry> entries;
-
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
     @OrderBy("id")
     @JsonIgnore
     private final Set<Entry> starredEntries;
-
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", unique = true, nullable = false)
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
+    private long id;
+    @Column(nullable = false, unique = true)
+    @ApiModelProperty(value = "Username on dockstore", position = 1)
+    private String username;
+    @Column
+    @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
+    private boolean isAdmin;
+    @ElementCollection(targetClass = Profile.class)
+    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "id",
+            "token_type" }))
+    @MapKeyColumn(name = "token_type", columnDefinition = "text")
+    @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
+    private Map<String, Profile> userProfile = new HashMap<>();
+    // database timestamps
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
     @Column
     @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
     private boolean curator;
@@ -132,7 +125,7 @@ public class User implements Principal, Comparable<User> {
     /**
      * Updates the given user with metadata and no source specified (defaults to trying both)
      *
-     * @param tokenDAO  The TokenDAO to access the user's tokens
+     * @param tokenDAO The TokenDAO to access the user's tokens
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
         updateUserMetadata(tokenDAO, null);
@@ -141,24 +134,28 @@ public class User implements Principal, Comparable<User> {
     /**
      * Updates the given user's profile with metadata depending on the source
      * If no source is specified try updating both
-     * @param tokenDAO  The TokenDAO to access the user's tokens
-     * @param source    The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
+     *
+     * @param tokenDAO The TokenDAO to access the user's tokens
+     * @param source   The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
      */
     public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source) {
         if (source == null) {
             if (!updateGoogleMetadata(tokenDAO) && !updateGithubMetadata(tokenDAO)) {
-                throw new CustomWebApplicationException("No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
+                throw new CustomWebApplicationException(
+                        "No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
             }
         } else {
             switch (source) {
             case GOOGLE_COM:
                 if (!updateGoogleMetadata(tokenDAO)) {
-                    throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.", HttpStatus.SC_FORBIDDEN);
+                    throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.",
+                            HttpStatus.SC_FORBIDDEN);
                 }
                 break;
             case GITHUB_COM:
                 if (!updateGithubMetadata(tokenDAO)) {
-                    throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.", HttpStatus.SC_FORBIDDEN);
+                    throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.",
+                            HttpStatus.SC_FORBIDDEN);
                 }
                 break;
             default:
@@ -169,8 +166,9 @@ public class User implements Principal, Comparable<User> {
 
     /**
      * Tries to update the user's GitHub profile
-     * @param tokenDAO  The TokenDAO to access the user's tokens
-     * @return          True if the user has a GitHub token and updating the GitHub profile was successful
+     *
+     * @param tokenDAO The TokenDAO to access the user's tokens
+     * @return True if the user has a GitHub token and updating the GitHub profile was successful
      */
     public boolean updateGithubMetadata(final TokenDAO tokenDAO) {
         List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
@@ -178,7 +176,7 @@ public class User implements Principal, Comparable<User> {
             return false;
         } else {
             Token githubToken = githubByUserId.get(0);
-            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo) SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
+            GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
             sourceCodeRepo.checkSourceCodeValidity();
             sourceCodeRepo.getUserMetadata(this);
             return true;
@@ -187,8 +185,9 @@ public class User implements Principal, Comparable<User> {
 
     /**
      * Tries to update the user's Google profile
-     * @param tokenDAO  The TokenDAO to access the user's tokens
-     * @return          True if the user has a Google token and updating the Google profile was successful
+     *
+     * @param tokenDAO The TokenDAO to access the user's tokens
+     * @return True if the user has a Google token and updating the Google profile was successful
      */
     public boolean updateGoogleMetadata(final TokenDAO tokenDAO) {
         List<Token> googleByUserId = tokenDAO.findGoogleByUserId(getId());
@@ -274,7 +273,7 @@ public class User implements Principal, Comparable<User> {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final User other = (User) obj;
+        final User other = (User)obj;
         // do not depend on lazily loaded collections for equality
         return Objects.equals(id, other.id) && Objects.equals(username, other.username) && Objects.equals(isAdmin, other.isAdmin);
     }
@@ -286,7 +285,8 @@ public class User implements Principal, Comparable<User> {
 
     @Override
     public int compareTo(User that) {
-        return ComparisonChain.start().compare(this.id, that.id).compare(this.username, that.username).compareTrueFirst(this.isAdmin, that.isAdmin).result();
+        return ComparisonChain.start().compare(this.id, that.id).compare(this.username, that.username)
+                .compareTrueFirst(this.isAdmin, that.isAdmin).result();
     }
 
     @Override
@@ -334,7 +334,5 @@ public class User implements Principal, Comparable<User> {
         @Column()
         @UpdateTimestamp
         private Timestamp dbUpdateDate;
-
-
     }
 }
