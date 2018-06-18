@@ -15,7 +15,7 @@ We've just released the next major version of Dockstore!
 * user requests such as the ability to link to [unencoded workflows](https://github.com/ga4gh/dockstore/issues/1097) 
 * documentation has been moved out to [docs.dockstore.org/](https://docs.dockstore.org/) allowing us to update it more often
 * CLI
-  * ability to [configure](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/#alternative-cwl-launchers) Cromwell and Bunny (rabix) version or use the [generic cwl-runner interface](https://github.com/common-workflow-language/common-workflow-language/blob/master/v1.1.0-dev1/cwl-runner.cwl) to run cwl
+  * ability to [configure](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/#alternative-cwl-launchers) Cromwell and Bunny (rabix) version or use the [generic cwl-runner interface](https://github.com/common-workflow-language/cwltool/blob/master/cwltool/schemas/v1.1.0-dev1/cwl-runner.cwl) to run cwl
   * ability to [POST notifications](https://docs.dockstore.org/docs/user-tutorials/launch/#notifications) during workflow execution to a custom endpoint
   * ability to run unpublished tools and workflows (if you are the owner or in the organization for a tool or workflow)
 * [WIP](https://github.com/ga4gh/dockstore/issues/1058) for displaying CWL visualizations using view.commonwl.org 
