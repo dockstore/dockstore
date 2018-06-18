@@ -276,6 +276,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
         return lastModified == null ? null : (int)lastModified.getTime();
     }
 
+    @JsonProperty("has_checker")
+    public boolean hasChecker() {
+        return checkerWorkflow != null;
+    }
+
     @JsonProperty("last_modified_date")
     public Date getLastModifiedDate() {
         return lastModified;
