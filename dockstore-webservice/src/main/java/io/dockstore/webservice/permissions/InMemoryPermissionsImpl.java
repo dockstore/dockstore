@@ -48,7 +48,11 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
      *
      * The keys are resource paths, e.g., the workflow path. The values are a second map.
      *
-     * The second map's keys are emails, and the values are Roles.
+     * The second map's keys are user keys, and the values are Roles
+     *
+     * The user key can either be an email or the username. With SAM/FireCloud, there must be
+     * an email, since SAM only supports Google emails. This is a little bit of a hack for
+     * this implementation, because we may only have the name, and not the email, of users logged in with GitHub.
      */
     private final Map<String, Map<String, Role>> resourceToUsersAndRolesMap = new ConcurrentHashMap<>();
     private DockstoreWebserviceConfiguration configuration;
@@ -67,7 +71,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     @Override
     public List<String> workflowsSharedWithUser(User user) {
         return resourceToUsersAndRolesMap.entrySet().stream()
-                .filter(e ->  e.getValue().containsKey(user.getEmail()))
+                .filter(e ->  e.getValue().containsKey(userKey(user)))
                 .map(e -> e.getKey())
                 .collect(Collectors.toList());
     }
@@ -125,7 +129,11 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
         if (userPermissionsMap == null) {
             return Optional.empty();
         }
-        return Optional.of(userPermissionsMap.get(requester.getEmail()));
+        return Optional.of(userPermissionsMap.get(userKey(requester)));
+    }
+
+    private String userKey(User user) {
+        return user.getEmail() == null ? user.getUsername() : user.getEmail();
     }
 
 }
