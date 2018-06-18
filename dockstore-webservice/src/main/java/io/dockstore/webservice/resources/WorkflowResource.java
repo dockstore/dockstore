@@ -92,6 +92,7 @@ import io.swagger.model.DescriptorType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.hibernate.Hibernate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -424,7 +425,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkUser(user, c);
 
         // This somehow forces users to get loaded
-        LOG.debug(String.valueOf(c.getUsers().size()));
+        Hibernate.initialize(c.getUsers());
 
         return c;
     }
