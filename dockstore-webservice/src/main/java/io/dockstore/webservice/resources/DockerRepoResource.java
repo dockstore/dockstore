@@ -82,7 +82,6 @@ import io.swagger.annotations.Authorization;
 import io.swagger.model.DescriptorType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
-import org.hibernate.Hibernate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -264,9 +263,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
         checkUser(user, c);
-        
-        // This somehow forces users to get loaded
-        Hibernate.initialize(c.getUsers());
+
         return c;
     }
 
