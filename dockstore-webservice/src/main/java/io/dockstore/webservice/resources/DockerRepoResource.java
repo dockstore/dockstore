@@ -258,7 +258,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
+    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "Also loads the users")
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);

@@ -72,46 +72,55 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username") })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User> {
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Groups that this user belongs to", position = 8)
-    @JsonIgnore
-    private final Set<Group> groups;
-    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
-    @JsonIgnore
-    private final Set<Entry> entries;
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
-    @OrderBy("id")
-    @JsonIgnore
-    private final Set<Entry> starredEntries;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
     @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
     private long id;
+
     @Column(nullable = false, unique = true)
     @ApiModelProperty(value = "Username on dockstore", position = 1)
     private String username;
+
     @Column
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
     private boolean isAdmin;
+
     @ElementCollection(targetClass = Profile.class)
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "id",
             "token_type" }))
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
     private Map<String, Profile> userProfile = new HashMap<>();
+
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
+
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty(value = "Groups that this user belongs to", position = 8)
+    @JsonIgnore
+    private final Set<Group> groups;
+
+    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
+    @JsonIgnore
+    private final Set<Entry> entries;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
+    @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
+    @OrderBy("id")
+    @JsonIgnore
+    private final Set<Entry> starredEntries;
+
     @Column
     @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
     private boolean curator;

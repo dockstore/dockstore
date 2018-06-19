@@ -417,7 +417,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "Also loads the users")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
