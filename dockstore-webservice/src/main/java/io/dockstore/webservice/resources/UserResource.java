@@ -41,14 +41,13 @@ import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Group;
-import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -293,7 +292,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (user != null && group != null) {
             user.addGroup(group);
         } else {
-            LOG.info(user.getUsername() + ": " + "user or group is null");
+            LOG.info((user != null ? user.getUsername() : "user with no name") + ": " + "user or group is null");
             throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -318,7 +317,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (user != null && group != null) {
             user.removeGroup(group);
         } else {
-            LOG.info(user.getUsername() + ": " + "user or group is null");
+            LOG.info((user != null ? user.getUsername() : "user with no name") + ": " + "user or group is null");
+
             throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
         }
         return user;
@@ -505,29 +505,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
-        // need to avoid lazy initialize error
         final User authUser = this.userDAO.findById(userId);
         List<Workflow> workflows = getWorkflows(authUser);
-        stripContent(workflows);
+        EntryVersionHelper.stripContent(workflows, this.userDAO);
         return workflows;
-    }
-
-    /**
-     * Duplicate of EntryVersionHelper but with a different DAO
-     * @param entries
-     */
-    void stripContent(List<? extends Entry> entries) {
-        for (Entry entry : entries) {
-            this.userDAO.evict(entry);
-            // clear users which are also lazy loaded
-            entry.setUsers(null);
-            // need to have this evicted so that hibernate does not actually delete the tags and users
-            Set<Version> versions = entry.getVersions();
-            versions.forEach(version ->
-                version.getSourceFiles().forEach(sourceFile ->
-                    ((SourceFile)sourceFile).setContent(null))
-            );
-        }
     }
 
     private List<Workflow> getWorkflows(User user) {
@@ -546,10 +527,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
-        // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
         List<Tool> tools = getTools(byId);
-        stripContent(tools);
+        EntryVersionHelper.stripContent(tools, this.userDAO);
         return tools;
     }
 
