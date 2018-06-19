@@ -73,6 +73,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected Workflow getEntry(User user, String registry, String name, String descriptorType, String namespace) {
         Workflow workflow = new Workflow();
         workflow.setMode(WorkflowMode.HOSTED);
+        // TODO: We set the organization to the username of the user creating it. However, for gmail accounts this is an
+        // email. This might not be a good idea. Especially if users don't want their emails displayed.
         workflow.setOrganization(user.getUsername());
         workflow.setRepository(name);
         workflow.setSourceControl(SourceControl.DOCKSTORE);
