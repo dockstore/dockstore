@@ -78,8 +78,8 @@ public class FileProvisioning {
     private final int threads;
     private final boolean cache;
 
-    private List<ProvisionInterface> plugins = new ArrayList<>();
-    private List<PreProvisionInterface> preProvisionPlugins = new ArrayList<>();
+    private List<ProvisionInterface> plugins;
+    private List<PreProvisionInterface> preProvisionPlugins;
 
     private INIConfiguration config;
 
