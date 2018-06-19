@@ -709,57 +709,97 @@ public class SwaggerClientIT {
     /**
      * Tests workflow sharing/permissions.
      *
-     * A longish method, but since we are buil
+     * A longish method, but since we need to set up a hosted to workflow
+     * to do the sharing, but don't want to do that with the other tests,
+     * it seemed better to do the setup and variations all in this one method.
      */
     @Test
     public void testSharing()  {
         // Setup for sharing
         final ApiClient user1WebClient = getWebClient(true, true); // Admin user
         final ApiClient user2WebClient = getWebClient(true, false);
-        final ApiClient anonWebClient = getAnonymousWebClient();
         final HostedApi user1HostedApi = new HostedApi(user1WebClient);
         final HostedApi user2HostedApi = new HostedApi(user2WebClient);
         final WorkflowsApi user1WorkflowsApi = new WorkflowsApi(user1WebClient);
         final WorkflowsApi user2WorkflowsApi = new WorkflowsApi(user2WebClient);
-        final WorkflowsApi anonWorkflowsApi = new WorkflowsApi(anonWebClient);
+        final WorkflowsApi anonWorkflowsApi = new WorkflowsApi(getAnonymousWebClient());
         final UsersApi users2Api = new UsersApi(user2WebClient);
         final User user2 = users2Api.getUser();
 
         // Create a hosted workflow
-        final Workflow hostedWorkflow = user1HostedApi.createHostedWorkflow("hosted1", "wdl", null, null);
+        final Workflow hostedWorkflow = user1HostedApi.createHostedWorkflow("hosted1", "cwl", null, null);
+        final String fullWorkflowPath = hostedWorkflow.getFullWorkflowPath();
 
         // User 2 should have no workflows shared with
         Assert.assertEquals(user2WorkflowsApi.sharedWorkflows().size(), 0);
 
-        // User 2 should not have GET as an option
-        user2WorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
-        verifyOptions(user2WebClient, Arrays.asList(HttpMethod.OPTIONS));
+        // User 2 should not have GET as an option on User 1's workflow
+        user2WorkflowsApi.getWorkflowByPathOptions(fullWorkflowPath);
+        verifyOptions(user2WorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.OPTIONS));
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
             Assert.fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             Assert.assertEquals(403, e.getCode());
         }
 
-        // User 1 shares workflow with user 2
-        final Permission permission = new Permission();
-        permission.setEmail(user2.getUsername()); // User 2 has no email; this would not be the case for SAM.
-        permission.setRole(Permission.RoleEnum.READER);
-        user1WorkflowsApi.addWorkflowPermission(hostedWorkflow.getFullWorkflowPath(), permission);
+        // User 1 shares workflow with user 2 as a reader
+        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.READER);
 
         // User 2 should now have 1 workflow shared with
         Assert.assertEquals(1, user2WorkflowsApi.sharedWorkflows().size());
         // OPTIONS should now return include GET
-        user2WorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
-        verifyOptions(user2WebClient, Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
-        // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
+        user2WorkflowsApi.getWorkflowByPathOptions(fullWorkflowPath);
+        verifyOptions(user2WorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
+        user2HostedApi.hostedWorkflowOptions(hostedWorkflow.getId());
+        verifyOptions(user2HostedApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
 
-        // Anonymous call to OPTIONS should return all potential methods.
+        // User 2 can now read the hosted workflow (will throw exception if it fails).
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
+        // But User 2 cannot edit the hosted workflow
+        try {
+            user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Collections.emptyList());
+            Assert.fail("User 2 can unexpectedly edit a readonly workflow");
+        } catch (ApiException ex) {
+            Assert.assertEquals(403, ex.getCode());
+        }
+
+        // Now give write permission to user 2
+        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.WRITER);
+        user2HostedApi.hostedWorkflowOptions(hostedWorkflow.getId());
+        verifyOptions(user2HostedApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS, "PATCH"));
+        // Edit should now work!
+        final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Arrays.asList(createCwlWorkflow()));
+
+        // Deleting the version should fail with 403.
+        try {
+            user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+            Assert.fail("Should not be able to delete workflow version");
+        } catch (ApiException ex) {
+            Assert.assertEquals(403, ex.getCode());
+        }
+
+        // Give Owner permission to user 2
+        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.OWNER);
+        // Delete should now work; will thrown exception if not
+        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+
+        checkAnonymousUser(anonWorkflowsApi, hostedWorkflow);
+    }
+
+    private void shareWorkflow(WorkflowsApi workflowsApi, String user, String path, Permission.RoleEnum role) {
+        final Permission permission = new Permission();
+        permission.setEmail(user);
+        permission.setRole(role);
+        workflowsApi.addWorkflowPermission(path, permission);
+    }
+
+    private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
         anonWorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
-        verifyOptions(anonWebClient, Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
+        // Anonymous call to OPTIONS should return all potential methods.
+        verifyOptions(anonWorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
 
         try {
             anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
@@ -767,6 +807,14 @@ public class SwaggerClientIT {
         } catch (ApiException ex) {
             Assert.assertEquals(401, ex.getCode());
         }
+    }
+
+    private SourceFile createCwlWorkflow() {
+        SourceFile fileCWL = new SourceFile();
+        fileCWL.setContent("class: Workflow"); // Need this for CWLHandler:isValidWorkflow
+        fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        fileCWL.setPath("/Dockstore.cwl");
+        return fileCWL;
     }
 
     private void verifyOptions(ApiClient apiClient, List<String> expectedMethods) {

@@ -170,7 +170,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Options for a hosted entry", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public Response editHostedOptions(@ApiParam(hidden = true) @Auth Optional<User> optionalUser,
+    public Response hostedEntryOptions(@ApiParam(hidden = true) @Auth Optional<User> optionalUser,
             @ApiParam(value = "The entry id.", required = true) @PathParam("entryId") Long entryId) {
         final List<String> headers = new ArrayList<>();
         headers.add(HttpMethod.OPTIONS);

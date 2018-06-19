@@ -1296,7 +1296,7 @@ paths:
       - "hosted"
       summary: "Options for a hosted entry"
       description: ""
-      operationId: "editHostedOptions"
+      operationId: "hostedEntryOptions"
       produces:
       - "application/json"
       parameters:
@@ -1335,7 +1335,7 @@ paths:
         schema:
           type: "array"
           items:
-            $ref: "#/definitions/SourceFile"
+            type: "object"
       responses:
         200:
           description: "successful operation"
@@ -2381,7 +2381,7 @@ paths:
       - "hosted"
       summary: "Options for a hosted entry"
       description: ""
-      operationId: "editHostedOptions"
+      operationId: "hostedEntryOptions"
       produces:
       - "application/json"
       parameters:
@@ -3352,9 +3352,9 @@ paths:
     options:
       tags:
       - "hosted"
-      summary: "Options for a hosted entry"
-      description: ""
-      operationId: "editHostedOptions"
+      summary: "Options for a hosted workflow"
+      description: "Options for a hosted workflow"
+      operationId: "hostedWorkflowOptions"
       produces:
       - "application/json"
       parameters:
