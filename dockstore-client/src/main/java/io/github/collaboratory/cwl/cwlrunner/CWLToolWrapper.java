@@ -15,6 +15,13 @@
  */
 package io.github.collaboratory.cwl.cwlrunner;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.ProcessingException;
+
 import com.google.common.base.Joiner;
 import io.dockstore.client.cli.ArgumentUtility;
 import io.dockstore.client.cli.Client;
@@ -23,12 +30,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.MetadataApi;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-
-import javax.ws.rs.ProcessingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 import static io.dockstore.common.PipHelper.convertPipRequirementsStringToMap;
 
@@ -49,8 +50,7 @@ public class CWLToolWrapper implements CWLRunnerInterface {
         String[] split = pair2.getKey().split(" ");
         final String schemaSaladVersion = split[split.length - 1].trim();
 
-        ApiClient defaultApiClient;
-        defaultApiClient = Configuration.getDefaultApiClient();
+        ApiClient defaultApiClient = Configuration.getDefaultApiClient();
         MetadataApi metadataApi = new MetadataApi(defaultApiClient);
         try {
             String runnerDependencies = metadataApi
