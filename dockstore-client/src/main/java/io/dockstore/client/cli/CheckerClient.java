@@ -179,7 +179,7 @@ public class CheckerClient extends WorkflowClient {
             Entry entry = getEntryFromPath(entryPath);
 
             // Retrieve the checker workflow
-            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry, true);
 
             // Update the checker workflow
             if (entry != null && checkerWorkflow != null) {
@@ -249,7 +249,7 @@ public class CheckerClient extends WorkflowClient {
             Entry entry = getDockstoreEntry(entryPath);
 
             // Get checker workflow
-            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry, false);
 
             // Download files
             if (entry != null && checkerWorkflow != null) {
@@ -302,7 +302,7 @@ public class CheckerClient extends WorkflowClient {
             Entry entry = getDockstoreEntry(entryPath);
 
             // Get checker workflow
-            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry, false);
 
             // Call parent launcher
             if (entry != null && checkerWorkflow != null) {
@@ -329,7 +329,7 @@ public class CheckerClient extends WorkflowClient {
             Entry entry = getEntryFromPath(entryPath);
 
             // Get checker workflow
-            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry, true);
 
             // Add/remove test parameter files
             if (entry != null && checkerWorkflow != null) {
@@ -358,7 +358,7 @@ public class CheckerClient extends WorkflowClient {
             Entry entry = getEntryFromPath(entryPath);
 
             // Get checker workflow
-            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry);
+            Workflow checkerWorkflow = getCheckerWorkflowFromEntry(entry, true);
 
             // Update version
             if (entry != null && checkerWorkflow != null) {
@@ -390,10 +390,11 @@ public class CheckerClient extends WorkflowClient {
 
     /**
      * Retrieve the checker workflow from an entry
-     * @param entry
+     * @param entry The entry of interest
+     * @param authRequired If true won't look for published workflows first, if false then it will
      * @return checker workflow
      */
-    private Workflow getCheckerWorkflowFromEntry(Entry entry) {
+    private Workflow getCheckerWorkflowFromEntry(Entry entry, boolean authRequired) {
         // Get checker workflow
         Workflow checkerWorkflow = null;
         if (entry != null) {
@@ -401,7 +402,11 @@ public class CheckerClient extends WorkflowClient {
                 errorMessage("The entry has no checker workflow.",
                     Client.CLIENT_ERROR);
             } else {
-                checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
+                if (authRequired) {
+                    checkerWorkflow = workflowsApi.getWorkflow(entry.getCheckerId());
+                } else {
+                    checkerWorkflow = getDockstoreWorkflowById(entry.getCheckerId());
+                }
             }
         }
         return checkerWorkflow;

@@ -86,7 +86,10 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             entry.setUsers(null);
             // need to have this evicted so that hibernate does not actually delete the tags and users
             Set<U> versions = entry.getVersions();
-            versions.forEach(version -> version.getSourceFiles().clear());
+            versions.forEach(version ->
+                version.getSourceFiles().forEach(sourceFile ->
+                        ((SourceFile)sourceFile).setContent(null))
+            );
         }
     }
 

@@ -27,7 +27,7 @@
     </properties>
 
     <parent>
-        <version>1.5.0-alpha.4-SNAPSHOT</version>
+        <version>1.5.0-alpha.5-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -62,12 +62,12 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.5.0-alpha.4-SNAPSHOT</version>
+            <version>1.5.0-alpha.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.5.0-alpha.4-SNAPSHOT</version>
+            <version>1.5.0-alpha.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -470,7 +470,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.5.0-alpha.4-SNAPSHOT</version>
+            <version>1.5.0-alpha.5-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -807,6 +807,7 @@
                 <groupId>com.github.kongchen</groupId>
                 <artifactId>swagger-maven-plugin</artifactId>
                 <!-- fixed at 3.1.5 due to odd issue with our EntryDAO making it into Swagger and not being ignorable -->
+                <!-- for 3.1.7 specific issues seem to include messed up subclass structure with hosted tool and workflow endpoints ( https://github.com/kongchen/swagger-maven-plugin/issues/626 or https://github.com/kongchen/swagger-maven-plugin/issues/619 ) -->
                 <version>3.1.5</version>
                 <configuration>
                     <apiSources>
@@ -942,30 +943,24 @@
                     </execution>
                 </executions>
             </plugin>
-	    <!-- swagger2openapi install fails too often
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <executions>
+                    <!-- Execute script, translate swagger to open, and clean up-->
                     <execution>
-                        <id>swagger2openapi)</id>
+                        <id>process-openapi</id>
                         <goals>
                             <goal>exec</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <phase>install</phase>
                         <configuration>
-                            <executable>swagger2openapi</executable>
-                            <arguments>
-                                <argument>src/main/resources/swagger.yaml</argument>
-                                <argument>-o</argument>
-                                <argument>src/main/resources/openapi.yaml</argument>
-                            </arguments>
+                            <executable>${basedir}/swagger2open.sh</executable>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            -->
         </plugins>
     </build>
 
