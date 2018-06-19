@@ -21,6 +21,7 @@ import java.util.List;
 import io.dockstore.webservice.core.User;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 
 /**
@@ -42,6 +43,11 @@ public class UserDAO extends AbstractDAO<User> {
     public void clearCache() {
         currentSession().flush();
         currentSession().clear();
+    }
+
+    public void evict(Object entry) {
+        Session session = currentSession();
+        session.evict(entry);
     }
 
     public List<User> findAll() {

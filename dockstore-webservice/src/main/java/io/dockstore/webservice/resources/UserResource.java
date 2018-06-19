@@ -41,10 +41,12 @@ import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Group;
+import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.GroupDAO;
@@ -505,7 +507,27 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(user, userId);
         // need to avoid lazy initialize error
         final User authUser = this.userDAO.findById(userId);
-        return getWorkflows(authUser);
+        List<Workflow> workflows = getWorkflows(authUser);
+        stripContent(workflows);
+        return workflows;
+    }
+
+    /**
+     * Duplicate of EntryVersionHelper but with a different DAO
+     * @param entries
+     */
+    void stripContent(List<? extends Entry> entries) {
+        for (Entry entry : entries) {
+            this.userDAO.evict(entry);
+            // clear users which are also lazy loaded
+            entry.setUsers(null);
+            // need to have this evicted so that hibernate does not actually delete the tags and users
+            Set<Version> versions = entry.getVersions();
+            versions.forEach(version ->
+                version.getSourceFiles().forEach(sourceFile ->
+                    ((SourceFile)sourceFile).setContent(null))
+            );
+        }
     }
 
     private List<Workflow> getWorkflows(User user) {
@@ -526,7 +548,9 @@ public class UserResource implements AuthenticatedResourceInterface {
         checkUser(user, userId);
         // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
-        return getTools(byId);
+        List<Tool> tools = getTools(byId);
+        stripContent(tools);
+        return tools;
     }
 
     @GET
