@@ -189,8 +189,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                 headers.add(HttpMethod.GET);
             }
             return list;
-        }).orElse(Arrays.asList(HttpMethod.GET, HttpMethod.GET, PATCH_METHOD)));
-        return Response.ok().header(HttpHeaders.ALLOW, StringUtils.join(headers, ',')).build();
+        }).orElse(Arrays.asList(HttpMethod.GET, HttpMethod.DELETE, PATCH_METHOD)));
+
+        final Response.ResponseBuilder builder = Response.ok();
+        headers.forEach(header -> builder.header(HttpHeaders.ALLOW, header));
+        return builder.build();
     }
 
     private boolean checkUserCanLambda(User user, Entry entry, BiConsumer<User, Entry> lambda) {

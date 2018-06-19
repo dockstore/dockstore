@@ -40,12 +40,14 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.ContainertagsApi;
 import io.swagger.client.api.Ga4Ghv1Api;
+import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -54,6 +56,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.Group;
 import io.swagger.client.model.MetadataV1;
+import io.swagger.client.model.Permission;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
@@ -101,7 +104,7 @@ public class SwaggerClientIT {
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH, ConfigOverride.config("authorizerType", "inmemory"));
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -138,6 +141,14 @@ public class SwaggerClientIT {
 
     private static ApiClient getAdminWebClient(boolean correctUser) throws IOException, TimeoutException {
         return getWebClient(correctUser, true);
+    }
+
+    private static ApiClient getAnonymousWebClient() {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        ApiClient client = new ApiClient();
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        return client;
     }
 
     private static ApiClient getWebClient(boolean correctUser, boolean admin) {
@@ -690,6 +701,61 @@ public class SwaggerClientIT {
         }
 
         Assert.assertTrue("sitemap with testing data should have at least 2 entries", sitemap.split("\n").length >= 2 && sitemap.contains("http://localhost/containers/quay.io/test_org/test6") && sitemap.contains("http://localhost/workflows/github.com/A/l"));
+    }
+
+    @Test
+    public void testSharing()  {
+        // Setup for sharing
+        final ApiClient user1WebClient = getWebClient(true, true); // Admin user
+        final ApiClient user2WebClient = getWebClient(true, false);
+        final ApiClient anonWebClient = getAnonymousWebClient();
+        final HostedApi user1HostedApi = new HostedApi(user1WebClient);
+        final WorkflowsApi user1WorkflowsApi = new WorkflowsApi(user1WebClient);
+        final WorkflowsApi user2WorkflowsApi = new WorkflowsApi(user2WebClient);
+        final WorkflowsApi anonWorkflowsApi = new WorkflowsApi(anonWebClient);
+        final UsersApi users2Api = new UsersApi(user2WebClient);
+        final User user2 = users2Api.getUser();
+
+        // Create a hosted workflow
+        final Workflow hostedWorkflow = user1HostedApi.createHostedWorkflow("hosted1", "wdl", null, null);
+
+        // User 2 should have no workflows shared with
+        Assert.assertEquals(user2WorkflowsApi.sharedWorkflows().size(), 0);
+        // User 2 should not have GET as an option
+        user2WorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
+        final List<String> allowHeader = user2WebClient.getResponseHeaders().get("Allow");
+        Assert.assertEquals(allowHeader.size(), 1);
+        Assert.assertTrue(allowHeader.contains("OPTIONS"));
+
+        // User 1 shares workflow with user 2
+        final Permission permission = new Permission();
+        permission.setEmail(user2.getUsername()); // User 2 has no email; this would not be the case for SAM.
+        permission.setRole(Permission.RoleEnum.READER);
+        user1WorkflowsApi.addWorkflowPermission(hostedWorkflow.getFullWorkflowPath(), permission);
+
+        // User 2 should now have 1 workflow shared with
+        Assert.assertEquals(1, user2WorkflowsApi.sharedWorkflows().size());
+        // OPTIONS should now return include GET
+        user2WorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
+        final List<String> allow = user2WebClient.getResponseHeaders().get("Allow");
+        Assert.assertTrue(allow.contains("GET"));
+        Assert.assertTrue(allow.contains("OPTIONS"));
+        Assert.assertEquals(2, allow.size());
+
+        // Anonymous call should return all potential methods.
+        anonWorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
+        final List<String> anonAllow = anonWebClient.getResponseHeaders().get("Allow");
+        Assert.assertTrue(anonAllow.contains("GET"));
+        Assert.assertTrue(anonAllow.contains("OPTIONS"));
+        Assert.assertEquals(2, anonAllow.size());
+
+        try {
+            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
+            Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
+        } catch (ApiException ex) {
+            Assert.assertEquals(401, ex.getCode());
+        }
+
     }
 
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi)

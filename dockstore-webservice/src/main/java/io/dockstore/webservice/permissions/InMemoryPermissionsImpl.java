@@ -107,7 +107,8 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
 
     @Override
     public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
-        return getRole(user, workflow).map(p -> {
+        final Optional<Role> role = getRole(user, workflow);
+        return role.map(p -> {
             switch (p) {
             case OWNER:
                 // If owner, can do anything
@@ -129,7 +130,8 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
         if (userPermissionsMap == null) {
             return Optional.empty();
         }
-        return Optional.of(userPermissionsMap.get(userKey(requester)));
+        final Role role = userPermissionsMap.get(userKey(requester));
+        return Optional.of(role);
     }
 
     private String userKey(User user) {

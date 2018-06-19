@@ -755,6 +755,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (optionalUser.isPresent()) {
             try {
                 checkCanRead(optionalUser.get(), workflow);
+                headers.add(HttpMethod.GET);
             } catch (CustomWebApplicationException ex) {
                 // Silently fail; just don't add GET to the allowed methods
             }
@@ -763,7 +764,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             headers.add(HttpMethod.GET);
         }
 
-        return Response.ok().header(HttpHeaders.ALLOW, StringUtils.join(headers, ',')).build();
+        final Response.ResponseBuilder builder = Response.ok();
+        headers.forEach(header -> builder.header(HttpHeaders.ALLOW, header));
+        return builder.build();
     }
 
     /**
