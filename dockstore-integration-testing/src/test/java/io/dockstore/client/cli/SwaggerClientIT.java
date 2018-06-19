@@ -24,9 +24,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -42,6 +44,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
+import io.swagger.annotations.Api;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -703,6 +706,11 @@ public class SwaggerClientIT {
         Assert.assertTrue("sitemap with testing data should have at least 2 entries", sitemap.split("\n").length >= 2 && sitemap.contains("http://localhost/containers/quay.io/test_org/test6") && sitemap.contains("http://localhost/workflows/github.com/A/l"));
     }
 
+    /**
+     * Tests workflow sharing/permissions.
+     *
+     * A longish method, but since we are buil
+     */
     @Test
     public void testSharing()  {
         // Setup for sharing
@@ -710,6 +718,7 @@ public class SwaggerClientIT {
         final ApiClient user2WebClient = getWebClient(true, false);
         final ApiClient anonWebClient = getAnonymousWebClient();
         final HostedApi user1HostedApi = new HostedApi(user1WebClient);
+        final HostedApi user2HostedApi = new HostedApi(user2WebClient);
         final WorkflowsApi user1WorkflowsApi = new WorkflowsApi(user1WebClient);
         final WorkflowsApi user2WorkflowsApi = new WorkflowsApi(user2WebClient);
         final WorkflowsApi anonWorkflowsApi = new WorkflowsApi(anonWebClient);
@@ -721,11 +730,18 @@ public class SwaggerClientIT {
 
         // User 2 should have no workflows shared with
         Assert.assertEquals(user2WorkflowsApi.sharedWorkflows().size(), 0);
+
         // User 2 should not have GET as an option
-//        user2WorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
-//        final List<String> allowHeader = user2WebClient.getResponseHeaders().get("Allow");
-//        Assert.assertEquals(allowHeader.size(), 1);
-//        Assert.assertTrue(allowHeader.contains("OPTIONS"));
+        user2WorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
+        verifyOptions(user2WebClient, Arrays.asList(HttpMethod.OPTIONS));
+
+        // User 2 should not be able to read user 1's hosted workflow
+        try {
+            user2WorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
+            Assert.fail("User 2 should not have rights to hosted workflow");
+        } catch (ApiException e) {
+            Assert.assertEquals(403, e.getCode());
+        }
 
         // User 1 shares workflow with user 2
         final Permission permission = new Permission();
@@ -736,18 +752,14 @@ public class SwaggerClientIT {
         // User 2 should now have 1 workflow shared with
         Assert.assertEquals(1, user2WorkflowsApi.sharedWorkflows().size());
         // OPTIONS should now return include GET
-//        user2WorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
-//        final List<String> allow = user2WebClient.getResponseHeaders().get("Allow");
-//        Assert.assertTrue(allow.contains("GET"));
-//        Assert.assertTrue(allow.contains("OPTIONS"));
-//        Assert.assertEquals(2, allow.size());
+        user2WorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
+        verifyOptions(user2WebClient, Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
+        // User 2 can now read the hosted workflow (will throw exception if it fails).
+        user2WorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
 
-        // Anonymous call should return all potential methods.
-//        anonWorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
-//        final List<String> anonAllow = anonWebClient.getResponseHeaders().get("Allow");
-//        Assert.assertTrue(anonAllow.contains("GET"));
-//        Assert.assertTrue(anonAllow.contains("OPTIONS"));
-//        Assert.assertEquals(2, anonAllow.size());
+        // Anonymous call to OPTIONS should return all potential methods.
+        anonWorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
+        verifyOptions(anonWebClient, Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
 
         try {
             anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
@@ -755,7 +767,13 @@ public class SwaggerClientIT {
         } catch (ApiException ex) {
             Assert.assertEquals(401, ex.getCode());
         }
+    }
 
+    private void verifyOptions(ApiClient apiClient, List<String> expectedMethods) {
+        final List<String> allowMethods = apiClient.getResponseHeaders().get("Allow");
+        Collections.sort(allowMethods);
+        Collections.sort(expectedMethods);
+        Assert.assertEquals(expectedMethods, allowMethods);
     }
 
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi)
