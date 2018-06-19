@@ -59,6 +59,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -164,7 +165,9 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Path("/user")
     @ApiOperation(value = "Get the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User user) {
-        return userDAO.findById(user.getId());
+        User foundUser = userDAO.findById(user.getId());
+        Hibernate.initialize(foundUser.getUserProfile());
+        return foundUser;
     }
 
     @GET

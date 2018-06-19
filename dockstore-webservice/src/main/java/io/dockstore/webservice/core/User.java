@@ -157,13 +157,13 @@ public class User implements Principal, Comparable<User> {
             switch (source) {
             case GOOGLE_COM:
                 if (!updateGoogleMetadata(tokenDAO)) {
-                    throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.",
+                    throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.",
                             HttpStatus.SC_FORBIDDEN);
                 }
                 break;
             case GITHUB_COM:
                 if (!updateGithubMetadata(tokenDAO)) {
-                    throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.",
+                    throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.",
                             HttpStatus.SC_FORBIDDEN);
                 }
                 break;
