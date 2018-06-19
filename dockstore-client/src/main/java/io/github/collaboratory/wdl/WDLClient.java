@@ -55,6 +55,7 @@ import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
+import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
@@ -149,7 +150,12 @@ public class WDLClient implements LanguageClientInterface {
 
             // Get list of input files
             Bridge bridge = new Bridge();
-            Map<String, String> wdlInputs = bridge.getInputFiles(tmp);
+            Map<String, String> wdlInputs = null;
+            try {
+                wdlInputs = bridge.getInputFiles(tmp);
+            } catch (NullPointerException e) {
+                exceptionMessage(e, "Could not get WDL imports: " + e.getMessage(), API_ERROR);
+            }
 
             // Convert parameter JSON to a map
             WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(abstractEntryClient.getConfigFile());

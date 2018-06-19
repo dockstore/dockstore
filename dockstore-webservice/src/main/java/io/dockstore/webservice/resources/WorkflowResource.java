@@ -751,6 +751,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, true);
         checkEntry(workflow);
+        filterContainersForHiddenTags(workflow);
         return workflow;
     }
 

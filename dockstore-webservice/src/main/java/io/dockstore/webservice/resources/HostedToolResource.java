@@ -75,6 +75,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         tool.setNamespace(namespace);
         tool.setName(name);
         tool.setMode(ToolMode.HOSTED);
+        tool.setLastUpdated(new Date());
         tool.getUsers().add(user);
         return tool;
     }
