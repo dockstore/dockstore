@@ -107,7 +107,7 @@ public class SwaggerClientIT {
     public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH, ConfigOverride.config("authorizerType", "inmemory"));
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();

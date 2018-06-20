@@ -805,7 +805,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             @ApiParam(value = "user permission", required = true) Permission permission) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        LOG.info("Adding permission for email " + permission.getEmail() + ", role " + permission.getRole());
         this.permissionsInterface.setPermission(workflow, user, permission);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
