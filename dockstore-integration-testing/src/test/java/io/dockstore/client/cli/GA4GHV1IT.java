@@ -74,7 +74,7 @@ public class GA4GHV1IT extends GA4GHIT {
         // also try search by id
         response = checkedResponse(basePath + "tools?id=quay.io%2Ftest_org%2Ftest6");
         List<ToolV1> responseList = response.readEntity(List.class);
-        assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), false);
+        assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), true);
     }
 
     private void toolsIdWorkflow() throws Exception {

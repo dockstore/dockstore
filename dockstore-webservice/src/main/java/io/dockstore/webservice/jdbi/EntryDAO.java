@@ -138,9 +138,17 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
         session.evict(entry);
     }
 
+    public Entry getGenericEntryById(long id) {
+        return uniqueResult(namedQuery("Entry.getGenericEntryById").setParameter("id", id));
+    }
+
+    public Entry getGenericEntryByAlias(String alias) {
+        return uniqueResult(namedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
+    }
+
     public T findPublishedById(long id) {
         return (T)uniqueResult(
-                namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
+            namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
     }
 
     public List<T> findAllPublished() {

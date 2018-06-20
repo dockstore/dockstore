@@ -28,6 +28,9 @@ tags:
     \ (CWL and Dockerfile))"
 - name: "containertags"
   description: "List and modify tags for containers"
+- name: "entries"
+  description: "Interact with entries in Dockstore regardless of whether they are\
+    \ containers or workflows"
 - name: "extendedGA4GH"
   description: "Optional experimental extensions of the GA4GH API"
 - name: "hosted"
@@ -2367,6 +2370,42 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /entries/{id}/aliases:
+    put:
+      tags:
+      - "entries"
+      summary: "Update the aliases linked to an entry."
+      description: "Aliases are alphanumerical (case-insensitive and may contain internal\
+        \ hyphens), given in a comma-delimited list."
+      operationId: "updateAliases"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Entry to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "aliases"
+        in: "query"
+        description: "Comma-delimited list of aliases."
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -3344,7 +3383,7 @@ paths:
         schema:
           type: "array"
           items:
-            $ref: "#/definitions/SourceFile"
+            type: "object"
       responses:
         200:
           description: "successful operation"
@@ -4453,6 +4492,11 @@ securityDefinitions:
     name: "Authorization"
     in: "header"
 definitions:
+  Alias:
+    type: "object"
+    properties:
+      content:
+        type: "string"
   BitbucketOrgAuthenticationResource:
     type: "object"
     properties:
@@ -4491,6 +4535,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -4504,9 +4553,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -4519,6 +4565,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -4700,6 +4749,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -4709,9 +4763,6 @@ definitions:
       last_modified_date:
         type: "string"
         format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
@@ -4725,6 +4776,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5534,6 +5588,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -5548,9 +5607,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -5563,6 +5619,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
