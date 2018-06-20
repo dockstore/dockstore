@@ -252,11 +252,12 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @SuppressWarnings("CheckStyle")
     @Override
-    public Response toolsGet(String id, String registry, String organization, String name, String toolname, String description,
+    public Response toolsGet(String id, String alias, String registry, String organization, String name, String toolname, String description,
         String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) {
         final List<Entry> all = new ArrayList<>();
 
         // short circuit id filter, this one is a bit weird because it is a max of one result
+        // TODO: implement alias support here
         if (id != null) {
             ParsedRegistryID parsedID = new ParsedRegistryID(id);
             Entry entry = getEntry(parsedID);

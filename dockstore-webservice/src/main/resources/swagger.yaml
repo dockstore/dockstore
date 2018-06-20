@@ -652,6 +652,12 @@ paths:
           \ example `123456`"
         required: false
         type: "string"
+      - name: "alias"
+        in: "query"
+        description: "OPTIONAL for tool registries that support aliases If provided\
+          \ will only return Data Objects with the given alias."
+        required: false
+        type: "string"
       - name: "registry"
         in: "query"
         description: "The image registry that contains the image."
@@ -4498,6 +4504,9 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -4700,6 +4709,9 @@ definitions:
       last_modified_date:
         type: "string"
         format: "date-time"
+        readOnly: true
+      has_checker:
+        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
@@ -5155,7 +5167,6 @@ definitions:
     required:
     - "author"
     - "id"
-    - "meta_version"
     - "organization"
     - "toolclass"
     - "url"
@@ -5169,6 +5180,13 @@ definitions:
         type: "string"
         example: "123456"
         description: "A unique identifier of the tool, scoped to this registry"
+      aliases:
+        type: "array"
+        description: "OPTIONAL A list of strings that can be used to identify this\
+          \ tool. This can be used to expose alternative ids (such as GUIDs) for a\
+          \ tool for registries. Can be used to match tools across registries."
+        items:
+          type: "string"
       organization:
         type: "string"
         description: "The organization that published the image."
@@ -5356,7 +5374,6 @@ definitions:
     type: "object"
     required:
     - "id"
-    - "meta_version"
     - "url"
     properties:
       name:
@@ -5530,6 +5547,9 @@ definitions:
       last_modified_date:
         type: "string"
         format: "date-time"
+        readOnly: true
+      has_checker:
+        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
