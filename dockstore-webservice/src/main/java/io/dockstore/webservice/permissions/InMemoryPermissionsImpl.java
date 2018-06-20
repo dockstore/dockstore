@@ -28,6 +28,8 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of the {@link PermissionsInterface} that only reads
@@ -43,6 +45,7 @@ import org.apache.http.HttpStatus;
  */
 public class InMemoryPermissionsImpl implements PermissionsInterface {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(InMemoryPermissionsImpl.class);
     /**
      * A map of resources to users and roles.
      *
@@ -57,13 +60,18 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     private final Map<String, Map<String, Role>> resourceToUsersAndRolesMap = new ConcurrentHashMap<>();
     private DockstoreWebserviceConfiguration configuration;
 
+
     @Override
     public List<Permission> setPermission(Workflow workflow, User requester, Permission permission) {
-        Map<String, Role> entryMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
-        if (entryMap == null) {
-            entryMap = new ConcurrentHashMap<>();
-            resourceToUsersAndRolesMap.put(workflow.getWorkflowPath(), entryMap);
+        Map<String, Role> entryMap;
+        synchronized (this) {
+            entryMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
+            if (entryMap == null) {
+                entryMap = new ConcurrentHashMap<>();
+                resourceToUsersAndRolesMap.put(workflow.getWorkflowPath(), entryMap);
+            }
         }
+        LOGGER.info("Adding permission for email " + permission.getEmail() + ", role " + permission.getRole());
         entryMap.put(permission.getEmail(), permission.getRole());
         return getPermissionsForWorkflow(requester, workflow);
     }
