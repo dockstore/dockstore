@@ -1553,6 +1553,25 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted entry
+      description: ''
+      operationId: hostedEntryOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
     patch:
       tags:
         - hosted
@@ -2644,6 +2663,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+  '/hostedEntry/{entryId}':
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted entry
+      description: ''
+      operationId: hostedEntryOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -3622,6 +3661,25 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - BEARER: []
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted workflow
+      description: Options for a hosted workflow
+      operationId: hostedWorkflowOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
     patch:
       tags:
         - hosted
@@ -3799,13 +3857,12 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - BEARER: []
-  '/workflows/path/workflow/{repository}/actions':
-    get:
+    options:
       tags:
         - workflows
-      summary: Determine if user can perform an action on a workflow
-      description: ''
-      operationId: canPerformAction
+      summary: Options for a workflow by path
+      description: Permissions for the endpoint
+      operationId: getWorkflowByPathOptions
       parameters:
         - name: repository
           in: path
@@ -3813,24 +3870,9 @@ paths:
           required: true
           schema:
             type: string
-        - name: action
-          in: query
-          description: action
-          required: true
-          schema:
-            type: string
-            enum:
-              - WRITE
-              - READ
-              - DELETE
-              - SHARE
       responses:
-        '200':
+        default:
           description: successful operation
-          content:
-            application/json:
-              schema:
-                type: boolean
       security:
         - BEARER: []
   '/workflows/path/workflow/{repository}/permissions':
