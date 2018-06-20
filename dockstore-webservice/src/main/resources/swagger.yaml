@@ -1570,7 +1570,7 @@ paths:
       tags:
       - "containers"
       summary: "Get a registered repo"
-      description: ""
+      description: "Also loads the users"
       operationId: "getContainer"
       produces:
       - "application/json"
@@ -3632,7 +3632,7 @@ paths:
       tags:
       - "workflows"
       summary: "Get a registered workflow"
-      description: ""
+      description: "Also loads the users"
       operationId: "getWorkflow"
       produces:
       - "application/json"
