@@ -48,7 +48,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.webservice.helpers.PipHelper;
+import io.dockstore.common.PipHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.rss.RSSEntry;
