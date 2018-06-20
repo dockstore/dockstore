@@ -590,6 +590,9 @@ public class SwaggerClientIT {
         assertEquals(2, containerId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         containersApi.starEntry(containerId, request);
+        List<User> starredUsers = containersApi.getStarredUsers(container.getId());
+        Assert.assertEquals(1, starredUsers.size());
+        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfile()));
         containersApi.starEntry(containerId, request);
     }
 
@@ -623,11 +626,14 @@ public class SwaggerClientIT {
     public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("G/A/l");
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l");
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         workflowsApi.starEntry(workflowId, request);
+        List<User> starredUsers = workflowsApi.getStarredUsers(workflow.getId());
+        Assert.assertEquals(1, starredUsers.size());
+        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfile()));
         workflowsApi.starEntry(workflowId, request);
     }
 
