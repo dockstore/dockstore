@@ -31,6 +31,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
@@ -76,16 +77,20 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         return entries;
     }
 
+    default void stripContent(List<? extends Entry> entries) {
+        stripContent(entries, getDAO());
+    }
+
     /**
      * For convenience, filters a list of entries
      */
-    default void stripContent(List<T> entries) {
-        for (T entry : entries) {
-            getDAO().evict(entry);
+    static void stripContent(List<? extends Entry> entries, AbstractDockstoreDAO dao) {
+        for (Entry entry : entries) {
+            dao.evict(entry);
             // clear users which are also lazy loaded
             entry.setUsers(null);
             // need to have this evicted so that hibernate does not actually delete the tags and users
-            Set<U> versions = entry.getVersions();
+            Set<Version> versions = entry.getVersions();
             versions.forEach(version ->
                 version.getSourceFiles().forEach(sourceFile ->
                         ((SourceFile)sourceFile).setContent(null))

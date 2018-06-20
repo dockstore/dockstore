@@ -24,7 +24,6 @@ import java.util.Objects;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
-import io.dropwizard.hibernate.AbstractDAO;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -35,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  * @author dyuen
  */
-public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
+public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryDAO.class);
 
@@ -131,11 +130,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDAO<T> {
         Session session = currentSession();
         session.delete(entry);
         session.flush();
-    }
-
-    public void evict(T entry) {
-        Session session = currentSession();
-        session.evict(entry);
     }
 
     public T findPublishedById(long id) {
