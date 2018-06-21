@@ -4553,9 +4553,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -4568,6 +4565,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -4764,9 +4764,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -4779,6 +4776,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5607,9 +5607,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -5622,6 +5619,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
