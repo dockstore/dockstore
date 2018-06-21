@@ -293,10 +293,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
         JsonObject oauthData = satellizerObject.get("oauthData").getAsJsonObject();
-        JsonObject authorizationData = satellizerObject.get("authorizationData").getAsJsonObject();
         final String code = oauthData.get("code").getAsString();
-        final String redirectUri = authorizationData.get("redirect_uri").getAsString();
-
         return addGithubToken(null, code);
     }
 
