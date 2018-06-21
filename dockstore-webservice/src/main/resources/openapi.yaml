@@ -1,10 +1,12 @@
 openapi: 3.0.0
+servers:
+  - url: https://dockstore.org:8443
 info:
   description: >-
     This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.3.0
+  version: 1.4.4
   title: Dockstore API
   termsOfService: ''
   contact:
@@ -12,13 +14,14 @@ info:
     url: 'https://github.com/ga4gh/dockstore'
     email: theglobalalliance@genomicsandhealth.org
   license:
-    name: ' GNU Lesser General Public License'
-    url: 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
+    name: Apache License Version 2.0
+    url: 'https://github.com/ga4gh/dockstore/blob/develop/LICENSE'
 tags:
   - name: GA4GH
     description: >-
       A curated subset of resources proposed as a common standard for tool
       repositories
+  - name: NIHdatacommons
   - name: GA4GHV1
     description: >-
       A curated subset of resources proposed as a common standard for tool
@@ -648,6 +651,86 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ToolV1'
+  '/api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}':
+    post:
+      tags:
+        - extendedGA4GH
+      summary: >-
+        Annotate test JSON with information on whether it ran successfully on
+        particular platforms plus metadata
+      description: >-
+        Test JSON can be annotated with whether they ran correctly keyed by
+        platform and associated with some metadata 
+      operationId: toolsIdVersionsVersionIdTypeTestsPost
+      parameters:
+        - name: type
+          in: path
+          description: >-
+            The type of the underlying descriptor. Allowable values include
+            "CWL", "WDL", "NFL".
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: >-
+            A unique identifier of the tool, scoped to this registry, for
+            example `123456`
+          required: true
+          schema:
+            type: string
+        - name: version_id
+          in: path
+          description: >-
+            An identifier of the tool version for this particular tool registry,
+            for example `v1`
+          required: true
+          schema:
+            type: string
+        - name: relative_path
+          in: path
+          description: >-
+            A relative path to the test json as retrieved from the files
+            endpoint or the tests endpoint
+          required: true
+          schema:
+            type: string
+            pattern: .+
+        - name: platform
+          in: query
+          description: Platform to report on
+          required: true
+          schema:
+            type: string
+        - name: verified
+          in: query
+          description: 'Verification status, omit to delete key'
+          required: false
+          schema:
+            type: boolean
+        - name: metadata
+          in: query
+          description: 'Additional information on the verification (notes, explanation)'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The tool test JSON response.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+        '404':
+          description: The tool test cannot be found to annotate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - BEARER: []
   /api/ga4gh/v2/metadata:
     get:
       tags:
@@ -1410,6 +1493,12 @@ paths:
         - name: registry
           in: query
           description: 'For tools, the Docker registry'
+          required: false
+          schema:
+            type: string
+        - name: namespace
+          in: query
+          description: 'For tools, the Docker namespace'
           required: false
           schema:
             type: string
@@ -3467,6 +3556,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: namespace
+          in: query
+          description: 'For tools, the Docker namespace'
+          required: false
+          schema:
+            type: string
         - name: name
           in: query
           description: name
@@ -3663,8 +3758,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-      security:
-        - BEARER: []
   '/workflows/path/workflow/{repository}':
     get:
       tags:
@@ -4682,8 +4775,6 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersion'
         description: List of modified workflow versions
         required: true
-servers:
-  - url: /
 components:
   requestBodies:
     PublishRequest:
@@ -4817,17 +4908,14 @@ components:
             $ref: '#/components/schemas/FileFormat'
         author:
           type: string
-          position: 1
           description: This is the name of the author stated in the Dockstore.cwl
         description:
           type: string
-          position: 2
           description: >-
             This is a human-readable description of this container and what it
             is trying to accomplish, required GA4GH
         labels:
           type: array
-          position: 3
           description: >-
             Labels (i.e. meta tags) for describing the purpose and contents of
             containers
@@ -4836,7 +4924,6 @@ components:
             $ref: '#/components/schemas/Label'
         users:
           type: array
-          position: 4
           description: >-
             This indicates the users that have control over this entry,
             dockstore specific
@@ -4845,7 +4932,6 @@ components:
             $ref: '#/components/schemas/User'
         starredUsers:
           type: array
-          position: 5
           description: >-
             This indicates the users that have starred this entry, dockstore
             specific
@@ -4854,41 +4940,33 @@ components:
             $ref: '#/components/schemas/User'
         email:
           type: string
-          position: 6
           description: This is the email of the git organization
         defaultVersion:
           type: string
-          position: 7
           description: This is the default version of the entry
         is_published:
           type: boolean
-          position: 8
           description: Implementation specific visibility in this web service
         last_modified:
           type: integer
           format: int32
-          position: 9
           description: Implementation specific timestamp for last modified
         lastUpdated:
           type: string
           format: date-time
-          position: 10
           description: Implementation specific timestamp for last updated on webservice
         gitUrl:
           type: string
-          position: 11
           description: >-
             This is a link to the associated repo with a descriptor, required
             GA4GH
         checker_id:
           type: integer
           format: int64
-          position: 12
           description: The id of the associated checker workflow
           readOnly: true
         mode:
           type: string
-          position: 13
           description: >-
             This indicates what mode this is in which informs how we do things
             like refresh, dockstore specific
@@ -4899,51 +4977,42 @@ components:
             - HOSTED
         name:
           type: string
-          position: 14
           description: 'This is the name of the container, required: GA4GH'
         default_dockerfile_path:
           type: string
-          position: 15
           description: >-
             This indicates for the associated git repository, the default path
             to the Dockerfile, required: GA4GH
         default_cwl_path:
           type: string
-          position: 16
           description: >-
             This indicates for the associated git repository, the default path
             to the CWL document, required: GA4GH
         default_wdl_path:
           type: string
-          position: 17
           description: >-
             This indicates for the associated git repository, the default path
             to the WDL document
         defaultCWLTestParameterFile:
           type: string
-          position: 18
           description: >-
             This indicates for the associated git repository, the default path
             to the CWL test parameter file
         defaultWDLTestParameterFile:
           type: string
-          position: 19
           description: >-
             This indicates for the associated git repository, the default path
             to the WDL test parameter file
         tool_maintainer_email:
           type: string
-          position: 20
           description: >-
             The email address of the tool maintainer. Required for private
             repositories
         private_access:
           type: boolean
-          position: 21
           description: Is the docker image private or not.
         toolname:
           type: string
-          position: 22
           description: >-
             This is the tool name of the container, when not-present this will
             function just like 0.1 dockstorewhen present, this can be used to
@@ -4956,22 +5025,18 @@ components:
             required: GA4GH
         namespace:
           type: string
-          position: 23
           description: 'This is a docker namespace for the container, required: GA4GH'
         registry_string:
           type: string
-          position: 24
           description: >-
             This is a specific docker provider like quay.io or dockerhub or
             n/a?, required: GA4GH
         lastBuild:
           type: string
           format: date-time
-          position: 25
           description: Implementation specific timestamp for last built
         tags:
           type: array
-          position: 26
           description: >-
             Implementation specific tracking of valid build tags for the docker
             container
@@ -4980,20 +5045,16 @@ components:
             $ref: '#/components/schemas/Tag'
         path:
           type: string
-          position: 27
         descriptorType:
           type: array
-          position: 28
           readOnly: true
           items:
             type: string
         tool_path:
           type: string
-          position: 29
           readOnly: true
         registry:
           type: string
-          position: 30
           enum:
             - QUAY_IO
             - DOCKER_HUB
@@ -5038,17 +5099,14 @@ components:
             $ref: '#/components/schemas/FileFormat'
         author:
           type: string
-          position: 1
           description: This is the name of the author stated in the Dockstore.cwl
         description:
           type: string
-          position: 2
           description: >-
             This is a human-readable description of this container and what it
             is trying to accomplish, required GA4GH
         labels:
           type: array
-          position: 3
           description: >-
             Labels (i.e. meta tags) for describing the purpose and contents of
             containers
@@ -5057,7 +5115,6 @@ components:
             $ref: '#/components/schemas/Label'
         users:
           type: array
-          position: 4
           description: >-
             This indicates the users that have control over this entry,
             dockstore specific
@@ -5066,7 +5123,6 @@ components:
             $ref: '#/components/schemas/User'
         starredUsers:
           type: array
-          position: 5
           description: >-
             This indicates the users that have starred this entry, dockstore
             specific
@@ -5075,36 +5131,29 @@ components:
             $ref: '#/components/schemas/User'
         email:
           type: string
-          position: 6
           description: This is the email of the git organization
         defaultVersion:
           type: string
-          position: 7
           description: This is the default version of the entry
         is_published:
           type: boolean
-          position: 8
           description: Implementation specific visibility in this web service
         last_modified:
           type: integer
           format: int32
-          position: 9
           description: Implementation specific timestamp for last modified
         lastUpdated:
           type: string
           format: date-time
-          position: 10
           description: Implementation specific timestamp for last updated on webservice
         gitUrl:
           type: string
-          position: 11
           description: >-
             This is a link to the associated repo with a descriptor, required
             GA4GH
         checker_id:
           type: integer
           format: int64
-          position: 12
           description: The id of the associated checker workflow
           readOnly: true
     Error:
@@ -5124,7 +5173,6 @@ components:
       properties:
         value:
           type: string
-          position: 1
           description: String representation of the file format
       description: >-
         This describes an input or output file format that is associated with an
@@ -5192,7 +5240,6 @@ components:
           readOnly: true
         value:
           type: string
-          position: 1
           description: String representation of the tag
       description: >-
         This describes a descriptive label that can be placed on an entry in the
@@ -5284,9 +5331,15 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the source file in this web service
+        verifiedBySource:
+          type: object
+          description: >-
+            maps from platform to whether an entry successfully ran on it using
+            this test json
+          additionalProperties:
+            $ref: '#/components/schemas/VerificationInformation'
         type:
           type: string
-          position: 1
           description: Enumerates the type of file
           enum:
             - DOCKSTORE_CWL
@@ -5299,11 +5352,9 @@ components:
             - NEXTFLOW_TEST_PARAMS
         content:
           type: string
-          position: 2
           description: Cache for the contents of the target file
         path:
           type: string
-          position: 3
           description: Path to source file in git repo
     StarRequest:
       type: object
@@ -5334,15 +5385,12 @@ components:
         last_modified:
           type: string
           format: date-time
-          position: 1
           description: The last time this image was modified in the image registry
         reference:
           type: string
-          position: 2
           description: git commit/tag/branch
         sourceFiles:
           type: array
-          position: 3
           description: >-
             Cached files for each version. Includes Dockerfile and Descriptor
             files
@@ -5351,46 +5399,37 @@ components:
             $ref: '#/components/schemas/SourceFile'
         hidden:
           type: boolean
-          position: 4
           description: >-
             Implementation specific, whether this row is visible to other users
             aside from the owner
         valid:
           type: boolean
-          position: 5
           description: >-
             Implementation specific, whether this tag has valid files from
             source code repo
         name:
           type: string
-          position: 6
           description: 'Implementation specific, can be a quay.io or docker hub tag name'
         dirtyBit:
           type: boolean
-          position: 7
           description: True if user has altered the tag
         verified:
           type: boolean
-          position: 8
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
-          position: 9
           description: Verified source for the version
         doiURL:
           type: string
-          position: 10
           description: This is a URL for the DOI for the version of the entry
         doiStatus:
           type: string
-          position: 11
           description: This indicates the DOI status
           enum:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
         versionEditor:
-          position: 12
           description: >-
             Particularly for hosted workflows, this records who edited to create
             a revision
@@ -5398,35 +5437,27 @@ components:
         size:
           type: integer
           format: int64
-          position: 13
           description: Size of the image
         dockerfile_path:
           type: string
-          position: 14
           description: Path for the Dockerfile
         cwl_path:
           type: string
-          position: 15
           description: Path for the CWL document
         wdl_path:
           type: string
-          position: 16
           description: Path for the WDL document
         automated:
           type: boolean
-          position: 17
           description: >-
             Implementation specific, indicates whether this is an automated
             build on quay.io
         workingDirectory:
           type: string
-          position: 18
         image_id:
           type: string
-          position: 19
         input_file_formats:
           type: array
-          position: 20
           description: >-
             File formats for describing the input file formats of versions
             (tag/workflowVersion)
@@ -5435,7 +5466,6 @@ components:
             $ref: '#/components/schemas/FileFormat'
         output_file_formats:
           type: array
-          position: 21
           description: >-
             File formats for describing the output file formats of versions
             (tag/workflowVersion)
@@ -5444,7 +5474,6 @@ components:
             $ref: '#/components/schemas/FileFormat'
         commitID:
           type: string
-          position: 22
           description: >-
             This is the commit id for the source control that the files belong
             to
@@ -5459,26 +5488,20 @@ components:
           readOnly: true
         tokenSource:
           type: string
-          position: 1
           description: Source website for this token
         content:
           type: string
-          position: 2
           description: Contents of the access token
         username:
           type: string
-          position: 3
           description: 'When an integrated service is not aware of the username, we store it'
         refreshToken:
           type: string
-          position: 4
         userId:
           type: integer
           format: int64
-          position: 5
         token:
           type: string
-          position: 6
           description: Contents of the access token
           readOnly: true
       description: >-
@@ -5806,6 +5829,7 @@ components:
     User:
       type: object
       required:
+        - curator
         - isAdmin
       properties:
         id:
@@ -5815,36 +5839,38 @@ components:
           readOnly: true
         username:
           type: string
-          position: 1
           description: Username on dockstore
         isAdmin:
           type: boolean
-          position: 2
           description: Indicates whether this user is an admin
         company:
           type: string
-          position: 3
           description: Company of user
         bio:
           type: string
-          position: 4
           description: Bio of user
         location:
           type: string
-          position: 5
           description: Location of user
         email:
           type: string
-          position: 6
           description: Email of user
         avatarUrl:
           type: string
-          position: 7
           description: URL of user avatar on Github.
         name:
           type: string
-          position: 8
+        curator:
+          type: boolean
+          description: Indicates whether this user is a curator
       description: End users for the dockstore
+    VerificationInformation:
+      type: object
+      properties:
+        verified:
+          type: boolean
+        metadata:
+          type: string
     VerifyRequest:
       type: object
       properties:
@@ -5898,17 +5924,14 @@ components:
             $ref: '#/components/schemas/FileFormat'
         author:
           type: string
-          position: 1
           description: This is the name of the author stated in the Dockstore.cwl
         description:
           type: string
-          position: 2
           description: >-
             This is a human-readable description of this container and what it
             is trying to accomplish, required GA4GH
         labels:
           type: array
-          position: 3
           description: >-
             Labels (i.e. meta tags) for describing the purpose and contents of
             containers
@@ -5917,7 +5940,6 @@ components:
             $ref: '#/components/schemas/Label'
         users:
           type: array
-          position: 4
           description: >-
             This indicates the users that have control over this entry,
             dockstore specific
@@ -5926,7 +5948,6 @@ components:
             $ref: '#/components/schemas/User'
         starredUsers:
           type: array
-          position: 5
           description: >-
             This indicates the users that have starred this entry, dockstore
             specific
@@ -5935,41 +5956,33 @@ components:
             $ref: '#/components/schemas/User'
         email:
           type: string
-          position: 6
           description: This is the email of the git organization
         defaultVersion:
           type: string
-          position: 7
           description: This is the default version of the entry
         is_published:
           type: boolean
-          position: 8
           description: Implementation specific visibility in this web service
         last_modified:
           type: integer
           format: int32
-          position: 9
           description: Implementation specific timestamp for last modified
         lastUpdated:
           type: string
           format: date-time
-          position: 10
           description: Implementation specific timestamp for last updated on webservice
         gitUrl:
           type: string
-          position: 11
           description: >-
             This is a link to the associated repo with a descriptor, required
             GA4GH
         checker_id:
           type: integer
           format: int64
-          position: 12
           description: The id of the associated checker workflow
           readOnly: true
         mode:
           type: string
-          position: 13
           description: >-
             This indicates what mode this is in which informs how we do things
             like refresh, dockstore specific
@@ -5979,45 +5992,37 @@ components:
             - HOSTED
         workflowName:
           type: string
-          position: 14
           description: >-
             This is the name of the workflow, not needed when only one workflow
             in a repo
         organization:
           type: string
-          position: 15
           description: This is a git organization for the workflow
         repository:
           type: string
-          position: 16
           description: This is a git repository name
         sourceControl:
           type: string
-          position: 17
           description: >-
             This is a specific source control provider like github or bitbucket
             or n/a?, required: GA4GH
         descriptorType:
           type: string
-          position: 18
           description: >-
             This is a descriptor type for the workflow, either CWL or WDL
             (Defaults to CWL)
         workflow_path:
           type: string
-          position: 19
           description: >-
             This indicates for the associated git repository, the default path
             to the CWL document
         defaultTestParameterFilePath:
           type: string
-          position: 20
           description: >-
             This indicates for the associated git repository, the default path
             to the test parameter file
         workflowVersions:
           type: array
-          position: 21
           description: >-
             Implementation specific tracking of valid build workflowVersions for
             the docker container
@@ -6026,17 +6031,13 @@ components:
             $ref: '#/components/schemas/WorkflowVersion'
         is_checker:
           type: boolean
-          position: 23
         full_workflow_path:
           type: string
-          position: 24
           readOnly: true
         path:
           type: string
-          position: 25
         source_control_provider:
           type: string
-          position: 26
           readOnly: true
       description: This describes one workflow in the dockstore
     WorkflowVersion:
@@ -6064,15 +6065,12 @@ components:
         last_modified:
           type: string
           format: date-time
-          position: 1
           description: The last time this image was modified in the image registry
         reference:
           type: string
-          position: 2
           description: git commit/tag/branch
         sourceFiles:
           type: array
-          position: 3
           description: >-
             Cached files for each version. Includes Dockerfile and Descriptor
             files
@@ -6081,57 +6079,46 @@ components:
             $ref: '#/components/schemas/SourceFile'
         hidden:
           type: boolean
-          position: 4
           description: >-
             Implementation specific, whether this row is visible to other users
             aside from the owner
         valid:
           type: boolean
-          position: 5
           description: >-
             Implementation specific, whether this tag has valid files from
             source code repo
         name:
           type: string
-          position: 6
           description: 'Implementation specific, can be a quay.io or docker hub tag name'
         dirtyBit:
           type: boolean
-          position: 7
           description: True if user has altered the tag
         verified:
           type: boolean
-          position: 8
           description: Whether this version has been verified or not
         verifiedSource:
           type: string
-          position: 9
           description: Verified source for the version
         doiURL:
           type: string
-          position: 10
           description: This is a URL for the DOI for the version of the entry
         doiStatus:
           type: string
-          position: 11
           description: This indicates the DOI status
           enum:
             - NOT_REQUESTED
             - REQUESTED
             - CREATED
         versionEditor:
-          position: 12
           description: >-
             Particularly for hosted workflows, this records who edited to create
             a revision
           $ref: '#/components/schemas/User'
         workflow_path:
           type: string
-          position: 12
           description: Path for the workflow
         input_file_formats:
           type: array
-          position: 20
           description: >-
             File formats for describing the input file formats of versions
             (tag/workflowVersion)
@@ -6140,7 +6127,6 @@ components:
             $ref: '#/components/schemas/FileFormat'
         output_file_formats:
           type: array
-          position: 21
           description: >-
             File formats for describing the output file formats of versions
             (tag/workflowVersion)
@@ -6149,7 +6135,6 @@ components:
             $ref: '#/components/schemas/FileFormat'
         commitID:
           type: string
-          position: 22
           description: >-
             This is the commit id for the source control that the files belong
             to
