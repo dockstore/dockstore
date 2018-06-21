@@ -4964,6 +4964,9 @@ components:
           type: string
           format: date-time
           readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -4976,9 +4979,6 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        has_checker:
-          type: boolean
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -5163,6 +5163,9 @@ components:
           type: string
           format: date-time
           readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5175,9 +5178,6 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        has_checker:
-          type: boolean
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6002,6 +6002,9 @@ components:
           type: string
           format: date-time
           readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -6014,9 +6017,6 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        has_checker:
-          type: boolean
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
