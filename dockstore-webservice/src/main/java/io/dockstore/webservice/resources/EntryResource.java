@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -30,19 +31,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
-import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +49,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 /**
  * Prototype for methods that apply identically across tools and workflows.
  *
- * @dyuen
+ * @author dyuen
  */
 @Path("/entries")
 @Api("entries")
@@ -59,19 +57,10 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 public class EntryResource implements AuthenticatedResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
-    private final ObjectMapper objectMapper;
-    private final UserDAO userDAO;
-    private final TokenDAO tokenDAO;
-    private final HttpClient client;
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;
 
-    public EntryResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO,
-        WorkflowDAO workflowDAO) {
-        objectMapper = mapper;
-        this.userDAO = userDAO;
-        this.tokenDAO = tokenDAO;
-        this.client = client;
+    public EntryResource(ObjectMapper mapper, ToolDAO toolDAO) {
         this.toolDAO = toolDAO;
         elasticManager = new ElasticManager();
     }
@@ -86,13 +75,13 @@ public class EntryResource implements AuthenticatedResourceInterface {
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("id") Long id,
         @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        Entry c = toolDAO.getGenericEntryById(id);
+        Entry<? extends Entry, ? extends Version> c = toolDAO.getGenericEntryById(id);
         checkEntry(c);
         // compute differences
         Set<String> oldAliases = c.getAliases().keySet();
-        Set<String> newAliases = Sets.newHashSet(aliases.split(","));
+        Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
         Set<String> aliasesToAdd = Sets.difference(newAliases, oldAliases);
-        Set<String> aliasesToRemove = new TreeSet(Sets.difference(oldAliases, newAliases));
+        Set<String> aliasesToRemove = new TreeSet<>(Sets.difference(oldAliases, newAliases));
         // add new ones and remove old ones while retaining the old entries and their order
         aliasesToAdd.forEach(alias -> c.getAliases().put(alias, new Entry.Alias()));
         aliasesToRemove.forEach(alias -> c.getAliases().remove(alias));

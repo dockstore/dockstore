@@ -23,6 +23,7 @@ import java.util.Objects;
 
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.hibernate.Session;
@@ -132,11 +133,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         session.flush();
     }
 
-    public Entry getGenericEntryById(long id) {
+    public Entry<? extends Entry, ? extends Version> getGenericEntryById(long id) {
         return uniqueResult(namedQuery("Entry.getGenericEntryById").setParameter("id", id));
     }
 
-    public Entry getGenericEntryByAlias(String alias) {
+    public Entry<? extends Entry, ? extends Version> getGenericEntryByAlias(String alias) {
         return uniqueResult(namedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
     }
 
