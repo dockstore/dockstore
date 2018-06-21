@@ -142,6 +142,11 @@ public class CRUDClientIT extends BaseIT {
         // can get it back with regular api
         WorkflowsApi oldApi = new WorkflowsApi(webClient);
         Workflow container = oldApi.getWorkflow(hostedTool.getId());
+        // clear lazy fields for now till merge
+        hostedTool.setAliases(null);
+        hostedTool.setUsers(null);
+        container.setAliases(null);
+        container.setUsers(null);
         Assert.assertEquals(container, hostedTool);
     }
 
