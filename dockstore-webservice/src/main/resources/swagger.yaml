@@ -1330,7 +1330,7 @@ paths:
         schema:
           type: "array"
           items:
-            type: "object"
+            $ref: "#/definitions/SourceFile"
       responses:
         200:
           description: "successful operation"
@@ -3392,7 +3392,7 @@ paths:
         schema:
           type: "array"
           items:
-            type: "object"
+            $ref: "#/definitions/SourceFile"
       responses:
         200:
           description: "successful operation"
