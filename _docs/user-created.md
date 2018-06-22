@@ -20,6 +20,14 @@ Miguel Vazquez has been leading the docktesters group. This is a group that is i
 Tutorials and documentation are always appreciated as well!
 The following tutorial demonstrates how to run the Pan Prostate pipeline and how to work with Dockstore tools (normally using Docker images) using Singularity.
 
+## [pfda2dockstore](https://github.com/OpenGenomics/pfda2dockstore/tree/wrapup)
+
+A utility that exports precisionFDA apps to Dockstore, creating Dockstore tools complete with Dockerfiles and CWL descriptors.
+
+## [Run Dockstore apps on the (Seven Bridges) platform](https://docs.sevenbridges.com/docs/run-dockstore-apps-on-the-platform)
+
+A tutorial on how to export CWL tools from Dockstore and run them in the SevenBridges platform. 
+
 ## Use Case Posters
 
 As Dockstore gains traction people are showing how they are using it in posters
