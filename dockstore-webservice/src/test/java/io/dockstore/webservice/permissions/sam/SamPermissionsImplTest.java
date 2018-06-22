@@ -12,7 +12,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.permissions.Permission;
 import io.dockstore.webservice.permissions.Role;
-import io.swagger.annotations.Api;
 import io.swagger.sam.client.ApiClient;
 import io.swagger.sam.client.ApiException;
 import io.swagger.sam.client.api.ResourcesApi;
@@ -26,11 +25,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-import org.mockito.internal.stubbing.answers.CallsRealMethods;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -157,10 +154,10 @@ public class SamPermissionsImplTest {
     @Test
     public void testWorkflowsSharedWithUser() throws ApiException {
         ResourceAndAccessPolicy reader = new ResourceAndAccessPolicy();
-        reader.setResourceId(FOO_WORKFLOW_NAME);
+        reader.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME);
         reader.setAccessPolicyName(SamConstants.READ_POLICY);
         ResourceAndAccessPolicy owner = new ResourceAndAccessPolicy();
-        owner.setResourceId(GOO_WORKFLOW_NAME);
+        owner.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + GOO_WORKFLOW_NAME);
         owner.setAccessPolicyName(SamConstants.OWNER_POLICY);
         when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenReturn(Arrays.asList(reader, owner));
         Assert.assertEquals(samPermissionsImpl.workflowsSharedWithUser(userMock), Arrays.asList(FOO_WORKFLOW_NAME));
