@@ -60,7 +60,7 @@ public final class GoogleHelper {
     public static Optional<String> getUserNameFromToken(String token) {
         try {
             Userinfoplus userinfoplus = userinfoplusFromToken(token);
-            return Optional.of(userinfoplus.getName());
+            return Optional.of(userinfoplus.getEmail());
 
         } catch (GeneralSecurityException | IOException e) {
             return Optional.empty();

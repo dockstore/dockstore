@@ -45,7 +45,9 @@ public interface SamConstants {
      * The prefix for resource names for workflows. Permissions calls for tools
      * should omit the prefix.
      */
+
     String WORKFLOW_PREFIX = "#workflow/";
+    String ENCODED_WORKFLOW_PREFIX = "%23workflow%2F";
 
     static String toSamAction(Role.Action action) {
         switch (action) {

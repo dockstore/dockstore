@@ -720,8 +720,10 @@ public class ApiClient {
         response = invocationBuilder.method("PATCH", entity);
       } else if ("HEAD".equals(method)) {
         response = invocationBuilder.head();
+      {{! Begin Change from default template; to support OPTIONS }}
       } else if ("OPTIONS".equals(method)) {
         response = invocationBuilder.options();
+      {{! End change from default template }}
       } else {
         throw new ApiException(500, "unknown method type " + method);
       }

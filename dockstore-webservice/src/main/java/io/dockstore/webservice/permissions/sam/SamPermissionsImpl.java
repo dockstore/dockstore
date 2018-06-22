@@ -114,7 +114,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
             return resourceAndAccessPolicies
                     .stream()
                     .filter(resourceAndAccessPolicy -> !SamConstants.OWNER_POLICY.equals(resourceAndAccessPolicy.getAccessPolicyName()))
-                    .map(resourceAndPolicy -> resourceAndPolicy.getResourceId())
+                    .map(resourceAndPolicy -> resourceAndPolicy.getResourceId().substring(SamConstants.ENCODED_WORKFLOW_PREFIX.length()))
                     .collect(Collectors.toList());
         } catch (ApiException e) {
             LOG.error("Error getting shared workflows", e);
