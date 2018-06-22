@@ -76,7 +76,7 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         Assert.assertNotNull("tool was not created properly", hostedTool);
         hostedTool.getUsers().forEach(user -> {
-            Assert.assertEquals("createHostedTool() endpoint should not have user profiles", null, user.getUserProfile());
+            Assert.assertEquals("createHostedTool() endpoint should not have user profiles", null, user.getUserProfiles());
         });
 
         Assert.assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
@@ -85,7 +85,7 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool container = oldApi.getContainer(hostedTool.getId());
         Assert.assertEquals(container, hostedTool);
         container.getUsers().forEach(user -> {
-            Assert.assertEquals("getContainer() endpoint should not have user profiles", null, user.getUserProfile());
+            Assert.assertEquals("getContainer() endpoint should not have user profiles", null, user.getUserProfiles());
         });
     }
 
@@ -141,7 +141,7 @@ public class CRUDClientIT extends BaseIT {
         Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", "cwl", null, null);
         Assert.assertNotNull("workflow was not created properly", hostedTool);
         hostedTool.getUsers().forEach(user -> {
-            Assert.assertEquals("createHostedWorkflow() endpoint should not have user profiles", null, user.getUserProfile());
+            Assert.assertEquals("createHostedWorkflow() endpoint should not have user profiles", null, user.getUserProfiles());
         });
         Assert.assertTrue("workflow was not created with a valid if", hostedTool.getId() != 0);
         // can get it back with regular api
@@ -149,7 +149,7 @@ public class CRUDClientIT extends BaseIT {
         Workflow container = oldApi.getWorkflow(hostedTool.getId());
         Assert.assertEquals(container, hostedTool);
         container.getUsers().forEach(user -> {
-            Assert.assertEquals("getWorkflow() endpoint should not have user profiles", null, user.getUserProfile());
+            Assert.assertEquals("getWorkflow() endpoint should not have user profiles", null, user.getUserProfiles());
         });
     }
 
@@ -229,7 +229,7 @@ public class CRUDClientIT extends BaseIT {
         thrown.expect(ApiException.class);
         DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
         refreshedTool.getUsers().forEach(entryUser -> {
-            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfile());
+            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
         });
     }
 

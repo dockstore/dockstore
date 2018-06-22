@@ -112,7 +112,7 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile
         refreshedEntry.getUsers().forEach(entryUser -> {
-            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfile());
+            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
         });
 
         // Checker workflow should refresh
@@ -204,7 +204,7 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile
         refreshedEntry.getUsers().forEach(entryUser -> {
-            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfile());
+            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
         });
 
         // Checker workflow should refresh

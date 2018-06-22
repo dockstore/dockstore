@@ -511,7 +511,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
             profile.location = myself.getLocation();
             profile.company = myself.getCompany();
-            Map<String, User.Profile> userProfile = user.getUserProfile();
+            Map<String, User.Profile> userProfile = user.getUserProfiles();
             userProfile.put(TokenType.GITHUB_COM.toString(), profile);
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername());

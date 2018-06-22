@@ -133,7 +133,7 @@ public class WorkflowIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
-        Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfile());
+        Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
         final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
 

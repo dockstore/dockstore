@@ -592,7 +592,7 @@ public class SwaggerClientIT {
         containersApi.starEntry(containerId, request);
         List<User> starredUsers = containersApi.getStarredUsers(container.getId());
         Assert.assertEquals(1, starredUsers.size());
-        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfile()));
+        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         containersApi.starEntry(containerId, request);
     }
 
@@ -633,7 +633,7 @@ public class SwaggerClientIT {
         workflowsApi.starEntry(workflowId, request);
         List<User> starredUsers = workflowsApi.getStarredUsers(workflow.getId());
         Assert.assertEquals(1, starredUsers.size());
-        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfile()));
+        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         workflowsApi.starEntry(workflowId, request);
     }
 

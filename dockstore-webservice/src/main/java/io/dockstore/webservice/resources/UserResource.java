@@ -166,7 +166,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Get the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User getUser(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
-        Hibernate.initialize(foundUser.getUserProfile());
+        Hibernate.initialize(foundUser.getUserProfiles());
         return foundUser;
     }
 

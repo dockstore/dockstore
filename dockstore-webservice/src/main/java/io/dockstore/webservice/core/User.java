@@ -91,7 +91,7 @@ public class User implements Principal, Comparable<User> {
             "token_type" }))
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
-    private Map<String, Profile> userProfile = new HashMap<>();
+    private Map<String, Profile> userProfiles = new HashMap<>();
 
     // database timestamps
     @Column(updatable = false)
@@ -303,12 +303,12 @@ public class User implements Principal, Comparable<User> {
         return MoreObjects.toStringHelper(this).add("id", id).add("username", username).add("isAdmin", isAdmin).toString();
     }
 
-    public Map<String, Profile> getUserProfile() {
-        return userProfile;
+    public Map<String, Profile> getUserProfiles() {
+        return userProfiles;
     }
 
-    public void setUserProfile(Map<String, Profile> userProfile) {
-        this.userProfile = userProfile;
+    public void setUserProfiles(Map<String, Profile> userProfiles) {
+        this.userProfiles = userProfiles;
     }
 
     public boolean isCurator() {

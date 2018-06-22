@@ -54,7 +54,7 @@ public final class GoogleHelper {
         profile.avatarURL = userinfo.getPicture();
         profile.email = userinfo.getEmail();
         profile.name = userinfo.getName();
-        Map<String, User.Profile> userProfile = user.getUserProfile();
+        Map<String, User.Profile> userProfile = user.getUserProfiles();
         userProfile.put(TokenType.GOOGLE_COM.toString(), profile);
         user.setUsername(userinfo.getEmail());
     }
