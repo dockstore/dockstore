@@ -90,7 +90,7 @@ public class User implements Principal, Comparable<User> {
     @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "id",
             "token_type" }))
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
-    @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
+    @ApiModelProperty(value = "Profile information of the user retrieved from 3rd party sites (GitHub, Google, etc)")
     private Map<String, Profile> userProfiles = new HashMap<>();
 
     @Column

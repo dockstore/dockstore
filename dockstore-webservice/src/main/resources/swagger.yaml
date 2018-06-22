@@ -1570,7 +1570,8 @@ paths:
       tags:
       - "containers"
       summary: "Get a registered repo"
-      description: "Also loads the users"
+      description: "This is one of the few endpoints that returns the user object\
+        \ with populated properties (except user profiles)"
       operationId: "getContainer"
       produces:
       - "application/json"
@@ -3632,7 +3633,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get a registered workflow"
-      description: "Also loads the users"
+      description: "This is one of the few endpoints that returns the user object\
+        \ with populated properties (except user profiles)"
       operationId: "getWorkflow"
       produces:
       - "application/json"
@@ -5480,7 +5482,7 @@ definitions:
         readOnly: true
       userProfiles:
         type: "object"
-        description: "Profile information of the user attained from 3rd party sites\
+        description: "Profile information of the user retrieved from 3rd party sites\
           \ (GitHub, Google, etc)"
         additionalProperties:
           $ref: "#/definitions/Profile"

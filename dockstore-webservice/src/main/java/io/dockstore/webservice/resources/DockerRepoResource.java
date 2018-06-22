@@ -259,14 +259,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "Also loads the users")
+    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (except user profiles)")
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
         checkUser(user, c);
-        
-        // This somehow forces users to get loaded
+
+        // This somehow forces users to get loaded, c.getUsers() does not work.  c.getUsers().size works too.
         Hibernate.initialize(c.getUsers());
         return c;
     }

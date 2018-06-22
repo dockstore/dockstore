@@ -1577,7 +1577,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/editHostedToolBody'
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -1832,7 +1832,9 @@ paths:
       tags:
         - containers
       summary: Get a registered repo
-      description: Also loads the users
+      description: >-
+        This is one of the few endpoints that returns the user object with
+        populated properties (except user profiles)
       operationId: getContainer
       parameters:
         - name: containerId
@@ -3647,7 +3649,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/editHostedToolBody'
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -3953,7 +3955,9 @@ paths:
       tags:
         - workflows
       summary: Get a registered workflow
-      description: Also loads the users
+      description: >-
+        This is one of the few endpoints that returns the user object with
+        populated properties (except user profiles)
       operationId: getWorkflow
       parameters:
         - name: workflowId
@@ -4808,17 +4812,6 @@ components:
           schema:
             type: string
       description: code
-    editHostedToolBody:
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              type: object
-      description: >-
-        Set of updated sourcefiles, add files by adding new files with unknown
-        paths, delete files by including them with emptied content
-      required: true
     Workflow:
       content:
         application/json:
@@ -4832,6 +4825,17 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
+      required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:
@@ -5877,7 +5881,7 @@ components:
         userProfiles:
           type: object
           description: >-
-            Profile information of the user attained from 3rd party sites
+            Profile information of the user retrieved from 3rd party sites
             (GitHub, Google, etc)
           additionalProperties:
             $ref: '#/components/schemas/Profile'
