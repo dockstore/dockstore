@@ -292,9 +292,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
-
-        final String code = satellizerObject.get("code").getAsString();
-
+        JsonObject oauthData = satellizerObject.get("oauthData").getAsJsonObject();
+        final String code = oauthData.get("code").getAsString();
         return addGithubToken(null, code);
     }
 
@@ -316,9 +315,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
-
-        final String code = satellizerObject.get("code").getAsString();
-        final String redirectUri = satellizerObject.get("redirectUri").getAsString();
+        JsonObject oauthData = satellizerObject.get("oauthData").getAsJsonObject();
+        JsonObject authorizationData = satellizerObject.get("authorizationData").getAsJsonObject();
+        final String code = oauthData.get("code").getAsString();
+        final String redirectUri = authorizationData.get("redirect_uri").getAsString();
         String accessToken = null;
         String refreshToken = null;
         if (accessToken == null) {
