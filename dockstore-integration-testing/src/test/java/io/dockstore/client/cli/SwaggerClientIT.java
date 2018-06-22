@@ -586,6 +586,7 @@ public class SwaggerClientIT {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
         assertEquals(2, containerId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
@@ -609,6 +610,7 @@ public class SwaggerClientIT {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
         assertEquals(2, containerId);
         containersApi.unstarEntry(containerId);
