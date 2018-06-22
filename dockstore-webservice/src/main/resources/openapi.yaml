@@ -1,4 +1,4 @@
-openapi: 3.0.0
+<openapi: 3.0.0
 servers:
   - url: https://dockstore.org:8443
 info:
@@ -21,7 +21,7 @@ tags:
     description: >-
       A curated subset of resources proposed as a common standard for tool
       repositories
-  - name: NIHdatacommons
+    - name: NIHdatacommons
   - name: GA4GHV1
     description: >-
       A curated subset of resources proposed as a common standard for tool
@@ -1577,7 +1577,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/SourceFileArray'
+        $ref: '#/components/requestBodies/editHostedToolBody'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -1832,7 +1832,7 @@ paths:
       tags:
         - containers
       summary: Get a registered repo
-      description: ''
+      description: Also loads the users
       operationId: getContainer
       parameters:
         - name: containerId
@@ -3647,7 +3647,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/SourceFileArray'
+        $ref: '#/components/requestBodies/editHostedToolBody'
   /workflows/manualRegister:
     post:
       tags:
@@ -3953,7 +3953,7 @@ paths:
       tags:
         - workflows
       summary: Get a registered workflow
-      description: ''
+      description: Also loads the users
       operationId: getWorkflow
       parameters:
         - name: workflowId
@@ -4808,6 +4808,17 @@ components:
           schema:
             type: string
       description: code
+    editHostedToolBody:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
+      required: true
     Workflow:
       content:
         application/json:
@@ -4821,17 +4832,6 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
-      required: true
-    SourceFileArray:
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/SourceFile'
-      description: >-
-        Set of updated sourcefiles, add files by adding new files with unknown
-        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:
@@ -4853,6 +4853,8 @@ components:
       name: Authorization
       in: header
   schemas:
+    BasicUser:
+      type: object
     BitbucketOrgAuthenticationResource:
       type: object
       properties:
@@ -4897,6 +4899,11 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        basicStarredUsers:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/BasicUser'
         custom_docker_registry_path:
           type: string
           readOnly: true
@@ -5091,6 +5098,11 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        basicStarredUsers:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/BasicUser'
         last_modified_date:
           type: string
           format: date-time
@@ -5862,7 +5874,7 @@ components:
           format: int64
           description: Implementation specific ID for the container in this web service
           readOnly: true
-        userProfile:
+        userProfiles:
           type: object
           description: >-
             Profile information of the user attained from 3rd party sites
@@ -5875,21 +5887,9 @@ components:
         isAdmin:
           type: boolean
           description: Indicates whether this user is an admin
-        company:
-          type: string
-          description: Company of user
-        bio:
-          type: string
-          description: Bio of user
-        location:
-          type: string
-          description: Location of user
-        email:
-          type: string
-          description: Email of user
         avatarUrl:
           type: string
-          description: URL of user avatar on Github.
+          description: URL of user avatar on GitHub/Google that can be selected by the user
         name:
           type: string
         curator:
@@ -5934,6 +5934,11 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        basicStarredUsers:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/BasicUser'
         parent_id:
           type: integer
           format: int64

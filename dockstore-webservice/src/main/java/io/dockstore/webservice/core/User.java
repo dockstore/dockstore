@@ -93,6 +93,10 @@ public class User implements Principal, Comparable<User> {
     @ApiModelProperty(value = "Profile information of the user attained from 3rd party sites (GitHub, Google, etc)")
     private Map<String, Profile> userProfiles = new HashMap<>();
 
+    @Column
+    @ApiModelProperty(value = "URL of user avatar on GitHub/Google that can be selected by the user", position = 7)
+    private String avatarUrl;
+
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -317,6 +321,14 @@ public class User implements Principal, Comparable<User> {
 
     public void setCurator(boolean curator) {
         this.curator = curator;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     /**

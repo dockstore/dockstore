@@ -513,6 +513,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             profile.company = myself.getCompany();
             Map<String, User.Profile> userProfile = user.getUserProfiles();
             userProfile.put(TokenType.GITHUB_COM.toString(), profile);
+            user.setAvatarUrl(myself.getAvatarUrl());
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername());
         }

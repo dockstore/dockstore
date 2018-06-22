@@ -4449,6 +4449,8 @@ securityDefinitions:
     name: "Authorization"
     in: "header"
 definitions:
+  BasicUser:
+    type: "object"
   BitbucketOrgAuthenticationResource:
     type: "object"
     properties:
@@ -4493,6 +4495,11 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      basicStarredUsers:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/BasicUser"
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -4699,6 +4706,11 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      basicStarredUsers:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/BasicUser"
       last_modified_date:
         type: "string"
         format: "date-time"
@@ -5466,7 +5478,7 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
         readOnly: true
-      userProfile:
+      userProfiles:
         type: "object"
         description: "Profile information of the user attained from 3rd party sites\
           \ (GitHub, Google, etc)"
@@ -5480,6 +5492,11 @@ definitions:
         type: "boolean"
         position: 2
         description: "Indicates whether this user is an admin"
+      avatarUrl:
+        type: "string"
+        position: 7
+        description: "URL of user avatar on GitHub/Google that can be selected by\
+          \ the user"
       name:
         type: "string"
         position: 8
@@ -5526,6 +5543,11 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      basicStarredUsers:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/BasicUser"
       parent_id:
         type: "integer"
         format: "int64"
