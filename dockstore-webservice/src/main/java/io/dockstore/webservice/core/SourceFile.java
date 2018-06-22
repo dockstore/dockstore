@@ -173,5 +173,14 @@ public class SourceFile implements Comparable<SourceFile> {
         public boolean verified = false;
         @Column(columnDefinition = "text")
         public String metadata = "";
+
+        // database timestamps
+        @Column(updatable = false)
+        @CreationTimestamp
+        private Timestamp dbCreateDate;
+
+        @Column()
+        @UpdateTimestamp
+        private Timestamp dbUpdateDate;
     }
 }

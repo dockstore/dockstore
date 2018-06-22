@@ -18,7 +18,9 @@ package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -37,11 +41,15 @@ import javax.persistence.InheritanceType;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedNativeQueries;
 import javax.persistence.NamedNativeQuery;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -60,6 +68,10 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 @SuppressWarnings("checkstyle:magicnumber")
 
+@NamedQueries({
+    @NamedQuery(name = "Entry.getGenericEntryById", query = "SELECT e from Entry e WHERE :id = e.id"),
+    @NamedQuery(name = "Entry.getGenericEntryByAlias", query = "SELECT e from Entry e JOIN e.aliases a WHERE KEY(a) IN :alias")
+})
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({
     @NamedNativeQuery(name = "Entry.getEntryById", query = "SELECT 'tool' as type, id from tool where id = :id union select 'workflow' as type, id from workflow where id = :id"),
@@ -138,6 +150,12 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ApiModelProperty(value = "The id of the associated checker workflow")
     private Workflow checkerWorkflow;
 
+    @ElementCollection(targetClass = Alias.class)
+    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "alias" }))
+    @MapKeyColumn(name = "alias", columnDefinition = "text")
+    @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
+    private Map<String, Alias> aliases = new HashMap<>();
+
     // database timestamps
     @Column(updatable = false)
     @CreationTimestamp
@@ -168,6 +186,13 @@ public abstract class Entry<S extends Entry, T extends Version> {
         }
     }
 
+    public Map<String, Alias> getAliases() {
+        return aliases;
+    }
+
+    public void setAliases(Map<String, Alias> aliases) {
+        this.aliases = aliases;
+    }
 
     public Workflow getCheckerWorkflow() {
         return checkerWorkflow;
@@ -274,6 +299,11 @@ public abstract class Entry<S extends Entry, T extends Version> {
     public Integer getLastModified() {
         // this is lossy, but needed for backwards compatibility
         return lastModified == null ? null : (int)lastModified.getTime();
+    }
+
+    @JsonProperty("has_checker")
+    public boolean hasChecker() {
+        return checkerWorkflow != null;
     }
 
     @JsonProperty("last_modified_date")
@@ -417,5 +447,24 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public Timestamp getDbUpdateDate() {
         return dbUpdateDate;
+    }
+
+    /**
+     * Stores alias information for a tool.
+     * For now its just blank, but can be expanded with additional information on the aliases (such as if they point at dockstore mirrors)
+     */
+    @Embeddable
+    public static class Alias {
+        @Column(columnDefinition = "text")
+        public String content = "";
+
+        // database timestamps
+        @Column(updatable = false)
+        @CreationTimestamp
+        private Timestamp dbCreateDate;
+
+        @Column()
+        @UpdateTimestamp
+        private Timestamp dbUpdateDate;
     }
 }

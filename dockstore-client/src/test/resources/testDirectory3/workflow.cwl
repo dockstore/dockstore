@@ -13,9 +13,9 @@ inputs:
 
   INDEX: File
 
-  TUMOR_BAM: File
+  TUMOR_BAM: { type: File, secondaryFiles: [.bai] }
 
-  NORMAL_BAM: File
+  NORMAL_BAM: { type: File, secondaryFiles: [.bai] }
 
   OUTVCF: string
 

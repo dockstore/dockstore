@@ -47,6 +47,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -294,7 +295,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (user != null && group != null) {
             user.addGroup(group);
         } else {
-            LOG.info(user.getUsername() + ": " + "user or group is null");
+            LOG.info((user != null ? user.getUsername() : "user with no name") + ": " + "user or group is null");
             throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -319,7 +320,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (user != null && group != null) {
             user.removeGroup(group);
         } else {
-            LOG.info(user.getUsername() + ": " + "user or group is null");
+            LOG.info((user != null ? user.getUsername() : "user with no name") + ": " + "user or group is null");
+
             throw new CustomWebApplicationException("Group and/or user not found.", HttpStatus.SC_BAD_REQUEST);
         }
         return user;
@@ -505,9 +507,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<Workflow> userWorkflows(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
-        // need to avoid lazy initialize error
         final User authUser = this.userDAO.findById(userId);
-        return getWorkflows(authUser);
+        List<Workflow> workflows = getWorkflows(authUser);
+        EntryVersionHelper.stripContent(workflows, this.userDAO);
+        return workflows;
     }
 
     private List<Workflow> getWorkflows(User user) {
@@ -526,9 +529,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     public List<Tool> userContainers(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User ID", required = true) @PathParam("userId") Long userId) {
         checkUser(user, userId);
-        // need to avoid lazy initialize error
         final User byId = this.userDAO.findById(userId);
-        return getTools(byId);
+        List<Tool> tools = getTools(byId);
+        EntryVersionHelper.stripContent(tools, this.userDAO);
+        return tools;
     }
 
     @GET

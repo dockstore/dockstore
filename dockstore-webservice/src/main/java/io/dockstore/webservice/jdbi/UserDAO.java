@@ -19,14 +19,13 @@ package io.dockstore.webservice.jdbi;
 import java.util.List;
 
 import io.dockstore.webservice.core.User;
-import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 
 /**
  * @author xliu
  */
-public class UserDAO extends AbstractDAO<User> {
+public class UserDAO extends AbstractDockstoreDAO<User> {
     public UserDAO(SessionFactory factory) {
         super(factory);
     }
