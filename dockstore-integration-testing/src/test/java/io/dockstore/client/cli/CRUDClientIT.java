@@ -85,9 +85,7 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool container = oldApi.getContainer(hostedTool.getId());
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
-        hostedTool.setUsers(null);
         container.setAliases(null);
-        container.setUsers(null);
         Assert.assertEquals(container, hostedTool);
         container.getUsers().forEach(user -> {
             Assert.assertEquals("getContainer() endpoint should not have user profiles", null, user.getUserProfiles());
@@ -154,9 +152,7 @@ public class CRUDClientIT extends BaseIT {
         Workflow container = oldApi.getWorkflow(hostedTool.getId());
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
-        hostedTool.setUsers(null);
         container.setAliases(null);
-        container.setUsers(null);
         Assert.assertEquals(container, hostedTool);
         container.getUsers().forEach(user -> {
             Assert.assertEquals("getWorkflow() endpoint should not have user profiles", null, user.getUserProfiles());
