@@ -1,4 +1,4 @@
-<openapi: 3.0.0
+openapi: 3.0.0
 servers:
   - url: https://dockstore.org:8443
 info:
@@ -21,7 +21,7 @@ tags:
     description: >-
       A curated subset of resources proposed as a common standard for tool
       repositories
-    - name: NIHdatacommons
+  - name: NIHdatacommons
   - name: GA4GHV1
     description: >-
       A curated subset of resources proposed as a common standard for tool
@@ -32,6 +32,10 @@ tags:
       (CWL and Dockerfile))
   - name: containertags
     description: List and modify tags for containers
+  - name: entries
+    description: >-
+      Interact with entries in Dockstore regardless of whether they are
+      containers or workflows
   - name: extendedGA4GH
     description: Optional experimental extensions of the GA4GH API
   - name: hosted
@@ -787,6 +791,14 @@ paths:
           required: false
           schema:
             type: string
+        - name: alias
+          in: query
+          description: >-
+            OPTIONAL for tool registries that support aliases If provided will
+            only return Data Objects with the given alias.
+          required: false
+          schema:
+            type: string
         - name: registry
           in: query
           description: The image registry that contains the image.
@@ -825,6 +837,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: checker
+          in: query
+          description: Return only checker workflows
+          required: false
+          schema:
+            type: boolean
         - name: offset
           in: query
           description: >-
@@ -1122,7 +1140,8 @@ paths:
             A relative path to the additional file (same directory or
             subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from
             the same directory as the main descriptor. 'nestedDirectory/foo.cwl'
-            would return the file  from a nested subdirectory
+            would return the file  from a nested subdirectory.  Unencoded paths
+            such 'sampleDirectory/foo.cwl' should also be allowed
           required: true
           schema:
             type: string
@@ -1577,7 +1596,16 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/editHostedToolBody'
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/SourceFile'
+        description: >-
+          Set of updated sourcefiles, add files by adding new files with unknown
+          paths, delete files by including them with emptied content
+        required: true
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -2637,6 +2665,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+  '/entries/{id}/aliases':
+    put:
+      tags:
+        - entries
+      summary: Update the aliases linked to an entry.
+      description: >-
+        Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateAliases
+      parameters:
+        - name: id
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateLabelsBody'
   /integration.bitbucket.org:
     get:
       tags:
@@ -3649,6 +3711,16 @@ paths:
       security:
         - BEARER: []
       requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+        description: >-
+          Set of updated sourcefiles, add files by adding new files with unknown
+          paths, delete files by including them with emptied content
+        required: true
         $ref: '#/components/requestBodies/editHostedToolBody'
   /workflows/manualRegister:
     post:
@@ -4857,6 +4929,11 @@ components:
       name: Authorization
       in: header
   schemas:
+    Alias:
+      type: object
+      properties:
+        content:
+          type: string
     BitbucketOrgAuthenticationResource:
       type: object
       properties:
@@ -4895,6 +4972,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for entries
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
         dbCreateDate:
           type: string
           format: date-time
@@ -4907,6 +4989,9 @@ components:
         last_modified_date:
           type: string
           format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
           readOnly: true
         input_file_formats:
           type: array
@@ -5089,6 +5174,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for entries
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
         dbCreateDate:
           type: string
           format: date-time
@@ -5098,6 +5188,9 @@ components:
         last_modified_date:
           type: string
           format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
           readOnly: true
         input_file_formats:
           type: array
@@ -5541,7 +5634,6 @@ components:
       required:
         - author
         - id
-        - meta_version
         - organization
         - toolclass
         - url
@@ -5555,6 +5647,14 @@ components:
           type: string
           example: '123456'
           description: 'A unique identifier of the tool, scoped to this registry'
+        aliases:
+          type: array
+          description: >-
+            OPTIONAL A list of strings that can be used to identify this tool.
+            This can be used to expose alternative ids (such as GUIDs) for a
+            tool for registries. Can be used to match tools across registries.
+          items:
+            type: string
         organization:
           type: string
           description: The organization that published the image.
@@ -5767,7 +5867,6 @@ components:
       type: object
       required:
         - id
-        - meta_version
         - url
       properties:
         name:
@@ -5920,6 +6019,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for entries
+          additionalProperties:
+            $ref: '#/components/schemas/Alias'
         dbCreateDate:
           type: string
           format: date-time
@@ -5933,6 +6037,9 @@ components:
         last_modified_date:
           type: string
           format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
           readOnly: true
         input_file_formats:
           type: array

@@ -1,5 +1,5 @@
 {
-  "cwlVersion": "https://w3id.org/cwl/cwl#draft-3.dev2",
+  "cwlVersion": "https://w3id.org/cwl/cwl#v1.0",
   "inputs": [
     {
       "default": 4,

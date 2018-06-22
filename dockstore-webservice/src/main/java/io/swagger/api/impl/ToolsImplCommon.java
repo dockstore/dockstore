@@ -156,6 +156,7 @@ public final class ToolsImplCommon {
             return null;
         }
         tool.setContains(new ArrayList<>());
+        tool.setAliases(new ArrayList<>(container.getAliases().keySet()));
 
         // handle verified information
         tool = setVerified(tool, inputVersions);

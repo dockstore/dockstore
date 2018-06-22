@@ -56,6 +56,7 @@ import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
+import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitLabComAuthenticationResource;
 import io.dockstore.webservice.resources.HostedToolResource;
@@ -277,6 +278,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
         environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO));
         environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO));
+        environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
 
 
         // attach the container dao statically to avoid too much modification of generated code

@@ -71,12 +71,20 @@ public class GA4GHV1IT extends GA4GHIT {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
+        // also try search by id
+        response = checkedResponse(basePath + "tools?id=quay.io%2Ftest_org%2Ftest6");
+        List<ToolV1> responseList = response.readEntity(List.class);
+        assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), true);
     }
 
     private void toolsIdWorkflow() throws Exception {
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FA%2Fl");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), false);
+        // also try search by id
+        response = checkedResponse(basePath + "tools?id=%23workflow%2Fgithub.com%2FA%2Fl");
+        List<ToolV1> responseList = response.readEntity(List.class);
+        assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), false);
     }
 
     @Test

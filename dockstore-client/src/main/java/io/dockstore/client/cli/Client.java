@@ -572,6 +572,7 @@ public class Client {
         out("   workflow            Puts dockstore into workflow mode.");
         out("   checker             Puts dockstore into checker mode.");
         out("   plugin              Configure and debug plugins.");
+        out("   deps                Print tool/workflow runner dependencies.");
         out("");
         printLineBreak();
         out("");
