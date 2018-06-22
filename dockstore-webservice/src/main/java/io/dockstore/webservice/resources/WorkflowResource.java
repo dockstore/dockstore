@@ -51,7 +51,6 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.api.VerifyRequest;
-import io.dockstore.webservice.core.BasicUser;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.SourceFile;
@@ -1256,11 +1255,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Returns list of users who starred the given Workflow", response = User.class, responseContainer = "List")
-    public Set<BasicUser> getStarredUsers(@ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
+    public Set<User> getStarredUsers(@ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
 
-        return workflow.getBasicStarredUsers();
+        return workflow.getStarredUsers();
     }
 
     @POST

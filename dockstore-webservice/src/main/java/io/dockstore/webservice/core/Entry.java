@@ -304,16 +304,6 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.lastUpdated = lastUpdated;
     }
 
-
-    public Set<BasicUser> getBasicStarredUsers() {
-        Set<BasicUser> basicUsers = new HashSet<>();
-        starredUsers.forEach(starredUser -> {
-            BasicUser user = new BasicUser(starredUser.getName(), starredUser.getUsername());
-            basicUsers.add(user);
-        });
-        return basicUsers;
-    }
-
     @JsonIgnore
     public Set<User> getStarredUsers() {
         return starredUsers;

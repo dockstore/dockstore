@@ -1577,7 +1577,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/SourceFileArray'
+        $ref: '#/components/requestBodies/editHostedToolBody'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -3649,7 +3649,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/SourceFileArray'
+        $ref: '#/components/requestBodies/editHostedToolBody'
   /workflows/manualRegister:
     post:
       tags:
@@ -4812,6 +4812,17 @@ components:
           schema:
             type: string
       description: code
+    editHostedToolBody:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              type: object
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
+      required: true
     Workflow:
       content:
         application/json:
@@ -4825,17 +4836,6 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
-      required: true
-    SourceFileArray:
-      content:
-        application/json:
-          schema:
-            type: array
-            items:
-              $ref: '#/components/schemas/SourceFile'
-      description: >-
-        Set of updated sourcefiles, add files by adding new files with unknown
-        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:
@@ -4857,8 +4857,6 @@ components:
       name: Authorization
       in: header
   schemas:
-    BasicUser:
-      type: object
     BitbucketOrgAuthenticationResource:
       type: object
       properties:
@@ -4903,11 +4901,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        basicStarredUsers:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/BasicUser'
         custom_docker_registry_path:
           type: string
           readOnly: true
@@ -5102,11 +5095,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        basicStarredUsers:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/BasicUser'
         last_modified_date:
           type: string
           format: date-time
@@ -5938,11 +5926,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        basicStarredUsers:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/BasicUser'
         parent_id:
           type: integer
           format: int64

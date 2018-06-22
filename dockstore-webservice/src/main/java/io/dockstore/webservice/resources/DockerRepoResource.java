@@ -44,7 +44,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
-import io.dockstore.webservice.core.BasicUser;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -928,11 +927,11 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Returns list of users who starred the given tool", response = User.class, responseContainer = "List")
-    public Set<BasicUser> getStarredUsers(
+    public Set<User> getStarredUsers(
             @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
-        return tool.getBasicStarredUsers();
+        return tool.getStarredUsers();
     }
 
     @Override

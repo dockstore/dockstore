@@ -1315,7 +1315,7 @@ paths:
         schema:
           type: "array"
           items:
-            $ref: "#/definitions/SourceFile"
+            type: "object"
       responses:
         200:
           description: "successful operation"
@@ -3341,7 +3341,7 @@ paths:
         schema:
           type: "array"
           items:
-            $ref: "#/definitions/SourceFile"
+            type: "object"
       responses:
         200:
           description: "successful operation"
@@ -4451,8 +4451,6 @@ securityDefinitions:
     name: "Authorization"
     in: "header"
 definitions:
-  BasicUser:
-    type: "object"
   BitbucketOrgAuthenticationResource:
     type: "object"
     properties:
@@ -4497,11 +4495,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      basicStarredUsers:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/BasicUser"
       custom_docker_registry_path:
         type: "string"
         readOnly: true
@@ -4708,11 +4701,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      basicStarredUsers:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/BasicUser"
       last_modified_date:
         type: "string"
         format: "date-time"
@@ -5545,11 +5533,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      basicStarredUsers:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/BasicUser"
       parent_id:
         type: "integer"
         format: "int64"
