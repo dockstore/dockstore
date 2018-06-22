@@ -28,6 +28,9 @@ tags:
     \ (CWL and Dockerfile))"
 - name: "containertags"
   description: "List and modify tags for containers"
+- name: "entries"
+  description: "Interact with entries in Dockstore regardless of whether they are\
+    \ containers or workflows"
 - name: "extendedGA4GH"
   description: "Optional experimental extensions of the GA4GH API"
 - name: "hosted"
@@ -652,6 +655,12 @@ paths:
           \ example `123456`"
         required: false
         type: "string"
+      - name: "alias"
+        in: "query"
+        description: "OPTIONAL for tool registries that support aliases If provided\
+          \ will only return Data Objects with the given alias."
+        required: false
+        type: "string"
       - name: "registry"
         in: "query"
         description: "The image registry that contains the image."
@@ -683,6 +692,11 @@ paths:
           \ that the author of the CWL and the image are the same?)."
         required: false
         type: "string"
+      - name: "checker"
+        in: "query"
+        description: "Return only checker workflows"
+        required: false
+        type: "boolean"
       - name: "offset"
         in: "query"
         description: "Start index of paging. Pagination results can be based on numbers\
@@ -908,7 +922,8 @@ paths:
         description: "A relative path to the additional file (same directory or subdirectories),\
           \ for example 'foo.cwl' would return a 'foo.cwl' from the same directory\
           \ as the main descriptor. 'nestedDirectory/foo.cwl' would return the file\
-          \  from a nested subdirectory"
+          \  from a nested subdirectory.  Unencoded paths such 'sampleDirectory/foo.cwl'\
+          \ should also be allowed"
         required: true
         type: "string"
         pattern: ".+"
@@ -2355,6 +2370,42 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /entries/{id}/aliases:
+    put:
+      tags:
+      - "entries"
+      summary: "Update the aliases linked to an entry."
+      description: "Aliases are alphanumerical (case-insensitive and may contain internal\
+        \ hyphens), given in a comma-delimited list."
+      operationId: "updateAliases"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "Entry to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "aliases"
+        in: "query"
+        description: "Comma-delimited list of aliases."
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -4441,6 +4492,11 @@ securityDefinitions:
     name: "Authorization"
     in: "header"
 definitions:
+  Alias:
+    type: "object"
+    properties:
+      content:
+        type: "string"
   BitbucketOrgAuthenticationResource:
     type: "object"
     properties:
@@ -4479,6 +4535,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -4491,6 +4552,9 @@ definitions:
       last_modified_date:
         type: "string"
         format: "date-time"
+        readOnly: true
+      has_checker:
+        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
@@ -4685,6 +4749,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -4694,6 +4763,9 @@ definitions:
       last_modified_date:
         type: "string"
         format: "date-time"
+        readOnly: true
+      has_checker:
+        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
@@ -5149,7 +5221,6 @@ definitions:
     required:
     - "author"
     - "id"
-    - "meta_version"
     - "organization"
     - "toolclass"
     - "url"
@@ -5163,6 +5234,13 @@ definitions:
         type: "string"
         example: "123456"
         description: "A unique identifier of the tool, scoped to this registry"
+      aliases:
+        type: "array"
+        description: "OPTIONAL A list of strings that can be used to identify this\
+          \ tool. This can be used to expose alternative ids (such as GUIDs) for a\
+          \ tool for registries. Can be used to match tools across registries."
+        items:
+          type: "string"
       organization:
         type: "string"
         description: "The organization that published the image."
@@ -5350,7 +5428,6 @@ definitions:
     type: "object"
     required:
     - "id"
-    - "meta_version"
     - "url"
     properties:
       name:
@@ -5511,6 +5588,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -5524,6 +5606,9 @@ definitions:
       last_modified_date:
         type: "string"
         format: "date-time"
+        readOnly: true
+      has_checker:
+        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"

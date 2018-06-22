@@ -63,7 +63,7 @@ public class ToolsApiV1 {
         @ApiParam(value = "Amount of records to return in a given page.  By default it is 1000.") @QueryParam("limit") Integer limit,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return ApiVersionConverter.convertToVersion(
-            delegate.toolsGet(id, registry, organization, name, toolname, description, author, offset, limit, securityContext, value));
+            delegate.toolsGet(id, null, registry, organization, name, toolname, description, author, null , offset, limit, securityContext, value));
     }
 
     @GET

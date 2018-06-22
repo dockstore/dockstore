@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
@@ -55,6 +56,7 @@ import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
+import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
 import io.dockstore.webservice.resources.GitLabComAuthenticationResource;
 import io.dockstore.webservice.resources.HostedToolResource;
@@ -197,6 +199,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private static void configureMapper(ObjectMapper objectMapper) {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        objectMapper.registerModule(new Hibernate5Module());
         objectMapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
         objectMapper.enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
         // doesn't seem to work, when it does, we could avoid overriding pojo.mustache in swagger
@@ -275,6 +278,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
         environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO));
         environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO));
+        environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
 
 
         // attach the container dao statically to avoid too much modification of generated code

@@ -108,4 +108,34 @@
         <addForeignKeyConstraint baseColumnNames="id" baseTableName="sourcefile_verified" constraintName="foreign_key" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="sourcefile"/>
     </changeSet>
 
+    <!-- add concept of aliases as suggested by team calcium work -->
+    <changeSet author="dyuen (generated)" id="entry aliases">
+        <createTable tableName="entry_alias">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="entry_alias_pkey"/>
+            </column>
+            <column name="content" type="TEXT"/>
+            <column name="alias" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="entry_alias_pkey"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint columnNames="alias" constraintName="aliases_are_unique" tableName="entry_alias"/>
+    </changeSet>
+
+    <!-- add dates to new tables -->
+    <changeSet author="dyuen (generated)" id="date_more_tables">
+        <addColumn tableName="sourcefile_verified">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="entry_alias">
+            <column name="dbcreatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="sourcefile_verified">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+        <addColumn tableName="entry_alias">
+            <column name="dbupdatedate" type="timestamp"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

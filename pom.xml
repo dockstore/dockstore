@@ -44,7 +44,7 @@
         <cwlavro.version>2.0.4</cwlavro.version>
         <okhttp.version>3.9.0</okhttp.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <swagger-ui.version>3.1.7</swagger-ui.version>
+        <swagger-ui.version>3.17.0</swagger-ui.version>
         <maven-surefire.version>2.21.0</maven-surefire.version>
         <maven-failsafe.version>2.21.0</maven-failsafe.version>
         <httpcomponents.version>4.5.5</httpcomponents.version>
@@ -1204,7 +1204,9 @@
                             <append>true</append>
                             <excludes>
                                 <exclude>io/dockstore/common/Bridge.*</exclude>
-                                <exclude>io/swagger/**/*</exclude>
+                                <!-- exclude client classes, but not the server classes to help guide tests -->
+                                <exclude>io/swagger/client/**/*</exclude>
+                                <exclude>io/swagger/client/*</exclude>
                                 <exclude>**/*$*</exclude>
                             </excludes>
                         </configuration>

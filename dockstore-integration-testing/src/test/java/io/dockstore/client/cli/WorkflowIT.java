@@ -38,11 +38,13 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.Ga4GhApi;
 import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Entry;
 import io.swagger.client.model.FileFormat;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -462,7 +464,7 @@ public class WorkflowIT extends BaseIT {
 
         // check that we can pull down the nextflow workflow via the ga4gh TRS API
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        List<Tool> toolV2s = ga4Ghv2Api.toolsGet(null, null, null, null, null, null, null, null, null);
+        List<Tool> toolV2s = ga4Ghv2Api.toolsGet(null, null,null, null, null, null, null, null, null, null, null);
         String mtaWorkflowID = "#workflow/github.com/DockstoreTestUser2/mta-nf";
         Tool toolV2 = ga4Ghv2Api.toolsIdGet(mtaWorkflowID);
         assertTrue("could get mta as part of list", toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects
@@ -822,5 +824,42 @@ public class WorkflowIT extends BaseIT {
             content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
             Assert.assertTrue("could not find content from generated test JSON URL", !content.isEmpty());
         }
+    }
+
+
+    @Test
+    public void testAliasOperations() throws ApiException {
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+        workflowApi.publish(workflow.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+
+        Workflow md5workflow = workflowApi
+            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
+                "test", "cwl", null);
+        workflowApi.refresh(md5workflow.getId());
+        workflowApi.publish(md5workflow.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+
+        // give the workflow a few aliases
+        EntriesApi genericApi = new EntriesApi(webClient);
+        Entry entry = genericApi.updateAliases(workflow.getId(), "awesome workflow, spam, test workflow", "");
+        Assert.assertTrue("entry is missing expected aliases", entry.getAliases().containsKey("awesome workflow") && entry.getAliases().containsKey("spam") && entry.getAliases().containsKey("test workflow"));
+        // check that the aliases work in TRS search
+        Ga4GhApi ga4GhApi = new Ga4GhApi(webClient);
+        // this generated code is mucho silly
+        List<Tool> workflows = ga4GhApi.toolsGet(null, null, null, null, null, null, null, null, null, null, 100);
+        Assert.assertEquals("expected workflows not found", 2, workflows.size());
+        List<Tool> awesome_workflow = ga4GhApi.toolsGet(null, "awesome workflow", null, null, null, null, null, null, null, null, 100);
+        Assert.assertTrue("workflow was not found or didn't have expected aliases", awesome_workflow.size() == 1 && awesome_workflow.get(0).getAliases().size() ==3);
+        // remove a few aliases
+        entry = genericApi.updateAliases(workflow.getId(), "foobar, test workflow", "");
+        Assert.assertTrue("entry is missing expected aliases", entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 2);
     }
 }
