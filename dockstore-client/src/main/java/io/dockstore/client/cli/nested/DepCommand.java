@@ -43,7 +43,7 @@ public final class DepCommand {
     @Parameters(separators = "=", commandDescription = "Print tool/workflow runner dependencies")
     private static class CommandDep {
         @Parameter(names = "--client-version", description = "Dockstore version")
-        private String clientVersion;
+        private String clientVersion = getClass().getPackage().getImplementationVersion();
         @Parameter(names = "--python-version", description = "Python version")
         private String pythonVersion = "2";
         @Parameter(names = "--runner", description = "tool/workflow runner")
