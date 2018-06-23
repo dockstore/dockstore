@@ -38,7 +38,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Confidential tests for checker workflows
@@ -113,37 +113,37 @@ public class CheckerWorkflowIT extends BaseIT {
         // Checker workflow should refresh
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("The checker workflow should be full, there are " + count, count == 1);
+        assertEquals("The checker workflow should be full, there are " + count, 1, count);
 
         // Checker workflow should have the same test path as entry
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where defaulttestparameterfilepath = '/testcwl.json'", new ScalarHandler<>());
-        assertTrue("The checker workflow should have the correct default test path /testcwl.json, there are " + count2, count2 == 1);
+        assertEquals("The checker workflow should have the correct default test path /testcwl.json, there are " + count2, 1, count2);
 
         // Checker workflow should have the correct workflow path
         final long count3 = testingPostgres
             .runSelectStatement("select count(*) from workflow where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'md5sum-checker' and workflowname like 'altname%' and giturl = 'git@github.com:DockstoreTestUser2/md5sum-checker.git'", new ScalarHandler<>());
-        assertTrue("The checker workflow should have the correct path information, there are " + count3, count3 == 1);
+        assertEquals("The checker workflow should have the correct path information, there are " + count3, 1, count3);
 
         // Publish workflow
         final long count4 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("No workflows should be published, there are " + count4, count4 == 0);
+        assertEquals("No workflows should be published, there are " + count4, 0, count4);
 
         final long count5 = testingPostgres
             .runSelectStatement("select count(*) from tool where ispublished = true", new ScalarHandler<>());
-        assertTrue("No tools should be published, there are " + count5, count5 == 0);
+        assertEquals("No tools should be published, there are " + count5, 0, count5);
 
         containersApi.publish(githubTool.getId(), publishRequest);
 
         // Checker workflow should publish
         final long count6 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("The checker workflow should be published, there are " + count6, count6 == 1);
+        assertEquals("The checker workflow should be published, there are " + count6, 1, count6);
 
         final long count7 = testingPostgres
             .runSelectStatement("select count(*) from tool where ispublished = true", new ScalarHandler<>());
-        assertTrue("the tool should be published, there are " + count7, count7 == 1);
+        assertEquals("the tool should be published, there are " + count7, 1, count7);
 
         // Unpublish workflow
         containersApi.publish(githubTool.getId(), unpublishRequest);
@@ -151,11 +151,11 @@ public class CheckerWorkflowIT extends BaseIT {
         // Checker workflow should unpublish
         final long count8 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("Checker workflow should not be published, there are " + count8, count8 == 0);
+        assertEquals("Checker workflow should not be published, there are " + count8, 0, count8);
 
         final long count9 = testingPostgres
             .runSelectStatement("select count(*) from tool where ispublished = true", new ScalarHandler<>());
-        assertTrue("the tool should not be published, there are " + count9, count9 == 0);
+        assertEquals("the tool should not be published, there are " + count9, 0, count9);
     }
 
     /**
@@ -182,14 +182,14 @@ public class CheckerWorkflowIT extends BaseIT {
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("No workflows are in full mode, there are " + count, count == 0);
+        assertEquals("No workflows are in full mode, there are " + count, 0, count);
 
         // Refresh the workflow
         workflowApi.refresh(githubWorkflow.getId());
 
         final long count2 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("One workflow should be full, there are " + count2, count2 == 1);
+        assertEquals("One workflow should be full, there are " + count2, 1, count2);
 
         // Add checker workflow
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
@@ -200,28 +200,29 @@ public class CheckerWorkflowIT extends BaseIT {
         // Checker workflow should refresh
         final long count3 = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("Two workflows should be full (one being the checker), there are " + count3, count3 == 2);
+        assertEquals("Two workflows should be full (one being the checker), there are " + count3, 2, count3);
 
         // Checker workflow should have the same test path as entry
         final long count4 = testingPostgres
             .runSelectStatement("select count(*) from workflow where defaulttestparameterfilepath = '/testcwl.json'", new ScalarHandler<>());
-        assertTrue("There should be two workflows with default test parameter file path of /testcwl.json, there are " + count4, count4 == 2);
+        assertEquals("There should be two workflows with default test parameter file path of /testcwl.json, there are " + count4, 2,
+            count4);
 
         // Checker workflow should have the correct workflow path
         final long count5 = testingPostgres
             .runSelectStatement("select count(*) from workflow where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'md5sum-checker' and workflowname = 'altname_cwl_checker' and giturl = 'git@github.com:DockstoreTestUser2/md5sum-checker.git'", new ScalarHandler<>());
-        assertTrue("The workflow should have the correct path, there are " + count5, count5 == 1);
+        assertEquals("The workflow should have the correct path, there are " + count5, 1, count5);
 
         // Publish workflow
         final long count6 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("No workflows should be published, there are " + count6, count6 == 0);
+        assertEquals("No workflows should be published, there are " + count6, 0, count6);
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
 
         // Checker workflow should publish
         final long count7 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("Two workflows should be published (one being the checker), there are " + count7, count7 == 2);
+        assertEquals("Two workflows should be published (one being the checker), there are " + count7, 2, count7);
 
         // Unpublish workflow
         workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
@@ -229,7 +230,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Checker workflow should unpublish
         final long count8 = testingPostgres
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("No workflows should be published, there are " + count8, count8 == 0);
+        assertEquals("No workflows should be published, there are " + count8, 0, count8);
     }
 
     /**
@@ -256,14 +257,14 @@ public class CheckerWorkflowIT extends BaseIT {
 
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("No workflows are in full mode, there are " + count, count == 0);
+        assertEquals("No workflows are in full mode, there are " + count, 0, count);
 
         // Refresh the workflow
         workflowApi.refresh(githubWorkflow.getId());
 
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("One workflow should be full, there are " + count2, count2 == 1);
+        assertEquals("One workflow should be full, there are " + count2, 1, count2);
 
         // Add checker workflow
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.wdl", githubWorkflow.getId(), "wdl", null);
@@ -274,28 +275,29 @@ public class CheckerWorkflowIT extends BaseIT {
         // Checker workflow should refresh
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("Two workflows should be full (one being the checker), there are " + count3, count3 == 2);
+        assertEquals("Two workflows should be full (one being the checker), there are " + count3, 2, count3);
 
         // Checker workflow should have the same test path as entry
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where defaulttestparameterfilepath = '/md5sum-wdl.json'", new ScalarHandler<>());
-        assertTrue("There should be two workflows with default test parameter file path of /md5sum-wdl.json, there are " + count4, count4 == 2);
+        assertEquals("There should be two workflows with default test parameter file path of /md5sum-wdl.json, there are " + count4, 2,
+            count4);
 
         // Checker workflow should have the correct workflow path
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where sourcecontrol = 'github.com' and organization = 'DockstoreTestUser2' and repository = 'md5sum-checker' and workflowname = 'altname_wdl_checker' and giturl = 'git@github.com:DockstoreTestUser2/md5sum-checker.git'", new ScalarHandler<>());
-        assertTrue("The workflow should have the correct path, there are " + count5, count5 == 1);
+        assertEquals("The workflow should have the correct path, there are " + count5, 1, count5);
 
         // Publish workflow
         final long count6 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("No workflows should be published, there are " + count6, count6 == 0);
+        assertEquals("No workflows should be published, there are " + count6, 0, count6);
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
 
         // Checker workflow should publish
         final long count7 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("Two workflows should be published (one being the checker), there are " + count7, count7 == 2);
+        assertEquals("Two workflows should be published (one being the checker), there are " + count7, 2, count7);
 
         // Unpublish workflow
         workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
@@ -303,7 +305,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Checker workflow should unpublish
         final long count8 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
-        assertTrue("No workflows should be published, there are " + count8, count8 == 0);
+        assertEquals("No workflows should be published, there are " + count8, 0, count8);
     }
 
     /**
@@ -324,7 +326,7 @@ public class CheckerWorkflowIT extends BaseIT {
 
         final long count = testingPostgres
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertTrue("No workflows are in full mode, there are " + count, count == 0);
+        assertEquals("No workflows are in full mode, there are " + count, 0, count);
 
         // Add checker workflow
         workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);

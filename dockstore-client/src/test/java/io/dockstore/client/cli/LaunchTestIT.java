@@ -1014,7 +1014,7 @@ public class LaunchTestIT {
 
         runClientCommand(args, false);
 
-        assertTrue("output should include an error message", systemErrRule.getLog().contains("The error was: 'NoneType' object is not iterable"));
+        assertTrue("output should include an error message", systemErrRule.getLog().contains("\"outputs\" section is not valid"));
     }
 
     @Test
@@ -1056,6 +1056,7 @@ public class LaunchTestIT {
 
     @Test
     public void cwl2jsonNoOutput() {
+        exit.expectSystemExit();
         File file = new File(ResourceHelpers.resourceFilePath("noOutput.cwl"));
         ArrayList<String> args = new ArrayList<String>() {{
             add("tool");
@@ -1066,7 +1067,8 @@ public class LaunchTestIT {
         }};
 
         runClientCommand(args, false);
-
-        assertTrue("output should include an error message", systemErrRule.getLog().contains("missing required field `outputs`"));
+        exit.checkAssertionAfterwards(() ->
+            assertTrue("output should include an error message", systemErrRule.getLog().contains("\"outputs section is not valid\""))
+        );
     }
 }

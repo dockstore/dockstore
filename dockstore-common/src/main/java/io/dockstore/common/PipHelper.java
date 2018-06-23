@@ -1,4 +1,4 @@
-package io.dockstore.webservice.helpers;
+package io.dockstore.common;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +26,8 @@ public final class PipHelper {
             semVerString = "9001.9001.9001";
         }
         Version semVer = Version.valueOf(semVerString);
-        if (semVer.greaterThanOrEqualTo(Version.valueOf("1.5.0"))) {
+        // Use the 1.5.0 even for snapshot
+        if (semVer.greaterThan(Version.valueOf("1.4.0"))) {
             return "1.5.0";
         } else {
             return "1.4.0";
