@@ -1306,6 +1306,26 @@ paths:
             $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
+    options:
+      tags:
+      - "hosted"
+      summary: "Options for a hosted entry"
+      description: ""
+      operationId: "hostedEntryOptions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "entryId"
+        in: "path"
+        description: "The entry id."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
     patch:
       tags:
       - "hosted"
@@ -2406,6 +2426,27 @@ paths:
             $ref: "#/definitions/Entry"
       security:
       - BEARER: []
+  /hostedEntry/{entryId}:
+    options:
+      tags:
+      - "hosted"
+      summary: "Options for a hosted entry"
+      description: ""
+      operationId: "hostedEntryOptions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "entryId"
+        in: "path"
+        description: "The entry id."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -3359,6 +3400,26 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+    options:
+      tags:
+      - "hosted"
+      summary: "Options for a hosted workflow"
+      description: "Options for a hosted workflow"
+      operationId: "hostedWorkflowOptions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "entryId"
+        in: "path"
+        description: "The entry id."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
     patch:
       tags:
       - "hosted"
@@ -3524,6 +3585,50 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
+    options:
+      tags:
+      - "workflows"
+      summary: "Options for a workflow by path"
+      description: "Permissions for the endpoint"
+      operationId: "getWorkflowByPathOptions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
+  /workflows/path/workflow/{repository}/permissions:
+    get:
+      tags:
+      - "workflows"
+      summary: "Get all permissions for a workflow"
+      description: "Lists all permissions for a workflow. The user must be the workflow\
+        \ owner."
+      operationId: "getWorkflowPermissions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Permission"
+      security:
+      - BEARER: []
   /workflows/path/workflow/{repository}/published:
     get:
       tags:
@@ -3544,6 +3649,75 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
+  /workflows/path/workfow/{repository}/permissions:
+    delete:
+      tags:
+      - "workflows"
+      summary: "Remove the specified user role for a workflow"
+      description: "Removes a role from a workflow. The user must be the workflow\
+        \ owner."
+      operationId: "removeWorkflowRole"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      - name: "email"
+        in: "query"
+        description: "user email"
+        required: true
+        type: "string"
+      - name: "role"
+        in: "query"
+        description: "role"
+        required: true
+        type: "string"
+        enum:
+        - "OWNER"
+        - "WRITER"
+        - "READER"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Permission"
+      security:
+      - BEARER: []
+    patch:
+      tags:
+      - "workflows"
+      summary: "Set the specified permission for a user on a workflow"
+      description: "Adds a permission for a workflow. The user must be the workflow\
+        \ owner."
+      operationId: "addWorkflowPermission"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "repository"
+        in: "path"
+        description: "repository path"
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "user permission"
+        required: true
+        schema:
+          $ref: "#/definitions/Permission"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Permission"
+      security:
+      - BEARER: []
   /workflows/path/{repository}:
     get:
       tags:
@@ -3627,6 +3801,25 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Workflow"
+  /workflows/shared:
+    get:
+      tags:
+      - "workflows"
+      summary: "All workflows shared with user"
+      description: "List all workflows shared with user"
+      operationId: "sharedWorkflows"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
     post:
       tags:
@@ -4965,6 +5158,17 @@ definitions:
       friendly-name:
         type: "string"
     description: "Describes this registry to better allow for mirroring and indexing."
+  Permission:
+    type: "object"
+    properties:
+      email:
+        type: "string"
+      role:
+        type: "string"
+        enum:
+        - "OWNER"
+        - "WRITER"
+        - "READER"
   PublishRequest:
     type: "object"
     properties:
