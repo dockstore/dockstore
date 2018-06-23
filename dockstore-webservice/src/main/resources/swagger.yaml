@@ -1350,7 +1350,7 @@ paths:
         schema:
           type: "array"
           items:
-            type: "object"
+            $ref: "#/definitions/SourceFile"
       responses:
         200:
           description: "successful operation"
@@ -2390,27 +2390,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
-  /hostedEntry/{entryId}:
-    options:
-      tags:
-      - "hosted"
-      summary: "Options for a hosted entry"
-      description: ""
-      operationId: "hostedEntryOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "entryId"
-        in: "path"
-        description: "The entry id."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
   /entries/{id}/aliases:
     put:
       tags:
@@ -2445,6 +2424,29 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
+      security:
+      - BEARER: []
+  /hostedEntry/{entryId}:
+    options:
+      tags:
+      - "hosted"
+      summary: "Options for a hosted entry"
+      description: ""
+      operationId: "hostedEntryOptions"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "entryId"
+        in: "path"
+        description: "The entry id."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
