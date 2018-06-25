@@ -295,7 +295,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
-        checkNotHosted(c);
         checkUser(user, c);
 
         Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
