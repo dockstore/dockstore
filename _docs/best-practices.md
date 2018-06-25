@@ -185,6 +185,8 @@ s:dateCreated: "2016-12-13"
 s:license: https://www.apache.org/licenses/LICENSE-2.0
 ```
 
+For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  See [this](https://github.com/ga4gh/dockstore/blob/1.5.0-alpha.4/dockstore-webservice/src/test/resources/metadata_example2.wdl#L194) for an example which defines author, email, and description metadata.
+
 ### Extended Example
 
 For those that are highly motivated, it is also possible to annotate your tool with a much larger amount of metadata. This example includes EDAM ontology tags as keywords (allowing the grouping of related tools), hints at hardware requirements in order to use the tool, and a few more metadata fields.
