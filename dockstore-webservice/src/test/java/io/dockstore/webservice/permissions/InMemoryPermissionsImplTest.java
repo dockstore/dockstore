@@ -33,7 +33,7 @@ public class InMemoryPermissionsImplTest {
         gooWorkflow = Mockito.mock(Workflow.class);
         when(fooWorkflow.getWorkflowPath()).thenReturn("foo");
         when(gooWorkflow.getWorkflowPath()).thenReturn("goo");
-        Map<String, User.Profile> profiles = new HashMap<String, User.Profile>();
+        Map<String, User.Profile> profiles = new HashMap<>();
         User.Profile profile = new User.Profile();
         profile.email = JOHN_DOE_EXAMPLE_COM;
         profiles.put(TokenType.GOOGLE_COM.toString(), profile);
