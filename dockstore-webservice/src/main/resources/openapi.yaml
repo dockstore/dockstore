@@ -1772,6 +1772,26 @@ paths:
       summary: List all published containers.
       description: NO authentication
       operationId: allPublishedContainers
+      parameters:
+        - name: offset
+          in: query
+          description: >-
+            Start index of paging. Pagination results can be based on numbers or
+            other values chosen by the registry implementor (for example, SHA
+            values). If this exceeds the current result set return an empty
+            set.  If not specified in the request, this will start at the
+            beginning of the results.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Amount of records to return in a given page.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1000
       responses:
         '200':
           description: successful operation
@@ -2682,22 +2702,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-  '/hostedEntry/{entryId}':
-    options:
-      tags:
-        - hosted
-      summary: Options for a hosted entry
-      description: ''
-      operationId: hostedEntryOptions
-      parameters:
-        - name: entryId
-          in: path
-          description: The entry id.
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
   '/entries/{id}/aliases':
     put:
       tags:
@@ -2732,6 +2736,26 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/updateLabelsBody'
+  '/hostedEntry/{entryId}':
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted entry
+      description: ''
+      operationId: hostedEntryOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -4076,6 +4100,26 @@ paths:
       summary: List all published workflows.
       description: NO authentication
       operationId: allPublishedWorkflows
+      parameters:
+        - name: offset
+          in: query
+          description: >-
+            Start index of paging. Pagination results can be based on numbers or
+            other values chosen by the registry implementor (for example, SHA
+            values). If this exceeds the current result set return an empty
+            set.  If not specified in the request, this will start at the
+            beginning of the results.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Amount of records to return in a given page.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1000
       responses:
         '200':
           description: successful operation

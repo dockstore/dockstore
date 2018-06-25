@@ -26,7 +26,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -34,6 +36,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -589,11 +592,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @UnitOfWork
     @Path("published")
     @ApiOperation(value = "List all published containers.", tags = {
-            "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
-    public List<Tool> allPublishedContainers() {
-        List<Tool> tools = toolDAO.findAllPublished();
+        "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    public List<Tool> allPublishedContainers(
+        @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.") @QueryParam("offset") String offset,
+        @ApiParam(value = "Amount of records to return in a given page.", defaultValue = "1000") @DefaultValue("1000") @QueryParam("limit") Integer limit,  @Context HttpServletResponse response) {
+        List<Tool> tools = toolDAO.findAllPublished(offset, limit);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
+        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished()));
         return tools;
     }
 

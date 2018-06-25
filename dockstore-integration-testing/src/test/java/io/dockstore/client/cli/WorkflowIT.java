@@ -483,12 +483,12 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // should start with nothing published
-        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows().isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null).isEmpty());
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
         usersApi.refreshWorkflows(userId);
-        assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows().isEmpty());
+        assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows(null, null).isEmpty());
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
         final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
@@ -498,8 +498,8 @@ public class WorkflowIT extends BaseIT {
         // publish one
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         workflowApi.publish(workflowByPath.getId(), publishRequest);
-        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows().size(), 1,
-            workflowApi.allPublishedWorkflows().size());
+        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null).size(), 1,
+            workflowApi.allPublishedWorkflows(null, null).size());
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId());
         assertNotNull("did not get published workflow", publishedWorkflow);
         final Workflow publishedWorkflowByPath = workflowApi.getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
@@ -553,8 +553,8 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
 
         // Assert some things
-        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows().size(), 2,
-            workflowApi.allPublishedWorkflows().size());
+        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null).size(), 2,
+            workflowApi.allPublishedWorkflows(null, null).size());
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
         assertEquals("Two workflows are in full mode", 2, count3);

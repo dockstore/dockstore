@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Objects;
 
+import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -146,8 +147,21 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
     }
 
+    public List<T> findAllPublished(String offset, Integer limit) {
+        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
+        return list(getAllPublishedQuery().setFirstResult(primitiveOffset).setMaxResults(limit));
+    }
+
     public List<T> findAllPublished() {
-        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
+        return list(getAllPublishedQuery());
+    }
+
+    private Query getAllPublishedQuery() {
+        return namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished");
+    }
+
+    public long countAllPublished() {
+        return (long)namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
     }
 
     public List<T> searchPattern(String pattern) {

@@ -42,9 +42,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.swagger.annotations.Api;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -201,7 +199,7 @@ public class SwaggerClientIT {
     public void testFailedContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allPublishedContainers();
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null);
 
         assertEquals(1, containers.size());
 
@@ -480,7 +478,7 @@ public class SwaggerClientIT {
     public void testContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allPublishedContainers();
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null);
 
         assertEquals(1, containers.size());
 
@@ -500,7 +498,7 @@ public class SwaggerClientIT {
         container = containersApi.publish(containerId, pub);
         assertTrue(container.isIsPublished());
 
-        containers = containersApi.allPublishedContainers();
+        containers = containersApi.allPublishedContainers(null, null);
         assertEquals(2, containers.size());
 
         pub = SwaggerUtility.createPublishRequest(false);
