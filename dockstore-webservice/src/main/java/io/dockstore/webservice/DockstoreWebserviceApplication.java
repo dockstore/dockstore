@@ -28,6 +28,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import io.dockstore.webservice.permissions.PermissionsFactory;
+import io.dockstore.webservice.permissions.PermissionsInterface;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Group;
@@ -251,8 +253,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
+        final PermissionsInterface authorizer = PermissionsFactory.getAuthorizer(tokenDAO, configuration);
         final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO,
-            workflowVersionDAO, labelDAO, fileDAO, fileFormatDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret());
+            workflowVersionDAO, labelDAO, fileDAO, fileFormatDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), authorizer);
         environment.jersey().register(workflowResource);
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
@@ -277,7 +280,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
         environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO));
-        environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO));
+        environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO, authorizer));
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
 
 
@@ -333,6 +336,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         // cors.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
         // cors.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, environment.getApplicationContext().getContextPath() +
         // "*");
+
     }
 
     public HibernateBundle<DockstoreWebserviceConfiguration> getHibernate() {

@@ -16,10 +16,13 @@
 
 package io.dockstore.webservice;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.AuthenticationException;
@@ -49,7 +52,20 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         final Token token = dao.findByContent(credentials);
         if (token != null) {
             return Optional.of(userDAO.findById(token.getUserId()));
+        } else {
+            final Optional<String> username = GoogleHelper.getUserNameFromToken(credentials);
+            if (username.isPresent()) {
+                User user = userDAO.findByUsername(username.get());
+                if (user != null) {
+                    List<Token> tokens = dao.findByUserId(user.getId());
+                    Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
+                    googleToken.setContent(credentials);
+                    dao.update(googleToken);
+                    return Optional.of(user);
+                }
+            }
         }
         return Optional.empty();
     }
+
 }
