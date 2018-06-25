@@ -228,7 +228,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     /**
-     * Ensures that hosted tools cannot be updated
+     * Ensures that hosted tools can be updated
      */
     @Test
     public void testUpdatingHostedTool() {
@@ -237,7 +237,6 @@ public class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         DockstoreTool newTool = new DockstoreTool();
-        thrown.expect(ApiException.class);
         containersApi.updateContainer(hostedTool.getId(), newTool);
     }
 
