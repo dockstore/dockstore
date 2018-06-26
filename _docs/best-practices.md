@@ -187,6 +187,36 @@ s:license: https://www.apache.org/licenses/LICENSE-2.0
 
 For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  See [this](https://github.com/ga4gh/dockstore/blob/1.5.0-alpha.4/dockstore-webservice/src/test/resources/metadata_example2.wdl#L194) for an example which defines author, email, and description metadata.
 
+Additionally, this following example includes author, email, and description metadata allowing others to cite your tool:
+```
+task runtime_meta {
+  String memory_mb
+  String sample_id
+  String param
+  String sample_id
+
+  command {
+    java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
+  }
+  output {
+    File results = "${sample_id}.out"
+  }
+  runtime {
+    docker: "broadinstitute/baseimg"
+  }
+  parameter_meta {
+    memory_mb: "Amount of memory to allocate to the JVM"
+    param: "Some arbitrary parameter"
+    sample_id: "The ID of the sample in format foo_bar_baz"
+  }
+  meta {
+    author: "Denis Yuen"
+    email: "dyuen@oicr.on.ca"
+    description: "An example tool demonstrating metadata. Note that this is an example and the metadata is not necessarily consistent."
+  }
+}
+```
+
 ### Extended Example
 
 For those that are highly motivated, it is also possible to annotate your tool with a much larger amount of metadata. This example includes EDAM ontology tags as keywords (allowing the grouping of related tools), hints at hardware requirements in order to use the tool, and a few more metadata fields.
