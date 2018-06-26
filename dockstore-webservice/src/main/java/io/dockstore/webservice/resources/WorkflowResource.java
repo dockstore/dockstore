@@ -431,7 +431,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (except user profiles)")
+    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
@@ -1187,6 +1187,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         final long workflowID = workflowDAO.create(newWorkflow);
         // need to create nested data models
         final Workflow workflowFromDB = workflowDAO.findById(workflowID);
+        workflowFromDB.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflowFromDB, newWorkflow);
         return workflowDAO.findById(workflowID);
 

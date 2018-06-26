@@ -111,6 +111,7 @@ public class CheckerWorkflowIT extends BaseIT {
         DockstoreTool refreshedEntry = containersApi.refresh(githubTool.getId());
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile
+        Assert.assertTrue("There should be at least one user of the workflow", refreshedEntry.getUsers().size() > 0);
         refreshedEntry.getUsers().forEach(entryUser -> {
             Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
         });

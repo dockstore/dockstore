@@ -1872,7 +1872,7 @@ paths:
       summary: Get a registered repo
       description: >-
         This is one of the few endpoints that returns the user object with
-        populated properties (except user profiles)
+        populated properties (minus the userProfiles property)
       operationId: getContainer
       parameters:
         - name: containerId
@@ -4203,7 +4203,7 @@ paths:
       summary: Get a registered workflow
       description: >-
         This is one of the few endpoints that returns the user object with
-        populated properties (except user profiles)
+        populated properties (minus the userProfiles property)
       operationId: getWorkflow
       parameters:
         - name: workflowId

@@ -1606,7 +1606,7 @@ paths:
       - "containers"
       summary: "Get a registered repo"
       description: "This is one of the few endpoints that returns the user object\
-        \ with populated properties (except user profiles)"
+        \ with populated properties (minus the userProfiles property)"
       operationId: "getContainer"
       produces:
       - "application/json"
@@ -3878,7 +3878,7 @@ paths:
       - "workflows"
       summary: "Get a registered workflow"
       description: "This is one of the few endpoints that returns the user object\
-        \ with populated properties (except user profiles)"
+        \ with populated properties (minus the userProfiles property)"
       operationId: "getWorkflow"
       produces:
       - "application/json"

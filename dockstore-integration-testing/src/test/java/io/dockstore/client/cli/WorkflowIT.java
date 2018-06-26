@@ -244,7 +244,9 @@ public class WorkflowIT extends BaseIT {
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
                 "test", "cwl", null);
+        assertEquals("There should be one user of the workflow after manually registering it.", 1, workflow.getUsers().size());
         Workflow refresh = workflowApi.refresh(workflow.getId());
+
 
         Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
 
