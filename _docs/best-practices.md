@@ -165,17 +165,17 @@ $schemas:
 s:author:
   - class: s:Person
     s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@oicr.on.ca
+    s:email: dyuen@not-oicr.on.ca
     s:name: Denis Yuen
 
 s:contributor:
   - class: s:Person
     s:id: http://orcid.org/0000-0002-7681-6415
-    s:email: briandoconnor@gmail.com
+    s:email: briandoconnor@not-ucsc.org
     s:name: Brian O'Connor
   - class: s:Person
     s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@oicr.on.ca
+    s:email: dyuen@not-oicr.on.ca
     s:name: Denis Yuen
 
 
@@ -193,7 +193,6 @@ task runtime_meta {
   String memory_mb
   String sample_id
   String param
-  String sample_id
 
   command {
     java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
@@ -211,7 +210,7 @@ task runtime_meta {
   }
   meta {
     author: "Denis Yuen"
-    email: "dyuen@oicr.on.ca"
+    email: "dyuen@not-oicr.on.ca"
     description: "An example tool demonstrating metadata. Note that this is an example and the metadata is not necessarily consistent."
   }
 }
@@ -270,17 +269,17 @@ $schemas:
 s:author:
   - class: s:Person
     s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@oicr.on.ca
+    s:email: dyuen@not-oicr.on.ca
     s:name: Denis Yuen
 
 s:contributor:
   - class: s:Person
     s:id: http://orcid.org/0000-0002-7681-6415
-    s:email: briandoconnor@gmail.com
+    s:email: briandoconnor@not-ucsc.org
     s:name: Brian O'Connor
   - class: s:Person
     s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@oicr.on.ca
+    s:email: dyuen@not-oicr.on.ca
     s:name: Denis Yuen
 
 s:citation: https://figshare.com/articles/Common_Workflow_Language_draft_3/3115156/2
