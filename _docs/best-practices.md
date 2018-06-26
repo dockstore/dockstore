@@ -165,17 +165,17 @@ $schemas:
 s:author:
   - class: s:Person
     s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@oicr.on.ca
+    s:email: dyuen@not-oicr.on.ca
     s:name: Denis Yuen
 
 s:contributor:
   - class: s:Person
     s:id: http://orcid.org/0000-0002-7681-6415
-    s:email: briandoconnor@gmail.com
+    s:email: briandoconnor@not-ucsc.org
     s:name: Brian O'Connor
   - class: s:Person
     s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@oicr.on.ca
+    s:email: dyuen@not-oicr.on.ca
     s:name: Denis Yuen
 
 
@@ -183,6 +183,37 @@ s:citation: https://figshare.com/articles/Common_Workflow_Language_draft_3/31151
 s:codeRepository: https://github.com/common-workflow-language/common-workflow-language
 s:dateCreated: "2016-12-13"
 s:license: https://www.apache.org/licenses/LICENSE-2.0
+```
+
+For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  
+
+Additionally, this following example includes author, email, and description metadata:
+```
+task runtime_meta {
+  String memory_mb
+  String sample_id
+  String param
+
+  command {
+    java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
+  }
+  output {
+    File results = "${sample_id}.out"
+  }
+  runtime {
+    docker: "broadinstitute/baseimg"
+  }
+  parameter_meta {
+    memory_mb: "Amount of memory to allocate to the JVM"
+    param: "Some arbitrary parameter"
+    sample_id: "The ID of the sample in format foo_bar_baz"
+  }
+  meta {
+    author: "Denis Yuen"
+    email: "dyuen@not-oicr.on.ca"
+    description: "An example tool demonstrating metadata. Note that this is an example and the metadata is not necessarily consistent."
+  }
+}
 ```
 
 ### Extended Example
@@ -238,17 +269,17 @@ $schemas:
 s:author:
   - class: s:Person
     s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@oicr.on.ca
+    s:email: dyuen@not-oicr.on.ca
     s:name: Denis Yuen
 
 s:contributor:
   - class: s:Person
     s:id: http://orcid.org/0000-0002-7681-6415
-    s:email: briandoconnor@gmail.com
+    s:email: briandoconnor@not-ucsc.org
     s:name: Brian O'Connor
   - class: s:Person
     s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@oicr.on.ca
+    s:email: dyuen@not-oicr.on.ca
     s:name: Denis Yuen
 
 s:citation: https://figshare.com/articles/Common_Workflow_Language_draft_3/3115156/2

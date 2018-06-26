@@ -347,8 +347,6 @@ workflow test {
 }
 ```
 
-We are currently monitoring WDL to see how metadata like that provided for CWL will be integrated into WDL.
-
 ## Next Steps
 
 Follow the [next tutorial](/docs/publisher-tutorials/getting-started-with-dockstore/) to register your tool on Dockstore.
