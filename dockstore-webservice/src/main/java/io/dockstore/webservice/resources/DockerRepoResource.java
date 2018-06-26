@@ -101,6 +101,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
+    private static final String PAGINATION_LIMIT = "100";
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -595,8 +596,13 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
     public List<Tool> allPublishedContainers(
         @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.") @QueryParam("offset") String offset,
-        @ApiParam(value = "Amount of records to return in a given page.", defaultValue = "1000") @DefaultValue("1000") @QueryParam("limit") Integer limit,  @Context HttpServletResponse response) {
-        List<Tool> tools = toolDAO.findAllPublished(offset, limit);
+        @ApiParam(value = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+        @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
+        @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
+        @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("asc") @QueryParam("sortOrder") String sortOrder,
+        @Context HttpServletResponse response) {
+        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
+        List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
         response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished()));

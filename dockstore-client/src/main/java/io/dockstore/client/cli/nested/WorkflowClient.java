@@ -675,7 +675,7 @@ public class WorkflowClient extends AbstractEntryClient {
     @Override
     protected void handleListUnstarredEntries() {
         try {
-            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null);
+            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, null, null, null);
             out("ALL PUBLISHED WORKFLOWS");
             printLineBreak();
             printWorkflowList(workflows);

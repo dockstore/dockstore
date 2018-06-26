@@ -1615,16 +1615,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -1786,12 +1777,37 @@ paths:
             type: string
         - name: limit
           in: query
-          description: Amount of records to return in a given page.
+          description: 'Amount of records to return in a given page, limited to 100'
           required: false
           schema:
             type: integer
             format: int32
-            default: 1000
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: filter
+          in: query
+          description: 'Filter, this is a search string that filters the results.'
+          required: false
+          schema:
+            type: string
+        - name: sortCol
+          in: query
+          description: Sort column
+          required: false
+          schema:
+            type: string
+            default: stars
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
       responses:
         '200':
           description: successful operation
@@ -3777,16 +3793,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -4114,12 +4121,37 @@ paths:
             type: string
         - name: limit
           in: query
-          description: Amount of records to return in a given page.
+          description: 'Amount of records to return in a given page, limited to 100'
           required: false
           schema:
             type: integer
             format: int32
-            default: 1000
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: filter
+          in: query
+          description: 'Filter, this is a search string that filters the results.'
+          required: false
+          schema:
+            type: string
+        - name: sortCol
+          in: query
+          description: Sort column
+          required: false
+          schema:
+            type: string
+            default: stars
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
       responses:
         '200':
           description: successful operation
@@ -5116,6 +5148,17 @@ components:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
       required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
+      required: true
     StarRequest:
       content:
         application/json:
@@ -5193,13 +5236,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5212,6 +5248,13 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -5392,13 +5435,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5411,6 +5447,13 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6242,13 +6285,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -6261,6 +6297,13 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

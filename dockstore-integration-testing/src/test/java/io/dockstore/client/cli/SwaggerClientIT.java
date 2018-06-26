@@ -199,7 +199,7 @@ public class SwaggerClientIT {
     public void testFailedContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null);
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
 
         assertEquals(1, containers.size());
 
@@ -208,6 +208,11 @@ public class SwaggerClientIT {
         containers = usersApi.userContainers(user.getId());
 
         assertEquals(5, containers.size());
+
+        // do some minor testing on pagination, majority of tests are in WorkflowIT.testPublishingAndListingOfPublished for now
+        // TODO: better testing of pagination when we use it
+        List<DockstoreTool> pagedTools = containersApi.allPublishedContainers("0", 1, "test", "stars", "desc");
+        assertEquals(1, pagedTools.size());
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         assertFalse(container.isIsPublished());
@@ -478,7 +483,7 @@ public class SwaggerClientIT {
     public void testContainerRegistration() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null);
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
 
         assertEquals(1, containers.size());
 
@@ -498,7 +503,7 @@ public class SwaggerClientIT {
         container = containersApi.publish(containerId, pub);
         assertTrue(container.isIsPublished());
 
-        containers = containersApi.allPublishedContainers(null, null);
+        containers = containersApi.allPublishedContainers(null, null, null, null, null);
         assertEquals(2, containers.size());
 
         pub = SwaggerUtility.createPublishRequest(false);
