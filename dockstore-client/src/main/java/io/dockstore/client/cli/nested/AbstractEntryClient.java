@@ -41,7 +41,6 @@ import io.dockstore.common.Bridge;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.CWLClient;
-import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.nextflow.NextFlowClient;
 import io.github.collaboratory.wdl.WDLClient;
 import io.swagger.client.ApiException;
@@ -108,8 +107,9 @@ public abstract class AbstractEntryClient {
     }
 
     public CWL getCwlUtil() {
-        String cwlrunner = CWLRunnerFactory.getCWLRunner();
-        return new CWL(cwlrunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()), Utilities.parseConfig(getConfigFile()));
+        // TODO: may be reactivated if we find a different way to read CWL into Java
+        // String cwlrunner = CWLRunnerFactory.getCWLRunner();
+        return new CWL(false, Utilities.parseConfig(getConfigFile()));
     }
 
     public abstract String getConfigFile();
