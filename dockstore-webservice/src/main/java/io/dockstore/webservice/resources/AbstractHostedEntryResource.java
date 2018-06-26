@@ -162,7 +162,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * and the other headers are set based on the user's permissions.</p>
      *
      * @param optionalUser
-     * @param entryId
+     * @param
      * @return
      */
     @OPTIONS
@@ -178,13 +178,13 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkEntry(entry);
         headers.addAll(optionalUser.map(user -> {
             final List<String> list = new ArrayList<>();
-            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanDelete(u, e))) {
+            if (checkUserCanLambda(user, entry, this::checkUserCanDelete)) {
                 headers.add(HttpMethod.DELETE);
             }
-            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanUpdate(u, e))) {
+            if (checkUserCanLambda(user, entry, this::checkUserCanUpdate)) {
                 headers.add(PATCH_METHOD); // Why is there no value for PATCH in HttpHeader?
             }
-            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanRead(u, e))) {
+            if (checkUserCanLambda(user, entry, this::checkUserCanRead)) {
                 headers.add(HttpMethod.GET);
             }
             return list;
