@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
@@ -48,6 +50,7 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
+import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -81,14 +84,15 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
-
+    private final DockstoreWebserviceConfiguration configuration;
     public UserResource(TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, WorkflowResource workflowResource,
-            DockerRepoResource dockerRepoResource) {
+            DockerRepoResource dockerRepoResource, DockstoreWebserviceConfiguration configuration) {
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
         this.tokenDAO = tokenDAO;
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
+        this.configuration = configuration;
         elasticManager = new ElasticManager();
     }
 
@@ -585,7 +589,29 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update metadata for logged in user.", response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
         User dbuser = userDAO.findById(user.getId());
+        if (source.equals(TokenType.GOOGLE_COM) || source.equals(null)) {
+            updateGoogleAccessToken(user.getId());
+        }
         dbuser.updateUserMetadata(tokenDAO, source);
         return dbuser;
+    }
+
+    /**
+     * Updates the user's google access token in the DB
+     * @param userId    The user's ID
+     */
+    public void updateGoogleAccessToken(Long userId) {
+        List<Token> googleByUserId = tokenDAO.findGoogleByUserId(userId);
+        if (googleByUserId.isEmpty()) {
+            return;
+        } else {
+            Token googleToken = googleByUserId.get(0);
+            Optional<String> validAccessToken = GoogleHelper
+                    .getValidAccessToken(googleToken, configuration.getGoogleClientID(), configuration.getGoogleClientSecret());
+            if (validAccessToken.isPresent()) {
+                googleToken.setContent(validAccessToken.get());
+                tokenDAO.update(googleToken);
+            }
+        }
     }
 }
