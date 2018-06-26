@@ -185,9 +185,9 @@ s:dateCreated: "2016-12-13"
 s:license: https://www.apache.org/licenses/LICENSE-2.0
 ```
 
-For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  See [this](https://github.com/ga4gh/dockstore/blob/1.5.0-alpha.4/dockstore-webservice/src/test/resources/metadata_example2.wdl#L194) for an example which defines author, email, and description metadata.
+For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  
 
-Additionally, this following example includes author, email, and description metadata allowing others to cite your tool:
+Additionally, this following example includes author, email, and description metadata:
 ```
 task runtime_meta {
   String memory_mb
