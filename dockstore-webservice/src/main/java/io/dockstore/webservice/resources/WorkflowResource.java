@@ -16,8 +16,11 @@
 
 package io.dockstore.webservice.resources;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -49,9 +52,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.api.client.util.Charsets;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -99,6 +104,10 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.ZipParameters;
+import net.lingala.zip4j.util.Zip4jConstants;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -1549,5 +1558,66 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new WebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/zip/{workflowVersionId}")
+    @ApiOperation(value = "Download a ZIP file of a workflow and all associated files.")
+    @Produces("application/zip")
+    public Response getWorkflowZip(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+        Workflow workflow = workflowDAO.findPublishedById(workflowId);
+        WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+
+        // Grab main descriptor and secondary descriptors
+        SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
+        Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
+
+        // Make files into ZIP
+        File tempDir = Files.createTempDir();
+        File tempZipDir = Files.createTempDir();
+        java.nio.file.Path primaryDescriptorPath = Paths.get(tempDir.getAbsolutePath(), workflowVersion.getWorkflowPath());
+        File primaryDesc = new File(primaryDescriptorPath.toString());
+        List<File> secondaryFiles = new ArrayList<>();
+
+        try {
+            // Write content to files
+            Files.write(mainDescriptor.getContent().getBytes(Charsets.UTF_8), primaryDesc);
+            for (Map.Entry<String, String> descriptor : secondaryDescContent.entrySet()) {
+                java.nio.file.Path secondaryDescriptorPath = Paths.get(tempDir.getAbsolutePath(), descriptor.getKey());
+                File secondaryFile = new File(secondaryDescriptorPath.toString());
+                secondaryFiles.add(secondaryFile);
+                Files.write(descriptor.getValue().getBytes(Charsets.UTF_8), secondaryFile);
+            }
+
+            // Zip the folder
+            java.nio.file.Path zipFilePath = Paths.get(tempZipDir.toString(), "workflow.zip");
+            net.lingala.zip4j.core.ZipFile zipFile = new net.lingala.zip4j.core.ZipFile(zipFilePath.toString());
+            ZipParameters parameters = new ZipParameters();
+            parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
+            parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_NORMAL);
+            zipFile.addFolder(tempDir, parameters);
+            File returnZipFile = zipFile.getFile();
+
+            return Response
+                    .ok(returnZipFile)
+                    .header("Content-Disposition", "attachment; filename=\"workflow.zip\"")
+                    .build();
+        } catch (IOException ex) {
+            LOG.error("Could not create all files", ex);
+        } catch (ZipException ex) {
+            LOG.error("Could not create zip file", ex);
+        } finally {
+            try {
+                // Delete files
+                FileUtils.deleteDirectory(tempDir);
+//                FileUtils.deleteDirectory(tempZipDir);
+            } catch (IOException ex) {
+                LOG.error("Could not delete directory", ex);
+            }
+        }
+
+        return null;
     }
 }
