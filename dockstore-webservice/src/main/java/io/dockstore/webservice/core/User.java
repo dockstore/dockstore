@@ -172,7 +172,7 @@ public class User implements Principal, Comparable<User> {
                 }
                 break;
             default:
-                throw new CustomWebApplicationException("Unrecognzied token type: " + source, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Unrecognized token type: " + source, HttpStatus.SC_BAD_REQUEST);
             }
         }
     }
