@@ -42,6 +42,8 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.permissions.Role;
+import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -59,6 +61,7 @@ import io.swagger.client.model.Group;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.Permission;
 import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.SharedWorkflows;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
@@ -761,7 +764,11 @@ public class SwaggerClientIT {
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.READER);
 
         // User 2 should now have 1 workflow shared with
-        Assert.assertEquals(1, user2WorkflowsApi.sharedWorkflows().size());
+        final List<SharedWorkflows> sharedWorkflows = user2WorkflowsApi.sharedWorkflows();
+        Assert.assertEquals(1, sharedWorkflows.size());
+        final SharedWorkflows firstShared = sharedWorkflows.get(0);
+        Assert.assertEquals(SharedWorkflows.RoleEnum.READER, firstShared.getRole());
+        Assert.assertEquals(fullWorkflowPath, firstShared.getWorkflows().get(0).getFullWorkflowPath());
         // OPTIONS should now return include GET
         user2WorkflowsApi.getWorkflowByPathOptions(fullWorkflowPath);
         verifyOptions(user2WorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));

@@ -1,8 +1,11 @@
 package io.dockstore.webservice.permissions.sam;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -36,6 +39,7 @@ public class SamPermissionsImplTest {
 
     public static final String FOO_WORKFLOW_NAME = "foo";
     public static final String GOO_WORKFLOW_NAME = "goo";
+    public static final String DOCKSTORE_ORG_WORKFLOW_NAME = "dockstore.org/john/myworkflow";
     public static final String JANE_DOE_GMAIL_COM = "jane.doe@gmail.com";
     private AccessPolicyResponseEntry ownerPolicy;
     private AccessPolicyResponseEntry writerPolicy;
@@ -152,15 +156,25 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    public void testWorkflowsSharedWithUser() throws ApiException {
+    public void testWorkflowsSharedWithUser() throws ApiException, UnsupportedEncodingException {
         ResourceAndAccessPolicy reader = new ResourceAndAccessPolicy();
         reader.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME);
         reader.setAccessPolicyName(SamConstants.READ_POLICY);
         ResourceAndAccessPolicy owner = new ResourceAndAccessPolicy();
         owner.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + GOO_WORKFLOW_NAME);
         owner.setAccessPolicyName(SamConstants.OWNER_POLICY);
-        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenReturn(Arrays.asList(reader, owner));
-        Assert.assertEquals(samPermissionsImpl.workflowsSharedWithUser(userMock), Arrays.asList(FOO_WORKFLOW_NAME));
+        ResourceAndAccessPolicy writer = new ResourceAndAccessPolicy();
+        writer.setResourceId(SamConstants.ENCODED_WORKFLOW_PREFIX + URLEncoder.encode(DOCKSTORE_ORG_WORKFLOW_NAME, "UTF-8"));
+        writer.setAccessPolicyName(SamConstants.WRITE_POLICY);
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenReturn(Arrays.asList(reader, owner, writer));
+        final Map<Role, List<String>> sharedWithUser = samPermissionsImpl.workflowsSharedWithUser(userMock);
+        Assert.assertEquals(3, sharedWithUser.size());
+        final List<String> ownerWorkflows = sharedWithUser.get(Role.OWNER);
+        Assert.assertEquals(GOO_WORKFLOW_NAME, ownerWorkflows.get(0));
+        final List<String> readerWorkflows = sharedWithUser.get(Role.READER);
+        Assert.assertEquals(FOO_WORKFLOW_NAME, readerWorkflows.get(0));
+        final List<String> writerWorkflows = sharedWithUser.get(Role.WRITER);
+        Assert.assertEquals(DOCKSTORE_ORG_WORKFLOW_NAME, writerWorkflows.get(0));
     }
 
     @Test
@@ -191,8 +205,6 @@ public class SamPermissionsImplTest {
 
     @Test
     public void testSetPermission() throws ApiException {
-//        final String janeEmail = "jane@example.org";
-//        readerAccessPolicyResponseEntry.getPolicy().addMemberEmailsItem(janeEmail);
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME))
                 .thenReturn(Collections.emptyList(), Arrays.asList(readerAccessPolicyResponseEntry));
         Permission permission = new Permission();
@@ -202,19 +214,15 @@ public class SamPermissionsImplTest {
         Assert.assertEquals(permissions.size(), 1);
     }
 
-    @Test
+    @Test(expected = CustomWebApplicationException.class)
     public void setPermissionTest1() {
         try {
             when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME)).thenThrow(new ApiException(500, "Server error"));
             final Permission permission = new Permission();
             permission.setEmail("jdoe@example.com");
             permission.setRole(Role.WRITER);
-            try {
-                samPermissionsImpl.setPermission(fooWorkflow, userMock, permission);
-                Assert.fail("setPermissions did not throw Exception");
-            } catch (CustomWebApplicationException ex) {
-                // Expecting the exception, this is good
-            }
+            samPermissionsImpl.setPermission(fooWorkflow, userMock, permission);
+            Assert.fail("setPermissions did not throw Exception");
         } catch (ApiException e) {
             Assert.fail();
             e.printStackTrace();
@@ -235,8 +243,7 @@ public class SamPermissionsImplTest {
                 final List<Permission> permissions = samPermissionsImpl.setPermission(fooWorkflow, userMock, permission);
                 Assert.assertEquals(permissions.size(), 1);
             } catch (CustomWebApplicationException ex) {
-                Assert.fail("setPermissions did not throw Exception");
-                // Expecting the exception, this is good
+                Assert.fail("setPermissions threw Exception");
             }
         } catch (ApiException e) {
             Assert.fail();
