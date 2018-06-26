@@ -129,7 +129,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
         cleanStatePrivate2(support, CONFIG_PATH, isNewApplication);
         // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
-        getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+//        getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**

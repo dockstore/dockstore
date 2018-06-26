@@ -137,6 +137,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
         Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate) {
         // Initialize workflow version
