@@ -39,12 +39,13 @@ public final class GoogleHelper {
      * @param token The Google access token
      * @param user  The pre-updated user
      */
-    public static void updateGoogleUserData(String token, User user) {
+    public static boolean updateGoogleUserData(String token, User user) {
         try {
             Userinfoplus userinfoplus = userinfoplusFromToken(token);
             updateUserFromGoogleUserinfoplus(userinfoplus, user);
+            return true;
         } catch (GeneralSecurityException | IOException e) {
-            throw new CustomWebApplicationException("Could not get Google profile of " + user.getUsername() + ".", HttpStatus.SC_BAD_REQUEST);
+            return false;
         }
     }
 

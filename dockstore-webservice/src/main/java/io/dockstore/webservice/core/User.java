@@ -208,8 +208,7 @@ public class User implements Principal, Comparable<User> {
             return false;
         } else {
             Token googleToken = googleByUserId.get(0);
-            GoogleHelper.updateGoogleUserData(googleToken.getContent(), this);
-            return true;
+            return GoogleHelper.updateGoogleUserData(googleToken.getContent(), this);
         }
     }
 
