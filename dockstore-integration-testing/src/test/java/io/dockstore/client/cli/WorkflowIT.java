@@ -135,6 +135,7 @@ public class WorkflowIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
+        Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
         final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
 
@@ -243,7 +244,9 @@ public class WorkflowIT extends BaseIT {
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
                 "test", "cwl", null);
+        assertEquals("There should be one user of the workflow after manually registering it.", 1, workflow.getUsers().size());
         Workflow refresh = workflowApi.refresh(workflow.getId());
+
 
         Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
 

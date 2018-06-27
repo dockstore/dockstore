@@ -28,6 +28,7 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,10 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         LOG.debug("SimpleAuthenticator called with {}", credentials);
         final Token token = dao.findByContent(credentials);
         if (token != null) {
-            return Optional.of(userDAO.findById(token.getUserId()));
+            User byId = userDAO.findById(token.getUserId());
+            // Always eagerly load yourself (your User object)
+            Hibernate.initialize(byId.getUserProfiles());
+            return Optional.of(byId);
         } else {
             final Optional<String> username = GoogleHelper.getUserNameFromToken(credentials);
             if (username.isPresent()) {
@@ -61,6 +65,8 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
                     Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
                     googleToken.setContent(credentials);
                     dao.update(googleToken);
+                    // Always eagerly load yourself (your User object)
+                    Hibernate.initialize(user.getUserProfiles());
                     return Optional.of(user);
                 }
             }

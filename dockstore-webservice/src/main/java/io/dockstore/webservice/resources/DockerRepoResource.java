@@ -82,6 +82,7 @@ import io.swagger.annotations.Authorization;
 import io.swagger.model.DescriptorType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.hibernate.Hibernate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -211,7 +212,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         if (tool.getCheckerWorkflow() != null) {
             workflowResource.refresh(user, tool.getCheckerWorkflow().getId());
         }
-
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
     }
@@ -258,12 +258,15 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
+    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
         checkUser(user, c);
+
+        // This somehow forces users to get loaded, c.getUsers() does not work.  c.getUsers().size works too.
+        Hibernate.initialize(c.getUsers());
         return c;
     }
 

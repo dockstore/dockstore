@@ -1605,7 +1605,8 @@ paths:
       tags:
       - "containers"
       summary: "Get a registered repo"
-      description: ""
+      description: "This is one of the few endpoints that returns the user object\
+        \ with populated properties (minus the userProfiles property)"
       operationId: "getContainer"
       produces:
       - "application/json"
@@ -2862,7 +2863,15 @@ paths:
       operationId: "updateLoggedInUserMetadata"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "source"
+        in: "query"
+        description: "Token source"
+        required: false
+        type: "string"
+        enum:
+        - "google.com"
+        - "github.com"
       responses:
         200:
           description: "successful operation"
@@ -3868,7 +3877,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get a registered workflow"
-      description: ""
+      description: "This is one of the few endpoints that returns the user object\
+        \ with populated properties (minus the userProfiles property)"
       operationId: "getWorkflow"
       produces:
       - "application/json"
@@ -5169,6 +5179,21 @@ definitions:
         - "OWNER"
         - "WRITER"
         - "READER"
+  Profile:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      avatarURL:
+        type: "string"
+      company:
+        type: "string"
+      location:
+        type: "string"
+      bio:
+        type: "string"
   PublishRequest:
     type: "object"
     properties:
@@ -5724,6 +5749,12 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
         readOnly: true
+      userProfiles:
+        type: "object"
+        description: "Profile information of the user retrieved from 3rd party sites\
+          \ (GitHub, Google, etc)"
+        additionalProperties:
+          $ref: "#/definitions/Profile"
       username:
         type: "string"
         position: 1
@@ -5732,26 +5763,11 @@ definitions:
         type: "boolean"
         position: 2
         description: "Indicates whether this user is an admin"
-      company:
-        type: "string"
-        position: 3
-        description: "Company of user"
-      bio:
-        type: "string"
-        position: 4
-        description: "Bio of user"
-      location:
-        type: "string"
-        position: 5
-        description: "Location of user"
-      email:
-        type: "string"
-        position: 6
-        description: "Email of user"
       avatarUrl:
         type: "string"
         position: 7
-        description: "URL of user avatar on Github."
+        description: "URL of user avatar on GitHub/Google that can be selected by\
+          \ the user"
       name:
         type: "string"
         position: 8

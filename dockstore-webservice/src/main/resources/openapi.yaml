@@ -1615,16 +1615,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -1879,7 +1870,9 @@ paths:
       tags:
         - containers
       summary: Get a registered repo
-      description: ''
+      description: >-
+        This is one of the few endpoints that returns the user object with
+        populated properties (minus the userProfiles property)
       operationId: getContainer
       parameters:
         - name: containerId
@@ -2682,22 +2675,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-  '/hostedEntry/{entryId}':
-    options:
-      tags:
-        - hosted
-      summary: Options for a hosted entry
-      description: ''
-      operationId: hostedEntryOptions
-      parameters:
-        - name: entryId
-          in: path
-          description: The entry id.
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
   '/entries/{id}/aliases':
     put:
       tags:
@@ -2732,6 +2709,26 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/updateLabelsBody'
+  '/hostedEntry/{entryId}':
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted entry
+      description: ''
+      operationId: hostedEntryOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -3142,6 +3139,16 @@ paths:
       summary: Update metadata for logged in user
       description: Update metadata for logged in user.
       operationId: updateLoggedInUserMetadata
+      parameters:
+        - name: source
+          in: query
+          description: Token source
+          required: false
+          schema:
+            type: string
+            enum:
+              - google.com
+              - github.com
       responses:
         '200':
           description: successful operation
@@ -3753,16 +3760,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -4203,7 +4201,9 @@ paths:
       tags:
         - workflows
       summary: Get a registered workflow
-      description: ''
+      description: >-
+        This is one of the few endpoints that returns the user object with
+        populated properties (minus the userProfiles property)
       operationId: getWorkflow
       parameters:
         - name: workflowId
@@ -5072,6 +5072,17 @@ components:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
       required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
+      required: true
     StarRequest:
       content:
         application/json:
@@ -5560,6 +5571,21 @@ components:
             - OWNER
             - WRITER
             - READER
+    Profile:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        avatarURL:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
     PublishRequest:
       type: object
       properties:
@@ -6124,27 +6150,22 @@ components:
           format: int64
           description: Implementation specific ID for the container in this web service
           readOnly: true
+        userProfiles:
+          type: object
+          description: >-
+            Profile information of the user retrieved from 3rd party sites
+            (GitHub, Google, etc)
+          additionalProperties:
+            $ref: '#/components/schemas/Profile'
         username:
           type: string
           description: Username on dockstore
         isAdmin:
           type: boolean
           description: Indicates whether this user is an admin
-        company:
-          type: string
-          description: Company of user
-        bio:
-          type: string
-          description: Bio of user
-        location:
-          type: string
-          description: Location of user
-        email:
-          type: string
-          description: Email of user
         avatarUrl:
           type: string
-          description: URL of user avatar on Github.
+          description: URL of user avatar on GitHub/Google that can be selected by the user
         name:
           type: string
         curator:

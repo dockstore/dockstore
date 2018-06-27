@@ -600,10 +600,15 @@ public class SwaggerClientIT {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        Assert.assertTrue("There should be at least one user of the workflow", container.getUsers().size() > 0);
+        Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
         assertEquals(2, containerId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         containersApi.starEntry(containerId, request);
+        List<User> starredUsers = containersApi.getStarredUsers(container.getId());
+        Assert.assertEquals(1, starredUsers.size());
+        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         containersApi.starEntry(containerId, request);
     }
 
@@ -620,6 +625,7 @@ public class SwaggerClientIT {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
         assertEquals(2, containerId);
         containersApi.unstarEntry(containerId);
@@ -637,11 +643,14 @@ public class SwaggerClientIT {
     public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("G/A/l");
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l");
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         workflowsApi.starEntry(workflowId, request);
+        List<User> starredUsers = workflowsApi.getStarredUsers(workflow.getId());
+        Assert.assertEquals(1, starredUsers.size());
+        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
         workflowsApi.starEntry(workflowId, request);
     }
 

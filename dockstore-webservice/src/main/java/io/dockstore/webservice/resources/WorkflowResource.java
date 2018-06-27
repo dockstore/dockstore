@@ -102,6 +102,7 @@ import io.swagger.model.DescriptorType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.hibernate.Hibernate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -362,7 +363,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
-
         elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
         return workflow;
     }
@@ -431,12 +431,16 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
 
         checkUser(user, c);
+
+        // This somehow forces users to get loaded
+        Hibernate.initialize(c.getUsers());
+
         return c;
     }
 

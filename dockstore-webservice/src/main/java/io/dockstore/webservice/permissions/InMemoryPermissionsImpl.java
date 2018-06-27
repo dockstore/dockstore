@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
@@ -135,7 +136,12 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     }
 
     private String userKey(User user) {
-        return user.getEmail() == null ? user.getUsername() : user.getEmail();
+        User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        if (profile == null || profile.email == null) {
+            return user.getUsername();
+        } else {
+            return profile.email;
+        }
     }
 
 }
