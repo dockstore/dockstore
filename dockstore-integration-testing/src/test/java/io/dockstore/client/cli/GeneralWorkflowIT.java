@@ -55,10 +55,10 @@ public class GeneralWorkflowIT extends BaseIT {
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
 
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().muteForSuccessfulTests();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().muteForSuccessfulTests();
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Before
     @Override
@@ -390,6 +390,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json",
                 "--entry", SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow:wdl_import","--script" });
+        Assert.assertTrue(systemOutRule.getLog().contains("\"three_step.cgrep.pattern\": \"String\""));
 
     }
 
