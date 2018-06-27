@@ -331,7 +331,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Workflow refresh(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
-        checkUser(user, workflow);
+        checkCanWriteWorkflow(user, workflow);
         checkNotHosted(workflow);
         // get a live user for the following
         user = userDAO.findById(user.getId());
@@ -433,11 +433,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/{workflowId}")
     @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow c = workflowDAO.findById(workflowId);
-        checkEntry(c);
-
-        checkUser(user, c);
-        return c;
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkCanReadWorkflow(user, workflow);
+        return workflow;
     }
 
     @PUT
@@ -467,7 +466,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow wf = workflowDAO.findById(workflowId);
         checkEntry(wf);
         checkNotHosted(wf);
-        checkUser(user, wf);
+        checkCanWriteWorkflow(user, wf);
 
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false);
 
@@ -585,7 +584,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         //check if the user and the entry is correct
         checkEntry(wf);
-        checkUser(user, wf);
+        checkCanWriteWorkflow(user, wf);
         checkNotHosted(wf);
 
         //update the workflow path in all workflowVersions
@@ -645,7 +644,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
 
-        checkUser(user, c);
+        checkCanShareWorkflow(user, c);
 
         Workflow checker = c.getCheckerWorkflow();
 
@@ -724,7 +723,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        checkCanRead(user, workflow);
+        checkCanReadWorkflow(user, workflow);
         return workflow;
     }
 
@@ -753,7 +752,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
         if (optionalUser.isPresent()) {
             try {
-                checkCanRead(optionalUser.get(), workflow);
+                checkCanReadWorkflow(optionalUser.get(), workflow);
                 headers.add(HttpMethod.GET);
             } catch (CustomWebApplicationException ex) {
                 // Silently fail; just don't add GET to the allowed methods
@@ -774,11 +773,43 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
      * @param user
      * @param workflow
      */
-    private void checkCanRead(User user, Workflow workflow) {
+    private void checkCanReadWorkflow(User user, Workflow workflow) {
         try {
             checkUser(user, workflow);
         } catch (CustomWebApplicationException ex) {
             if (!permissionsInterface.canDoAction(user, workflow, Role.Action.READ)) {
+                throw ex;
+            }
+        }
+    }
+
+    /**
+     * Checks if <code>user</code> has permission to write <code>workflow</code>. If the user
+     * does not have permission, throws a {@link CustomWebApplicationException}.
+     * @param user
+     * @param workflow
+     */
+    private void checkCanWriteWorkflow(User user, Workflow workflow) {
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.WRITE)) {
+                throw ex;
+            }
+        }
+    }
+
+    /**
+     * Checks if <code>user</code> has permission to share <code>workflow</code>. If the user
+     * does not have permission, throws a {@link CustomWebApplicationException}.
+     * @param user
+     * @param workflow
+     */
+    private void checkCanShareWorkflow(User user, Workflow workflow) {
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.SHARE)) {
                 throw ex;
             }
         }
@@ -903,7 +934,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow repository = workflowDAO.findById(workflowId);
         checkEntry(repository);
 
-        checkUser(user, repository);
+        checkCanReadWorkflow(user, repository);
 
         return new ArrayList<>(repository.getVersions());
     }
@@ -1218,7 +1249,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow w = workflowDAO.findById(workflowId);
         checkEntry(w);
 
-        checkUser(user, w);
+        checkCanWriteWorkflow(user, w);
 
         // create a map for quick lookup
         Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();
