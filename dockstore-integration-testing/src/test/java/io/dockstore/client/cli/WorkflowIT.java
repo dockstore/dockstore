@@ -514,14 +514,14 @@ public class WorkflowIT extends BaseIT {
         });
         List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null);
         // test offset
-        assertTrue("offset seems to be working",
+        assertTrue("offset does not seem to be working",
             Objects.equals(workflowApi.allPublishedWorkflows("1", null, null, null, null).get(0).getId(), workflows.get(1).getId()));
         // test limit
         assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null).size());
         // test custom sort column
         List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc");
         List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc");
-        assertTrue("sort by id seems to be working", Objects.equals(ascId.get(0).getId(), descId.get(descId.size() - 1).getId()));
+        assertTrue("sort by id does not seem to be working", Objects.equals(ascId.get(0).getId(), descId.get(descId.size() - 1).getId()));
         // test filter
         List<Workflow> filtered = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
         assertEquals(1, filtered.size());

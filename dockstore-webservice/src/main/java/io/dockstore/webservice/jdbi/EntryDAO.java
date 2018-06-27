@@ -167,8 +167,8 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             String orgName = toolMode ? "namespace" : "organization";
 
             query.where(cb.and(// get published workflows
-                cb.isTrue(entry.get("isPublished")), // ensure we deal will null values
-                // ensure we deal will null values and then do like queries on those non-null values
+                cb.isTrue(entry.get("isPublished")),
+                // ensure we deal with null values and then do like queries on those non-null values
                 cb.or(cb.and(cb.isNotNull(entry.get(nameName)), cb.like(entry.get(nameName), "%" + filter + "%")), //
                     cb.and(cb.isNotNull(entry.get("author")), cb.like(entry.get("author"), "%" + filter + "%")), //
                     cb.and(cb.isNotNull(entry.get(repoName)), cb.like(entry.get(repoName), "%" + filter + "%")), //
