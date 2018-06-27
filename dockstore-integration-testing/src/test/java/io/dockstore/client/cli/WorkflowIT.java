@@ -199,6 +199,26 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testEntryConvertWDLWithSecondaryDescriptors() throws IOException {
+        String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow workflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.wdl",
+                        "test", "wdl", null);
+        Workflow refresh = workflowApi.refresh(workflow.getId());
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        workflowApi.publish(refresh.getId(), publishRequest);
+
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", toolpath, "--script" });
+        Assert.assertTrue(systemOutRule.getLog().contains("{\n" + "  \"checkerWorkflow.inputFile\": \"File\",\n"
+                + "  \"checkerWorkflow.expectedMd5sum\": \"String\"\n" + "}"));
+    }
+
+
+    @Test
     public void testNextFlowRefresh() throws ApiException {
         // need to promote user to admin to refresh all stubs
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
