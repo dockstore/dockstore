@@ -773,13 +773,8 @@ public class SwaggerClientIT {
         // Edit should now work!
         final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Arrays.asList(createCwlWorkflow()));
 
-        // Deleting the version should fail with 403.
-        try {
-            user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
-            Assert.fail("Should not be able to delete workflow version");
-        } catch (ApiException ex) {
-            Assert.assertEquals(403, ex.getCode());
-        }
+        // Deleting the version should not fail
+        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
 
         // Give Owner permission to user 2
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.OWNER);
