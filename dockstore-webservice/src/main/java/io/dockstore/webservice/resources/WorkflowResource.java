@@ -701,6 +701,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("asc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
+        // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
         List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(workflows);
