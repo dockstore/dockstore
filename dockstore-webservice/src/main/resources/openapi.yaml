@@ -8,7 +8,7 @@ info:
     build those images
   version: 1.4.4
   title: Dockstore API
-  termsOfService: ''
+  termsOfService: TBD
   contact:
     name: Dockstore@ga4gh
     url: 'https://github.com/ga4gh/dockstore'
@@ -592,11 +592,6 @@ paths:
       responses:
         '200':
           description: An array of Tools of the input organization.
-          content:
-            text/plain:
-              schema:
-                type: integer
-                format: int32
       security:
         - BEARER: []
   '/api/ga4gh/v2/extended/tools/{organization}':
@@ -1615,16 +1610,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -2682,22 +2668,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-  '/hostedEntry/{entryId}':
-    options:
-      tags:
-        - hosted
-      summary: Options for a hosted entry
-      description: ''
-      operationId: hostedEntryOptions
-      parameters:
-        - name: entryId
-          in: path
-          description: The entry id.
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
   '/entries/{id}/aliases':
     put:
       tags:
@@ -2839,9 +2809,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties:
+                type: array
+                items:
                   type: object
+                  additionalProperties:
+                    type: object
   /metadata/rss:
     get:
       tags:
@@ -3753,16 +3725,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -5035,6 +4998,9 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersion'
         description: List of modified workflow versions
         required: true
+externalDocs:
+  description: Dockstore documentation
+  url: 'https://www.dockstore.org/docs/getting-started'
 components:
   requestBodies:
     PublishRequest:
@@ -5071,6 +5037,17 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
+      required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:
