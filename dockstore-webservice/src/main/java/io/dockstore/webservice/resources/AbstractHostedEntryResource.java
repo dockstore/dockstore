@@ -41,6 +41,7 @@ import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -55,6 +56,8 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
+import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.dropwizard.jersey.PATCH;
@@ -84,11 +87,13 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     final ElasticManager elasticManager;
     private final FileDAO fileDAO;
     private final UserDAO userDAO;
+    private final PermissionsInterface permissionsInterface;
 
-    AbstractHostedEntryResource(FileDAO fileDAO, UserDAO userDAO) {
+    AbstractHostedEntryResource(FileDAO fileDAO, UserDAO userDAO, PermissionsInterface permissionsInterface) {
         this.fileDAO = fileDAO;
         this.elasticManager = new ElasticManager();
         this.userDAO = userDAO;
+        this.permissionsInterface = permissionsInterface;
     }
 
     /**
@@ -123,6 +128,21 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     }
 
     protected abstract T getEntry(User user, String registry, String name, String descriptorType, String namespace);
+
+    @Override
+    public void checkUserCanUpdate(User user, Entry entry) {
+        try {
+            checkUser(user, entry);
+        } catch (CustomWebApplicationException ex) {
+            if (entry instanceof Workflow) {
+                if (!permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.WRITE)) {
+                    throw ex;
+                }
+            } else {
+                throw ex;
+            }
+        }
+    }
 
     @PATCH
     @io.swagger.jaxrs.PATCH
@@ -242,7 +262,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
-        checkUserCanDelete(user, entry);
+        checkUserCanUpdate(user, entry);
         checkHosted(entry);
         entry.getVersions().removeIf(v -> Objects.equals(v.getName(), version));
         elasticManager.handleIndexUpdate(entry, ElasticMode.UPDATE);
