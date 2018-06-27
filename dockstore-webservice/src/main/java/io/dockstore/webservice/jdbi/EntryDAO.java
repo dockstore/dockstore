@@ -18,9 +18,18 @@ package io.dockstore.webservice.jdbi;
 
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -146,8 +155,58 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findPublishedById").setParameter("id", id));
     }
 
+    public List<T> findAllPublished(String offset, Integer limit, String filter, String sortCol, String sortOrder) {
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<T> query = criteriaQuery();
+        Root<T> entry = query.from(typeOfT);
+        if (!Strings.isNullOrEmpty(filter)) {
+            // TODO: handle all search attributes that we want to hook up, this sucks since we didn't handle polymorphism quite right
+            boolean toolMode = typeOfT == Tool.class;
+            String nameName = toolMode ? "toolname" : "workflowName";
+            String repoName = toolMode ? "name" : "repository";
+            String orgName = toolMode ? "namespace" : "organization";
+
+            query.where(cb.and(// get published workflows
+                cb.isTrue(entry.get("isPublished")),
+                // ensure we deal with null values and then do like queries on those non-null values
+                cb.or(cb.and(cb.isNotNull(entry.get(nameName)), cb.like(entry.get(nameName), "%" + filter + "%")), //
+                    cb.and(cb.isNotNull(entry.get("author")), cb.like(entry.get("author"), "%" + filter + "%")), //
+                    cb.and(cb.isNotNull(entry.get(repoName)), cb.like(entry.get(repoName), "%" + filter + "%")), //
+                    cb.and(cb.isNotNull(entry.get(orgName)), cb.like(entry.get(orgName), "%" + filter + "%")))));
+        } else {
+            query.where(cb.isTrue(entry.get("isPublished")));
+        }
+        if (!Strings.isNullOrEmpty(sortCol)) {
+            // sorting by stars is a special case since it needs a join
+            if ("stars".equalsIgnoreCase(sortCol)) {
+                if ("desc".equalsIgnoreCase(sortOrder)) {
+                    query.orderBy(cb.desc(cb.size(entry.<Collection>get("starredUsers"))));
+                } else {
+                    query.orderBy(cb.asc(cb.size(entry.<Collection>get("starredUsers"))));
+                }
+            } else {
+                if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
+                    query.orderBy(cb.desc(entry.get(sortCol)));
+                } else {
+                    query.orderBy(cb.asc(entry.get(sortCol)));
+                }
+            }
+        }
+        query.select(entry);
+
+        //TODO: getting the entity manager to convert the criteria query to a TypedQuery is weird, there must be a different way
+        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
+        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
+        TypedQuery<T> typedQuery = entityManager.createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
+        return typedQuery.getResultList();
+    }
+
     public List<T> findAllPublished() {
         return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
+    }
+
+    public long countAllPublished() {
+        return (long)namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
     }
 
     public List<T> searchPattern(String pattern) {

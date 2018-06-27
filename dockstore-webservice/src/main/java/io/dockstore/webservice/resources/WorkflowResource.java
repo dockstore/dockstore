@@ -33,7 +33,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.OPTIONS;
@@ -44,6 +46,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -122,6 +125,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
+    private static final String PAGINATION_LIMIT = "100";
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -692,11 +696,21 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("published")
-    @ApiOperation(value = "List all published workflows.", tags = { "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> allPublishedWorkflows() {
-        List<Workflow> workflows = workflowDAO.findAllPublished();
+    @ApiOperation(value = "List all published workflows.", tags = {
+        "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> allPublishedWorkflows(
+        @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.") @QueryParam("offset") String offset,
+        @ApiParam(value = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+        @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
+        @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
+        @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("asc") @QueryParam("sortOrder") String sortOrder,
+        @Context HttpServletResponse response) {
+        // delete the next line if GUI pagination is not working by 1.5.0 release
+        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
+        List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
+        response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished()));
         return workflows;
     }
 

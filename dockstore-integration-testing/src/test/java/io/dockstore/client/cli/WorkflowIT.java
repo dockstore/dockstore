@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -50,10 +51,10 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tool;
-import io.swagger.client.model.User;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.ToolTests;
+import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -486,12 +487,12 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // should start with nothing published
-        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows().isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null).isEmpty());
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
         usersApi.refreshWorkflows(userId);
-        assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows().isEmpty());
+        assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null).isEmpty());
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
         final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
@@ -501,12 +502,32 @@ public class WorkflowIT extends BaseIT {
         // publish one
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         workflowApi.publish(workflowByPath.getId(), publishRequest);
-        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows().size(), 1,
-            workflowApi.allPublishedWorkflows().size());
+        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 1,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId());
         assertNotNull("did not get published workflow", publishedWorkflow);
         final Workflow publishedWorkflowByPath = workflowApi.getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
         assertNotNull("did not get published workflow", publishedWorkflowByPath);
+
+        // publish everything so pagination testing makes more sense (going to unfortunately use rate limit)
+        Lists.newArrayList("github.com/DockstoreTestUser2/hello-dockstore-workflow", "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "bitbucket.org/dockstore_testuser2/dockstore-workflow", "github.com/DockstoreTestUser2/parameter_test_workflow").forEach(path -> {
+            Workflow workflow = workflowApi.getWorkflowByPath(path);
+            workflowApi.refresh(workflow.getId());
+            workflowApi.publish(workflow.getId(), publishRequest);
+        });
+        List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null);
+        // test offset
+        assertTrue("offset does not seem to be working",
+            Objects.equals(workflowApi.allPublishedWorkflows("1", null, null, null, null).get(0).getId(), workflows.get(1).getId()));
+        // test limit
+        assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null).size());
+        // test custom sort column
+        List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc");
+        List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc");
+        assertTrue("sort by id does not seem to be working", Objects.equals(ascId.get(0).getId(), descId.get(descId.size() - 1).getId()));
+        // test filter
+        List<Workflow> filtered = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
+        assertEquals(1, filtered.size());
     }
 
     /**
@@ -556,8 +577,8 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
 
         // Assert some things
-        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows().size(), 2,
-            workflowApi.allPublishedWorkflows().size());
+        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 2,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
         assertEquals("Two workflows are in full mode", 2, count3);

@@ -1502,7 +1502,44 @@ paths:
       operationId: "allPublishedContainers"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "offset"
+        in: "query"
+        description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        required: false
+        type: "string"
+      - name: "limit"
+        in: "query"
+        description: "Amount of records to return in a given page, limited to 100"
+        required: false
+        type: "integer"
+        default: 100
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      - name: "filter"
+        in: "query"
+        description: "Filter, this is a search string that filters the results."
+        required: false
+        type: "string"
+      - name: "sortCol"
+        in: "query"
+        description: "Sort column"
+        required: false
+        type: "string"
+        default: "stars"
+      - name: "sortOrder"
+        in: "query"
+        description: "Sort order"
+        required: false
+        type: "string"
+        default: "asc"
+        enum:
+        - "asc"
+        - "desc"
       responses:
         200:
           description: "successful operation"
@@ -3760,7 +3797,44 @@ paths:
       operationId: "allPublishedWorkflows"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "offset"
+        in: "query"
+        description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        required: false
+        type: "string"
+      - name: "limit"
+        in: "query"
+        description: "Amount of records to return in a given page, limited to 100"
+        required: false
+        type: "integer"
+        default: 100
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      - name: "filter"
+        in: "query"
+        description: "Filter, this is a search string that filters the results."
+        required: false
+        type: "string"
+      - name: "sortCol"
+        in: "query"
+        description: "Sort column"
+        required: false
+        type: "string"
+        default: "stars"
+      - name: "sortOrder"
+        in: "query"
+        description: "Sort order"
+        required: false
+        type: "string"
+        default: "asc"
+        enum:
+        - "asc"
+        - "desc"
       responses:
         200:
           description: "successful operation"
@@ -4752,13 +4826,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -4771,6 +4838,13 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -4963,13 +5037,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -4982,6 +5049,13 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5823,13 +5897,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -5842,6 +5909,13 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1

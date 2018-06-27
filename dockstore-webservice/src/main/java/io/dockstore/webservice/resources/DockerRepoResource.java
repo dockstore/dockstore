@@ -26,7 +26,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -34,6 +36,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -99,6 +102,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
+    private static final String PAGINATION_LIMIT = "100";
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -592,11 +596,20 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @UnitOfWork
     @Path("published")
     @ApiOperation(value = "List all published containers.", tags = {
-            "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
-    public List<Tool> allPublishedContainers() {
-        List<Tool> tools = toolDAO.findAllPublished();
+        "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    public List<Tool> allPublishedContainers(
+        @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.") @QueryParam("offset") String offset,
+        @ApiParam(value = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+        @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
+        @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
+        @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("asc") @QueryParam("sortOrder") String sortOrder,
+        @Context HttpServletResponse response) {
+        // delete the next line if GUI pagination is not working by 1.5.0 release
+        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
+        List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
+        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished()));
         return tools;
     }
 
