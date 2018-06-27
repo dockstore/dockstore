@@ -198,23 +198,31 @@ public class WorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "launch", "--entry", toolpath, "--json" , ResourceHelpers.resourceFilePath("md5sum-wrapper-tool.json") ,  "--script" });
     }
 
+    /**
+     * This tests workflow convert entry2json when the main descriptor is nested far within the GitHub repo with secondary descriptors too
+     * @throws IOException
+     */
     @Test
     public void testEntryConvertWDLWithSecondaryDescriptors() throws IOException {
-        String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
-        testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+        String toolpath = SourceControl.GITHUB.toString() + "/garyluu/skylab";
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
-                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.wdl",
-                        "test", "wdl", null);
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "garyluu/skylab", "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl",
+                        "", "wdl", null);
         Workflow refresh = workflowApi.refresh(workflow.getId());
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         workflowApi.publish(refresh.getId(), publishRequest);
 
-        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", toolpath, "--script" });
-        Assert.assertTrue(systemOutRule.getLog().contains("{\n" + "  \"checkerWorkflow.inputFile\": \"File\",\n"
-                + "  \"checkerWorkflow.expectedMd5sum\": \"String\"\n" + "}"));
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", toolpath + ":Dockstore_Testing", "--script" });
+        Assert.assertTrue(systemOutRule.getLog().contains("{\n" + "  \"SmartSeq2SingleCell.gtf_file\": \"File\",\n"
+                + "  \"SmartSeq2SingleCell.genome_ref_fasta\": \"File\",\n" + "  \"SmartSeq2SingleCell.rrna_intervals\": \"File\",\n"
+                + "  \"SmartSeq2SingleCell.fastq2\": \"File\",\n" + "  \"SmartSeq2SingleCell.hisat2_ref_index\": \"File\",\n"
+                + "  \"SmartSeq2SingleCell.hisat2_ref_trans_name\": \"String\",\n" + "  \"SmartSeq2SingleCell.stranded\": \"String\",\n"
+                + "  \"SmartSeq2SingleCell.sample_name\": \"String\",\n" + "  \"SmartSeq2SingleCell.output_name\": \"String\",\n"
+                + "  \"SmartSeq2SingleCell.fastq1\": \"File\",\n" + "  \"SmartSeq2SingleCell.hisat2_ref_trans_index\": \"File\",\n"
+                + "  \"SmartSeq2SingleCell.hisat2_ref_name\": \"String\",\n" + "  \"SmartSeq2SingleCell.rsem_ref_index\": \"File\",\n"
+                + "  \"SmartSeq2SingleCell.gene_ref_flat\": \"File\"\n" + "}"));
     }
 
 
