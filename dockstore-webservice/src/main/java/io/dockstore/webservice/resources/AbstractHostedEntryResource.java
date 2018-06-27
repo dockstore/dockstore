@@ -161,9 +161,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * <p>If the authorization header is present, then the OPTIONS method is always set,
      * and the other headers are set based on the user's permissions.</p>
      *
-     * @param optionalUser
-     * @param
-     * @return
+     * @param optionalUser provided when the user is logged in
+     * @param entryId the id of the tool or workflow to check options for
+     * @return methods that are accessible based on optionalUser's role
      */
     @OPTIONS
     @Path("/hostedEntry/{entryId}")
