@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -92,6 +93,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public String readFile(String repositoryId, String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
+
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
@@ -100,6 +102,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
         return readFileFromRepo(fileName, reference, repo);
+    }
+
+    @Override
+    public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
+        GHRepository repo;
+        try {
+            repo = github.getRepository(repositoryId);
+            List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
+            return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            return null;
+        }
     }
 
     private String readFileFromRepo(String fileName, String reference, GHRepository repo) {
@@ -165,7 +180,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         throws IOException {
         // retrieval of directory content is cached as opposed to retrieving individual files
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
-        String stripStart = StringUtils.stripStart(fileName, "/");
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
         GHRef[] refs = repo.getRefs();
         if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
@@ -173,6 +187,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
         // only look at github if the reference exists
         List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
+
+        String stripStart = StringUtils.stripStart(fileName, "/");
         Optional<GHContent> firstMatch = directoryContent.stream().filter(content -> stripStart.equals(content.getPath())).findFirst();
         if (firstMatch.isPresent()) {
             GHContent content = firstMatch.get();

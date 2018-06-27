@@ -18,11 +18,15 @@ package io.dockstore.webservice.helpers;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -37,6 +41,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.resources.ResourceUtilities;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -46,7 +51,11 @@ import org.slf4j.LoggerFactory;
  * @author dyuen
  */
 public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
-    private static final String BITBUCKET_API_URL = "https://bitbucket.org/api/1.0/";
+    private static final String BITBUCKET_V1_API_URL = "https://bitbucket.org/api/1.0/";
+    /** should use the java api, but I can't make heads or tails of the documentation
+     * https://docs.atlassian.com/bitbucket-server/javadoc/5.11.1/api/reference/packages.html
+     * */
+    private static final String BITBUCKET_V2_API_URL = "https://bitbucket.org/api/2.0/";
     private static final String BITBUCKET_GIT_URL_PREFIX = "git@bitbucket.org:";
     private static final String BITBUCKET_GIT_URL_SUFFIX = ".git";
 
@@ -72,41 +81,14 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         }
 
         String content;
-        String branch = null;
-
-        if (reference == null) {
-            String mainBranchUrl = BITBUCKET_API_URL + "repositories/" + repositoryId + "/main-branch";
-
-            Optional<String> asString = ResourceUtilities.asString(mainBranchUrl, bitbucketTokenContent, client);
-            LOG.info(gitUsername + ": RESOURCE CALL: {}", mainBranchUrl);
-            if (asString.isPresent()) {
-                String branchJson = asString.get();
-
-                Gson gson = new Gson();
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>)gson.fromJson(branchJson, map.getClass());
-
-                branch = map.get("name");
-
-                if (branch == null) {
-                    LOG.info(gitUsername + ": Could NOT find bitbucket default branch!");
-                    return null;
-                } else {
-                    LOG.info(gitUsername + ": Default branch: {}", branch);
-                }
-            }
-        } else {
-            branch = reference;
-        }
-
-        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + '/' + fileName;
+        String url = BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + '/' + fileName;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
         LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
         if (asString.isPresent()) {
             LOG.info(gitUsername + ": FOUND: {}", fileName);
             content = asString.get();
         } else {
-            LOG.info(gitUsername + ": Branch: {} has no {}", branch, fileName);
+            LOG.info(gitUsername + ": Branch: {} has no {}", reference, fileName);
             return null;
         }
 
@@ -118,9 +100,28 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     }
 
     @Override
+    public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
+        // Get descriptor content using the BitBucket API
+        String url = BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + StringUtils.prependIfMissing(pathToDirectory, "/");
+        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
+
+        LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
+
+        if (asString.isPresent()) {
+            String userJson = asString.get();
+            // TODO: deal with pagination for directories with more than ten files
+            JsonElement jsonElement = new JsonParser().parse(userJson);
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            return StreamSupport.stream(jsonObject.getAsJsonArray("values").spliterator(), false).map(element -> StringUtils.removeStart(element.getAsJsonObject().get("path").getAsString(), pathToDirectory + "/")).collect(Collectors
+                .toList());
+        }
+        return Lists.newArrayList();
+    }
+
+    @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
-        String url = BITBUCKET_API_URL + "users/" + gitUsername;
+        String url = BITBUCKET_V1_API_URL + "users/" + gitUsername;
 
         // Call to Bitbucket API to get list of Workflows owned by the current user (is it possible that owner is a group the user is part of?)
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
@@ -161,7 +162,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         SourceFile file = null;
 
         // Get descriptor content using the BitBucket API
-        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/raw/" + branch + "/" + path;
+        String url = BITBUCKET_V1_API_URL + "repositories/" + repositoryId + "/raw/" + branch + "/" + path;
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
 
         LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
@@ -192,7 +193,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             return;
         }
         // Look at each version, check for valid workflows
-        String url = BITBUCKET_API_URL + "repositories/" + repositoryId;
+        String url = BITBUCKET_V1_API_URL + "repositories/" + repositoryId;
         // Call to Bitbucket API to get list of branches for a given repo (what about tags)
         Optional<String> branches = ResourceUtilities.asString(url + "/branches", bitbucketTokenContent, client);
         if (branches.isPresent()) {
@@ -245,7 +246,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
             Map<String, WorkflowVersion> existingDefaults) {
         // Look at each version, check for valid workflows
-        String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/branches-tags";
+        String url = BITBUCKET_V1_API_URL + "repositories/" + repositoryId + "/branches-tags";
 
         // Call to Bitbucket API to get list of branches for a given repo (what about tags)
         Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
@@ -321,7 +322,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             // If default version is not set, need to find the main branch
 
             // Create API call string
-            String url = BITBUCKET_API_URL + "repositories/" + repositoryId + "/main-branch";
+            String url = BITBUCKET_V1_API_URL + "repositories/" + repositoryId + "/main-branch";
 
             // Call BitBucket API
             Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);

@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import com.google.common.base.Strings;
 import io.dockstore.common.LanguageType;
 import io.dockstore.webservice.core.Entry;
@@ -62,7 +64,7 @@ public abstract class SourceCodeRepoInterface {
      * @param reference the tag/branch to get the file from
      * @return content of the file
      */
-    public abstract String readFile(String repositoryId, String fileName, String reference);
+    public abstract String readFile(String repositoryId, String fileName, @NotNull String reference);
 
     /**
      * Read a file from the importer and add it into files
@@ -72,10 +74,8 @@ public abstract class SourceCodeRepoInterface {
      * @param fileType the type of file
      */
     void readFile(String repositoryId, Version tag, Collection<SourceFile> files, SourceFile.FileType fileType, String path) {
-        SourceFile sourceFile = this.readFile(repositoryId, tag, fileType, path);
-        if (sourceFile != null) {
-            files.add(sourceFile);
-        }
+        Optional<SourceFile> sourceFile = this.readFile(repositoryId, tag, fileType, path);
+        sourceFile.ifPresent(files::add);
     }
 
     /**
@@ -84,17 +84,28 @@ public abstract class SourceCodeRepoInterface {
      * @param tag the version of source control we want to read from
      * @param fileType the type of file
      */
-    public SourceFile readFile(String repositoryId, Version tag, SourceFile.FileType fileType, String path) {
+    public Optional<SourceFile> readFile(String repositoryId, Version tag, SourceFile.FileType fileType, String path) {
         String fileResponse = this.readGitRepositoryFile(repositoryId, fileType, tag, path);
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
             dockstoreFile.setType(fileType);
             dockstoreFile.setContent(fileResponse);
             dockstoreFile.setPath(path);
-            return dockstoreFile;
+            return Optional.of(dockstoreFile);
         }
-        return null;
+        return Optional.empty();
     }
+
+    /**
+     * For Nextflow workflows, they seem to auto-import the contents of the lib and bin directories
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
+     * @param pathToDirectory  full path to the directory to list
+     * @param reference the tag/branch to get the file from
+     * @return a list of files in the directory
+     */
+    public abstract List<String> listFiles(String repositoryId, String pathToDirectory, String reference);
+
+
 
     /**
      * Get a map of git url to an id that can uniquely identify a repository
@@ -289,7 +300,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return
      */
-    public String getBranchNameFromDefaultVersion(Entry entry) {
+    String getBranchNameFromDefaultVersion(Entry entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
             for (Tag tag : ((Tool)entry).getVersions()) {

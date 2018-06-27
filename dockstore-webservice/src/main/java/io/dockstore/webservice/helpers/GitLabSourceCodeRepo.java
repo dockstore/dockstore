@@ -26,7 +26,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import com.google.common.collect.Lists;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -40,6 +42,7 @@ import org.gitlab.api.TokenType;
 import org.gitlab.api.models.GitlabBranch;
 import org.gitlab.api.models.GitlabProject;
 import org.gitlab.api.models.GitlabRepositoryFile;
+import org.gitlab.api.models.GitlabRepositoryTree;
 import org.gitlab.api.models.GitlabTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,10 +69,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             fileName = fileName.substring(1);
         }
         try {
-            if (reference == null) {
-                GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
-                reference = project.getDefaultBranch();
-            }
             GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
             GitlabRepositoryFile repositoryFile = this.gitlabAPI.getRepositoryFile(project, fileName, reference);
             return new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8);
@@ -77,6 +76,18 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.error("could not read file " + fileName + " on " + reference);
         }
         return null;
+    }
+
+    @Override
+    public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
+        try {
+            GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            List<GitlabRepositoryTree> repositoryTree = gitlabAPI.getRepositoryTree(project, pathToDirectory, reference, false);
+            return repositoryTree.stream().map(GitlabRepositoryTree::getName).collect(Collectors.toList());
+        } catch (IOException e) {
+            LOG.error("could not read directory listing " + pathToDirectory + " on " + reference);
+        }
+        return Lists.newArrayList();
     }
 
     @Override
