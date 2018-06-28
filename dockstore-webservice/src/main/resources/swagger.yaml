@@ -6,7 +6,7 @@ info:
     \ used to build those images"
   version: "1.4.4"
   title: "Dockstore API"
-  termsOfService: ""
+  termsOfService: "TBD"
   contact:
     name: "Dockstore@ga4gh"
     url: "https://github.com/ga4gh/dockstore"
@@ -14,7 +14,6 @@ info:
   license:
     name: "Apache License Version 2.0"
     url: "https://github.com/ga4gh/dockstore/blob/develop/LICENSE"
-host: ""
 basePath: "/"
 tags:
 - name: "GA4GH"
@@ -487,9 +486,6 @@ paths:
       responses:
         200:
           description: "An array of Tools of the input organization."
-          schema:
-            type: "integer"
-            format: "int32"
       security:
       - BEARER: []
   /api/ga4gh/v2/extended/tools/{organization}:
@@ -2464,27 +2460,6 @@ paths:
             $ref: "#/definitions/Entry"
       security:
       - BEARER: []
-  /hostedEntry/{entryId}:
-    options:
-      tags:
-      - "hosted"
-      summary: "Options for a hosted entry"
-      description: ""
-      operationId: "hostedEntryOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "entryId"
-        in: "path"
-        description: "The entry id."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -2596,9 +2571,11 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "object"
-            additionalProperties:
+            type: "array"
+            items:
               type: "object"
+              additionalProperties:
+                type: "object"
   /metadata/rss:
     get:
       tags:
@@ -6156,3 +6133,6 @@ definitions:
         description: "This is the commit id for the source control that the files\
           \ belong to"
     description: "This describes one workflow version associated with a workflow."
+externalDocs:
+  description: "Dockstore documentation"
+  url: "https://www.dockstore.org/docs/getting-started"

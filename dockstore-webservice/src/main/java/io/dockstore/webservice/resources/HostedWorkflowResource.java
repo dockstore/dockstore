@@ -39,6 +39,7 @@ import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 
@@ -47,6 +48,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 /**
  * @author dyuen
  */
+@Api("hosted")
 @Path("/workflows")
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private final WorkflowDAO workflowDAO;
