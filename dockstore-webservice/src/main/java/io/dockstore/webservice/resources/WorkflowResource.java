@@ -336,7 +336,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Workflow refresh(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
-        checkCanWriteWorkflow(user, workflow);
+        checkUser(user, workflow);
         checkNotHosted(workflow);
         // get a live user for the following
         user = userDAO.findById(user.getId());
