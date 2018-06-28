@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -215,14 +216,24 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(refresh.getId(), publishRequest);
 
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", toolpath + ":Dockstore_Testing", "--script" });
-        Assert.assertTrue(systemOutRule.getLog().contains("{\n" + "  \"SmartSeq2SingleCell.gtf_file\": \"File\",\n"
-                + "  \"SmartSeq2SingleCell.genome_ref_fasta\": \"File\",\n" + "  \"SmartSeq2SingleCell.rrna_intervals\": \"File\",\n"
-                + "  \"SmartSeq2SingleCell.fastq2\": \"File\",\n" + "  \"SmartSeq2SingleCell.hisat2_ref_index\": \"File\",\n"
-                + "  \"SmartSeq2SingleCell.hisat2_ref_trans_name\": \"String\",\n" + "  \"SmartSeq2SingleCell.stranded\": \"String\",\n"
-                + "  \"SmartSeq2SingleCell.sample_name\": \"String\",\n" + "  \"SmartSeq2SingleCell.output_name\": \"String\",\n"
-                + "  \"SmartSeq2SingleCell.fastq1\": \"File\",\n" + "  \"SmartSeq2SingleCell.hisat2_ref_trans_index\": \"File\",\n"
-                + "  \"SmartSeq2SingleCell.hisat2_ref_name\": \"String\",\n" + "  \"SmartSeq2SingleCell.rsem_ref_index\": \"File\",\n"
-                + "  \"SmartSeq2SingleCell.gene_ref_flat\": \"File\"\n" + "}"));
+        List<String> stringList = new ArrayList<>();
+        stringList.add("\"SmartSeq2SingleCell.gtf_file\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.genome_ref_fasta\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.rrna_intervals\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.fastq2\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_trans_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.stranded\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.sample_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.output_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.fastq1\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_trans_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.rsem_ref_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.gene_ref_flat\": \"File\"");
+        stringList.forEach(string -> {
+            Assert.assertTrue(systemOutRule.getLog().contains(string));
+        });
     }
 
 
