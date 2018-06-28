@@ -172,8 +172,9 @@ public class LauncherCWL {
         CWLRunnerFactory.setConfig(config);
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
-        String cwlRunner = CWLRunnerFactory.getCWLRunner();
-        CWL cwlUtil = new CWL(cwlRunner.equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString()), config);
+        // TODO: may be reactivated if we find a different way to read CWL into Java
+        // String cwlRunner = CWLRunnerFactory.getCWLRunner();
+        CWL cwlUtil = new CWL(false, config);
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
         Object cwlObject;
         try {
@@ -209,10 +210,9 @@ public class LauncherCWL {
         try {
             if (cwlObject instanceof Workflow) {
                 Workflow workflow = (Workflow)cwlObject;
-                if (!"bunny".equals(cwlRunner)) {
-                    SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
-                    secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
-                }
+                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
+                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+
                 // pull input files
                 inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
 
@@ -582,15 +582,6 @@ public class LauncherCWL {
 
         try {
             Files.createDirectories(Paths.get(workingDir));
-            try {
-                boolean useBunny = config.getString("cwlrunner", "cwltool").equalsIgnoreCase(CWLRunnerFactory.CWLRunner.BUNNY.toString());
-                if (useBunny) {
-                    Utilities.executeCommand("setfacl -d -m o::rwx " + workingDir);
-                }
-            } catch (Exception e) {
-                System.err.println("WARNING: Unable to set default permissions on working dir, may "
-                        + "result in problems with Docker containers that change users : setfacl -d -m o::rwx " + workingDir);
-            }
             Files.createDirectories(globalWorkingPath);
             Files.createDirectories(Paths.get(globalWorkingDir, "working"));
             Files.createDirectories(Paths.get(globalWorkingDir, "inputs"));

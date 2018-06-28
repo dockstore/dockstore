@@ -1615,16 +1615,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -1772,6 +1763,51 @@ paths:
       summary: List all published containers.
       description: NO authentication
       operationId: allPublishedContainers
+      parameters:
+        - name: offset
+          in: query
+          description: >-
+            Start index of paging. Pagination results can be based on numbers or
+            other values chosen by the registry implementor (for example, SHA
+            values). If this exceeds the current result set return an empty
+            set.  If not specified in the request, this will start at the
+            beginning of the results.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 'Amount of records to return in a given page, limited to 100'
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: filter
+          in: query
+          description: 'Filter, this is a search string that filters the results.'
+          required: false
+          schema:
+            type: string
+        - name: sortCol
+          in: query
+          description: Sort column
+          required: false
+          schema:
+            type: string
+            default: stars
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
       responses:
         '200':
           description: successful operation
@@ -1879,7 +1915,9 @@ paths:
       tags:
         - containers
       summary: Get a registered repo
-      description: ''
+      description: >-
+        This is one of the few endpoints that returns the user object with
+        populated properties (minus the userProfiles property)
       operationId: getContainer
       parameters:
         - name: containerId
@@ -2682,22 +2720,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-  '/hostedEntry/{entryId}':
-    options:
-      tags:
-        - hosted
-      summary: Options for a hosted entry
-      description: ''
-      operationId: hostedEntryOptions
-      parameters:
-        - name: entryId
-          in: path
-          description: The entry id.
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
   '/entries/{id}/aliases':
     put:
       tags:
@@ -2732,6 +2754,26 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/updateLabelsBody'
+  '/hostedEntry/{entryId}':
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted entry
+      description: ''
+      operationId: hostedEntryOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -3142,6 +3184,16 @@ paths:
       summary: Update metadata for logged in user
       description: Update metadata for logged in user.
       operationId: updateLoggedInUserMetadata
+      parameters:
+        - name: source
+          in: query
+          description: Token source
+          required: false
+          schema:
+            type: string
+            enum:
+              - google.com
+              - github.com
       responses:
         '200':
           description: successful operation
@@ -3753,16 +3805,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -4076,6 +4119,51 @@ paths:
       summary: List all published workflows.
       description: NO authentication
       operationId: allPublishedWorkflows
+      parameters:
+        - name: offset
+          in: query
+          description: >-
+            Start index of paging. Pagination results can be based on numbers or
+            other values chosen by the registry implementor (for example, SHA
+            values). If this exceeds the current result set return an empty
+            set.  If not specified in the request, this will start at the
+            beginning of the results.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 'Amount of records to return in a given page, limited to 100'
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: filter
+          in: query
+          description: 'Filter, this is a search string that filters the results.'
+          required: false
+          schema:
+            type: string
+        - name: sortCol
+          in: query
+          description: Sort column
+          required: false
+          schema:
+            type: string
+            default: stars
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
       responses:
         '200':
           description: successful operation
@@ -4203,7 +4291,9 @@ paths:
       tags:
         - workflows
       summary: Get a registered workflow
-      description: ''
+      description: >-
+        This is one of the few endpoints that returns the user object with
+        populated properties (minus the userProfiles property)
       operationId: getWorkflow
       parameters:
         - name: workflowId
@@ -5072,6 +5162,17 @@ components:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
       required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
+      required: true
     StarRequest:
       content:
         application/json:
@@ -5149,13 +5250,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5168,6 +5262,13 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -5348,13 +5449,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5367,6 +5461,13 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -5560,6 +5661,21 @@ components:
             - OWNER
             - WRITER
             - READER
+    Profile:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        avatarURL:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
     PublishRequest:
       type: object
       properties:
@@ -6124,27 +6240,22 @@ components:
           format: int64
           description: Implementation specific ID for the container in this web service
           readOnly: true
+        userProfiles:
+          type: object
+          description: >-
+            Profile information of the user retrieved from 3rd party sites
+            (GitHub, Google, etc)
+          additionalProperties:
+            $ref: '#/components/schemas/Profile'
         username:
           type: string
           description: Username on dockstore
         isAdmin:
           type: boolean
           description: Indicates whether this user is an admin
-        company:
-          type: string
-          description: Company of user
-        bio:
-          type: string
-          description: Bio of user
-        location:
-          type: string
-          description: Location of user
-        email:
-          type: string
-          description: Email of user
         avatarUrl:
           type: string
-          description: URL of user avatar on Github.
+          description: URL of user avatar on GitHub/Google that can be selected by the user
         name:
           type: string
         curator:
@@ -6198,13 +6309,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -6217,6 +6321,13 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

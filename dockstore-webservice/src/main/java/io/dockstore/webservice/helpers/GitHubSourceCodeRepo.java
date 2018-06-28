@@ -38,7 +38,9 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -502,10 +504,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
-            user.setBio(myself.getBlog()); // ? not sure about this mapping in the new api
-            user.setCompany(myself.getCompany());
-            user.setEmail(myself.getEmail());
-            user.setLocation(myself.getLocation());
+            User.Profile profile = new User.Profile();
+            profile.name = myself.getName();
+            profile.email = myself.getEmail();
+            profile.avatarURL = myself.getAvatarUrl();
+            profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
+            profile.location = myself.getLocation();
+            profile.company = myself.getCompany();
+            Map<String, User.Profile> userProfile = user.getUserProfiles();
+            userProfile.put(TokenType.GITHUB_COM.toString(), profile);
             user.setAvatarUrl(myself.getAvatarUrl());
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername());

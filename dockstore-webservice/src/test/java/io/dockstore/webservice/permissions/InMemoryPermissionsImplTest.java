@@ -1,7 +1,10 @@
 package io.dockstore.webservice.permissions;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import org.junit.Assert;
@@ -30,7 +33,11 @@ public class InMemoryPermissionsImplTest {
         gooWorkflow = Mockito.mock(Workflow.class);
         when(fooWorkflow.getWorkflowPath()).thenReturn("foo");
         when(gooWorkflow.getWorkflowPath()).thenReturn("goo");
-        when(userMock.getEmail()).thenReturn(JOHN_DOE_EXAMPLE_COM);
+        Map<String, User.Profile> profiles = new HashMap<>();
+        User.Profile profile = new User.Profile();
+        profile.email = JOHN_DOE_EXAMPLE_COM;
+        profiles.put(TokenType.GOOGLE_COM.toString(), profile);
+        when(userMock.getUserProfiles()).thenReturn(profiles);
     }
 
     @Test

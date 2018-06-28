@@ -75,16 +75,26 @@ public class CRUDClientIT extends BaseIT {
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         Assert.assertNotNull("tool was not created properly", hostedTool);
+        // createHostedTool() endpoint is safe to have user profiles because that profile is your own
+        Assert.assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
+        hostedTool.getUsers().forEach(user -> {
+            Assert.assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles());
+            // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return user profiles
+            user.setUserProfiles(null);
+        });
+
         Assert.assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);
         DockstoreTool container = oldApi.getContainer(hostedTool.getId());
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
-        hostedTool.setUsers(null);
         container.setAliases(null);
-        container.setUsers(null);
         Assert.assertEquals(container, hostedTool);
+        Assert.assertEquals(1, container.getUsers().size());
+        container.getUsers().forEach(user -> {
+            Assert.assertNull("getContainer() endpoint should not have user profiles", user.getUserProfiles());
+        });
     }
 
     @Test
@@ -138,16 +148,24 @@ public class CRUDClientIT extends BaseIT {
         HostedApi api = new HostedApi(webClient);
         Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", "cwl", null, null);
         Assert.assertNotNull("workflow was not created properly", hostedTool);
+        // createHostedWorkflow() endpoint is safe to have user profiles because that profile is your own
+        Assert.assertEquals(1, hostedTool.getUsers().size());
+        hostedTool.getUsers().forEach(user -> {
+            Assert.assertNotNull("createHostedWorkflow() endpoint should have user profiles", user.getUserProfiles());
+            // Setting it to null afterwards to compare with the getWorkflow endpoint since that one doesn't return user profiles
+            user.setUserProfiles(null);
+        });
         Assert.assertTrue("workflow was not created with a valid if", hostedTool.getId() != 0);
         // can get it back with regular api
         WorkflowsApi oldApi = new WorkflowsApi(webClient);
         Workflow container = oldApi.getWorkflow(hostedTool.getId());
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
-        hostedTool.setUsers(null);
         container.setAliases(null);
-        container.setUsers(null);
+        Assert.assertEquals(1, container.getUsers().size());
+        container.getUsers().forEach(user -> Assert.assertNull("getWorkflow() endpoint should not have user profiles", user.getUserProfiles()));
         Assert.assertEquals(container, hostedTool);
+
     }
 
     @Test
@@ -224,7 +242,11 @@ public class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         thrown.expect(ApiException.class);
-        containersApi.refresh(hostedTool.getId());
+        DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
+        Assert.assertTrue("There should be at least one user of the workflow", refreshedTool.getUsers().size() > 0);
+        refreshedTool.getUsers().forEach(entryUser -> {
+            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
+        });
     }
 
     /**

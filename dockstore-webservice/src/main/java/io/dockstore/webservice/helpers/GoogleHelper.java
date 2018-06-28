@@ -2,6 +2,7 @@ package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Map;
 import java.util.Optional;
 
 import com.google.api.client.auth.oauth2.TokenResponse;
@@ -11,10 +12,9 @@ import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,12 +37,13 @@ public final class GoogleHelper {
      * @param token The Google access token
      * @param user  The pre-updated user
      */
-    public static void updateGoogleUserData(String token, User user) {
+    public static boolean updateGoogleUserData(String token, User user) {
         try {
             Userinfoplus userinfoplus = userinfoplusFromToken(token);
             updateUserFromGoogleUserinfoplus(userinfoplus, user);
+            return true;
         } catch (GeneralSecurityException | IOException e) {
-            throw new CustomWebApplicationException("Could not get Google profile of " + user.getUsername() + ".", HttpStatus.SC_BAD_REQUEST);
+            return false;
         }
     }
 
@@ -52,9 +53,14 @@ public final class GoogleHelper {
      * @param user      The pre-updated User object
      */
     public static void updateUserFromGoogleUserinfoplus(Userinfoplus userinfo, User user) {
-        user.setUsername(userinfo.getEmail());
-        user.setEmail(userinfo.getEmail());
+        User.Profile profile = new User.Profile();
+        profile.avatarURL = userinfo.getPicture();
+        profile.email = userinfo.getEmail();
+        profile.name = userinfo.getName();
         user.setAvatarUrl(userinfo.getPicture());
+        Map<String, User.Profile> userProfile = user.getUserProfiles();
+        userProfile.put(TokenType.GOOGLE_COM.toString(), profile);
+        user.setUsername(userinfo.getEmail());
     }
 
     public static Optional<String> getUserNameFromToken(String token) {
