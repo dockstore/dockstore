@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.validation.Valid;
@@ -105,6 +106,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private String sqsURL;
 
     private String authorizerType = null;
+
+    private List<String> externalGoogleClientIds = new ArrayList<>();
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -374,7 +377,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.authorizerType = authorizerType;
     }
 
-
     @JsonProperty("samconfiguration")
     public SamConfiguration getSamConfiguration() {
         return samConfiguration;
@@ -382,6 +384,20 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setSamConfiguration(SamConfiguration samConfiguration) {
         this.samConfiguration = samConfiguration;
+    }
+
+    /**
+     * A list of a additional Google client ids that Dockstore will accept google tokens from. These ids are in addition
+     * to getGoogleClientID, and is intended for any external Google clients that Dockstore will accept tokens from.
+     * @return a list of google client ids
+     */
+    @JsonProperty("externalGoogleClientIds")
+    public List<String> getExternalGoogleClientIds() {
+        return externalGoogleClientIds;
+    }
+
+    public void setExternalGoogleClientIds(List<String> externalGoogleClientIds) {
+        this.externalGoogleClientIds = externalGoogleClientIds;
     }
 
     public class ElasticSearchConfig {
