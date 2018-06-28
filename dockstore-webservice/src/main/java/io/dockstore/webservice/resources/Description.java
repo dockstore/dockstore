@@ -18,10 +18,12 @@ package io.dockstore.webservice.resources;
 
 import javax.ws.rs.ext.Provider;
 
+import io.swagger.annotations.Api;
 import io.swagger.annotations.Contact;
 import io.swagger.annotations.ExternalDocs;
 import io.swagger.annotations.Info;
 import io.swagger.annotations.License;
+import io.swagger.annotations.SecurityDefinition;
 import io.swagger.annotations.SwaggerDefinition;
 import io.swagger.annotations.Tag;
 import io.swagger.jaxrs.Reader;
@@ -37,25 +39,26 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  *
  * @author dyuen
  */
+@Api("tools")
 @Provider
 @SwaggerDefinition(info = @Info(description =
-        "This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as "
-                + "CWL documents and Dockerfiles used to build those images", version = "1.4.4", title = "Dockstore API", contact = @Contact(name = "Dockstore@ga4gh", email = "theglobalalliance@genomicsandhealth.org", url = "https://github.com/ga4gh/dockstore"), license = @License(name = "Apache License Version 2.0", url = "https://github.com/ga4gh/dockstore/blob/develop/LICENSE")), consumes = "application/json", produces = "application/json", tags = {
-        @Tag(name = "entries", description = "Interact with entries in Dockstore regardless of whether they are containers or workflows"),
-        @Tag(name = "containers", description = "List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile))"),
-        @Tag(name = "containertags", description = "List and modify tags for containers"),
-        @Tag(name = "GA4GHV1", description = "A curated subset of resources proposed as a common standard for tool repositories"),
-        @Tag(name = "GA4GH", description = "A curated subset of resources proposed as a common standard for tool repositories"),
-        @Tag(name = "extendedGA4GH", description = "Optional experimental extensions of the GA4GH API"),
-        @Tag(name = "github.repo", description = "List source code repositories (should be generalized from github)"),
-        @Tag(name = "integration.bitbucket.org", description = "stop-gap allowing developers to associate with bitbucket"),
-        @Tag(name = "integration.github.com", description = "stop-gap allowing developers to associate with github"),
-        @Tag(name = "integration.gitlab.com", description = "stop-gap allowing developers to associate with gitlab"),
-        @Tag(name = "integration.quay.io", description = "stop-gap allowing developers to associate with quay.io"),
-        @Tag(name = "tokens", description = "List, modify, refresh, and delete tokens for external services"),
-        @Tag(name = "workflows", description = "List and register workflows in the dockstore (CWL or WDL)"),
-        @Tag(name = "hosted", description = "Created and modify hosted entries in the dockstore"),
-        @Tag(name = "users", description = "List, modify, and manage end users of the dockstore") }, externalDocs = @ExternalDocs(value = "Dockstore documentation", url = "https://www.dockstore.org/docs/getting-started"))
+    "This describes the dockstore API, a webservice that manages pairs of Docker images and associated metadata such as "
+        + "CWL documents and Dockerfiles used to build those images", version = "1.4.4", title = "Dockstore API", contact = @Contact(name = "Dockstore@ga4gh", email = "theglobalalliance@genomicsandhealth.org", url = "https://github.com/ga4gh/dockstore"), license = @License(name = "Apache License Version 2.0", url = "https://github.com/ga4gh/dockstore/blob/develop/LICENSE"), termsOfService = "TBD"), tags = {
+    @Tag(name = "entries", description = "Interact with entries in Dockstore regardless of whether they are containers or workflows"),
+    @Tag(name = "containers", description = "List and register entries in the dockstore (pairs of images + metadata (CWL and Dockerfile))"),
+    @Tag(name = "containertags", description = "List and modify tags for containers"),
+    @Tag(name = "GA4GHV1", description = "A curated subset of resources proposed as a common standard for tool repositories"),
+    @Tag(name = "GA4GH", description = "A curated subset of resources proposed as a common standard for tool repositories"),
+    @Tag(name = "extendedGA4GH", description = "Optional experimental extensions of the GA4GH API"),
+    @Tag(name = "integration.bitbucket.org", description = "stop-gap allowing developers to associate with bitbucket"),
+    @Tag(name = "integration.github.com", description = "stop-gap allowing developers to associate with github"),
+    @Tag(name = "integration.gitlab.com", description = "stop-gap allowing developers to associate with gitlab"),
+    @Tag(name = "integration.quay.io", description = "stop-gap allowing developers to associate with quay.io"),
+    @Tag(name = "tokens", description = "List, modify, refresh, and delete tokens for external services"),
+    @Tag(name = "workflows", description = "List and register workflows in the dockstore (CWL or WDL)"),
+    @Tag(name = "hosted", description = "Created and modify hosted entries in the dockstore"),
+    @Tag(name = "users", description = "List, modify, and manage end users of the dockstore") }, externalDocs = @ExternalDocs(value = "Dockstore documentation", url = "https://www.dockstore.org/docs/getting-started"), securityDefinition = @SecurityDefinition(apiKeyAuthDefinitions = {
+    @io.swagger.annotations.ApiKeyAuthDefinition(key = JWT_SECURITY_DEFINITION_NAME, in = io.swagger.annotations.ApiKeyAuthDefinition.ApiKeyLocation.HEADER, name = "Authorization") }))
 public class Description implements ReaderListener {
     @Override
     public void beforeScan(Reader reader, Swagger swagger) {

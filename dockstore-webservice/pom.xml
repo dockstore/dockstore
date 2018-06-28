@@ -825,9 +825,7 @@
             <plugin>
                 <groupId>com.github.kongchen</groupId>
                 <artifactId>swagger-maven-plugin</artifactId>
-                <!-- fixed at 3.1.5 due to odd issue with our EntryDAO making it into Swagger and not being ignorable -->
-                <!-- for 3.1.7 specific issues seem to include messed up subclass structure with hosted tool and workflow endpoints ( https://github.com/kongchen/swagger-maven-plugin/issues/626 or https://github.com/kongchen/swagger-maven-plugin/issues/619 ) -->
-                <version>3.1.5</version>
+                <version>3.1.7</version>
                 <configuration>
                     <apiSources>
                         <apiSource>
@@ -843,15 +841,8 @@
                             <swaggerFileName>swagger</swaggerFileName>
                             <outputFormats>yaml</outputFormats>
                             <basePath>/</basePath>
-                            <!-- "can be used to strictly use the official Swagger reader in order to generate the exact same output as Swagger''s runtime generation (with all its bugs). "
                             <swaggerApiReader>com.github.kongchen.swagger.docgen.reader.SwaggerReader</swaggerApiReader>
-                            -->
                             <attachSwaggerArtifact>true</attachSwaggerArtifact>
-                            <securityDefinitions>
-                                <securityDefinition>
-                                    <json>/securityDefinition.json</json>
-                                </securityDefinition>
-                            </securityDefinitions>
                         </apiSource>
                     </apiSources>
                 </configuration>
