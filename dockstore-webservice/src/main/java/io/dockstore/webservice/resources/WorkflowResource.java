@@ -441,8 +441,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
         checkCanReadWorkflow(user, workflow);
 
-        checkUser(user, workflow);
-
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         return workflow;
