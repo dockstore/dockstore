@@ -16,8 +16,6 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -94,6 +92,7 @@ import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.Permission;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
+import io.dockstore.webservice.permissions.SharedWorkflows;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
@@ -716,18 +715,16 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("shared")
-    @ApiOperation(value = "All workflows shared with user", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "List all workflows shared with user", tags = { "workflows"}, response = Workflow.class, responseContainer = "List")
-    public List<Workflow> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
-        return this.permissionsInterface.workflowsSharedWithUser(user).stream()
-                .map(encodedPath -> {
-                    try {
-                        final String path = URLDecoder.decode(encodedPath, "UTF-8");
+    @ApiOperation(value = "All workflows shared with user", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "List all workflows shared with user", tags = { "workflows"}, response = SharedWorkflows.class, responseContainer = "List")
+    public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
+        return this.permissionsInterface
+                .workflowsSharedWithUser(user).entrySet().stream()
+                .map(e -> {
+                    final List<Workflow> workflows = e.getValue().stream().map(path -> {
                         return workflowDAO.findByPath(path, false);
-                    } catch (UnsupportedEncodingException e) {
-                        return null;
-                    }
+                    }).filter(w -> w != null).collect(Collectors.toList());
+                    return new SharedWorkflows(e.getKey(), workflows);
                 })
-                .filter(w -> w != null) // Just ignore
                 .collect(Collectors.toList());
     }
 

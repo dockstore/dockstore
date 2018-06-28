@@ -3877,7 +3877,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/Workflow"
+              $ref: "#/definitions/SharedWorkflows"
       security:
       - BEARER: []
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
@@ -5280,6 +5280,19 @@ definitions:
         type: "string"
       enum:
         type: "string"
+  SharedWorkflows:
+    type: "object"
+    properties:
+      role:
+        type: "string"
+        enum:
+        - "OWNER"
+        - "WRITER"
+        - "READER"
+      workflows:
+        type: "array"
+        items:
+          $ref: "#/definitions/Workflow"
   SourceControlBean:
     type: "object"
     properties:

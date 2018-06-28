@@ -1,5 +1,7 @@
 package io.dockstore.webservice.permissions.sam;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -107,15 +109,24 @@ public class SamPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public List<String> workflowsSharedWithUser(User user) {
+    public Map<Role, List<String>> workflowsSharedWithUser(User user) {
         ResourcesApi resourcesApi = getResourcesApi(user);
         try {
             List<ResourceAndAccessPolicy> resourceAndAccessPolicies = resourcesApi.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE);
-            return resourceAndAccessPolicies
-                    .stream()
-                    .filter(resourceAndAccessPolicy -> !SamConstants.OWNER_POLICY.equals(resourceAndAccessPolicy.getAccessPolicyName()))
-                    .map(resourceAndPolicy -> resourceAndPolicy.getResourceId().substring(SamConstants.ENCODED_WORKFLOW_PREFIX.length()))
-                    .collect(Collectors.toList());
+            return resourceAndAccessPolicies.stream()
+                    .collect(Collectors.groupingBy(ResourceAndAccessPolicy::getAccessPolicyName))
+                    .entrySet().stream()
+                    .collect(Collectors.toMap(e -> samPolicyNameToRole(e.getKey()),
+                        e -> e.getValue().stream()
+                                .map(r -> {
+                                    try {
+                                        return URLDecoder
+                                                .decode(r.getResourceId().substring(SamConstants.ENCODED_WORKFLOW_PREFIX.length()), "UTF-8");
+                                    } catch (UnsupportedEncodingException e1) {
+                                        return null;
+                                    }
+                                })
+                                .collect(Collectors.toList())));
         } catch (ApiException e) {
             LOG.error("Error getting shared workflows", e);
             throw new CustomWebApplicationException("Error getting shared workflows", e.getCode());
@@ -285,6 +296,17 @@ public class SamPermissionsImpl implements PermissionsInterface {
         } catch (Exception ex) {
             return Optional.empty();
         }
+    }
+
+    private Role samPolicyNameToRole(String policyName) {
+        if (SamConstants.READ_POLICY.equals(policyName)) {
+            return Role.READER;
+        } else if (SamConstants.WRITE_POLICY.equals(policyName)) {
+            return Role.WRITER;
+        } else if (SamConstants.OWNER_POLICY.equals(policyName)) {
+            return Role.OWNER;
+        }
+        return null;
     }
 
 }

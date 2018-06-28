@@ -17,6 +17,7 @@
 package io.dockstore.webservice.permissions;
 
 import java.util.List;
+import java.util.Map;
 
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -64,12 +65,15 @@ public interface PermissionsInterface {
     List<Permission> setPermission(Workflow workflow, User requester, Permission permission);
 
     /**
-     * Returns the workflow paths of all entries that have been shared with the specified <code>user</code>.
+     * Returns a map of all the paths of all workflows that have been shared with the specified <code>user</code>.
+     *
+     * <p>Each key in the map is a {@link Role}, and the value is a list of workflow
+     * paths of workflows for which the user has that role. The paths are NOT encoded.</p>
      *
      * @param user
      * @return this list of all entries shared with the user
      */
-    List<String> workflowsSharedWithUser(User user);
+    Map<Role, List<String>> workflowsSharedWithUser(User user);
 
     /**
      * Lists all <code>Permission</code>s for <code>workflow</code>

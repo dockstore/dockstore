@@ -19,20 +19,22 @@ public class InMemoryPermissionsImplTest {
 
     public static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";
     public static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
+    public static final String DOCKSTORE_ORG_JOHN_MYWORKFLOW = "dockstore.org/john/myworkflow";
     private InMemoryPermissionsImpl inMemoryPermissions;
     private User userMock = Mockito.mock(User.class);
-    public static final String FOO_WORKFLOW_NAME = "foo";
-    public static final String GOO_WORKFLOW_NAME = "goo";
     private Workflow fooWorkflow;
     private Workflow gooWorkflow;
+    private Workflow dockstoreOrgWorkflow;
 
     @Before
     public void setup() {
         inMemoryPermissions = new InMemoryPermissionsImpl();
         fooWorkflow = Mockito.mock(Workflow.class);
         gooWorkflow = Mockito.mock(Workflow.class);
+        dockstoreOrgWorkflow = Mockito.mock(Workflow.class);
         when(fooWorkflow.getWorkflowPath()).thenReturn("foo");
         when(gooWorkflow.getWorkflowPath()).thenReturn("goo");
+        when(dockstoreOrgWorkflow.getWorkflowPath()).thenReturn(DOCKSTORE_ORG_JOHN_MYWORKFLOW);
         Map<String, User.Profile> profiles = new HashMap<>();
         User.Profile profile = new User.Profile();
         profile.email = JOHN_DOE_EXAMPLE_COM;
@@ -57,7 +59,12 @@ public class InMemoryPermissionsImplTest {
         permission.setEmail(JOHN_DOE_EXAMPLE_COM);
         inMemoryPermissions.setPermission(fooWorkflow, userMock, permission);
         inMemoryPermissions.setPermission(gooWorkflow, userMock, permission);
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 2);
+        Assert.assertEquals(1, inMemoryPermissions.workflowsSharedWithUser(userMock).size());
+        permission.setRole(Role.READER);
+        inMemoryPermissions.setPermission(dockstoreOrgWorkflow, userMock, permission);
+        final Map<Role, List<String>> roleListMap = inMemoryPermissions.workflowsSharedWithUser(userMock);
+        Assert.assertEquals(2, roleListMap.size());
+        Assert.assertEquals(DOCKSTORE_ORG_JOHN_MYWORKFLOW, roleListMap.get(Role.READER).get(0));
     }
 
     @Test
@@ -68,9 +75,13 @@ public class InMemoryPermissionsImplTest {
         permission.setEmail(JOHN_DOE_EXAMPLE_COM);
         inMemoryPermissions.setPermission(fooWorkflow, userMock, permission);
         inMemoryPermissions.setPermission(gooWorkflow, userMock, permission);
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 2);
+        final Map<Role, List<String>> sharedWithUser = inMemoryPermissions.workflowsSharedWithUser(userMock);
+        Assert.assertEquals(1, sharedWithUser.size());
+        Assert.assertEquals(2, sharedWithUser.entrySet().iterator().next().getValue().size());
         inMemoryPermissions.removePermission(fooWorkflow, userMock, JOHN_DOE_EXAMPLE_COM, Role.WRITER);
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 1);
+        final Map<Role, List<String>> sharedWithUser1 = inMemoryPermissions.workflowsSharedWithUser(userMock);
+        Assert.assertEquals(1, sharedWithUser1.size());
+        Assert.assertEquals(1, sharedWithUser1.entrySet().iterator().next().getValue().size());
     }
 
     @Test

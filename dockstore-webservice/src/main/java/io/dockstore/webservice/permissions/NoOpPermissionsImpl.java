@@ -2,6 +2,7 @@ package io.dockstore.webservice.permissions;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -18,8 +19,8 @@ public class NoOpPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public List<String> workflowsSharedWithUser(User user) {
-        return Collections.emptyList();
+    public Map<Role, List<String>> workflowsSharedWithUser(User user) {
+        return Collections.emptyMap();
     }
 
     @Override
