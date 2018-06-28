@@ -57,7 +57,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     public HostedWorkflowResource(UserDAO userDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO, FileDAO fileDAO,
             PermissionsInterface permissionsInterface) {
-        super(fileDAO, userDAO);
+        super(fileDAO, userDAO, permissionsInterface);
         this.workflowVersionDAO = workflowVersionDAO;
         this.workflowDAO = workflowDAO;
         this.permissionsInterface = permissionsInterface;

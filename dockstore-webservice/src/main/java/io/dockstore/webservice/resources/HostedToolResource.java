@@ -32,6 +32,7 @@ import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
@@ -47,8 +48,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
 
-    public HostedToolResource(UserDAO userDAO, ToolDAO toolDAO, TagDAO tagDAO, FileDAO fileDAO) {
-        super(fileDAO, userDAO);
+    public HostedToolResource(UserDAO userDAO, ToolDAO toolDAO, TagDAO tagDAO, FileDAO fileDAO, PermissionsInterface permissionsInterface) {
+        super(fileDAO, userDAO, permissionsInterface);
         this.tagDAO = tagDAO;
         this.toolDAO = toolDAO;
     }

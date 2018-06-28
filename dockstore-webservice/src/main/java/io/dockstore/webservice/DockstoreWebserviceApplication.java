@@ -279,7 +279,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource, configuration));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
-        environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO));
+        environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO, authorizer));
         environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO, authorizer));
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
 

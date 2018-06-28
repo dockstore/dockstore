@@ -770,6 +770,8 @@ public class SwaggerClientIT {
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
         user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
+        user2WorkflowsApi.getWorkflow(hostedWorkflow.getId());
+
         // But User 2 cannot edit the hosted workflow
         try {
             user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Collections.emptyList());
@@ -785,18 +787,23 @@ public class SwaggerClientIT {
         // Edit should now work!
         final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Arrays.asList(createCwlWorkflow()));
 
-        // Deleting the version should fail with 403.
+        // Deleting the version should not fail
+        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+
+        // Publishing the workflow should fail
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         try {
-            user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
-            Assert.fail("Should not be able to delete workflow version");
+            user2WorkflowsApi.publish(hostedWorkflow.getId(), publishRequest);
+            Assert.fail("User 2 can unexpectedly publish a read/write workflow");
         } catch (ApiException ex) {
             Assert.assertEquals(403, ex.getCode());
         }
 
         // Give Owner permission to user 2
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.OWNER);
-        // Delete should now work; will thrown exception if not
-        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+
+        // Should be able to publish
+        user2WorkflowsApi.publish(hostedWorkflow.getId(), publishRequest);
 
         checkAnonymousUser(anonWorkflowsApi, hostedWorkflow);
     }
