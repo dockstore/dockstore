@@ -82,8 +82,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         if (sourceFile.isPresent()) {
             imports.put(mainScriptPath, sourceFile.get());
         }
-        // TODO: does NextFlow have imports beyond the main script file linked to from nextflow.config?
-        // kinda, source files in /lib seem to be automatically added to the script classpath
+        // source files in /lib seem to be automatically added to the script classpath
         // binaries are also there and will need to be ignored
         List<String> strings = sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference());
         handleNextFlowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
@@ -169,7 +168,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     private Map<String, String> getImportMap(String mainDescriptor) {
-        //TODO: deal with secondary files properly?
+        //TODO: deal with secondary files properly? (for DAG and tools display)
         return new HashMap<>();
     }
 
