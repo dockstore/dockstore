@@ -2749,26 +2749,6 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/updateLabelsBody'
-  '/hostedEntry/{entryId}':
-    options:
-      tags:
-        - hosted
-      summary: Options for a hosted entry
-      description: ''
-      operationId: hostedEntryOptions
-      parameters:
-        - name: entryId
-          in: path
-          description: The entry id.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -4229,7 +4209,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Workflow'
+                  $ref: '#/components/schemas/SharedWorkflows'
       security:
         - BEARER: []
   '/workflows/{entryId}/registerCheckerWorkflow/{descriptorType}':
@@ -5711,6 +5691,19 @@ components:
           type: string
         enum:
           type: string
+    SharedWorkflows:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - OWNER
+            - WRITER
+            - READER
+        workflows:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
     SourceControlBean:
       type: object
       properties:
