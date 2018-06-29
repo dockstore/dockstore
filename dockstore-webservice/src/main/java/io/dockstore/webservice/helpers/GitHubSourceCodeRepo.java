@@ -232,8 +232,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return reposByGitURl;
         } catch (IOException e) {
-            LOG.error(gitUsername + ": Cannot getWorkflowGitUrl2RepositoryId workflows {}", gitUsername);
-            throw new CustomWebApplicationException("could not determine user organizations ", HttpStatus.SC_REQUEST_TIMEOUT);
+            LOG.error("could not find projects due to ", e);
+            throw new CustomWebApplicationException("could not read projects from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
