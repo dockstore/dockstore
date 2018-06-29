@@ -12,8 +12,6 @@ information on what that looks like from a user point of view in a mini tutorial
 When browsing WDL workflows from within Dockstore, you will see a "Launch with FireCloud" button on the right. The currently selected
 version of the workflow will be exported, but this can subsequently be changed in the FireCloud UI if need be.
 
-Note: Workflows with file-based imports are unsupported in FireCloud, the button will be disabled for those workflow versions.
-
 ![WDL workflow](/assets/images/docs/firecloud/firecloud_from_dockstore1.png)
 
 If not logged into FireCloud, you will be prompted to login. Otherwise, or after login, you will be presented with the following screen. 
