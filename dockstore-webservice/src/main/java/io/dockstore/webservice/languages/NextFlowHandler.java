@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import com.google.common.collect.Lists;
@@ -33,6 +34,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
@@ -76,13 +78,28 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         if (manifest != null && manifest.containsKey("mainScript")) {
             mainScriptPath = (String)manifest.get("mainScript");
         }
-        SourceFile sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
-        if (sourceFile != null) {
-            imports.put(mainScriptPath, sourceFile);
+        Optional<SourceFile> sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
+        if (sourceFile.isPresent()) {
+            imports.put(mainScriptPath, sourceFile.get());
         }
-        // TODO: does NextFlow have imports beyond the main script file linked to from nextflow.config?
-        // kinda, source files in /lib seem to be automatically added, binaries are also there and will need to be ignored
+        // source files in /lib seem to be automatically added to the script classpath
+        // binaries are also there and will need to be ignored
+        List<String> strings = sourceCodeRepoInterface.listFiles(repositoryId, "/", version.getReference());
+        handleNextFlowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "lib");
+        handleNextFlowImports(repositoryId, version, sourceCodeRepoInterface, imports, strings, "bin");
         return imports;
+    }
+
+    private void handleNextFlowImports(String repositoryId, Version version, SourceCodeRepoInterface sourceCodeRepoInterface,
+        Map<String, SourceFile> imports, List<String> strings, String lib) {
+        if (strings.contains(lib)) {
+            List<String> libraries = sourceCodeRepoInterface.listFiles(repositoryId, lib, version.getReference());
+            for (String library : libraries) {
+                Optional<SourceFile> librarySourceFile = sourceCodeRepoInterface
+                    .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, FilenameUtils.concat(lib, library));
+                librarySourceFile.ifPresent(sourceFile -> imports.put(lib + "/" + library, sourceFile));
+            }
+        }
     }
 
     private ConfigObject getConfigObject(String content) {
@@ -151,7 +168,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     private Map<String, String> getImportMap(String mainDescriptor) {
-        //TODO: deal with secondary files properly?
+        //TODO: deal with secondary files properly? (for DAG and tools display)
         return new HashMap<>();
     }
 
