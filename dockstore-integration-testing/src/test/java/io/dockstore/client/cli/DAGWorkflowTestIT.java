@@ -157,8 +157,15 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have four nodes (including start and end)", countNode, 4);
         Assert.assertTrue("node data should have hello as task", strings.get(0).contains("hello"));
-        Assert.assertTrue("should have four edges", strings.get(0).contains(
-                "\"edges\":[{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_hello\"}},{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_helperfile.helper\"}},{\"data\":{\"source\":\"dockstore_helperfile.helper\",\"target\":\"UniqueEndKey\"}},{\"data\":{\"source\":\"dockstore_hello\",\"target\":\"UniqueEndKey\"}}]"));
+        Assert.assertTrue("should have first edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_hello\"}}"));
+        Assert.assertTrue("should have second edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_helper\"}}"));
+        Assert.assertTrue("should have third edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"dockstore_helper\",\"target\":\"UniqueEndKey\"}}"));
+        Assert.assertTrue("should have fourth edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"dockstore_hello\",\"target\":\"UniqueEndKey\"}}"));
+
     }
 
     @Test
@@ -177,8 +184,17 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertTrue("node data should have ps as tool", strings.get(0).contains("ps"));
         Assert.assertTrue("node data should have cgrep as tool", strings.get(0).contains("cgrep"));
         Assert.assertTrue("node data should have wc as tool", strings.get(0).contains("wc"));
-        Assert.assertTrue("should have 5 edges", strings.get(0).contains(
-                "\"edges\":[{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_ps\"}},{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_cgrep\"}},{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_wc\"}},{\"data\":{\"source\":\"dockstore_wc\",\"target\":\"UniqueEndKey\"}},{\"data\":{\"source\":\"dockstore_cgrep\",\"target\":\"UniqueEndKey\"}}]"));
+        Assert.assertTrue("should have first edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_ps\"}}"));
+        Assert.assertTrue("should have second edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_cgrep\"}}"));
+        Assert.assertTrue("should have third edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_wc\"}}"));
+        Assert.assertTrue("should have fourth edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"dockstore_wc\",\"target\":\"UniqueEndKey\"}}"));
+        Assert.assertTrue("should have fifth edge", strings.get(0).contains(
+                "{\"data\":{\"source\":\"dockstore_cgrep\",\"target\":\"UniqueEndKey\"}}"));
+
     }
 
     @Test
