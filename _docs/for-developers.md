@@ -178,9 +178,9 @@ See https://cromwell.readthedocs.io/en/develop/Imports/ for a general knowledge 
 
 Imports allow you to reference other files in your workflow.  There are two types of resources that are supported in imports: http(s) and file-path based. Any public http(s) based URL can be used as the resource for an import, such as a website, GitHub, GA4GH compliant TES endpoint, and etc.
 
-There are times when you may want to convert file-path based imports to public http(s) imports.  One such reason is to ensure compatibility with FireCloud since it currently does not support file-path based imports.  There are so many different ways to convert to a public http(s) based import, the following are two examples.
+There are times when you may want to convert file-path based imports to public http(s) imports.  One such reason is to ensure compatibility with FireCloud since it currently does not support file-path based imports.  There are many different ways to convert to a public http(s) based import, the following are two examples.
 
-You can host your file on GitHub and import it in the workflow descriptor like Topmed does:
+You can host your file on GitHub and import it in the workflow descriptor like this:
 
 ```
 import "https://raw.githubusercontent.com/DataBiosphere/topmed-workflows/1.11.0/variant-caller/variant-caller-wdl/topmed_freeze3_calling.wdl" as TopMed_variantcaller
@@ -188,7 +188,7 @@ import "https://raw.githubusercontent.com/DataBiosphere/topmed-workflows/1.11.0/
 ...
 ```
 
-Similarly, you can also host your file on a public google bucket and import it in the workflow descriptor like:
+Similarly, you can also host your file on a public google bucket and import it in the workflow descriptor like this:
 
 ```
 import "http://storage.googleapis.com/..."
