@@ -68,7 +68,7 @@ public class NextFlowIT extends BaseIT {
             assertNotSame("", workflow.getWorkflowName());
         }
 
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
@@ -81,7 +81,7 @@ public class NextFlowIT extends BaseIT {
             refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get()
                 .getSourceFiles());
         Assert.assertEquals(4, sourceFileList.size());
-        Assert.assertTrue("files are what we expected", sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/AMPA-BIGTABLE.pl")) && sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/multi-AMPA-BIGTABLE.pl")));
+        Assert.assertTrue("files are not what we expected", sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/AMPA-BIGTABLE.pl")) && sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/multi-AMPA-BIGTABLE.pl")));
 
         // check that metadata made it through properly
         Assert.assertEquals("test.user@test.com", refreshGithub.getAuthor());
@@ -98,7 +98,7 @@ public class NextFlowIT extends BaseIT {
         // get workflow stubs
         usersApi.refreshWorkflows(user.getId());
 
-        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
         Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
