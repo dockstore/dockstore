@@ -373,6 +373,7 @@ public class GeneralIT extends BaseIT {
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "convert", "entry2json", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl", "--descriptor", "wdl", "--script" });
         // TODO: Test that output is the expected WDL file
+        Assert.assertTrue(systemOutRule.getLog().contains("\"test.hello.name\": \"String\""));
     }
 
     @Test
