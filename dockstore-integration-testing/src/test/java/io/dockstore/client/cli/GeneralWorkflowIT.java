@@ -379,6 +379,7 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     public void testRefreshAndConvertWithImportsWDL() {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "update_workflow", "--entry",
@@ -754,6 +755,8 @@ public class GeneralWorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
                 SourceControl.GITLAB.toString() + "/dockstore.test.user2/dockstore-workflow-example", "--script" });
+        final long nullLastModifiedWorkflowVersions = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
+        Assert.assertEquals("All GitLab workflow versions should have last modified populated after refreshing", 0, nullLastModifiedWorkflowVersions);
 
         // Check a few things
         final long count = testingPostgres.runSelectStatement(
@@ -834,7 +837,6 @@ public class GeneralWorkflowIT extends BaseIT {
      */
     @Test
     @Category(SlowTest.class)
-    @Ignore("Broken on hotfix due to 'API V3 is no longer supported. Use API V4 instead'")
     public void testManualPublishGitlab() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -848,6 +850,9 @@ public class GeneralWorkflowIT extends BaseIT {
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
         Assert.assertEquals("there should be 1 valid version, there are " + count, 1, count);
+
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
+        Assert.assertEquals("All GitLab workflow versions should have last modified populated when manual published", 0, count2);
 
         // grab wdl file
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",

@@ -128,8 +128,8 @@ public final class CommonTestUtilities {
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
         cleanStatePrivate2(support, CONFIG_PATH, isNewApplication);
-        // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
-        getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+        // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
+        // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**

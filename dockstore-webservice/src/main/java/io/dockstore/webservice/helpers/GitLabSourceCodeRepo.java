@@ -134,10 +134,13 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             GitlabProject project = gitlabAPI.getProject(repositoryId.split("/")[0], repositoryId.split("/")[1]);
             List<GitlabTag> tagList = gitlabAPI.getTags(repositoryId);
             List<GitlabBranch> branches = gitlabAPI.getBranches(project);
-            tagList.forEach(tag -> handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(),
-                Version.ReferenceType.TAG));
+            tagList.forEach(tag -> {
+                Date committedDate = tag.getCommit().getCommittedDate();
+                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, tag.getName(), Version.ReferenceType.TAG, committedDate);
+            });
             branches.forEach(branch -> {
-                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(), Version.ReferenceType.BRANCH);
+                Date committedDate = branch.getCommit().getCommittedDate();
+                handleVersionOfWorkflow(repositoryId, workflow, existingWorkflow, existingDefaults, repositoryId, branch.getName(), Version.ReferenceType.BRANCH, committedDate);
             });
         } catch (IOException e) {
             LOG.info("could not find " + repositoryId + " due to " + e.getMessage());
@@ -145,8 +148,9 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         return workflow;
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     private void handleVersionOfWorkflow(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type) {
+        Map<String, WorkflowVersion> existingDefaults, String id, String branchName, Version.ReferenceType type, Date committedDate) {
         // Initialize workflow version
         WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
         String calculatedPath = version.getWorkflowPath();
@@ -161,7 +165,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
             version.setValid(true);
         }
         version.setReferenceType(type);
-
+        version.setLastModified(committedDate);
         // Use default test parameter file if either new version or existing version that hasn't been edited
         createTestParameterFiles(workflow, id, branchName, version, identifiedType);
 
