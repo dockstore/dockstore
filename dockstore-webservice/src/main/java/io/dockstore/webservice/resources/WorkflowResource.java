@@ -725,6 +725,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                     }).filter(w -> w != null).collect(Collectors.toList());
                     return new SharedWorkflows(e.getKey(), workflows);
                 })
+                .filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0)
                 .collect(Collectors.toList());
     }
 
