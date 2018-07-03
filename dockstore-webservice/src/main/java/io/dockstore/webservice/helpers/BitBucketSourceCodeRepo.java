@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -24,14 +25,10 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import javax.ws.rs.core.GenericType;
+
+import com.google.common.base.Strings;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -40,10 +37,21 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
-import io.dockstore.webservice.resources.ResourceUtilities;
+import io.swagger.bitbucket.client.ApiClient;
+import io.swagger.bitbucket.client.ApiException;
+import io.swagger.bitbucket.client.Configuration;
+import io.swagger.bitbucket.client.api.RefsApi;
+import io.swagger.bitbucket.client.api.RepositoriesApi;
+import io.swagger.bitbucket.client.model.Branch;
+import io.swagger.bitbucket.client.model.PaginatedBranches;
+import io.swagger.bitbucket.client.model.PaginatedRefs;
+import io.swagger.bitbucket.client.model.PaginatedRepositories;
+import io.swagger.bitbucket.client.model.PaginatedTags;
+import io.swagger.bitbucket.client.model.PaginatedTreeentries;
+import io.swagger.bitbucket.client.model.Repository;
+import io.swagger.bitbucket.client.model.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,27 +59,26 @@ import org.slf4j.LoggerFactory;
  * @author dyuen
  */
 public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
-    private static final String BITBUCKET_V1_API_URL = "https://bitbucket.org/api/1.0/";
-    /** should use the java api, but I can't make heads or tails of the documentation
+    /**
+     * should use the java api, but I can't make heads or tails of the documentation
      * https://docs.atlassian.com/bitbucket-server/javadoc/5.11.1/api/reference/packages.html
-     * */
-    private static final String BITBUCKET_V2_API_URL = "https://bitbucket.org/api/2.0/";
+     */
+    private static final String BITBUCKET_V2_API_URL = "https://api.bitbucket.org/2.0/";
     private static final String BITBUCKET_GIT_URL_PREFIX = "git@bitbucket.org:";
     private static final String BITBUCKET_GIT_URL_SUFFIX = ".git";
 
     private static final Logger LOG = LoggerFactory.getLogger(BitBucketSourceCodeRepo.class);
-    private final HttpClient client;
-    private final String bitbucketTokenContent;
+    private final ApiClient apiClient;
 
     /**
      * @param gitUsername           username that owns the bitbucket token
-     * @param client
      * @param bitbucketTokenContent bitbucket token
      */
-    BitBucketSourceCodeRepo(String gitUsername, HttpClient client, String bitbucketTokenContent) {
-        this.client = client;
-        this.bitbucketTokenContent = bitbucketTokenContent;
+    BitBucketSourceCodeRepo(String gitUsername, String bitbucketTokenContent) {
         this.gitUsername = gitUsername;
+
+        apiClient = Configuration.getDefaultApiClient();
+        apiClient.addDefaultHeader("Authorization", "Bearer " + bitbucketTokenContent);
     }
 
     @Override
@@ -80,79 +87,91 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             fileName = fileName.substring(1);
         }
 
-        String content;
-        String url = BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + '/' + fileName;
-        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-        LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-        if (asString.isPresent()) {
+        try {
+            String fileContent = this
+                .getArbitraryURL(BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + '/' + fileName,
+                    new GenericType<String>() {
+                    });
             LOG.info(gitUsername + ": FOUND: {}", fileName);
-            content = asString.get();
-        } else {
-            LOG.info(gitUsername + ": Branch: {} has no {}", reference, fileName);
-            return null;
-        }
-
-        if (!content.isEmpty()) {
-            return content;
-        } else {
+            return fileContent;
+        } catch (ApiException e) {
+            LOG.error("unable to readFile: " + fileName);
             return null;
         }
     }
 
     @Override
     public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
-        // Get descriptor content using the BitBucket API
-        String url = BITBUCKET_V2_API_URL + "repositories/" + repositoryId + "/src/" + reference + StringUtils.prependIfMissing(pathToDirectory, "/");
-        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-
-        LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-
-        if (asString.isPresent()) {
-            String userJson = asString.get();
-            // TODO: deal with pagination for directories with more than ten files
-            JsonElement jsonElement = new JsonParser().parse(userJson);
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
-            return StreamSupport.stream(jsonObject.getAsJsonArray("values").spliterator(), false).map(element -> StringUtils.removeStart(element.getAsJsonObject().get("path").getAsString(), pathToDirectory + "/")).collect(Collectors
-                .toList());
+        RepositoriesApi repositoriesApi = new RepositoriesApi(apiClient);
+        try {
+            List<String> files = new ArrayList<>();
+            PaginatedTreeentries paginatedTreeentries = repositoriesApi
+                .repositoriesUsernameRepoSlugSrcNodePathGet(repositoryId.split("/")[0], reference, pathToDirectory,
+                    repositoryId.split("/")[1], null, null, null);
+            // TODO: this pagination pattern happens a lot with Bitbucket, a future exercise would clean this up
+            while (paginatedTreeentries != null) {
+                files.addAll(
+                    paginatedTreeentries.getValues().stream().map(entry -> StringUtils.removeStart(entry.getPath(), pathToDirectory + "/"))
+                        .collect(Collectors.toList()));
+                if (paginatedTreeentries.getNext() != null) {
+                    paginatedTreeentries = getArbitraryURL(paginatedTreeentries.getNext(), new GenericType<PaginatedTreeentries>() {
+                    });
+                } else {
+                    paginatedTreeentries = null;
+                }
+            }
+            return files;
+        } catch (ApiException e) {
+            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            return null;
         }
-        return Lists.newArrayList();
     }
 
     @Override
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
-        Map<String, String> reposByGitURl = new HashMap<>();
-        String url = BITBUCKET_V1_API_URL + "users/" + gitUsername;
-
-        // Call to Bitbucket API to get list of Workflows owned by the current user (is it possible that owner is a group the user is part of?)
-        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-        LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-
-        if (asString.isPresent()) {
-            String userJson = asString.get();
-
-            JsonElement jsonElement = new JsonParser().parse(userJson);
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
-            JsonArray asJsonArray = jsonObject.getAsJsonArray("repositories");
-            for (JsonElement element : asJsonArray) {
-                String owner = element.getAsJsonObject().get("owner").getAsString();
-                String name = element.getAsJsonObject().get("name").getAsString();
-                String bitbucketUrl = BITBUCKET_GIT_URL_PREFIX + owner + "/" + name + BITBUCKET_GIT_URL_SUFFIX;
-
-                String id = owner + "/" + name;
-                reposByGitURl.put(bitbucketUrl, id);
+        RepositoriesApi repositoriesApi = new RepositoriesApi(apiClient);
+        try {
+            Map<String, String> collect = new HashMap<>();
+            PaginatedRepositories contributor = repositoriesApi.repositoriesUsernameGet(gitUsername, "contributor");
+            while (contributor != null) {
+                collect.putAll(contributor.getValues().stream().collect(Collectors
+                    .toMap(object -> BITBUCKET_GIT_URL_PREFIX + object.getFullName() + BITBUCKET_GIT_URL_SUFFIX, Repository::getFullName)));
+                if (contributor.getNext() != null) {
+                    contributor = getArbitraryURL(contributor.getNext(), new GenericType<PaginatedRepositories>() {
+                    });
+                } else {
+                    contributor = null;
+                }
             }
-
+            return collect;
+        } catch (ApiException e) {
+            LOG.error("could not find projects due to ", e);
+            throw new CustomWebApplicationException("could not read projects from gitlab, please re-link your gitlab token",
+                HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        return reposByGitURl;
+    }
+
+    /**
+     * Gets arbitrary URLs that Bitbucket seems to use for pagination
+     *
+     * @param url full URL coming back from a self link in Bitbucket
+     * @return the typed result
+     * @throws ApiException swagger classes throw this exception
+     */
+    private <T> T getArbitraryURL(String url, GenericType<T> type) throws ApiException {
+        String substring = url.substring(BITBUCKET_V2_API_URL.length() - 1);
+        return apiClient
+            .invokeAPI(substring, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/json", "application/json",
+                new String[] { "api_key", "basic", "oauth2" }, type);
     }
 
     /**
      * Uses Bitbucket API to grab a raw source file and return it; Return null if nothing found
      *
-     * @param path
-     * @param repositoryId
-     * @param branch
-     * @param type
+     * @param path         path to the file
+     * @param repositoryId id in the format of "name/repo"
+     * @param branch       branch name
+     * @param type         type of file to create
      * @return source file
      */
     @Override
@@ -160,17 +179,11 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         // TODO: should we even be creating a sourcefile before checking that it is valid?
         // I think it is fine since in the next part we just check that source file has content or not (no content is like null)
         SourceFile file = null;
+        String content = this.readFile(repositoryId, path, branch);
 
-        // Get descriptor content using the BitBucket API
-        String url = BITBUCKET_V1_API_URL + "repositories/" + repositoryId + "/raw/" + branch + "/" + path;
-        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-
-        LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-
-        if (asString.isPresent()) {
+        if (!Strings.isNullOrEmpty(content)) {
             file = new SourceFile();
             // Grab content from found file
-            String content = asString.get();
 
             // Is workflow descriptor valid?
             boolean validWorkflow = true;
@@ -192,32 +205,64 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (version.getReferenceType() != Version.ReferenceType.UNSET) {
             return;
         }
-        // Look at each version, check for valid workflows
-        String url = BITBUCKET_V1_API_URL + "repositories/" + repositoryId;
-        // Call to Bitbucket API to get list of branches for a given repo (what about tags)
-        Optional<String> branches = ResourceUtilities.asString(url + "/branches", bitbucketTokenContent, client);
-        if (branches.isPresent()) {
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>)gson.fromJson(branches.get(), map.getClass());
-            if (map.keySet().stream().anyMatch(key -> key.equals(version.getReference()))) {
-                version.setReferenceType(Version.ReferenceType.BRANCH);
+        RefsApi refsApi = new RefsApi(apiClient);
+        try {
+            PaginatedBranches paginatedBranches = refsApi
+                .repositoriesUsernameRepoSlugRefsBranchesGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            while (paginatedBranches != null) {
+                if (paginatedBranches.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
+                    version.setReferenceType(Version.ReferenceType.BRANCH);
+                }
+                if (paginatedBranches.getNext() != null) {
+                    paginatedBranches = getArbitraryURL(paginatedBranches.getNext(), new GenericType<PaginatedBranches>() {
+                    });
+                } else {
+                    paginatedBranches = null;
+                }
             }
+        } catch (ApiException e) {
+            LOG.error(gitUsername + ": apiexception on reading branches" + e.getMessage());
+            // this is not so critical to warrant a http error code
         }
-        Optional<String> tags = ResourceUtilities.asString(url + "/tags", bitbucketTokenContent, client);
-        if (tags.isPresent()) {
-            Gson gson = new Gson();
-            Map<String, String> map = new HashMap<>();
-            map = (Map<String, String>)gson.fromJson(tags.get(), map.getClass());
-            if (map.keySet().stream().anyMatch(key -> key.equals(version.getReference()))) {
-                version.setReferenceType(Version.ReferenceType.TAG);
+
+        try {
+            PaginatedTags paginatedTags = refsApi
+                .repositoriesUsernameRepoSlugRefsTagsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            while (paginatedTags != null) {
+                if (paginatedTags.getValues().stream().anyMatch(key -> key.getName().equals(version.getReference()))) {
+                    version.setReferenceType(Version.ReferenceType.TAG);
+                }
+                if (paginatedTags.getNext() != null) {
+                    paginatedTags = getArbitraryURL(paginatedTags.getNext(), new GenericType<PaginatedTags>() {
+                    });
+                } else {
+                    paginatedTags = null;
+                }
             }
+        } catch (ApiException e) {
+            LOG.error(gitUsername + ": apiexception on reading tags" + e.getMessage());
+            // this is not so critical to warrant a http error code
         }
     }
 
     @Override
     String getCommitID(String repositoryId, Version version) {
-        //TODO: optimize here for bitbucket by returning actual sha1
+        RefsApi refsApi = new RefsApi(apiClient);
+        try {
+            Branch branch = refsApi.repositoriesUsernameRepoSlugRefsBranchesNameGet(repositoryId.split("/")[0], version.getReference(),
+                repositoryId.split("/")[0]);
+            Tag tag = refsApi.repositoriesUsernameRepoSlugRefsTagsNameGet(repositoryId.split("/")[0], version.getReference(),
+                repositoryId.split("/")[0]);
+            if (branch != null) {
+                return branch.getTarget().getHash();
+            }
+            if (tag != null) {
+                return tag.getTarget().getHash();
+            }
+        } catch (ApiException e) {
+            LOG.error(gitUsername + ": apiexception on reading commitid" + e.getMessage());
+            // this is not so critical to warrant a http error code
+        }
         return null;
     }
 
@@ -244,25 +289,15 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public Workflow setupWorkflowVersions(String repositoryId, Workflow workflow, Optional<Workflow> existingWorkflow,
-            Map<String, WorkflowVersion> existingDefaults) {
-        // Look at each version, check for valid workflows
-        String url = BITBUCKET_V1_API_URL + "repositories/" + repositoryId + "/branches-tags";
-
-        // Call to Bitbucket API to get list of branches for a given repo (what about tags)
-        Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-        LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-
-        if (asString.isPresent()) {
-            String repoJson = asString.get();
-
-            JsonElement jsonElement = new JsonParser().parse(repoJson);
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
-            // Iterate to find branches and tags arrays
-            for (Map.Entry<String, JsonElement> objectEntry : jsonObject.entrySet()) {
-                JsonArray branchArray = objectEntry.getValue().getAsJsonArray();
-                // Iterate over both arrays
-                for (JsonElement branch : branchArray) {
-                    String branchName = branch.getAsJsonObject().get("name").getAsString();
+        Map<String, WorkflowVersion> existingDefaults) {
+        RefsApi refsApi = new RefsApi(apiClient);
+        try {
+            PaginatedRefs paginatedRefs = refsApi
+                .repositoriesUsernameRepoSlugRefsGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+            // this pagination structure is repetitive and should be refactored
+            while (paginatedRefs != null) {
+                paginatedRefs.getValues().forEach(ref -> {
+                    String branchName = ref.getName();
 
                     WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
                     String calculatedPath = version.getWorkflowPath();
@@ -280,15 +315,20 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     createTestParameterFiles(workflow, repositoryId, branchName, version, identifiedType);
                     workflow.addWorkflowVersion(
-                            combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+                        combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
+                });
+
+                if (paginatedRefs.getNext() != null) {
+                    paginatedRefs = getArbitraryURL(paginatedRefs.getNext(), new GenericType<PaginatedRefs>() {
+                    });
+                } else {
+                    paginatedRefs = null;
                 }
             }
-
-        } else {
+        } catch (ApiException e) {
             LOG.error("Could not find Bitbucket repository " + repositoryId + " for user.");
             throw new CustomWebApplicationException("Could not reach Bitbucket", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
-
         return workflow;
     }
 
@@ -313,35 +353,20 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
 
     @Override
     public String getMainBranch(Entry entry, String repositoryId) {
-        String branch;
-
+        RepositoriesApi api = new RepositoriesApi(apiClient);
         // Is default version set?
         if (entry.getDefaultVersion() != null) {
-            branch = getBranchNameFromDefaultVersion(entry);
+            return getBranchNameFromDefaultVersion(entry);
         } else {
             // If default version is not set, need to find the main branch
-
-            // Create API call string
-            String url = BITBUCKET_V1_API_URL + "repositories/" + repositoryId + "/main-branch";
-
-            // Call BitBucket API
-            Optional<String> asString = ResourceUtilities.asString(url, bitbucketTokenContent, client);
-            LOG.info(gitUsername + ": RESOURCE CALL: {}", url);
-
-            if (asString.isPresent()) {
-                String branchJson = asString.get();
-                Gson gson = new Gson();
-                Map<String, String> map = new HashMap<>();
-                map = (Map<String, String>)gson.fromJson(branchJson, map.getClass());
-
-                // Branch stores the "main branch" on bitbucket
-                branch = map.get("name");
-            } else {
-                branch = null;
+            try {
+                Repository repository = api.repositoriesUsernameRepoSlugGet(repositoryId.split("/")[0], repositoryId.split("/")[1]);
+                return repository.getMainbranch().getName();
+            } catch (ApiException e) {
+                LOG.error("Unable to retrieve default branch for repository " + repositoryId);
+                return null;
             }
         }
-
-        return branch;
     }
 
     @Override
