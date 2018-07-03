@@ -44,3 +44,9 @@ If not logged into DNAstack, you will be prompted to login. Otherwise or after l
 You will need to pick a version of your workflow to import and a project to import it into.
 Then hit the button to "Import" and continue from within the DNAstack interface to run your workflow. 
 Note that as with the above approach, you will want to double-check that the workflow specifies a runtime environment (docker, cpu, memory, and disks) if you have trouble importing the workflow and that the workflow has not been imported before. 
+
+
+## Limitations
+1. While we support launching of WDL workflows, tools as listed in Dockstore are currently not supported.
+0. DNAStack does not currently support http(s) or file-path based imports.  Importing a workflow with those imports will result in error.  See [cromwell imports docs](https://cromwell.readthedocs.io/en/develop/Imports/) for more info about imports.
+0. Only the WDL language is supported.

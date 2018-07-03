@@ -10,10 +10,12 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 
 {% include language-support.html %}
 
-<sup>[1] Some verified tools/workflows are known to execute unsuccessfully with Bunny.  As a result, these tools/workflows will also execute unsuccessfully with Bunny through Dockstore.
+<sup>[1] Does not support file-path based imports. See [FireCloud Limitations](/docs/user-tutorials/firecloud-launch-with/#limitations) for limitations.
 </sup>
 
-<sup> [2] The handful of verified WDL tools/workflows were tested successfully.  More verification/testing likely needed.</sup>
+<sup>[2] Does not support file-path or http(s) based imports. See [DNAStack Limitations](/docs/user-tutorials/dnastack-launch-with/#limitations) for limitations.
+</sup>
 
-<sup> [3] Bunny file output provisioning fails if the parameter file has "metadata" property or similar, see https://github.com/ga4gh/dockstore/issues/1317 </sup>
+<sup> [3] The small number of verified Dockstore WDL tools/workflows were tested successfully.  More verification/testing likely needed.</sup>
+
 <!-- &ast; Nextflow has preliminary support for workflow registration -->
