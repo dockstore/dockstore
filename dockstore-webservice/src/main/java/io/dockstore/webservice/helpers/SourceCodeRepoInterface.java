@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 
 import com.google.common.base.Strings;
+import com.google.common.primitives.Bytes;
 import io.dockstore.common.LanguageType;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -52,6 +54,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
+    public static final int BYTES_IN_KB = 1024;
 
     String gitUsername;
 
@@ -89,6 +92,15 @@ public abstract class SourceCodeRepoInterface {
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
             dockstoreFile.setType(fileType);
+            // a file of 1MB size is probably up to no good
+            if (fileResponse.getBytes(StandardCharsets.UTF_8).length >= BYTES_IN_KB * BYTES_IN_KB) {
+                fileResponse = "Dockstore does not store files over 1MB in size";
+            }
+            // some binary files that I tried has this character which cannot be stored
+            // in postgres anyway https://www.postgresql.org/message-id/1171970019.3101.328.camel%40coppola.muc.ecircle.de
+            if (Bytes.indexOf(fileResponse.getBytes(StandardCharsets.UTF_8), Byte.decode("0x00")) != -1) {
+                fileResponse = "Dockstore does not store binary files";
+            }
             dockstoreFile.setContent(fileResponse);
             dockstoreFile.setPath(path);
             return Optional.of(dockstoreFile);
