@@ -257,8 +257,8 @@ public class Tool extends Entry<Tool, Tag> {
         return tags;
     }
 
-    public void addTag(Tag tag) {
-        tags.add(tag);
+    public boolean addTag(Tag tag) {
+        return tags.add(tag);
     }
 
     public boolean removeTag(Tag tag) {

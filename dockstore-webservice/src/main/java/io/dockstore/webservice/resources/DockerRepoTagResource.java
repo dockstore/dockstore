@@ -156,7 +156,11 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
             // Set dirty bit since this is a manual add
             byId.setDirtyBit(true);
 
-            c.addTag(byId);
+            boolean ableToAdd = c.addTag(byId);
+            if (!ableToAdd) {
+                tagDAO.delete(byId);
+                throw new CustomWebApplicationException("Rollback of tag creation due to duplicate name", HttpStatus.SC_BAD_REQUEST);
+            }
         }
 
         Tool result = toolDAO.findById(containerId);
