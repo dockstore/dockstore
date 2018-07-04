@@ -33,7 +33,7 @@ public final class FileFormatHelper {
             Set<SourceFile> sourceFiles = tag.getSourceFiles();
             List<SourceFile> cwlFiles = sourceFiles.stream()
                     .filter(sourceFile -> sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)).collect(Collectors.toList());
-            cwlFiles.forEach(cwlFile -> {
+            cwlFiles.stream().filter(cwlFile -> cwlFile.getContent() != null).forEach(cwlFile -> {
                 inputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "inputs"));
                 outputFileFormats.addAll(cwlHandler.getFileFormats(cwlFile.getContent(), "outputs"));
             });

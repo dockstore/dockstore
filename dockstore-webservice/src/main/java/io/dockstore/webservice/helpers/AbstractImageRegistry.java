@@ -576,6 +576,9 @@ public abstract class AbstractImageRegistry {
         // Save all new and existing containers, and generate new tags
         for (final Tool tool : dbToolList) {
             tool.setLastUpdated(time);
+            if (tool.getUsers() == null) {
+                tool.setUsers(new HashSet<>());
+            }
             tool.addUser(user);
             toolDAO.create(tool);
 
