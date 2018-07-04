@@ -708,6 +708,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished()));
+        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;
     }
 
