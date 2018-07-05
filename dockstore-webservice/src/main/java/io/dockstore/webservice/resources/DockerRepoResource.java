@@ -98,7 +98,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoResource extends AbstractEntryResource<Tool, Tag, ToolDAO, TagDAO> implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface  {
+public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface  {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
     private static final String PAGINATION_LIMIT = "100";
@@ -114,12 +114,12 @@ public class DockerRepoResource extends AbstractEntryResource<Tool, Tag, ToolDAO
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final ObjectMapper objectMapper;
+    private final ElasticManager elasticManager;
     private final WorkflowResource workflowResource;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
             LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
-        super(labelDAO, new ElasticManager());
         objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
@@ -135,6 +135,7 @@ public class DockerRepoResource extends AbstractEntryResource<Tool, Tag, ToolDAO
         this.workflowResource = workflowResource;
 
         this.toolDAO = toolDAO;
+        elasticManager = new ElasticManager();
     }
 
     List<Tool> refreshToolsForUser(Long userId, String organization) {
@@ -272,22 +273,17 @@ public class DockerRepoResource extends AbstractEntryResource<Tool, Tag, ToolDAO
         return c;
     }
 
-    @Override
-    protected ToolDAO getEntryDAO() {
-        return toolDAO;
-    }
 
     @PUT
-    @Override
     @Timed
     @UnitOfWork
     @Path("/{containerId}/labels")
-    @ApiOperation(value = "Update the labels linked to a container.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class, nickname = "updateLabels")
+    @ApiOperation(value = "Update the labels linked to a container.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
     public Tool updateLabels(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return super.updateLabels(user, containerId, labelStrings, emptyBody);
+        return this.updateLabels(user, containerId, labelStrings, labelDAO, elasticManager);
     }
 
     @PUT
@@ -1022,7 +1018,7 @@ public class DockerRepoResource extends AbstractEntryResource<Tool, Tag, ToolDAO
         return false;
     }
 
-    public void checkNotHosted(Tool tool) {
+    private void checkNotHosted(Tool tool) {
         if (tool.getMode() == ToolMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }

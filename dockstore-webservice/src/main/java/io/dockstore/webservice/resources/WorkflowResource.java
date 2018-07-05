@@ -119,11 +119,12 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/workflows")
 @Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowResource extends AbstractEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface, SourceControlResourceInterface {
+public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface, SourceControlResourceInterface {
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
+    private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final WorkflowDAO workflowDAO;
@@ -142,7 +143,6 @@ public class WorkflowResource extends AbstractEntryResource<Workflow, WorkflowVe
     public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
         WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID,
         String bitbucketClientSecret, PermissionsInterface permissionsInterface) {
-        super(labelDAO, new ElasticManager());
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.workflowVersionDAO = workflowVersionDAO;
@@ -158,6 +158,7 @@ public class WorkflowResource extends AbstractEntryResource<Workflow, WorkflowVe
         this.permissionsInterface = permissionsInterface;
 
         this.workflowDAO = workflowDAO;
+        elasticManager = new ElasticManager();
     }
 
     /**
@@ -443,20 +444,15 @@ public class WorkflowResource extends AbstractEntryResource<Workflow, WorkflowVe
         return workflow;
     }
 
-    @Override
-    protected WorkflowDAO getEntryDAO() {
-        return workflowDAO;
-    }
 
     @PUT
-    @Override
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/labels")
-    @ApiOperation(value = "Update the labels linked to a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class, nickname = "updateLabels")
+    @ApiOperation(value = "Update the labels linked to a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
     public Workflow updateLabels(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings, @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        return super.updateLabels(user, workflowId, labelStrings, emptyBody);
+        return this.updateLabels(user, workflowId, labelStrings, labelDAO, elasticManager);
     }
 
     @PUT
@@ -1588,7 +1584,7 @@ public class WorkflowResource extends AbstractEntryResource<Workflow, WorkflowVe
         return this.workflowDAO;
     }
 
-    public void checkNotHosted(Workflow workflow) {
+    private void checkNotHosted(Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new WebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }
