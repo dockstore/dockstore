@@ -267,7 +267,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted tools can have their default path updated
      */
     @Test
-    public void testUpdatingDefaultHostedTool() {
+    public void testUpdatingDefaultVersionHostedTool() {
         ApiClient webClient = getWebClient();
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -289,6 +289,31 @@ public class CRUDClientIT extends BaseIT {
         // Update the default version of the tool
         if (first.isPresent()) {
             containersApi.updateDefaultVersion(hostedTool.getId(), first.get());
+        }
+    }
+
+    /**
+     * Ensures that hosted workflows can have their default path updated
+     */
+    @Test
+    public void testUpdatingDefaultVersionHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient());
+        HostedApi hostedApi = new HostedApi(webClient);
+
+        // Add a workflow with a version
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null, null);
+        SourceFile file = new SourceFile();
+        file.setContent("cwlVersion: v1.0\\nclass: Workflow\\ninputs:\\ninp: File\\nex: string\\noutputs:\\nclassout:\\ntype: File\\noutputSource: compile/classfile\\nsteps:\\nuntar:\\nrun: tar-param.cwl\\nin:\\ntarfile: inp\\nextractfile: ex\\nout: [example_out]\\ncompile:\\nrun: arguments.cwl\\nin:\\nsrc: untar/example_out\\nout: [classfile]");
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        Workflow dockstoreWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
+        Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+
+        // Update the default version of the workflow
+        if (first.isPresent()) {
+            workflowsApi.updateDefaultVersion(hostedWorkflow.getId(), first.get());
         }
     }
 
