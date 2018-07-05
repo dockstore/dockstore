@@ -2370,6 +2370,35 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /containers/{toolId}/defaultVersion:
+    put:
+      tags:
+      - "containers"
+      summary: "Update the default version of the given tool."
+      description: ""
+      operationId: "updateDefaultVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "toolId"
+        in: "path"
+        description: "Tool to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Tag to set as default."
+        required: true
+        schema:
+          $ref: "#/definitions/Tag"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
   /entries/{id}/aliases:
     put:
       tags:
@@ -3383,7 +3412,7 @@ paths:
         schema:
           type: "array"
           items:
-            $ref: "#/definitions/SourceFile"
+            type: "object"
       responses:
         200:
           description: "successful operation"
@@ -3802,6 +3831,35 @@ paths:
           description: "successful operation"
           schema:
             type: "string"
+  /workflows/{workflowId}/defaultVersion:
+    put:
+      tags:
+      - "workflows"
+      summary: "Update the default version of the given workflow."
+      description: ""
+      operationId: "updateDefaultVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Version to set as default"
+        required: true
+        schema:
+          $ref: "#/definitions/WorkflowVersion"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -4549,12 +4607,12 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
@@ -4760,12 +4818,12 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
@@ -5603,12 +5661,12 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"

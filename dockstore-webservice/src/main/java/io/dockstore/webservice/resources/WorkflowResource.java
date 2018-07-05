@@ -452,6 +452,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow wf = workflowDAO.findById(workflowId);
         checkEntry(wf);
+        checkNotHosted(wf);
         checkUser(user, wf);
 
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false);
@@ -467,6 +468,29 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/defaultVersion")
+    @ApiOperation(value = "Update the default version of the given workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+                                   @ApiParam(value = "Version to set as default", required = true) WorkflowVersion version) {
+        Workflow wf = workflowDAO.findById(workflowId);
+        checkEntry(wf);
+        checkUser(user, wf);
+
+        if (version != null) {
+            if (!wf.checkAndSetDefaultVersion(version.getName())) {
+                throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
+        Workflow result = workflowDAO.findById(workflowId);
+        checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        return result;
     }
 
     // Used to update workflow manually (not refresh)

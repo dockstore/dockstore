@@ -295,6 +295,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Tool with updated information", required = true) Tool tool) {
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
+        checkNotHosted(c);
         checkUser(user, c);
 
         Tool duplicate = toolDAO.findByPath(tool.getToolPath(), false);
@@ -311,6 +312,30 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{toolId}/defaultVersion")
+    @ApiOperation(value = "Update the default version of the given tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
+    public Tool updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
+                                @ApiParam(value = "Tool to modify.", required = true) @PathParam("toolId") Long toolId,
+                                @ApiParam(value = "Tag to set as default.", required = true) Tag tag) {
+        Tool t = toolDAO.findById(toolId);
+        checkEntry(t);
+        checkUser(user, t);
+
+        if (tag != null) {
+            if (!t.checkAndSetDefaultVersion(tag.getName())) {
+                throw new CustomWebApplicationException("Tool version does not exist.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
+        Tool result = toolDAO.findById(toolId);
+        checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        return result;
     }
 
     /**

@@ -228,7 +228,7 @@ public class CRUDClientIT extends BaseIT {
     }
 
     /**
-     * Ensures that hosted tools can be updated
+     * Ensures that hosted tools cannot be updated
      */
     @Test
     public void testUpdatingHostedTool() {
@@ -237,7 +237,37 @@ public class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         DockstoreTool newTool = new DockstoreTool();
+        thrown.expect(ApiException.class);
         containersApi.updateContainer(hostedTool.getId(), newTool);
+    }
+
+    /**
+     * Ensures that hosted tools can have their default path updated
+     */
+    @Test
+    public void testUpdatingDefaultHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+
+        // Add a tool with a version
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        SourceFile descriptorFile = new SourceFile();
+        descriptorFile.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
+        descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        descriptorFile.setPath("/Dockstore.cwl");
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        dockerfile.setPath("/Dockerfile");
+        DockstoreTool dockstoreTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
+        Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
+        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+
+        // Update the default version of the tool
+        if (first.isPresent()) {
+            containersApi.updateDefaultVersion(hostedTool.getId(), first.get());
+        }
     }
 
     /**
