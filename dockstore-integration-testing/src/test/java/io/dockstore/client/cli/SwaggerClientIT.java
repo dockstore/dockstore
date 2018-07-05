@@ -225,6 +225,44 @@ public class SwaggerClientIT {
         containersApi.publish(containerId, pub);
     }
 
+    @Test(expected = ApiException.class)
+    public void testToolLabelling() throws ApiException {
+        ContainersApi userApi1 = new ContainersApi(getWebClient(true, false));
+        ContainersApi userApi2 = new ContainersApi(getWebClient(false, false));
+
+        DockstoreTool container = userApi1.getContainerByToolPath("quay.io/test_org/test2");
+        assertFalse(container.isIsPublished());
+
+        long containerId = container.getId();
+
+        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+
+        userApi1.publish(containerId, pub);
+        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+        container = userApi1.getContainerByToolPath("quay.io/test_org/test2");
+        assertEquals(3, container.getLabels().size());
+        userApi2.updateLabels(containerId, "foobar", "");
+    }
+
+    @Test(expected = ApiException.class)
+    public void testWorkflowLabelling() throws ApiException {
+        WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, false));
+        WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
+
+        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l");
+        assertFalse(workflow.isIsPublished());
+
+        long containerId = workflow.getId();
+
+        PublishRequest pub = SwaggerUtility.createPublishRequest(true);
+
+        userApi1.publish(containerId, pub);
+        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+        workflow = userApi1.getWorkflowByPath("github.com/A/l");
+        assertEquals(3, workflow.getLabels().size());
+        userApi2.updateLabels(containerId, "foobar", "");
+    }
+
     @Test
     public void testSuccessfulManualImageRegistration() throws ApiException {
         ApiClient client = getAdminWebClient();
