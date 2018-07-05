@@ -45,6 +45,8 @@ public class NextFlowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser/ampa-nf";
     // bitbucket workflow
     private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BITBUCKET_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/ampa-nf";
+    // workflow with binaries in bin directory
+    private static final String DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/kallisto-nf";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -119,5 +121,32 @@ public class NextFlowIT extends BaseIT {
         // TODO: need to look into the SlowTest situation but we also need to reactivate the tests against API V4 for 1.5.0
     }
 
+    @Test
+    public void testBitbucketBinaryWorkflow() throws Exception {
+        CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+        // get workflow stubs
+        usersApi.refreshWorkflows(user.getId());
+
+        // do targeted refresh, should promote workflow to fully-fleshed out workflow
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW);
+        // need to set paths properly
+        workflowByPathGithub.setWorkflowPath("/nextflow.config");
+        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
+
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_BINARY_WORKFLOW);
+        final Workflow bitbucketWorkflow = workflowApi.refresh(workflowByPathGithub.getId());
+
+        List<SourceFile> sourceFileList = new ArrayList<>(
+            bitbucketWorkflow.getWorkflowVersions().stream().filter(version -> version.getName().equals("v1.0")).findFirst().get()
+                .getSourceFiles());
+        Assert.assertEquals(6, sourceFileList.size());
+        // two of the files should essentially be blanked
+        Assert.assertEquals("two files have our one-line warning", 2, sourceFileList.stream().filter(file -> file.getContent().split("\n").length == 1 && file.getContent().contains("Dockstore does not")).count());
+    }
 
 }
