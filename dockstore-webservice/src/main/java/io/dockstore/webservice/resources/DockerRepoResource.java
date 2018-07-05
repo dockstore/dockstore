@@ -61,7 +61,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
-import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
@@ -99,7 +98,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface {
+public class DockerRepoResource extends AbstractEntryResource<Tool, Tag, ToolDAO, TagDAO> implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface  {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
     private static final String PAGINATION_LIMIT = "100";
@@ -115,12 +114,12 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
     private final ObjectMapper objectMapper;
-    private final ElasticManager elasticManager;
     private final WorkflowResource workflowResource;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
             LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
+        super(labelDAO, new ElasticManager());
         objectMapper = mapper;
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
@@ -136,7 +135,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         this.workflowResource = workflowResource;
 
         this.toolDAO = toolDAO;
-        elasticManager = new ElasticManager();
     }
 
     List<Tool> refreshToolsForUser(Long userId, String organization) {
@@ -274,22 +272,22 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         return c;
     }
 
+    @Override
+    protected ToolDAO getEntryDAO() {
+        return toolDAO;
+    }
+
     @PUT
+    @Override
     @Timed
     @UnitOfWork
     @Path("/{containerId}/labels")
-    @ApiOperation(value = "Update the labels linked to a container.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class)
+    @ApiOperation(value = "Update the labels linked to a container.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Tool.class, nickname = "updateLabels")
     public Tool updateLabels(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        Tool c = toolDAO.findById(containerId);
-        checkEntry(c);
-
-        EntryLabelHelper<Tool> labeller = new EntryLabelHelper<>(labelDAO);
-        Tool tool = labeller.updateLabels(c, labelStrings);
-        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
-        return tool;
+        return super.updateLabels(user, containerId, labelStrings, emptyBody);
     }
 
     @PUT
