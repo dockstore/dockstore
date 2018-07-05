@@ -192,7 +192,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     }
                 });
             } else {
-                LOG.warn(type + " is not a map.");
+                LOG.debug(type + " is not a map.");
             }
         } catch (YAMLException e) {
             SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");

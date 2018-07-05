@@ -504,7 +504,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         if (newWorkflow.getDefaultVersion() != null) {
-            if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion())) {
+            if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
             }
         }
