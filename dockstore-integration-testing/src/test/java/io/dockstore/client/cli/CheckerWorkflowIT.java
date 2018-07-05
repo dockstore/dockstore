@@ -108,7 +108,13 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-tool.cwl", githubTool.getId(), "cwl", null);
 
         // Refresh workflow
-        containersApi.refresh(githubTool.getId());
+        DockstoreTool refreshedEntry = containersApi.refresh(githubTool.getId());
+
+        // Refreshing the entry also calls the update user metadata function which populates the user profile
+        Assert.assertTrue("There should be at least one user of the workflow", refreshedEntry.getUsers().size() > 0);
+        refreshedEntry.getUsers().forEach(entryUser -> {
+            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
+        });
 
         // Checker workflow should refresh
         final long count = testingPostgres
@@ -195,7 +201,12 @@ public class CheckerWorkflowIT extends BaseIT {
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
 
         // Refresh workflow
-        workflowApi.refresh(githubWorkflow.getId());
+        Workflow refreshedEntry = workflowApi.refresh(githubWorkflow.getId());
+
+        // Refreshing the entry also calls the update user metadata function which populates the user profile
+        refreshedEntry.getUsers().forEach(entryUser -> {
+            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
+        });
 
         // Checker workflow should refresh
         final long count3 = testingPostgres

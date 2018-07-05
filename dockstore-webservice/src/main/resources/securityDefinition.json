@@ -1,7 +1,0 @@
-{
-  "BEARER": {
-    "type": "apiKey",
-    "name": "Authorization",
-    "in": "header"
-  }
-}

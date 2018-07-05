@@ -294,7 +294,7 @@ public class ToolClient extends AbstractEntryClient {
     @Override
     protected void handleListUnstarredEntries() {
         try {
-            List<DockstoreTool> containers = containersApi.allPublishedContainers();
+            List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
             out("ALL PUBLISHED TOOLS");
             printLineBreak();
             printPublishedList(containers);

@@ -18,7 +18,7 @@ package io.github.collaboratory.cwl.cwlrunner;
 import java.util.List;
 
 /**
- * Abstracts out the interaction with cwlrunners (for example, cwltool or bunny)
+ * Abstracts out the interaction with cwlrunners (for example, cwltool or toil)
  */
 public interface CWLRunnerInterface {
 

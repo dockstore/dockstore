@@ -89,4 +89,52 @@ public interface AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("Forbidden: please check your credentials.", HttpStatus.SC_FORBIDDEN);
         }
     }
+
+    /**
+     * Checks if a user can read an entry. Default implementation
+     * is to invoke <code>checkUser</code>. Implmenations that support
+     * more nuanched sharing should override.
+     * @param user
+     * @param entry
+     */
+    default void checkUserCanRead(User user, Entry entry) {
+        checkUser(user, entry);
+    }
+
+    /**
+     * Checks if a user can modify an entry. Default implementation
+     * is to invoke <code>checkUser</code>. Implementations that support
+     * more nuanced sharing should override.
+     *
+     * @param user
+     * @param entry
+     */
+    default void checkUserCanUpdate(User user, Entry entry) {
+        checkUser(user, entry);
+    }
+
+    /**
+     * Checks if a user can delete an entry. Default implementation
+     * is to invoke <code>checkUser</code>. Implementations that support
+     * more nuanced sharing should override.
+     *
+     * @param user
+     * @param entry
+     */
+    default void checkUserCanDelete(User user, Entry entry) {
+        checkUser(user, entry);
+    }
+
+    /**
+     * Checks is a user can share an entry. Default implementation
+     * is to invoke <code>checkUser</code>. Implmentations that support
+     * more nuanced sharing should override.
+     *
+     * @param user
+     * @param entry
+     */
+    default void checkUserCanShare(User user, Entry entry) {
+        checkUser(user, entry);
+    }
+
 }

@@ -333,7 +333,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
     public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
     }
-
+    
     public Set<User> getStarredUsers() {
         return starredUsers;
     }

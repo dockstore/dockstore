@@ -283,7 +283,7 @@ public class WDLClient implements LanguageClientInterface {
             } else {
                 if (!m.group(1).startsWith("https://") && !m.group(1).startsWith("http://")) { // Don't resolve URLs
                     if (!m.group(1).startsWith(File.separator)) { // what is the purpose of this line?
-                        String newImportLine = "import \"" + tempDir + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
+                        String newImportLine = "import \"" + file.getParent() + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
                         FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
                     }
                 } else {

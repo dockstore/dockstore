@@ -18,14 +18,18 @@ package io.dockstore.webservice.core;
 
 import java.security.Principal;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -34,10 +38,12 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -80,24 +86,15 @@ public class User implements Principal, Comparable<User> {
     @ApiModelProperty(value = "Indicates whether this user is an admin", required = true, position = 2)
     private boolean isAdmin;
 
-    @Column
-    @ApiModelProperty(value = "Company of user", position = 3)
-    private String company;
+    @ElementCollection(targetClass = Profile.class)
+    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "id",
+            "token_type" }))
+    @MapKeyColumn(name = "token_type", columnDefinition = "text")
+    @ApiModelProperty(value = "Profile information of the user retrieved from 3rd party sites (GitHub, Google, etc)")
+    private Map<String, Profile> userProfiles = new HashMap<>();
 
     @Column
-    @ApiModelProperty(value = "Bio of user", position = 4)
-    private String bio;
-
-    @Column
-    @ApiModelProperty(value = "Location of user", position = 5)
-    private String location;
-
-    @Column
-    @ApiModelProperty(value = "Email of user", position = 6)
-    private String email;
-
-    @Column
-    @ApiModelProperty(value = "URL of user avatar on Github.", position = 7)
+    @ApiModelProperty(value = "URL of user avatar on GitHub/Google that can be selected by the user", position = 7)
     private String avatarUrl;
 
     // database timestamps
@@ -139,24 +136,79 @@ public class User implements Principal, Comparable<User> {
     }
 
     /**
-     * Updates the given user with metadata from Github
+     * Updates the given user with metadata and no source specified (defaults to trying both)
      *
-     * @param tokenDAO
+     * @param tokenDAO The TokenDAO to access the user's tokens
      */
     public void updateUserMetadata(final TokenDAO tokenDAO) {
-        List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
-        List<Token> googleByUserId = tokenDAO.findGoogleByUserId(getId());
-        if (githubByUserId.isEmpty() && googleByUserId.isEmpty()) {
-            throw new CustomWebApplicationException("No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
+        updateUserMetadata(tokenDAO, null);
+    }
+
+    /**
+     * Updates the given user's profile with metadata depending on the source
+     * If no source is specified try updating both
+     *
+     * @param tokenDAO The TokenDAO to access the user's tokens
+     * @param source   The source to update the user's profile (GITHUB_COM, GOOGLE_COM, NULL)
+     */
+    public void updateUserMetadata(final TokenDAO tokenDAO, TokenType source) {
+        if (source == null) {
+            if (!updateGoogleMetadata(tokenDAO) && !updateGithubMetadata(tokenDAO)) {
+                throw new CustomWebApplicationException(
+                        "No GitHub or Google token found.  Please link a GitHub or Google token to your account.", HttpStatus.SC_FORBIDDEN);
+            }
+        } else {
+            switch (source) {
+            case GOOGLE_COM:
+                if (!updateGoogleMetadata(tokenDAO)) {
+                    throw new CustomWebApplicationException("No Google token found.  Please link a Google token to your account.",
+                            HttpStatus.SC_FORBIDDEN);
+                }
+                break;
+            case GITHUB_COM:
+                if (!updateGithubMetadata(tokenDAO)) {
+                    throw new CustomWebApplicationException("No GitHub token found.  Please link a GitHub token to your account.",
+                            HttpStatus.SC_FORBIDDEN);
+                }
+                break;
+            default:
+                throw new CustomWebApplicationException("Unrecognized token type: " + source, HttpStatus.SC_BAD_REQUEST);
+            }
         }
-        if (!githubByUserId.isEmpty()) {
+    }
+
+    /**
+     * Tries to update the user's GitHub profile
+     *
+     * @param tokenDAO The TokenDAO to access the user's tokens
+     * @return True if the user has a GitHub token and updating the GitHub profile was successful
+     */
+    public boolean updateGithubMetadata(final TokenDAO tokenDAO) {
+        List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
+        if (githubByUserId.isEmpty()) {
+            return false;
+        } else {
             Token githubToken = githubByUserId.get(0);
             GitHubSourceCodeRepo sourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
             sourceCodeRepo.checkSourceCodeValidity();
             sourceCodeRepo.getUserMetadata(this);
+            return true;
+        }
+    }
+
+    /**
+     * Tries to update the user's Google profile
+     *
+     * @param tokenDAO The TokenDAO to access the user's tokens
+     * @return True if the user has a Google token and updating the Google profile was successful
+     */
+    public boolean updateGoogleMetadata(final TokenDAO tokenDAO) {
+        List<Token> googleByUserId = tokenDAO.findGoogleByUserId(getId());
+        if (googleByUserId.isEmpty()) {
+            return false;
         } else {
             Token googleToken = googleByUserId.get(0);
-            GoogleHelper.updateGoogleUserData(googleToken.getContent(), this);
+            return GoogleHelper.updateGoogleUserData(googleToken.getContent(), this);
         }
     }
 
@@ -219,50 +271,10 @@ public class User implements Principal, Comparable<User> {
         return starredEntries.remove(entry);
     }
 
-    public String getAvatarUrl() {
-        return avatarUrl;
-    }
-
-    public void setAvatarUrl(String avatarUrl) {
-        this.avatarUrl = avatarUrl;
-    }
-
     @Override
     @ApiModelProperty(position = 8)
     public String getName() {
         return getUsername();
-    }
-
-    public String getCompany() {
-        return company;
-    }
-
-    public void setCompany(String company) {
-        this.company = company;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     @Override
@@ -285,12 +297,21 @@ public class User implements Principal, Comparable<User> {
 
     @Override
     public int compareTo(User that) {
-        return ComparisonChain.start().compare(this.id, that.id).compare(this.username, that.username).compareTrueFirst(this.isAdmin, that.isAdmin).result();
+        return ComparisonChain.start().compare(this.id, that.id).compare(this.username, that.username)
+                .compareTrueFirst(this.isAdmin, that.isAdmin).result();
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this).add("id", id).add("username", username).add("isAdmin", isAdmin).toString();
+    }
+
+    public Map<String, Profile> getUserProfiles() {
+        return userProfiles;
+    }
+
+    public void setUserProfiles(Map<String, Profile> userProfiles) {
+        this.userProfiles = userProfiles;
     }
 
     public boolean isCurator() {
@@ -299,5 +320,39 @@ public class User implements Principal, Comparable<User> {
 
     public void setCurator(boolean curator) {
         this.curator = curator;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    /**
+     * The profile of a user using a token (Google profile, GitHub profile, etc)
+     * The order of the properties are important, the UI lists these properties in this order
+     */
+    @Embeddable
+    public static class Profile {
+        @Column(columnDefinition = "text")
+        public String name;
+        @Column(columnDefinition = "text")
+        public String email;
+        @Column(columnDefinition = "text")
+        public String avatarURL;
+        @Column(columnDefinition = "text")
+        public String company;
+        @Column(columnDefinition = "text")
+        public String location;
+        @Column(columnDefinition = "text")
+        public String bio;
+        @Column(updatable = false)
+        @CreationTimestamp
+        private Timestamp dbCreateDate;
+        @Column()
+        @UpdateTimestamp
+        private Timestamp dbUpdateDate;
     }
 }

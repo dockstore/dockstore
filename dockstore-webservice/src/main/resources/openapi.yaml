@@ -8,7 +8,7 @@ info:
     build those images
   version: 1.4.4
   title: Dockstore API
-  termsOfService: ''
+  termsOfService: TBD
   contact:
     name: Dockstore@ga4gh
     url: 'https://github.com/ga4gh/dockstore'
@@ -592,11 +592,6 @@ paths:
       responses:
         '200':
           description: An array of Tools of the input organization.
-          content:
-            text/plain:
-              schema:
-                type: integer
-                format: int32
       security:
         - BEARER: []
   '/api/ga4gh/v2/extended/tools/{organization}':
@@ -1572,6 +1567,25 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted entry
+      description: ''
+      operationId: hostedEntryOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
     patch:
       tags:
         - hosted
@@ -1596,16 +1610,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/SourceFile'
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   '/containers/namespace/{namespace}/published':
     get:
       tags:
@@ -1753,6 +1758,51 @@ paths:
       summary: List all published containers.
       description: NO authentication
       operationId: allPublishedContainers
+      parameters:
+        - name: offset
+          in: query
+          description: >-
+            Start index of paging. Pagination results can be based on numbers or
+            other values chosen by the registry implementor (for example, SHA
+            values). If this exceeds the current result set return an empty
+            set.  If not specified in the request, this will start at the
+            beginning of the results.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 'Amount of records to return in a given page, limited to 100'
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: filter
+          in: query
+          description: 'Filter, this is a search string that filters the results.'
+          required: false
+          schema:
+            type: string
+        - name: sortCol
+          in: query
+          description: Sort column
+          required: false
+          schema:
+            type: string
+            default: stars
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
       responses:
         '200':
           description: successful operation
@@ -1860,7 +1910,9 @@ paths:
       tags:
         - containers
       summary: Get a registered repo
-      description: ''
+      description: >-
+        This is one of the few endpoints that returns the user object with
+        populated properties (minus the userProfiles property)
       operationId: getContainer
       parameters:
         - name: containerId
@@ -2835,9 +2887,11 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties:
+                type: array
+                items:
                   type: object
+                  additionalProperties:
+                    type: object
   /metadata/rss:
     get:
       tags:
@@ -3138,6 +3192,16 @@ paths:
       summary: Update metadata for logged in user
       description: Update metadata for logged in user.
       operationId: updateLoggedInUserMetadata
+      parameters:
+        - name: source
+          in: query
+          description: Token source
+          required: false
+          schema:
+            type: string
+            enum:
+              - google.com
+              - github.com
       responses:
         '200':
           description: successful operation
@@ -3706,6 +3770,25 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - BEARER: []
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted workflow
+      description: Options for a hosted workflow
+      operationId: hostedWorkflowOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
     patch:
       tags:
         - hosted
@@ -3730,16 +3813,7 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: array
-              items:
-                type: object
-        description: >-
-          Set of updated sourcefiles, add files by adding new files with unknown
-          paths, delete files by including them with emptied content
-        required: true
+        $ref: '#/components/requestBodies/SourceFileArray'
   /workflows/manualRegister:
     post:
       tags:
@@ -3883,6 +3957,51 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - BEARER: []
+    options:
+      tags:
+        - workflows
+      summary: Options for a workflow by path
+      description: Permissions for the endpoint
+      operationId: getWorkflowByPathOptions
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
+  '/workflows/path/workflow/{repository}/permissions':
+    get:
+      tags:
+        - workflows
+      summary: Get all permissions for a workflow
+      description: >-
+        Lists all permissions for a workflow. The user must be the workflow
+        owner.
+      operationId: getWorkflowPermissions
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Permission'
+      security:
+        - BEARER: []
   '/workflows/path/workflow/{repository}/published':
     get:
       tags:
@@ -3904,6 +4023,78 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+  '/workflows/path/workfow/{repository}/permissions':
+    delete:
+      tags:
+        - workflows
+      summary: Remove the specified user role for a workflow
+      description: Removes a role from a workflow. The user must be the workflow owner.
+      operationId: removeWorkflowRole
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+        - name: email
+          in: query
+          description: user email
+          required: true
+          schema:
+            type: string
+        - name: role
+          in: query
+          description: role
+          required: true
+          schema:
+            type: string
+            enum:
+              - OWNER
+              - WRITER
+              - READER
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Permission'
+      security:
+        - BEARER: []
+    patch:
+      tags:
+        - workflows
+      summary: Set the specified permission for a user on a workflow
+      description: Adds a permission for a workflow. The user must be the workflow owner.
+      operationId: addWorkflowPermission
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Permission'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Permission'
+        description: user permission
+        required: true
   '/workflows/path/{repository}':
     get:
       tags:
@@ -3936,6 +4127,51 @@ paths:
       summary: List all published workflows.
       description: NO authentication
       operationId: allPublishedWorkflows
+      parameters:
+        - name: offset
+          in: query
+          description: >-
+            Start index of paging. Pagination results can be based on numbers or
+            other values chosen by the registry implementor (for example, SHA
+            values). If this exceeds the current result set return an empty
+            set.  If not specified in the request, this will start at the
+            beginning of the results.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 'Amount of records to return in a given page, limited to 100'
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: filter
+          in: query
+          description: 'Filter, this is a search string that filters the results.'
+          required: false
+          schema:
+            type: string
+        - name: sortCol
+          in: query
+          description: Sort column
+          required: false
+          schema:
+            type: string
+            default: stars
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
       responses:
         '200':
           description: successful operation
@@ -3989,6 +4225,24 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Workflow'
+  /workflows/shared:
+    get:
+      tags:
+        - workflows
+      summary: All workflows shared with user
+      description: List all workflows shared with user
+      operationId: sharedWorkflows
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SharedWorkflows'
+      security:
+        - BEARER: []
   '/workflows/{entryId}/registerCheckerWorkflow/{descriptorType}':
     post:
       tags:
@@ -4045,7 +4299,9 @@ paths:
       tags:
         - workflows
       summary: Get a registered workflow
-      description: ''
+      description: >-
+        This is one of the few endpoints that returns the user object with
+        populated properties (minus the userProfiles property)
       operationId: getWorkflow
       parameters:
         - name: workflowId
@@ -4908,6 +5164,9 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersion'
         description: List of modified workflow versions
         required: true
+externalDocs:
+  description: Dockstore documentation
+  url: 'https://www.dockstore.org/docs/getting-started'
 components:
   requestBodies:
     PublishRequest:
@@ -4944,6 +5203,17 @@ components:
           schema:
             $ref: '#/components/schemas/DockstoreTool'
       description: Tool with updated information
+      required: true
+    SourceFileArray:
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceFile'
+      description: >-
+        Set of updated sourcefiles, add files by adding new files with unknown
+        paths, delete files by including them with emptied content
       required: true
     StarRequest:
       content:
@@ -5022,12 +5292,12 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         last_modified_date:
           type: string
           format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
           readOnly: true
         input_file_formats:
           type: array
@@ -5221,12 +5491,12 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        has_checker:
-          type: boolean
-          readOnly: true
         last_modified_date:
           type: string
           format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
           readOnly: true
         input_file_formats:
           type: array
@@ -5422,6 +5692,32 @@ components:
         friendly-name:
           type: string
       description: Describes this registry to better allow for mirroring and indexing.
+    Permission:
+      type: object
+      properties:
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+            - OWNER
+            - WRITER
+            - READER
+    Profile:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        avatarURL:
+          type: string
+        company:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
     PublishRequest:
       type: object
       properties:
@@ -5457,6 +5753,19 @@ components:
           type: string
         enum:
           type: string
+    SharedWorkflows:
+      type: object
+      properties:
+        role:
+          type: string
+          enum:
+            - OWNER
+            - WRITER
+            - READER
+        workflows:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
     SourceControlBean:
       type: object
       properties:
@@ -5986,27 +6295,22 @@ components:
           format: int64
           description: Implementation specific ID for the container in this web service
           readOnly: true
+        userProfiles:
+          type: object
+          description: >-
+            Profile information of the user retrieved from 3rd party sites
+            (GitHub, Google, etc)
+          additionalProperties:
+            $ref: '#/components/schemas/Profile'
         username:
           type: string
           description: Username on dockstore
         isAdmin:
           type: boolean
           description: Indicates whether this user is an admin
-        company:
-          type: string
-          description: Company of user
-        bio:
-          type: string
-          description: Bio of user
-        location:
-          type: string
-          description: Location of user
-        email:
-          type: string
-          description: Email of user
         avatarUrl:
           type: string
-          description: URL of user avatar on Github.
+          description: URL of user avatar on GitHub/Google that can be selected by the user
         name:
           type: string
         curator:
@@ -6060,12 +6364,12 @@ components:
           type: integer
           format: int64
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         last_modified_date:
           type: string
           format: date-time
+          readOnly: true
+        has_checker:
+          type: boolean
           readOnly: true
         input_file_formats:
           type: array

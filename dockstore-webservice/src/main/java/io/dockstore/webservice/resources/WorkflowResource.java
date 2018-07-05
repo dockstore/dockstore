@@ -31,8 +31,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.HttpMethod;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -40,7 +44,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
@@ -82,16 +89,22 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import io.dockstore.webservice.permissions.Permission;
+import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
+import io.dockstore.webservice.permissions.SharedWorkflows;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import io.swagger.jaxrs.PATCH;
 import io.swagger.model.DescriptorType;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.hibernate.Hibernate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -111,6 +124,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
+    private static final String PAGINATION_LIMIT = "100";
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -124,10 +138,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     private final String bitbucketClientID;
     private final String bitbucketClientSecret;
+    private final PermissionsInterface permissionsInterface;
 
     @SuppressWarnings("checkstyle:parameternumber")
     public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
-        WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID, String bitbucketClientSecret) {
+        WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID,
+        String bitbucketClientSecret, PermissionsInterface permissionsInterface) {
         this.userDAO = userDAO;
         this.tokenDAO = tokenDAO;
         this.workflowVersionDAO = workflowVersionDAO;
@@ -139,6 +155,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
+
+        this.permissionsInterface = permissionsInterface;
 
         this.workflowDAO = workflowDAO;
         elasticManager = new ElasticManager();
@@ -348,7 +366,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
-
         elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
         return workflow;
     }
@@ -417,13 +434,15 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
-        Workflow c = workflowDAO.findById(workflowId);
-        checkEntry(c);
+        Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkCanReadWorkflow(user, workflow);
 
-        checkUser(user, c);
-        return c;
+        // This somehow forces users to get loaded
+        Hibernate.initialize(workflow.getUsers());
+        return workflow;
     }
 
     @PUT
@@ -453,7 +472,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow wf = workflowDAO.findById(workflowId);
         checkEntry(wf);
         checkNotHosted(wf);
-        checkUser(user, wf);
+        checkCanWriteWorkflow(user, wf);
 
         Workflow duplicate = workflowDAO.findByPath(workflow.getWorkflowPath(), false);
 
@@ -508,7 +527,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         oldWorkflow.setDefaultWorkflowPath(newWorkflow.getDefaultWorkflowPath());
         oldWorkflow.setDefaultTestParameterFilePath(newWorkflow.getDefaultTestParameterFilePath());
         if (newWorkflow.getDefaultVersion() != null) {
-            if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion())) {
+            if (!oldWorkflow.checkAndSetDefaultVersion(newWorkflow.getDefaultVersion()) && newWorkflow.getMode() != WorkflowMode.STUB) {
                 throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
             }
         }
@@ -594,7 +613,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         //check if the user and the entry is correct
         checkEntry(wf);
-        checkUser(user, wf);
+        checkCanWriteWorkflow(user, wf);
         checkNotHosted(wf);
 
         //update the workflow path in all workflowVersions
@@ -654,7 +673,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
 
-        checkUser(user, c);
+        checkCanShareWorkflow(user, c);
 
         Workflow checker = c.getCheckerWorkflow();
 
@@ -697,12 +716,40 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("published")
-    @ApiOperation(value = "List all published workflows.", tags = { "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> allPublishedWorkflows() {
-        List<Workflow> workflows = workflowDAO.findAllPublished();
+    @ApiOperation(value = "List all published workflows.", tags = {
+        "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
+    public List<Workflow> allPublishedWorkflows(
+        @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.") @QueryParam("offset") String offset,
+        @ApiParam(value = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+        @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
+        @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
+        @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("asc") @QueryParam("sortOrder") String sortOrder,
+        @Context HttpServletResponse response) {
+        // delete the next line if GUI pagination is not working by 1.5.0 release
+        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
+        List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
+        response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished()));
         return workflows;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("shared")
+    @ApiOperation(value = "All workflows shared with user", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "List all workflows shared with user", tags = { "workflows"}, response = SharedWorkflows.class, responseContainer = "List")
+    public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
+        return this.permissionsInterface
+                .workflowsSharedWithUser(user).entrySet().stream()
+                .map(e -> {
+                    final List<Workflow> workflows = e.getValue().stream().map(path -> {
+                        return workflowDAO.findByPath(path, false);
+                    }).filter(w -> w != null).collect(Collectors.toList());
+                    return new SharedWorkflows(e.getKey(), workflows);
+                })
+                .filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0)
+                .collect(Collectors.toList());
     }
 
     @GET
@@ -714,8 +761,136 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        checkUser(user, workflow);
+        checkCanReadWorkflow(user, workflow);
         return workflow;
+    }
+
+    /**
+     * Sets the allow header with the allowed HTTP methods for this endpoint.
+     *
+     * <p>If authorization is not present, allowed methods are set to GET and OPTIONS.</p>
+     *
+     * <p>If authorization is present, allowed methods are set to OPTIONS, and if user
+     * has read permission, GET.</p>
+     *
+     * @param optionalUser
+     * @param path
+     * @return
+     */
+    @OPTIONS
+    @Timed
+    @UnitOfWork
+    @Path("/path/workflow/{repository}")
+    @ApiOperation(value = "Options for a workflow by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Permissions for the endpoint")
+    @SuppressWarnings("checkstyle:emptycatchblock")
+    public Response getWorkflowByPathOptions(@ApiParam(hidden = true) @Auth Optional<User> optionalUser, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        final ArrayList<String> headers = new ArrayList<>();
+        headers.add(HttpMethod.OPTIONS);
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        if (optionalUser.isPresent()) {
+            try {
+                checkCanReadWorkflow(optionalUser.get(), workflow);
+                headers.add(HttpMethod.GET);
+            } catch (CustomWebApplicationException ex) {
+                // Silently fail; just don't add GET to the allowed methods
+            }
+
+        } else {
+            headers.add(HttpMethod.GET);
+        }
+
+        final Response.ResponseBuilder builder = Response.ok();
+        headers.forEach(header -> builder.header(HttpHeaders.ALLOW, header));
+        return builder.build();
+    }
+
+    /**
+     * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user
+     * does not have permission, throws a {@link CustomWebApplicationException}.
+     * @param user
+     * @param workflow
+     */
+    private void checkCanReadWorkflow(User user, Workflow workflow) {
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.READ)) {
+                throw ex;
+            }
+        }
+    }
+
+    /**
+     * Checks if <code>user</code> has permission to write <code>workflow</code>. If the user
+     * does not have permission, throws a {@link CustomWebApplicationException}.
+     * @param user
+     * @param workflow
+     */
+    private void checkCanWriteWorkflow(User user, Workflow workflow) {
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.WRITE)) {
+                throw ex;
+            }
+        }
+    }
+
+    /**
+     * Checks if <code>user</code> has permission to share <code>workflow</code>. If the user
+     * does not have permission, throws a {@link CustomWebApplicationException}.
+     * @param user
+     * @param workflow
+     */
+    private void checkCanShareWorkflow(User user, Workflow workflow) {
+        try {
+            checkUser(user, workflow);
+        } catch (CustomWebApplicationException ex) {
+            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.SHARE)) {
+                throw ex;
+            }
+        }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/workflow/{repository}/permissions")
+    @ApiOperation(value = "Get all permissions for a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all permissions for a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
+    }
+
+    @PATCH
+    @Timed
+    @UnitOfWork
+    @Path("/path/workfow/{repository}/permissions")
+    @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Adds a permission for a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+            @ApiParam(value = "user permission", required = true) Permission permission) {
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        this.permissionsInterface.setPermission(workflow, user, permission);
+        return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/path/workfow/{repository}/permissions")
+    @ApiOperation(value = "Remove the specified user role for a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Removes a role from a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+            @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
+            @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        this.permissionsInterface.removePermission(workflow, user, email, role);
+        return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
 
     @GET
@@ -797,7 +972,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow repository = workflowDAO.findById(workflowId);
         checkEntry(repository);
 
-        checkUser(user, repository);
+        checkCanReadWorkflow(user, repository);
 
         return new ArrayList<>(repository.getVersions());
     }
@@ -1112,7 +1287,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow w = workflowDAO.findById(workflowId);
         checkEntry(w);
 
-        checkUser(user, w);
+        checkCanWriteWorkflow(user, w);
 
         // create a map for quick lookup
         Map<Long, WorkflowVersion> mapOfExistingWorkflowVersions = new HashMap<>();

@@ -47,7 +47,7 @@ public final class SourceCodeRepoFactory {
         if (Objects.equals(token.getTokenSource(), TokenType.GITHUB_COM)) {
             repo = new GitHubSourceCodeRepo(token.getUsername(), token.getContent());
         } else if (Objects.equals(token.getTokenSource(), TokenType.BITBUCKET_ORG)) {
-            repo = new BitBucketSourceCodeRepo(token.getUsername(), client, token.getContent());
+            repo = new BitBucketSourceCodeRepo(token.getUsername(), token.getContent());
         } else if (Objects.equals(token.getTokenSource(), TokenType.GITLAB_COM)) {
             repo = new GitLabSourceCodeRepo(token.getUsername(), token.getContent());
         } else {
@@ -76,7 +76,7 @@ public final class SourceCodeRepoFactory {
             repo = new GitHubSourceCodeRepo(gitUsername, githubTokenContent);
         } else if (SourceControl.BITBUCKET.toString().equals(source)) {
             if (bitbucketTokenContent != null) {
-                repo = new BitBucketSourceCodeRepo(gitUsername, client, bitbucketTokenContent);
+                repo = new BitBucketSourceCodeRepo(gitUsername, bitbucketTokenContent);
             } else {
                 LOG.info("WARNING: Source is from Bitbucket, but user does not have Bitbucket token!");
                 return null;

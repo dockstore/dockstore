@@ -16,15 +16,19 @@
 
 package io.dockstore.webservice;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.dockstore.webservice.core.Token;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,8 +52,26 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         LOG.debug("SimpleAuthenticator called with {}", credentials);
         final Token token = dao.findByContent(credentials);
         if (token != null) {
-            return Optional.of(userDAO.findById(token.getUserId()));
+            User byId = userDAO.findById(token.getUserId());
+            // Always eagerly load yourself (your User object)
+            Hibernate.initialize(byId.getUserProfiles());
+            return Optional.of(byId);
+        } else {
+            final Optional<String> username = GoogleHelper.getUserNameFromToken(credentials);
+            if (username.isPresent()) {
+                User user = userDAO.findByUsername(username.get());
+                if (user != null) {
+                    List<Token> tokens = dao.findByUserId(user.getId());
+                    Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
+                    googleToken.setContent(credentials);
+                    dao.update(googleToken);
+                    // Always eagerly load yourself (your User object)
+                    Hibernate.initialize(user.getUserProfiles());
+                    return Optional.of(user);
+                }
+            }
         }
         return Optional.empty();
     }
+
 }

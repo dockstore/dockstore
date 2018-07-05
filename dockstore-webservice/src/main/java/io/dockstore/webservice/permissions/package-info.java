@@ -1,5 +1,5 @@
 /*
- *    Copyright 2017 OICR
+ *    Copyright 2018 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,22 +13,11 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package io.github.collaboratory;
-
-import io.github.collaboratory.cwl.LauncherIT;
-import org.apache.commons.io.FileUtils;
 
 /**
- * @author dyuen
+ * Model objects that exist in the database.
+ *
+ * @since 1.0
  */
-public class BunnyLauncherIT extends LauncherIT {
+package io.dockstore.webservice.permissions;
 
-    public String getConfigFile() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.ini").getAbsolutePath();
-    }
-
-    @Override
-    public String getConfigFileWithExtraParameters() {
-        return FileUtils.getFile("src", "test", "resources", "launcher.bunny.extra.ini").getAbsolutePath();
-    }
-}

@@ -27,6 +27,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.core.Entry;
@@ -135,9 +137,9 @@ public abstract class AbstractImageRegistry {
         List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO));
 
         // Filter DB tools and API tools to only include relevant tools
-        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry()));
+        manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry().toString()));
 
-        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry()));
+        dbTools.removeIf(test -> !test.getRegistry().equals(getRegistry().toString()));
         apiTools.addAll(manualTools);
 
         // Remove tools that can't be updated (Manual tools)
@@ -243,7 +245,7 @@ public abstract class AbstractImageRegistry {
      * @param fileDAO
      * @param toolDAO
      */
-    private void updateTags(List<Tag> newTags, Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
+    private void updateTags(List<Tag> newTags, @NotNull Tool tool, SourceCodeRepoInterface sourceCodeRepoInterface, final TagDAO tagDAO,
         final FileDAO fileDAO, final ToolDAO toolDAO, final FileFormatDAO fileFormatDAO) {
         // Get all existing tags
         List<Tag> existingTags = new ArrayList<>(tool.getTags());
@@ -251,7 +253,7 @@ public abstract class AbstractImageRegistry {
         if (tool.getMode() != ToolMode.MANUAL_IMAGE_PATH || (tool.getRegistry().equals(Registry.QUAY_IO.toString()) && existingTags.isEmpty())) {
 
             if (newTags == null) {
-                LOG.info(sourceCodeRepoInterface.gitUsername + " : Tags for tool {} did not get updated because new tags were not found",
+                LOG.info(tool.getToolPath() + " : Tags for tool {} did not get updated because new tags were not found",
                         tool.getPath());
                 return;
             }
@@ -322,7 +324,7 @@ public abstract class AbstractImageRegistry {
             for (Tag tag : existingTags) {
                 // create and add a tag if it does not already exist
                 if (!tool.getTags().contains(tag)) {
-                    LOG.info(sourceCodeRepoInterface.gitUsername + " : Updating tag {}", tag.getName());
+                    LOG.info(tool.getToolPath() + " : Updating tag {}", tag.getName());
 
                     long id = tagDAO.create(tag);
                     tag = tagDAO.findById(id);
@@ -337,7 +339,7 @@ public abstract class AbstractImageRegistry {
 
             // delete tool if it has no users
             for (Tag t : toDelete) {
-                LOG.info(sourceCodeRepoInterface.gitUsername + " : DELETING tag: {}", t.getName());
+                LOG.info(tool.getToolPath() + " : DELETING tag: {}", t.getName());
                 t.getSourceFiles().clear();
                 // tagDAO.delete(t);
                 tool.getTags().remove(t);
@@ -368,12 +370,12 @@ public abstract class AbstractImageRegistry {
             // If set and valid, set tag of interest to tag stored in default version
 
             if (tool.getDefaultCwlPath() != null) {
-                LOG.info(sourceCodeRepoInterface.gitUsername + " : Parsing CWL...");
+                LOG.info(tool.getToolPath() + " " + sourceCodeRepoInterface.gitUsername + " : Parsing CWL...");
                 sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.CWL);
             }
 
             if (tool.getDefaultWdlPath() != null) {
-                LOG.info(sourceCodeRepoInterface.gitUsername + " : Parsing WDL...");
+                LOG.info(tool.getToolPath() + " " + sourceCodeRepoInterface.gitUsername + " : Parsing WDL...");
                 sourceCodeRepoInterface.updateEntryMetadata(tool, LanguageType.WDL);
             }
 
@@ -515,7 +517,7 @@ public abstract class AbstractImageRegistry {
      * @param toolDAO
      * @return list of newly updated containers
      */
-    public List<Tool> updateTools(final Iterable<Tool> apiToolList, final List<Tool> dbToolList, final User user, final ToolDAO toolDAO) {
+    private List<Tool> updateTools(final Iterable<Tool> apiToolList, final List<Tool> dbToolList, final User user, final ToolDAO toolDAO) {
 
         final List<Tool> toDelete = new ArrayList<>();
         // Find containers that the user no longer has
@@ -574,6 +576,9 @@ public abstract class AbstractImageRegistry {
         // Save all new and existing containers, and generate new tags
         for (final Tool tool : dbToolList) {
             tool.setLastUpdated(time);
+            if (tool.getUsers() == null) {
+                tool.setUsers(new HashSet<>());
+            }
             tool.addUser(user);
             toolDAO.create(tool);
 

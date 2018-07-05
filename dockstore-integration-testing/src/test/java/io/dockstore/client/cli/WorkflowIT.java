@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -50,10 +51,10 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tool;
-import io.swagger.client.model.User;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.ToolTests;
+import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -64,6 +65,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
@@ -92,9 +95,13 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
     // workflow that uses containers
     private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/galaxy-workflows";
-
-
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = Registry.QUAY_IO.toString() + "/dockstoretestuser2/dockstore-cgpmap";
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -135,6 +142,7 @@ public class WorkflowIT extends BaseIT {
 
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
+        Assert.assertNotEquals("getUser() endpoint should actually return the user profile", null, user.getUserProfiles());
 
         final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
 
@@ -243,7 +251,9 @@ public class WorkflowIT extends BaseIT {
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
                 "test", "cwl", null);
+        assertEquals("There should be one user of the workflow after manually registering it.", 1, workflow.getUsers().size());
         Workflow refresh = workflowApi.refresh(workflow.getId());
+
 
         Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
 
@@ -255,6 +265,44 @@ public class WorkflowIT extends BaseIT {
         systemExit.expectSystemExitWithStatus(Client.ENTRY_NOT_FOUND);
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "launch", "--entry", toolpath, "--json" , ResourceHelpers.resourceFilePath("md5sum-wrapper-tool.json") ,  "--script" });
     }
+
+    /**
+     * This tests workflow convert entry2json when the main descriptor is nested far within the GitHub repo with secondary descriptors too
+     * @throws IOException
+     */
+    @Test
+    public void testEntryConvertWDLWithSecondaryDescriptors() throws IOException {
+        String toolpath = SourceControl.GITHUB.toString() + "/garyluu/skylab";
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow workflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "garyluu/skylab", "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl",
+                        "", "wdl", null);
+        Workflow refresh = workflowApi.refresh(workflow.getId());
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        workflowApi.publish(refresh.getId(), publishRequest);
+
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", toolpath + ":Dockstore_Testing", "--script" });
+        List<String> stringList = new ArrayList<>();
+        stringList.add("\"SmartSeq2SingleCell.gtf_file\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.genome_ref_fasta\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.rrna_intervals\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.fastq2\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_trans_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.stranded\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.sample_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.output_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.fastq1\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_trans_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.rsem_ref_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.gene_ref_flat\": \"File\"");
+        stringList.forEach(string -> {
+            Assert.assertTrue(systemOutRule.getLog().contains(string));
+        });
+    }
+
 
     @Test
     public void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
@@ -483,12 +531,12 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // should start with nothing published
-        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows().isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null).isEmpty());
         // refresh just for the current user
         UsersApi usersApi = new UsersApi(webClient);
         final Long userId = usersApi.getUser().getId();
         usersApi.refreshWorkflows(userId);
-        assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows().isEmpty());
+        assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null).isEmpty());
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
         final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
@@ -498,12 +546,32 @@ public class WorkflowIT extends BaseIT {
         // publish one
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         workflowApi.publish(workflowByPath.getId(), publishRequest);
-        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows().size(), 1,
-            workflowApi.allPublishedWorkflows().size());
+        assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 1,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
         final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId());
         assertNotNull("did not get published workflow", publishedWorkflow);
         final Workflow publishedWorkflowByPath = workflowApi.getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
         assertNotNull("did not get published workflow", publishedWorkflowByPath);
+
+        // publish everything so pagination testing makes more sense (going to unfortunately use rate limit)
+        Lists.newArrayList("github.com/DockstoreTestUser2/hello-dockstore-workflow", "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "bitbucket.org/dockstore_testuser2/dockstore-workflow", "github.com/DockstoreTestUser2/parameter_test_workflow").forEach(path -> {
+            Workflow workflow = workflowApi.getWorkflowByPath(path);
+            workflowApi.refresh(workflow.getId());
+            workflowApi.publish(workflow.getId(), publishRequest);
+        });
+        List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null);
+        // test offset
+        assertTrue("offset does not seem to be working",
+            Objects.equals(workflowApi.allPublishedWorkflows("1", null, null, null, null).get(0).getId(), workflows.get(1).getId()));
+        // test limit
+        assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null).size());
+        // test custom sort column
+        List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc");
+        List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc");
+        assertTrue("sort by id does not seem to be working", Objects.equals(ascId.get(0).getId(), descId.get(descId.size() - 1).getId()));
+        // test filter
+        List<Workflow> filtered = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
+        assertEquals(1, filtered.size());
     }
 
     /**
@@ -553,8 +621,8 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
 
         // Assert some things
-        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows().size(), 2,
-            workflowApi.allPublishedWorkflows().size());
+        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 2,
+            workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
         assertEquals("Two workflows are in full mode", 2, count3);
