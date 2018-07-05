@@ -2442,10 +2442,10 @@ paths:
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Tag to set as default."
+        description: "Tag name to set as default."
         required: true
         schema:
-          $ref: "#/definitions/Tag"
+          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -4103,10 +4103,10 @@ paths:
         format: "int64"
       - in: "body"
         name: "body"
-        description: "Version to set as default"
+        description: "Version name to set as default"
         required: true
         schema:
-          $ref: "#/definitions/WorkflowVersion"
+          type: "string"
       responses:
         200:
           description: "successful operation"

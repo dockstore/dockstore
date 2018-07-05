@@ -288,7 +288,7 @@ public class CRUDClientIT extends BaseIT {
 
         // Update the default version of the tool
         if (first.isPresent()) {
-            containersApi.updateDefaultVersion(hostedTool.getId(), first.get());
+            containersApi.updateDefaultVersion(hostedTool.getId(), first.get().getName());
         }
     }
 
@@ -313,7 +313,7 @@ public class CRUDClientIT extends BaseIT {
 
         // Update the default version of the workflow
         if (first.isPresent()) {
-            workflowsApi.updateDefaultVersion(hostedWorkflow.getId(), first.get());
+            workflowsApi.updateDefaultVersion(hostedWorkflow.getId(), first.get().getName());
         }
     }
 

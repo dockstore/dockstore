@@ -2743,8 +2743,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Tag'
-        description: Tag to set as default.
+              type: string
+        description: Tag name to set as default.
         required: true
   '/entries/{id}/aliases':
     put:
@@ -4461,8 +4461,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WorkflowVersion'
-        description: Version to set as default
+              type: string
+        description: Version name to set as default
         required: true
   '/workflows/{workflowId}/labels':
     put:

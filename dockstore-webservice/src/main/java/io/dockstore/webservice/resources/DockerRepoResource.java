@@ -328,13 +328,13 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @ApiOperation(value = "Update the default version of the given tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
                                 @ApiParam(value = "Tool to modify.", required = true) @PathParam("toolId") Long toolId,
-                                @ApiParam(value = "Tag to set as default.", required = true) Tag tag) {
+                                @ApiParam(value = "Tag name to set as default.", required = true) String tag) {
         Tool t = toolDAO.findById(toolId);
         checkEntry(t);
         checkUser(user, t);
 
         if (tag != null) {
-            if (!t.checkAndSetDefaultVersion(tag.getName())) {
+            if (!t.checkAndSetDefaultVersion(tag)) {
                 throw new CustomWebApplicationException("Tool version does not exist.", HttpStatus.SC_BAD_REQUEST);
             }
         }
