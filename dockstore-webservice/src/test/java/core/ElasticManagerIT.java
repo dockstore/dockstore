@@ -32,6 +32,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
@@ -40,7 +41,10 @@ public class ElasticManagerIT {
     private static ElasticManager manager;
 
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @BeforeClass
     public static void setupManager() {
@@ -61,6 +65,7 @@ public class ElasticManagerIT {
 
         String cwlContent = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
 
+        file.setPath("dummypath");
         file.setContent(cwlContent);
         file.setType(DOCKSTORE_CWL);
         tag.addSourceFile(file);

@@ -49,10 +49,13 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.Ordering;
 import io.dockstore.webservice.helpers.EntryStarredSerializer;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -86,7 +89,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedNativeQuery(name = "Entry.getPublishedEntryByPathNullName", query =
         "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL and ispublished = TRUE union"
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE")})
-public abstract class Entry<S extends Entry, T extends Version> {
+public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry> {
 
     /**
      * re-use existing generator for backwards compatibility
@@ -448,6 +451,12 @@ public abstract class Entry<S extends Entry, T extends Version> {
 
     public Timestamp getDbUpdateDate() {
         return dbUpdateDate;
+    }
+
+    @Override
+    public int compareTo(@NotNull Entry that) {
+        return ComparisonChain.start().compare(this.getId(), that.getId(), Ordering.natural().nullsLast())
+            .result();
     }
 
     /**
