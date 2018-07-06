@@ -1,6 +1,4 @@
 openapi: 3.0.0
-servers:
-  - url: https://dockstore.org:8443
 info:
   description: >-
     This describes the dockstore API, a webservice that manages pairs of Docker
@@ -2721,7 +2719,7 @@ paths:
         - containers
       summary: Update the default version of the given tool.
       description: ''
-      operationId: updateDefaultVersion
+      operationId: updateToolDefaultVersion
       parameters:
         - name: toolId
           in: path
@@ -4439,7 +4437,7 @@ paths:
         - workflows
       summary: Update the default version of the given workflow.
       description: ''
-      operationId: updateDefaultVersion
+      operationId: updateWorkflowDefaultVersion
       parameters:
         - name: workflowId
           in: path
@@ -5167,6 +5165,8 @@ paths:
 externalDocs:
   description: Dockstore documentation
   url: 'https://www.dockstore.org/docs/getting-started'
+servers:
+  - url: https://dockstore.org:8443
 components:
   requestBodies:
     PublishRequest:

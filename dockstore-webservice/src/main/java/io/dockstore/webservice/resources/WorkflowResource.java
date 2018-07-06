@@ -493,18 +493,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/defaultVersion")
-    @ApiOperation(value = "Update the default version of the given workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    @ApiOperation(value = "Update the default version of the given workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, nickname = "updateWorkflowDefaultVersion")
     public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
                                    @ApiParam(value = "Version name to set as default", required = true) String version) {
         Workflow wf = workflowDAO.findById(workflowId);
         checkEntry(wf);
         checkUser(user, wf);
 
-        if (version != null) {
-            if (!wf.checkAndSetDefaultVersion(version)) {
-                throw new CustomWebApplicationException("Workflow version does not exist.", HttpStatus.SC_BAD_REQUEST);
-            }
-        }
+        updateDefaultVersionHelper(version, wf);
 
         Workflow result = workflowDAO.findById(workflowId);
         checkEntry(result);

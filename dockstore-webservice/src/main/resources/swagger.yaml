@@ -2430,7 +2430,7 @@ paths:
       - "containers"
       summary: "Update the default version of the given tool."
       description: ""
-      operationId: "updateDefaultVersion"
+      operationId: "updateToolDefaultVersion"
       produces:
       - "application/json"
       parameters:
@@ -4091,7 +4091,7 @@ paths:
       - "workflows"
       summary: "Update the default version of the given workflow."
       description: ""
-      operationId: "updateDefaultVersion"
+      operationId: "updateWorkflowDefaultVersion"
       produces:
       - "application/json"
       parameters:

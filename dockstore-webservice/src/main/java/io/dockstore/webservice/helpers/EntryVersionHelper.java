@@ -52,6 +52,19 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     W getDAO();
 
     /**
+     * Sets the default version if possible, if not it will throw an error
+     * @param version Name of the version to set
+     * @param entry Entry to update
+     */
+    default void updateDefaultVersionHelper(String version, Entry entry) {
+        if (version != null) {
+            if (!entry.checkAndSetDefaultVersion(version)) {
+                throw new CustomWebApplicationException("Given version does not exist.", HttpStatus.SC_NOT_FOUND);
+            }
+        }
+    }
+
+    /**
      * For the purposes of display, this method filters an entry to not show workflow or tool versions that are hidden
      * without deleting them from the database
      * @param entry the entry to be filtered
@@ -275,4 +288,5 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             this.primaryDescriptor = isPrimaryDescriptor;
         }
     }
+
 }

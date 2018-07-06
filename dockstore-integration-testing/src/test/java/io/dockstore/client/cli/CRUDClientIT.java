@@ -46,6 +46,8 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests CRUD style operations for tools and workflows hosted directly on Dockstore
  *
@@ -83,7 +85,7 @@ public class CRUDClientIT extends BaseIT {
             user.setUserProfiles(null);
         });
 
-        Assert.assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
+        assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);
         DockstoreTool container = oldApi.getContainer(hostedTool.getId());
@@ -155,7 +157,7 @@ public class CRUDClientIT extends BaseIT {
             // Setting it to null afterwards to compare with the getWorkflow endpoint since that one doesn't return user profiles
             user.setUserProfiles(null);
         });
-        Assert.assertTrue("workflow was not created with a valid if", hostedTool.getId() != 0);
+        assertTrue("workflow was not created with a valid if", hostedTool.getId() != 0);
         // can get it back with regular api
         WorkflowsApi oldApi = new WorkflowsApi(webClient);
         Workflow container = oldApi.getWorkflow(hostedTool.getId());
@@ -243,7 +245,7 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         thrown.expect(ApiException.class);
         DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
-        Assert.assertTrue("There should be at least one user of the workflow", refreshedTool.getUsers().size() > 0);
+        assertTrue("There should be at least one user of the workflow", refreshedTool.getUsers().size() > 0);
         refreshedTool.getUsers().forEach(entryUser -> {
             Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
         });
@@ -286,10 +288,10 @@ public class CRUDClientIT extends BaseIT {
         Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
+        assertTrue(first.isPresent());
+
         // Update the default version of the tool
-        if (first.isPresent()) {
-            containersApi.updateDefaultVersion(hostedTool.getId(), first.get().getName());
-        }
+        containersApi.updateToolDefaultVersion(hostedTool.getId(), first.get().getName());
     }
 
     /**
@@ -311,10 +313,10 @@ public class CRUDClientIT extends BaseIT {
         Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
 
+        assertTrue(first.isPresent());
+
         // Update the default version of the workflow
-        if (first.isPresent()) {
-            workflowsApi.updateDefaultVersion(hostedWorkflow.getId(), first.get().getName());
-        }
+        workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), first.get().getName());
     }
 
     /**
