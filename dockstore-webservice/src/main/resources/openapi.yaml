@@ -1802,7 +1802,7 @@ paths:
             enum:
               - asc
               - desc
-            default: asc
+            default: desc
       responses:
         '200':
           description: successful operation
@@ -4140,7 +4140,7 @@ paths:
             enum:
               - asc
               - desc
-            default: asc
+            default: desc
       responses:
         '200':
           description: successful operation
