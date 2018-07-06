@@ -275,8 +275,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
             // Get import files
             namespaceToPath = bridge.getImportMap(tempMainDescriptor);
-        } catch (IOException e) {
-            throw new CustomWebApplicationException("could not process wdl into DAG", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (IOException | WdlParser.SyntaxError e) {
+            throw new CustomWebApplicationException("could not process wdl into DAG: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }
