@@ -107,6 +107,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
     User createUser(String credentials, Userinfoplus userinfoPlus) {
         User user = new User();
         GoogleHelper.updateUserFromGoogleUserinfoplus(userinfoPlus, user);
+        user.setUsername(userinfoPlus.getEmail());
         final long userID = userDAO.create(user);
         dao.create(TokenResource.createGoogleToken(credentials, null, userID, user.getUsername()));
         return user;
