@@ -19,7 +19,6 @@ package io.dockstore.webservice.core;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -114,13 +113,15 @@ public abstract class Entry<S extends Entry, T extends Version> {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have control over this entry, dockstore specific", required = false, position = 4)
-    private Set<User> users;
+    @OrderBy("id")
+    private SortedSet<User> users;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "This indicates the users that have starred this entry, dockstore specific", required = false, position = 5)
     @JsonSerialize(using = EntryStarredSerializer.class)
-    private Set<User> starredUsers;
+    @OrderBy("id")
+    private SortedSet<User> starredUsers;
 
     @Column
     @ApiModelProperty(value = "This is the email of the git organization", position = 6)
@@ -166,14 +167,14 @@ public abstract class Entry<S extends Entry, T extends Version> {
     private Timestamp dbUpdateDate;
 
     public Entry() {
-        users = new HashSet<>(0);
-        starredUsers = new HashSet<>(0);
+        users = new TreeSet<>();
+        starredUsers = new TreeSet<>();
     }
 
     public Entry(long id) {
         this.id = id;
-        users = new HashSet<>(0);
-        starredUsers = new HashSet<>(0);
+        users = new TreeSet<>();
+        starredUsers = new TreeSet<>();
     }
 
     @JsonProperty("checker_id")
@@ -248,7 +249,7 @@ public abstract class Entry<S extends Entry, T extends Version> {
         this.labels = labels;
     }
 
-    public void setUsers(Set<User> users) {
+    public void setUsers(SortedSet<User> users) {
         this.users = users;
     }
 

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -577,7 +578,7 @@ public abstract class AbstractImageRegistry {
         for (final Tool tool : dbToolList) {
             tool.setLastUpdated(time);
             if (tool.getUsers() == null) {
-                tool.setUsers(new HashSet<>());
+                tool.setUsers(new TreeSet<>());
             }
             tool.addUser(user);
             toolDAO.create(tool);

@@ -18,9 +18,10 @@ package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -96,7 +97,8 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JoinTable(name = "version_sourcefile", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "sourcefileid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached files for each version. Includes Dockerfile and Descriptor files", position = 3)
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
-    private final Set<SourceFile> sourceFiles;
+    @OrderBy("path")
+    private final SortedSet<SourceFile> sourceFiles;
 
     @Column
     @ApiModelProperty(value = "Implementation specific, whether this row is visible to other users aside from the owner", position = 4)
@@ -144,16 +146,16 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JoinTable(name = "version_input_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the input file formats of versions (tag/workflowVersion)", position = 20)
     @OrderBy("id")
-    private Set<FileFormat> inputFileFormats = new HashSet<>();
+    private SortedSet<FileFormat> inputFileFormats = new TreeSet<>();
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "version_output_fileformat", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "fileformatid", referencedColumnName = "id"))
     @ApiModelProperty(value = "File formats for describing the output file formats of versions (tag/workflowVersion)", position = 21)
     @OrderBy("id")
-    private Set<FileFormat> outputFileFormats = new HashSet<>();
+    private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
     public Version() {
-        sourceFiles = new HashSet<>(0);
+        sourceFiles = new TreeSet<>();
         doiStatus = DOIStatus.NOT_REQUESTED;
     }
 
@@ -224,7 +226,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         this.reference = reference;
     }
 
-    public Set<SourceFile> getSourceFiles() {
+    public SortedSet<SourceFile> getSourceFiles() {
         return sourceFiles;
     }
 
@@ -294,7 +296,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return inputFileFormats;
     }
 
-    public void setInputFileFormats(Set<FileFormat> inputFileFormats) {
+    public void setInputFileFormats(SortedSet<FileFormat> inputFileFormats) {
         this.inputFileFormats = inputFileFormats;
     }
 
@@ -303,7 +305,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return outputFileFormats;
     }
 
-    public void setOutputFileFormats(Set<FileFormat> outputFileFormats) {
+    public void setOutputFileFormats(SortedSet<FileFormat> outputFileFormats) {
         this.outputFileFormats = outputFileFormats;
     }
   

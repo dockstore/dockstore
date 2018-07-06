@@ -254,7 +254,7 @@ public class ToolsImplCommonTest {
         workflow.setAuthor(null);
         workflow.setDescription(null);
         workflow.setLabels(Collections.emptySortedSet());
-        workflow.setUsers(Collections.emptySet());
+        workflow.setUsers(Collections.emptySortedSet());
         workflow.setEmail(null);
         workflow.setDefaultVersion(REFERENCE2);
         workflow.setIsPublished(true);
