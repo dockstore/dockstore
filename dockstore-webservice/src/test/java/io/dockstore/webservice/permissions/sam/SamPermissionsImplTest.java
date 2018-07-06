@@ -22,10 +22,13 @@ import io.swagger.sam.client.model.AccessPolicyMembership;
 import io.swagger.sam.client.model.AccessPolicyResponseEntry;
 import io.swagger.sam.client.model.ErrorReport;
 import io.swagger.sam.client.model.ResourceAndAccessPolicy;
+import org.apache.http.HttpStatus;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
@@ -54,6 +57,9 @@ public class SamPermissionsImplTest {
     private Permission readerPermission;
     private AccessPolicyMembership readerAccessPolicyMemebership;
     private AccessPolicyResponseEntry readerAccessPolicyResponseEntry;
+
+    @Rule
+    public ExpectedException thrown= ExpectedException.none();
 
     @Before
     public void setup() {
@@ -214,19 +220,21 @@ public class SamPermissionsImplTest {
         Assert.assertEquals(permissions.size(), 1);
     }
 
-    @Test(expected = CustomWebApplicationException.class)
+    @Test
     public void setPermissionTest1() {
         try {
-            when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME)).thenThrow(new ApiException(500, "Server error"));
+            when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME)).thenThrow(new ApiException(HttpStatus.SC_INTERNAL_SERVER_ERROR, "Server error"));
             final Permission permission = new Permission();
             permission.setEmail("jdoe@example.com");
             permission.setRole(Role.WRITER);
+            thrown.expect(CustomWebApplicationException.class);
             samPermissionsImpl.setPermission(fooWorkflow, userMock, permission);
             Assert.fail("setPermissions did not throw Exception");
         } catch (ApiException e) {
             Assert.fail();
             e.printStackTrace();
         }
+
     }
 
     @Test

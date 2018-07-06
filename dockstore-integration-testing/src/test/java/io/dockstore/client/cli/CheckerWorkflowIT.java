@@ -36,6 +36,7 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
@@ -55,6 +56,9 @@ public class CheckerWorkflowIT extends BaseIT {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    @Rule
+    public ExpectedException thrown= ExpectedException.none();
 
     @Before
     @Override
@@ -323,7 +327,7 @@ public class CheckerWorkflowIT extends BaseIT {
      * Should not be able to add a checker workflow to a stub workflow (Should fail)
      * @throws ApiException
      */
-    @Test(expected = ApiException.class)
+    @Test
     public void testAddCheckerToStub() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient();
@@ -339,6 +343,7 @@ public class CheckerWorkflowIT extends BaseIT {
             .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
         assertEquals("No workflows are in full mode, there are " + count, 0, count);
 
+        thrown.expect(ApiException.class);
         // Add checker workflow
         workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", githubWorkflow.getId(), "cwl", null);
     }
@@ -347,7 +352,7 @@ public class CheckerWorkflowIT extends BaseIT {
      * Tests that you cannot register a tool with an underscore
      * @throws ApiException
      */
-    @Test(expected = ApiException.class)
+    @Test
     public void testRegisteringToolWithUnderscoreInName() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient();
@@ -366,24 +371,25 @@ public class CheckerWorkflowIT extends BaseIT {
         newTool.setToolname("_altname");
         newTool.setPrivateAccess(false);
         newTool.setDefaultCWLTestParameterFile("/testcwl.json");
-
-        // Register the tool
-        DockstoreTool githubTool = containersApi.registerManual(newTool);
+        thrown.expect(ApiException.class);
+        containersApi.registerManual(newTool);
     }
 
     /**
      * Tests that you cannot register a workflow with an underscore
+     *
      * @throws ApiException
      */
-    @Test(expected = ApiException.class)
+    @Test
     public void testRegisteringWorkflowWithUnderscoreInName() throws ApiException {
         // Setup for test
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // Manually register a workflow
-        Workflow githubWorkflow = workflowApi
-            .manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "_altname", "cwl", "/testcwl.json");
+        thrown.expect(ApiException.class);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "_altname", "cwl",
+            "/testcwl.json");
 
     }
 
