@@ -272,11 +272,11 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testEntryConvertWDLWithSecondaryDescriptors() throws IOException {
-        String toolpath = SourceControl.GITHUB.toString() + "/garyluu/skylab";
+        String toolpath = SourceControl.GITHUB.toString() + "/dockstore-testing/skylab";
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
-                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "garyluu/skylab", "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl",
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/skylab", "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl",
                         "", "wdl", null);
         Workflow refresh = workflowApi.refresh(workflow.getId());
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
