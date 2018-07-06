@@ -496,16 +496,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @ApiOperation(value = "Update the default version of the given workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, nickname = "updateWorkflowDefaultVersion")
     public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
                                    @ApiParam(value = "Version name to set as default", required = true) String version) {
-        Workflow wf = workflowDAO.findById(workflowId);
-        checkEntry(wf);
-        checkUser(user, wf);
-
-        updateDefaultVersionHelper(version, wf);
-
-        Workflow result = workflowDAO.findById(workflowId);
-        checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result;
+        return (Workflow)updateDefaultVersionHelper(version, workflowId, user, elasticManager);
     }
 
     // Used to update workflow manually (not refresh)

@@ -329,16 +329,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public Tool updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
                                 @ApiParam(value = "Tool to modify.", required = true) @PathParam("toolId") Long toolId,
                                 @ApiParam(value = "Tag name to set as default.", required = true) String version) {
-        Tool t = toolDAO.findById(toolId);
-        checkEntry(t);
-        checkUser(user, t);
-
-        updateDefaultVersionHelper(version, t);
-
-        Tool result = toolDAO.findById(toolId);
-        checkEntry(result);
-        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
-        return result;
+        return (Tool)updateDefaultVersionHelper(version, toolId, user, elasticManager);
     }
 
     /**

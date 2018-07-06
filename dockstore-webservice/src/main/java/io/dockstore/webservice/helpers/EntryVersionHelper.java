@@ -29,6 +29,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
@@ -54,14 +55,23 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     /**
      * Sets the default version if possible, if not it will throw an error
      * @param version Name of the version to set
-     * @param entry Entry to update
+     * @param id Id of entry
+     * @param user User
+     * @param elasticManager
      */
-    default void updateDefaultVersionHelper(String version, Entry entry) {
+    default Entry updateDefaultVersionHelper(String version, long id, User user, ElasticManager elasticManager) {
+        Entry entry = getDAO().findById(id);
+        checkEntry(entry);
+        checkUser(user, entry);
         if (version != null) {
             if (!entry.checkAndSetDefaultVersion(version)) {
                 throw new CustomWebApplicationException("Given version does not exist.", HttpStatus.SC_NOT_FOUND);
             }
         }
+        Entry result = getDAO().findById(id);
+        checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        return result;
     }
 
     /**
