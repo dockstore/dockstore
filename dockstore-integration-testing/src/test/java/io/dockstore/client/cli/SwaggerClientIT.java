@@ -144,11 +144,7 @@ public class SwaggerClientIT {
     private static ApiClient getAdminWebClient() {
         return getWebClient(true, true);
     }
-
-    private static ApiClient getAdminWebClient(boolean correctUser) {
-        return getWebClient(correctUser, true);
-    }
-
+    
     private static ApiClient getAnonymousWebClient() {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
