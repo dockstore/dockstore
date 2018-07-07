@@ -232,7 +232,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
         List<Token> tokens = tokenDAO.findByUserId(user.getId());
         Token token = Token.extractToken(tokens, TokenType.GOOGLE_COM);
         if (token != null) {
-            return GoogleHelper.getValidAccessToken(token, config.getGoogleClientID(), config.getGoogleClientSecret())
+            return GoogleHelper.getValidAccessToken(token)
                     .map(accessToken -> {
                         if (!accessToken.equals(token.getToken())) {
                             token.setContent(accessToken);

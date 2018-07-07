@@ -607,7 +607,7 @@ public class UserResource implements AuthenticatedResourceInterface {
         } else {
             Token googleToken = googleByUserId.get(0);
             Optional<String> validAccessToken = GoogleHelper
-                    .getValidAccessToken(googleToken, configuration.getGoogleClientID(), configuration.getGoogleClientSecret());
+                    .getValidAccessToken(googleToken);
             if (validAccessToken.isPresent()) {
                 googleToken.setContent(validAccessToken.get());
                 tokenDAO.update(googleToken);
