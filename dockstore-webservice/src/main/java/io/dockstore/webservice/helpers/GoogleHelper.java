@@ -12,6 +12,7 @@ import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
@@ -29,7 +30,13 @@ public final class GoogleHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(GoogleHelper.class);
 
+    private static DockstoreWebserviceConfiguration config;
+
     private GoogleHelper() {
+    }
+
+    public static void setConfig(DockstoreWebserviceConfiguration config) {
+        GoogleHelper.config = config;
     }
 
     /**
@@ -38,13 +45,12 @@ public final class GoogleHelper {
      * @param user  The pre-updated user
      */
     public static boolean updateGoogleUserData(String token, User user) {
-        try {
-            Userinfoplus userinfoplus = userinfoplusFromToken(token);
-            updateUserFromGoogleUserinfoplus(userinfoplus, user);
-            return true;
-        } catch (GeneralSecurityException | IOException e) {
-            return false;
-        }
+        return userinfoplusFromToken(token)
+                .map(userinfoPlus -> {
+                    updateUserFromGoogleUserinfoplus(userinfoPlus, user);
+                    return true;
+                })
+                .orElse(false);
     }
 
     /**
@@ -60,17 +66,6 @@ public final class GoogleHelper {
         user.setAvatarUrl(userinfo.getPicture());
         Map<String, User.Profile> userProfile = user.getUserProfiles();
         userProfile.put(TokenType.GOOGLE_COM.toString(), profile);
-        user.setUsername(userinfo.getEmail());
-    }
-
-    public static Optional<String> getUserNameFromToken(String token) {
-        try {
-            Userinfoplus userinfoplus = userinfoplusFromToken(token);
-            return Optional.of(userinfoplus.getEmail());
-
-        } catch (GeneralSecurityException | IOException e) {
-            return Optional.empty();
-        }
     }
 
     /**
@@ -88,47 +83,67 @@ public final class GoogleHelper {
      * @param token
      * @return
      */
-    public static Optional<String> getValidAccessToken(Token token, String clientId, String clientSecret) {
-        try {
-            final String googleToken = token.getToken();
-            GoogleCredential cred = new GoogleCredential().setAccessToken(googleToken);
-            Oauth2 oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), new JacksonFactory(), cred).setApplicationName("").build();
-            try {
-                Tokeninfo tokenInfo = oauth2.tokeninfo().setAccessToken(googleToken).execute();
-                if (tokenInfo != null) {
-                    if (isValidAudience(clientId, tokenInfo)) {
-                        return Optional.of(googleToken);
-                    } else {
-                        return Optional.empty();
+    public static Optional<String> getValidAccessToken(Token token) {
+        final String googleToken = token.getToken();
+        return tokenInfoFromToken(googleToken)
+                .map(tokenInfo -> {
+                    // The user has a non-expired Google token -- also make sure that the audience is valid.
+                    return isValidAudience(tokenInfo) ? Optional.of(googleToken) : Optional.<String>empty();
+                })
+                .orElseGet(() -> {
+                    // The token expired; try to refresh it
+                    if (token.getRefreshToken() != null) {
+                        TokenResponse tokenResponse = new TokenResponse();
+                        try {
+                            tokenResponse.setRefreshToken(token.getRefreshToken());
+                            GoogleCredential credential = new GoogleCredential.Builder()
+                                    .setTransport(GoogleNetHttpTransport.newTrustedTransport()).setJsonFactory(new JacksonFactory())
+                                    .setClientSecrets(config.getGoogleClientID(), config.getGoogleClientSecret()).build()
+                                    .setFromTokenResponse(tokenResponse);
+                            credential.refreshToken();
+                            return Optional.ofNullable(credential.getAccessToken());
+                        } catch (GeneralSecurityException | IOException e) {
+                            LOG.error("Error refreshing token", e);
+                        }
                     }
-                }
-            } catch (RuntimeException e) {
-                // If token is invalid, Google client throws exception. See https://github.com/google/google-api-java-client/issues/970
-                LOG.info("Error getting token info", e);
+                    return Optional.empty();
+                });
+    }
+
+    public static Optional<Userinfoplus> userinfoplusFromToken(String token)  {
+        if (isValidToken(token)) {
+            GoogleCredential credential = new GoogleCredential().setAccessToken(token);
+            Oauth2 oauth2;
+            try {
+                oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), new JacksonFactory(), credential).setApplicationName("").build();
+                return Optional.ofNullable(oauth2.userinfo().get().execute());
+            } catch (Exception ex) {
+                return Optional.empty();
             }
-            TokenResponse tokenResponse = new TokenResponse();
-            tokenResponse.setRefreshToken(token.getRefreshToken());
-            GoogleCredential credential = new GoogleCredential.Builder().setTransport(GoogleNetHttpTransport.newTrustedTransport())
-                    .setJsonFactory(new JacksonFactory()).setClientSecrets(clientId, clientSecret).build()
-                    .setFromTokenResponse(tokenResponse);
-            credential.refreshToken();
-            return Optional.ofNullable(credential.getAccessToken());
-        } catch (GeneralSecurityException | IOException e) {
-            LOG.error("Error getting Google access token", e);
         }
-        return Optional.of(token.getContent());
+        return Optional.empty();
     }
 
-    static boolean isValidAudience(String clientId, Tokeninfo tokenInfo) {
-        // TODO: Allow other audiences.
-        return clientId.equals(tokenInfo.getAudience());
+    static boolean isValidAudience(Tokeninfo tokenInfo) {
+        final String audience = tokenInfo.getAudience();
+        return config.getGoogleClientID().equals(audience) || config.getExternalGoogleClientIds().contains(audience);
     }
 
-    private static Userinfoplus userinfoplusFromToken(String token) throws GeneralSecurityException, IOException {
-        GoogleCredential credential = new GoogleCredential().setAccessToken(token);
-        Oauth2 oauth2;
-        oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), new JacksonFactory(), credential).setApplicationName("")
-                .build();
-        return oauth2.userinfo().get().execute();
+    private static Optional<Tokeninfo> tokenInfoFromToken(String googleToken) {
+        GoogleCredential cred = new GoogleCredential().setAccessToken(googleToken);
+        try {
+            Oauth2 oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), new JacksonFactory(), cred).setApplicationName("").build();
+            Tokeninfo tokenInfo = oauth2.tokeninfo().setAccessToken(googleToken).execute();
+            return Optional.ofNullable(tokenInfo);
+        } catch (RuntimeException | GeneralSecurityException | IOException e) {
+            // If token is invalid, Google client throws exception. See https://github.com/google/google-api-java-client/issues/970
+            LOG.info("Error getting token info", e);
+            return Optional.empty();
+        }
     }
+
+    private static boolean isValidToken(String googleToken) {
+        return tokenInfoFromToken(googleToken).map(tokenInfo -> isValidAudience(tokenInfo)).orElse(false);
+    }
+
 }

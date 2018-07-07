@@ -385,13 +385,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
             if (googleToken == null) {
                 LOG.info("Could not find user's Google token. Making new one...");
-                // CREATE GITHUB TOKEN
-                googleToken = new Token();
-                googleToken.setTokenSource(TokenType.GOOGLE_COM);
-                googleToken.setContent(accessToken);
-                googleToken.setRefreshToken(refreshToken);
-                googleToken.setUserId(userID);
-                googleToken.setUsername(googleLoginName);
+                // CREATE GOOGLE TOKEN
+                googleToken = createGoogleToken(accessToken, refreshToken, userID, googleLoginName);
                 tokenDAO.create(googleToken);
                 LOG.info("Google token created for {}", googleLoginName);
             } else {
@@ -404,6 +399,17 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         } catch (GeneralSecurityException | IOException e) {
             throw new CustomWebApplicationException(e.getMessage() + ". Could not use OAuth 2.0 client credentials.", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    public static Token createGoogleToken(String accessToken, String refreshToken, long userID, String googleLoginName) {
+        Token googleToken;
+        googleToken = new Token();
+        googleToken.setTokenSource(TokenType.GOOGLE_COM);
+        googleToken.setContent(accessToken);
+        googleToken.setRefreshToken(refreshToken);
+        googleToken.setUserId(userID);
+        googleToken.setUsername(googleLoginName);
+        return googleToken;
     }
 
     @GET

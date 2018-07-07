@@ -19,12 +19,14 @@ package io.dockstore.webservice;
 import java.util.List;
 import java.util.Optional;
 
+import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.resources.TokenResource;
 import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -46,32 +48,69 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         this.userDAO = userDAO;
     }
 
+    /**
+     * Authenticates the credentials.
+     *
+     * Valid credentials can either be a Dockstore token or a Google token, if the Google token
+     * is issued against a whitelisted Google client id.
+     *
+     * @param credentials
+     * @return an optional user
+     * @throws AuthenticationException
+     */
     @UnitOfWork
     @Override
     public Optional<User> authenticate(String credentials) throws AuthenticationException {
         LOG.debug("SimpleAuthenticator called with {}", credentials);
         final Token token = dao.findByContent(credentials);
-        if (token != null) {
+        if (token != null) { // It's a valid Dockstore token
             User byId = userDAO.findById(token.getUserId());
-            // Always eagerly load yourself (your User object)
-            Hibernate.initialize(byId.getUserProfiles());
+            initializeUserProfiles(byId);
             return Optional.of(byId);
-        } else {
-            final Optional<String> username = GoogleHelper.getUserNameFromToken(credentials);
-            if (username.isPresent()) {
-                User user = userDAO.findByUsername(username.get());
-                if (user != null) {
-                    List<Token> tokens = dao.findByUserId(user.getId());
-                    Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
-                    googleToken.setContent(credentials);
-                    dao.update(googleToken);
-                    // Always eagerly load yourself (your User object)
-                    Hibernate.initialize(user.getUserProfiles());
-                    return Optional.of(user);
-                }
-            }
+        } else { // It might be a Google token
+            return userinfoPlusFromToken(credentials)
+                    .map(userinfoPlus -> {
+                        final String email = userinfoPlus.getEmail();
+                        User user = userDAO.findByUsername(email);
+                        if (user != null) {
+                            updateGoogleToken(credentials, user);
+                        } else {
+                            user = createUser(credentials, userinfoPlus);
+                        }
+                        initializeUserProfiles(user);
+                        return Optional.of(user);
+                    })
+                    .orElse(Optional.empty());
         }
-        return Optional.empty();
+    }
+
+    void initializeUserProfiles(User user) {
+        // Always eagerly load yourself (your User object)
+        Hibernate.initialize(user.getUserProfiles());
+    }
+
+    Optional<Userinfoplus> userinfoPlusFromToken(String credentials) {
+        return GoogleHelper.userinfoplusFromToken(credentials);
+    }
+
+    void updateGoogleToken(String credentials, User user) {
+        List<Token> tokens = dao.findByUserId(user.getId());
+        final Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
+        if (googleToken == null) {
+            dao.create(TokenResource.createGoogleToken(credentials, null, user.getId(), user.getUsername()));
+        } else {
+            googleToken.setContent(credentials);
+            dao.update(googleToken);
+        }
+    }
+
+    User createUser(String credentials, Userinfoplus userinfoPlus) {
+        User user = new User();
+        GoogleHelper.updateUserFromGoogleUserinfoplus(userinfoPlus, user);
+        user.setUsername(userinfoPlus.getEmail());
+        final long userID = userDAO.create(user);
+        dao.create(TokenResource.createGoogleToken(credentials, null, userID, user.getUsername()));
+        return user;
     }
 
 }
