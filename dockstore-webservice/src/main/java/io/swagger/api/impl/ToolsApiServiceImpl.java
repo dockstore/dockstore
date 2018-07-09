@@ -559,24 +559,6 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                     if (toolDescriptor == null) {
                         return Response.status(Response.Status.NOT_FOUND).build();
                     }
-                }
-
-                // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
-                // so in this stream we need to standardize relative to the main descriptor
-                if (correctSourceFile.isPresent()) {
-                    SourceFile sourceFile = correctSourceFile.get();
-                    // annoyingly, test json, Dockerfiles, primaries include a fullpath whereas secondary descriptors
-                    // are just relative to the main descriptor this affects the url that needs to be built
-                    // in a non-hotfix, this could re-use code from the file listing
-                    StringBuilder sourceFileUrl = new StringBuilder(urlBuilt);
-                    if (!SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType()) && sourceFile.getType() != SourceFile.FileType.DOCKERFILE
-                        && !primaryDescriptors.contains(sourceFile.getPath())) {
-                        sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
-                    }
-                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
-                    if (toolDescriptor == null) {
-                        return Response.status(Response.Status.NOT_FOUND).build();
-                    }
                     return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }

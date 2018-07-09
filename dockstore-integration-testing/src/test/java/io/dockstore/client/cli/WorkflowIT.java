@@ -202,6 +202,7 @@ public class WorkflowIT extends BaseIT {
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
         checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
 
+
         // check on commit ids for github
         boolean allHaveCommitIds = refreshGithub.getWorkflowVersions().stream().noneMatch(version -> version.getCommitID().isEmpty());
         assertTrue("not all workflows seem to have commit ids", allHaveCommitIds);
