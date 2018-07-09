@@ -315,6 +315,17 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{toolId}/defaultVersion")
+    @ApiOperation(value = "Update the default version of the given tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, nickname = "updateToolDefaultVersion")
+    public Tool updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
+                                @ApiParam(value = "Tool to modify.", required = true) @PathParam("toolId") Long toolId,
+                                @ApiParam(value = "Tag name to set as default.", required = true) String version) {
+        return (Tool)updateDefaultVersionHelper(version, toolId, user, elasticManager);
+    }
+
     /**
      * Updates information from given tool based on the new tool
      *

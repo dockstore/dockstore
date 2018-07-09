@@ -1,6 +1,4 @@
 openapi: 3.0.0
-servers:
-  - url: https://dockstore.org:8443
 info:
   description: >-
     This describes the dockstore API, a webservice that manages pairs of Docker
@@ -2715,6 +2713,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+  '/containers/{toolId}/defaultVersion':
+    put:
+      tags:
+        - containers
+      summary: Update the default version of the given tool.
+      description: ''
+      operationId: updateToolDefaultVersion
+      parameters:
+        - name: toolId
+          in: path
+          description: Tool to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockstoreTool'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Tag name to set as default.
+        required: true
   '/entries/{id}/aliases':
     put:
       tags:
@@ -4402,6 +4431,37 @@ paths:
             application/json:
               schema:
                 type: string
+  '/workflows/{workflowId}/defaultVersion':
+    put:
+      tags:
+        - workflows
+      summary: Update the default version of the given workflow.
+      description: ''
+      operationId: updateWorkflowDefaultVersion
+      parameters:
+        - name: workflowId
+          in: path
+          description: Workflow to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Version name to set as default
+        required: true
   '/workflows/{workflowId}/labels':
     put:
       tags:
@@ -5105,6 +5165,8 @@ paths:
 externalDocs:
   description: Dockstore documentation
   url: 'https://www.dockstore.org/docs/getting-started'
+servers:
+  - url: https://dockstore.org:8443
 components:
   requestBodies:
     PublishRequest:

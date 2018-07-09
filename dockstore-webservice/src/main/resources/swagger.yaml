@@ -2424,6 +2424,35 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /containers/{toolId}/defaultVersion:
+    put:
+      tags:
+      - "containers"
+      summary: "Update the default version of the given tool."
+      description: ""
+      operationId: "updateToolDefaultVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "toolId"
+        in: "path"
+        description: "Tool to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Tag name to set as default."
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
   /entries/{id}/aliases:
     put:
       tags:
@@ -4056,6 +4085,35 @@ paths:
           description: "successful operation"
           schema:
             type: "string"
+  /workflows/{workflowId}/defaultVersion:
+    put:
+      tags:
+      - "workflows"
+      summary: "Update the default version of the given workflow."
+      description: ""
+      operationId: "updateWorkflowDefaultVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Version name to set as default"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/{workflowId}/labels:
     put:
       tags:
