@@ -725,7 +725,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                 .workflowsSharedWithUser(user).entrySet().stream()
                 .map(e -> {
                     final List<Workflow> workflows = e.getValue().stream().map(path -> {
-                        return workflowDAO.findByPath(path, false);
+                        final Workflow workflow = workflowDAO.findByPath(path, false);
+                        // If user is the owner of the workflow, don't include it as shared with
+                        if (workflow != null && !workflow.getUsers().contains(user)) {
+                            return workflow;
+                        }
+                        return null;
                     }).filter(w -> w != null).collect(Collectors.toList());
                     return new SharedWorkflows(e.getKey(), workflows);
                 })
@@ -849,13 +854,16 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/path/workfow/{repository}/permissions")
-    @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Adds a permission for a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Adds a permission for a workflow. The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
             @ApiParam(value = "user permission", required = true) Permission permission) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        this.permissionsInterface.setPermission(workflow, user, permission);
+        if (workflow.getMode() != WorkflowMode.HOSTED) {
+            throw new CustomWebApplicationException("Setting permissions is only allowed on hosted workflows.", HttpStatus.SC_BAD_REQUEST);
+        }
+        this.permissionsInterface.setPermission(user, workflow, permission);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
 
@@ -870,7 +878,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        this.permissionsInterface.removePermission(workflow, user, email, role);
+        this.permissionsInterface.removePermission(user, workflow, email, role);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
 

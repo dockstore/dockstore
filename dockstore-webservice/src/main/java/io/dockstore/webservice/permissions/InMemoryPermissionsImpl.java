@@ -17,7 +17,6 @@
 package io.dockstore.webservice.permissions;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +60,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     private DockstoreWebserviceConfiguration configuration;
 
     @Override
-    public List<Permission> setPermission(Workflow workflow, User requester, Permission permission) {
+    public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
         Map<String, Role> entryMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
         if (entryMap == null) {
             entryMap = new ConcurrentHashMap<>();
@@ -91,9 +90,11 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
 
     @Override
     public List<Permission> getPermissionsForWorkflow(User user, Workflow workflow) {
+        final List<Permission> dockstoreOwners = PermissionsInterface.super.getPermissionsForWorkflow(user, workflow);
         Map<String, Role> permissionMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
+        checkIfOwner(user, workflow, permissionMap);
         if (permissionMap == null) {
-            return Collections.EMPTY_LIST;
+            return dockstoreOwners;
         }
         List<Permission> permissionList = permissionMap.entrySet().stream().map(e -> {
             Permission permission = new Permission();
@@ -101,19 +102,14 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
             permission.setRole(e.getValue());
             return permission;
         }).collect(Collectors.toList());
-        return permissionList;
+        return PermissionsInterface.mergePermissions(dockstoreOwners, permissionList);
     }
 
     @Override
-    public void removePermission(Workflow workflow, User user, String email, Role role) {
+    public void removePermission(User user, Workflow workflow, String email, Role role) {
+        PermissionsInterface.checkUserNotOriginalOwner(email, workflow);
         Map<String, Role> userPermissionMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
         if (userPermissionMap != null) {
-            if (role == Role.OWNER) {
-                // Make sure not the last owner
-                if (userPermissionMap.values().stream().filter(p -> p == Role.OWNER).collect(Collectors.toList()).size() < 2) {
-                    throw new CustomWebApplicationException("The last owner cannot be removed", HttpStatus.SC_BAD_REQUEST);
-                }
-            }
             userPermissionMap.remove(email);
         }
     }
@@ -155,6 +151,16 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
             return profile.email;
         }
     }
+
+    private void checkIfOwner(User user, Workflow workflow, Map<String, Role> permissionMap) {
+        final String userKey = userKey(user);
+        if (!workflow.getUsers().contains(user)) {
+            if (!permissionMap.entrySet().stream().anyMatch(e -> e.getValue() == Role.OWNER && e.getKey().equals(userKey))) {
+                throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
+            }
+        }
+    }
+
 
 }
 
