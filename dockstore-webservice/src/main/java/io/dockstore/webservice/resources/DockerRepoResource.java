@@ -61,7 +61,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
-import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
@@ -99,7 +98,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface {
+public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface  {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
     private static final String PAGINATION_LIMIT = "100";
@@ -274,6 +273,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         return c;
     }
 
+
     @PUT
     @Timed
     @UnitOfWork
@@ -283,13 +283,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        Tool c = toolDAO.findById(containerId);
-        checkEntry(c);
-
-        EntryLabelHelper<Tool> labeller = new EntryLabelHelper<>(labelDAO);
-        Tool tool = labeller.updateLabels(c, labelStrings);
-        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
-        return tool;
+        return this.updateLabels(user, containerId, labelStrings, labelDAO, elasticManager);
     }
 
     @PUT
@@ -1024,7 +1018,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         return false;
     }
 
-    public void checkNotHosted(Tool tool) {
+    private void checkNotHosted(Tool tool) {
         if (tool.getMode() == ToolMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }

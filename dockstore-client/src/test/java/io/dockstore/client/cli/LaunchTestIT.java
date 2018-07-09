@@ -38,9 +38,11 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -55,6 +57,9 @@ public class LaunchTestIT {
 
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void wdlCorrect() {
@@ -168,7 +173,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files/test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -186,7 +191,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files_renamed/renamed.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -204,7 +209,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 8);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 8, countMatches);
         checkFileAndThenDeleteIt("/tmp/provision_out_with_files_renamed/renamed.aa");
         for (char y = 'b'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files_renamed/renamed.aa.a" + y + "extra";
@@ -225,7 +230,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
         for (char y = 'a'; y <= 'e'; y++) {
             String filename = "/tmp/provision_out_with_files_renamed/renamed.txt.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -252,7 +257,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files/test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -270,7 +275,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON, true);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "/tmp/provision_out_with_files/test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -285,7 +290,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "./test.a" + y;
             checkFileAndThenDeleteIt(filename);
@@ -300,26 +305,19 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 6, countMatches);
         for (char y = 'a'; y <= 'f'; y++) {
             String filename = "./test.a" + y;
             checkFileAndThenDeleteIt(filename);
         }
     }
 
-    @Test(expected = RuntimeException.class)
+    @Test
     public void runToolToMissingS3() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_s3_failed.json"));
-
+        thrown.expect(RuntimeException.class);
         runTool(cwlFile, cwlJSON);
-
-        final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 6);
-        for (char y = 'a'; y <= 'f'; y++) {
-            String filename = "./test.a" + y;
-            checkFileAndThenDeleteIt(filename);
-        }
     }
 
     @Test
@@ -330,7 +328,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 1);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 1, countMatches);
         String filename = "test1";
         checkFileAndThenDeleteIt(filename);
         FileUtils.deleteDirectory(new File(filename));
@@ -385,7 +383,7 @@ public class LaunchTestIT {
         runTool(cwlFile, args, api, usersApi, client, true);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 7);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 7, countMatches);
         for (char y = 'a'; y <= 'f'; y++) {
             assertTrue("output should provision out to correct locations",
                     systemOutRule.getLog().contains("/tmp/provision_out_with_files/"));
@@ -416,7 +414,7 @@ public class LaunchTestIT {
         runTool(cwlFile, args, api, usersApi, client, true);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Uploading");
-        assertTrue("output should include multiple provision out events, found " + countMatches, countMatches == 0);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 0, countMatches);
     }
 
     @Test
@@ -434,8 +432,8 @@ public class LaunchTestIT {
         final String log = systemOutRule.getLog();
         Gson gson = new Gson();
         final Map<String, Map<String, Object>> map = gson.fromJson(log, Map.class);
-        assertTrue(map.size() == 2);
-        assertTrue(map.get("indir").get("class").equals("Directory"));
+        assertEquals(2, map.size());
+        assertEquals("Directory", map.get("indir").get("class"));
     }
 
     @Test
@@ -453,7 +451,7 @@ public class LaunchTestIT {
         final String log = systemOutRule.getLog();
         Gson gson = new Gson();
         final Map<String, Map<String, Object>> map = gson.fromJson(log, Map.class);
-        assertTrue(map.size() == 4);
+        assertEquals(4, map.size());
         assertTrue(map.containsKey("TUMOR_FASTQ_1") && map.containsKey("TUMOR_FASTQ_2") && map.containsKey("index") && map
                 .containsKey("OUTPUT"));
     }

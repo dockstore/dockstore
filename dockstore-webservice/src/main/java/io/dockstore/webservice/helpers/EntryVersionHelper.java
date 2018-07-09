@@ -29,11 +29,13 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
@@ -96,6 +98,17 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                         ((SourceFile)sourceFile).setContent(null))
             );
         }
+    }
+
+    default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO, ElasticManager manager) {
+        T c = getDAO().findById(containerId);
+        checkEntry(c);
+        checkUserCanUpdate(user, c);
+
+        EntryLabelHelper<T> labeller = new EntryLabelHelper<>(labelDAO);
+        T entry = labeller.updateLabels(c, labelStrings);
+        manager.handleIndexUpdate(entry, ElasticMode.UPDATE);
+        return entry;
     }
 
     /**
