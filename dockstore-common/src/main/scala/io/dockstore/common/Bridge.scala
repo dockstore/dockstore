@@ -21,10 +21,11 @@ import java.util
 
 import io.github.collaboratory.wdl.BridgeHelper
 import spray.json._
+import wdl4s.parser.WdlParser
 import wdl4s.wdl.{WdlNamespace, WdlNamespaceWithWorkflow}
 import wdl4s.wdl.types.{WdlArrayType, WdlFileType}
 import wdl4s.wdl.values.WdlValue
-import wdl4s.wdl.{WorkflowSource, WdlNamespaceWithWorkflow}
+import wdl4s.wdl.{WdlNamespaceWithWorkflow, WorkflowSource}
 
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -148,6 +149,7 @@ class Bridge {
     def isDefinedAt(x: WdlValue) = true
   }
 
+  @throws(classOf[WdlParser.SyntaxError])
   def getCallsToDockerMap(file: JFile): util.LinkedHashMap[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
     val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
