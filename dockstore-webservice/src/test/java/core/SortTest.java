@@ -26,7 +26,7 @@ public class SortTest {
 
     @Test
     public void testCWLSourceFileSortOrder() {
-        // in the GUI, we should try to sort `/Dockstore.cwl` first before relative files
+        // for the GUI, we should try to sort `/Dockstore.cwl` first before relative files
         SortedSet<SourceFile> files = new TreeSet<>();
 
         createAndAddFile(files, "foo2.cwl");
@@ -40,7 +40,7 @@ public class SortTest {
 
     @Test
     public void testWDLSourceFileSortOrder() {
-        // in the GUI, we should try to sort `/Dockstore.cwl` first before relative files
+        // for the GUI, we should try to sort `/Dockstore.wdl` first before relative files
         SortedSet<SourceFile> files = new TreeSet<>();
 
         createAndAddFile(files, "foo2.cwl");
