@@ -1532,7 +1532,7 @@ paths:
         description: "Sort order"
         required: false
         type: "string"
-        default: "asc"
+        default: "desc"
         enum:
         - "asc"
         - "desc"
@@ -3837,7 +3837,7 @@ paths:
         description: "Sort order"
         required: false
         type: "string"
-        default: "asc"
+        default: "desc"
         enum:
         - "asc"
         - "desc"

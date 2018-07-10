@@ -703,7 +703,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
-        @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("asc") @QueryParam("sortOrder") String sortOrder,
+        @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
         // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
@@ -711,6 +711,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
         response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished()));
+        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;
     }
 
