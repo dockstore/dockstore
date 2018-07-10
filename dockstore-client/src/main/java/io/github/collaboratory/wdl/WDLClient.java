@@ -136,23 +136,22 @@ public class WDLClient implements LanguageClientInterface {
         try {
             // Grab WDL from server and store to file
             final File tempDir = Files.createTempDir();
-            File tmp;
+            File localPrimaryDescriptorFile;
             if (!isLocalEntry) {
                 wdlFromServer = abstractEntryClient.getDescriptorFromServer(entry, "wdl");
                 File tempDescriptor = File.createTempFile("temp", ".wdl", tempDir);
                 Files.asCharSink(tempDescriptor, StandardCharsets.UTF_8).write(wdlFromServer.getContent());
                 abstractEntryClient.downloadDescriptors(entry, "wdl", tempDir);
-
-                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
+                localPrimaryDescriptorFile = resolveImportsForDescriptor(tempDir + File.separator + "overwrittenImports.wdl", tempDescriptor);
             } else {
-                tmp = new File(entry);
+                localPrimaryDescriptorFile = new File(entry);
             }
 
             // Get list of input files
             Bridge bridge = new Bridge();
             Map<String, String> wdlInputs = null;
             try {
-                wdlInputs = bridge.getInputFiles(tmp);
+                wdlInputs = bridge.getInputFiles(localPrimaryDescriptorFile);
             } catch (NullPointerException e) {
                 exceptionMessage(e, "Could not get WDL imports: " + e.getMessage(), API_ERROR);
             }
@@ -172,7 +171,7 @@ public class WDLClient implements LanguageClientInterface {
                 Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
                 // Make new json file
                 String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-                wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), "--inputs", newJsonPath);
+                wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
             } catch (Exception e) {
                 notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
                 throw e;
@@ -228,7 +227,7 @@ public class WDLClient implements LanguageClientInterface {
                     // grab values from output JSON
                     Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
                     System.out.println("Provisioning your output files to their final destinations");
-                    final List<String> outputFiles = bridge.getOutputFiles(tmp);
+                    final List<String> outputFiles = bridge.getOutputFiles(localPrimaryDescriptorFile);
                     FileProvisioning fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
                     List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
                     for (String outFile : outputFiles) {
@@ -263,35 +262,38 @@ public class WDLClient implements LanguageClientInterface {
     }
 
     /**
-     * @param tempDir
-     * @param tempDescriptor
+     * @param provisionedFilePath Name of file to write to
+     * @param originalDescriptorFile Name of file to read from
      * @return
      * @throws IOException
      */
-    private File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
-        File tmp;
+    private File resolveImportsForDescriptor(String provisionedFilePath, File originalDescriptorFile) throws IOException {
         Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-        File file = new File(tempDescriptor.getAbsolutePath());
-        List<String> lines = FileUtils.readLines(file, StandardCharsets.UTF_8);
-        tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
+        List<String> lines = FileUtils.readLines(originalDescriptorFile, StandardCharsets.UTF_8);
+        File provisionedFile = new File(provisionedFilePath + ".swp");
 
         // Replace relative imports with absolute (to temp dir)
         for (String line : lines) {
             Matcher m = p.matcher(line);
             if (!m.find()) {
-                FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
+                FileUtils.writeStringToFile(provisionedFile, line + "\n", StandardCharsets.UTF_8, true);
             } else {
                 if (!m.group(1).startsWith("https://") && !m.group(1).startsWith("http://")) { // Don't resolve URLs
                     if (!m.group(1).startsWith(File.separator)) { // what is the purpose of this line?
-                        String newImportLine = "import \"" + file.getParent() + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                        FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
+                        String importFilePath = originalDescriptorFile.getParent() + File.separator + m.group(1);
+                        String provisionedImportLine = "import \"" + importFilePath + "\"" + m.group(2) + "\n";
+                        FileUtils.writeStringToFile(provisionedFile, provisionedImportLine, StandardCharsets.UTF_8, true);
+                        File importFile = new File(importFilePath);
+                        resolveImportsForDescriptor(importFilePath, importFile);
                     }
                 } else {
-                    FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
+                    FileUtils.writeStringToFile(provisionedFile, line + "\n", StandardCharsets.UTF_8, true);
                 }
             }
         }
-        return tmp;
+        FileUtils.copyFile(provisionedFile, originalDescriptorFile);
+        FileUtils.deleteQuietly(provisionedFile);
+        return originalDescriptorFile;
     }
 
     /**
@@ -381,7 +383,7 @@ public class WDLClient implements LanguageClientInterface {
 
         File tmp;
         if (json) {
-            tmp = resolveImportsForDescriptor(tempDir, primaryFile);
+            tmp = resolveImportsForDescriptor(tempDir + File.separator + "overwrittenImports.wdl", primaryFile);
             final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
             Bridge bridge = new Bridge();

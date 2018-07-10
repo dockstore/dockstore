@@ -22,7 +22,7 @@ import java.util
 import io.github.collaboratory.wdl.BridgeHelper
 import spray.json._
 import wdl4s.parser.WdlParser
-import wdl4s.wdl.{WdlNamespace, WdlNamespaceWithWorkflow}
+import wdl4s.wdl.{WdlNamespace}
 import wdl4s.wdl.types.{WdlArrayType, WdlFileType}
 import wdl4s.wdl.values.WdlValue
 import wdl4s.wdl.{WdlNamespaceWithWorkflow, WorkflowSource}
