@@ -18,13 +18,14 @@ package io.dockstore.webservice.core;
 
 import java.security.Principal;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -91,7 +92,8 @@ public class User implements Principal, Comparable<User> {
             "token_type" }))
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user retrieved from 3rd party sites (GitHub, Google, etc)")
-    private Map<String, Profile> userProfiles = new HashMap<>();
+    @OrderBy("id")
+    private SortedMap<String, Profile> userProfiles = new TreeMap<>();
 
     @Column
     @ApiModelProperty(value = "URL of user avatar on GitHub/Google that can be selected by the user", position = 7)
@@ -110,29 +112,31 @@ public class User implements Principal, Comparable<User> {
     @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Groups that this user belongs to", position = 8)
     @JsonIgnore
-    private final Set<Group> groups;
+    @OrderBy("id")
+    private final SortedSet<Group> groups;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
+    @OrderBy("id")
     @JsonIgnore
-    private final Set<Entry> entries;
+    private final SortedSet<Entry> entries;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
     @OrderBy("id")
     @JsonIgnore
-    private final Set<Entry> starredEntries;
+    private final SortedSet<Entry> starredEntries;
 
     @Column
     @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
     private boolean curator;
 
     public User() {
-        groups = new HashSet<>(0);
-        entries = new HashSet<>(0);
-        starredEntries = new LinkedHashSet<>();
+        groups = new TreeSet<>();
+        entries = new TreeSet<>();
+        starredEntries = new TreeSet<>();
     }
 
     /**
@@ -310,7 +314,7 @@ public class User implements Principal, Comparable<User> {
         return userProfiles;
     }
 
-    public void setUserProfiles(Map<String, Profile> userProfiles) {
+    public void setUserProfiles(SortedMap<String, Profile> userProfiles) {
         this.userProfiles = userProfiles;
     }
 

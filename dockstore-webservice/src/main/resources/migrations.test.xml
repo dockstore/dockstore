@@ -335,19 +335,19 @@
             <column name="id" valueNumeric="9006"/>
             <column name="content" value="potato"/>
             <column name="path" value="/Dockerfile"/>
-            <column name="type" value="NEXTFLOW"/>
+            <column name="type" value="DOCKERFILE"/>
         </insert>
         <insert tableName="sourcefile">
             <column name="id" valueNumeric="9007"/>
             <column name="content" value="potato"/>
             <column name="path" value="/Dockstore.wdl"/>
-            <column name="type" value="NEXTFLOW_CONFIG"/>
+            <column name="type" value="DOCKSTORE_WDL"/>
         </insert>
         <insert tableName="sourcefile">
             <column name="id" valueNumeric="9008"/>
             <column name="content" value="potato"/>
             <column name="path" value="/test.wdl.json"/>
-            <column name="type" value="NEXTFLOW_TEST_PARAMS"/>
+            <column name="type" value="WDL_TEST_JSON"/>
         </insert>
         <insert tableName="sourcefile">
             <column name="id" valueNumeric="9009"/>
@@ -360,6 +360,24 @@
             <column name="content" value="nestedPotato"/>
             <column name="path" value="/nested/test.wdl.json"/>
             <column name="type" value="WDL_TEST_JSON"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9011"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/nextflow.config"/>
+            <column name="type" value="NEXTFLOW_CONFIG"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9012"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/test.nfl.json"/>
+            <column name="type" value="NEXTFLOW_TEST_PARAMS"/>
+        </insert>
+        <insert tableName="sourcefile">
+            <column name="id" valueNumeric="9013"/>
+            <column name="content" value="potato"/>
+            <column name="path" value="/main.nf"/>
+            <column name="type" value="NEXTFLOW"/>
         </insert>
     </changeSet>
     <changeSet author="gluu" id="insert_version_sourcefiles">
@@ -402,6 +420,18 @@
         <insert tableName="version_sourcefile">
             <column name="versionid" valueNumeric="1"/>
             <column name="sourcefileid" value="9010"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9011"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9012"/>
+        </insert>
+        <insert tableName="version_sourcefile">
+            <column name="versionid" valueNumeric="1"/>
+            <column name="sourcefileid" value="9013"/>
         </insert>
     </changeSet>
     <changeSet author="dyuen" id="custom_test_sequence1">

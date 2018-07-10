@@ -17,8 +17,9 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -32,6 +33,7 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OrderBy;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -62,7 +64,8 @@ public class Group  implements Comparable<Group> {
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "endusergroup", inverseJoinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
-    private final Set<User> users;
+    @OrderBy("id")
+    private final SortedSet<User> users;
 
     // database timestamps
     @Column(updatable = false)
@@ -74,7 +77,7 @@ public class Group  implements Comparable<Group> {
     private Timestamp dbUpdateDate;
 
     public Group() {
-        users = new HashSet<>(0);
+        users = new TreeSet<>();
     }
 
     @JsonProperty
