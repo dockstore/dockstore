@@ -838,7 +838,6 @@ public class GeneralWorkflowIT extends BaseIT {
      * This tests manually publishing a Bitbucket workflow
      */
     @Test
-    @Category(SlowTest.class)
     public void testManualPublishBitbucket() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -850,7 +849,7 @@ public class GeneralWorkflowIT extends BaseIT {
 
         // Check for two valid versions (wdl_import and surprisingly, cwl_import)
         final long count = testingPostgres
-                .runSelectStatement("select count(*) from workflowversion where valid='t'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from workflowversion where valid='t' and (name='wdl_import' OR name='cwl_import')", new ScalarHandler<>());
         Assert.assertEquals("there should be 2 valid version, there are " + count, 2, count);
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
