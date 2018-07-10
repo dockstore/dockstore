@@ -146,8 +146,6 @@ public class SourceFile implements Comparable<SourceFile> {
         return dbCreateDate;
     }
 
-
-
     @JsonIgnore
     public Timestamp getDbUpdateDate() {
         return dbUpdateDate;
