@@ -715,7 +715,8 @@ public class GeneralWorkflowIT extends BaseIT {
         // refresh individual that is valid
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--entry",
                 SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow", "--script" });
-
+        final long nullLastModifiedWorkflowVersions = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
+        Assert.assertEquals("All Bitbucket workflow versions should have last modified populated after refreshing", 0, nullLastModifiedWorkflowVersions);
         // Check that no versions have a true dirty bit
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where dirtybit = true", new ScalarHandler<>());
@@ -832,6 +833,33 @@ public class GeneralWorkflowIT extends BaseIT {
         Assert.assertEquals("there should be no 1 wdl workflow" + count9, 1, count9);
 
     }
+
+    /**
+     * This tests manually publishing a Bitbucket workflow
+     */
+    @Test
+    public void testManualPublishBitbucket() {
+        // Setup DB
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // manual publish
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
+                "--repository", "dockstore-workflow", "--organization", "dockstore_testuser2", "--git-version-control", "bitbucket",
+                "--workflow-name", "testname", "--workflow-path", "/Dockstore.wdl", "--descriptor-type", "wdl", "--script" });
+
+        // Check for two valid versions (wdl_import and surprisingly, cwl_import)
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from workflowversion where valid='t' and (name='wdl_import' OR name='cwl_import')", new ScalarHandler<>());
+        Assert.assertEquals("There should be a valid 'wdl_import' version and a valid 'cwl_import' version", 2, count);
+
+        final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
+        Assert.assertEquals("All Bitbucket workflow versions should have last modified populated when manual published", 0, count2);
+
+        // grab wdl file
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "wdl", "--entry",
+                SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow/testname:wdl_import", "--script" });
+    }
+
 
     /**
      * This tests manually publishing a gitlab workflow
