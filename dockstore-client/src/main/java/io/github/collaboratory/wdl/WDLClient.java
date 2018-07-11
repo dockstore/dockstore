@@ -125,8 +125,8 @@ public class WDLClient implements LanguageClientInterface {
         if (!(yamlRun == null && jsonRun != null && csvRuns == null)) {
             errorMessage("dockstore: Missing required flag --json", CLIENT_ERROR);
         }
-        File parameterFile = new File(jsonRun);
 
+        File parameterFile = new File(jsonRun);
         File cromwellTargetFile = getCromwellTargetFile();
 
         final SourceFile wdlFromServer;
@@ -134,15 +134,14 @@ public class WDLClient implements LanguageClientInterface {
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
         try {
-            // Grab WDL from server and store to file
-            final File tempDir = Files.createTempDir();
+            final File tempLaunchDirectory = Files.createTempDir();
             File localPrimaryDescriptorFile;
             if (!isLocalEntry) {
+                // Grab WDL(s) from server and store in a temporary directory, maintaining directory structure
                 wdlFromServer = abstractEntryClient.getDescriptorFromServer(entry, "wdl");
-                File tempDescriptor = File.createTempFile("temp", ".wdl", tempDir);
-                Files.asCharSink(tempDescriptor, StandardCharsets.UTF_8).write(wdlFromServer.getContent());
-                abstractEntryClient.downloadDescriptors(entry, "wdl", tempDir);
-                localPrimaryDescriptorFile = resolveImportsForDescriptor(tempDir + File.separator + "overwrittenImports.wdl", tempDescriptor);
+                localPrimaryDescriptorFile = File.createTempFile("temp", ".wdl", tempLaunchDirectory);
+                Files.asCharSink(localPrimaryDescriptorFile, StandardCharsets.UTF_8).write(wdlFromServer.getContent());
+                abstractEntryClient.downloadDescriptors(entry, "wdl", tempLaunchDirectory);
             } else {
                 localPrimaryDescriptorFile = new File(entry);
             }
@@ -162,9 +161,16 @@ public class WDLClient implements LanguageClientInterface {
             String jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
             final List<String> wdlRun;
-            // Download files and change to local location
-            // Make a new map of the inputs with updated locations
-            final String workingDir = Paths.get(".").toAbsolutePath().normalize().toString();
+
+            // The working directory is based on the location of the primary descriptor
+            String workingDir;
+            if (!isLocalEntry) {
+                workingDir = tempLaunchDirectory.getAbsolutePath();
+            } else {
+                workingDir = Paths.get(entry).toAbsolutePath().normalize().getParent().toString();
+            }
+
+            // Else if local entry then need to get parent path of entry variable (path)
             System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
             notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
             try {
@@ -262,41 +268,6 @@ public class WDLClient implements LanguageClientInterface {
     }
 
     /**
-     * @param provisionedFilePath Name of file to write to
-     * @param originalDescriptorFile Name of file to read from
-     * @return
-     * @throws IOException
-     */
-    private File resolveImportsForDescriptor(String provisionedFilePath, File originalDescriptorFile) throws IOException {
-        Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-        List<String> lines = FileUtils.readLines(originalDescriptorFile, StandardCharsets.UTF_8);
-        File provisionedFile = new File(provisionedFilePath + ".swp");
-
-        // Replace relative imports with absolute (to temp dir)
-        for (String line : lines) {
-            Matcher m = p.matcher(line);
-            if (!m.find()) {
-                FileUtils.writeStringToFile(provisionedFile, line + "\n", StandardCharsets.UTF_8, true);
-            } else {
-                if (!m.group(1).startsWith("https://") && !m.group(1).startsWith("http://")) { // Don't resolve URLs
-                    if (!m.group(1).startsWith(File.separator)) { // what is the purpose of this line?
-                        String importFilePath = originalDescriptorFile.getParent() + File.separator + m.group(1);
-                        String provisionedImportLine = "import \"" + importFilePath + "\"" + m.group(2) + "\n";
-                        FileUtils.writeStringToFile(provisionedFile, provisionedImportLine, StandardCharsets.UTF_8, true);
-                        File importFile = new File(importFilePath);
-                        resolveImportsForDescriptor(importFilePath, importFile);
-                    }
-                } else {
-                    FileUtils.writeStringToFile(provisionedFile, line + "\n", StandardCharsets.UTF_8, true);
-                }
-            }
-        }
-        FileUtils.copyFile(provisionedFile, originalDescriptorFile);
-        FileUtils.deleteQuietly(provisionedFile);
-        return originalDescriptorFile;
-    }
-
-    /**
      * this function will check if the content of the file is WDL or not
      * it will get the content of the file and try to find/match the required fields
      * Required fields in WDL: 'task' 'workflow 'command' 'call' 'output'
@@ -381,10 +352,8 @@ public class WDLClient implements LanguageClientInterface {
         final File tempDir = Files.createTempDir();
         final File primaryFile = abstractEntryClient.downloadDescriptorFiles(entry, WDL_STRING, tempDir);
 
-        File tmp;
         if (json) {
-            tmp = resolveImportsForDescriptor(tempDir + File.separator + "overwrittenImports.wdl", primaryFile);
-            final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
+            final List<String> wdlDocuments = Lists.newArrayList(primaryFile.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
             Bridge bridge = new Bridge();
             return bridge.inputs(wdlList);
