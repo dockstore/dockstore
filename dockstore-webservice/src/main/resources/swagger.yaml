@@ -3444,7 +3444,7 @@ paths:
         schema:
           type: "array"
           items:
-            $ref: "#/definitions/SourceFile"
+            type: "object"
       responses:
         200:
           description: "successful operation"
@@ -4679,6 +4679,31 @@ paths:
               $ref: "#/definitions/WorkflowVersion"
       security:
       - BEARER: []
+  /workflows/{workflowId}/zip/{workflowVersionId}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Download a ZIP file of a workflow and all associated files."
+      description: ""
+      operationId: "getWorkflowZip"
+      produces:
+      - "application/zip"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "workflowId"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "workflowVersionId"
+        in: "path"
+        description: "workflowVersionId"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
 securityDefinitions:
   BEARER:
     type: "apiKey"
@@ -4742,12 +4767,12 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
@@ -4953,12 +4978,12 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
@@ -5807,12 +5832,12 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      has_checker:
+        type: "boolean"
+        readOnly: true
       last_modified_date:
         type: "string"
         format: "date-time"
-        readOnly: true
-      has_checker:
-        type: "boolean"
         readOnly: true
       input_file_formats:
         type: "array"
