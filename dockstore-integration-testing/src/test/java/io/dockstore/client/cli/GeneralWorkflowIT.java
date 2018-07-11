@@ -850,7 +850,7 @@ public class GeneralWorkflowIT extends BaseIT {
         // Check for two valid versions (wdl_import and surprisingly, cwl_import)
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid='t' and (name='wdl_import' OR name='cwl_import')", new ScalarHandler<>());
-        Assert.assertEquals("there should be 2 valid version, there are " + count, 2, count);
+        Assert.assertEquals("There should be a valid 'wdl_import' version and a valid 'cwl_import' version", 2, count);
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from workflowversion where lastmodified is null", new ScalarHandler<>());
         Assert.assertEquals("All Bitbucket workflow versions should have last modified populated when manual published", 0, count2);
