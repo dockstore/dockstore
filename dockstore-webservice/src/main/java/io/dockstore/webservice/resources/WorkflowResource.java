@@ -789,6 +789,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         final Response.ResponseBuilder builder = Response.ok();
         headers.forEach(header -> builder.header(HttpHeaders.ALLOW, header));
+        builder.header("Access-Control-Expose-Headers", HttpHeaders.ALLOW);
         return builder.build();
     }
 
