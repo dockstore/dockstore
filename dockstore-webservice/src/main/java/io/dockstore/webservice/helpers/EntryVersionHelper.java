@@ -274,12 +274,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
 
     /**
      * Creates a zip file in the tmp dir for the given files
-     * @param mainDescriptor The primary descriptor
-     * @param secondaryFiles Mapping of file names to content
+     * @param sourceFiles Set of sourcefiles
      * @param fileName Name of zip file
      * @return Zip file
      */
-    default File downloadAsZip(SourceFile mainDescriptor, Map<String, String> secondaryFiles, String fileName) {
+    default File downloadAsZip(Set<SourceFile> sourceFiles, String fileName) {
         File tempDir = Files.createTempDir();
         String filePath = tempDir + "/" + fileName;
 
@@ -288,16 +287,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             FileOutputStream fileOutputStream = new FileOutputStream(filePath);
             ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
 
-            // Write primary descriptor to ZIP
-            ZipEntry zipEntry = new ZipEntry(mainDescriptor.getPath());
-            zipOutputStream.putNextEntry(zipEntry);
-            zipOutputStream.write(mainDescriptor.getContent().getBytes(Charsets.UTF_8));
-
-            // Write secondary files to ZIP
-            for (Map.Entry<String, String> secondaryFile : secondaryFiles.entrySet()) {
-                ZipEntry secondaryZipEntry = new ZipEntry(secondaryFile.getKey());
+            // Write each sourcefile
+            for (SourceFile sourceFile : sourceFiles) {
+                ZipEntry secondaryZipEntry = new ZipEntry(sourceFile.getPath());
                 zipOutputStream.putNextEntry(secondaryZipEntry);
-                zipOutputStream.write(secondaryFile.getValue().getBytes(Charsets.UTF_8));
+                zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));
             }
 
             zipOutputStream.close();

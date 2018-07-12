@@ -18,7 +18,6 @@ package io.dockstore.webservice.resources;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1017,24 +1016,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     }
 
     /**
-     * Populates the return file with the descriptor and secondaryDescContent as a map between file paths and secondary files
-     *
-     * @param tag source control tag to consider
-     * @param descriptorPath path to primary descriptor
-     * @return secondary file map (string path -> string content)
-     */
-    private Map<String, String> extractDescriptorAndSecondaryFiles(Tag tag, String descriptorPath) {
-        Map<String, String> secondaryDescContent = new HashMap<>();
-        // get secondary files
-        for (SourceFile secondaryFile : tag.getSourceFiles()) {
-            if (!secondaryFile.getPath().equals(descriptorPath)) {
-                secondaryDescContent.put(secondaryFile.getPath(), secondaryFile.getContent());
-            }
-        }
-        return secondaryDescContent;
-    }
-
-    /**
      * This method will find the tag based on the tagId passed in the parameter and return it
      *
      * @param tool          a tool to grab a tag from
@@ -1054,35 +1035,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         return tag;
     }
 
-    /**
-     * This method will find the main descriptor file based on the tag passed in the parameter
-     *
-     * @param tag tag with collects sourcefiles
-     * @param descriptorPath path to primary descriptor
-     * @return mainDescriptor
-     */
-    private SourceFile getMainDescriptorFile(Tag tag, String descriptorPath) {
-        SourceFile mainDescriptor = null;
-        for (SourceFile sourceFile : tag.getSourceFiles()) {
-            if (sourceFile.getPath().equals(descriptorPath)) {
-                mainDescriptor = sourceFile;
-                break;
-            }
-        }
-
-        return mainDescriptor;
-    }
-
-
     @GET
     @Timed
     @UnitOfWork
-    @Path("/{toolId}/zip/{tagId}/{descriptorType}")
+    @Path("/{toolId}/zip/{tagId}")
     @ApiOperation(value = "Download a ZIP file of a tool and all associated files.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @Produces("application/zip")
     public Response getToolZip(@ApiParam(hidden = true) @Auth Optional<User> user, @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
-                                   @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId,
-                                   @ApiParam(value = "descriptorType", required = true, allowableValues = "CWL, WDL") @PathParam("descriptorType") String descriptorType) {
+                                   @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
         Tool tool;
         if (user.isPresent()) {
             tool = toolDAO.findById(toolId);
@@ -1094,26 +1054,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
 
         Tag tag = getToolTag(tool, tagId);
-
-        // Determine the descriptor path
-        String path;
-        if (Objects.equals(descriptorType.toLowerCase(), "cwl")) {
-            path = tag.getCwlPath();
-        } else {
-            path = tag.getWdlPath();
-        }
-
-        // Grab main descriptor, secondary descriptors and test parameter files
-        SourceFile mainDescriptor = getMainDescriptorFile(tag, path);
-        if (mainDescriptor == null) {
+        Set<SourceFile> sourceFiles = tag.getSourceFiles();
+        if (sourceFiles == null || sourceFiles.size() == 0) {
             return null;
         }
 
-        Map<String, String> secondaryFiles = extractDescriptorAndSecondaryFiles(tag, path);
-
         String fileName = tool.getToolPath().replaceAll("/", "-") + ".zip";
 
-        File returnZipFile = downloadAsZip(mainDescriptor, secondaryFiles, fileName);
+        File returnZipFile = downloadAsZip(sourceFiles, fileName);
         return Response
                 .ok(returnZipFile)
                 .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")

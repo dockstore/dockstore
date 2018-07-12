@@ -1571,18 +1571,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
-
-        // Grab main descriptor, secondary descriptors and test parameter files
-        SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
-        if (mainDescriptor == null) {
+        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        if (sourceFiles == null || sourceFiles.size() == 0) {
             return null;
         }
 
-        Map<String, String> secondaryFiles = extractDescriptorAndSecondaryFiles(workflowVersion);
-
         String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
 
-        File returnZipFile = downloadAsZip(mainDescriptor, secondaryFiles, fileName);
+        File returnZipFile = downloadAsZip(sourceFiles, fileName);
         return Response
                 .ok(returnZipFile)
                 .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
