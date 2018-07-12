@@ -725,6 +725,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                 .workflowsSharedWithUser(user).entrySet().stream()
                 .map(e -> {
                     final List<Workflow> workflows = e.getValue().stream().map(path -> {
+                        // TODO: Fetch workflows in bulk rather than 1 by 1.
                         final Workflow workflow = workflowDAO.findByPath(path, false);
                         // If user is the owner of the workflow, don't include it as shared with
                         if (workflow != null && !workflow.getUsers().contains(user)) {
@@ -860,6 +861,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             @ApiParam(value = "user permission", required = true) Permission permission) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
+        // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/ga4gh/dockstore/issues/1593
         if (workflow.getMode() != WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Setting permissions is only allowed on hosted workflows.", HttpStatus.SC_BAD_REQUEST);
         }
