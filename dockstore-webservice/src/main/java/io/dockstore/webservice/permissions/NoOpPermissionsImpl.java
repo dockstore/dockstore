@@ -14,7 +14,7 @@ import io.dockstore.webservice.core.Workflow;
 public class NoOpPermissionsImpl implements PermissionsInterface {
 
     @Override
-    public List<Permission> setPermission(Workflow workflow, User requester, Permission permission) {
+    public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
         return Collections.emptyList();
     }
 
@@ -24,13 +24,8 @@ public class NoOpPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public List<Permission> getPermissionsForWorkflow(User user, Workflow workflow) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void removePermission(Workflow workflow, User user, String email, Role role) {
-
+    public void removePermission(User user, Workflow workflow, String email, Role role) {
+        PermissionsInterface.checkUserNotOriginalOwner(email, workflow);
     }
 
     @Override

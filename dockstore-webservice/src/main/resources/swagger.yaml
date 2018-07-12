@@ -3745,7 +3745,7 @@ paths:
       - "workflows"
       summary: "Set the specified permission for a user on a workflow"
       description: "Adds a permission for a workflow. The user must be the workflow\
-        \ owner."
+        \ owner. Currently only supported on hosted workflows."
       operationId: "addWorkflowPermission"
       produces:
       - "application/json"

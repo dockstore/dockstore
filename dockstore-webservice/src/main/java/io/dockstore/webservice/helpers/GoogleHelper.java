@@ -126,7 +126,16 @@ public final class GoogleHelper {
 
     static boolean isValidAudience(Tokeninfo tokenInfo) {
         final String audience = tokenInfo.getAudience();
-        return config.getGoogleClientID().equals(audience) || config.getExternalGoogleClientIds().contains(audience);
+        if (config.getGoogleClientID().equals(audience)) {
+            return true;
+        } else {
+            final int index = audience.indexOf('-');
+            if (index != -1) {
+                final String prefix = audience.substring(0, index);
+                return config.getExternalGoogleClientIdPrefixes().contains(prefix);
+            }
+        }
+        return false;
     }
 
     private static Optional<Tokeninfo> tokenInfoFromToken(String googleToken) {

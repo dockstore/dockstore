@@ -16,11 +16,16 @@
 
 package io.dockstore.webservice.permissions;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
+import org.apache.http.HttpStatus;
 
 /**
  * <p>
@@ -57,12 +62,12 @@ public interface PermissionsInterface {
      * <p>If the email in <code>permission</code> does not have any permissions on the workflow,
      * the email is added with the specified permission. If the email already has a permission,
      * then the permission is updated.</p>
-     * @param workflow the workflow
      * @param requester -- the requester, who must be an owner of <code>workflow</code> or an admin
+     * @param workflow the workflow
      * @param permission -- the email and the permission for that email
      * @return the list of the workflow's permissions after having added or modified
      */
-    List<Permission> setPermission(Workflow workflow, User requester, Permission permission);
+    List<Permission> setPermission(User requester, Workflow workflow, Permission permission);
 
     /**
      * Returns a map of all the paths of all workflows that have been shared with the specified <code>user</code>.
@@ -81,17 +86,22 @@ public interface PermissionsInterface {
      * @param workflow the workflow
      * @return a list of users and their permissions
      */
-    List<Permission> getPermissionsForWorkflow(User user, Workflow workflow);
+    default List<Permission> getPermissionsForWorkflow(User user, Workflow workflow) {
+        if (!workflow.getUsers().contains(user)) {
+            throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
+        }
+        return PermissionsInterface.getOriginalOwnersForWorkflow(workflow);
+    }
 
     /**
      * Removes the <code>email</code> from the <code>role</code> from
      * <code>workflow</code>'s permissions.
-     * @param workflow
      * @param user the requester, must be an owner of <code>workflow</code> or an admin.
+     * @param workflow
      * @param email the email of the user to remove
      * @param role
      */
-    void removePermission(Workflow workflow, User user, String email, Role role);
+    void removePermission(User user, Workflow workflow, String email, Role role);
 
     /**
      * Indicates whether the <code>user</code> can perform the given <code>action</code> on the
@@ -103,4 +113,56 @@ public interface PermissionsInterface {
      * @return
      */
     boolean canDoAction(User user, Workflow workflow, Role.Action action);
+
+    /**
+     * Merges two lists of permissions, removing any duplicate users. If there
+     * are duplicates, gives precendence to <code>dockstoreOwners</code>.
+     *
+     * @param dockstoreOwners
+     * @param nativePermissions
+     * @return
+     */
+    static List<Permission> mergePermissions(List<Permission> dockstoreOwners, List<Permission> nativePermissions) {
+        final ArrayList<Permission> permissions = new ArrayList<>(dockstoreOwners);
+        final Set<String> dockstoreOwnerEmails = permissions.stream().map(p -> p.getEmail()).collect(Collectors.toSet());
+        permissions.addAll(nativePermissions.stream()
+                .filter(p -> !dockstoreOwnerEmails.contains(p.getEmail())).collect(Collectors.toList()));
+        return permissions;
+    }
+
+    /**
+     * Returns the "original owners" of a workflow as list of {@link Permission}. The original owners
+     * are the <code>workflow.getUsers()</code>, e.g., who created the hosted entry, or members of the
+     * GitHub repo.
+     *
+     * @param workflow
+     * @return
+     */
+    static List<Permission> getOriginalOwnersForWorkflow(Workflow workflow) {
+        return workflow.getUsers().stream()
+                .map(u -> u.getUsername())
+                .filter(email -> email != null)
+                .map(email -> {
+                    final Permission permission = new Permission();
+                    permission.setEmail(email);
+                    permission.setRole(Role.OWNER);
+                    return permission;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if a the email is an "original owner" of a workflow, and throws a
+     * {@link CustomWebApplicationException} if it is. To be used as a check so
+     * that original owners never remove themselves as owners.
+     *
+     *
+     * @param email
+     * @param workflow
+     */
+    static void checkUserNotOriginalOwner(String email, Workflow workflow) {
+        if (workflow.getUsers().stream().anyMatch(u ->  email.equals(u.getUsername()))) {
+            throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
 }

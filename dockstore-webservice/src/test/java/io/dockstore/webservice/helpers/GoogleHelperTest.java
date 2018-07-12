@@ -13,18 +13,20 @@ import static org.mockito.Mockito.when;
 
 public class GoogleHelperTest {
 
-    private static final String ID1 = "id1";
-    private static final String ID2 = "id2";
-    private static final String ID3 = "id3";
+    private static final String SUFFIX = "-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com";
+    private static final String AUDIENCE1 = "123456789012" + SUFFIX;
+    private static final String EXTERNAL_PREFIX = "987654321098";
+    private static final String EXTERNAL_AUDIENCE = EXTERNAL_PREFIX + SUFFIX;
+    private static final String INVALID_AUDIENCE = "extremelyunlikelyaudiencewithoutadash";
 
     @Test
     public void isValidAudience() {
         final DockstoreWebserviceConfiguration config = new DockstoreWebserviceConfiguration();
-        config.setGoogleClientID(ID1);
-        config.getExternalGoogleClientIds().add(ID2);
+        config.setGoogleClientID(AUDIENCE1);
+        config.getExternalGoogleClientIdPrefixes().add(EXTERNAL_PREFIX);
         GoogleHelper.setConfig(config);
         final Tokeninfo tokeninfo = Mockito.mock(Tokeninfo.class);
-        when(tokeninfo.getAudience()).thenReturn(ID1).thenReturn(ID2).thenReturn(ID3);
+        when(tokeninfo.getAudience()).thenReturn(AUDIENCE1).thenReturn(EXTERNAL_AUDIENCE).thenReturn(INVALID_AUDIENCE);
         Assert.assertTrue(GoogleHelper.isValidAudience(tokeninfo));
         Assert.assertTrue(GoogleHelper.isValidAudience(tokeninfo));
         Assert.assertFalse(GoogleHelper.isValidAudience(tokeninfo));

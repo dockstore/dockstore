@@ -4066,7 +4066,9 @@ paths:
       tags:
         - workflows
       summary: Set the specified permission for a user on a workflow
-      description: Adds a permission for a workflow. The user must be the workflow owner.
+      description: >-
+        Adds a permission for a workflow. The user must be the workflow owner.
+        Currently only supported on hosted workflows.
       operationId: addWorkflowPermission
       parameters:
         - name: repository
