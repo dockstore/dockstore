@@ -1618,7 +1618,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: '#/components/schemas/SourceFile'
+                type: object
         description: >-
           Set of updated sourcefiles, add files by adding new files with unknown
           paths, delete files by including them with emptied content
@@ -2680,6 +2680,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+  '/containers/{toolId}/zip/{tagId}/{descriptorType}':
+    get:
+      tags:
+        - containers
+      summary: Download a ZIP file of a tool and all associated files.
+      description: ''
+      operationId: getToolZip
+      parameters:
+        - name: toolId
+          in: path
+          description: toolId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tagId
+          in: path
+          description: tagId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: descriptorType
+          in: path
+          description: descriptorType
+          required: true
+          schema:
+            type: string
+            enum:
+              - CWL
+              - WDL
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   '/entries/{id}/aliases':
     put:
       tags:
@@ -3760,7 +3796,7 @@ paths:
             schema:
               type: array
               items:
-                type: object
+                $ref: '#/components/schemas/SourceFile'
         description: >-
           Set of updated sourcefiles, add files by adding new files with unknown
           paths, delete files by including them with emptied content
@@ -5184,9 +5220,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5199,6 +5232,9 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -5383,9 +5419,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -5398,6 +5431,9 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6233,9 +6269,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
         input_file_formats:
           type: array
           readOnly: true
@@ -6248,6 +6281,9 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        has_checker:
+          type: boolean
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

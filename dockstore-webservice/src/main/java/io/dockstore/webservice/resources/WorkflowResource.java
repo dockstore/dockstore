@@ -17,8 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -34,8 +32,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.DELETE;
@@ -54,11 +50,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
-import com.google.api.client.util.Charsets;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
@@ -1583,40 +1577,15 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (mainDescriptor == null) {
             return null;
         }
+
         Map<String, String> secondaryFiles = extractDescriptorAndSecondaryFiles(workflowVersion);
-        File tempDir = Files.createTempDir();
+
         String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
-        String filePath = tempDir + "/" + fileName;
 
-        try {
-            // Create ZIP file
-            FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
-
-            // Write primary descriptor to ZIP
-            ZipEntry zipEntry = new ZipEntry(mainDescriptor.getPath());
-            zipOutputStream.putNextEntry(zipEntry);
-            zipOutputStream.write(mainDescriptor.getContent().getBytes(Charsets.UTF_8));
-
-            // Write secondary files to ZIP
-            for (Map.Entry<String, String> secondaryFile : secondaryFiles.entrySet()) {
-                ZipEntry secondaryZipEntry = new ZipEntry(secondaryFile.getKey());
-                zipOutputStream.putNextEntry(secondaryZipEntry);
-                zipOutputStream.write(secondaryFile.getValue().getBytes(Charsets.UTF_8));
-            }
-
-            zipOutputStream.close();
-            fileOutputStream.close();
-
-            File returnZipFile = new File(filePath);
-            return Response
-                    .ok(returnZipFile)
-                    .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
-                    .build();
-        } catch (IOException ex) {
-            LOG.error("Could not create ZIP file", ex);
-        }
-
-        return null;
+        File returnZipFile = downloadAsZip(mainDescriptor, secondaryFiles, fileName);
+        return Response
+                .ok(returnZipFile)
+                .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                .build();
     }
 }

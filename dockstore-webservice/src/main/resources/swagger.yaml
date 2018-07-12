@@ -1350,7 +1350,7 @@ paths:
         schema:
           type: "array"
           items:
-            $ref: "#/definitions/SourceFile"
+            type: "object"
       responses:
         200:
           description: "successful operation"
@@ -2390,6 +2390,41 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /containers/{toolId}/zip/{tagId}/{descriptorType}:
+    get:
+      tags:
+      - "containers"
+      summary: "Download a ZIP file of a tool and all associated files."
+      description: ""
+      operationId: "getToolZip"
+      produces:
+      - "application/zip"
+      parameters:
+      - name: "toolId"
+        in: "path"
+        description: "toolId"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tagId"
+        in: "path"
+        description: "tagId"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "descriptorType"
+        in: "path"
+        description: "descriptorType"
+        required: true
+        type: "string"
+        enum:
+        - "CWL"
+        - "WDL"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
   /entries/{id}/aliases:
     put:
       tags:
@@ -3444,7 +3479,7 @@ paths:
         schema:
           type: "array"
           items:
-            type: "object"
+            $ref: "#/definitions/SourceFile"
       responses:
         200:
           description: "successful operation"
@@ -4773,9 +4808,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -4788,6 +4820,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -4984,9 +5019,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -4999,6 +5031,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5838,9 +5873,6 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
       input_file_formats:
         type: "array"
         readOnly: true
@@ -5853,6 +5885,9 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      has_checker:
+        type: "boolean"
+        readOnly: true
       author:
         type: "string"
         position: 1
