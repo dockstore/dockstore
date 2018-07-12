@@ -5062,6 +5062,8 @@ paths:
       responses:
         default:
           description: successful operation
+      security:
+        - BEARER: []
 servers:
   - url: https://dockstore.org:8443
 components:

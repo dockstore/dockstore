@@ -1562,14 +1562,27 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/zip/{workflowVersionId}")
-    @ApiOperation(value = "Download a ZIP file of a workflow and all associated files.")
+    @ApiOperation(value = "Download a ZIP file of a workflow and all associated files.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @Produces("application/zip")
-    public Response getWorkflowZip(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
-        Workflow workflow = workflowDAO.findPublishedById(workflowId);
+    public Response getWorkflowZip(@ApiParam(hidden = true) @Auth Optional<User> user, @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
+                                   @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+        Workflow workflow;
+        if (user.isPresent()) {
+            workflow = workflowDAO.findById(workflowId);
+            checkEntry(workflow);
+            checkCanRead(user.get(), workflow);
+        } else {
+            workflow = workflowDAO.findPublishedById(workflowId);
+            checkEntry(workflow);
+        }
+
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
 
         // Grab main descriptor, secondary descriptors and test parameter files
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
+        if (mainDescriptor == null) {
+            return null;
+        }
         Map<String, String> secondaryFiles = extractDescriptorAndSecondaryFiles(workflowVersion);
         File tempDir = Files.createTempDir();
         String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
@@ -1601,7 +1614,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                     .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
                     .build();
         } catch (IOException ex) {
-            LOG.error("Could not create all files", ex);
+            LOG.error("Could not create ZIP file", ex);
         }
 
         return null;
