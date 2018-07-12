@@ -1568,34 +1568,37 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
 
-        // Grab main descriptor and secondary descriptors
+        // Grab main descriptor, secondary descriptors and test parameter files
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
-        Map<String, String> secondaryDescContent = extractDescriptorAndSecondaryFiles(workflowVersion);
+        Map<String, String> secondaryFiles = extractDescriptorAndSecondaryFiles(workflowVersion);
         File tempDir = Files.createTempDir();
+        String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+        String filePath = tempDir + "/" + fileName;
 
         try {
-
             // Create ZIP file
-            FileOutputStream fos = new FileOutputStream(tempDir + "/workflow.zip");
-            ZipOutputStream zipOutputStream = new ZipOutputStream(fos);
+            FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
 
             // Write primary descriptor to ZIP
             ZipEntry zipEntry = new ZipEntry(mainDescriptor.getPath());
             zipOutputStream.putNextEntry(zipEntry);
             zipOutputStream.write(mainDescriptor.getContent().getBytes(Charsets.UTF_8));
 
-            for (Map.Entry<String, String> descriptor : secondaryDescContent.entrySet()) {
-                ZipEntry secondaryZipEntry = new ZipEntry(descriptor.getKey());
+            // Write secondary files to ZIP
+            for (Map.Entry<String, String> secondaryFile : secondaryFiles.entrySet()) {
+                ZipEntry secondaryZipEntry = new ZipEntry(secondaryFile.getKey());
                 zipOutputStream.putNextEntry(secondaryZipEntry);
-                zipOutputStream.write(descriptor.getValue().getBytes(Charsets.UTF_8));
+                zipOutputStream.write(secondaryFile.getValue().getBytes(Charsets.UTF_8));
             }
-            zipOutputStream.close();
-            fos.close();
 
-            File returnZipFile = new File(tempDir + "/workflow.zip");
+            zipOutputStream.close();
+            fileOutputStream.close();
+
+            File returnZipFile = new File(filePath);
             return Response
                     .ok(returnZipFile)
-                    .header("Content-Disposition", "attachment; filename=\"workflow.zip\"")
+                    .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
                     .build();
         } catch (IOException ex) {
             LOG.error("Could not create all files", ex);

@@ -1,6 +1,4 @@
 openapi: 3.0.0
-servers:
-  - url: https://dockstore.org:8443
 info:
   description: >-
     This describes the dockstore API, a webservice that manages pairs of Docker
@@ -2682,22 +2680,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
-  '/hostedEntry/{entryId}':
-    options:
-      tags:
-        - hosted
-      summary: Options for a hosted entry
-      description: ''
-      operationId: hostedEntryOptions
-      parameters:
-        - name: entryId
-          in: path
-          description: The entry id.
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
   '/entries/{id}/aliases':
     put:
       tags:
@@ -2732,6 +2714,26 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/updateLabelsBody'
+  '/hostedEntry/{entryId}':
+    options:
+      tags:
+        - hosted
+      summary: Options for a hosted entry
+      description: ''
+      operationId: hostedEntryOptions
+      parameters:
+        - name: entryId
+          in: path
+          description: The entry id.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   /integration.bitbucket.org:
     get:
       tags:
@@ -3758,7 +3760,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: '#/components/schemas/SourceFile'
+                type: object
         description: >-
           Set of updated sourcefiles, add files by adding new files with unknown
           paths, delete files by including them with emptied content
@@ -5035,6 +5037,33 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersion'
         description: List of modified workflow versions
         required: true
+  '/workflows/{workflowId}/zip/{workflowVersionId}':
+    get:
+      tags:
+        - workflows
+      summary: Download a ZIP file of a workflow and all associated files.
+      description: ''
+      operationId: getWorkflowZip
+      parameters:
+        - name: workflowId
+          in: path
+          description: workflowId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: workflowVersionId
+          in: path
+          description: workflowVersionId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+servers:
+  - url: https://dockstore.org:8443
 components:
   requestBodies:
     PublishRequest:
