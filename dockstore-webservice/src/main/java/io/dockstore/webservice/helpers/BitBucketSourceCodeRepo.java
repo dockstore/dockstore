@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -298,10 +299,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             while (paginatedRefs != null) {
                 paginatedRefs.getValues().forEach(ref -> {
                     String branchName = ref.getName();
-
+                    OffsetDateTime date = ref.getTarget().getDate();
                     WorkflowVersion version = initializeWorkflowVersion(branchName, existingWorkflow, existingDefaults);
+                    version.setLastModified(Date.from(date.toInstant()));
                     String calculatedPath = version.getWorkflowPath();
-
                     // Now grab source files
                     SourceFile.FileType identifiedType = workflow.getFileType();
                     // TODO: No exceptions are caught here in the event of a failed call

@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -89,6 +90,7 @@ public class SamPermissionsImplTest {
         when(configMock.getSamConfiguration()).thenReturn(new DockstoreWebserviceConfiguration.SamConfiguration());
         samPermissionsImpl = Mockito.spy(new SamPermissionsImpl(tokenDAO, configMock));
         doReturn(Optional.of("my token")).when(samPermissionsImpl).googleAccessToken(userMock);
+        doReturn(Mockito.mock(Token.class)).when(samPermissionsImpl).googleToken(userMock);
         resourcesApiMock = Mockito.mock(ResourcesApi.class);
         apiClient = Mockito.mock(ApiClient.class);
         when(apiClient.escapeString(ArgumentMatchers.anyString()))
@@ -216,7 +218,7 @@ public class SamPermissionsImplTest {
         Permission permission = new Permission();
         permission.setEmail(JANE_DOE_GMAIL_COM);
         permission.setRole(Role.READER);
-        List<Permission> permissions = samPermissionsImpl.setPermission(fooWorkflow, userMock, permission);
+        List<Permission> permissions = samPermissionsImpl.setPermission(userMock, fooWorkflow, permission);
         Assert.assertEquals(permissions.size(), 1);
     }
 
@@ -228,7 +230,7 @@ public class SamPermissionsImplTest {
             permission.setEmail("jdoe@example.com");
             permission.setRole(Role.WRITER);
             thrown.expect(CustomWebApplicationException.class);
-            samPermissionsImpl.setPermission(fooWorkflow, userMock, permission);
+            samPermissionsImpl.setPermission(userMock, fooWorkflow, permission);
             Assert.fail("setPermissions did not throw Exception");
         } catch (ApiException e) {
             Assert.fail();
@@ -248,7 +250,7 @@ public class SamPermissionsImplTest {
                     .thenReturn( Arrays.asList(readerAccessPolicyResponseEntry));
             try {
                 setupInitializePermissionsMocks(SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME);
-                final List<Permission> permissions = samPermissionsImpl.setPermission(fooWorkflow, userMock, permission);
+                final List<Permission> permissions = samPermissionsImpl.setPermission(userMock, fooWorkflow, permission);
                 Assert.assertEquals(permissions.size(), 1);
             } catch (CustomWebApplicationException ex) {
                 Assert.fail("setPermissions threw Exception");
@@ -266,10 +268,18 @@ public class SamPermissionsImplTest {
         final List<Permission> permissions = samPermissionsImpl.getPermissionsForWorkflow(userMock, fooWorkflow);
         Assert.assertEquals(permissions.size(), 1);
         try {
-            samPermissionsImpl.removePermission(fooWorkflow, userMock, JANE_DOE_GMAIL_COM, Role.READER);
+            samPermissionsImpl.removePermission(userMock, fooWorkflow, JANE_DOE_GMAIL_COM, Role.READER);
         } catch (CustomWebApplicationException e) {
             Assert.fail();
         }
+    }
+
+    @Test
+    public void userNotInSamReturnsEmptyMap() throws ApiException {
+        // https://github.com/ga4gh/dockstore/issues/1597
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized"));
+        final Map<Role, List<String>> sharedWithUser = samPermissionsImpl.workflowsSharedWithUser(userMock);
+        Assert.assertEquals(0, sharedWithUser.size());
     }
 
     private void setupInitializePermissionsMocks(String encodedPath) {

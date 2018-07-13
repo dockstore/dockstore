@@ -107,7 +107,7 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     private String authorizerType = null;
 
-    private List<String> externalGoogleClientIds = new ArrayList<>();
+    private List<String> externalGoogleClientIdPrefixes = new ArrayList<>();
 
     @JsonProperty("database")
     public DataSourceFactory getDataSourceFactory() {
@@ -391,13 +391,13 @@ public class DockstoreWebserviceConfiguration extends Configuration {
      * to getGoogleClientID, and is intended for any external Google clients that Dockstore will accept tokens from.
      * @return a list of google client ids
      */
-    @JsonProperty("externalGoogleClientIds")
-    public List<String> getExternalGoogleClientIds() {
-        return externalGoogleClientIds;
+    @JsonProperty("externalGoogleClientIdPrefixes")
+    public List<String> getExternalGoogleClientIdPrefixes() {
+        return externalGoogleClientIdPrefixes;
     }
 
-    public void setExternalGoogleClientIds(List<String> externalGoogleClientIds) {
-        this.externalGoogleClientIds = externalGoogleClientIds;
+    public void setExternalGoogleClientIdPrefixes(List<String> externalGoogleClientIdPrefixes) {
+        this.externalGoogleClientIdPrefixes = externalGoogleClientIdPrefixes;
     }
 
     public class ElasticSearchConfig {
