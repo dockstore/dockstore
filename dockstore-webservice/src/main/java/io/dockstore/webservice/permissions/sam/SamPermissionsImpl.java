@@ -125,6 +125,10 @@ public class SamPermissionsImpl implements PermissionsInterface {
                     }).collect(Collectors.toList())));
         } catch (ApiException e) {
             LOG.error("Error getting shared workflows", e);
+            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+                // If user is unauthorized in SAM, then nothing has been shared with that user
+                return Collections.emptyMap();
+            }
             throw new CustomWebApplicationException("Error getting shared workflows", e.getCode());
         }
     }
