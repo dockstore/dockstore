@@ -274,6 +274,14 @@ public class SamPermissionsImplTest {
         }
     }
 
+    @Test
+    public void userNotInSamReturnsEmptyMap() throws ApiException {
+        // https://github.com/ga4gh/dockstore/issues/1597
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)).thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized"));
+        final Map<Role, List<String>> sharedWithUser = samPermissionsImpl.workflowsSharedWithUser(userMock);
+        Assert.assertEquals(0, sharedWithUser.size());
+    }
+
     private void setupInitializePermissionsMocks(String encodedPath) {
         try {
             doNothing().when(resourcesApiMock).createResourceWithDefaults(anyString(), anyString());
