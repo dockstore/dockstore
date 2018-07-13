@@ -114,6 +114,7 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
         Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        Assert.assertTrue("a tool lacks a date", dockstoreTool.getLastModifiedDate() != null && dockstoreTool.getLastModified() != 0);
 
         SourceFile file2 = new SourceFile();
         file2.setContent("{\"message\": \"Hello world!\"}");
@@ -181,6 +182,7 @@ public class CRUDClientIT extends BaseIT {
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        Assert.assertTrue("a workflow lacks a date", first.get().getLastModified() != null && first.get().getLastModified().getTime() != 0);
 
         SourceFile file2 = new SourceFile();
         file2.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nlabel: Example trivial wrapper for Java 7 compiler\\nhints:\\nDockerRequirement:\\ndockerPull: java:7-jdk\\nbaseCommand: javac\\narguments: [\"-d\", $(runtime.outdir)]\\ninputs:\\nsrc:\\ntype: File\\ninputBinding:\\nposition: 1\\noutputs:\\nclassfile:\\ntype: File\\noutputBinding:\\nglob: \"*.class\"");

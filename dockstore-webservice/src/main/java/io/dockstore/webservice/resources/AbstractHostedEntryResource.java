@@ -166,6 +166,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         version.setVersionEditor(user);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
+        entry.setLastModified(version.getLastModified());
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
