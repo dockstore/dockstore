@@ -212,6 +212,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         final Response.ResponseBuilder builder = Response.ok();
         headers.forEach(header -> builder.header(HttpHeaders.ALLOW, header));
+        builder.header("Access-Control-Expose-Headers", HttpHeaders.ALLOW);
         return builder.build();
     }
 
