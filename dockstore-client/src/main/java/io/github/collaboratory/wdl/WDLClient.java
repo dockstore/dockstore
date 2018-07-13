@@ -138,16 +138,13 @@ public class WDLClient implements LanguageClientInterface {
             File localPrimaryDescriptorFile;
             if (!isLocalEntry) {
                 // Grab WDL(s) from server and store in a temporary directory, maintaining directory structure
-                wdlFromServer = abstractEntryClient.getDescriptorFromServer(entry, "wdl");
-                localPrimaryDescriptorFile = File.createTempFile("temp", ".wdl", tempLaunchDirectory);
-                Files.asCharSink(localPrimaryDescriptorFile, StandardCharsets.UTF_8).write(wdlFromServer.getContent());
-                abstractEntryClient.downloadDescriptors(entry, "wdl", tempLaunchDirectory);
+                localPrimaryDescriptorFile = abstractEntryClient.downloadDescriptorFiles(entry, WDL_STRING, tempLaunchDirectory);
             } else {
                 localPrimaryDescriptorFile = new File(entry);
             }
 
             // Get list of input files
-            Bridge bridge = new Bridge();
+            Bridge bridge = new Bridge(localPrimaryDescriptorFile.getParent());
             Map<String, String> wdlInputs = null;
             try {
                 wdlInputs = bridge.getInputFiles(localPrimaryDescriptorFile);
@@ -201,7 +198,7 @@ public class WDLClient implements LanguageClientInterface {
                 // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
                 final String join = Joiner.on(" ").join(arguments);
                 System.out.println(join);
-                final ImmutablePair<String, String> execute = Utilities.executeCommand(join);
+                final ImmutablePair<String, String> execute = Utilities.executeCommand(join, localPrimaryDescriptorFile.getParentFile());
                 stdout = execute.getLeft();
                 stderr = execute.getRight();
             } catch (RuntimeException e) {
@@ -355,7 +352,7 @@ public class WDLClient implements LanguageClientInterface {
         if (json) {
             final List<String> wdlDocuments = Lists.newArrayList(primaryFile.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge bridge = new Bridge();
+            Bridge bridge = new Bridge(primaryFile.getParent());
             return bridge.inputs(wdlList);
         }
         return null;

@@ -252,8 +252,6 @@ public class WDLHandler implements LanguageHandlerInterface {
     public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent,
         LanguageHandlerInterface.Type type, ToolDAO dao) {
         // Initialize general variables
-        Bridge bridge = new Bridge();
-        bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
         String callType = "call"; // This may change later (ex. tool, workflow)
         String toolType = "tool";
         // Initialize data structures for DAG
@@ -264,6 +262,8 @@ public class WDLHandler implements LanguageHandlerInterface {
         // The use of temporary files is not needed here and might cause new problems
         try {
             tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+            Bridge bridge = new Bridge(tempMainDescriptor.getParent());
+            bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
             Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
 
             // Iterate over each call, grab docker containers
@@ -316,7 +316,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @return
      */
     List<String> getWdlImports(File workflowFile) {
-        Bridge bridge = new Bridge();
+        Bridge bridge = new Bridge(workflowFile.getParent());
         return bridge.getImportFiles(workflowFile);
     }
 

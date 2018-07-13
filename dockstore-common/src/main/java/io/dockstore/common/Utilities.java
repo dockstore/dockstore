@@ -17,6 +17,7 @@
 package io.dockstore.common;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -80,11 +81,16 @@ public final class Utilities {
     }
 
     public static ImmutablePair<String, String> executeCommand(String command) {
-        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()));
+        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), null);
     }
 
+    public static ImmutablePair<String, String> executeCommand(String command, File workingDir) {
+        return executeCommand(command, true, Optional.of(ByteStreams.nullOutputStream()), Optional.of(ByteStreams.nullOutputStream()), workingDir);
+    }
+
+
     public static ImmutablePair<String, String> executeCommand(String command, OutputStream stdoutStream, OutputStream stderrStream) {
-        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream));
+        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), null);
     }
 
     /**
@@ -94,7 +100,7 @@ public final class Utilities {
      * @return the stdout and stderr
      */
     private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,
-            Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
+            Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream, File workingDir) {
         // TODO: limit our output in case the called program goes crazy
 
         // these are for returning the output for use by this
@@ -114,6 +120,10 @@ public final class Utilities {
             try {
                 final CommandLine parse = CommandLine.parse(command);
                 Executor executor = new DefaultExecutor();
+                if (workingDir != null) {
+                    LOG.info("working directory is " + workingDir.toString());
+                    executor.setWorkingDirectory(workingDir);
+                }
                 executor.setExitValue(0);
                 if (dumpOutput) {
                     LOG.info("CMD: " + command);
