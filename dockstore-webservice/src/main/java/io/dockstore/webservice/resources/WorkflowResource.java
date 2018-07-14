@@ -35,8 +35,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -45,9 +43,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
@@ -750,46 +746,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
         checkCanReadWorkflow(user, workflow);
         return workflow;
-    }
-
-    /**
-     * Sets the allow header with the allowed HTTP methods for this endpoint.
-     *
-     * <p>If authorization is not present, allowed methods are set to GET and OPTIONS.</p>
-     *
-     * <p>If authorization is present, allowed methods are set to OPTIONS, and if user
-     * has read permission, GET.</p>
-     *
-     * @param optionalUser
-     * @param path
-     * @return
-     */
-    @OPTIONS
-    @Timed
-    @UnitOfWork
-    @Path("/path/workflow/{repository}")
-    @ApiOperation(value = "Options for a workflow by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, notes = "Permissions for the endpoint")
-    @SuppressWarnings("checkstyle:emptycatchblock")
-    public Response getWorkflowByPathOptions(@ApiParam(hidden = true) @Auth Optional<User> optionalUser, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
-        final ArrayList<String> headers = new ArrayList<>();
-        headers.add(HttpMethod.OPTIONS);
-        Workflow workflow = workflowDAO.findByPath(path, false);
-        checkEntry(workflow);
-        if (optionalUser.isPresent()) {
-            try {
-                checkCanReadWorkflow(optionalUser.get(), workflow);
-                headers.add(HttpMethod.GET);
-            } catch (CustomWebApplicationException ex) {
-                // Silently fail; just don't add GET to the allowed methods
-            }
-
-        } else {
-            headers.add(HttpMethod.GET);
-        }
-
-        final Response.ResponseBuilder builder = Response.ok();
-        headers.forEach(header -> builder.header(HttpHeaders.ALLOW, header));
-        return builder.build();
     }
 
     /**

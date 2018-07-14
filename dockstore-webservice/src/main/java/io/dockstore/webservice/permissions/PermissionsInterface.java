@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import org.apache.http.HttpStatus;
@@ -140,7 +141,15 @@ public interface PermissionsInterface {
      */
     static List<Permission> getOriginalOwnersForWorkflow(Workflow workflow) {
         return workflow.getUsers().stream()
-                .map(u -> u.getUsername())
+                .map(user -> {
+                    // This is ugly in order to support both SAM and InMemory authorizers
+                    final User.Profile profile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+                    if (profile != null && profile.email != null) {
+                        return profile.email;
+                    } else {
+                        return user.getUsername();
+                    }
+                })
                 .filter(email -> email != null)
                 .map(email -> {
                     final Permission permission = new Permission();

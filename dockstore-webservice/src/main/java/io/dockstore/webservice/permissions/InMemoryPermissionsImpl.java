@@ -62,6 +62,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     @Override
     public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
         Map<String, Role> entryMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
+        checkIfOwner(requester, workflow, entryMap);
         if (entryMap == null) {
             entryMap = new ConcurrentHashMap<>();
             resourceToUsersAndRolesMap.put(workflow.getWorkflowPath(), entryMap);
@@ -90,18 +91,40 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
 
     @Override
     public List<Permission> getPermissionsForWorkflow(User user, Workflow workflow) {
-        final List<Permission> dockstoreOwners = PermissionsInterface.super.getPermissionsForWorkflow(user, workflow);
+        final List<Permission> permissions = getWorkflowPermissions(workflow);
+        if (isOwner(user, permissions)) {
+            return permissions;
+        } else {
+            final String userKey = userKey(user);
+            final List<Permission> userPermissions = permissions.stream()
+                    .filter(p -> p.getEmail().equals(userKey)).collect(Collectors.toList());
+            if (userPermissions.isEmpty()) {
+                throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
+            }
+            return userPermissions;
+        }
+    }
+
+    private boolean isOwner(User user, List<Permission> workflowPermissions) {
+        final String userKey = userKey(user);
+        return workflowPermissions.stream()
+                .anyMatch(p -> p.getRole() == Role.OWNER && p.getEmail().equals(userKey));
+    }
+
+    /**
+     * Gets all of the permissions for the <code>workflow</code>.
+     * @param workflow
+     * @return
+     */
+    private List<Permission> getWorkflowPermissions(Workflow workflow) {
+        final List<Permission> dockstoreOwners = PermissionsInterface.getOriginalOwnersForWorkflow(workflow);
         Map<String, Role> permissionMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
-        checkIfOwner(user, workflow, permissionMap);
         if (permissionMap == null) {
             return dockstoreOwners;
         }
-        List<Permission> permissionList = permissionMap.entrySet().stream().map(e -> {
-            Permission permission = new Permission();
-            permission.setEmail(e.getKey());
-            permission.setRole(e.getValue());
-            return permission;
-        }).collect(Collectors.toList());
+        List<Permission> permissionList = permissionMap.entrySet().stream()
+                .map(e -> new Permission(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
         return PermissionsInterface.mergePermissions(dockstoreOwners, permissionList);
     }
 
@@ -155,12 +178,10 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
     private void checkIfOwner(User user, Workflow workflow, Map<String, Role> permissionMap) {
         final String userKey = userKey(user);
         if (!workflow.getUsers().contains(user)) {
-            if (!permissionMap.entrySet().stream().anyMatch(e -> e.getValue() == Role.OWNER && e.getKey().equals(userKey))) {
+            if (permissionMap == null || !permissionMap.entrySet().stream().anyMatch(e -> e.getValue() == Role.OWNER && e.getKey().equals(userKey))) {
                 throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
             }
         }
     }
-
-
 }
 

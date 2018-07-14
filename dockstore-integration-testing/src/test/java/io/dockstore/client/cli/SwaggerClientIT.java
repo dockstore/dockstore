@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -803,10 +802,6 @@ public class SwaggerClientIT {
         // User 2 should have no workflows shared with
         Assert.assertEquals(user2WorkflowsApi.sharedWorkflows().size(), 0);
 
-        // User 2 should not have GET as an option on User 1's workflow
-        user2WorkflowsApi.getWorkflowByPathOptions(fullWorkflowPath);
-        verifyOptions(user2WorkflowsApi.getApiClient(), Collections.singletonList(HttpMethod.OPTIONS));
-
         // User 2 should not be able to read user 1's hosted workflow
         try {
             user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
@@ -824,11 +819,6 @@ public class SwaggerClientIT {
         final SharedWorkflows firstShared = sharedWorkflows.get(0);
         Assert.assertEquals(SharedWorkflows.RoleEnum.READER, firstShared.getRole());
         Assert.assertEquals(fullWorkflowPath, firstShared.getWorkflows().get(0).getFullWorkflowPath());
-        // OPTIONS should now return include GET
-        user2WorkflowsApi.getWorkflowByPathOptions(fullWorkflowPath);
-        verifyOptions(user2WorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
-        user2HostedApi.hostedWorkflowOptions(hostedWorkflow.getId());
-        verifyOptions(user2HostedApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
         user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
@@ -844,8 +834,6 @@ public class SwaggerClientIT {
 
         // Now give write permission to user 2
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.WRITER);
-        user2HostedApi.hostedWorkflowOptions(hostedWorkflow.getId());
-        verifyOptions(user2HostedApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS, "PATCH"));
         // Edit should now work!
         final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Collections.singletonList(createCwlWorkflow()));
 
@@ -878,10 +866,6 @@ public class SwaggerClientIT {
     }
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
-        anonWorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
-        // Anonymous call to OPTIONS should return all potential methods.
-        verifyOptions(anonWorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
-
         try {
             anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
             Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
@@ -896,13 +880,6 @@ public class SwaggerClientIT {
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
         return fileCWL;
-    }
-
-    private void verifyOptions(ApiClient apiClient, List<String> expectedMethods) {
-        final List<String> allowMethods = apiClient.getResponseHeaders().get("Allow");
-        Collections.sort(allowMethods);
-        Collections.sort(expectedMethods);
-        Assert.assertEquals(expectedMethods, allowMethods);
     }
 
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi)
