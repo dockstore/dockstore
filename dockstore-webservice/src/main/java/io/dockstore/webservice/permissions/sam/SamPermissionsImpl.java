@@ -151,9 +151,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
                 return derivePermission(user, workflow)
                         .map(permission -> Arrays.asList(permission)) // If we're not an owner, only return our own permission
                         .orElseThrow(() -> new CustomWebApplicationException(errorGettingPermissions, e.getCode()));
-            }
-            // If 404, the SAM resource has not yet been created, so just return Dockstore owners
-            else if (e.getCode() != HttpStatus.SC_NOT_FOUND) {
+            } else if (e.getCode() != HttpStatus.SC_NOT_FOUND) { // If 404, SAM resource has not been created; just return Dockstore owners
                 throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
             }
         }
