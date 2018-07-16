@@ -51,10 +51,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 /**
- * Basic confidential integration tests, focusing on publishing/unpublishing both automatic and manually added tools
- * This is important as it tests the web service with real data instead of dummy data, using actual services like Github and Quay
- *
- * @author aduncan
+ * Gathers a few tests that focus on WDL workflows, testing things like generation of wdl test parameter files 
+ * and launching workflows with imports
+ * @author dyuen
  */
 @Category(ConfidentialTest.class)
 public class WDLWorkflowIT extends BaseIT {
