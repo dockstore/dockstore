@@ -22,7 +22,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -321,12 +320,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
-        Optional<Date> max = references.stream().map(Triple::getMiddle).max(Comparator.naturalOrder());
-        // TODO: this conversion is lossy
-        max.ifPresent(date -> {
-            long time = max.get().getTime();
-            workflow.setLastModified(new Date(Math.max(time, 0L)));
-        });
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {

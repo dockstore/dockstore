@@ -501,6 +501,7 @@ public class WorkflowIT extends BaseIT {
             }
         });
         mtaNf = workflowApi.getWorkflow(mtaNf.getId());
+        Assert.assertTrue("a workflow lacks a date", mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0);
         assertNotNull("Nextflow workflow not found after update", mtaNf);
         assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
         int numOfSourceFiles = mtaNf.getWorkflowVersions().stream().mapToInt(version -> version.getSourceFiles().size()).sum();

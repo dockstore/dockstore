@@ -18,6 +18,8 @@ package io.dockstore.webservice.helpers;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -193,6 +195,13 @@ public abstract class SourceCodeRepoInterface {
 
         // Create branches and associated source files
         setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
+        // setting last modified date can be done uniformly
+        Optional<Date> max = workflow.getWorkflowVersions().stream().map(Version::getLastModified).max(Comparator.naturalOrder());
+        // TODO: this conversion is lossy
+        max.ifPresent(date -> {
+            long time = max.get().getTime();
+            workflow.setLastModified(new Date(Math.max(time, 0L)));
+        });
 
         // update each workflow with reference types
         Set<WorkflowVersion> versions = workflow.getVersions();
