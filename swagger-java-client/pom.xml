@@ -54,7 +54,6 @@
                             <generateApiDocumentation>false</generateApiDocumentation>
                             <withXml>true</withXml>
                             <library>jersey2</library>
-                            <templateDirectory>${pom.basedir}/src/main/resources/swagger-templates</templateDirectory>
                         </configuration>
                     </execution>
                 </executions>

@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -143,9 +144,15 @@ public class SamPermissionsImpl implements PermissionsInterface {
                     resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encoded));
             return PermissionsInterface.mergePermissions(dockstoreOwners, samPermissions);
         } catch (ApiException e) {
-            // If 404, the SAM resource has not yet been created, so just return Dockstore owners
-            if (e.getCode() != HttpStatus.SC_NOT_FOUND) {
-                throw new CustomWebApplicationException("Error getting permissions", e.getCode());
+            final String errorGettingPermissions = "Error getting permissions";
+            if (e.getCode() == HttpStatus.SC_FORBIDDEN) {
+                // If it's a 403; it may exist, but we may not have permissions to view
+                // the permissions, so derive the permission
+                return derivePermission(user, workflow)
+                        .map(permission -> Arrays.asList(permission)) // If we're not an owner, only return our own permission
+                        .orElseThrow(() -> new CustomWebApplicationException(errorGettingPermissions, e.getCode()));
+            } else if (e.getCode() != HttpStatus.SC_NOT_FOUND) { // If 404, SAM resource has not been created; just return Dockstore owners
+                throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
             }
         }
         return dockstoreOwners;
@@ -169,6 +176,27 @@ public class SamPermissionsImpl implements PermissionsInterface {
             LOG.error(MessageFormat.format("Error removing {0} from workflow {1}", email, encodedPath), e);
             throw new CustomWebApplicationException("Error removing permissions", e.getCode());
         }
+    }
+
+    /**
+     * Derives <code>user</code>'s {@link Permission} (email + role) on <code>workflow</code>, without
+     * being able to read the SAM permissions directly, by calling the SAM
+     * APIs to see what actions the user can perform on the workflow.
+     *
+     * @param user
+     * @param workflow
+     * @return
+     */
+    private Optional<Permission> derivePermission(User user, Workflow workflow) {
+        final User.Profile googleProfile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        assert googleProfile != null; // If we gotten this far, we can safely assume there is a Google TokenType
+        final String email = googleProfile.email;
+        if (canDoAction(user, workflow, Role.Action.WRITE)) {
+            return Optional.of(new Permission(email, Role.WRITER));
+        } else if (canDoAction(user, workflow, Role.Action.READ)) {
+            return Optional.of(new Permission(email, Role.READER));
+        }
+        return Optional.empty();
     }
 
     private void initializePermission(Workflow workflow, User user) {

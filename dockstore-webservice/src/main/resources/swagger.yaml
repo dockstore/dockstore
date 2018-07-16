@@ -1302,26 +1302,6 @@ paths:
             $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
-    options:
-      tags:
-      - "hosted"
-      summary: "Options for a hosted entry"
-      description: ""
-      operationId: "hostedEntryOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "entryId"
-        in: "path"
-        description: "The entry id."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
     patch:
       tags:
       - "hosted"
@@ -3452,26 +3432,6 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-    options:
-      tags:
-      - "hosted"
-      summary: "Options for a hosted workflow"
-      description: "Options for a hosted workflow"
-      operationId: "hostedWorkflowOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "entryId"
-        in: "path"
-        description: "The entry id."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
     patch:
       tags:
       - "hosted"
@@ -3635,25 +3595,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
-      security:
-      - BEARER: []
-    options:
-      tags:
-      - "workflows"
-      summary: "Options for a workflow by path"
-      description: "Permissions for the endpoint"
-      operationId: "getWorkflowByPathOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "repository"
-        in: "path"
-        description: "repository path"
-        required: true
-        type: "string"
-      responses:
-        default:
-          description: "successful operation"
       security:
       - BEARER: []
   /workflows/path/workflow/{repository}/permissions:

@@ -1565,25 +1565,6 @@ paths:
                 $ref: '#/components/schemas/DockstoreTool'
       security:
         - BEARER: []
-    options:
-      tags:
-        - hosted
-      summary: Options for a hosted entry
-      description: ''
-      operationId: hostedEntryOptions
-      parameters:
-        - name: entryId
-          in: path
-          description: The entry id.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
     patch:
       tags:
         - hosted
@@ -3768,25 +3749,6 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - BEARER: []
-    options:
-      tags:
-        - hosted
-      summary: Options for a hosted workflow
-      description: Options for a hosted workflow
-      operationId: hostedWorkflowOptions
-      parameters:
-        - name: entryId
-          in: path
-          description: The entry id.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        default:
-          description: successful operation
-      security:
-        - BEARER: []
     patch:
       tags:
         - hosted
@@ -3953,24 +3915,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
-      security:
-        - BEARER: []
-    options:
-      tags:
-        - workflows
-      summary: Options for a workflow by path
-      description: Permissions for the endpoint
-      operationId: getWorkflowByPathOptions
-      parameters:
-        - name: repository
-          in: path
-          description: repository path
-          required: true
-          schema:
-            type: string
-      responses:
-        default:
-          description: successful operation
       security:
         - BEARER: []
   '/workflows/path/workflow/{repository}/permissions':

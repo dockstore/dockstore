@@ -17,11 +17,9 @@ package io.dockstore.webservice.resources;
 
 import java.util.Date;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import javax.ws.rs.Path;
-import javax.ws.rs.core.Response;
 
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -78,13 +76,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted workflow", response = Workflow.class)
     public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace) {
         return super.createHosted(user, registry, name, descriptorType, namespace);
-    }
-
-    @Override
-    @ApiOperation(nickname = "hostedWorkflowOptions", value = "Options for a hosted workflow", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Options for a hosted workflow")
-    public Response hostedEntryOptions(Optional<User> optionalUser, Long entryId) {
-        return super.hostedEntryOptions(optionalUser, entryId);
     }
 
     @Override
