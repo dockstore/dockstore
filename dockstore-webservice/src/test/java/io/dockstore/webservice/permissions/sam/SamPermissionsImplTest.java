@@ -295,7 +295,7 @@ public class SamPermissionsImplTest {
      * @throws ApiException
      */
     @Test
-    public void getPermissions1() throws ApiException {
+    public void testSelfPermissions() throws ApiException {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
                 .thenThrow(new ApiException(HttpStatus.SC_FORBIDDEN, "Unauthorized"));
@@ -313,7 +313,7 @@ public class SamPermissionsImplTest {
      * @throws ApiException
      */
     @Test
-    public void getPermissions2() throws ApiException {
+    public void testNoPermissions() throws ApiException {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
                 .thenThrow(new ApiException(HttpStatus.SC_FORBIDDEN, "Unauthorized"));

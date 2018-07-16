@@ -112,7 +112,7 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    public void getPermissions1() {
+    public void testSelfPermissions() {
         // Test that reader can see her own permission even if she is not an owner
         final Permission permission = new Permission("jane", Role.READER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
@@ -121,7 +121,7 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    public void getPermissions2() {
+    public void testNoPermissions() {
         // Test that user without permissions querying permissions gets an exception
         thrown.expect(CustomWebApplicationException.class);
         inMemoryPermissions.getPermissionsForWorkflow(janeDoeUser, fooWorkflow);

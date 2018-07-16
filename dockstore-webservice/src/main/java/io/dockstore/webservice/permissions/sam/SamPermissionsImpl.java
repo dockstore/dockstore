@@ -188,8 +188,9 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * @return
      */
     private Optional<Permission> derivePermission(User user, Workflow workflow) {
-        // If we gotten this far, we can safely assume there is a Google TokenType
-        final String email = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString()).email;
+        final User.Profile googleProfile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        assert googleProfile != null; // If we gotten this far, we can safely assume there is a Google TokenType
+        final String email = googleProfile.email;
         if (canDoAction(user, workflow, Role.Action.WRITE)) {
             return Optional.of(new Permission(email, Role.WRITER));
         } else if (canDoAction(user, workflow, Role.Action.READ)) {
