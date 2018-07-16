@@ -13,6 +13,14 @@ public class Permission {
     private String email;
     private Role role;
 
+    public Permission() {
+    }
+
+    public Permission(String email, Role role) {
+        this.email = email;
+        this.role = role;
+    }
+
     public void setEmail(String email) {
         this.email = email;
     }

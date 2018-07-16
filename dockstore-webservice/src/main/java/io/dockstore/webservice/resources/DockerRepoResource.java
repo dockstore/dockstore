@@ -27,7 +27,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -35,6 +37,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -59,7 +62,6 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.AbstractImageRegistry;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
-import io.dockstore.webservice.helpers.EntryLabelHelper;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.ImageRegistryFactory;
 import io.dockstore.webservice.helpers.QuayImageRegistry;
@@ -83,6 +85,7 @@ import io.swagger.annotations.Authorization;
 import io.swagger.model.DescriptorType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.hibernate.Hibernate;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -96,9 +99,10 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/containers")
 @Api("containers")
 @Produces(MediaType.APPLICATION_JSON)
-public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface {
+public class DockerRepoResource implements AuthenticatedResourceInterface, EntryVersionHelper<Tool, Tag, ToolDAO>, StarrableResourceInterface, SourceControlResourceInterface  {
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
+    private static final String PAGINATION_LIMIT = "100";
 
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -212,7 +216,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         if (tool.getCheckerWorkflow() != null) {
             workflowResource.refresh(user, tool.getCheckerWorkflow().getId());
         }
-
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         return tool;
     }
@@ -259,14 +262,18 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Timed
     @UnitOfWork
     @Path("/{containerId}")
-    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
+    @ApiOperation(value = "Get a registered repo", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool c = toolDAO.findById(containerId);
         checkEntry(c);
         checkUser(user, c);
+
+        // This somehow forces users to get loaded, c.getUsers() does not work.  c.getUsers().size works too.
+        Hibernate.initialize(c.getUsers());
         return c;
     }
+
 
     @PUT
     @Timed
@@ -277,13 +284,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
             @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        Tool c = toolDAO.findById(containerId);
-        checkEntry(c);
-
-        EntryLabelHelper<Tool> labeller = new EntryLabelHelper<>(labelDAO);
-        Tool tool = labeller.updateLabels(c, labelStrings);
-        elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
-        return tool;
+        return this.updateLabels(user, containerId, labelStrings, labelDAO, elasticManager);
     }
 
     @PUT
@@ -313,6 +314,17 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
         return result;
 
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{toolId}/defaultVersion")
+    @ApiOperation(value = "Update the default version of the given tool.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, nickname = "updateToolDefaultVersion")
+    public Tool updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
+                                @ApiParam(value = "Tool to modify.", required = true) @PathParam("toolId") Long toolId,
+                                @ApiParam(value = "Tag name to set as default.", required = true) String version) {
+        return (Tool)updateDefaultVersionHelper(version, toolId, user, elasticManager);
     }
 
     /**
@@ -590,11 +602,22 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @UnitOfWork
     @Path("published")
     @ApiOperation(value = "List all published containers.", tags = {
-            "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
-    public List<Tool> allPublishedContainers() {
-        List<Tool> tools = toolDAO.findAllPublished();
+        "containers" }, notes = "NO authentication", response = Tool.class, responseContainer = "List")
+    public List<Tool> allPublishedContainers(
+        @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.") @QueryParam("offset") String offset,
+        @ApiParam(value = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+        @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
+        @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
+        @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
+        @Context HttpServletResponse response) {
+        // delete the next line if GUI pagination is not working by 1.5.0 release
+        int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
+        List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
+        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished()));
+        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+
         return tools;
     }
 
@@ -1009,7 +1032,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         return false;
     }
 
-    public void checkNotHosted(Tool tool) {
+    private void checkNotHosted(Tool tool) {
         if (tool.getMode() == ToolMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }

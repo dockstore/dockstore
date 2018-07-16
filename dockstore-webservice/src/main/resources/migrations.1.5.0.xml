@@ -88,6 +88,34 @@
         </addColumn>
     </changeSet>
 
+    <!-- Move GitHub profile information from the enduser table to a new user_profile table -->
+    <changeSet author="gluu (generated)" id="move-github-profile-to-user_profile-table">
+        <createTable tableName="user_profile">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="user_profile_pkey"/>
+            </column>
+            <column name="avatarurl" type="TEXT"/>
+            <column name="bio" type="TEXT"/>
+            <column name="company" type="TEXT"/>
+            <column name="email" type="TEXT"/>
+            <column name="location" type="TEXT"/>
+            <column name="name" type="TEXT"/>
+            <column name="token_type" type="TEXT">
+                <constraints primaryKey="true" primaryKeyName="user_profile_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="timestamp"/>
+            <column name="dbupdatedate" type="timestamp"/>
+        </createTable>
+        <sql dbms="postgresql">
+            INSERT INTO user_profile(id, avatarurl, bio, company, email, location, name, token_type) select id, avatarurl, bio, company, email, location, '', 'github.com' from enduser
+        </sql>
+        <addForeignKeyConstraint baseColumnNames="id" baseTableName="user_profile" constraintName="fk_id_with_user_profile" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+        <dropColumn columnName="bio" tableName="enduser"/>
+        <dropColumn columnName="company" tableName="enduser"/>
+        <dropColumn columnName="email" tableName="enduser"/>
+        <dropColumn columnName="location" tableName="enduser"/>
+    </changeSet>
+
     <!-- add verification map to sourcefiles -->
      <changeSet author="dyuen (generated)" id="verification_metadata">
         <createTable tableName="sourcefile_verified">
@@ -137,5 +165,4 @@
             <column name="dbupdatedate" type="timestamp"/>
         </addColumn>
     </changeSet>
-
 </databaseChangeLog>

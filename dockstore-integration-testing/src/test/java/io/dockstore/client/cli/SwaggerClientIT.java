@@ -26,14 +26,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
-import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.UriBuilder;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -42,9 +41,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.swagger.annotations.Api;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -61,6 +58,7 @@ import io.swagger.client.model.Group;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.Permission;
 import io.swagger.client.model.PublishRequest;
+import io.swagger.client.model.SharedWorkflows;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
@@ -86,6 +84,7 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -104,8 +103,8 @@ import static org.junit.Assert.fail;
 @Category(ConfidentialTest.class)
 public class SwaggerClientIT {
 
-    public static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
-    public static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
+    private static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
+    private static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
 
@@ -117,6 +116,9 @@ public class SwaggerClientIT {
 
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @BeforeClass
     public static void dumpDBAndCreateSchema() throws Exception {
@@ -134,18 +136,14 @@ public class SwaggerClientIT {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
     }
 
-    private static ApiClient getWebClient() throws IOException, TimeoutException {
+    private static ApiClient getWebClient() {
         return getWebClient(true, false);
     }
 
-    private static ApiClient getAdminWebClient() throws IOException, TimeoutException {
+    private static ApiClient getAdminWebClient() {
         return getWebClient(true, true);
     }
-
-    private static ApiClient getAdminWebClient(boolean correctUser) throws IOException, TimeoutException {
-        return getWebClient(correctUser, true);
-    }
-
+    
     private static ApiClient getAnonymousWebClient() {
         File configFile = FileUtils.getFile("src", "test", "resources", "config");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
@@ -166,19 +164,17 @@ public class SwaggerClientIT {
         return client;
     }
 
-    @Test(expected = ApiException.class)
-    public void testListUsersWithoutAuthentication() throws IOException, TimeoutException, ApiException {
-        ApiClient client = getAdminWebClient(false);
+    @Test
+    public void testListUsersWithoutAuthentication() throws ApiException {
+        ApiClient client = getWebClient();
         UsersApi usersApi = new UsersApi(client);
-        User user = usersApi.getUser();
-        final List<User> dockstoreUsers = usersApi.listUsers();
-
-        // should just be the one admin user after we clear it out
-        assertTrue(dockstoreUsers.size() > 1);
+        usersApi.getUser();
+        thrown.expect(ApiException.class);
+        usersApi.listUsers();
     }
 
     @Test
-    public void testListUsers() throws ApiException, IOException, TimeoutException {
+    public void testListUsers() throws ApiException {
         ApiClient client = getAdminWebClient();
         UsersApi usersApi = new UsersApi(client);
         final List<User> users = usersApi.listUsers();
@@ -187,7 +183,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testListUsersTools() throws ApiException, IOException, TimeoutException {
+    public void testListUsersTools() throws ApiException {
         ApiClient client = getAdminWebClient();
 
         UsersApi usersApi = new UsersApi(client);
@@ -197,11 +193,11 @@ public class SwaggerClientIT {
         assertEquals(2, tools.size());
     }
 
-    @Test(expected = ApiException.class)
-    public void testFailedContainerRegistration() throws ApiException, IOException, TimeoutException {
+    @Test
+    public void testFailedContainerRegistration() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allPublishedContainers();
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
 
         assertEquals(1, containers.size());
 
@@ -211,18 +207,57 @@ public class SwaggerClientIT {
 
         assertEquals(5, containers.size());
 
+        // do some minor testing on pagination, majority of tests are in WorkflowIT.testPublishingAndListingOfPublished for now
+        // TODO: better testing of pagination when we use it
+        List<DockstoreTool> pagedTools = containersApi.allPublishedContainers("0", 1, "test", "stars", "desc");
+        assertEquals(1, pagedTools.size());
+
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         assertFalse(container.isIsPublished());
 
         long containerId = container.getId();
 
         PublishRequest pub = SwaggerUtility.createPublishRequest(true);
-
+        thrown.expect(ApiException.class);
         containersApi.publish(containerId, pub);
     }
 
     @Test
-    public void testSuccessfulManualImageRegistration() throws IOException, TimeoutException, ApiException {
+    public void testToolLabelling() throws ApiException {
+        ContainersApi userApi1 = new ContainersApi(getWebClient(true, false));
+        ContainersApi userApi2 = new ContainersApi(getWebClient(false, false));
+
+        DockstoreTool container = userApi1.getContainerByToolPath("quay.io/test_org/test2");
+        assertFalse(container.isIsPublished());
+
+        long containerId = container.getId();
+        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+        container = userApi1.getContainerByToolPath("quay.io/test_org/test2");
+        assertEquals(3, container.getLabels().size());
+        thrown.expect(ApiException.class);
+        userApi2.updateLabels(containerId, "foobar", "");
+    }
+
+    @Test
+    public void testWorkflowLabelling() throws ApiException {
+        // note db workflow seems to have no owner, so I need an admin user to label it
+        WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
+        WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
+
+        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l");
+        assertTrue(workflow.isIsPublished());
+
+        long containerId = workflow.getId();
+
+        userApi1.updateLabels(containerId, "foo,spam,phone", "");
+        workflow = userApi1.getWorkflowByPath("github.com/A/l");
+        assertEquals(3, workflow.getLabels().size());
+        thrown.expect(ApiException.class);
+        userApi2.updateLabels(containerId, "foobar", "");
+    }
+
+    @Test
+    public void testSuccessfulManualImageRegistration() throws ApiException {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
@@ -282,19 +317,20 @@ public class SwaggerClientIT {
         return c;
     }
 
-    @Test(expected = ApiException.class)
-    public void testFailedDuplicateManualImageRegistration() throws ApiException, IOException, TimeoutException {
+    @Test
+    public void testFailedDuplicateManualImageRegistration() throws ApiException {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
         DockstoreTool c = getContainer();
 
         final DockstoreTool container = containersApi.registerManual(c);
+        thrown.expect(ApiException.class);
         containersApi.registerManual(container);
     }
 
     @Test
-    public void testGA4GHV1Path() throws IOException, TimeoutException {
+    public void testGA4GHV1Path() throws IOException {
         // we need to explictly test the path rather than use the swagger generated client classes to enforce the path
         ApiClient client = getAdminWebClient();
         final String basePath = client.getBasePath();
@@ -309,7 +345,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testGA4GHMetadata() throws IOException, TimeoutException, ApiException {
+    public void testGA4GHMetadata() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         final MetadataV1 metadata = toolApi.metadataGet();
@@ -317,7 +353,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testGA4GHListContainers() throws IOException, TimeoutException, ApiException {
+    public void testGA4GHListContainers() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
@@ -338,7 +374,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testGetSpecificTool() throws IOException, TimeoutException, ApiException {
+    public void testGetSpecificTool() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
@@ -364,7 +400,38 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testGetVerifiedSpecificTool() throws ApiException, IOException, TimeoutException {
+    public void testAddDuplicateTagsForTool() throws ApiException {
+        ApiClient client = getAdminWebClient();
+        Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
+        ContainersApi containersApi = new ContainersApi(client);
+        ContainertagsApi containertagsApi = new ContainertagsApi(client);
+        // register one more to give us something to look at
+        DockstoreTool c = getContainer();
+        final DockstoreTool dockstoreTool = containersApi.registerManual(c);
+
+        io.swagger.client.model.ToolV1 tool = toolApi.toolsIdGet(REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        assertNotNull(tool);
+        assertEquals(tool.getId(), REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE);
+        List<Tag> tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
+        assertEquals(1, tags.size());
+        // register more tags
+        Tag tag = new Tag();
+        tag.setName("funky_tag");
+        tag.setReference("funky_tag");
+        containertagsApi.addTags(dockstoreTool.getId(), Lists.newArrayList(tag));
+        tags = containertagsApi.getTagsByPath(dockstoreTool.getId());
+        assertEquals(2, tags.size());
+        // attempt to register duplicates (should fail)
+
+        Tag secondTag = new Tag();
+        secondTag.setName("funky_tag");
+        secondTag.setReference("funky_tag");
+        thrown.expect(ApiException.class);
+        containertagsApi.addTags(dockstoreTool.getId(), Lists.newArrayList(secondTag));
+    }
+
+    @Test
+    public void testGetVerifiedSpecificTool() throws ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
@@ -394,7 +461,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testGetFiles() throws IOException, TimeoutException, ApiException {
+    public void testGetFiles() throws IOException, ApiException {
         ApiClient client = getAdminWebClient();
         Ga4Ghv1Api toolApi = new Ga4Ghv1Api(client);
         ContainersApi containersApi = new ContainersApi(client);
@@ -437,7 +504,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testVerifiedToolsViaGA4GH() throws IOException, TimeoutException, ApiException {
+    public void testVerifiedToolsViaGA4GH() throws IOException, ApiException {
         ApiClient client = getAdminWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         // register one more to give us something to look at
@@ -477,10 +544,10 @@ public class SwaggerClientIT {
 
     // Can't test publish repos that don't exist
     @Ignore
-    public void testContainerRegistration() throws ApiException, IOException, TimeoutException {
+    public void testContainerRegistration() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        List<DockstoreTool> containers = containersApi.allPublishedContainers();
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, null, null, null);
 
         assertEquals(1, containers.size());
 
@@ -500,7 +567,7 @@ public class SwaggerClientIT {
         container = containersApi.publish(containerId, pub);
         assertTrue(container.isIsPublished());
 
-        containers = containersApi.allPublishedContainers();
+        containers = containersApi.allPublishedContainers(null, null, null, null, null);
         assertEquals(2, containers.size());
 
         pub = SwaggerUtility.createPublishRequest(false);
@@ -510,7 +577,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testContainerSearch() throws ApiException, IOException, TimeoutException {
+    public void testContainerSearch() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
 
@@ -523,7 +590,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testHidingTags() throws IOException, TimeoutException, ApiException {
+    public void testHidingTags() throws ApiException {
         ApiClient client = getAdminWebClient();
 
         ContainersApi containersApi = new ContainersApi(client);
@@ -542,11 +609,10 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testUserGroups() throws ApiException, IOException, TimeoutException {
+    public void testUserGroups() throws ApiException {
         ApiClient client = getAdminWebClient();
 
         UsersApi usersApi = new UsersApi(client);
-        User admin = usersApi.getUser();
 
         Group group = usersApi.createGroup("group1");
         long groupId = group.getId();
@@ -576,7 +642,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testListTokens() throws ApiException, IOException, TimeoutException {
+    public void testListTokens() throws ApiException {
         ApiClient client = getWebClient();
 
         UsersApi usersApi = new UsersApi(client);
@@ -592,18 +658,22 @@ public class SwaggerClientIT {
      * This test will pass if this action cannot be performed.
      *
      * @throws ApiException
-     * @throws IOException
-     * @throws TimeoutException
      */
-    @Test(expected = ApiException.class)
-    public void testStarStarredTool() throws ApiException, IOException, TimeoutException {
+    @Test
+    public void testStarStarredTool() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        Assert.assertTrue("There should be at least one user of the workflow", container.getUsers().size() > 0);
+        Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
         assertEquals(2, containerId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         containersApi.starEntry(containerId, request);
+        List<User> starredUsers = containersApi.getStarredUsers(container.getId());
+        Assert.assertEquals(1, starredUsers.size());
+        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
+        thrown.expect(ApiException.class);
         containersApi.starEntry(containerId, request);
     }
 
@@ -612,16 +682,16 @@ public class SwaggerClientIT {
      * This test will pass if this action cannot be performed.
      *
      * @throws ApiException
-     * @throws IOException
-     * @throws TimeoutException
      */
-    @Test(expected = ApiException.class)
-    public void testUnstarUnstarredTool() throws ApiException, IOException, TimeoutException {
+    @Test
+    public void testUnstarUnstarredTool() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
         assertEquals(2, containerId);
+        thrown.expect(ApiException.class);
         containersApi.unstarEntry(containerId);
     }
 
@@ -630,18 +700,20 @@ public class SwaggerClientIT {
      * This test will pass if this action cannot be performed.
      *
      * @throws ApiException
-     * @throws IOException
-     * @throws TimeoutException
      */
-    @Test(expected = ApiException.class)
-    public void testStarStarredWorkflow() throws ApiException, IOException, TimeoutException {
+    @Test
+    public void testStarStarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("G/A/l");
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l");
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
         workflowsApi.starEntry(workflowId, request);
+        List<User> starredUsers = workflowsApi.getStarredUsers(workflow.getId());
+        Assert.assertEquals(1, starredUsers.size());
+        starredUsers.forEach(user -> Assert.assertNull("User profile is not lazy loaded in starred users", user.getUserProfiles()));
+        thrown.expect(ApiException.class);
         workflowsApi.starEntry(workflowId, request);
     }
 
@@ -650,16 +722,15 @@ public class SwaggerClientIT {
      * This test will pass if this action cannot be performed.
      *
      * @throws ApiException
-     * @throws IOException
-     * @throws TimeoutException
      */
-    @Test(expected = ApiException.class)
-    public void testUnstarUnstarredWorkflow() throws ApiException, IOException, TimeoutException {
+    @Test
+    public void testUnstarUnstarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("G/A/l");
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l");
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
+        thrown.expect(ApiException.class);
         workflowApi.unstarEntry(workflowId);
     }
 
@@ -668,11 +739,9 @@ public class SwaggerClientIT {
      * This test will pass if the order returned is always the same
      *
      * @throws ApiException
-     * @throws IOException
-     * @throws TimeoutException
      */
     @Test
-    public void testStarredToolsOrder() throws ApiException, IOException, TimeoutException {
+    public void testStarredToolsOrder() throws ApiException {
         ApiClient apiClient = getWebClient();
         UsersApi usersApi = new UsersApi(apiClient);
         ContainersApi containersApi = new ContainersApi(apiClient);
@@ -687,7 +756,7 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testRSSPlusSiteMap() throws ApiException, IOException, TimeoutException, ParserConfigurationException, SAXException {
+    public void testRSSPlusSiteMap() throws ApiException, IOException, ParserConfigurationException, SAXException {
         ApiClient apiClient = getWebClient();
         MetadataApi metadataApi = new MetadataApi(apiClient);
         String rssFeed = metadataApi.rssFeed();
@@ -733,10 +802,6 @@ public class SwaggerClientIT {
         // User 2 should have no workflows shared with
         Assert.assertEquals(user2WorkflowsApi.sharedWorkflows().size(), 0);
 
-        // User 2 should not have GET as an option on User 1's workflow
-        user2WorkflowsApi.getWorkflowByPathOptions(fullWorkflowPath);
-        verifyOptions(user2WorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.OPTIONS));
-
         // User 2 should not be able to read user 1's hosted workflow
         try {
             user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
@@ -749,15 +814,16 @@ public class SwaggerClientIT {
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.READER);
 
         // User 2 should now have 1 workflow shared with
-        Assert.assertEquals(1, user2WorkflowsApi.sharedWorkflows().size());
-        // OPTIONS should now return include GET
-        user2WorkflowsApi.getWorkflowByPathOptions(fullWorkflowPath);
-        verifyOptions(user2WorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
-        user2HostedApi.hostedWorkflowOptions(hostedWorkflow.getId());
-        verifyOptions(user2HostedApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
+        final List<SharedWorkflows> sharedWorkflows = user2WorkflowsApi.sharedWorkflows();
+        Assert.assertEquals(1, sharedWorkflows.size());
+        final SharedWorkflows firstShared = sharedWorkflows.get(0);
+        Assert.assertEquals(SharedWorkflows.RoleEnum.READER, firstShared.getRole());
+        Assert.assertEquals(fullWorkflowPath, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
         user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
+        user2WorkflowsApi.getWorkflow(hostedWorkflow.getId());
+
         // But User 2 cannot edit the hosted workflow
         try {
             user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Collections.emptyList());
@@ -768,23 +834,26 @@ public class SwaggerClientIT {
 
         // Now give write permission to user 2
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.WRITER);
-        user2HostedApi.hostedWorkflowOptions(hostedWorkflow.getId());
-        verifyOptions(user2HostedApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS, "PATCH"));
         // Edit should now work!
-        final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Arrays.asList(createCwlWorkflow()));
+        final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Collections.singletonList(createCwlWorkflow()));
 
-        // Deleting the version should fail with 403.
+        // Deleting the version should not fail
+        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+
+        // Publishing the workflow should fail
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         try {
-            user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
-            Assert.fail("Should not be able to delete workflow version");
+            user2WorkflowsApi.publish(hostedWorkflow.getId(), publishRequest);
+            Assert.fail("User 2 can unexpectedly publish a read/write workflow");
         } catch (ApiException ex) {
             Assert.assertEquals(403, ex.getCode());
         }
 
         // Give Owner permission to user 2
         shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.OWNER);
-        // Delete should now work; will thrown exception if not
-        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+
+        // Should be able to publish
+        user2WorkflowsApi.publish(hostedWorkflow.getId(), publishRequest);
 
         checkAnonymousUser(anonWorkflowsApi, hostedWorkflow);
     }
@@ -797,10 +866,6 @@ public class SwaggerClientIT {
     }
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
-        anonWorkflowsApi.getWorkflowByPathOptions(hostedWorkflow.getFullWorkflowPath());
-        // Anonymous call to OPTIONS should return all potential methods.
-        verifyOptions(anonWorkflowsApi.getApiClient(), Arrays.asList(HttpMethod.GET, HttpMethod.OPTIONS));
-
         try {
             anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
             Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
@@ -815,13 +880,6 @@ public class SwaggerClientIT {
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
         return fileCWL;
-    }
-
-    private void verifyOptions(ApiClient apiClient, List<String> expectedMethods) {
-        final List<String> allowMethods = apiClient.getResponseHeaders().get("Allow");
-        Collections.sort(allowMethods);
-        Collections.sort(expectedMethods);
-        Assert.assertEquals(expectedMethods, allowMethods);
     }
 
     private void starring(List<Long> containerIds, ContainersApi containersApi, UsersApi usersApi)

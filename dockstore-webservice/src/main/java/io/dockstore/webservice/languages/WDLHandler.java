@@ -53,7 +53,7 @@ import wdl4s.parser.WdlParser;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
-    public static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
+    private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
     @Override
     public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
@@ -233,9 +233,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 imports.put(importFile.getPath(), importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports));
             }
-
         }
-
         return imports;
     }
 
@@ -275,8 +273,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             toolInfoMap = mapConverterToToolInfo(callsToDockerMap, callsToDependencies);
             // Get import files
             namespaceToPath = bridge.getImportMap(tempMainDescriptor);
-        } catch (IOException e) {
-            throw new CustomWebApplicationException("could not process wdl into DAG", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (IOException | WdlParser.SyntaxError e) {
+            throw new CustomWebApplicationException("could not process wdl into DAG: " + e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } finally {
             FileUtils.deleteQuietly(tempMainDescriptor);
         }

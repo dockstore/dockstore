@@ -27,7 +27,7 @@
     </properties>
 
     <parent>
-        <version>1.5.0-alpha.5-SNAPSHOT</version>
+        <version>1.5.0-alpha.7-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -57,17 +57,22 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.5.0-alpha.5-SNAPSHOT</version>
+            <version>1.5.0-alpha.7-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.5.0-alpha.5-SNAPSHOT</version>
+            <version>1.5.0-alpha.7-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>swagger-java-bitbucket-client</artifactId>
+            <version>1.5.0-alpha.7-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.5.0-alpha.5-SNAPSHOT</version>
+            <version>1.5.0-alpha.7-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -481,7 +486,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.5.0-alpha.5-SNAPSHOT</version>
+            <version>1.5.0-alpha.7-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -616,7 +621,6 @@
             <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 
@@ -825,9 +829,7 @@
             <plugin>
                 <groupId>com.github.kongchen</groupId>
                 <artifactId>swagger-maven-plugin</artifactId>
-                <!-- fixed at 3.1.5 due to odd issue with our EntryDAO making it into Swagger and not being ignorable -->
-                <!-- for 3.1.7 specific issues seem to include messed up subclass structure with hosted tool and workflow endpoints ( https://github.com/kongchen/swagger-maven-plugin/issues/626 or https://github.com/kongchen/swagger-maven-plugin/issues/619 ) -->
-                <version>3.1.5</version>
+                <version>3.1.7</version>
                 <configuration>
                     <apiSources>
                         <apiSource>
@@ -843,15 +845,8 @@
                             <swaggerFileName>swagger</swaggerFileName>
                             <outputFormats>yaml</outputFormats>
                             <basePath>/</basePath>
-                            <!-- "can be used to strictly use the official Swagger reader in order to generate the exact same output as Swagger''s runtime generation (with all its bugs). "
                             <swaggerApiReader>com.github.kongchen.swagger.docgen.reader.SwaggerReader</swaggerApiReader>
-                            -->
                             <attachSwaggerArtifact>true</attachSwaggerArtifact>
-                            <securityDefinitions>
-                                <securityDefinition>
-                                    <json>/securityDefinition.json</json>
-                                </securityDefinition>
-                            </securityDefinitions>
                         </apiSource>
                     </apiSources>
                 </configuration>

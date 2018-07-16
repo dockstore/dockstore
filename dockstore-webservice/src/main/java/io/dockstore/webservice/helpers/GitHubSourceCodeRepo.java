@@ -22,7 +22,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -38,7 +38,9 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -90,6 +92,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     @Override
     public String readFile(String repositoryId, String fileName, String reference) {
         checkNotNull(fileName, "The fileName given is null.");
+
         GHRepository repo;
         try {
             repo = github.getRepository(repositoryId);
@@ -98,6 +101,19 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             return null;
         }
         return readFileFromRepo(fileName, reference, repo);
+    }
+
+    @Override
+    public List<String> listFiles(String repositoryId, String pathToDirectory, String reference) {
+        GHRepository repo;
+        try {
+            repo = github.getRepository(repositoryId);
+            List<GHContent> directoryContent = repo.getDirectoryContent(pathToDirectory, reference);
+            return directoryContent.stream().map(GHContent::getName).collect(Collectors.toList());
+        } catch (IOException e) {
+            LOG.error(gitUsername + ": IOException on readFile " + e.getMessage());
+            return null;
+        }
     }
 
     private String readFileFromRepo(String fileName, String reference, GHRepository repo) {
@@ -163,7 +179,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         throws IOException {
         // retrieval of directory content is cached as opposed to retrieving individual files
         String fullPathNoEndSeparator = FilenameUtils.getFullPathNoEndSeparator(fileName);
-        String stripStart = StringUtils.stripStart(fileName, "/");
         // but tags on quay.io that do not match github are costly, avoid by checking cached references
         GHRef[] refs = repo.getRefs();
         if (Lists.newArrayList(refs).stream().noneMatch(ref -> ref.getRef().contains(reference))) {
@@ -171,6 +186,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         }
         // only look at github if the reference exists
         List<GHContent> directoryContent = repo.getDirectoryContent(fullPathNoEndSeparator, reference);
+
+        String stripStart = StringUtils.stripStart(fileName, "/");
         Optional<GHContent> firstMatch = directoryContent.stream().filter(content -> stripStart.equals(content.getPath())).findFirst();
         if (firstMatch.isPresent()) {
             GHContent content = firstMatch.get();
@@ -214,8 +231,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
             return reposByGitURl;
         } catch (IOException e) {
-            LOG.error(gitUsername + ": Cannot getWorkflowGitUrl2RepositoryId workflows {}", gitUsername);
-            throw new CustomWebApplicationException("could not determine user organizations ", HttpStatus.SC_REQUEST_TIMEOUT);
+            LOG.error("could not find projects due to ", e);
+            throw new CustomWebApplicationException("could not read projects from github, please re-link your github token", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -303,12 +320,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             LOG.info(gitUsername + ": Cannot get branches or tags for workflow {}");
             throw new CustomWebApplicationException("Could not reach GitHub, please try again later", HttpStatus.SC_SERVICE_UNAVAILABLE);
         }
-        Optional<Date> max = references.stream().map(Triple::getMiddle).max(Comparator.naturalOrder());
-        // TODO: this conversion is lossy
-        max.ifPresent(date -> {
-            long time = max.get().getTime();
-            workflow.setLastModified(new Date(Math.max(time, 0L)));
-        });
 
         // For each branch (reference) found, create a workflow version and find the associated descriptor files
         for (Triple<String, Date, String> ref : references) {
@@ -502,10 +513,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         // eGit user object
         try {
             GHMyself myself = github.getMyself();
-            user.setBio(myself.getBlog()); // ? not sure about this mapping in the new api
-            user.setCompany(myself.getCompany());
-            user.setEmail(myself.getEmail());
-            user.setLocation(myself.getLocation());
+            User.Profile profile = new User.Profile();
+            profile.name = myself.getName();
+            profile.email = myself.getEmail();
+            profile.avatarURL = myself.getAvatarUrl();
+            profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
+            profile.location = myself.getLocation();
+            profile.company = myself.getCompany();
+            Map<String, User.Profile> userProfile = user.getUserProfiles();
+            userProfile.put(TokenType.GITHUB_COM.toString(), profile);
             user.setAvatarUrl(myself.getAvatarUrl());
         } catch (IOException ex) {
             LOG.info("Could not find user information for user " + user.getUsername());

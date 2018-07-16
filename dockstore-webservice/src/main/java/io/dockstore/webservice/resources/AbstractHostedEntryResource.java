@@ -15,32 +15,24 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
 import javax.ws.rs.DELETE;
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -55,18 +47,16 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
+import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.permissions.Role;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
  * Methods to create and edit hosted tool and workflows.
@@ -84,11 +74,13 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     final ElasticManager elasticManager;
     private final FileDAO fileDAO;
     private final UserDAO userDAO;
+    private final PermissionsInterface permissionsInterface;
 
-    AbstractHostedEntryResource(FileDAO fileDAO, UserDAO userDAO) {
+    AbstractHostedEntryResource(FileDAO fileDAO, UserDAO userDAO, PermissionsInterface permissionsInterface) {
         this.fileDAO = fileDAO;
         this.elasticManager = new ElasticManager();
         this.userDAO = userDAO;
+        this.permissionsInterface = permissionsInterface;
     }
 
     /**
@@ -124,6 +116,21 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
     protected abstract T getEntry(User user, String registry, String name, String descriptorType, String namespace);
 
+    @Override
+    public void checkUserCanUpdate(User user, Entry entry) {
+        try {
+            checkUser(user, entry);
+        } catch (CustomWebApplicationException ex) {
+            if (entry instanceof Workflow) {
+                if (!permissionsInterface.canDoAction(user, (Workflow)entry, Role.Action.WRITE)) {
+                    throw ex;
+                }
+            } else {
+                throw ex;
+            }
+        }
+    }
+
     @PATCH
     @io.swagger.jaxrs.PATCH
     @Path("/hostedEntry/{entryId}")
@@ -146,62 +153,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         version.setVersionEditor(user);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
+        entry.setLastModified(version.getLastModified());
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
-    }
-
-    /**
-     * Sets the Allow header to the allowed methods for this endpoint.
-     *
-     * <p>If there is no authorization header, then all possible methods are set:
-     * OPTIONS, DELETE, PATCH, and GET.</p>
-     *
-     * <p>If the authorization header is present, then the OPTIONS method is always set,
-     * and the other headers are set based on the user's permissions.</p>
-     *
-     * @param optionalUser
-     * @param entryId
-     * @return
-     */
-    @OPTIONS
-    @Path("/hostedEntry/{entryId}")
-    @Timed
-    @UnitOfWork
-    @ApiOperation(value = "Options for a hosted entry", authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)})
-    public Response hostedEntryOptions(@ApiParam(hidden = true) @Auth Optional<User> optionalUser,
-            @ApiParam(value = "The entry id.", required = true) @PathParam("entryId") Long entryId) {
-        final List<String> headers = new ArrayList<>();
-        headers.add(HttpMethod.OPTIONS);
-        T entry = getEntryDAO().findById(entryId);
-        checkEntry(entry);
-        headers.addAll(optionalUser.map(user -> {
-            final List<String> list = new ArrayList<>();
-            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanDelete(u, e))) {
-                headers.add(HttpMethod.DELETE);
-            }
-            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanUpdate(u, e))) {
-                headers.add(PATCH_METHOD); // Why is there no value for PATCH in HttpHeader?
-            }
-            if (checkUserCanLambda(user, entry, (u, e) -> checkUserCanRead(u, e))) {
-                headers.add(HttpMethod.GET);
-            }
-            return list;
-        }).orElse(Arrays.asList(HttpMethod.GET, HttpMethod.DELETE, PATCH_METHOD)));
-
-        final Response.ResponseBuilder builder = Response.ok();
-        headers.forEach(header -> builder.header(HttpHeaders.ALLOW, header));
-        return builder.build();
-    }
-
-    private boolean checkUserCanLambda(User user, Entry entry, BiConsumer<User, Entry> lambda) {
-        try {
-            lambda.accept(user, entry);
-            return true;
-        } catch (Exception ex) {
-            return false;
-        }
     }
 
     protected abstract boolean checkValidVersion(Set<SourceFile> sourceFiles, T entry);
@@ -242,7 +198,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
-        checkUserCanDelete(user, entry);
+        checkUserCanUpdate(user, entry);
         checkHosted(entry);
         entry.getVersions().removeIf(v -> Objects.equals(v.getName(), version));
         elasticManager.handleIndexUpdate(entry, ElasticMode.UPDATE);

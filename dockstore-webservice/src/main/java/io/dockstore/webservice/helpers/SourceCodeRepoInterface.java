@@ -16,7 +16,10 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +29,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.validation.constraints.NotNull;
+
 import com.google.common.base.Strings;
+import com.google.common.primitives.Bytes;
 import io.dockstore.common.LanguageType;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -50,6 +56,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class SourceCodeRepoInterface {
     public static final Logger LOG = LoggerFactory.getLogger(SourceCodeRepoInterface.class);
+    public static final int BYTES_IN_KB = 1024;
 
     String gitUsername;
 
@@ -62,7 +69,7 @@ public abstract class SourceCodeRepoInterface {
      * @param reference the tag/branch to get the file from
      * @return content of the file
      */
-    public abstract String readFile(String repositoryId, String fileName, String reference);
+    public abstract String readFile(String repositoryId, String fileName, @NotNull String reference);
 
     /**
      * Read a file from the importer and add it into files
@@ -72,10 +79,8 @@ public abstract class SourceCodeRepoInterface {
      * @param fileType the type of file
      */
     void readFile(String repositoryId, Version tag, Collection<SourceFile> files, SourceFile.FileType fileType, String path) {
-        SourceFile sourceFile = this.readFile(repositoryId, tag, fileType, path);
-        if (sourceFile != null) {
-            files.add(sourceFile);
-        }
+        Optional<SourceFile> sourceFile = this.readFile(repositoryId, tag, fileType, path);
+        sourceFile.ifPresent(files::add);
     }
 
     /**
@@ -84,17 +89,37 @@ public abstract class SourceCodeRepoInterface {
      * @param tag the version of source control we want to read from
      * @param fileType the type of file
      */
-    public SourceFile readFile(String repositoryId, Version tag, SourceFile.FileType fileType, String path) {
+    public Optional<SourceFile> readFile(String repositoryId, Version tag, SourceFile.FileType fileType, String path) {
         String fileResponse = this.readGitRepositoryFile(repositoryId, fileType, tag, path);
         if (fileResponse != null) {
             SourceFile dockstoreFile = new SourceFile();
             dockstoreFile.setType(fileType);
+            // a file of 1MB size is probably up to no good
+            if (fileResponse.getBytes(StandardCharsets.UTF_8).length >= BYTES_IN_KB * BYTES_IN_KB) {
+                fileResponse = "Dockstore does not store files over 1MB in size";
+            }
+            // some binary files that I tried has this character which cannot be stored
+            // in postgres anyway https://www.postgresql.org/message-id/1171970019.3101.328.camel%40coppola.muc.ecircle.de
+            if (Bytes.indexOf(fileResponse.getBytes(StandardCharsets.UTF_8), Byte.decode("0x00")) != -1) {
+                fileResponse = "Dockstore does not store binary files";
+            }
             dockstoreFile.setContent(fileResponse);
             dockstoreFile.setPath(path);
-            return dockstoreFile;
+            return Optional.of(dockstoreFile);
         }
-        return null;
+        return Optional.empty();
     }
+
+    /**
+     * For Nextflow workflows, they seem to auto-import the contents of the lib and bin directories
+     * @param repositoryId identifies the git repository that we wish to use, normally something like 'organization/repo_name`
+     * @param pathToDirectory  full path to the directory to list
+     * @param reference the tag/branch to get the file from
+     * @return a list of files in the directory
+     */
+    public abstract List<String> listFiles(String repositoryId, String pathToDirectory, String reference);
+
+
 
     /**
      * Get a map of git url to an id that can uniquely identify a repository
@@ -170,6 +195,13 @@ public abstract class SourceCodeRepoInterface {
 
         // Create branches and associated source files
         setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
+        // setting last modified date can be done uniformly
+        Optional<Date> max = workflow.getWorkflowVersions().stream().map(Version::getLastModified).max(Comparator.naturalOrder());
+        // TODO: this conversion is lossy
+        max.ifPresent(date -> {
+            long time = max.get().getTime();
+            workflow.setLastModified(new Date(Math.max(time, 0L)));
+        });
 
         // update each workflow with reference types
         Set<WorkflowVersion> versions = workflow.getVersions();
@@ -289,7 +321,7 @@ public abstract class SourceCodeRepoInterface {
      * @param entry
      * @return
      */
-    public String getBranchNameFromDefaultVersion(Entry entry) {
+    String getBranchNameFromDefaultVersion(Entry entry) {
         String defaultVersion = entry.getDefaultVersion();
         if (entry instanceof Tool) {
             for (Tag tag : ((Tool)entry).getVersions()) {

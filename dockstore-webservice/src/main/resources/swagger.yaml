@@ -6,7 +6,7 @@ info:
     \ used to build those images"
   version: "1.4.4"
   title: "Dockstore API"
-  termsOfService: ""
+  termsOfService: "TBD"
   contact:
     name: "Dockstore@ga4gh"
     url: "https://github.com/ga4gh/dockstore"
@@ -14,7 +14,6 @@ info:
   license:
     name: "Apache License Version 2.0"
     url: "https://github.com/ga4gh/dockstore/blob/develop/LICENSE"
-host: ""
 basePath: "/"
 tags:
 - name: "GA4GH"
@@ -487,9 +486,6 @@ paths:
       responses:
         200:
           description: "An array of Tools of the input organization."
-          schema:
-            type: "integer"
-            format: "int32"
       security:
       - BEARER: []
   /api/ga4gh/v2/extended/tools/{organization}:
@@ -1306,26 +1302,6 @@ paths:
             $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
-    options:
-      tags:
-      - "hosted"
-      summary: "Options for a hosted entry"
-      description: ""
-      operationId: "hostedEntryOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "entryId"
-        in: "path"
-        description: "The entry id."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
     patch:
       tags:
       - "hosted"
@@ -1502,7 +1478,44 @@ paths:
       operationId: "allPublishedContainers"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "offset"
+        in: "query"
+        description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        required: false
+        type: "string"
+      - name: "limit"
+        in: "query"
+        description: "Amount of records to return in a given page, limited to 100"
+        required: false
+        type: "integer"
+        default: 100
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      - name: "filter"
+        in: "query"
+        description: "Filter, this is a search string that filters the results."
+        required: false
+        type: "string"
+      - name: "sortCol"
+        in: "query"
+        description: "Sort column"
+        required: false
+        type: "string"
+        default: "stars"
+      - name: "sortOrder"
+        in: "query"
+        description: "Sort order"
+        required: false
+        type: "string"
+        default: "desc"
+        enum:
+        - "asc"
+        - "desc"
       responses:
         200:
           description: "successful operation"
@@ -1605,7 +1618,8 @@ paths:
       tags:
       - "containers"
       summary: "Get a registered repo"
-      description: ""
+      description: "This is one of the few endpoints that returns the user object\
+        \ with populated properties (minus the userProfiles property)"
       operationId: "getContainer"
       produces:
       - "application/json"
@@ -2390,6 +2404,35 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/SourceFile"
+  /containers/{toolId}/defaultVersion:
+    put:
+      tags:
+      - "containers"
+      summary: "Update the default version of the given tool."
+      description: ""
+      operationId: "updateToolDefaultVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "toolId"
+        in: "path"
+        description: "Tool to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Tag name to set as default."
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/DockstoreTool"
+      security:
+      - BEARER: []
   /containers/{toolId}/zip/{tagId}:
     get:
       tags:
@@ -2451,27 +2494,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Entry"
-      security:
-      - BEARER: []
-  /hostedEntry/{entryId}:
-    options:
-      tags:
-      - "hosted"
-      summary: "Options for a hosted entry"
-      description: ""
-      operationId: "hostedEntryOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "entryId"
-        in: "path"
-        description: "The entry id."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
       security:
       - BEARER: []
   /integration.bitbucket.org:
@@ -2585,9 +2607,11 @@ paths:
         200:
           description: "successful operation"
           schema:
-            type: "object"
-            additionalProperties:
+            type: "array"
+            items:
               type: "object"
+              additionalProperties:
+                type: "object"
   /metadata/rss:
     get:
       tags:
@@ -2889,7 +2913,15 @@ paths:
       operationId: "updateLoggedInUserMetadata"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "source"
+        in: "query"
+        description: "Token source"
+        required: false
+        type: "string"
+        enum:
+        - "google.com"
+        - "github.com"
       responses:
         200:
           description: "successful operation"
@@ -3427,26 +3459,6 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-    options:
-      tags:
-      - "hosted"
-      summary: "Options for a hosted workflow"
-      description: "Options for a hosted workflow"
-      operationId: "hostedWorkflowOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "entryId"
-        in: "path"
-        description: "The entry id."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
     patch:
       tags:
       - "hosted"
@@ -3471,7 +3483,7 @@ paths:
         schema:
           type: "array"
           items:
-            type: "object"
+            $ref: "#/definitions/SourceFile"
       responses:
         200:
           description: "successful operation"
@@ -3612,25 +3624,6 @@ paths:
             $ref: "#/definitions/Workflow"
       security:
       - BEARER: []
-    options:
-      tags:
-      - "workflows"
-      summary: "Options for a workflow by path"
-      description: "Permissions for the endpoint"
-      operationId: "getWorkflowByPathOptions"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "repository"
-        in: "path"
-        description: "repository path"
-        required: true
-        type: "string"
-      responses:
-        default:
-          description: "successful operation"
-      security:
-      - BEARER: []
   /workflows/path/workflow/{repository}/permissions:
     get:
       tags:
@@ -3720,7 +3713,7 @@ paths:
       - "workflows"
       summary: "Set the specified permission for a user on a workflow"
       description: "Adds a permission for a workflow. The user must be the workflow\
-        \ owner."
+        \ owner. Currently only supported on hosted workflows."
       operationId: "addWorkflowPermission"
       produces:
       - "application/json"
@@ -3778,7 +3771,44 @@ paths:
       operationId: "allPublishedWorkflows"
       produces:
       - "application/json"
-      parameters: []
+      parameters:
+      - name: "offset"
+        in: "query"
+        description: "Start index of paging. Pagination results can be based on numbers\
+          \ or other values chosen by the registry implementor (for example, SHA values).\
+          \ If this exceeds the current result set return an empty set.  If not specified\
+          \ in the request, this will start at the beginning of the results."
+        required: false
+        type: "string"
+      - name: "limit"
+        in: "query"
+        description: "Amount of records to return in a given page, limited to 100"
+        required: false
+        type: "integer"
+        default: 100
+        maximum: 100
+        minimum: 1
+        format: "int32"
+      - name: "filter"
+        in: "query"
+        description: "Filter, this is a search string that filters the results."
+        required: false
+        type: "string"
+      - name: "sortCol"
+        in: "query"
+        description: "Sort column"
+        required: false
+        type: "string"
+        default: "stars"
+      - name: "sortOrder"
+        in: "query"
+        description: "Sort order"
+        required: false
+        type: "string"
+        default: "desc"
+        enum:
+        - "asc"
+        - "desc"
       responses:
         200:
           description: "successful operation"
@@ -3844,7 +3874,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/Workflow"
+              $ref: "#/definitions/SharedWorkflows"
       security:
       - BEARER: []
   /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
@@ -3895,7 +3925,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get a registered workflow"
-      description: ""
+      description: "This is one of the few endpoints that returns the user object\
+        \ with populated properties (minus the userProfiles property)"
       operationId: "getWorkflow"
       produces:
       - "application/json"
@@ -4022,6 +4053,35 @@ paths:
           description: "successful operation"
           schema:
             type: "string"
+  /workflows/{workflowId}/defaultVersion:
+    put:
+      tags:
+      - "workflows"
+      summary: "Update the default version of the given workflow."
+      description: ""
+      operationId: "updateWorkflowDefaultVersion"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "Workflow to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Version name to set as default"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
   /workflows/{workflowId}/labels:
     put:
       tags:
@@ -5223,6 +5283,21 @@ definitions:
         - "OWNER"
         - "WRITER"
         - "READER"
+  Profile:
+    type: "object"
+    properties:
+      name:
+        type: "string"
+      email:
+        type: "string"
+      avatarURL:
+        type: "string"
+      company:
+        type: "string"
+      location:
+        type: "string"
+      bio:
+        type: "string"
   PublishRequest:
     type: "object"
     properties:
@@ -5258,6 +5333,19 @@ definitions:
         type: "string"
       enum:
         type: "string"
+  SharedWorkflows:
+    type: "object"
+    properties:
+      role:
+        type: "string"
+        enum:
+        - "OWNER"
+        - "WRITER"
+        - "READER"
+      workflows:
+        type: "array"
+        items:
+          $ref: "#/definitions/Workflow"
   SourceControlBean:
     type: "object"
     properties:
@@ -5778,6 +5866,12 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
         readOnly: true
+      userProfiles:
+        type: "object"
+        description: "Profile information of the user retrieved from 3rd party sites\
+          \ (GitHub, Google, etc)"
+        additionalProperties:
+          $ref: "#/definitions/Profile"
       username:
         type: "string"
         position: 1
@@ -5786,26 +5880,11 @@ definitions:
         type: "boolean"
         position: 2
         description: "Indicates whether this user is an admin"
-      company:
-        type: "string"
-        position: 3
-        description: "Company of user"
-      bio:
-        type: "string"
-        position: 4
-        description: "Bio of user"
-      location:
-        type: "string"
-        position: 5
-        description: "Location of user"
-      email:
-        type: "string"
-        position: 6
-        description: "Email of user"
       avatarUrl:
         type: "string"
         position: 7
-        description: "URL of user avatar on Github."
+        description: "URL of user avatar on GitHub/Google that can be selected by\
+          \ the user"
       name:
         type: "string"
         position: 8
@@ -6120,3 +6199,6 @@ definitions:
         description: "This is the commit id for the source control that the files\
           \ belong to"
     description: "This describes one workflow version associated with a workflow."
+externalDocs:
+  description: "Dockstore documentation"
+  url: "https://www.dockstore.org/docs/getting-started"

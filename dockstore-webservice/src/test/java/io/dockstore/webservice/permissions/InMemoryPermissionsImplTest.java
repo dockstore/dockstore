@@ -1,12 +1,20 @@
 package io.dockstore.webservice.permissions;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
 import static org.mockito.Mockito.spy;
@@ -16,65 +24,107 @@ public class InMemoryPermissionsImplTest {
 
     public static final String JANE_DOE_EXAMPLE_COM = "jane.doe@example.com";
     public static final String JOHN_DOE_EXAMPLE_COM = "john.doe@example.com";
+    public static final String DOCKSTORE_ORG_JOHN_MYWORKFLOW = "dockstore.org/john/myworkflow";
     private InMemoryPermissionsImpl inMemoryPermissions;
-    private User userMock = Mockito.mock(User.class);
-    public static final String FOO_WORKFLOW_NAME = "foo";
-    public static final String GOO_WORKFLOW_NAME = "goo";
+    private User johnDoeUser = new User();
+    private User janeDoeUser = new User();
     private Workflow fooWorkflow;
     private Workflow gooWorkflow;
+    private Workflow dockstoreOrgWorkflow;
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void setup() {
         inMemoryPermissions = new InMemoryPermissionsImpl();
         fooWorkflow = Mockito.mock(Workflow.class);
         gooWorkflow = Mockito.mock(Workflow.class);
+        dockstoreOrgWorkflow = Mockito.mock(Workflow.class);
         when(fooWorkflow.getWorkflowPath()).thenReturn("foo");
+
+        User.Profile profile = new User.Profile();
+        profile.email = JOHN_DOE_EXAMPLE_COM;
+        johnDoeUser.getUserProfiles().put(TokenType.GOOGLE_COM.toString(), profile);
+        johnDoeUser.setUsername(JOHN_DOE_EXAMPLE_COM);
+
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(johnDoeUser)));
         when(gooWorkflow.getWorkflowPath()).thenReturn("goo");
-        when(userMock.getEmail()).thenReturn(JOHN_DOE_EXAMPLE_COM);
+        when(gooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(johnDoeUser)));
+        when(dockstoreOrgWorkflow.getWorkflowPath()).thenReturn(DOCKSTORE_ORG_JOHN_MYWORKFLOW);
+        when(dockstoreOrgWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(johnDoeUser)));
+
+        janeDoeUser.setUsername("jane");
     }
 
     @Test
     public void setPermissionTest() {
-        final Permission permission = new Permission();
-        permission.setRole(Role.WRITER);
-        permission.setEmail(JANE_DOE_EXAMPLE_COM);
-        final List<Permission> permissions = inMemoryPermissions.setPermission(fooWorkflow, userMock, permission);
-        Assert.assertEquals(permissions.get(0), permission);
+        final Permission permission = new Permission(JANE_DOE_EXAMPLE_COM, Role.WRITER);
+        final List<Permission> permissions = inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        Assert.assertTrue(permissions.contains(permission));
     }
 
     @Test
     public void workflowsSharedWithUser() {
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 0);
+        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size(), 0);
         final Permission permission = new Permission();
         permission.setRole(Role.WRITER);
         permission.setEmail(JOHN_DOE_EXAMPLE_COM);
-        inMemoryPermissions.setPermission(fooWorkflow, userMock, permission);
-        inMemoryPermissions.setPermission(gooWorkflow, userMock, permission);
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 2);
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        inMemoryPermissions.setPermission(johnDoeUser, gooWorkflow, permission);
+        Assert.assertEquals(1, inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size());
+        permission.setRole(Role.READER);
+        inMemoryPermissions.setPermission(johnDoeUser, dockstoreOrgWorkflow, permission);
+        final Map<Role, List<String>> roleListMap = inMemoryPermissions.workflowsSharedWithUser(johnDoeUser);
+        Assert.assertEquals(2, roleListMap.size());
+        Assert.assertEquals(DOCKSTORE_ORG_JOHN_MYWORKFLOW, roleListMap.get(Role.READER).get(0));
     }
 
     @Test
     public void removePermission() {
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 0);
-        final Permission permission = new Permission();
-        permission.setRole(Role.WRITER);
-        permission.setEmail(JOHN_DOE_EXAMPLE_COM);
-        inMemoryPermissions.setPermission(fooWorkflow, userMock, permission);
-        inMemoryPermissions.setPermission(gooWorkflow, userMock, permission);
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 2);
-        inMemoryPermissions.removePermission(fooWorkflow, userMock, JOHN_DOE_EXAMPLE_COM, Role.WRITER);
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 1);
+        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size(), 0);
+        final Permission permission = new Permission("jane", Role.WRITER);
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        inMemoryPermissions.setPermission(johnDoeUser, gooWorkflow, permission);
+        final Map<Role, List<String>> sharedWithUser = inMemoryPermissions.workflowsSharedWithUser(janeDoeUser);
+        Assert.assertEquals(1, sharedWithUser.size());
+        Assert.assertEquals(2, sharedWithUser.entrySet().iterator().next().getValue().size());
+        inMemoryPermissions.removePermission(johnDoeUser, fooWorkflow, "jane", Role.WRITER);
+        final Map<Role, List<String>> sharedWithUser1 = inMemoryPermissions.workflowsSharedWithUser(janeDoeUser);
+        Assert.assertEquals(1, sharedWithUser1.size());
+        Assert.assertEquals(1, sharedWithUser1.entrySet().iterator().next().getValue().size());
     }
 
     @Test
     public void canDoAction() {
-        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(userMock).size(), 0);
-        final Permission permission = new Permission();
-        permission.setRole(Role.READER);
-        permission.setEmail(JOHN_DOE_EXAMPLE_COM);
-        inMemoryPermissions.setPermission(fooWorkflow, userMock, permission);
-        Assert.assertTrue(inMemoryPermissions.canDoAction(userMock, fooWorkflow, Role.Action.READ));
-        Assert.assertFalse(inMemoryPermissions.canDoAction(userMock, fooWorkflow, Role.Action.WRITE));
+        Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size(), 0);
+        final Permission permission = new Permission(JOHN_DOE_EXAMPLE_COM, Role.READER);
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        Assert.assertTrue(inMemoryPermissions.canDoAction(johnDoeUser, fooWorkflow, Role.Action.READ));
+        Assert.assertFalse(inMemoryPermissions.canDoAction(johnDoeUser, fooWorkflow, Role.Action.WRITE));
+    }
+
+    @Test
+    public void setPermissionsUnauthorized() {
+        final Permission permission = new Permission("whatever",Role.READER);
+        thrown.expect(CustomWebApplicationException.class);
+        inMemoryPermissions.setPermission(janeDoeUser, fooWorkflow, permission);
+    }
+
+    @Test
+    public void testSelfPermissions() {
+        // Test that reader can see her own permission even if she is not an owner
+        final Permission permission = new Permission("jane", Role.READER);
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        final List<Permission> permissions = inMemoryPermissions.getPermissionsForWorkflow(janeDoeUser, fooWorkflow);
+        Assert.assertEquals(1, permissions.size());
+    }
+
+    @Test
+    public void testNoPermissions() {
+        // Test that user without permissions querying permissions gets an exception
+        thrown.expect(CustomWebApplicationException.class);
+        inMemoryPermissions.getPermissionsForWorkflow(janeDoeUser, fooWorkflow);
     }
 
 

@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
@@ -277,9 +278,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
+        environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource, configuration));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
-        environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO));
+        environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO, authorizer));
         environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO, authorizer));
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
 
@@ -294,6 +295,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         ToolsApiExtendedServiceImpl.setConfig(configuration);
 
         DOIGeneratorFactory.setConfig(configuration);
+
+        GoogleHelper.setConfig(configuration);
 
         ToolsApi toolsApi = new ToolsApi(null);
         environment.jersey().register(toolsApi);

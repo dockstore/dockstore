@@ -1,7 +1,10 @@
 package io.dockstore.webservice.permissions.sam;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +50,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * A map of SAM policy names to Dockstore roles.
      */
     private static Map<String, Role> samPermissionMap = new HashMap<>();
+
     static {
         samPermissionMap.put(SamConstants.OWNER_POLICY, Role.OWNER);
         samPermissionMap.put(SamConstants.WRITE_POLICY, Role.WRITER);
@@ -57,8 +61,8 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * A map of Dockstore roles to SAM policy names. Created by swapping the keys and values
      * in the <code>samPermissionMap</code>.
      */
-    private static Map<Role, String> permissionSamMap =
-            samPermissionMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, c -> c.getKey()));
+    private static Map<Role, String> permissionSamMap = samPermissionMap.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getValue, c -> c.getKey()));
 
     private DockstoreWebserviceConfiguration config;
     private final TokenDAO tokenDAO;
@@ -69,21 +73,18 @@ public class SamPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public List<Permission> setPermission(Workflow workflow, User requester, Permission permission) {
+    public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
         ResourcesApi resourcesApi = getResourcesApi(requester);
         try {
             final String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
 
             ensureResourceExists(workflow, requester, resourcesApi, encodedPath);
 
-            resourcesApi.addUserToPolicy(SamConstants.RESOURCE_TYPE,
-                    encodedPath,
-                    permissionSamMap.get(permission.getRole()),
+            resourcesApi.addUserToPolicy(SamConstants.RESOURCE_TYPE, encodedPath, permissionSamMap.get(permission.getRole()),
                     permission.getEmail());
             return getPermissionsForWorkflow(requester, workflow);
         } catch (ApiException e) {
-            String errorMessage = readValue(e, ErrorReport.class)
-                    .map(errorReport -> errorReport.getMessage())
+            String errorMessage = readValue(e, ErrorReport.class).map(errorReport -> errorReport.getMessage())
                     .orElse("Error setting permission");
             LOG.error(errorMessage, e);
             throw new CustomWebApplicationException(errorMessage, e.getCode());
@@ -107,39 +108,59 @@ public class SamPermissionsImpl implements PermissionsInterface {
     }
 
     @Override
-    public List<String> workflowsSharedWithUser(User user) {
+    public Map<Role, List<String>> workflowsSharedWithUser(User user) {
+        if (googleToken(user) == null) {
+            return Collections.emptyMap();
+        }
         ResourcesApi resourcesApi = getResourcesApi(user);
         try {
             List<ResourceAndAccessPolicy> resourceAndAccessPolicies = resourcesApi.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE);
-            return resourceAndAccessPolicies
-                    .stream()
-                    .filter(resourceAndAccessPolicy -> !SamConstants.OWNER_POLICY.equals(resourceAndAccessPolicy.getAccessPolicyName()))
-                    .map(resourceAndPolicy -> resourceAndPolicy.getResourceId().substring(SamConstants.ENCODED_WORKFLOW_PREFIX.length()))
-                    .collect(Collectors.toList());
+            return resourceAndAccessPolicies.stream().collect(Collectors.groupingBy(ResourceAndAccessPolicy::getAccessPolicyName))
+                    .entrySet().stream()
+                    .collect(Collectors.toMap(e -> samPolicyNameToRole(e.getKey()), e -> e.getValue().stream().map(r -> {
+                        try {
+                            return URLDecoder.decode(r.getResourceId().substring(SamConstants.ENCODED_WORKFLOW_PREFIX.length()), "UTF-8");
+                        } catch (UnsupportedEncodingException e1) {
+                            return null;
+                        }
+                    }).collect(Collectors.toList())));
         } catch (ApiException e) {
             LOG.error("Error getting shared workflows", e);
+            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+                // If user is unauthorized in SAM, then nothing has been shared with that user
+                return Collections.emptyMap();
+            }
             throw new CustomWebApplicationException("Error getting shared workflows", e.getCode());
         }
     }
 
     @Override
     public List<Permission> getPermissionsForWorkflow(User user, Workflow workflow) {
+        final List<Permission> dockstoreOwners = PermissionsInterface.getOriginalOwnersForWorkflow(workflow);
         ResourcesApi resourcesApi = getResourcesApi(user);
         try {
             String encoded = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
-            return accessPolicyResponseEntryToUserPermissions(resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE,
-                    encoded));
+            final List<Permission> samPermissions = accessPolicyResponseEntryToUserPermissions(
+                    resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encoded));
+            return PermissionsInterface.mergePermissions(dockstoreOwners, samPermissions);
         } catch (ApiException e) {
-            // If 404, the SAM resource has not yet been created, so just return an empty list.
-            if (e.getCode() != HttpStatus.SC_NOT_FOUND) {
-                throw new CustomWebApplicationException("Error getting permissions", e.getCode());
+            final String errorGettingPermissions = "Error getting permissions";
+            if (e.getCode() == HttpStatus.SC_FORBIDDEN) {
+                // If it's a 403; it may exist, but we may not have permissions to view
+                // the permissions, so derive the permission
+                return derivePermission(user, workflow)
+                        .map(permission -> Arrays.asList(permission)) // If we're not an owner, only return our own permission
+                        .orElseThrow(() -> new CustomWebApplicationException(errorGettingPermissions, e.getCode()));
+            } else if (e.getCode() != HttpStatus.SC_NOT_FOUND) { // If 404, SAM resource has not been created; just return Dockstore owners
+                throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
             }
         }
-        return Collections.emptyList();
+        return dockstoreOwners;
     }
 
     @Override
-    public void removePermission(Workflow workflow, User user, String email, Role role) {
+    public void removePermission(User user, Workflow workflow, String email, Role role) {
+        PermissionsInterface.checkUserNotOriginalOwner(email, workflow);
         ResourcesApi resourcesApi = getResourcesApi(user);
         String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
         try {
@@ -155,6 +176,27 @@ public class SamPermissionsImpl implements PermissionsInterface {
             LOG.error(MessageFormat.format("Error removing {0} from workflow {1}", email, encodedPath), e);
             throw new CustomWebApplicationException("Error removing permissions", e.getCode());
         }
+    }
+
+    /**
+     * Derives <code>user</code>'s {@link Permission} (email + role) on <code>workflow</code>, without
+     * being able to read the SAM permissions directly, by calling the SAM
+     * APIs to see what actions the user can perform on the workflow.
+     *
+     * @param user
+     * @param workflow
+     * @return
+     */
+    private Optional<Permission> derivePermission(User user, Workflow workflow) {
+        final User.Profile googleProfile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+        assert googleProfile != null; // If we gotten this far, we can safely assume there is a Google TokenType
+        final String email = googleProfile.email;
+        if (canDoAction(user, workflow, Role.Action.WRITE)) {
+            return Optional.of(new Permission(email, Role.WRITER));
+        } else if (canDoAction(user, workflow, Role.Action.READ)) {
+            return Optional.of(new Permission(email, Role.READER));
+        }
+        return Optional.empty();
     }
 
     private void initializePermission(Workflow workflow, User user) {
@@ -196,12 +238,10 @@ public class SamPermissionsImpl implements PermissionsInterface {
             }
         };
         apiClient.setBasePath(config.getSamConfiguration().getBasepath());
-        return googleAccessToken(user)
-            .map(credentials -> {
-                apiClient.setAccessToken(credentials);
-                return apiClient;
-            })
-            .orElseThrow(() -> new CustomWebApplicationException("Unauthorized", HttpStatus.SC_UNAUTHORIZED));
+        return googleAccessToken(user).map(credentials -> {
+            apiClient.setAccessToken(credentials);
+            return apiClient;
+        }).orElseThrow(() -> new CustomWebApplicationException("Unauthorized", HttpStatus.SC_UNAUTHORIZED));
     }
 
     private String encodedWorkflowResource(Workflow workflow, ApiClient apiClient) {
@@ -218,24 +258,27 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * @return
      */
     Optional<String> googleAccessToken(User user) {
-        List<Token> tokens = tokenDAO.findByUserId(user.getId());
-        Token token = Token.extractToken(tokens, TokenType.GOOGLE_COM);
+        Token token = googleToken(user);
         if (token != null) {
-            return GoogleHelper.getValidAccessToken(token, config.getGoogleClientID(), config.getGoogleClientSecret())
-                    .map(accessToken -> {
-                        if (!accessToken.equals(token.getToken())) {
-                            token.setContent(accessToken);
-                            tokenDAO.update(token);
-                        }
-                        return Optional.of(accessToken);
-                    })
-                    .orElse(Optional.empty());
+            return GoogleHelper.getValidAccessToken(token).map(accessToken -> {
+                if (!accessToken.equals(token.getToken())) {
+                    token.setContent(accessToken);
+                    tokenDAO.update(token);
+                }
+                return Optional.of(accessToken);
+            }).orElse(Optional.empty());
         }
         return Optional.empty();
     }
 
+    Token googleToken(User user) {
+        List<Token> tokens = tokenDAO.findByUserId(user.getId());
+        return Token.extractToken(tokens, TokenType.GOOGLE_COM);
+    }
+
     /**
      * Converts the response from SAM into a list of Dockstore {@link Permission}
+     *
      * @param accessPolicyList
      * @return
      */
@@ -256,8 +299,9 @@ public class SamPermissionsImpl implements PermissionsInterface {
     /**
      * Removes duplicate emails from <code>permissionList</code>. If there are duplicates,
      * leaves the one with the most privileged role.
-     *
+     * <p>
      * The Dockstore UI will be simplified to only show one role; while the SAM API support
+     *
      * @param permissionList
      * @return
      */
@@ -285,6 +329,17 @@ public class SamPermissionsImpl implements PermissionsInterface {
         } catch (Exception ex) {
             return Optional.empty();
         }
+    }
+
+    private Role samPolicyNameToRole(String policyName) {
+        if (SamConstants.READ_POLICY.equals(policyName)) {
+            return Role.READER;
+        } else if (SamConstants.WRITE_POLICY.equals(policyName)) {
+            return Role.WRITER;
+        } else if (SamConstants.OWNER_POLICY.equals(policyName)) {
+            return Role.OWNER;
+        }
+        return null;
     }
 
 }

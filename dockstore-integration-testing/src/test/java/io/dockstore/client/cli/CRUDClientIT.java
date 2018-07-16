@@ -46,6 +46,8 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import static org.junit.Assert.assertTrue;
+
 /**
  * Tests CRUD style operations for tools and workflows hosted directly on Dockstore
  *
@@ -75,16 +77,26 @@ public class CRUDClientIT extends BaseIT {
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         Assert.assertNotNull("tool was not created properly", hostedTool);
-        Assert.assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
+        // createHostedTool() endpoint is safe to have user profiles because that profile is your own
+        Assert.assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
+        hostedTool.getUsers().forEach(user -> {
+            Assert.assertNotNull("createHostedTool() endpoint should have user profiles", user.getUserProfiles());
+            // Setting it to null afterwards to compare with the getContainer endpoint since that one doesn't return user profiles
+            user.setUserProfiles(null);
+        });
+
+        assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);
         DockstoreTool container = oldApi.getContainer(hostedTool.getId());
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
-        hostedTool.setUsers(null);
         container.setAliases(null);
-        container.setUsers(null);
         Assert.assertEquals(container, hostedTool);
+        Assert.assertEquals(1, container.getUsers().size());
+        container.getUsers().forEach(user -> {
+            Assert.assertNull("getContainer() endpoint should not have user profiles", user.getUserProfiles());
+        });
     }
 
     @Test
@@ -102,6 +114,7 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
         Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+        Assert.assertTrue("a tool lacks a date", dockstoreTool.getLastModifiedDate() != null && dockstoreTool.getLastModified() != 0);
 
         SourceFile file2 = new SourceFile();
         file2.setContent("{\"message\": \"Hello world!\"}");
@@ -138,16 +151,24 @@ public class CRUDClientIT extends BaseIT {
         HostedApi api = new HostedApi(webClient);
         Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", "cwl", null, null);
         Assert.assertNotNull("workflow was not created properly", hostedTool);
-        Assert.assertTrue("workflow was not created with a valid if", hostedTool.getId() != 0);
+        // createHostedWorkflow() endpoint is safe to have user profiles because that profile is your own
+        Assert.assertEquals(1, hostedTool.getUsers().size());
+        hostedTool.getUsers().forEach(user -> {
+            Assert.assertNotNull("createHostedWorkflow() endpoint should have user profiles", user.getUserProfiles());
+            // Setting it to null afterwards to compare with the getWorkflow endpoint since that one doesn't return user profiles
+            user.setUserProfiles(null);
+        });
+        assertTrue("workflow was not created with a valid if", hostedTool.getId() != 0);
         // can get it back with regular api
         WorkflowsApi oldApi = new WorkflowsApi(webClient);
         Workflow container = oldApi.getWorkflow(hostedTool.getId());
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
-        hostedTool.setUsers(null);
         container.setAliases(null);
-        container.setUsers(null);
+        Assert.assertEquals(1, container.getUsers().size());
+        container.getUsers().forEach(user -> Assert.assertNull("getWorkflow() endpoint should not have user profiles", user.getUserProfiles()));
         Assert.assertEquals(container, hostedTool);
+
     }
 
     @Test
@@ -161,6 +182,7 @@ public class CRUDClientIT extends BaseIT {
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+        Assert.assertTrue("a workflow lacks a date", first.get().getLastModified() != null && first.get().getLastModified().getTime() != 0);
 
         SourceFile file2 = new SourceFile();
         file2.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nlabel: Example trivial wrapper for Java 7 compiler\\nhints:\\nDockerRequirement:\\ndockerPull: java:7-jdk\\nbaseCommand: javac\\narguments: [\"-d\", $(runtime.outdir)]\\ninputs:\\nsrc:\\ntype: File\\ninputBinding:\\nposition: 1\\noutputs:\\nclassfile:\\ntype: File\\noutputBinding:\\nglob: \"*.class\"");
@@ -224,7 +246,11 @@ public class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         thrown.expect(ApiException.class);
-        containersApi.refresh(hostedTool.getId());
+        DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
+        assertTrue("There should be at least one user of the workflow", refreshedTool.getUsers().size() > 0);
+        refreshedTool.getUsers().forEach(entryUser -> {
+            Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
+        });
     }
 
     /**
@@ -239,6 +265,60 @@ public class CRUDClientIT extends BaseIT {
         DockstoreTool newTool = new DockstoreTool();
         thrown.expect(ApiException.class);
         containersApi.updateContainer(hostedTool.getId(), newTool);
+    }
+
+    /**
+     * Ensures that hosted tools can have their default path updated
+     */
+    @Test
+    public void testUpdatingDefaultVersionHostedTool() {
+        ApiClient webClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(webClient);
+        HostedApi hostedApi = new HostedApi(webClient);
+
+        // Add a tool with a version
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        SourceFile descriptorFile = new SourceFile();
+        descriptorFile.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
+        descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        descriptorFile.setPath("/Dockstore.cwl");
+        SourceFile dockerfile = new SourceFile();
+        dockerfile.setContent("FROM ubuntu:latest");
+        dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
+        dockerfile.setPath("/Dockerfile");
+        DockstoreTool dockstoreTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
+        Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
+        Assert.assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
+
+        assertTrue(first.isPresent());
+
+        // Update the default version of the tool
+        containersApi.updateToolDefaultVersion(hostedTool.getId(), first.get().getName());
+    }
+
+    /**
+     * Ensures that hosted workflows can have their default path updated
+     */
+    @Test
+    public void testUpdatingDefaultVersionHostedWorkflow() {
+        ApiClient webClient = getWebClient();
+        WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient());
+        HostedApi hostedApi = new HostedApi(webClient);
+
+        // Add a workflow with a version
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", "cwl", null, null);
+        SourceFile file = new SourceFile();
+        file.setContent("cwlVersion: v1.0\\nclass: Workflow\\ninputs:\\ninp: File\\nex: string\\noutputs:\\nclassout:\\ntype: File\\noutputSource: compile/classfile\\nsteps:\\nuntar:\\nrun: tar-param.cwl\\nin:\\ntarfile: inp\\nextractfile: ex\\nout: [example_out]\\ncompile:\\nrun: arguments.cwl\\nin:\\nsrc: untar/example_out\\nout: [classfile]");
+        file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        file.setPath("/Dockstore.cwl");
+        Workflow dockstoreWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
+        Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
+        Assert.assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
+
+        assertTrue(first.isPresent());
+
+        // Update the default version of the workflow
+        workflowsApi.updateWorkflowDefaultVersion(hostedWorkflow.getId(), first.get().getName());
     }
 
     /**

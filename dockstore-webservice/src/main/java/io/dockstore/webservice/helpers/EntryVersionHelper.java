@@ -36,11 +36,13 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.AbstractDockstoreDAO;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
@@ -57,6 +59,28 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * Implementors of this interface require a DAO
      */
     W getDAO();
+
+    /**
+     * Sets the default version if possible, if not it will throw an error
+     * @param version Name of the version to set
+     * @param id Id of entry
+     * @param user User
+     * @param elasticManager
+     */
+    default Entry updateDefaultVersionHelper(String version, long id, User user, ElasticManager elasticManager) {
+        Entry entry = getDAO().findById(id);
+        checkEntry(entry);
+        checkUser(user, entry);
+        if (version != null) {
+            if (!entry.checkAndSetDefaultVersion(version)) {
+                throw new CustomWebApplicationException("Given version does not exist.", HttpStatus.SC_NOT_FOUND);
+            }
+        }
+        Entry result = getDAO().findById(id);
+        checkEntry(result);
+        elasticManager.handleIndexUpdate(result, ElasticMode.UPDATE);
+        return result;
+    }
 
     /**
      * For the purposes of display, this method filters an entry to not show workflow or tool versions that are hidden
@@ -103,6 +127,17 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                         ((SourceFile)sourceFile).setContent(null))
             );
         }
+    }
+
+    default T updateLabels(User user, Long containerId, String labelStrings, LabelDAO labelDAO, ElasticManager manager) {
+        T c = getDAO().findById(containerId);
+        checkEntry(c);
+        checkUserCanUpdate(user, c);
+
+        EntryLabelHelper<T> labeller = new EntryLabelHelper<>(labelDAO);
+        T entry = labeller.updateLabels(c, labelStrings);
+        manager.handleIndexUpdate(entry, ElasticMode.UPDATE);
+        return entry;
     }
 
     /**
@@ -313,4 +348,5 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             this.primaryDescriptor = isPrimaryDescriptor;
         }
     }
+
 }
