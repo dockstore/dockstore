@@ -68,37 +68,41 @@ public final class ToolsImplCommon {
      * @param sourceFile The Dockstore SourceFile
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
-    static Object sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile) {
+    static Object sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile, SourceFile.FileType type) {
         String processedSourceFilePath = StringUtils.prependIfMissing(sourceFile.getPath(), "/");
         String url = StringUtils.removeEnd(urlWithWorkDirectory, "/") + processedSourceFilePath;
+        DescriptorType resultType;
+        if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
+            resultType = DescriptorType.CWL;
+        } else if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_WDL)) {
+            resultType = DescriptorType.WDL;
+        } else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW) {
+            resultType = DescriptorType.NFL;
+        } else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
+            resultType = DescriptorType.NFL;
+        } else {
+            LOG.error("This source file is not a recognized descriptor.");
+            return null;
+        }
 
         if (sourceFile.getType().equals(SourceFile.FileType.DOCKERFILE)) {
             ToolContainerfile file = new ToolContainerfile();
             file.setContent(sourceFile.getContent());
             file.setUrl(url);
+            file.setType(resultType);
             return file;
         } else if (sourceFile.getType().equals(SourceFile.FileType.CWL_TEST_JSON) || sourceFile.getType().equals(SourceFile.FileType.WDL_TEST_JSON) ||
             sourceFile.getType().equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
             ToolTests file = new ToolTests();
             file.setContent(sourceFile.getContent());
             file.setUrl(url);
+            file.setType(resultType);
             return file;
         }
         ToolDescriptor toolDescriptor = new ToolDescriptor();
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
-        if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-            toolDescriptor.setType(DescriptorType.CWL);
-        } else if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_WDL)) {
-            toolDescriptor.setType(DescriptorType.WDL);
-        } else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW) {
-            toolDescriptor.setType(DescriptorType.NFL);
-        }  else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
-            toolDescriptor.setType(DescriptorType.NFL);
-        }else {
-            LOG.error("This source file is not a recognized descriptor.");
-            return null;
-        }
+        toolDescriptor.setType(resultType);
         return toolDescriptor;
     }
 

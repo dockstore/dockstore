@@ -955,12 +955,14 @@ public class WorkflowIT extends BaseIT {
                 ToolDescriptor test = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
                 assertTrue("test exists", !test.getContent().isEmpty());
+                assertNotNull("type was null", test.getType());
                 count.incrementAndGet();
             } else if (file.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR || file.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) {
                 // annoyingly, some files are tool tests, some are tooldescriptor
                 ToolDescriptor toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
                 assertTrue("descriptor exists", !toolDescriptor.getContent().isEmpty());
+                assertNotNull("type was null", toolDescriptor.getType());
                 count.incrementAndGet();
             } else {
                 fail();

@@ -63,7 +63,7 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        ToolDescriptor actualToolDescriptor = (ToolDescriptor)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile);
+        ToolDescriptor actualToolDescriptor = (ToolDescriptor)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile, SourceFile.FileType.DOCKSTORE_WDL);
         ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
         expectedToolDescriptor.setType(DescriptorType.WDL);
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
@@ -78,7 +78,7 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        ToolDescriptor actualToolDescriptor = (ToolDescriptor)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile);
+        ToolDescriptor actualToolDescriptor = (ToolDescriptor)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile, SourceFile.FileType.DOCKSTORE_CWL);
         ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
         expectedToolDescriptor.setType(DescriptorType.CWL);
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
