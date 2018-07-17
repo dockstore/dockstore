@@ -304,14 +304,42 @@ public class WorkflowIT extends BaseIT {
         });
     }
 
+    /**
+     * This tests that you are able to download zip files for versions of a workflow
+     */
+    @Test
+    public void downloadZipFile() {
+        String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        // Register and refresh workflow
+        Workflow workflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
+                        "test", "cwl", null);
+        Workflow refresh = workflowApi.refresh(workflow.getId());
+        Long workflowId = refresh.getId();
+        Long versionId = refresh.getWorkflowVersions().get(0).getId();
+
+        // Download unpublished workflow version
+        workflowApi.getWorkflowZip(workflowId, versionId);
+
+        // Download published workflow version
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--script" });
+        workflowApi.getWorkflowZip(workflowId, versionId);
+
+    }
+
 
     @Test
     public void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
         Workflow workflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
                         "test", "cwl", null);
