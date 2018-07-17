@@ -16,17 +16,20 @@
 
 package io.swagger.api.impl;
 
+import java.util.Optional;
+
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
+import io.dockstore.webservice.core.User;
 import io.swagger.api.MetadataApiService;
 import io.swagger.api.NotFoundException;
 import io.swagger.model.Metadata;
 
 public class MetadataApiServiceImpl extends MetadataApiService {
     @Override
-    public Response metadataGet(SecurityContext securityContext, ContainerRequestContext containerContext) throws NotFoundException {
+    public Response metadataGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) throws NotFoundException {
         Metadata metadata = new Metadata();
         metadata.setCountry("CAN");
         metadata.setApiVersion("2.0.0");

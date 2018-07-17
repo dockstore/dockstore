@@ -1,5 +1,7 @@
 package {{package}};
 
+import java.util.Optional;
+
 import {{modelPackage}}.*;
 import {{package}}.{{classname}}Service;
 import {{package}}.factories.{{classname}}ServiceFactory;
@@ -20,6 +22,8 @@ import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
 
 import io.dockstore.webservice.DockstoreWebserviceApplication;
+import io.dockstore.webservice.core.User;
+import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import javax.servlet.ServletConfig;
 import javax.ws.rs.core.Context;
@@ -77,9 +81,9 @@ public class {{classname}}  {
     @io.swagger.annotations.ApiResponses(value = { {{#responses}}
         @io.swagger.annotations.ApiResponse(code = {{{code}}}, message = "{{{message}}}", response = {{{baseType}}}.class{{#containerType}}, responseContainer = "{{{containerType}}}"{{/containerType}}){{#hasMore}},
         {{/hasMore}}{{/responses}} })
-    public Response {{nickname}}({{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}},{{/allParams}}@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext)
+    public Response {{nickname}}({{#allParams}}{{>queryParams}}{{>pathParams}}{{>headerParams}}{{>bodyParams}}{{>formParams}},{{/allParams}}@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext, @ApiParam(hidden = true) @Auth Optional<User> user)
     throws NotFoundException {
-        return delegate.{{nickname}}({{#allParams}}{{#isFile}}{{paramName}}InputStream, {{paramName}}Detail{{/isFile}}{{^isFile}}{{paramName}}{{/isFile}},{{/allParams}}securityContext, containerContext);
+        return delegate.{{nickname}}({{#allParams}}{{#isFile}}{{paramName}}InputStream, {{paramName}}Detail{{/isFile}}{{^isFile}}{{paramName}}{{/isFile}},{{/allParams}}securityContext, containerContext, user);
     }
 {{/operation}}
 }

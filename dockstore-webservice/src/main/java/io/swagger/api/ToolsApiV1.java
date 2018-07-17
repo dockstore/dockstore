@@ -15,6 +15,8 @@
  */
 package io.swagger.api;
 
+import java.util.Optional;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -63,7 +65,7 @@ public class ToolsApiV1 {
         @ApiParam(value = "Amount of records to return in a given page.  By default it is 1000.") @QueryParam("limit") Integer limit,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return ApiVersionConverter.convertToVersion(
-            delegate.toolsGet(id, null, registry, organization, name, toolname, description, author, null , offset, limit, securityContext, value));
+            delegate.toolsGet(id, null, registry, organization, name, toolname, description, author, null , offset, limit, securityContext, value, Optional.empty()));
     }
 
     @GET
@@ -77,7 +79,7 @@ public class ToolsApiV1 {
     public Response toolsIdGet(
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return ApiVersionConverter.convertToVersion(delegate.toolsIdGet(id, securityContext, value));
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdGet(id, securityContext, value, Optional.empty()));
     }
 
     @GET
@@ -92,7 +94,7 @@ public class ToolsApiV1 {
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return ApiVersionConverter
-            .convertToVersion(delegate.toolsIdVersionsGet(id, securityContext, value));
+            .convertToVersion(delegate.toolsIdVersionsGet(id, securityContext, value, Optional.empty()));
     }
 
     @GET
@@ -109,7 +111,7 @@ public class ToolsApiV1 {
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
         @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdContainerfileGet(id, versionId, securityContext, value));
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdContainerfileGet(id, versionId, securityContext, value, Optional.empty()));
     }
 
     @GET
@@ -124,7 +126,7 @@ public class ToolsApiV1 {
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
         @ApiParam(value = "An identifier of the tool version, scoped to this registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
-        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdGet(id, versionId, securityContext, value));
+        return ApiVersionConverter.convertToVersion(delegate.toolsIdVersionsVersionIdGet(id, versionId, securityContext, value, Optional.empty()));
     }
 
     @GET
@@ -143,7 +145,7 @@ public class ToolsApiV1 {
         @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return ApiVersionConverter
-            .convertToVersion(delegate.toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value));
+            .convertToVersion(delegate.toolsIdVersionsVersionIdTypeDescriptorGet(type, id, versionId, securityContext, value, Optional.empty()));
     }
 
     @GET
@@ -163,7 +165,7 @@ public class ToolsApiV1 {
         @ApiParam(value = "A relative path to the additional file (same directory or subdirectories), for example 'foo.cwl' would return a 'foo.cwl' from the same directory as the main descriptor", required = true) @PathParam("relative_path") String relativePath,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return ApiVersionConverter.convertToVersion(
-            delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext, value));
+            delegate.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(type, id, versionId, relativePath, securityContext, value, Optional.empty()));
     }
 
     @GET
@@ -182,6 +184,6 @@ public class ToolsApiV1 {
         @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
         @Context SecurityContext securityContext, @Context ContainerRequestContext value) throws NotFoundException {
         return ApiVersionConverter
-            .convertToVersion(delegate.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext, value));
+            .convertToVersion(delegate.toolsIdVersionsVersionIdTypeTestsGet(type, id, versionId, securityContext, value, Optional.empty()));
     }
 }

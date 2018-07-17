@@ -15,6 +15,8 @@
  */
 package io.swagger.api;
 
+import java.util.Optional;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -45,6 +47,6 @@ public class MetadataApiV1 {
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "A Metadata object describing this service.", response = MetadataV1.class) })
     public Response metadataGet(@Context SecurityContext securityContext, @Context ContainerRequestContext containerRequestContext) throws NotFoundException {
-        return ApiVersionConverter.convertToVersion(delegate.metadataGet(securityContext, containerRequestContext));
+        return ApiVersionConverter.convertToVersion(delegate.metadataGet(securityContext, containerRequestContext, Optional.empty()));
     }
 }
