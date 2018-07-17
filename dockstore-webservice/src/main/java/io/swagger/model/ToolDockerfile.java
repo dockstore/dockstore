@@ -36,7 +36,7 @@ public class ToolDockerfile {
     private String url = null;
 
     public ToolDockerfile(ToolContainerfile containerfile) {
-        this.dockerfile = containerfile.getContainerfile();
+        this.dockerfile = containerfile.getContent();
         this.url = containerfile.getUrl();
     }
 

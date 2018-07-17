@@ -67,7 +67,7 @@ public class ToolsImplCommonTest {
         ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
         expectedToolDescriptor.setType(DescriptorType.WDL);
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
-        expectedToolDescriptor.setDescriptor(PLACEHOLDER_CONTENT);
+        expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
         assertEquals(expectedToolDescriptor, actualToolDescriptor);
     }
 
@@ -82,7 +82,7 @@ public class ToolsImplCommonTest {
         ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
         expectedToolDescriptor.setType(DescriptorType.CWL);
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
-        expectedToolDescriptor.setDescriptor(PLACEHOLDER_CONTENT);
+        expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
         assertEquals(expectedToolDescriptor, actualToolDescriptor);
     }
 
@@ -349,7 +349,7 @@ public class ToolsImplCommonTest {
         sourceFile.setId(9001);
         ToolTests actualToolTests = ToolsImplCommon.sourceFileToToolTests("", sourceFile);
         ToolTests expectedToolTests = new ToolTests();
-        expectedToolTests.setTest(PLACEHOLDER_CONTENT);
+        expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");
         assertEquals(expectedToolTests, actualToolTests);
     }

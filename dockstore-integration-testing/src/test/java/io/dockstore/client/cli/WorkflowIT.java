@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -194,7 +195,7 @@ public class WorkflowIT extends BaseIT {
         assertTrue(exceptionThrown);
         ToolDescriptor adminToolDesciptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
-        assertTrue("could not get content via optional auth", adminToolDesciptor != null && !adminToolDesciptor.getDescriptor().isEmpty());
+        assertTrue("could not get content via optional auth", adminToolDesciptor != null && !adminToolDesciptor.getContent().isEmpty());
 
         workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
             public Boolean isPublish() { return true;}
@@ -946,31 +947,26 @@ public class WorkflowIT extends BaseIT {
             assertTrue(thrownInnerException);
         });
 
+        final AtomicInteger count = new AtomicInteger(0);
         // can get relative paths with admin user
         toolFiles.forEach(file -> {
             if (file.getFileType() == ToolFile.FileTypeEnum.TEST_FILE) {
                 // enable later with a simplification to TRS
-//                ToolTests test = (ToolTests)adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
-//                    "master", file.getPath());
-//                assertTrue("test exists", !test.getTest().isEmpty());
+                ToolDescriptor test = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
+                    "master", file.getPath());
+                assertTrue("test exists", !test.getContent().isEmpty());
+                count.incrementAndGet();
             } else if (file.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR || file.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) {
                 // annoyingly, some files are tool tests, some are tooldescriptor
                 ToolDescriptor toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
-                assertTrue("descriptor exists", !toolDescriptor.getDescriptor().isEmpty());
+                assertTrue("descriptor exists", !toolDescriptor.getContent().isEmpty());
+                count.incrementAndGet();
             } else {
                 fail();
             }
         });
-
-        // check on urls created for test files
-        List<ToolTests> toolTests = adminGa4Ghv2Api
-            .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
-        assertTrue("could not find tool tests", toolTests.size() > 0);
-        for (ToolTests test : toolTests) {
-            String content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
-            Assert.assertTrue("could not find content from generated test JSON URL", !content.isEmpty());
-        }
+        assertTrue("did not count expected number of files", count.get() >= 5);
     }
 
 

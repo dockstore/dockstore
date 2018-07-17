@@ -509,20 +509,20 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     toolTestsList.add(toolTests);
                 }
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
-                    unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull).collect(Collectors.joining("\n"))
+                    unwrap ? toolTestsList.stream().map(ToolTests::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n"))
                         : toolTestsList).build();
             case DOCKERFILE:
                 Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
                     .filter(sourcefile -> ((SourceFile)sourcefile).getType() == SourceFile.FileType.DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
                     ToolContainerfile dockerfile = new ToolContainerfile();
-                    dockerfile.setContainerfile(potentialDockerfile.get().getContent());
+                    dockerfile.setContent(potentialDockerfile.get().getContent());
                     dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
                     toolVersion.setContainerfile(true);
                     List<ToolContainerfile> containerfilesList = new ArrayList<>();
                     containerfilesList.add(dockerfile);
                     return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? dockerfile.getContainerfile() : containerfilesList).build();
+                        .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
                 }
             default:
                 Set<String> primaryDescriptors = new HashSet<>();

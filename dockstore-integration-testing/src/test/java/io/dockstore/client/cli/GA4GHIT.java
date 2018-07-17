@@ -178,12 +178,12 @@ public abstract class GA4GHIT {
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         ToolTests responseObject = response.readEntity(ToolTests.class);
         assertEquals(200, response.getStatus());
-        assertEquals("nestedPotato", responseObject.getTest());
+        assertEquals("nestedPotato", responseObject.getContent());
         Response response2 = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Fnested%2Ftest.wdl.json");
         ToolTests responseObject2 = response2.readEntity(ToolTests.class);
         assertEquals(200, response2.getStatus());
-        assertEquals("nestedPotato", responseObject2.getTest());
+        assertEquals("nestedPotato", responseObject2.getContent());
     }
 
     /**
@@ -241,13 +241,13 @@ public abstract class GA4GHIT {
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         ToolTests responseObject = response.readEntity(ToolTests.class);
         assertEquals(200, response.getStatus());
-        assertEquals("nestedPotato", responseObject.getTest());
+        assertEquals("nestedPotato", responseObject.getContent());
         Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
         assertEquals(404, response2.getStatus());
         Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
         ToolTests responseObject3 = response3.readEntity(ToolTests.class);
         assertEquals(200, response3.getStatus());
-        assertEquals("potato", responseObject3.getTest());
+        assertEquals("potato", responseObject3.getContent());
     }
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {

@@ -74,18 +74,18 @@ public final class ToolsImplCommon {
 
         if (sourceFile.getType().equals(SourceFile.FileType.DOCKERFILE)) {
             ToolContainerfile file = new ToolContainerfile();
-            file.setContainerfile(sourceFile.getContent());
+            file.setContent(sourceFile.getContent());
             file.setUrl(url);
             return file;
         } else if (sourceFile.getType().equals(SourceFile.FileType.CWL_TEST_JSON) || sourceFile.getType().equals(SourceFile.FileType.WDL_TEST_JSON) ||
             sourceFile.getType().equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
             ToolTests file = new ToolTests();
-            file.setTest(sourceFile.getContent());
+            file.setContent(sourceFile.getContent());
             file.setUrl(url);
             return file;
         }
         ToolDescriptor toolDescriptor = new ToolDescriptor();
-        toolDescriptor.setDescriptor(sourceFile.getContent());
+        toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
             toolDescriptor.setType(DescriptorType.CWL);
@@ -396,7 +396,7 @@ public final class ToolsImplCommon {
         }
         ToolTests toolTests = new ToolTests();
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
-        toolTests.setTest(sourceFile.getContent());
+        toolTests.setContent(sourceFile.getContent());
         return toolTests;
     }
 

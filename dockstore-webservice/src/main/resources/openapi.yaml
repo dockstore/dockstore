@@ -6010,10 +6010,14 @@ components:
         tasks, and maybe even other entities (such as services) separately
     ToolContainerfile:
       type: object
-      required:
-        - containerfile
       properties:
-        containerfile:
+        type:
+          type: string
+          enum:
+            - CWL
+            - WDL
+            - NFL
+        content:
           type: string
           description: The container specification for this tool.
         url:
@@ -6038,7 +6042,7 @@ components:
             - CWL
             - WDL
             - NFL
-        descriptor:
+        content:
           type: string
           description: The descriptor that represents this version of the tool.
         url:
@@ -6088,7 +6092,13 @@ components:
     ToolTests:
       type: object
       properties:
-        test:
+        type:
+          type: string
+          enum:
+            - CWL
+            - WDL
+            - NFL
+        content:
           type: string
           description: >-
             Optional test JSON content for this tool. (Note that one of test and
