@@ -36,6 +36,7 @@ import com.google.common.io.Files;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 import io.cwl.avro.CWL;
+import io.dockstore.client.cli.CheckerClient;
 import io.dockstore.client.cli.Client;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.LanguageType;
@@ -566,7 +567,7 @@ public abstract class AbstractEntryClient {
             File wdlFile = new File(wdlPath);
             final List<String> wdlDocuments = Lists.newArrayList(wdlFile.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge bridge = new Bridge();
+            Bridge bridge = new Bridge(wdlFile.getParent());
             String inputs = bridge.inputs(wdlList);
             out(inputs);
         }
@@ -971,7 +972,7 @@ public abstract class AbstractEntryClient {
      * @param entry
      * @param descriptor
      * @param tempDir
-     * @return
+     * @return a file representing not the directory, but the primary descriptor inside the directory
      * @throws ApiException
      * @throws IOException
      */
@@ -1220,15 +1221,19 @@ public abstract class AbstractEntryClient {
         out("");
         out("Required parameters:");
         out("  --entry <entry>                     Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
-        out("   OR");
-        out("  --local-entry <local-entry>         Allows you to specify a full path to a local descriptor instead of an entry path");
+        if (!(this instanceof CheckerClient)) {
+            out("   OR");
+            out("  --local-entry <local-entry>         Allows you to specify a full path to a local descriptor instead of an entry path");
+        }
         out("");
         out("Optional parameters:");
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --yaml <yaml file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs (Only for CWL)");
         out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
-        out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
+        if (!(this instanceof CheckerClient)) {
+            out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");
+        }
         out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
         out("  --uuid                              Allows you to specify a uuid for 3rd party notifications");
         printHelpFooter();

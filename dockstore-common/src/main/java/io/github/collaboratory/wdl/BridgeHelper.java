@@ -44,7 +44,7 @@ public class BridgeHelper {
      * @return content of file
      */
     public String resolveUrl(String importUrl) {
-        String content = "";
+        StringBuilder content = new StringBuilder();
 
         // Check if valid URL
         UrlValidator urlValidator = new UrlValidator();
@@ -54,16 +54,13 @@ public class BridgeHelper {
                     .startsWith("https://gitlab.com")) {
                 // Grab file located at URL
                 try {
-                    InputStream inputStream = new URL(importUrl).openStream();
-                    try {
+                    try (InputStream inputStream = new URL(importUrl).openStream()) {
                         InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
                         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                         String line;
                         while ((line = bufferedReader.readLine()) != null) {
-                            content += line;
+                            content.append(line);
                         }
-                    } finally {
-                        inputStream.close();
                     }
                 } catch (MalformedURLException ex) {
                     LOG.debug("Invalid URL: " + importUrl);
@@ -76,7 +73,7 @@ public class BridgeHelper {
         } else {
             LOG.debug("Invalid URL: " + importUrl);
         }
-        return content;
+        return content.toString();
     }
 
     /**
@@ -102,10 +99,11 @@ public class BridgeHelper {
     /**
      * Resolves local imports (when files exist locally)
      *
+     * @param basePath
      * @param importPath
      * @return content of local import
      */
-    public String resolveLocalPath(String importPath) {
+    public String resolveLocalPath(String basePath, String importPath) {
         String content = "";
 
         // Remove file:// from import path
@@ -113,7 +111,11 @@ public class BridgeHelper {
 
         // Get content of importPath
         try {
-            content = Files.asCharSource(new File(importPath), Charsets.UTF_8).read();
+            if (basePath != null) {
+                content = Files.asCharSource(new File(basePath, importPath), Charsets.UTF_8).read();
+            } else {
+                content = Files.asCharSource(new File(importPath), Charsets.UTF_8).read();
+            }
         } catch (IOException ex) {
             LOG.debug("Invalid filepath: " + importPath);
         }
