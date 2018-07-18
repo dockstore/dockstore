@@ -15,13 +15,15 @@
  */
 package io.swagger.model;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.dockstore.webservice.core.SourceFile;
 
 /**
  * Used to store additional transient information about files to be returned from the GA4GH endpoints
  */
-public class ExtendedFileWrapper extends FileWrapper {
+public class ExtendedFileWrapper extends FileWrapper  {
 
     @JsonIgnore
     private SourceFile originalFile = null;
@@ -32,5 +34,19 @@ public class ExtendedFileWrapper extends FileWrapper {
 
     public void setOriginalFile(SourceFile originalFile) {
         this.originalFile = originalFile;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof FileWrapper)) {
+            return false;
+        }
+        FileWrapper fileWrapper = (FileWrapper)o;
+        return Objects.equals(super.getType(), fileWrapper.getType()) &&
+            Objects.equals(super.getDescriptor(), fileWrapper.getDescriptor()) &&
+            Objects.equals(super.getUrl(), fileWrapper.getUrl());
     }
 }

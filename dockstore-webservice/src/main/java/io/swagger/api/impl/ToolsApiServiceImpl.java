@@ -564,7 +564,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         && !primaryDescriptors.contains(sourceFile.getPath())) {
                         sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
                     }
-                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile, type);
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile, type);
                     if (toolDescriptor == null) {
                         return Response.status(Response.Status.NOT_FOUND).build();
                     }

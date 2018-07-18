@@ -68,7 +68,7 @@ public final class ToolsImplCommon {
      * @param type the desired type from the webservice request
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
-    static Object sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile, SourceFile.FileType type) {
+    static ExtendedFileWrapper sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile, SourceFile.FileType type) {
         String processedSourceFilePath = StringUtils.prependIfMissing(sourceFile.getPath(), "/");
         String url = StringUtils.removeEnd(urlWithWorkDirectory, "/") + processedSourceFilePath;
         DescriptorType resultType;
