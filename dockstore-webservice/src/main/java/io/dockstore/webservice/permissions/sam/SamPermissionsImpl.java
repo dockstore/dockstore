@@ -5,6 +5,7 @@ import java.net.URLDecoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -115,8 +116,8 @@ public class SamPermissionsImpl implements PermissionsInterface {
         ResourcesApi resourcesApi = getResourcesApi(user);
         try {
             List<ResourceAndAccessPolicy> resourceAndAccessPolicies = resourcesApi.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE);
-            return resourceAndAccessPolicies.stream().collect(Collectors.groupingBy(ResourceAndAccessPolicy::getAccessPolicyName))
-                    .entrySet().stream()
+            return weedOutDuplicateResourceIds(resourceAndAccessPolicies).stream()
+                    .collect(Collectors.groupingBy(ResourceAndAccessPolicy::getAccessPolicyName)).entrySet().stream()
                     .collect(Collectors.toMap(e -> samPolicyNameToRole(e.getKey()), e -> e.getValue().stream().map(r -> {
                         try {
                             return URLDecoder.decode(r.getResourceId().substring(SamConstants.ENCODED_WORKFLOW_PREFIX.length()), "UTF-8");
@@ -131,6 +132,36 @@ public class SamPermissionsImpl implements PermissionsInterface {
                 return Collections.emptyMap();
             }
             throw new CustomWebApplicationException("Error getting shared workflows", e.getCode());
+        }
+    }
+
+    /**
+     * Weeds out duplicate resource ids from <code>resourceAndAccessPolicies</code>, giving priority to the more
+     * privileged role when there are duplicates.
+     *
+     * There might be a more elegant way to implement this with streams, but this works for now.
+     *
+     * @param resourceAndAccessPolicies
+     * @return
+     */
+    private Collection<ResourceAndAccessPolicy> weedOutDuplicateResourceIds(List<ResourceAndAccessPolicy> resourceAndAccessPolicies) {
+        final Map<String, ResourceAndAccessPolicy> map = new HashMap<>();
+        for (ResourceAndAccessPolicy policy : resourceAndAccessPolicies) {
+            final ResourceAndAccessPolicy existing = map.get(policy.getResourceId());
+            if (shouldPutPolicy(existing, policy)) {
+                map.put(policy.getResourceId(), policy);
+            }
+        }
+        return map.values();
+    }
+
+    private boolean shouldPutPolicy(ResourceAndAccessPolicy existing, ResourceAndAccessPolicy candidate) {
+        if (existing == null) {
+            return true;
+        } else {
+            final Role candidateRole = samPolicyNameToRole(candidate.getAccessPolicyName());
+            final Role existingRole = samPolicyNameToRole(existing.getAccessPolicyName());
+            return candidateRole.compareTo(existingRole) < 0;
         }
     }
 
