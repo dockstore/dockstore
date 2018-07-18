@@ -21,10 +21,13 @@ import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import io.dockstore.webservice.core.SourceFile;
+import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Metadata;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.Tool;
+import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersion;
 import io.swagger.model.ToolVersionV1;
@@ -51,12 +54,12 @@ public final class ApiVersionConverter {
                         ToolVersion toolVersion = (ToolVersion)innerObject;
                         newArrayList.add(new ToolVersionV1(toolVersion));
                     } else {
-                        if (innerObject instanceof FileWrapper) {
-                            System.out.println();
-                            //return getResponse(new ToolDockerfile((ToolContainerfile)innerObject), response.getHeaders());
-                        } else {
-                            return getResponse(object, response.getHeaders());
+                        if (innerObject instanceof ExtendedFileWrapper) {
+                            if (((ExtendedFileWrapper)innerObject).getOriginalFile().getType() == SourceFile.FileType.DOCKERFILE) {
+                                return getResponse(new ToolDockerfile((ExtendedFileWrapper)innerObject), response.getHeaders());
+                            }
                         }
+                        return getResponse(object, response.getHeaders());
                     }
                 }
             }
@@ -74,10 +77,12 @@ public final class ApiVersionConverter {
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
         } else if (object instanceof FileWrapper) {
-            System.out.println();
-//            FileWrapper containerfile = (FileWrapper)object;
-//            ToolDescriptor dockerfile = new ToolDescriptor(containerfile);
-//            return getResponse(dockerfile, response.getHeaders());
+            if (object instanceof ExtendedFileWrapper) {
+                if (((ExtendedFileWrapper)object).getOriginalFile().getType() == SourceFile.FileType.DOCKERFILE) {
+                    return getResponse(new ToolDockerfile((ExtendedFileWrapper)object), response.getHeaders());
+                }
+            }
+            return getResponse(object, response.getHeaders());
         }
         return response;
     }

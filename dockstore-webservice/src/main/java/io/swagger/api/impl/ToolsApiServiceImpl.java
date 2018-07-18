@@ -60,6 +60,7 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.Error;
+import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.ToolFile;
 import io.swagger.model.ToolVersion;
@@ -514,9 +515,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
                     .filter(sourcefile -> ((SourceFile)sourcefile).getType() == SourceFile.FileType.DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
-                    FileWrapper dockerfile = new FileWrapper();
+                    ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
                     dockerfile.setDescriptor(potentialDockerfile.get().getContent());
                     dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
+                    dockerfile.setOriginalFile(potentialDockerfile.get());
                     toolVersion.setContainerfile(true);
                     List<FileWrapper> containerfilesList = new ArrayList<>();
                     containerfilesList.add(dockerfile);

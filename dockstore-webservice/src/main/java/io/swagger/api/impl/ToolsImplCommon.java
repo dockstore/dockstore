@@ -41,6 +41,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.swagger.model.DescriptorType;
+import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
@@ -97,10 +98,11 @@ public final class ToolsImplCommon {
             }
         }
 
-        FileWrapper toolDescriptor = new FileWrapper();
+        ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
         toolDescriptor.setDescriptor(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setType(resultType);
+        toolDescriptor.setOriginalFile(sourceFile);
         return toolDescriptor;
     }
 
@@ -396,9 +398,10 @@ public final class ToolsImplCommon {
         if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
             LOG.error("This source file is not a recognized test file.");
         }
-        FileWrapper toolTests = new FileWrapper();
+        ExtendedFileWrapper toolTests = new ExtendedFileWrapper();
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
         toolTests.setDescriptor(sourceFile.getContent());
+        toolTests.setOriginalFile(sourceFile);
         return toolTests;
     }
 
