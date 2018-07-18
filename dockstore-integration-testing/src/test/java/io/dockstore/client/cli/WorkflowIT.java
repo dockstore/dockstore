@@ -362,7 +362,6 @@ public class WorkflowIT extends BaseIT {
                 new String[] { "BEARER" }, type);
     }
 
-
     @Test
     public void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
