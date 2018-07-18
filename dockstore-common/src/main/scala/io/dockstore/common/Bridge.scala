@@ -22,7 +22,7 @@ import java.util
 import io.github.collaboratory.wdl.BridgeHelper
 import spray.json._
 import wdl4s.parser.WdlParser
-import wdl4s.wdl.{WdlNamespace, WdlNamespaceWithWorkflow}
+import wdl4s.wdl.WdlNamespace
 import wdl4s.wdl.types.{WdlArrayType, WdlFileType}
 import wdl4s.wdl.values.WdlValue
 import wdl4s.wdl.{WdlNamespaceWithWorkflow, WorkflowSource}
@@ -34,11 +34,11 @@ import scala.util.{Failure, Success, Try}
   * This exposes the Cromwell methods in an easier way to access from Java
   * until wdltool is released to artifactory.
   */
-class Bridge {
+class Bridge(basePath : String) {
   var secondaryWdlFiles = new util.HashMap[String, String]()
   val bridgeHelper = new BridgeHelper()
 
-  def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]) = {
+  def setSecondaryFiles(secondaryFiles: util.HashMap[String, String]): Unit = {
     secondaryWdlFiles = secondaryFiles
   }
 
@@ -58,7 +58,7 @@ class Bridge {
   // When resolving non-http(s) files that do not actually exist locally, but instead in strings
   def resolveHttpAndSecondaryFiles(importString: String): WorkflowSource = {
     importString match {
-      case s if (s.startsWith("http://") || s.startsWith("https://")) =>
+      case s if s.startsWith("http://") || s.startsWith("https://") =>
         bridgeHelper.resolveUrl(s)
       case s =>
         bridgeHelper.resolveSecondaryPath(s, secondaryWdlFiles)
@@ -68,15 +68,16 @@ class Bridge {
   // When resolving non-http(s) files that do exist locally
   def resolveHttpAndLocalFiles(importString: String): WorkflowSource = {
     importString match {
-      case s if (s.startsWith("http://") || s.startsWith("https://")) =>
+      case s if s.startsWith("http://") || s.startsWith("https://") =>
         bridgeHelper.resolveUrl(s)
       case s =>
-        bridgeHelper.resolveLocalPath(s)
+        bridgeHelper.resolveLocalPath(basePath, s)
     }
   }
 
   private[this] def loadWdl(path: String)(f: WdlNamespace => String): String = {
-    val lines = scala.io.Source.fromFile(new JFile(path)).mkString
+    val pathFile = new JFile(path)
+    val lines = scala.io.Source.fromFile(pathFile).mkString
     Try(WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndLocalFiles _)).get) match {
       case Success(namespace) => f(namespace)
       case Failure(t) =>
@@ -143,8 +144,8 @@ class Bridge {
     outputList
   }
 
-  val passthrough = new PartialFunction[WdlValue, WdlValue] {
-    def apply(x: WdlValue) = x
+  val passthrough: PartialFunction[WdlValue, WdlValue] = new PartialFunction[WdlValue, WdlValue] {
+    def apply(x: WdlValue): WdlValue = x
 
     def isDefinedAt(x: WdlValue) = true
   }
