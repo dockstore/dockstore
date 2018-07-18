@@ -21,11 +21,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import javax.ws.rs.core.GenericType;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -308,7 +316,7 @@ public class WorkflowIT extends BaseIT {
      * This tests that you are able to download zip files for versions of a workflow
      */
     @Test
-    public void downloadZipFile() {
+    public void downloadZipFile() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -323,11 +331,35 @@ public class WorkflowIT extends BaseIT {
 
         // Download unpublished workflow version
         workflowApi.getWorkflowZip(workflowId, versionId);
+        byte[] arbitraryURL = getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        }, webClient);
+        Path write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
+        ZipFile zipFile = new ZipFile(write.toFile());
+        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+
+        // should not be able to get zip anonymously before publication
+        boolean thrownException = false;
+        try {
+            getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+            }, getWebClient(false));
+        } catch (Exception e) {
+            thrownException = true;
+        }
+        assertTrue(thrownException);
 
         // Download published workflow version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--script" });
-        workflowApi.getWorkflowZip(workflowId, versionId);
+        arbitraryURL = getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        }, getWebClient(false));
+        write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
+        zipFile = new ZipFile(write.toFile());
+        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+    }
 
+    private <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+        return client
+            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
+                new String[] { "BEARER" }, type);
     }
 
 
