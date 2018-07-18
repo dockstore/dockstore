@@ -317,21 +317,14 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         File tempDir = Files.createTempDir();
         String filePath = tempDir + "/" + fileName;
 
-        try {
-            // Create ZIP file
-            FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
-
+        try (FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream)) {
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
                 ZipEntry secondaryZipEntry = new ZipEntry(sourceFile.getPath());
                 zipOutputStream.putNextEntry(secondaryZipEntry);
                 zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));
             }
-
-            zipOutputStream.close();
-            fileOutputStream.close();
-
             return new File(filePath);
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);

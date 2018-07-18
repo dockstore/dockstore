@@ -1038,25 +1038,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
     }
 
-    /**
-     * This method will find the tag based on the tagId passed in the parameter and return it
-     *
-     * @param tool          a tool to grab a tag from
-     * @param tagId the tool version to get
-     * @return Tag
-     */
-    private Tag getToolTag(Tool tool, Long tagId) {
-        Set<Tag> tags = tool.getTags();
-        Tag tag = null;
-        for (Tag t : tags) {
-            if (t.getId() == tagId) {
-                tag = t;
-                break;
-            }
-        }
-
-        return tag;
-    }
 
     @GET
     @Timed
@@ -1076,7 +1057,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             checkEntry(tool);
         }
 
-        Tag tag = getToolTag(tool, tagId);
+        Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst().orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
         if (sourceFiles == null || sourceFiles.size() == 0) {
             return null;
