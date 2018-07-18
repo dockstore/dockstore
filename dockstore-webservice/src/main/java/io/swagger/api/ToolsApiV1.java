@@ -32,9 +32,9 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.ApiParam;
 import io.swagger.api.factories.ToolsApiServiceFactory;
 import io.swagger.api.impl.ApiVersionConverter;
-import io.swagger.model.ToolDescriptor;
+import io.swagger.model.FileWrapper;
 import io.swagger.model.ToolDockerfile;
-import io.swagger.model.ToolTests;
+import io.swagger.model.ToolTestsV1;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersionV1;
 
@@ -133,12 +133,12 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}/{type}/descriptor")
     @UnitOfWork
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get the tool descriptor (CWL/WDL) for the specified tool.", notes = "Returns the CWL or WDL descriptor for the specified tool.", response = ToolDescriptor.class, tags = {
+    @io.swagger.annotations.ApiOperation(value = "Get the tool descriptor (CWL/WDL) for the specified tool.", notes = "Returns the CWL or WDL descriptor for the specified tool.", response = FileWrapper.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
+        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = FileWrapper.class),
 
-        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolDescriptor.class) })
+        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = FileWrapper.class) })
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(
         @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, PLAIN_CWL, PLAIN_WDL") @PathParam("type") String type,
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
@@ -152,12 +152,12 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}/{type}/descriptor/{relative_path}")
     @UnitOfWork
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = ToolDescriptor.class, tags = {
+    @io.swagger.annotations.ApiOperation(value = "Get additional tool descriptor files (CWL/WDL) relative to the main file", notes = "Returns additional CWL or WDL descriptors for the specified tool in the same or subdirectories", response = FileWrapper.class, tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = ToolDescriptor.class),
+        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool descriptor.", response = FileWrapper.class),
 
-        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolDescriptor.class) })
+        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = FileWrapper.class) })
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(
         @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return.  Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, PLAIN_CWL, PLAIN_WDL") @PathParam("type") String type,
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
@@ -172,12 +172,12 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}/{type}/tests")
     @UnitOfWork
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get an array of test JSONs suitable for use with this descriptor type.", notes = "", response = ToolTests.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(value = "Get an array of test JSONs suitable for use with this descriptor type.", notes = "", response = ToolTestsV1.class, responseContainer = "List", tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool test JSON response.", response = ToolTests.class, responseContainer = "List"),
+        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool test JSON response.", response = ToolTestsV1.class, responseContainer = "List"),
 
-        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolTests.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolTestsV1.class, responseContainer = "List") })
     public Response toolsIdVersionsVersionIdTypeTestsGet(
         @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, PLAIN_CWL, PLAIN_WDL") @PathParam("type") String type,
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,

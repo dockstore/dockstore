@@ -25,10 +25,9 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.model.ToolClass;
-import io.swagger.client.model.ToolDescriptor;
+import io.swagger.model.FileWrapper;
 import io.swagger.model.Metadata;
 import io.swagger.model.Tool;
-import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolFile;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -126,7 +125,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Override
     public void toolsIdVersionsVersionIdTypeDockerfile() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/containerfile");
-        List<ToolContainerfile> responseObject = response.readEntity(new GenericType<List<ToolContainerfile>>() {
+        List<FileWrapper> responseObject = response.readEntity(new GenericType<List<FileWrapper>>() {
         });
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject).contains("containerfile"));
     }
@@ -145,7 +144,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
-        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }

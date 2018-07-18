@@ -35,8 +35,8 @@ public class ToolDockerfile {
 
     private String url = null;
 
-    public ToolDockerfile(ToolContainerfile containerfile) {
-        this.dockerfile = containerfile.getContent();
+    public ToolDockerfile(FileWrapper containerfile) {
+        this.dockerfile = containerfile.getDescriptor();
         this.url = containerfile.getUrl();
     }
 

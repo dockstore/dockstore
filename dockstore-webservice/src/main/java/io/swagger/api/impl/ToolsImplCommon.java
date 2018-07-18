@@ -41,11 +41,9 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.swagger.model.DescriptorType;
+import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
-import io.swagger.model.ToolContainerfile;
-import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -66,6 +64,7 @@ public final class ToolsImplCommon {
      *
      * @param urlWithWorkDirectory
      * @param sourceFile The Dockstore SourceFile
+     * @param type the desired type from the webservice request
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
     static Object sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile, SourceFile.FileType type) {
@@ -81,26 +80,25 @@ public final class ToolsImplCommon {
         } else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
             resultType = DescriptorType.NFL;
         } else {
-            LOG.error("This source file is not a recognized descriptor.");
-            return null;
+            // just take the request word for it
+            switch (type) {
+            case DOCKSTORE_CWL:
+                resultType = DescriptorType.CWL;
+                break;
+            case DOCKSTORE_WDL:
+                resultType = DescriptorType.WDL;
+                break;
+            case NEXTFLOW:
+                resultType = DescriptorType.NFL;
+                break;
+            default:
+                LOG.error("This source file is not a recognized descriptor.");
+                return null;
+            }
         }
 
-        if (sourceFile.getType().equals(SourceFile.FileType.DOCKERFILE)) {
-            ToolContainerfile file = new ToolContainerfile();
-            file.setContent(sourceFile.getContent());
-            file.setUrl(url);
-            file.setType(resultType);
-            return file;
-        } else if (sourceFile.getType().equals(SourceFile.FileType.CWL_TEST_JSON) || sourceFile.getType().equals(SourceFile.FileType.WDL_TEST_JSON) ||
-            sourceFile.getType().equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
-            ToolTests file = new ToolTests();
-            file.setContent(sourceFile.getContent());
-            file.setUrl(url);
-            file.setType(resultType);
-            return file;
-        }
-        ToolDescriptor toolDescriptor = new ToolDescriptor();
-        toolDescriptor.setContent(sourceFile.getContent());
+        FileWrapper toolDescriptor = new FileWrapper();
+        toolDescriptor.setDescriptor(sourceFile.getContent());
         toolDescriptor.setUrl(url);
         toolDescriptor.setType(resultType);
         return toolDescriptor;
@@ -393,14 +391,14 @@ public final class ToolsImplCommon {
      * @param sourceFile The Dockstore SourceFile to convert
      * @return The resulting GA4GH ToolTests
      */
-    static ToolTests sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
+    static FileWrapper sourceFileToToolTests(String urlWithWorkDirectory, SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
         if (!type.equals(SourceFile.FileType.WDL_TEST_JSON) && !type.equals(SourceFile.FileType.CWL_TEST_JSON) && !type.equals(SourceFile.FileType.NEXTFLOW_TEST_PARAMS)) {
             LOG.error("This source file is not a recognized test file.");
         }
-        ToolTests toolTests = new ToolTests();
+        FileWrapper toolTests = new FileWrapper();
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
-        toolTests.setContent(sourceFile.getContent());
+        toolTests.setDescriptor(sourceFile.getContent());
         return toolTests;
     }
 

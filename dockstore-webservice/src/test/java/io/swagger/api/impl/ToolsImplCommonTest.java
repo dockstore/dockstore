@@ -30,11 +30,9 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.model.DescriptorType;
+import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
-import io.swagger.model.ToolDescriptor;
-import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -63,11 +61,11 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        ToolDescriptor actualToolDescriptor = (ToolDescriptor)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile, SourceFile.FileType.DOCKSTORE_WDL);
-        ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
+        FileWrapper actualToolDescriptor = (FileWrapper)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile, SourceFile.FileType.DOCKSTORE_WDL);
+        FileWrapper expectedToolDescriptor = new FileWrapper();
         expectedToolDescriptor.setType(DescriptorType.WDL);
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
-        expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
+        expectedToolDescriptor.setDescriptor(PLACEHOLDER_CONTENT);
         assertEquals(expectedToolDescriptor, actualToolDescriptor);
     }
 
@@ -78,11 +76,11 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        ToolDescriptor actualToolDescriptor = (ToolDescriptor)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile, SourceFile.FileType.DOCKSTORE_CWL);
-        ToolDescriptor expectedToolDescriptor = new ToolDescriptor();
+        FileWrapper actualToolDescriptor = (FileWrapper)ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile, SourceFile.FileType.DOCKSTORE_CWL);
+        FileWrapper expectedToolDescriptor = new FileWrapper();
         expectedToolDescriptor.setType(DescriptorType.CWL);
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
-        expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
+        expectedToolDescriptor.setDescriptor(PLACEHOLDER_CONTENT);
         assertEquals(expectedToolDescriptor, actualToolDescriptor);
     }
 
@@ -184,7 +182,7 @@ public class ToolsImplCommonTest {
         Tool actualTool = ToolsImplCommon.convertEntryToTool(tool, actualConfig);
         actualTool.setMetaVersion(null);
         actualTool.getVersions().parallelStream().forEach(version -> version.setMetaVersion(null));
-        Assert.assertEquals(expectedTool, actualTool);
+        assertEquals(expectedTool, actualTool);
 
     }
 
@@ -337,7 +335,7 @@ public class ToolsImplCommonTest {
         List<ToolVersion> versions = actualTool.getVersions();
         versions.forEach(version -> version.setMetaVersion(null));
         actualTool.setVersions(versions);
-        Assert.assertEquals(expectedTool, actualTool);
+        assertEquals(expectedTool, actualTool);
     }
 
     @Test
@@ -347,9 +345,9 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        ToolTests actualToolTests = ToolsImplCommon.sourceFileToToolTests("", sourceFile);
-        ToolTests expectedToolTests = new ToolTests();
-        expectedToolTests.setContent(PLACEHOLDER_CONTENT);
+        FileWrapper actualToolTests = ToolsImplCommon.sourceFileToToolTests("", sourceFile);
+        FileWrapper expectedToolTests = new FileWrapper();
+        expectedToolTests.setDescriptor(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");
         assertEquals(expectedToolTests, actualToolTests);
     }

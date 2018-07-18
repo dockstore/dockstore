@@ -21,16 +21,16 @@ import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import io.swagger.model.FileWrapper;
 import io.swagger.model.Metadata;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.Tool;
-import io.swagger.model.ToolContainerfile;
-import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersion;
 import io.swagger.model.ToolVersionV1;
 
 /**
+ * Converts between the V2 version of the GA4GH TRS to V1
  * @author gluu
  * @since 21/12/17
  */
@@ -51,8 +51,9 @@ public final class ApiVersionConverter {
                         ToolVersion toolVersion = (ToolVersion)innerObject;
                         newArrayList.add(new ToolVersionV1(toolVersion));
                     } else {
-                        if (innerObject instanceof ToolContainerfile) {
-                            return getResponse(new ToolDockerfile((ToolContainerfile)innerObject), response.getHeaders());
+                        if (innerObject instanceof FileWrapper) {
+                            System.out.println();
+                            //return getResponse(new ToolDockerfile((ToolContainerfile)innerObject), response.getHeaders());
                         } else {
                             return getResponse(object, response.getHeaders());
                         }
@@ -72,10 +73,11 @@ public final class ApiVersionConverter {
             Metadata metadata = (Metadata)object;
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
-        } else if (object instanceof ToolContainerfile) {
-            ToolContainerfile containerfile = (ToolContainerfile)object;
-            ToolDockerfile dockerfile = new ToolDockerfile(containerfile);
-            return getResponse(dockerfile, response.getHeaders());
+        } else if (object instanceof FileWrapper) {
+            System.out.println();
+//            FileWrapper containerfile = (FileWrapper)object;
+//            ToolDescriptor dockerfile = new ToolDescriptor(containerfile);
+//            return getResponse(dockerfile, response.getHeaders());
         }
         return response;
     }

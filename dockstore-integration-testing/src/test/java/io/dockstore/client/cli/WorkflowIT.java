@@ -48,13 +48,12 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.FileFormat;
+import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Tool;
-import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolFile;
-import io.swagger.client.model.ToolTests;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
@@ -193,15 +192,15 @@ public class WorkflowIT extends BaseIT {
             exceptionThrown = true;
         }
         assertTrue(exceptionThrown);
-        ToolDescriptor adminToolDesciptor = adminGa4Ghv2Api
+        FileWrapper adminToolDesciptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
-        assertTrue("could not get content via optional auth", adminToolDesciptor != null && !adminToolDesciptor.getContent().isEmpty());
+        assertTrue("could not get content via optional auth", adminToolDesciptor != null && !adminToolDesciptor.getDescriptor().isEmpty());
 
         workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
             public Boolean isPublish() { return true;}
         });
         // check on URLs for workflows via ga4gh calls
-        ToolDescriptor toolDescriptor = adminGa4Ghv2Api
+        FileWrapper toolDescriptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
@@ -730,7 +729,7 @@ public class WorkflowIT extends BaseIT {
 
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        ToolDescriptor toolDescriptor = ga4Ghv2Api
+        FileWrapper toolDescriptor = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL, "symbolic.v1");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
@@ -756,7 +755,7 @@ public class WorkflowIT extends BaseIT {
      */
     private void checkForRelativeFile(Ga4GhApi ga4Ghv2Api, String dockstoreTestUser2RelativeImportsTool, String reference, String filename)
         throws IOException, URISyntaxException {
-        ToolDescriptor toolDescriptor;
+        FileWrapper toolDescriptor;
         String content;
         toolDescriptor = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", dockstoreTestUser2RelativeImportsTool, reference, filename);
@@ -877,7 +876,7 @@ public class WorkflowIT extends BaseIT {
         });
         // check on URLs for workflows via ga4gh calls
         Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        ToolDescriptor toolDescriptor = ga4Ghv2Api
+        FileWrapper toolDescriptor = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
@@ -892,10 +891,10 @@ public class WorkflowIT extends BaseIT {
         assertTrue("all files should have relative paths", toolFiles.stream().filter(toolFile -> !toolFile.getPath().startsWith("/")).count() >= 5);
 
         // check on urls created for test files
-        List<ToolTests> toolTests = ga4Ghv2Api
+        List<FileWrapper> toolTests = ga4Ghv2Api
             .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
         assertTrue("could not find tool tests", toolTests.size() > 0);
-        for(ToolTests test: toolTests) {
+        for(FileWrapper test: toolTests) {
             content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
             Assert.assertTrue("could not find content from generated test JSON URL", !content.isEmpty());
         }
@@ -952,16 +951,16 @@ public class WorkflowIT extends BaseIT {
         toolFiles.forEach(file -> {
             if (file.getFileType() == ToolFile.FileTypeEnum.TEST_FILE) {
                 // enable later with a simplification to TRS
-                ToolDescriptor test = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
+                FileWrapper test = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
-                assertTrue("test exists", !test.getContent().isEmpty());
+                assertTrue("test exists", !test.getDescriptor().isEmpty());
                 assertNotNull("type was null", test.getType());
                 count.incrementAndGet();
             } else if (file.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR || file.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) {
                 // annoyingly, some files are tool tests, some are tooldescriptor
-                ToolDescriptor toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
+                FileWrapper toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
-                assertTrue("descriptor exists", !toolDescriptor.getContent().isEmpty());
+                assertTrue("descriptor exists", !toolDescriptor.getDescriptor().isEmpty());
                 assertNotNull("type was null", toolDescriptor.getType());
                 count.incrementAndGet();
             } else {

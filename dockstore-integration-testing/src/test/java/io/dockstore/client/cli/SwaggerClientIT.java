@@ -63,7 +63,7 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
-import io.swagger.client.model.ToolDescriptor;
+import io.swagger.client.model.FileWrapper;
 import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
@@ -472,9 +472,9 @@ public class SwaggerClientIT {
         final ToolDockerfile toolDockerfile = toolApi
                 .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final ToolDescriptor cwl = toolApi
+        final FileWrapper cwl = toolApi
                 .toolsIdVersionsVersionIdTypeDescriptorGet("cwl","registry.hub.docker.com/seqware/seqware/test5", "master");
-        assertTrue(cwl.getContent().contains("cwlstuff"));
+        assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();

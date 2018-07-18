@@ -60,9 +60,8 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.Error;
-import io.swagger.model.ToolContainerfile;
+import io.swagger.model.FileWrapper;
 import io.swagger.model.ToolFile;
-import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -502,27 +501,27 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     LOG.warn("intentionally ignoring failure to get source files", e);
                 }
 
-                List<ToolTests> toolTestsList = new ArrayList<>();
+                List<FileWrapper> toolTestsList = new ArrayList<>();
 
                 for (SourceFile file : testSourceFiles) {
-                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
+                    FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
                     toolTestsList.add(toolTests);
                 }
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
-                    unwrap ? toolTestsList.stream().map(ToolTests::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n"))
+                    unwrap ? toolTestsList.stream().map(FileWrapper::getDescriptor).filter(Objects::nonNull).collect(Collectors.joining("\n"))
                         : toolTestsList).build();
             case DOCKERFILE:
                 Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
                     .filter(sourcefile -> ((SourceFile)sourcefile).getType() == SourceFile.FileType.DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
-                    ToolContainerfile dockerfile = new ToolContainerfile();
-                    dockerfile.setContent(potentialDockerfile.get().getContent());
+                    FileWrapper dockerfile = new FileWrapper();
+                    dockerfile.setDescriptor(potentialDockerfile.get().getContent());
                     dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
                     toolVersion.setContainerfile(true);
-                    List<ToolContainerfile> containerfilesList = new ArrayList<>();
+                    List<FileWrapper> containerfilesList = new ArrayList<>();
                     containerfilesList.add(dockerfile);
                     return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
+                        .entity(unwrap ? dockerfile.getDescriptor() : containerfilesList).build();
                 }
             default:
                 Set<String> primaryDescriptors = new HashSet<>();
