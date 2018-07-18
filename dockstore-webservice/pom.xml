@@ -863,7 +863,7 @@
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
                 <configuration>
-                    <inputSpec>https://raw.githubusercontent.com/ga4gh/tool-registry-service-schemas/feature/search/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
+                    <inputSpec>https://raw.githubusercontent.com/ga4gh/tool-registry-service-schemas/9b3f735535437c0b666207abe107e6e539761765/src/main/resources/swagger/ga4gh-tool-discovery.yaml</inputSpec>
                     <language>jaxrs</language>
                     <configOptions>
                         <dateLibrary>legacy</dateLibrary>
