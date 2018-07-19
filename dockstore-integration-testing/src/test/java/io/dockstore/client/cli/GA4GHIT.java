@@ -60,7 +60,7 @@ public abstract class GA4GHIT {
     protected abstract String getApiVersion();
 
     /**
-     * This tests the /testMetadata endpoint
+     * This tests the /metadata endpoint
      */
     @Test
     public abstract void testMetadata() throws Exception;

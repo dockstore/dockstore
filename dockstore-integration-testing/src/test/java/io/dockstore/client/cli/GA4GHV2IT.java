@@ -205,7 +205,7 @@ public class GA4GHV2IT extends GA4GHIT {
     public void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
@@ -219,13 +219,13 @@ public class GA4GHV2IT extends GA4GHIT {
         Response response = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//nested/test.cwl.json");
         String responseObject = response.readEntity(String.class);
-        assertEquals(200, response.getStatus());
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
 
         Response response2 = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//test.cwl.json");
         String responseObject2 = response2.readEntity(String.class);
-        assertEquals(200, response2.getStatus());
+        assertEquals(HttpStatus.SC_OK, response2.getStatus());
         assertEquals("potato", responseObject2);
     }
 
@@ -243,12 +243,12 @@ public class GA4GHV2IT extends GA4GHIT {
         Response response = checkedResponse(basePath
             + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//nested/test.cwl.json");
         String responseObject = response.readEntity(String.class);
-        assertEquals(200, response.getStatus());
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
         Response response2 = checkedResponse(
             basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//test.cwl.json");
         String responseObject2 = response2.readEntity(String.class);
-        assertEquals(200, response2.getStatus());
+        assertEquals(HttpStatus.SC_OK, response2.getStatus());
         assertEquals("potato", responseObject2);
     }
 
