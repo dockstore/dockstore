@@ -41,6 +41,8 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import scala.collection.JavaConversions;
 import scala.collection.immutable.List;
@@ -53,6 +55,12 @@ import scala.collection.immutable.List;
 public class CromwellIT {
 
     @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     @Test
@@ -60,7 +68,7 @@ public class CromwellIT {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl.wdl"));
         final java.util.List<String> wdlDocuments = Lists.newArrayList(sourceFile.getAbsolutePath());
         final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
-        Bridge bridge = new Bridge();
+        Bridge bridge = new Bridge(sourceFile.getParent());
         String inputs = bridge.inputs(wdlList);
         Assert.assertTrue(inputs.contains("three_step.cgrep.pattern"));
     }
@@ -104,7 +112,7 @@ public class CromwellIT {
             .orElseThrow(RuntimeException::new);
         File workflowFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.wdl"));
         File parameterFile = new File(ResourceHelpers.resourceFilePath("wdlfileprov.json"));
-        Bridge bridge = new Bridge();
+        Bridge bridge = new Bridge(workflowFile.getParent());
         Map<String, String> wdlInputs = bridge.getInputFiles(workflowFile);
 
         WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(ResourceHelpers.resourceFilePath("config_file.txt"));
@@ -131,7 +139,7 @@ public class CromwellIT {
     public void testWDLResolver() {
         // If resolver works, this should throw no errors
         File sourceFile = new File(ResourceHelpers.resourceFilePath("wdl-sanger-workflow.wdl"));
-        Bridge bridge = new Bridge();
+        Bridge bridge = new Bridge(sourceFile.getParent());
         HashMap<String, String> secondaryFiles = new HashMap<>();
         secondaryFiles.put("wdl.wdl",
                 "task ps {\n" + "  command {\n" + "    ps\n" + "  }\n" + "  output {\n" + "    File procs = stdout()\n" + "  }\n" + "}\n"
@@ -170,7 +178,7 @@ public class CromwellIT {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("hello_world.wdl"));
         final java.util.List<String> wdlDocuments = Lists.newArrayList(sourceFile.getAbsolutePath());
         final List<String> wdlList = JavaConversions.asScalaBuffer(wdlDocuments).toList();
-        Bridge bridge = new Bridge();
+        Bridge bridge = new Bridge(sourceFile.getParent());
         String inputs = bridge.inputs(wdlList);
         Assert.assertTrue(inputs.contains("wf.hello_world.hello_input"));
     }

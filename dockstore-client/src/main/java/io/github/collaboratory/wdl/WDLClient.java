@@ -125,8 +125,8 @@ public class WDLClient implements LanguageClientInterface {
         if (!(yamlRun == null && jsonRun != null && csvRuns == null)) {
             errorMessage("dockstore: Missing required flag --json", CLIENT_ERROR);
         }
-        File parameterFile = new File(jsonRun);
 
+        File parameterFile = new File(jsonRun);
         File cromwellTargetFile = getCromwellTargetFile();
 
         final SourceFile wdlFromServer;
@@ -134,25 +134,20 @@ public class WDLClient implements LanguageClientInterface {
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
         try {
-            // Grab WDL from server and store to file
-            final File tempDir = Files.createTempDir();
-            File tmp;
+            final File tempLaunchDirectory = Files.createTempDir();
+            File localPrimaryDescriptorFile;
             if (!isLocalEntry) {
-                wdlFromServer = abstractEntryClient.getDescriptorFromServer(entry, "wdl");
-                File tempDescriptor = File.createTempFile("temp", ".wdl", tempDir);
-                Files.asCharSink(tempDescriptor, StandardCharsets.UTF_8).write(wdlFromServer.getContent());
-                abstractEntryClient.downloadDescriptors(entry, "wdl", tempDir);
-
-                tmp = resolveImportsForDescriptor(tempDir, tempDescriptor);
+                // Grab WDL(s) from server and store in a temporary directory, maintaining directory structure
+                localPrimaryDescriptorFile = abstractEntryClient.downloadDescriptorFiles(entry, WDL_STRING, tempLaunchDirectory);
             } else {
-                tmp = new File(entry);
+                localPrimaryDescriptorFile = new File(entry);
             }
 
             // Get list of input files
-            Bridge bridge = new Bridge();
+            Bridge bridge = new Bridge(localPrimaryDescriptorFile.getParent());
             Map<String, String> wdlInputs = null;
             try {
-                wdlInputs = bridge.getInputFiles(tmp);
+                wdlInputs = bridge.getInputFiles(localPrimaryDescriptorFile);
             } catch (NullPointerException e) {
                 exceptionMessage(e, "Could not get WDL imports: " + e.getMessage(), API_ERROR);
             }
@@ -163,16 +158,23 @@ public class WDLClient implements LanguageClientInterface {
             String jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
             final List<String> wdlRun;
-            // Download files and change to local location
-            // Make a new map of the inputs with updated locations
-            final String workingDir = Paths.get(".").toAbsolutePath().normalize().toString();
+
+            // The working directory is based on the location of the primary descriptor
+            String workingDir;
+            if (!isLocalEntry) {
+                workingDir = tempLaunchDirectory.getAbsolutePath();
+            } else {
+                workingDir = Paths.get(entry).toAbsolutePath().normalize().getParent().toString();
+            }
+
+            // Else if local entry then need to get parent path of entry variable (path)
             System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
             notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
             try {
                 Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
                 // Make new json file
                 String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-                wdlRun = Lists.newArrayList(tmp.getAbsolutePath(), "--inputs", newJsonPath);
+                wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
             } catch (Exception e) {
                 notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
                 throw e;
@@ -196,7 +198,7 @@ public class WDLClient implements LanguageClientInterface {
                 // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
                 final String join = Joiner.on(" ").join(arguments);
                 System.out.println(join);
-                final ImmutablePair<String, String> execute = Utilities.executeCommand(join);
+                final ImmutablePair<String, String> execute = Utilities.executeCommand(join, localPrimaryDescriptorFile.getParentFile());
                 stdout = execute.getLeft();
                 stderr = execute.getRight();
             } catch (RuntimeException e) {
@@ -228,7 +230,7 @@ public class WDLClient implements LanguageClientInterface {
                     // grab values from output JSON
                     Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
                     System.out.println("Provisioning your output files to their final destinations");
-                    final List<String> outputFiles = bridge.getOutputFiles(tmp);
+                    final List<String> outputFiles = bridge.getOutputFiles(localPrimaryDescriptorFile);
                     FileProvisioning fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
                     List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
                     for (String outFile : outputFiles) {
@@ -260,38 +262,6 @@ public class WDLClient implements LanguageClientInterface {
         }
         notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
         return 0;
-    }
-
-    /**
-     * @param tempDir
-     * @param tempDescriptor
-     * @return
-     * @throws IOException
-     */
-    private File resolveImportsForDescriptor(File tempDir, File tempDescriptor) throws IOException {
-        File tmp;
-        Pattern p = Pattern.compile("^import\\s+\"(\\S+)\"(.*)");
-        File file = new File(tempDescriptor.getAbsolutePath());
-        List<String> lines = FileUtils.readLines(file, StandardCharsets.UTF_8);
-        tmp = new File(tempDir + File.separator + "overwrittenImports.wdl");
-
-        // Replace relative imports with absolute (to temp dir)
-        for (String line : lines) {
-            Matcher m = p.matcher(line);
-            if (!m.find()) {
-                FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
-            } else {
-                if (!m.group(1).startsWith("https://") && !m.group(1).startsWith("http://")) { // Don't resolve URLs
-                    if (!m.group(1).startsWith(File.separator)) { // what is the purpose of this line?
-                        String newImportLine = "import \"" + file.getParent() + File.separator + m.group(1) + "\"" + m.group(2) + "\n";
-                        FileUtils.writeStringToFile(tmp, newImportLine, StandardCharsets.UTF_8, true);
-                    }
-                } else {
-                    FileUtils.writeStringToFile(tmp, line + "\n", StandardCharsets.UTF_8, true);
-                }
-            }
-        }
-        return tmp;
     }
 
     /**
@@ -379,12 +349,10 @@ public class WDLClient implements LanguageClientInterface {
         final File tempDir = Files.createTempDir();
         final File primaryFile = abstractEntryClient.downloadDescriptorFiles(entry, WDL_STRING, tempDir);
 
-        File tmp;
         if (json) {
-            tmp = resolveImportsForDescriptor(tempDir, primaryFile);
-            final List<String> wdlDocuments = Lists.newArrayList(tmp.getAbsolutePath());
+            final List<String> wdlDocuments = Lists.newArrayList(primaryFile.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge bridge = new Bridge();
+            Bridge bridge = new Bridge(primaryFile.getParent());
             return bridge.inputs(wdlList);
         }
         return null;
