@@ -180,27 +180,31 @@ public class WorkflowIT extends BaseIT {
         assertEquals("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
                 .filter(WorkflowVersion::isValid).count(), 4,
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
+
+        // should not be able to get content normally
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getAnonWebClient());
+        Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(webClient);
+        boolean exceptionThrown = false;
+        try {
+            anonymousGa4Ghv2Api
+                .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
+        } catch (ApiException e) {
+            exceptionThrown = true;
+        }
+        assertTrue(exceptionThrown);
+        ToolDescriptor adminToolDesciptor = adminGa4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
+        assertTrue("could not get content via optional auth", adminToolDesciptor != null && !adminToolDesciptor.getDescriptor().isEmpty());
+
         workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
             public Boolean isPublish() { return true;}
         });
         // check on URLs for workflows via ga4gh calls
-        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
-        ToolDescriptor toolDescriptor = ga4Ghv2Api
+        ToolDescriptor toolDescriptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
-        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
-
-
-        workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
-            public Boolean isPublish() { return true;}
-        });
-        // check on URLs for workflows via ga4gh calls
-        toolDescriptor = ga4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
-        content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
-        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
-        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
+        checkForRelativeFile(adminGa4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
 
 
         // check on commit ids for github
@@ -855,6 +859,79 @@ public class WorkflowIT extends BaseIT {
         assertTrue("could not find tool tests", toolTests.size() > 0);
         for(ToolTests test: toolTests) {
             content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
+            Assert.assertTrue("could not find content from generated test JSON URL", !content.isEmpty());
+        }
+    }
+
+    @Test
+    public void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
+        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient());
+        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+        workflowApi.refresh(workflowByPathGithub.getId());
+
+        // should not be able to get content normally
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getAnonWebClient());
+        boolean thrownException = false;
+        try {
+            anonymousGa4Ghv2Api
+                .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        } catch (ApiException e) {
+            thrownException = true;
+        }
+        assert (thrownException);
+
+        boolean thrownListException = false;
+        try {
+            anonymousGa4Ghv2Api
+                .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        } catch (ApiException e) {
+            thrownListException = true;
+        }
+        assert (thrownListException);
+
+        // can get content via admin user
+        Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(getWebClient());
+
+        List<ToolFile> toolFiles = adminGa4Ghv2Api
+            .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        assertTrue("should have at least 5 files", toolFiles.size() >= 5);
+
+        // cannot get relative paths anonymously
+        toolFiles.forEach(file -> {
+            boolean thrownInnerException = false;
+            try {
+                anonymousGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL",
+                    "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master", file.getPath());
+            } catch (ApiException e) {
+                thrownInnerException = true;
+            }
+            assertTrue(thrownInnerException);
+        });
+
+        // can get relative paths with admin user
+        toolFiles.forEach(file -> {
+            if (file.getFileType() == ToolFile.FileTypeEnum.TEST_FILE) {
+                // enable later with a simplification to TRS
+//                ToolTests test = (ToolTests)adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
+//                    "master", file.getPath());
+//                assertTrue("test exists", !test.getTest().isEmpty());
+            } else if (file.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR || file.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) {
+                // annoyingly, some files are tool tests, some are tooldescriptor
+                ToolDescriptor toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
+                    "master", file.getPath());
+                assertTrue("descriptor exists", !toolDescriptor.getDescriptor().isEmpty());
+            } else {
+                fail();
+            }
+        });
+
+        // check on urls created for test files
+        List<ToolTests> toolTests = adminGa4Ghv2Api
+            .toolsIdVersionsVersionIdTypeTestsGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
+        assertTrue("could not find tool tests", toolTests.size() > 0);
+        for (ToolTests test : toolTests) {
+            String content = IOUtils.toString(new URI(test.getUrl()), StandardCharsets.UTF_8);
             Assert.assertTrue("could not find content from generated test JSON URL", !content.isEmpty());
         }
     }

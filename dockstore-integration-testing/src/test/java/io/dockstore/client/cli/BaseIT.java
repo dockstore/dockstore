@@ -90,4 +90,18 @@ public class BaseIT {
             .runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>())));
         return client;
     }
+
+    /**
+     * Shared convenience method
+     * @return
+     * @throws IOException
+     * @throws TimeoutException
+     */
+    protected static ApiClient getAnonWebClient() {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        ApiClient client = new ApiClient();
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        return client;
+    }
 }

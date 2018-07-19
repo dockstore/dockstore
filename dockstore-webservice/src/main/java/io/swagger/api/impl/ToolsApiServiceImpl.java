@@ -50,12 +50,14 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.Error;
 import io.swagger.model.ToolContainerfile;
@@ -73,7 +75,7 @@ import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_CWL;
 import static io.dockstore.webservice.core.SourceFile.FileType.DOCKSTORE_WDL;
 import static io.dockstore.webservice.core.SourceFile.FileType.WDL_TEST_JSON;
 
-public class ToolsApiServiceImpl extends ToolsApiService {
+public class ToolsApiServiceImpl extends ToolsApiService implements AuthenticatedResourceInterface {
     private static final String GITHUB_PREFIX = "git@github.com:";
     private static final String BITBUCKET_PREFIX = "git@bitbucket.org:";
     private static final int SEGMENTS_IN_ID = 3;
@@ -101,16 +103,16 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value) {
+    public Response toolsIdGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Entry entry = getEntry(parsedID);
+        Entry entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, false);
     }
 
     @Override
-    public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value) {
+    public Response toolsIdVersionsGet(String id, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Entry entry = getEntry(parsedID);
+        Entry entry = getEntry(parsedID, user);
         return buildToolResponse(entry, null, true);
     }
 
@@ -144,18 +146,18 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value) {
+    public Response toolsIdVersionsVersionIdGet(String id, String versionId, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
         try {
             versionId = URLDecoder.decode(versionId, StandardCharsets.UTF_8.displayName());
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Entry entry = getEntry(parsedID);
+        Entry entry = getEntry(parsedID, user);
         return buildToolResponse(entry, versionId, false);
     }
 
-    public Entry<?,?> getEntry(ParsedRegistryID parsedID) {
+    public Entry<?,?> getEntry(ParsedRegistryID parsedID, Optional<User> user) {
         Entry<?,?> entry;
         String entryPath = parsedID.getPath();
         String entryName = parsedID.getToolName().isEmpty() ? null : parsedID.getToolName();
@@ -163,27 +165,36 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             entryPath += "/" + parsedID.getToolName();
         }
         if (parsedID.isTool()) {
-            entry = toolDAO.findByPath(entryPath, true);
+            entry = toolDAO.findByPath(entryPath, !user.isPresent());
         } else {
-            entry = workflowDAO.findByPath(entryPath, true);
+            entry = workflowDAO.findByPath(entryPath, !user.isPresent());
         }
-        return entry;
+        if (entry != null && entry.getIsPublished()) {
+            return entry;
+        }
+        if (entry != null && user.isPresent()) {
+            checkUser(user.get(), entry);
+            return entry;
+        }
+        return null;
     }
+
+
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value) {
+        ContainerRequestContext value, Optional<User> user) {
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, null,
-            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"), user);
     }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
-        SecurityContext securityContext, ContainerRequestContext value) {
+        SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -192,12 +203,12 @@ public class ToolsApiServiceImpl extends ToolsApiService {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, relativePath,
-            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"));
+            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"), user);
     }
 
     @Override
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value) {
+        ContainerRequestContext value, Optional<User> user) {
         if (type == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -212,14 +223,14 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
-            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, plainTextResponse);
+            return getFileByToolVersionID(id, versionId, CWL_TEST_JSON, null, plainTextResponse, user);
         case WDL_TEST_JSON:
         case DOCKSTORE_WDL:
-            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, plainTextResponse);
+            return getFileByToolVersionID(id, versionId, WDL_TEST_JSON, null, plainTextResponse, user);
         case NEXTFLOW:
         case NEXTFLOW_CONFIG:
         case NEXTFLOW_TEST_PARAMS:
-            return getFileByToolVersionID(id, versionId, SourceFile.FileType.NEXTFLOW_TEST_PARAMS, null, plainTextResponse);
+            return getFileByToolVersionID(id, versionId, SourceFile.FileType.NEXTFLOW_TEST_PARAMS, null, plainTextResponse, user);
         default:
             return Response.status(Response.Status.BAD_REQUEST).build();
         }
@@ -245,21 +256,21 @@ public class ToolsApiServiceImpl extends ToolsApiService {
 
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
-        ContainerRequestContext value) {
+        ContainerRequestContext value, Optional<User> user) {
         boolean unwrap = !value.getAcceptableMediaTypes().contains(MediaType.APPLICATION_JSON_TYPE);
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap);
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap, user);
     }
 
     @SuppressWarnings("CheckStyle")
     @Override
     public Response toolsGet(String id, String alias, String registry, String organization, String name, String toolname, String description,
-        String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value) {
+        String author, Boolean checker, String offset, Integer limit, SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         final List<Entry> all = new ArrayList<>();
 
         // short circuit id and alias filters, these are a bit weird because they have a max of one result
         if (id != null) {
             ParsedRegistryID parsedID = new ParsedRegistryID(id);
-            Entry entry = getEntry(parsedID);
+            Entry entry = getEntry(parsedID, user);
             all.add(entry);
         } else if (alias != null) {
             all.add(toolDAO.getGenericEntryByAlias(alias));
@@ -424,7 +435,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
      * @return a specific file wrapped in a response
      */
     private Response getFileByToolVersionID(String registryId, String versionId, SourceFile.FileType type, String relativePath,
-        boolean unwrap) {
+        boolean unwrap, Optional<User> user) {
         // if a version is provided, get that version, otherwise return the newest
         ParsedRegistryID parsedID = new ParsedRegistryID(registryId);
         try {
@@ -432,13 +443,10 @@ public class ToolsApiServiceImpl extends ToolsApiService {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        Entry<?,?> entry = getEntry(parsedID);
+        Entry<?,?> entry = getEntry(parsedID, user);
         // check whether this is registered
         if (entry == null) {
             return Response.status(Response.Status.NOT_FOUND).build();
-        }
-        if (!entry.getIsPublished()) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
         final io.swagger.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config);
@@ -596,9 +604,9 @@ public class ToolsApiServiceImpl extends ToolsApiService {
     }
 
     @Override
-    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext containerRequestContext) {
+    public Response toolsIdVersionsVersionIdTypeFilesGet(String type, String id, String versionId, SecurityContext securityContext, ContainerRequestContext containerRequestContext, Optional<User> user) {
         ParsedRegistryID parsedID = new ParsedRegistryID(id);
-        Entry entry = getEntry(parsedID);
+        Entry entry = getEntry(parsedID, user);
         List<String> primaryDescriptorPaths = new ArrayList<>();
         if (entry instanceof Workflow) {
             Workflow workflow = (Workflow)entry;
@@ -631,7 +639,7 @@ public class ToolsApiServiceImpl extends ToolsApiService {
                 return Response.noContent().build();
             }
         } else {
-            return Response.noContent().build();
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
     }
 
