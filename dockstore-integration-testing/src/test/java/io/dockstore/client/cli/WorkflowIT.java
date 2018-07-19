@@ -190,7 +190,7 @@ public class WorkflowIT extends BaseIT {
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getAnonWebClient());
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false));
         Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(webClient);
         boolean exceptionThrown = false;
         try {
@@ -967,7 +967,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.refresh(workflowByPathGithub.getId());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getAnonWebClient());
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false));
         boolean thrownException = false;
         try {
             anonymousGa4Ghv2Api
