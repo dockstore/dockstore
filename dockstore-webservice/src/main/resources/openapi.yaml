@@ -2725,6 +2725,33 @@ paths:
               type: string
         description: Tag name to set as default.
         required: true
+  '/containers/{toolId}/zip/{tagId}':
+    get:
+      tags:
+        - containers
+      summary: Download a ZIP file of a tool and all associated files.
+      description: ''
+      operationId: getToolZip
+      parameters:
+        - name: toolId
+          in: path
+          description: toolId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: tagId
+          in: path
+          description: tagId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   '/entries/{id}/aliases':
     put:
       tags:
@@ -5108,6 +5135,33 @@ paths:
                 $ref: '#/components/schemas/WorkflowVersion'
         description: List of modified workflow versions
         required: true
+  '/workflows/{workflowId}/zip/{workflowVersionId}':
+    get:
+      tags:
+        - workflows
+      summary: Download a ZIP file of a workflow and all associated files.
+      description: ''
+      operationId: getWorkflowZip
+      parameters:
+        - name: workflowId
+          in: path
+          description: workflowId
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: workflowVersionId
+          in: path
+          description: workflowVersionId
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
 externalDocs:
   description: Dockstore documentation
   url: 'https://www.dockstore.org/docs/getting-started'
