@@ -41,7 +41,6 @@ import org.apache.commons.io.IOUtils;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
-import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 /**
  * This class will eventually handle support for NextFlow
@@ -113,47 +112,26 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     /**
-     * Grabs the path in the AST to the desired child node
-     *
-     * @param ast
-     * @param keyword
-     * @param groovyTokenType
-     * @return
-     */
-    private List<GroovySourceAST> extractTargetFromAST(GroovySourceAST ast, String keyword, int groovyTokenType) {
-        if (ast == null) {
-            return null;
-        }
-        if (ast.getType() == groovyTokenType && ast.getText().equals(keyword)) {
-            return Lists.newArrayList(ast);
-        }
-
-        int numChildren = ast.getNumberOfChildren();
-        for (int i = 0; i < numChildren; i++) {
-            GroovySourceAST groovySourceAST = ast.childAt(i);
-            List<GroovySourceAST> target = extractTargetFromAST(groovySourceAST, keyword, groovyTokenType);
-            if (target != null) {
-                target.add(ast);
-                return target;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Returns the first AST found with some keyword
      * @param ast
-     * @param keyword
+     * @param keyword text to search node for (exact match)
+     * @param compareChild if true will check first child for keyword, if false will check current node
      * @return
      */
-    private GroovySourceAST getFirstAstWithKeyword(GroovySourceAST ast, String keyword) {
+    private GroovySourceAST getFirstAstWithKeyword(GroovySourceAST ast, String keyword, boolean compareChild) {
         // Base case
         if (ast == null) {
             return null;
         }
 
-        if (Objects.equals(ast.getText(), keyword)) {
-            return ast;
+        if (compareChild) {
+            if (ast.getFirstChild() != null && Objects.equals(ast.getFirstChild().getText(), keyword)) {
+                return ast;
+            }
+        } else {
+            if (Objects.equals(ast.getText(), keyword)) {
+                return ast;
+            }
         }
 
         int numChildren = ast.getNumberOfChildren();
@@ -161,77 +139,49 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
         for (int i = 0; i < numChildren; i++) {
             GroovySourceAST groovySourceAST = ast.childAt(i);
-            subtree = getFirstAstWithKeyword(groovySourceAST, keyword);
+            subtree = getFirstAstWithKeyword(groovySourceAST, keyword, compareChild);
             if (subtree != null) {
                 break;
             }
         }
 
         if (subtree == null && ast.getNextSibling() != null) {
-            subtree = getFirstAstWithKeyword((GroovySourceAST)ast.getNextSibling(), keyword);
+            subtree = getFirstAstWithKeyword((GroovySourceAST)ast.getNextSibling(), keyword, compareChild);
         }
         return subtree;
     }
 
-    /**
-     * Returns the first AST found with a child of some keyword
-     * @param ast
-     * @return
-     */
-    private GroovySourceAST getAstWhereChildHasSomeKeyword(GroovySourceAST ast, String keyword) {
-        // Base case
-        if (ast == null) {
-            return null;
-        }
-
-        if (ast.getFirstChild() != null && Objects.equals(ast.getFirstChild().getText(), keyword)) {
-            return ast;
-        }
-
-        int numChildren = ast.getNumberOfChildren();
-        GroovySourceAST subtree = null;
-
-        for (int i = 0; i < numChildren; i++) {
-            GroovySourceAST groovySourceAST = ast.childAt(i);
-            subtree = getAstWhereChildHasSomeKeyword(groovySourceAST, keyword);
-            if (subtree != null) {
-                break;
-            }
-        }
-
-        if (subtree == null && ast.getNextSibling() != null) {
-            subtree = getAstWhereChildHasSomeKeyword((GroovySourceAST)ast.getNextSibling(), keyword);
-        }
-        return subtree;
-    }
 
     /**
      * Given an AST for an EXPR will return the text name
+     * @param exprAST
+     * @return Input channel name
+     */
+    private String getInputChannelNameForEXPR(GroovySourceAST exprAST) {
+        return exprAST == null ? null: exprAST.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getText();
+    }
+
+
+    /**
+     * Given an AST for a process, returns the name of the process
+     * @param processAST
+     * @return Process name
+     */
+    private String getProcessValue(GroovySourceAST processAST) {
+        return processAST == null ? null: processAST.getNextSibling().getFirstChild().getFirstChild().getText();
+    }
+
+    /**
+     * Get a list of all channel names for either inputs or outputs of an EXPR
      * @param ast
      * @return
      */
-    private String getInputFileForEXPR(GroovySourceAST ast) {
-        if (ast == null) {
-            return null;
-        } else {
-            return ast.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getText();
-        }
-    }
-
-    private String getProcessValue(GroovySourceAST ast) {
-        return ast.getNextSibling().getFirstChild().getFirstChild().getText();
-    }
-
     private List<String> getListOfIO(GroovySourceAST ast) {
         List<String> inputs = new ArrayList<>();
-        // get first child pair
-        GroovySourceAST firstEXPR = getFirstAstWithKeyword(ast, "EXPR");
-
-        // add to array
-        inputs.add(getInputFileForEXPR(firstEXPR));
-
-        // recursively grab children
-        if (!(ast.getNextSibling() != null && ast.getNextSibling().getFirstChild() != null && Objects.equals(ast.getNextSibling().getFirstChild().getText(), "output"))) {
+        GroovySourceAST firstEXPR = getFirstAstWithKeyword(ast, "EXPR", false);
+        inputs.add(getInputChannelNameForEXPR(firstEXPR));
+        // This is specific to inputs and probably needs to be changed
+        if (!(ast != null && ast.getNextSibling() != null && ast.getNextSibling().getFirstChild() != null && Objects.equals(ast.getNextSibling().getFirstChild().getText(), "output"))) {
             if (ast != null && ast.getNextSibling() != null) {
                 inputs.addAll(getListOfIO((GroovySourceAST) ast.getNextSibling()));
             }
@@ -260,8 +210,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         int numChildren = ast.getNumberOfChildren();
 
         for (int i = 0; i < numChildren; i++) {
-            GroovySourceAST groovySourceAST = ast.childAt(i);
-            subtrees.addAll(getSubtreesOfKeyword(groovySourceAST, keyword));
+            GroovySourceAST childAST = ast.childAt(i);
+            subtrees.addAll(getSubtreesOfKeyword(childAST, keyword));
         }
 
         if (ast.getNextSibling() != null) {
@@ -273,21 +223,34 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
 
     /**
-     * Returns a list of input dependencies
-     * @param ast
+     * Returns a list of input channels the process AST depends on
+     * @param processAST
      * @return
      */
-    private List<String> getInputDependencyList(GroovySourceAST ast) {
-        GroovySourceAST inputAST = getAstWhereChildHasSomeKeyword(ast, "input");
-        List<String> results = getListOfIO(inputAST);
-        return results;
+    private List<String> getInputDependencyList(GroovySourceAST processAST) {
+        GroovySourceAST inputAST = getFirstAstWithKeyword(processAST, "input", true);
+        if (inputAST != null) {
+            List<String> results = getListOfIO(inputAST);
+            return results;
+        } else {
+            return new ArrayList<>();
+        }
     }
 
-    private List<String> getOutputDependencyList(GroovySourceAST ast) {
-        GroovySourceAST outputAst = getAstWhereChildHasSomeKeyword(ast, "output");
-        outputAst.setNextSibling(null);
-        List<String> results = getListOfIO(outputAst);
-        return results;
+    /**
+     * Returns a list of all channels written to by the given process AST
+     * @param processAST
+     * @return
+     */
+    private List<String> getOutputDependencyList(GroovySourceAST processAST) {
+        GroovySourceAST outputAst = getFirstAstWithKeyword(processAST, "output", true);
+        if (outputAst != null) {
+            outputAst.setNextSibling(null);
+            List<String> results = getListOfIO(outputAst);
+            return results;
+        } else {
+            return new ArrayList<>();
+        }
     }
 
     @Override
@@ -355,13 +318,10 @@ public class NextFlowHandler implements LanguageHandlerInterface {
                 processNameToOutputChannels.put(processName, outputs);
             }
 
-            // For each process
+            // Create a map of process name to dependent processes
             for (String processName : processNameToInputChannels.keySet()) {
                 List<String> dependencies = new ArrayList<>();
-
-                // For each input dependency
                 for (String channelRead : processNameToInputChannels.get(processName)) {
-                    // Find if in another process' output dependency
                     for (String dependentProcessName : processNameToOutputChannels.keySet()) {
                         for (String channelWrite : processNameToOutputChannels.get(dependentProcessName)) {
                             if (Objects.equals(channelRead, channelWrite)) {
@@ -385,29 +345,22 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
             make.compilationUnit();
             GroovySourceAST ast = (GroovySourceAST)make.getAST();
-            while (ast != null) {
-                List<GroovySourceAST> target = extractTargetFromAST(ast, "container", GroovyTokenTypes.IDENT);
-                if (target != null) {
-                    String processName = getProcessName(target.get(target.size() - 1));
-                    String containerName = target.get(0).getNextSibling().getFirstChild().getText();
+
+
+            List<GroovySourceAST> processList = getSubtreesOfKeyword(ast, "process");
+
+            for (GroovySourceAST processAST : processList) {
+                String processName = getProcessValue(processAST);
+                GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
+                if (containerAST != null) {
+                    String containerName = containerAST.getNextSibling().getFirstChild().getText();
                     map.put(processName, containerName);
                     LOG.debug("found container: " + containerName + " in process " + processName);
                 }
-                ast = (GroovySourceAST)ast.getNextSibling();
             }
         } catch (IOException | TokenStreamException | RecognitionException e) {
             LOG.warn("could not parse", e);
         }
         return map;
-    }
-
-    /**
-     * Gets name of process, this really really sucks, but we can write a test with this and find a better way
-     *
-     * @param ast
-     * @return
-     */
-    private String getProcessName(GroovySourceAST ast) {
-        return ast.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getFirstChild().getText();
     }
 }
