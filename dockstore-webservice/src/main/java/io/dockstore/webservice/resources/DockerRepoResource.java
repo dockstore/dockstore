@@ -16,7 +16,6 @@
 
 package io.dockstore.webservice.resources;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +39,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1038,15 +1038,16 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         }
     }
 
-
     @GET
     @Timed
     @UnitOfWork
     @Path("/{toolId}/zip/{tagId}")
-    @ApiOperation(value = "Download a ZIP file of a tool and all associated files.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "Download a ZIP file of a tool and all associated files.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @Produces("application/zip")
-    public Response getToolZip(@ApiParam(hidden = true) @Auth Optional<User> user, @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
-                                   @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
+    public Response getToolZip(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
+        @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
         Tool tool;
         if (user.isPresent()) {
             tool = toolDAO.findById(toolId);
@@ -1057,18 +1058,16 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             checkEntry(tool);
         }
 
-        Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst().orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));
+        Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
+            .orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));
         Set<SourceFile> sourceFiles = tag.getSourceFiles();
         if (sourceFiles == null || sourceFiles.size() == 0) {
-            return null;
+            throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
         }
 
         String fileName = tool.getToolPath().replaceAll("/", "-") + ".zip";
 
-        File returnZipFile = downloadAsZip(sourceFiles, fileName);
-        return Response
-                .ok(returnZipFile)
-                .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
-                .build();
+        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
+            .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 }

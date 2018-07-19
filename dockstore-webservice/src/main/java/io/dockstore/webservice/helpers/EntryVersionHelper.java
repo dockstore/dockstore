@@ -16,9 +16,8 @@
 
 package io.dockstore.webservice.helpers;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,6 @@ import java.util.zip.ZipOutputStream;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -310,22 +308,16 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     /**
      * Creates a zip file in the tmp dir for the given files
      * @param sourceFiles Set of sourcefiles
-     * @param fileName Name of zip file
      * @return Zip file
      */
-    default File downloadAsZip(Set<SourceFile> sourceFiles, String fileName) {
-        File tempDir = Files.createTempDir();
-        String filePath = tempDir + "/" + fileName;
-
-        try (FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream)) {
+    default void writeStreamAsZip(Set<SourceFile> sourceFiles, OutputStream outputStream) {
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
                 ZipEntry secondaryZipEntry = new ZipEntry(sourceFile.getPath());
                 zipOutputStream.putNextEntry(secondaryZipEntry);
                 zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));
             }
-            return new File(filePath);
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
