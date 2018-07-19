@@ -15,9 +15,6 @@
  */
 package io.dockstore.client.cli;
 
-import java.util.List;
-
-import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -25,8 +22,8 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.DropwizardTestSupport;
+import io.swagger.client.model.FileWrapper;
 import io.swagger.model.Error;
-import io.swagger.model.FileWrapper;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
@@ -44,7 +41,7 @@ import static org.junit.Assert.assertEquals;
  */
 public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
     protected static javax.ws.rs.client.Client client;
     final String basePath = String.format("http://localhost:%d/" + getApiVersion(), SUPPORT.getLocalPort());
 
@@ -63,68 +60,58 @@ public abstract class GA4GHIT {
     protected abstract String getApiVersion();
 
     /**
-     * This tests the /metadata endpoint
-     *
-     * @throws Exception
+     * This tests the /testMetadata endpoint
      */
-    protected abstract void metadata() throws Exception;
+    @Test
+    public abstract void testMetadata() throws Exception;
 
     /**
      * This tests the /tools endpoint
-     *
-     * @throws Exception
      */
-    protected abstract void tools() throws Exception;
+    @Test
+    public abstract void testTools() throws Exception;
 
     /**
      * This tests the /tools/{id} endpoint
-     *
-     * @throws Exception
      */
-    protected abstract void toolsId() throws Exception;
+    @Test
+    public abstract void testToolsId() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions endpoint
-     *
-     * @throws Exception
      */
-    protected abstract void toolsIdVersions() throws Exception;
+    @Test
+    public abstract void testToolsIdVersions() throws Exception;
 
     /**
-     * This tests the /tool-classes or /toolClasses endpoint
-     *
-     * @throws Exception
+     * This tests the /tool-classes or /testToolClasses endpoint
      */
-    protected abstract void toolClasses() throws Exception;
+    @Test
+    public abstract void testToolClasses() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version_id} endpoint
-     *
-     * @throws Exception
      */
-    protected abstract void toolsIdVersionsVersionId() throws Exception;
+    @Test
+    public abstract void testToolsIdVersionsVersionId() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version-id}/{type}/descriptor endpoint
-     *
-     * @throws Exception
      */
     @Test
-    public void toolsIdVersionsVersionIdTypeDescriptor() throws Exception {
+    public void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} endpoint
-     *
-     * @throws Exception
      */
 
     @Test
-    public void toolsIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
+    public void testToolsIdVersionsVersionIdTypeDescriptorRelativePath() throws Exception {
         toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal();
         toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash();
         toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot();
@@ -132,9 +119,9 @@ public abstract class GA4GHIT {
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal() throws Exception {
         Response response = checkedResponse(
-                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
@@ -144,7 +131,6 @@ public abstract class GA4GHIT {
      * Tool with non-existent cwl test parameter file
      * Tool with nested wdl test parameter file
      * Tool with non-existent wdl test parameter file
-     * @throws Exception
      */
     @Test
     public void relativePathEndpointToolTestParameterFilePLAIN() {
@@ -153,14 +139,18 @@ public abstract class GA4GHIT {
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
-        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Ftest.potato.json").request().get();
+        Response response2 = client
+            .target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Ftest.potato.json").request()
+            .get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
         Response response3 = checkedResponse(
             basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Fnested%2Ftest.wdl.json");
         String responseObject3 = response3.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("nestedPotato", responseObject3);
-        Response response4 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request().get();
+        Response response4 = client
+            .target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request()
+            .get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response4.getStatus());
     }
 
@@ -172,23 +162,11 @@ public abstract class GA4GHIT {
      * Tool with non-existent wdl test parameter file
      */
     @Test
-    public void relativePathEndpointToolTestParameterFileJSON() {
-        Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
-        FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertEquals(HttpStatus.SC_OK, response.getStatus());
-        assertEquals("nestedPotato", responseObject.getDescriptor());
-        Response response2 = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Fnested%2Ftest.wdl.json");
-        FileWrapper responseObject2 = response2.readEntity(FileWrapper.class);
-        assertEquals(HttpStatus.SC_OK, response2.getStatus());
-        assertEquals("nestedPotato", responseObject2.getDescriptor());
-    }
+    public abstract void testRelativePathEndpointToolTestParameterFileJSON();
 
     /**
      * Tests GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
      * Tool with a dockerfile
-     * @throws Exception
      */
     @Test
     public void relativePathEndpointToolContainerfile() {
@@ -204,7 +182,6 @@ public abstract class GA4GHIT {
      * Workflow with nested cwl test parameter file
      * Workflow with non-existent wdl test parameter file
      * Workflow with non-nested cwl test parameter file
-     * @throws Exception
      */
     @Test
     public void relativePathEndpointWorkflowTestParameterFilePLAIN() throws Exception {
@@ -212,13 +189,17 @@ public abstract class GA4GHIT {
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
         // Check responses
-        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+        Response response = checkedResponse(basePath
+            + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
-        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request().get();
+        Response response2 = client
+            .target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request()
+            .get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
-        Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Ftest.cwl.json");
+        Response response3 = checkedResponse(
+            basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Ftest.cwl.json");
         String responseObject3 = response3.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3);
@@ -229,25 +210,9 @@ public abstract class GA4GHIT {
      * Workflow with nested cwl test parameter file
      * Workflow with non-existent wdl test parameter file
      * Workflow with non-nested cwl test parameter file
-     * @throws Exception
      */
     @Test
-    public void relativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
-        // Insert the 4 workflows into the database using migrations
-        CommonTestUtilities.setupTestWorkflow(SUPPORT);
-
-        // Check responses
-        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
-        FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertEquals(HttpStatus.SC_OK, response.getStatus());
-        assertEquals("nestedPotato", responseObject.getDescriptor());
-        Response response2 = client.target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
-        assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
-        Response response3 = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
-        FileWrapper responseObject3 = response3.readEntity(FileWrapper.class);
-        assertEquals(HttpStatus.SC_OK, response3.getStatus());
-        assertEquals("potato", responseObject3.getDescriptor());
-    }
+    public abstract void relativePathEndpointWorkflowTestParameterFileJSON() throws Exception;
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
@@ -258,7 +223,7 @@ public abstract class GA4GHIT {
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot() throws Exception {
         Response response = checkedResponse(
-                basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
@@ -266,18 +231,9 @@ public abstract class GA4GHIT {
 
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/tests endpoint
-     *
-     * @throws Exception
      */
     @Test
-    public void toolsIdVersionsVersionIdTypeTests() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
-        List<FileWrapper> responseObject = response.readEntity(new GenericType<List<FileWrapper>>() {
-        });
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject).contains("test"));
-
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
-    }
+    public abstract void testToolsIdVersionsVersionIdTypeTests() throws Exception;
 
     void assertDescriptor(String descriptor) {
         assertThat(descriptor).contains("type");
@@ -286,7 +242,8 @@ public abstract class GA4GHIT {
 
     protected abstract void assertTool(String tool, boolean isTool);
 
-    public abstract void toolsIdVersionsVersionIdTypeDockerfile() throws Exception;
+    @Test
+    public abstract void testToolsIdVersionsVersionIdTypeDockerfile() throws Exception;
 
     protected abstract void assertVersion(String toolVersion);
 
@@ -299,10 +256,9 @@ public abstract class GA4GHIT {
     /**
      * This tests that a 400 response returns an Error response object similar to the HttpStatus.SC_NOT_FOUND response defined in the
      * GA4GH swagger.yaml
-     * @throws Exception
      */
     @Test
-    public void testInvalidToolId() throws Exception {
+    public void testInvalidToolId() {
         Response response = client.target(basePath + "tools/potato").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
         Error error = response.readEntity(Error.class);

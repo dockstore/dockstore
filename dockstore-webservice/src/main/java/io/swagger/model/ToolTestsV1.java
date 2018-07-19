@@ -31,6 +31,11 @@ public class ToolTestsV1   {
     @JsonProperty("url")
     private String url = null;
 
+    public ToolTestsV1(FileWrapper containerfile) {
+        this.test = containerfile.getDescriptor();
+        this.url = containerfile.getUrl();
+    }
+
     public ToolTestsV1 test(String test) {
         this.test = test;
         return this;

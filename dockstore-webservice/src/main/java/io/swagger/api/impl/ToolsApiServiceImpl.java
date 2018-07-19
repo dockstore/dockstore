@@ -189,7 +189,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, null,
-            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
     }
 
     @Override
@@ -203,7 +203,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, relativePath,
-            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
+    }
+
+    private boolean contextContainsPlainText(ContainerRequestContext value) {
+        return value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE);
     }
 
     @Override
@@ -219,7 +223,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
         boolean plainTextResponse =
-            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.toLowerCase().contains("plain");
+            contextContainsPlainText(value) || type.toLowerCase().contains("plain");
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
@@ -257,8 +261,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
-        boolean unwrap = !value.getAcceptableMediaTypes().contains(MediaType.APPLICATION_JSON_TYPE);
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap, user);
+        // matching behaviour of the descriptor endpoint
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, contextContainsPlainText(value), user);
     }
 
     @SuppressWarnings("CheckStyle")

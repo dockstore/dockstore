@@ -24,13 +24,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.ToolClass;
+import io.swagger.client.model.ToolDockerfile;
+import io.swagger.client.model.ToolTestsV1;
 import io.swagger.client.model.ToolV1;
 import io.swagger.client.model.ToolVersionV1;
-import io.swagger.model.ToolDockerfile;
+import org.apache.http.HttpStatus;
 import org.junit.Test;
 
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author gluu
@@ -43,8 +47,8 @@ public class GA4GHV1IT extends GA4GHIT {
         return apiVersion;
     }
 
-    @Test
-    public void metadata() throws Exception {
+    @Override
+    public void testMetadata() throws Exception {
         Response response = checkedResponse(basePath + "metadata");
         MetadataV1 metadata = response.readEntity(MetadataV1.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).contains("api-version");
@@ -53,16 +57,16 @@ public class GA4GHV1IT extends GA4GHIT {
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).doesNotContain("friendly_name");
     }
 
-    @Test
-    public void tools() throws Exception {
+    @Override
+    public void testTools() throws Exception {
         Response response = checkedResponse(basePath + "tools");
         List<ToolV1> responseObject = response.readEntity(new GenericType<List<ToolV1>>() {
         });
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
     }
 
-    @Test
-    public void toolsId() throws Exception {
+    @Override
+    public void testToolsId() throws Exception {
         toolsIdTool();
         toolsIdWorkflow();
     }
@@ -73,7 +77,8 @@ public class GA4GHV1IT extends GA4GHIT {
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
         // also try search by id
         response = checkedResponse(basePath + "tools?id=quay.io%2Ftest_org%2Ftest6");
-        List<ToolV1> responseList = response.readEntity(List.class);
+        List<ToolV1> responseList = response.readEntity(new GenericType<List<ToolV1>>() {
+        });
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), true);
     }
 
@@ -83,20 +88,21 @@ public class GA4GHV1IT extends GA4GHIT {
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), false);
         // also try search by id
         response = checkedResponse(basePath + "tools?id=%23workflow%2Fgithub.com%2FA%2Fl");
-        List<ToolV1> responseList = response.readEntity(List.class);
+        List<ToolV1> responseList = response.readEntity(new GenericType<List<ToolV1>>() {
+        });
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), false);
     }
 
-    @Test
-    public void toolsIdVersions() throws Exception {
+    @Override
+    public void testToolsIdVersions() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions");
         List<ToolVersionV1> responseObject = response.readEntity(new GenericType<List<ToolVersionV1>>() {
         });
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
-    @Test
-    public void toolClasses() throws Exception {
+    @Override
+    public void testToolClasses() throws Exception {
         Response response = checkedResponse(basePath + "tool-classes");
         List<ToolClass> responseObject = response.readEntity(new GenericType<List<ToolClass>>() {
         });
@@ -106,20 +112,66 @@ public class GA4GHV1IT extends GA4GHIT {
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).isEqualTo(expected);
     }
 
-    @Test
-    public void toolsIdVersionsVersionId() throws Exception {
+    @Override
+    public void testToolsIdVersionsVersionId() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersionV1 responseObject = response.readEntity(ToolVersionV1.class);
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     @Override
-    public void toolsIdVersionsVersionIdTypeDockerfile() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile");
-        ToolDockerfile responseObject = response.readEntity(ToolDockerfile.class);
-        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject).contains("dockerfile"));
+    public void testRelativePathEndpointToolTestParameterFileJSON() {
+        Response response = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+        ToolTestsV1 responseObject = response.readEntity(ToolTestsV1.class);
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+        assertEquals("nestedPotato", responseObject.getTest());
+        Response response2 = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Fnested%2Ftest.wdl.json");
+        ToolTestsV1 responseObject2 = response2.readEntity(ToolTestsV1.class);
+        assertEquals(HttpStatus.SC_OK, response2.getStatus());
+        assertEquals("nestedPotato", responseObject2.getTest());
     }
 
+    @Override
+    public void relativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
+        // Insert the 4 workflows into the database using migrations
+        CommonTestUtilities.setupTestWorkflow(SUPPORT);
+
+        // Check responses
+        Response response = checkedResponse(
+            basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+        ToolTestsV1 responseObject = response.readEntity(ToolTestsV1.class);
+        assertEquals(HttpStatus.SC_OK, response.getStatus());
+        assertEquals("nestedPotato", responseObject.getTest());
+        Response response2 = client
+            .target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
+        assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
+        Response response3 = checkedResponse(
+            basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
+        ToolTestsV1 responseObject3 = response3.readEntity(ToolTestsV1.class);
+        assertEquals(HttpStatus.SC_OK, response3.getStatus());
+        assertEquals("potato", responseObject3.getTest());
+    }
+
+    @Override
+    public void testToolsIdVersionsVersionIdTypeTests() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
+        List<ToolTestsV1> responseObject = response.readEntity(new GenericType<List<ToolTestsV1>>() {
+        });
+        assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject).contains("test")).isTrue();
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+    }
+
+    @Override
+    public void testToolsIdVersionsVersionIdTypeDockerfile() {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile");
+        // note: v1 really does expect only one item
+        ToolDockerfile responseObject = response.readEntity(ToolDockerfile.class);
+        assertTrue(!responseObject.getDockerfile().isEmpty() && !responseObject.getUrl().isEmpty());
+    }
+
+    @Override
     protected void assertVersion(String version) {
         assertThat(version).contains("meta-version");
         assertThat(version).contains("descriptor-type");
@@ -129,6 +181,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertThat(version).doesNotContain("verified_source");
     }
 
+    @Override
     protected void assertTool(String tool, boolean isTool) {
         assertThat(tool).contains("meta-version");
         assertThat(tool).contains("verified-source");
@@ -143,15 +196,12 @@ public class GA4GHV1IT extends GA4GHIT {
      * This tests if the 4 workflows with a combination of different repositories and either same or matching workflow name
      * can be retrieved separately
      *
-     * @throws Exception
      */
     @Test
     public void toolsIdGet4Workflows() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
-        Response response2 = checkedResponse(basePath + "tools");
-        List<ToolV1> responseObject2 = response2.readEntity(new GenericType<List<ToolV1>>() {
-        });
+        checkedResponse(basePath + "tools");
         // Check responses
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
