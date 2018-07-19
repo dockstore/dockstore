@@ -190,7 +190,7 @@ public class WorkflowIT extends BaseIT {
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getAnonWebClient());
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false));
         Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(webClient);
         boolean exceptionThrown = false;
         try {
@@ -281,10 +281,9 @@ public class WorkflowIT extends BaseIT {
 
     /**
      * This tests workflow convert entry2json when the main descriptor is nested far within the GitHub repo with secondary descriptors too
-     * @throws IOException
      */
     @Test
-    public void testEntryConvertWDLWithSecondaryDescriptors() throws IOException {
+    public void testEntryConvertWDLWithSecondaryDescriptors() {
         String toolpath = SourceControl.GITHUB.toString() + "/dockstore-testing/skylab";
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
@@ -960,14 +959,14 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
+    public void testAnonAndAdminGA4GH() throws ApiException {
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient());
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
         workflowApi.refresh(workflowByPathGithub.getId());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getAnonWebClient());
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false));
         boolean thrownException = false;
         try {
             anonymousGa4Ghv2Api

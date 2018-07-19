@@ -47,6 +47,7 @@ public class GA4GHV1IT extends GA4GHIT {
         return apiVersion;
     }
 
+    @Test
     @Override
     public void testMetadata() throws Exception {
         Response response = checkedResponse(basePath + "metadata");
@@ -57,6 +58,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(metadata)).doesNotContain("friendly_name");
     }
 
+    @Test
     @Override
     public void testTools() throws Exception {
         Response response = checkedResponse(basePath + "tools");
@@ -65,6 +67,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
     }
 
+    @Test
     @Override
     public void testToolsId() throws Exception {
         toolsIdTool();
@@ -93,6 +96,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), false);
     }
 
+    @Test
     @Override
     public void testToolsIdVersions() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions");
@@ -101,6 +105,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
+    @Test
     @Override
     public void testToolClasses() throws Exception {
         Response response = checkedResponse(basePath + "tool-classes");
@@ -112,6 +117,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).isEqualTo(expected);
     }
 
+    @Test
     @Override
     public void testToolsIdVersionsVersionId() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
@@ -119,6 +125,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
+    @Test
     @Override
     public void testRelativePathEndpointToolTestParameterFileJSON() {
         Response response = checkedResponse(
@@ -133,8 +140,9 @@ public class GA4GHV1IT extends GA4GHIT {
         assertEquals("nestedPotato", responseObject2.getTest());
     }
 
+    @Test
     @Override
-    public void relativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
+    public void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
@@ -154,6 +162,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertEquals("potato", responseObject3.getTest());
     }
 
+    @Test
     @Override
     public void testToolsIdVersionsVersionIdTypeTests() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
@@ -163,6 +172,7 @@ public class GA4GHV1IT extends GA4GHIT {
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
     }
 
+    @Test
     @Override
     public void testToolsIdVersionsVersionIdTypeDockerfile() {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/dockerfile");

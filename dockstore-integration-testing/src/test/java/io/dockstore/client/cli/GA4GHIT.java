@@ -212,7 +212,7 @@ public abstract class GA4GHIT {
      * Workflow with non-nested cwl test parameter file
      */
     @Test
-    public abstract void relativePathEndpointWorkflowTestParameterFileJSON() throws Exception;
+    public abstract void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception;
 
     private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
         Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
