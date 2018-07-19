@@ -2433,6 +2433,33 @@ paths:
             $ref: "#/definitions/DockstoreTool"
       security:
       - BEARER: []
+  /containers/{toolId}/zip/{tagId}:
+    get:
+      tags:
+      - "containers"
+      summary: "Download a ZIP file of a tool and all associated files."
+      description: ""
+      operationId: "getToolZip"
+      produces:
+      - "application/zip"
+      parameters:
+      - name: "toolId"
+        in: "path"
+        description: "toolId"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "tagId"
+        in: "path"
+        description: "tagId"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
   /entries/{id}/aliases:
     put:
       tags:
@@ -4737,6 +4764,33 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/WorkflowVersion"
+      security:
+      - BEARER: []
+  /workflows/{workflowId}/zip/{workflowVersionId}:
+    get:
+      tags:
+      - "workflows"
+      summary: "Download a ZIP file of a workflow and all associated files."
+      description: ""
+      operationId: "getWorkflowZip"
+      produces:
+      - "application/zip"
+      parameters:
+      - name: "workflowId"
+        in: "path"
+        description: "workflowId"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "workflowVersionId"
+        in: "path"
+        description: "workflowVersionId"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
       security:
       - BEARER: []
 securityDefinitions:

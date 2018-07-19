@@ -39,6 +39,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -1035,5 +1036,38 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         if (tool.getMode() == ToolMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{toolId}/zip/{tagId}")
+    @ApiOperation(value = "Download a ZIP file of a tool and all associated files.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Produces("application/zip")
+    public Response getToolZip(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
+        @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
+        Tool tool;
+        if (user.isPresent()) {
+            tool = toolDAO.findById(toolId);
+            checkEntry(tool);
+            checkUser(user.get(), tool);
+        } else {
+            tool = toolDAO.findPublishedById(toolId);
+            checkEntry(tool);
+        }
+
+        Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
+            .orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));
+        Set<SourceFile> sourceFiles = tag.getSourceFiles();
+        if (sourceFiles == null || sourceFiles.size() == 0) {
+            throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
+        }
+
+        String fileName = tool.getToolPath().replaceAll("/", "-") + ".zip";
+
+        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
+            .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 }
