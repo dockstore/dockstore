@@ -44,6 +44,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
@@ -1565,5 +1567,37 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new WebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/zip/{workflowVersionId}")
+    @ApiOperation(value = "Download a ZIP file of a workflow and all associated files.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Produces("application/zip")
+    public Response getWorkflowZip(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+        Workflow workflow;
+        if (user.isPresent()) {
+            workflow = workflowDAO.findById(workflowId);
+            checkEntry(workflow);
+            checkCanReadWorkflow(user.get(), workflow);
+        } else {
+            workflow = workflowDAO.findPublishedById(workflowId);
+            checkEntry(workflow);
+        }
+
+        WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        if (sourceFiles == null || sourceFiles.size() == 0) {
+            throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
+        }
+
+        String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+
+        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
+            .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 }

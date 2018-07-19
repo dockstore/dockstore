@@ -16,13 +16,18 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import com.google.api.client.util.Charsets;
 import com.google.common.collect.Lists;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -297,6 +302,24 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 SourceFile sourceFileWithId = fileDAO.findById(id);
                 workflowVersion.addSourceFile(sourceFileWithId);
             }
+        }
+    }
+
+    /**
+     * Creates a zip file in the tmp dir for the given files
+     * @param sourceFiles Set of sourcefiles
+     * @return Zip file
+     */
+    default void writeStreamAsZip(Set<SourceFile> sourceFiles, OutputStream outputStream) {
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+            // Write each sourcefile
+            for (SourceFile sourceFile : sourceFiles) {
+                ZipEntry secondaryZipEntry = new ZipEntry(sourceFile.getPath());
+                zipOutputStream.putNextEntry(secondaryZipEntry);
+                zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));
+            }
+        } catch (IOException ex) {
+            throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 

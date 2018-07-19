@@ -21,11 +21,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import javax.ws.rs.core.GenericType;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -182,7 +190,7 @@ public class WorkflowIT extends BaseIT {
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getAnonWebClient());
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false));
         Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(webClient);
         boolean exceptionThrown = false;
         try {
@@ -271,14 +279,102 @@ public class WorkflowIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "launch", "--entry", toolpath, "--json" , ResourceHelpers.resourceFilePath("md5sum-wrapper-tool.json") ,  "--script" });
     }
 
+    /**
+     * This tests workflow convert entry2json when the main descriptor is nested far within the GitHub repo with secondary descriptors too
+     * @throws IOException
+     */
+    @Test
+    public void testEntryConvertWDLWithSecondaryDescriptors() throws IOException {
+        String toolpath = SourceControl.GITHUB.toString() + "/dockstore-testing/skylab";
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        Workflow workflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/skylab", "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl",
+                        "", "wdl", null);
+        Workflow refresh = workflowApi.refresh(workflow.getId());
+        final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        workflowApi.publish(refresh.getId(), publishRequest);
+
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "convert", "entry2json", "--entry", toolpath + ":Dockstore_Testing", "--script" });
+        List<String> stringList = new ArrayList<>();
+        stringList.add("\"SmartSeq2SingleCell.gtf_file\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.genome_ref_fasta\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.rrna_intervals\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.fastq2\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_trans_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.stranded\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.sample_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.output_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.fastq1\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_trans_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.hisat2_ref_name\": \"String\"");
+        stringList.add("\"SmartSeq2SingleCell.rsem_ref_index\": \"File\"");
+        stringList.add("\"SmartSeq2SingleCell.gene_ref_flat\": \"File\"");
+        stringList.forEach(string -> {
+            Assert.assertTrue(systemOutRule.getLog().contains(string));
+        });
+    }
+
+    /**
+     * This tests that you are able to download zip files for versions of a workflow
+     */
+    @Test
+    public void downloadZipFile() throws IOException {
+        String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
+        final ApiClient webClient = getWebClient();
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        // Register and refresh workflow
+        Workflow workflow = workflowApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
+                        "test", "cwl", null);
+        Workflow refresh = workflowApi.refresh(workflow.getId());
+        Long workflowId = refresh.getId();
+        Long versionId = refresh.getWorkflowVersions().get(0).getId();
+
+        // Download unpublished workflow version
+        workflowApi.getWorkflowZip(workflowId, versionId);
+        byte[] arbitraryURL = getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        }, webClient);
+        Path write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
+        ZipFile zipFile = new ZipFile(write.toFile());
+        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+
+        // should not be able to get zip anonymously before publication
+        boolean thrownException = false;
+        try {
+            getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+            }, getWebClient(false));
+        } catch (Exception e) {
+            thrownException = true;
+        }
+        assertTrue(thrownException);
+
+        // Download published workflow version
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--script" });
+        arbitraryURL = getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        }, getWebClient(false));
+        write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
+        zipFile = new ZipFile(write.toFile());
+        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+    }
+
+    private <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+        return client
+            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
+                new String[] { "BEARER" }, type);
+    }
 
     @Test
     public void testCheckerWorkflowDownloadBasedOnCredentials() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
+
         final ApiClient webClient = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
         Workflow workflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
                         "test", "cwl", null);
@@ -871,7 +967,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.refresh(workflowByPathGithub.getId());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getAnonWebClient());
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false));
         boolean thrownException = false;
         try {
             anonymousGa4Ghv2Api
