@@ -325,6 +325,31 @@ public class SamPermissionsImplTest {
         samPermissionsImpl.getPermissionsForWorkflow(userMock, fooWorkflow);
     }
 
+    @Test
+    public void testUserInTwoPoliciesForSameResource() throws ApiException {
+        // https://github.com/ga4gh/dockstore/issues/1609, second item
+        final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        ResourceAndAccessPolicy reader = new ResourceAndAccessPolicy();
+        reader.setResourceId(resourceId);
+        reader.setAccessPolicyName(SamConstants.READ_POLICY);
+        ResourceAndAccessPolicy writer = new ResourceAndAccessPolicy();
+        writer.setResourceId(resourceId);
+        writer.setAccessPolicyName(SamConstants.WRITE_POLICY);
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
+                .thenReturn(Arrays.asList(reader, writer))
+                .thenReturn(Arrays.asList(writer, reader));
+
+        // Should be 1 workflow, with the writer role, because writer > reader
+        final Map<Role, List<String>> sharedWithUser = samPermissionsImpl.workflowsSharedWithUser(userMock);
+        Assert.assertEquals(1, sharedWithUser.size());
+        Assert.assertEquals(Role.WRITER, sharedWithUser.entrySet().iterator().next().getKey());
+
+        // Verify it works the same if the SAM API returns the policies in a different order.
+        final Map<Role, List<String>> sharedWithUser2 = samPermissionsImpl.workflowsSharedWithUser(userMock);
+        Assert.assertEquals(1, sharedWithUser.size());
+        Assert.assertEquals(Role.WRITER, sharedWithUser.entrySet().iterator().next().getKey());
+    }
+
     private void setupInitializePermissionsMocks(String encodedPath) {
         try {
             doNothing().when(resourcesApiMock).createResourceWithDefaults(anyString(), anyString());

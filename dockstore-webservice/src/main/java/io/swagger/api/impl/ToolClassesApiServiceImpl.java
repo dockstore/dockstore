@@ -18,11 +18,13 @@ package io.swagger.api.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
+import io.dockstore.webservice.core.User;
 import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolClassesApiService;
 import io.swagger.model.ToolClass;
@@ -45,7 +47,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
     }
 
     @Override
-    public Response toolClassesGet(SecurityContext securityContext, ContainerRequestContext containerContext) throws NotFoundException {
+    public Response toolClassesGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) throws NotFoundException {
         final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
         toolTypes.add(getCommandLineToolClass());
         toolTypes.add(getWorkflowClass());

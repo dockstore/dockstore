@@ -212,7 +212,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         String metadata) {
         ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
         ToolsApiServiceImpl.ParsedRegistryID parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
-        Entry entry = impl.getEntry(parsedID);
+        Entry entry = impl.getEntry(parsedID, Optional.empty());
         Optional<? extends Version> versionOptional;
 
         if (entry instanceof Workflow) {
