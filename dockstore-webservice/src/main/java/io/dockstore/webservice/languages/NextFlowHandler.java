@@ -269,7 +269,14 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         }
         mainDescriptor = secondaryDescContent.get(mainScriptPath);
 
-        Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor);
+        // Get default container
+        ConfigObject params = (ConfigObject)parse.get("params");
+        String defaultContainer = null;
+        if (params != null && params.containsKey("container")) {
+            defaultContainer = (String)params.get("container");
+        }
+
+        Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);
         // Iterate over each call, determine dependencies
         // Mapping of stepId -> array of dependencies for the step
         Map<String, List<String>> callToDependencies = this.getCallsToDependencies(mainDescriptor);
@@ -336,7 +343,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         return map;
     }
 
-    private Map<String, String> getCallsToDockerMap(String mainDescriptor) {
+    private Map<String, String> getCallsToDockerMap(String mainDescriptor, String defaultContainer) {
         Map<String, String> map = new HashMap<>();
         try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
             GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
@@ -347,8 +354,14 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             for (GroovySourceAST processAST : processList) {
                 String processName = getProcessValue(processAST);
                 GroovySourceAST containerAST = getFirstAstWithKeyword(processAST, "container", false);
+                String containerName;
                 if (containerAST != null) {
-                    String containerName = containerAST.getNextSibling().getFirstChild().getText();
+                    containerName = containerAST.getNextSibling().getFirstChild().getText();
+                } else {
+                    containerName = defaultContainer;
+                }
+
+                if (containerName != null) {
                     map.put(processName, containerName);
                     LOG.debug("found container: " + containerName + " in process " + processName);
                 }
