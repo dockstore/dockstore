@@ -812,7 +812,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @PATCH
     @Timed
     @UnitOfWork
-    @Path("/path/workfow/{repository}/permissions")
+    @Path("/path/workflow/{repository}/permissions")
     @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Adds a permission for a workflow. The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
@@ -830,7 +830,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @DELETE
     @Timed
     @UnitOfWork
-    @Path("/path/workfow/{repository}/permissions")
+    @Path("/path/workflow/{repository}/permissions")
     @ApiOperation(value = "Remove the specified user role for a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Removes a role from a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
