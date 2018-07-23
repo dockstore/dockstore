@@ -1048,14 +1048,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public Response getToolZip(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
-        Tool tool;
-        if (user.isPresent()) {
-            tool = toolDAO.findById(toolId);
-            checkEntry(tool);
-            checkUser(user.get(), tool);
-        } else {
+
+        Tool tool = toolDAO.findById(toolId);
+        if (tool.getIsPublished()) {
             tool = toolDAO.findPublishedById(toolId);
             checkEntry(tool);
+        } else {
+            checkEntry(tool);
+            checkUser(user.get(), tool);
         }
 
         Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()

@@ -1579,14 +1579,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Response getWorkflowZip(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
-        Workflow workflow;
-        if (user.isPresent()) {
-            workflow = workflowDAO.findById(workflowId);
-            checkEntry(workflow);
-            checkCanReadWorkflow(user.get(), workflow);
-        } else {
+
+        Workflow workflow = workflowDAO.findById(workflowId);
+        if (workflow.getIsPublished()) {
             workflow = workflowDAO.findPublishedById(workflowId);
             checkEntry(workflow);
+        } else {
+            checkEntry(workflow);
+            checkCanReadWorkflow(user.get(), workflow);
         }
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
