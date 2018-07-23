@@ -170,6 +170,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return typedQuery.getResultList();
     }
 
+    public List<T> findAllPublished() {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
+    }
+
     public long countAllPublished(Optional<String> filter) {
         if (!filter.isPresent()) {
             return countAllPublished();
@@ -177,11 +181,15 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<Long> query = cb.createQuery(Long.class);
         Root<T> entry = query.from(typeOfT);
-        processQuery(filter.get(), null, null, cb, query, entry);
+        processQuery(filter.get(), "", "", cb, query, entry);
         query.select(cb.count(entry));
         //TODO: getting the entity manager to convert the criteria query to a TypedQuery is weird, there must be a different way
         EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
         return entityManager.createQuery(query).getSingleResult();
+    }
+
+    private long countAllPublished() {
+        return (long)namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
@@ -218,14 +226,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 }
             }
         }
-    }
-
-    public List<T> findAllPublished() {
-        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
-    }
-
-    public long countAllPublished() {
-        return (long)namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
     }
 
     public List<T> searchPattern(String pattern) {
