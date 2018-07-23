@@ -120,6 +120,16 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "1.5.0");
     }
 
+    public static void runMigration(List<String> migrationList, Application<DockstoreWebserviceConfiguration> application, String configPath) {
+        migrationList.forEach(migration -> {
+            try {
+                application.run("db", "migrate", configPath, "--include", migration);
+            } catch (Exception e) {
+                Assert.fail();
+            }
+        });
+    }
+
     /**
      * Wrapper fir dropping and recreating database from migrations for test confidential 2
      * @param support reference to testing instance of the dockstore web service

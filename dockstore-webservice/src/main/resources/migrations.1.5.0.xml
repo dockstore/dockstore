@@ -165,4 +165,18 @@
             <column name="dbupdatedate" type="timestamp"/>
         </addColumn>
     </changeSet>
+    <changeSet author="gluu" id="migrate-legacy-verification-information">
+        <sql dbms="postgresql">
+            <comment>Migrate the verified workflow versions into the new sourcefile_verified table</comment>
+            INSERT INTO sourcefile_verified(id, metadata, verified, source) select s.id, v.verifiedSource, v.verified, 'Dockstore CLI' from
+            sourcefile s inner join version_sourcefile vs on vs.sourcefileid = s.id inner join workflowversion v on v.id = vs.versionid
+            where v.verified='true' and (s.type='CWL_TEST_JSON' OR s.type='WDL_TEST_JSON')
+        </sql>
+        <sql dbms="postgresql">
+            <comment>Migrate the verified tags into the new sourcefile_verified table</comment>
+            INSERT INTO sourcefile_verified(id, metadata, verified, source) select s.id, v.verifiedSource, v.verified, 'Dockstore CLI' from
+            sourcefile s inner join version_sourcefile vs on vs.sourcefileid = s.id inner join tag v on v.id = vs.versionid where
+            v.verified='true' and (s.type='CWL_TEST_JSON' OR s.type='WDL_TEST_JSON')
+        </sql>
+    </changeSet>
 </databaseChangeLog>
