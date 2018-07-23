@@ -388,6 +388,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
                 // CREATE GOOGLE TOKEN
                 googleToken = createGoogleToken(accessToken, refreshToken, userID, googleLoginName);
                 tokenDAO.create(googleToken);
+                // Update user profile too
+                user = userDAO.findById(userID);
+                GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
                 LOG.info("Google token created for {}", googleLoginName);
             } else {
                 // Update tokens if exists
