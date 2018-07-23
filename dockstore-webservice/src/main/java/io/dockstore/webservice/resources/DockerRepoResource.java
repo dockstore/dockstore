@@ -615,9 +615,8 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
-        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished()));
+        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
-
         return tools;
     }
 
