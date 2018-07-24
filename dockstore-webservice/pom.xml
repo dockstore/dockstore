@@ -690,9 +690,9 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.basedir}/src/main/java/io/dockstore/webservice/resources</outputDirectory>
+                            <outputDirectory>${basedir}/target/generated-sources/src/gen/java/io/dockstore/webservice/resources</outputDirectory>
                             <resources>
-                                <resource>
+                                <resource>${basedir}/target/generated-sources/swagger/src/gen/java
                                     <directory>${project.basedir}/src/main/templates/io/dockstore/webservice/resources</directory>
                                     <includes>
                                         <include>Description.java</include>
@@ -775,12 +775,14 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
-            <!-- skip the swagger generated classes -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <configuration>
+                    <!-- skip the swagger generated classes -->
                     <excludes>**/swagger/**/*</excludes>
+                    <!-- skip the generated description class -->
+                    <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
                 </configuration>
             </plugin>
             <plugin>
@@ -956,6 +958,7 @@
                         </goals>
                         <configuration>
                             <sources>
+                                <source>${basedir}/target/generated-sources/src/gen/java/io/dockstore/webservice/resources</source>
                                 <source>${basedir}/target/generated-sources/swagger/src/gen/java</source>
                                 <source>${basedir}/target/generated-sources/swagger/src/main/java</source>
                                 <source>${basedir}/src/main/java</source>
