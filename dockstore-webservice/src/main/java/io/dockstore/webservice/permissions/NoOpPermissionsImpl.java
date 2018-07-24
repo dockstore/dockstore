@@ -1,5 +1,6 @@
 package io.dockstore.webservice.permissions;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,9 @@ public class NoOpPermissionsImpl implements PermissionsInterface {
 
     @Override
     public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
+        if (workflow.getUsers().contains(user)) {
+            return Arrays.asList(Role.Action.values());
+        }
         return Collections.emptyList();
     }
 

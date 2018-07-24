@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -323,6 +324,13 @@ public class SamPermissionsImplTest {
         final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
         Assert.assertEquals(1, actions.size());
         Assert.assertTrue(actions.contains(Role.Action.READ));
+    }
+
+    @Test
+    public void testDockstoreOwnerNoSamPermissions() {
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
     }
 
     /**

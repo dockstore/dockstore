@@ -186,7 +186,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
     @Override
     public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
         List<Role.Action> list = new ArrayList<>();
-        if (canDoAction(user, workflow, Role.Action.SHARE)) {
+        if (workflow.getUsers().contains(user) || canDoAction(user, workflow, Role.Action.SHARE)) {
             // Short cut to avoid multiple calls; if we can share, we're an owner and can do all actions
             list.addAll(Arrays.asList(Role.Action.values()));
         } else if (canDoAction(user, workflow, Role.Action.WRITE)) {

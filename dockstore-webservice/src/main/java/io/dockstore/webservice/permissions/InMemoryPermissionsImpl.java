@@ -17,6 +17,7 @@
 package io.dockstore.webservice.permissions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +101,9 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
 
     @Override
     public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
+        if (workflow.getUsers().contains(user)) {
+            return Arrays.asList(Role.Action.values());
+        }
         final ArrayList<Role.Action> actions = new ArrayList<>();
         final List<Permission> permissions = getWorkflowPermissions(workflow);
         final String userKey = userKey(user);
