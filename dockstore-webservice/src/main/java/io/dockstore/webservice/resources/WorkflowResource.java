@@ -814,7 +814,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/path/workflow/{repository}/actions")
     @ApiOperation(value = "Gets all actions a user can perform on a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "", response = Role.Action.class, responseContainer = "List")
-    public List<Role.Action> getMyWorkflowPermissions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);
