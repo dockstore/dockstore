@@ -88,12 +88,25 @@ public class BaseIT {
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         if (authenticated) {
             client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                .runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>())));
+                .runSelectStatement("select content from token where tokensource='dockstore' and username='DockstoreTestUser2';", new ScalarHandler<>())));
         }
         return client;
     }
 
     protected static ApiClient getWebClient(){
         return getWebClient(true);
+    }
+
+    protected static ApiClient getWebClientOtherUser(boolean authenticated) {
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+        File configFile = FileUtils.getFile("src", "test", "resources", "config2");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        ApiClient client = new ApiClient();
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        if (authenticated) {
+            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
+                    .runSelectStatement("select content from token where tokensource='dockstore' and username='OtherUser';", new ScalarHandler<>())));
+        }
+        return client;
     }
 }

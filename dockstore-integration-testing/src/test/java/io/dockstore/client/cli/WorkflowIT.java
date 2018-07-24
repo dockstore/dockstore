@@ -360,6 +360,63 @@ public class WorkflowIT extends BaseIT {
         assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
     }
 
+    /**
+     * This tests that zip file can be downloaded or not based on published state and auth.
+     */
+    @Test
+    public void downloadZipFileTestAuth() {
+        final ApiClient ownerWebClient = getWebClient();
+        WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
+
+        final ApiClient anonWebClient = getWebClient(false);
+        WorkflowsApi anonWorkflowApi = new WorkflowsApi(anonWebClient);
+
+        final ApiClient otherUserWebClient = getWebClientOtherUser(true);
+        WorkflowsApi otherUserWorkflowApi = new WorkflowsApi(otherUserWebClient);
+
+        // Register and refresh workflow
+        Workflow workflow = ownerWorkflowApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
+                        "test", "cwl", null);
+        Workflow refresh = ownerWorkflowApi.refresh(workflow.getId());
+        Long workflowId = refresh.getId();
+        Long versionId = refresh.getWorkflowVersions().get(0).getId();
+
+        // Try downloading unpublished
+        // Owner: Should pass
+        ownerWorkflowApi.getWorkflowZip(workflowId, versionId);
+        // Anon: Should fail
+        boolean success = true;
+        try {
+            anonWorkflowApi.getWorkflowZip(workflowId, versionId);
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("User does not have access to workflow.", !success);
+        }
+        // Other user: Should fail
+        success = true;
+        try {
+            otherUserWorkflowApi.getWorkflowZip(workflowId, versionId);
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("User does not have access to workflow.", !success);
+        }
+
+        // Publish
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        ownerWorkflowApi.publish(workflowId, publishRequest);
+
+        // Try downloading published
+        // Owner: Should pass
+        ownerWorkflowApi.getWorkflowZip(workflowId, versionId);
+        // Anon: Should pass
+        anonWorkflowApi.getWorkflowZip(workflowId, versionId);
+        // Other user: Should pass
+        otherUserWorkflowApi.getWorkflowZip(workflowId, versionId);
+    }
+
     private <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
         return client
             .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",

@@ -36,6 +36,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -1055,7 +1056,12 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
             checkEntry(tool);
         } else {
             checkEntry(tool);
-            checkUser(user.get(), tool);
+            if (user.isPresent()) {
+                checkUser(user.get(), tool);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
+            }
         }
 
         Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()

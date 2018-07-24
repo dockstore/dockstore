@@ -1586,7 +1586,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             checkEntry(workflow);
         } else {
             checkEntry(workflow);
-            checkCanReadWorkflow(user.get(), workflow);
+            if (user.isPresent()) {
+                checkCanReadWorkflow(user.get(), workflow);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
+            }
         }
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
