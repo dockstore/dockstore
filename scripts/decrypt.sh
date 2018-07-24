@@ -9,6 +9,6 @@ set -o nounset
 set -o xtrace
 
 if [[ "${TESTING_PROFILE}" == *"integration-tests"* ]]; then
-    openssl aes-256-cbc -K $encrypted_68a061aa6fa5_key -iv $encrypted_68a061aa6fa5_iv -in secrets.tar.enc -out secrets.tar -d
+    openssl aes-256-cbc -K $encrypted_581ea24ec30a_key -iv $encrypted_581ea24ec30a_iv -in secrets.tar.enc -out secrets.tar -d
     tar xvf secrets.tar
 fi
