@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -214,7 +215,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         BeanConfig beanConfig = new BeanConfig();
         beanConfig.setSchemes(new String[] { configuration.getExternalConfig().getScheme() });
         beanConfig.setHost(configuration.getExternalConfig().getHostname() + ':' + configuration.getExternalConfig().getPort());
-        beanConfig.setBasePath(configuration.getExternalConfig().getBasePath());
+        beanConfig.setBasePath(MoreObjects.firstNonNull(configuration.getExternalConfig().getBasePath(), "/"));
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
         ElasticManager.setConfig(configuration);

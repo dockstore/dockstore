@@ -374,7 +374,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         @NotEmpty
         private String hostname;
 
-        @NotEmpty
         private String basePath;
 
         @NotEmpty
