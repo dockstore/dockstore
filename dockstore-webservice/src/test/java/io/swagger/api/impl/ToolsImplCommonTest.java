@@ -51,9 +51,9 @@ public class ToolsImplCommonTest {
 
     @BeforeClass
     public static void setup() {
-        actualConfig.setHostname("localhost");
-        actualConfig.setPort("8080");
-        actualConfig.setScheme("http");
+        actualConfig.getExternalConfig().setHostname("localhost");
+        actualConfig.getExternalConfig().setPort("8080");
+        actualConfig.getExternalConfig().setScheme("http");
     }
 
     @Test

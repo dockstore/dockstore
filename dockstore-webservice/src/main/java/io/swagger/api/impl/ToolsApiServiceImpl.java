@@ -389,12 +389,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             handleParameter(limit.toString(), "limit", filters);
 
             if (offsetInteger + 1 < pagedResults.size()) {
-                URI nextPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
+                URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), Integer.parseInt(config.getExternalConfig().getPort()),
                     DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
                     Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
-            URI lastPageURI = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
+            URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), Integer.parseInt(config.getExternalConfig().getPort()),
                 DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
                 Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
             responseBuilder.header("last_page", lastPageURI.toURL().toString());

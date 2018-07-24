@@ -44,6 +44,10 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     private ElasticSearchConfig esConfiguration = new ElasticSearchConfig();
 
     @Valid
+    @NotNull
+    private ExternalConfig externalConfig = new ExternalConfig();
+
+    @Valid
     private SamConfiguration samConfiguration = new SamConfiguration();
 
     @NotEmpty
@@ -92,15 +96,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
 
-    @NotEmpty
-    private String hostname;
-
-    @NotEmpty
-    private String scheme;
-
-    @NotEmpty
-    private String port;
-
     private String uiPort = null;
 
     private String sqsURL;
@@ -117,6 +112,11 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @JsonProperty("httpClient")
     public HttpClientConfiguration getHttpClientConfiguration() {
         return httpClient;
+    }
+
+    @JsonProperty("externalConfig")
+    public ExternalConfig getExternalConfig() {
+        return externalConfig;
     }
 
     @JsonProperty
@@ -291,30 +291,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.gitlabClientSecret = gitlabClientSecret;
     }
 
-    public String getHostname() {
-        return hostname;
-    }
-
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
-
-    public String getScheme() {
-        return scheme;
-    }
-
-    public void setScheme(String scheme) {
-        this.scheme = scheme;
-    }
-
-    public String getPort() {
-        return port;
-    }
-
-    public void setPort(String port) {
-        this.port = port;
-    }
-
     @JsonProperty("esconfiguration")
     public ElasticSearchConfig getEsConfiguration() {
         return esConfiguration;
@@ -398,6 +374,57 @@ public class DockstoreWebserviceConfiguration extends Configuration {
 
     public void setExternalGoogleClientIdPrefixes(List<String> externalGoogleClientIdPrefixes) {
         this.externalGoogleClientIdPrefixes = externalGoogleClientIdPrefixes;
+    }
+
+    /**
+     * This config defines values that define the webservice from the outside world.
+     * Most notably, for swagger. But also to configure generated RSS paths and TRS paths
+     */
+    public class ExternalConfig {
+        @NotEmpty
+        private String hostname;
+
+        @NotEmpty
+        private String basePath;
+
+        @NotEmpty
+        private String scheme;
+
+        @NotEmpty
+        private String port;
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public void setHostname(String hostname) {
+            this.hostname = hostname;
+        }
+
+        public String getScheme() {
+            return scheme;
+        }
+
+        public void setScheme(String scheme) {
+            this.scheme = scheme;
+        }
+
+        public String getPort() {
+            return port;
+        }
+
+        public void setPort(String port) {
+            this.port = port;
+        }
+
+        public String getBasePath() {
+            return basePath;
+        }
+
+        public void setBasePath(String basePath) {
+            this.basePath = basePath;
+        }
+
     }
 
     public class ElasticSearchConfig {

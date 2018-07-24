@@ -212,9 +212,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setSchemes(new String[] { configuration.getScheme() });
-        beanConfig.setHost(configuration.getHostname() + ':' + configuration.getPort());
-        beanConfig.setBasePath("/");
+        beanConfig.setSchemes(new String[] { configuration.getExternalConfig().getScheme() });
+        beanConfig.setHost(configuration.getExternalConfig().getHostname() + ':' + configuration.getExternalConfig().getPort());
+        beanConfig.setBasePath(configuration.getExternalConfig().getBasePath());
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
         ElasticManager.setConfig(configuration);
