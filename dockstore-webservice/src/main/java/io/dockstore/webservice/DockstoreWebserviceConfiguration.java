@@ -96,8 +96,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @NotNull
     private CacheBuilderSpec authenticationCachePolicy;
 
-    private String uiPort = null;
-
     private String sqsURL;
 
     private String authorizerType = null;
@@ -300,14 +298,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.esConfiguration = esConfiguration;
     }
 
-    public String getUiPort() {
-        return uiPort;
-    }
-
-    public void setUiPort(String uiPort) {
-        this.uiPort = uiPort;
-    }
-
     @JsonProperty
     public String getSqsURL() {
         return sqsURL;
@@ -393,6 +383,8 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         @NotEmpty
         private String port;
 
+        private String uiPort = null;
+
         public String getHostname() {
             return hostname;
         }
@@ -425,6 +417,13 @@ public class DockstoreWebserviceConfiguration extends Configuration {
             this.basePath = basePath;
         }
 
+        public String getUiPort() {
+            return uiPort;
+        }
+
+        public void setUiPort(String uiPort) {
+            this.uiPort = uiPort;
+        }
     }
 
     public class ElasticSearchConfig {
