@@ -379,7 +379,6 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         @NotEmpty
         private String scheme;
 
-        @NotEmpty
         private String port;
 
         private String uiPort = null;
