@@ -101,9 +101,8 @@ public class WDLClient implements LanguageClientInterface {
         File cromwellTargetFile = new File(cromwellTarget);
         if (!cromwellTargetFile.exists()) {
             try {
-                final int pluginDownloadAttempts = 5;
-                FileProvisioning.retryWrapper(null, cromwellURL.toString(), cromwellTargetFile.toPath(), pluginDownloadAttempts, true, 1);
-            } catch (Exception e) {
+                FileUtils.copyURLToFile(cromwellURL, cromwellTargetFile);
+            } catch (IOException e) {
                 throw new RuntimeException("Could not download cromwell location", e);
             }
         }
