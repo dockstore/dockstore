@@ -683,6 +683,25 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>template-code</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.basedir}/src/main/java/io/dockstore/webservice/resources</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/templates/io/dockstore/webservice/resources</directory>
+                                    <includes>
+                                        <include>Description.java</include>
+                                    </includes>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
