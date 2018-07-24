@@ -88,7 +88,7 @@ public class BaseIT {
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         if (authenticated) {
             client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                .runSelectStatement("select content from token where tokensource='dockstore' and username='DockstoreTestUser2';", new ScalarHandler<>())));
+                .runSelectStatement("select content from token where tokensource='dockstore' and username like 'DockstoreTestUser%';", new ScalarHandler<>())));
         }
         return client;
     }
