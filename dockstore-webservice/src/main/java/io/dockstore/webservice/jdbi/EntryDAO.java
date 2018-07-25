@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
@@ -159,6 +160,39 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
         CriteriaQuery<T> query = criteriaQuery();
         Root<T> entry = query.from(typeOfT);
+        processQuery(filter, sortCol, sortOrder, cb, query, entry);
+        query.select(entry);
+
+        //TODO: getting the entity manager to convert the criteria query to a TypedQuery is weird, there must be a different way
+        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
+        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
+        TypedQuery<T> typedQuery = entityManager.createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
+        return typedQuery.getResultList();
+    }
+
+    public List<T> findAllPublished() {
+        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
+    }
+
+    public long countAllPublished(Optional<String> filter) {
+        if (!filter.isPresent()) {
+            return countAllPublished();
+        }
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Long> query = cb.createQuery(Long.class);
+        Root<T> entry = query.from(typeOfT);
+        processQuery(filter.get(), "", "", cb, query, entry);
+        query.select(cb.count(entry));
+        //TODO: getting the entity manager to convert the criteria query to a TypedQuery is weird, there must be a different way
+        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
+        return entityManager.createQuery(query).getSingleResult();
+    }
+
+    private long countAllPublished() {
+        return (long)namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
+    }
+
+    private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
         if (!Strings.isNullOrEmpty(filter)) {
             // TODO: handle all search attributes that we want to hook up, this sucks since we didn't handle polymorphism quite right
             boolean toolMode = typeOfT == Tool.class;
@@ -192,21 +226,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                 }
             }
         }
-        query.select(entry);
-
-        //TODO: getting the entity manager to convert the criteria query to a TypedQuery is weird, there must be a different way
-        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
-        int primitiveOffset = Integer.parseInt(MoreObjects.firstNonNull(offset, "0"));
-        TypedQuery<T> typedQuery = entityManager.createQuery(query).setFirstResult(primitiveOffset).setMaxResults(limit);
-        return typedQuery.getResultList();
-    }
-
-    public List<T> findAllPublished() {
-        return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
-    }
-
-    public long countAllPublished() {
-        return (long)namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".countAllPublished").getSingleResult();
     }
 
     public List<T> searchPattern(String pattern) {

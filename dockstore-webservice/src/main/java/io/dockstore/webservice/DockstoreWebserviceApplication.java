@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -212,9 +213,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     @Override
     public void run(DockstoreWebserviceConfiguration configuration, Environment environment) {
         BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setSchemes(new String[] { configuration.getScheme() });
-        beanConfig.setHost(configuration.getHostname() + ':' + configuration.getPort());
-        beanConfig.setBasePath("/");
+        beanConfig.setSchemes(new String[] { configuration.getExternalConfig().getScheme() });
+        String portFragment = configuration.getExternalConfig().getPort() == null ? "" : ":" + configuration.getExternalConfig().getPort();
+        beanConfig.setHost(configuration.getExternalConfig().getHostname() + portFragment);
+        beanConfig.setBasePath(MoreObjects.firstNonNull(configuration.getExternalConfig().getBasePath(), "/"));
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
         ElasticManager.setConfig(configuration);
@@ -278,7 +280,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource, configuration));
+        environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
         environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO, authorizer));
         environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO, authorizer));

@@ -165,24 +165,6 @@ public class SwaggerClientIT {
     }
 
     @Test
-    public void testListUsersWithoutAuthentication() throws ApiException {
-        ApiClient client = getWebClient();
-        UsersApi usersApi = new UsersApi(client);
-        usersApi.getUser();
-        thrown.expect(ApiException.class);
-        usersApi.listUsers();
-    }
-
-    @Test
-    public void testListUsers() throws ApiException {
-        ApiClient client = getAdminWebClient();
-        UsersApi usersApi = new UsersApi(client);
-        final List<User> users = usersApi.listUsers();
-        // should just be the one admin user after we clear it out
-        assertEquals(2, users.size());
-    }
-
-    @Test
     public void testListUsersTools() throws ApiException {
         ApiClient client = getAdminWebClient();
 

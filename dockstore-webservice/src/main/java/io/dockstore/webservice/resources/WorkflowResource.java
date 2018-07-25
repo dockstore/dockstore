@@ -708,7 +708,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
-        response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished()));
+        response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished(Optional.of(filter))));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;
     }
@@ -730,7 +730,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                             return workflow;
                         }
                         return null;
-                    }).filter(w -> w != null).collect(Collectors.toList());
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
                     return new SharedWorkflows(e.getKey(), workflows);
                 })
                 .filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0)
