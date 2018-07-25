@@ -1205,6 +1205,7 @@
                         <configuration>
                             <append>true</append>
                             <excludes>
+                                <exclude>io/dockstore/webservice/resources/Description.*</exclude>
                                 <exclude>io/dockstore/common/Bridge.*</exclude>
                                 <!-- exclude client classes, but not the server classes to help guide tests -->
                                 <exclude>io/swagger/client/**/*</exclude>

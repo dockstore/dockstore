@@ -690,9 +690,9 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${basedir}/target/generated-sources/src/gen/java/io/dockstore/webservice/resources</outputDirectory>
+                            <outputDirectory>${basedir}/target/generated-sources/swagger/src/gen/java/io/dockstore/webservice/resources</outputDirectory>
                             <resources>
-                                <resource>${basedir}/target/generated-sources/swagger/src/gen/java
+                                <resource>
                                     <directory>${project.basedir}/src/main/templates/io/dockstore/webservice/resources</directory>
                                     <includes>
                                         <include>Description.java</include>
@@ -958,7 +958,6 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${basedir}/target/generated-sources/src/gen/java/io/dockstore/webservice/resources</source>
                                 <source>${basedir}/target/generated-sources/swagger/src/gen/java</source>
                                 <source>${basedir}/target/generated-sources/swagger/src/main/java</source>
                                 <source>${basedir}/src/main/java</source>
