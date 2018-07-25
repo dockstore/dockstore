@@ -758,12 +758,21 @@ public class SwaggerClientIT {
     }
 
     @Test
+    public void testDuplicateHostedWorkflowCreationNull() {
+        registerHostedWorkflow(null);
+    }
+
+    @Test
     public void testDuplicateHostedWorkflowCreation() {
+        registerHostedWorkflow("");
+    }
+
+    private void registerHostedWorkflow(String s) {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedWorkflow("hosted1", "cwl", "", "");
+        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedWorkflow("hosted1", "cwl", "", "");
+        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
     }
 
     @Test
