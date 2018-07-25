@@ -294,7 +294,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     @Test
     public void testUpdateWorkflowPath() throws ApiException {
         // Set up webservice
-        ApiClient webClient = WorkflowIT.getWebClient();
+        ApiClient webClient = WorkflowIT.getWebClient("DockstoreTestUser2");
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);

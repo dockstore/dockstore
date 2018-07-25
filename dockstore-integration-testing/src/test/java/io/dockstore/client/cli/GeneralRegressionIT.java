@@ -143,7 +143,7 @@ public class GeneralRegressionIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getWebClient("DockstoreTestUser2");
         ContainersApi toolsApi = new ContainersApi(client);
         return toolsApi;
     }

@@ -124,7 +124,7 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getWebClient("DockstoreTestUser2");
         ContainersApi toolsApi = new ContainersApi(client);
         return toolsApi;
     }
@@ -724,13 +724,13 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void downloadZipFileTestAuth() {
-        final ApiClient ownerWebClient = getWebClient();
+        final ApiClient ownerWebClient = getWebClient("DockstoreTestUser2");
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
-        final ApiClient anonWebClient = getWebClient(false);
+        final ApiClient anonWebClient = getWebClient(false, null);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClientOtherUser(true);
+        final ApiClient otherUserWebClient = getWebClient(true, "OtherUser");
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool
