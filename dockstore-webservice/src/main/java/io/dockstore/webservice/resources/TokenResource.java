@@ -348,7 +348,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         if (user == null && !authUser.isPresent() && googleByUsername.isEmpty()) {
             user = new User();
             // Pull user information from Google
-            GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
             user.setUsername(userinfo.getEmail());
             userID = userDAO.create(user);
 
@@ -385,7 +384,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             tokenDAO.create(googleToken);
             // Update user profile too
             user = userDAO.findById(userID);
-            GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
+            updateGoogleUserMetaData(userinfo, user);
             LOG.info("Google token created for {}", googleLoginName);
         } else {
             // Update tokens if exists
@@ -434,6 +433,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             LOG.error("Retrieving accessToken was unsuccessful");
             throw new CustomWebApplicationException("Could not retrieve google.com token based on code", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    public void updateGoogleUserMetaData(Userinfoplus userinfo, User user) {
+        GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
+
     }
 
     @GET

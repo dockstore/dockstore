@@ -106,6 +106,7 @@ public class TokenResourceTest {
     public void tearDown() {
         reset(tokenDAO);
         reset(enduserDAO);
+        reset(tokenResourceSpy);
     }
 
     /**
@@ -121,6 +122,8 @@ public class TokenResourceTest {
 
         // Two tokens should have been created, the Dockstore token and the Google Token
         verify(tokenDAO, times(2)).create(any());
+        // Check profile is update once only once
+        verify(tokenResourceSpy, times(1)).updateGoogleUserMetaData(any(), any());
         final String responseBody = potato.readEntity(String.class);
         try {
             Token token = mapper.readValue(responseBody, Token.class);
@@ -147,6 +150,8 @@ public class TokenResourceTest {
 
         // Only created the Google token
         verify(tokenDAO, times(1)).create(any());
+        // Check profile is update once only once
+        verify(tokenResourceSpy, times(1)).updateGoogleUserMetaData(any(), any());
         final String responseBody = response.readEntity(String.class);
 
         try {
@@ -175,6 +180,8 @@ public class TokenResourceTest {
 
         // Only created the Google token
         verify(tokenDAO, times(0)).create(any());
+        // Check profile is update 0 times, since the token already exists
+        verify(tokenResourceSpy, times(0)).updateGoogleUserMetaData(any(), any());
         final String responseBody = response.readEntity(String.class);
 
         try {
