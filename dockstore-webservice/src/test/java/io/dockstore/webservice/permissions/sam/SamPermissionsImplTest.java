@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -290,22 +291,46 @@ public class SamPermissionsImplTest {
         Assert.assertEquals(0, sharedWithUser.size());
     }
 
-    /**
-     * Test that a reader gets herself back
-     * @throws ApiException
-     */
     @Test
-    public void testSelfPermissions() throws ApiException {
+    public void testOwnersActions() throws ApiException {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
-        when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
-                .thenThrow(new ApiException(HttpStatus.SC_FORBIDDEN, "Unauthorized"));
-        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.READ)))
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
                 .thenReturn(Boolean.TRUE);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
+    }
+
+    @Test
+    public void testWritersActions() throws ApiException {
+        final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
+                .thenReturn(Boolean.FALSE);
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.WRITE)))
+                .thenReturn(Boolean.TRUE);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(2, actions.size());
+        Assert.assertTrue(actions.contains(Role.Action.WRITE) && actions.contains(Role.Action.READ));
+    }
+
+    @Test
+    public void testReadersActions() throws ApiException {
+        final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
+                .thenReturn(Boolean.FALSE);
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.WRITE)))
                 .thenReturn(Boolean.FALSE);
-        final List<Permission> permissions = samPermissionsImpl.getPermissionsForWorkflow(userMock, fooWorkflow);
-        Assert.assertEquals(1, permissions.size());
-        Assert.assertEquals(Role.READER, permissions.iterator().next().getRole());
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.READ)))
+                .thenReturn(Boolean.TRUE);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(1, actions.size());
+        Assert.assertTrue(actions.contains(Role.Action.READ));
+    }
+
+    @Test
+    public void testDockstoreOwnerNoSamPermissions() {
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
     }
 
     /**

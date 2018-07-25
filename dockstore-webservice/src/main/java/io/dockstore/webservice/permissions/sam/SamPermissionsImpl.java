@@ -176,17 +176,27 @@ public class SamPermissionsImpl implements PermissionsInterface {
             return PermissionsInterface.mergePermissions(dockstoreOwners, samPermissions);
         } catch (ApiException e) {
             final String errorGettingPermissions = "Error getting permissions";
-            if (e.getCode() == HttpStatus.SC_FORBIDDEN) {
-                // If it's a 403; it may exist, but we may not have permissions to view
-                // the permissions, so derive the permission
-                return derivePermission(user, workflow)
-                        .map(permission -> Arrays.asList(permission)) // If we're not an owner, only return our own permission
-                        .orElseThrow(() -> new CustomWebApplicationException(errorGettingPermissions, e.getCode()));
-            } else if (e.getCode() != HttpStatus.SC_NOT_FOUND) { // If 404, SAM resource has not been created; just return Dockstore owners
+            if (e.getCode() != HttpStatus.SC_NOT_FOUND) { // If 404, SAM resource has not been created; just return Dockstore owners
                 throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
             }
         }
         return dockstoreOwners;
+    }
+
+    @Override
+    public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
+        List<Role.Action> list = new ArrayList<>();
+        if (workflow.getUsers().contains(user) || canDoAction(user, workflow, Role.Action.SHARE)) {
+            // Short cut to avoid multiple calls; if we can share, we're an owner and can do all actions
+            list.addAll(Arrays.asList(Role.Action.values()));
+        } else if (canDoAction(user, workflow, Role.Action.WRITE)) {
+            // If we can write, we can read
+            list.add(Role.Action.WRITE);
+            list.add(Role.Action.READ);
+        } else if (canDoAction(user, workflow, Role.Action.READ)) {
+            list.add(Role.Action.READ);
+        }
+        return list;
     }
 
     @Override
@@ -207,27 +217,6 @@ public class SamPermissionsImpl implements PermissionsInterface {
             LOG.error(MessageFormat.format("Error removing {0} from workflow {1}", email, encodedPath), e);
             throw new CustomWebApplicationException("Error removing permissions", e.getCode());
         }
-    }
-
-    /**
-     * Derives <code>user</code>'s {@link Permission} (email + role) on <code>workflow</code>, without
-     * being able to read the SAM permissions directly, by calling the SAM
-     * APIs to see what actions the user can perform on the workflow.
-     *
-     * @param user
-     * @param workflow
-     * @return
-     */
-    private Optional<Permission> derivePermission(User user, Workflow workflow) {
-        final User.Profile googleProfile = user.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
-        assert googleProfile != null; // If we gotten this far, we can safely assume there is a Google TokenType
-        final String email = googleProfile.email;
-        if (canDoAction(user, workflow, Role.Action.WRITE)) {
-            return Optional.of(new Permission(email, Role.WRITER));
-        } else if (canDoAction(user, workflow, Role.Action.READ)) {
-            return Optional.of(new Permission(email, Role.READER));
-        }
-        return Optional.empty();
     }
 
     private void initializePermission(Workflow workflow, User user) {

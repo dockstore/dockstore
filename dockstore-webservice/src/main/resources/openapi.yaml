@@ -3907,6 +3907,36 @@ paths:
                 $ref: '#/components/schemas/Workflow'
       security:
         - BEARER: []
+  '/workflows/path/workflow/{repository}/actions':
+    get:
+      tags:
+        - workflows
+      summary: Gets all actions a user can perform on a workflow
+      description: ''
+      operationId: getWorkflowActions
+      parameters:
+        - name: repository
+          in: path
+          description: repository path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum:
+                    - WRITE
+                    - READ
+                    - DELETE
+                    - SHARE
+      security:
+        - BEARER: []
   '/workflows/path/workflow/{repository}/permissions':
     get:
       tags:
