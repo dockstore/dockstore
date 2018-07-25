@@ -250,7 +250,8 @@ public final class ToolsImplCommon {
      * @throws URISyntaxException When URI building goes wrong
      */
     private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
-        URI uri = new URI(config.getScheme(), null, config.getHostname(), Integer.parseInt(config.getPort()),
+        int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
+        URI uri = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
             DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
         return uri.toString();
     }

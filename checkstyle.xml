@@ -207,7 +207,7 @@
         <module name="AvoidStarImport"/>
         <!-- ban new references to old commons lang and configuration -->
         <module name="IllegalImport">
-            <property name="illegalPkgs" value="sun, org.apache.commons.lang, org.apache.commons.configuration"/>
+            <property name="illegalPkgs" value="sun, org.apache.commons.lang, org.apache.commons.configuration, org.apache.commons.httpclient"/>
         </module>
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
@@ -312,9 +312,9 @@
         <!-- See http://checkstyle.sf.net/config_design.html -->
         <!--
             <module name="DesignForExtension"/>
-            <module name="InterfaceIsType"/>
             <module name="VisibilityModifier"/>
         -->
+        <module name="InterfaceIsType"/>
         <module name="FinalClass"/>
         <module name="HideUtilityClassConstructor"/>
         <module name="InnerTypeLast"/>
@@ -322,14 +322,16 @@
 
         <!-- Miscellaneous other checks.                   -->
         <!-- See http://checkstyle.sf.net/config_misc.html -->
-        <!-- <module name="ArrayTypeStyle"/> -->
+        <module name="ArrayTypeStyle"/>
         <module name="FinalParameters">
             <property name="severity" value="ignore"/>
         </module>
+        <module name="CommentsIndentation"/>
         <module name="TodoComment">
             <property name="severity" value="ignore"/>
         </module>
         <module name="UpperEll"/>
+        <module name="DefaultComesLast"/>
     </module>
 
 </module>
