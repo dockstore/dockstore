@@ -17,7 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,14 +39,11 @@ import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.TokenResponse;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
-import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
@@ -402,14 +398,11 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      * @return
      */
     public Userinfoplus getUserInfo(String accessToken) {
-        try {
-            GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
-            Oauth2 oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, credential)
-                    .setApplicationName("").build();
-            return oauth2.userinfo().get().execute();
-        } catch (GeneralSecurityException | IOException e) {
-            throw new CustomWebApplicationException(e.getMessage() + ". Could not use OAuth 2.0 client credentials.",
-                    HttpStatus.SC_BAD_REQUEST);
+        Optional<Userinfoplus> userinfoplus = GoogleHelper.userinfoplusFromToken(accessToken);
+        if (userinfoplus.isPresent()) {
+            return userinfoplus.get();
+        } else {
+            throw new CustomWebApplicationException("Could not get Google user info using token.", HttpStatus.SC_EXPECTATION_FAILED);
         }
     }
 
