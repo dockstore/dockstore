@@ -40,6 +40,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SamPermissionsImplTest {
@@ -145,11 +147,11 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    public void testAccessPolicyResponseEntryToUserPermissionsDuplicateEmails() {
+    public void testRemoveDuplicateEmails() {
         // If a user belongs to two different roles, which the UI does not support, just return
         // the most powerful role.
         final List<Permission> permissions = samPermissionsImpl
-                .accessPolicyResponseEntryToUserPermissions(Arrays.asList(ownerPolicy, writerPolicy, readerPolicy));
+                .removeDuplicateEmails(Arrays.asList(ownerPermission, writerPermission, readerPermission));
         Assert.assertEquals(
                 permissions.size(), 2);
         Assert.assertTrue(permissions.contains(ownerPermission));
@@ -245,7 +247,6 @@ public class SamPermissionsImplTest {
             Assert.fail();
             e.printStackTrace();
         }
-
     }
 
     @Test
@@ -269,6 +270,28 @@ public class SamPermissionsImplTest {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Verifies that if a user already has a permission on a workflow, and we then set a different permission, that the
+     * call to remove the old permission is made.
+     *
+     * @throws ApiException
+     */
+    @Test
+    public void setPermissionRemovesExistingPermission() throws ApiException {
+        final Permission readerPermission = new Permission(JANE_DOE_GMAIL_COM, Role.READER);
+        final String encodedPath = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath))
+                .thenReturn(Arrays.asList(writerPolicy));
+        setupInitializePermissionsMocks(encodedPath);
+        doNothing().when(resourcesApiMock)
+                .removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.WRITE_POLICY, JANE_DOE_GMAIL_COM);
+        samPermissionsImpl.setPermission(userMock, fooWorkflow, readerPermission);
+        verify(resourcesApiMock, times(1))
+                .removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.WRITE_POLICY, JANE_DOE_GMAIL_COM);
+    }
+
+
 
     @Test
     public void removePermissionTest() throws ApiException {

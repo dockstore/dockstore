@@ -73,16 +73,42 @@ public class SamPermissionsImpl implements PermissionsInterface {
         this.config = config;
     }
 
+    /**
+     * Calls SAM to add the email in <code>permission</code> to the appropriate policy, based on the role
+     * in the <code>permission</code> for the SAM resource for <code>workflow</code>.
+     *
+     * In SAM an email can belong to multiple policies for the same resource. This can lead to confusion in the Dockstore
+     * UI. If a user belongs to the writer policy, then gets added to the reader policy as well, the user will still have
+     * write permissions, which is probably not the intended behavior.
+     *
+     * To avoid this, when setting a permission, the code removes the user from any other policies the user may belong to.
+     *
+     * @param requester -- the requester, who must be an owner of <code>workflow</code> or an admin
+     * @param workflow the workflow
+     * @param permission -- the email and the permission for that email
+     * @return
+     */
     @Override
     public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
         ResourcesApi resourcesApi = getResourcesApi(requester);
         try {
             final String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
 
-            ensureResourceExists(workflow, requester, resourcesApi, encodedPath);
-
-            resourcesApi.addUserToPolicy(SamConstants.RESOURCE_TYPE, encodedPath, permissionSamMap.get(permission.getRole()),
-                    permission.getEmail());
+            final List<AccessPolicyResponseEntry> policyList = ensureResourceExists(workflow, requester, resourcesApi,
+                    encodedPath).stream().filter(entry -> entry.getPolicy().getMemberEmails().contains(permission.getEmail()))
+                    .collect(Collectors.toList());
+            final String samPolicyName = permissionSamMap.get(permission.getRole());
+            // If the email does not already belong to the policy, add it.
+            if (!policyList.stream().anyMatch(entry -> entry.getPolicyName().equals(samPolicyName))) {
+                resourcesApi.addUserToPolicy(SamConstants.RESOURCE_TYPE, encodedPath, samPolicyName,
+                        permission.getEmail());
+            }
+            // If the email belongs to other policies, remove it from them so that the one we are setting is the only applicable one.
+            for (AccessPolicyResponseEntry entry : policyList) {
+                if (!entry.getPolicyName().equals(samPolicyName)) {
+                    resourcesApi.removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, entry.getPolicyName(), permission.getEmail());
+                }
+            }
             return getPermissionsForWorkflow(requester, workflow);
         } catch (ApiException e) {
             String errorMessage = readValue(e, ErrorReport.class).map(errorReport -> errorReport.getMessage())
@@ -96,9 +122,9 @@ public class SamPermissionsImpl implements PermissionsInterface {
         return new ResourcesApi(getApiClient(requester));
     }
 
-    private void ensureResourceExists(Workflow workflow, User requester, ResourcesApi resourcesApi, String encodedPath) {
+    private List<AccessPolicyResponseEntry> ensureResourceExists(Workflow workflow, User requester, ResourcesApi resourcesApi, String encodedPath) {
         try {
-            resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath);
+            return resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath);
         } catch (ApiException e) {
             if (e.getCode() == HttpStatus.SC_NOT_FOUND) {
                 initializePermission(workflow, requester);
@@ -106,6 +132,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
                 throw new CustomWebApplicationException("Error listing permissions", e.getCode());
             }
         }
+        return Collections.emptyList();
     }
 
     @Override
@@ -173,7 +200,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
             String encoded = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
             final List<Permission> samPermissions = accessPolicyResponseEntryToUserPermissions(
                     resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encoded));
-            return PermissionsInterface.mergePermissions(dockstoreOwners, samPermissions);
+            return PermissionsInterface.mergePermissions(dockstoreOwners, removeDuplicateEmails(samPermissions));
         } catch (ApiException e) {
             final String errorGettingPermissions = "Error getting permissions";
             if (e.getCode() != HttpStatus.SC_NOT_FOUND) { // If 404, SAM resource has not been created; just return Dockstore owners
@@ -303,7 +330,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * @return
      */
     List<Permission> accessPolicyResponseEntryToUserPermissions(List<AccessPolicyResponseEntry> accessPolicyList) {
-        final List<Permission> permissionList = accessPolicyList.stream().map(accessPolicy -> {
+        return accessPolicyList.stream().map(accessPolicy -> {
             Role role = samPermissionMap.get(accessPolicy.getPolicy().getRoles().get(0));
             return accessPolicy.getPolicy().getMemberEmails().stream().map(email -> {
                 Permission permission = new Permission();
@@ -312,7 +339,6 @@ public class SamPermissionsImpl implements PermissionsInterface {
                 return permission;
             });
         }).flatMap(s -> s).collect(Collectors.toList());
-        return removeDuplicateEmails(permissionList);
 
     }
 
@@ -325,7 +351,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * @param permissionList
      * @return
      */
-    private List<Permission> removeDuplicateEmails(List<Permission> permissionList) {
+    List<Permission> removeDuplicateEmails(List<Permission> permissionList) {
         // A map of email to permissions.
         final Map<String, Permission> map = new HashMap<>();
         permissionList.stream().forEach(permission -> {
