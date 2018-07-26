@@ -114,7 +114,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolCWL() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolCWL() throws IOException, ApiException {
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
         // Branch: master
@@ -135,7 +135,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolWDLSingleNode() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLSingleNode() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: master
@@ -155,7 +155,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolWDLMultipleNodes() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLMultipleNodes() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: hello-dockstore-workflow
         // Branch: master
@@ -174,7 +174,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolCWLMissingTool() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolCWLMissingTool() throws IOException, ApiException {
         // Input: Dockstore.cwl
         // Repo: hello-dockstore-workflow
         // Branch: testCWL
@@ -189,7 +189,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
     @Test
     @Ignore("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
-    public void testWorkflowToolWDLMissingTask() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLMissingTask() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: missing_docker
@@ -203,7 +203,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolImportAndIncludeSyntax() throws IOException, TimeoutException, ApiException {
+    public void testToolImportAndIncludeSyntax() throws IOException, ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: master
@@ -222,7 +222,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolCWL1Syntax() throws IOException, TimeoutException, ApiException {
+    public void testToolCWL1Syntax() throws IOException, ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: develop
@@ -245,7 +245,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolCWL1SyntaxCorrectLink() throws IOException, TimeoutException, ApiException {
+    public void testToolCWL1SyntaxCorrectLink() throws IOException, ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: correct_docker_link

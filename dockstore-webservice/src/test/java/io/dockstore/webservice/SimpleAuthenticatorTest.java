@@ -40,7 +40,7 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateDockstoreToken() throws AuthenticationException {
+    public void authenticateDockstoreToken() {
         when(token.getUserId()).thenReturn(USER_ID);
         when(tokenDAO.findByContent(credentials)).thenReturn(token);
         when(userDAO.findById(USER_ID)).thenReturn(user);
@@ -48,7 +48,7 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateGoogleTokenExistingUser() throws AuthenticationException {
+    public void authenticateGoogleTokenExistingUser() {
         when(tokenDAO.findByContent(credentials)).thenReturn(null);
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
@@ -57,7 +57,7 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateGoogleTokenNewUser() throws AuthenticationException {
+    public void authenticateGoogleTokenNewUser() {
         when(tokenDAO.findByContent(credentials)).thenReturn(null);
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
@@ -67,7 +67,7 @@ public class SimpleAuthenticatorTest {
     }
 
     @Test
-    public void authenticateBadToken() throws AuthenticationException {
+    public void authenticateBadToken() {
         doReturn(Optional.empty()).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         Assert.assertFalse(simpleAuthenticator.authenticate(credentials).isPresent());
     }
