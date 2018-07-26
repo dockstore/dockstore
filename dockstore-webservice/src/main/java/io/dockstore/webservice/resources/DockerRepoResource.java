@@ -1050,7 +1050,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         Tool tool = toolDAO.findById(toolId);
         if (tool.getIsPublished()) {
-            tool = toolDAO.findPublishedById(toolId);
             checkEntry(tool);
         } else {
             checkEntry(tool);

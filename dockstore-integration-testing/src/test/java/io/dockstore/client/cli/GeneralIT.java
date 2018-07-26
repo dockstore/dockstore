@@ -124,7 +124,7 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient("DockstoreTestUser2");
+        ApiClient client = getWebClient(USER_2_USERNAME);
         ContainersApi toolsApi = new ContainersApi(client);
         return toolsApi;
     }
@@ -724,7 +724,7 @@ public class GeneralIT extends BaseIT {
      */
     @Test
     public void downloadZipFileTestAuth() {
-        final ApiClient ownerWebClient = getWebClient("DockstoreTestUser2");
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
         final ApiClient anonWebClient = getWebClient(false, null);

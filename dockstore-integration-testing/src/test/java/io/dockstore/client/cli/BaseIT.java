@@ -47,6 +47,9 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  */
 @Category(ConfidentialTest.class)
 public class BaseIT {
+    public final String ADMIN_USERNAME = "admin@admin.com";
+    public final String USER_1_USERNAME = "DockstoreTestUser";
+    public final String USER_2_USERNAME = "DockstoreTestUser2";
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);

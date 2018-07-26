@@ -1582,7 +1582,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         Workflow workflow = workflowDAO.findById(workflowId);
         if (workflow.getIsPublished()) {
-            workflow = workflowDAO.findPublishedById(workflowId);
             checkEntry(workflow);
         } else {
             checkEntry(workflow);
