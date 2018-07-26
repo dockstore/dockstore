@@ -638,7 +638,7 @@ public class Client {
      * --------------
      */
 
-    private void clean() throws IOException, ConfigurationException {
+    private void clean() throws IOException {
         final INIConfiguration configuration = Utilities.parseConfig(getConfigFile());
         final String cacheDirectory = getCacheDirectory(configuration);
         FileUtils.deleteDirectory(new File(cacheDirectory));

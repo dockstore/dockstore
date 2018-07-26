@@ -115,7 +115,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowDAGCWL() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowDAGCWL() throws IOException, ApiException {
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
         // Branch: master
@@ -135,7 +135,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowDAGWDLSingleNode() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowDAGWDLSingleNode() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: master
@@ -160,7 +160,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowDAGWDLMultipleNodes() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowDAGWDLMultipleNodes() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: hello-dockstore-workflow
         // Branch: master
@@ -189,7 +189,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowDAGCWLMissingTool() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowDAGCWLMissingTool() throws IOException, ApiException {
         // Input: Dockstore.cwl
         // Repo: hello-dockstore-workflow
         // Branch: testCWL
@@ -204,7 +204,7 @@ public class DAGWorkflowTestIT extends BaseIT {
 
     @Test
     @Ignore("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
-    public void testWorkflowDAGWDLMissingTask() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowDAGWDLMissingTask() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: missing_docker
@@ -218,7 +218,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testDAGImportSyntax() throws IOException, TimeoutException, ApiException {
+    public void testDAGImportSyntax() throws IOException, ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: master
@@ -237,7 +237,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testDAGCWL1Syntax() throws IOException, TimeoutException, ApiException {
+    public void testDAGCWL1Syntax() throws IOException, ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: develop
@@ -254,7 +254,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testHintsExpressionTool() throws IOException, TimeoutException, ApiException {
+    public void testHintsExpressionTool() throws IOException, ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: hints_ExpressionTool

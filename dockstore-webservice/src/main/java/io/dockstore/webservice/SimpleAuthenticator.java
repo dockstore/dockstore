@@ -27,7 +27,6 @@ import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.resources.TokenResource;
-import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
 import org.hibernate.Hibernate;
@@ -43,7 +42,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
     private final TokenDAO dao;
     private final UserDAO userDAO;
 
-    public SimpleAuthenticator(TokenDAO dao, UserDAO userDAO) {
+    SimpleAuthenticator(TokenDAO dao, UserDAO userDAO) {
         this.dao = dao;
         this.userDAO = userDAO;
     }
@@ -56,11 +55,10 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
      *
      * @param credentials
      * @return an optional user
-     * @throws AuthenticationException
      */
     @UnitOfWork
     @Override
-    public Optional<User> authenticate(String credentials) throws AuthenticationException {
+    public Optional<User> authenticate(String credentials) {
         LOG.debug("SimpleAuthenticator called with {}", credentials);
         final Token token = dao.findByContent(credentials);
         if (token != null) { // It's a valid Dockstore token

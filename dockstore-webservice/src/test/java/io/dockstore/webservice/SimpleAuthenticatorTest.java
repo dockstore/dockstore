@@ -31,7 +31,7 @@ public class SimpleAuthenticatorTest {
     private final static String USER_EMAIL = "jdoe@example.com";
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         tokenDAO = Mockito.mock(TokenDAO.class);
         userDAO = Mockito.mock(UserDAO.class);
         simpleAuthenticator = spy(new SimpleAuthenticator(tokenDAO, userDAO));

@@ -69,7 +69,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
-            throws IOException, TimeoutException, ApiException {
+            throws IOException, ApiException {
         final String TEST_WORKFLOW_NAME = "test-workflow";
         WorkflowsApi workflowApi = setupWebService();
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");

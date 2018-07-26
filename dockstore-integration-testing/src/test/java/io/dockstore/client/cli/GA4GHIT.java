@@ -300,10 +300,9 @@ public abstract class GA4GHIT {
     /**
      * This tests that a 400 response returns an Error response object similar to the 404 response defined in the
      * GA4GH swagger.yaml
-     * @throws Exception
      */
     @Test
-    public void testInvalidToolId() throws Exception {
+    public void testInvalidToolId() {
         Response response = client.target(basePath + "tools/potato").request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
         Error error = response.readEntity(Error.class);
