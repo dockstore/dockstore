@@ -295,6 +295,7 @@ public class ClientIT extends BaseIT {
 
         checkCommandForHelp(new String[] {});
         checkCommandForHelp(new String[] { "tool" });
+        checkCommandForHelp(new String[] { "tool", "download", "--help" });
         checkCommandForHelp(new String[] { "tool", "list", "--help" });
         checkCommandForHelp(new String[] { "tool", "search", "--help" });
         checkCommandForHelp(new String[] { "tool", "publish", "--help" });
@@ -339,6 +340,7 @@ public class ClientIT extends BaseIT {
         checkCommandForHelp(new String[] { "workflow", "update_workflow" });
         checkCommandForHelp(new String[] { "workflow", "restub" });
 
+        checkCommandForHelp(new String[] { "workflow", "download", "--help" });
         checkCommandForHelp(new String[] { "workflow", "list", "--help" });
         checkCommandForHelp(new String[] { "workflow", "search", "--help" });
         checkCommandForHelp(new String[] { "workflow", "publish", "--help" });

@@ -55,6 +55,7 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
+import static io.dockstore.client.cli.ArgumentUtility.DOWNLOAD;
 import static io.dockstore.client.cli.ArgumentUtility.LAUNCH;
 import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
@@ -147,6 +148,7 @@ public abstract class AbstractEntryClient {
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
+        out("  " + DOWNLOAD + "         :  download " + getEntryType() + "s to the local directory");
         printClientSpecificHelp();
         if (isAdmin) {
             printAdminHelp();
@@ -221,6 +223,9 @@ public abstract class AbstractEntryClient {
             case LAUNCH:
                 launch(args);
                 break;
+            case DOWNLOAD:
+                download(args);
+                break;
             case "verify":
                 verify(args);
                 break;
@@ -269,6 +274,14 @@ public abstract class AbstractEntryClient {
      * @param toolpath a unique identifier for an entry, called a path for workflows and tools
      */
     protected abstract void refreshTargetEntry(String toolpath);
+
+    /**
+     * Download a specific entry of this type.
+     *
+     * @param toolpath a unique identifier for an entry, called a path for workflows and tools
+     * @param unzip unzip the entry after downloading
+     */
+    protected abstract void downloadTargetEntry(String toolpath, boolean unzip) throws IOException;
 
     /**
      * Grab the descriptor for an entry. TODO: descriptorType should probably be an enum, may need to play with generics to make it
@@ -830,8 +843,33 @@ public abstract class AbstractEntryClient {
     }
 
     /**
-     * TODO: this may need to be moved to ToolClient depending on whether we can re-use
-     * this for workflows.
+     * download tools and workflows.
+     *
+     * @param args Arguments entered into the CLI
+     */
+    public void download(final List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            downloadHelp();
+        } else {
+            if (!args.contains("--entry")) {
+                errorMessage("dockstore: missing required flag --entry", CLIENT_ERROR);
+            }
+            final String entry = reqVal(args, "--entry");
+            final boolean unzip = !args.contains("--zip");
+            try {
+                downloadTargetEntry(entry, unzip);
+            } catch (ApiException e) {
+                exceptionMessage(e, "error downloading workflow, perhaps an incorrect ID?",
+                    Client.API_ERROR);
+            } catch (IOException e) {
+                exceptionMessage(e, "error downloading workflow, perhaps you're out of space or do not have permissions?",
+                    Client.API_ERROR);
+            }
+        }
+    }
+
+    /**
+     * Launches tools and workflows.
      *
      * @param args Arguments entered into the CLI
      */
@@ -1208,6 +1246,22 @@ public abstract class AbstractEntryClient {
         out("  --entry <entry>                Complete " + getEntryType().toLowerCase()
                 + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
         out("  --descriptor <descriptor>      Type of descriptor language used. Defaults to cwl");
+        printHelpFooter();
+    }
+
+    protected void downloadHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " download --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " download [parameters]");
+        out("");
+        out("Description:");
+        out("  Download an entry to the working directory.");
+        out("");
+        out("Required parameters:");
+        out("  --entry <entry>          Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow:develop)");
+        out("");
+        out("Optional parameters:");
+        out("  --zip               Keep the zip file rather than uncompress the files within");
         printHelpFooter();
     }
 

@@ -19,7 +19,6 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -27,6 +26,8 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import javax.ws.rs.core.GenericType;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -45,16 +46,15 @@ import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.MAX_DESCRIPTION;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 import static io.dockstore.client.cli.ArgumentUtility.columnWidthsTool;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
@@ -67,6 +67,8 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpFooter;
 import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 
 /**
  * Implement all operations that have to do with tools.
@@ -156,7 +158,7 @@ public class ToolClient extends AbstractEntryClient {
     }
 
     private static void printPublishedList(List<DockstoreTool> containers) {
-        Collections.sort(containers, new ToolComparator());
+        containers.sort(new ToolComparator());
 
         int[] maxWidths = columnWidthsTool(containers);
 
@@ -600,6 +602,40 @@ public class ToolClient extends AbstractEntryClient {
             exceptionMessage(ex, "", Client.API_ERROR);
         }
     }
+
+    /**
+     * Disturbingly similar to WorkflowClient#downloadTargetEntry, could use cleanup refactoring
+     * @param toolpath a unique identifier for an entry, called a path for workflows and tools
+     * @param unzip unzip the entry after downloading
+     */
+    protected void downloadTargetEntry(String toolpath, boolean unzip) {
+        String[] parts = toolpath.split(":");
+
+        String path = parts[0];
+
+        String tag = (parts.length > 1) ? parts[1] : null;
+        DockstoreTool container = getDockstoreTool(path);
+        Optional<Tag> first = container.getTags().stream().filter(foo -> foo.getName().equalsIgnoreCase(tag)).findFirst();
+        if (first.isPresent()) {
+            Long versionId = first.get().getId();
+            byte[] arbitraryURL = SwaggerUtility
+                .getArbitraryURL("/containers/" + container.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
+                }, containersApi.getApiClient());
+            try {
+                File zipFile = new File(container.getName() + ".zip");
+                FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
+                if (unzip) {
+                    SwaggerUtility.unzipFile(zipFile);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("could not write zip file to disk, out of space?");
+            }
+        } else {
+            throw new RuntimeException("version not found");
+        }
+    }
+
+
 
     public void handleLabels(String entryPath, Set<String> addsSet, Set<String> removesSet) {
         // Try and update the labels for the given container

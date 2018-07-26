@@ -21,7 +21,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
@@ -29,9 +28,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
@@ -64,24 +61,23 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
     private WorkflowsApi setupWebService() throws ApiException {
         ApiClient webClient = WorkflowIT.getWebClient(USER_1_USERNAME);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        return workflowApi;
+        return new WorkflowsApi(webClient);
     }
 
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
-            throws IOException, TimeoutException, ApiException {
+            throws IOException, ApiException {
         final String TEST_WORKFLOW_NAME = "test-workflow";
         WorkflowsApi workflowApi = setupWebService();
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
-        Assert.assertTrue(githubWorkflow.getWorkflowName().equals(TEST_WORKFLOW_NAME));
+        Assert.assertEquals(githubWorkflow.getWorkflowName(), TEST_WORKFLOW_NAME);
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
-        Assert.assertTrue(refresh.getWorkflowName().equals(TEST_WORKFLOW_NAME));
+        Assert.assertEquals(refresh.getWorkflowName(), TEST_WORKFLOW_NAME);
 
         Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch))
                 .findFirst();
@@ -89,9 +85,8 @@ public class ToolsWorkflowTestIT extends BaseIT {
         //getting the dag json string
         final String basePath = WorkflowIT.getWebClient(USER_1_USERNAME).getBasePath();
         URL url = new URL(basePath + "/workflows/" + githubWorkflow.getId() + "/tools/" + master.get().getId());
-        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
 
-        return strings;
+        return Resources.readLines(url, Charset.forName("UTF-8"));
     }
 
     private int countToolInJSON(List<String> strings) {
@@ -114,7 +109,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolCWL() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolCWL() throws IOException, ApiException {
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
         // Branch: master
@@ -135,7 +130,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolWDLSingleNode() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLSingleNode() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: master
@@ -155,7 +150,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolWDLMultipleNodes() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLMultipleNodes() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: hello-dockstore-workflow
         // Branch: master
@@ -174,7 +169,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowToolCWLMissingTool() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolCWLMissingTool() throws IOException, ApiException {
         // Input: Dockstore.cwl
         // Repo: hello-dockstore-workflow
         // Branch: testCWL
@@ -189,7 +184,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
     @Test
     @Ignore("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
-    public void testWorkflowToolWDLMissingTask() throws IOException, TimeoutException, ApiException {
+    public void testWorkflowToolWDLMissingTask() throws IOException, ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: missing_docker
@@ -203,7 +198,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolImportAndIncludeSyntax() throws IOException, TimeoutException, ApiException {
+    public void testToolImportAndIncludeSyntax() throws IOException, ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: master
@@ -222,7 +217,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolCWL1Syntax() throws IOException, TimeoutException, ApiException {
+    public void testToolCWL1Syntax() throws IOException, ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: develop
@@ -245,7 +240,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testToolCWL1SyntaxCorrectLink() throws IOException, TimeoutException, ApiException {
+    public void testToolCWL1SyntaxCorrectLink() throws IOException, ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: correct_docker_link
