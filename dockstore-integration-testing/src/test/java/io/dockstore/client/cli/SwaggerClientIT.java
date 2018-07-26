@@ -757,6 +757,33 @@ public class SwaggerClientIT {
         Assert.assertTrue("sitemap with testing data should have at least 2 entries", sitemap.split("\n").length >= 2 && sitemap.contains("http://localhost/containers/quay.io/test_org/test6") && sitemap.contains("http://localhost/workflows/github.com/A/l"));
     }
 
+    @Test
+    public void testDuplicateHostedWorkflowCreationNull() {
+        registerHostedWorkflow(null);
+    }
+
+    @Test
+    public void testDuplicateHostedWorkflowCreation() {
+        registerHostedWorkflow("");
+    }
+
+    private void registerHostedWorkflow(String s) {
+        final ApiClient userWebClient = getWebClient(true, true);
+        final HostedApi userHostedApi = new HostedApi(userWebClient);
+        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
+        thrown.expect(ApiException.class);
+        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
+    }
+
+    @Test
+    public void testDuplicateHostedToolCreation() {
+        final ApiClient userWebClient = getWebClient(true, true);
+        final HostedApi userHostedApi = new HostedApi(userWebClient);
+        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org");
+        thrown.expect(ApiException.class);
+        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org");
+    }
+
     /**
      * Tests workflow sharing/permissions.
      *

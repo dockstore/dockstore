@@ -38,7 +38,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 /**
  * This is a dummy class used to describe the swagger API as a whole.
  * WARNING: This is a generated file, do not edit directly.
- * Edit the template in src/main/templates
+ * Edit the template in src/main/templates/io/dockstore/webservice/resources
  *
  * @author dyuen
  */
