@@ -314,14 +314,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         JsonObject satellizerObject = element.getAsJsonObject();
         final String code = satellizerObject.get("code").getAsString();
         final String redirectUri = satellizerObject.get("redirectUri").getAsString();
-        String accessToken = null;
-        String refreshToken = null;
-        if (accessToken == null) {
-            TokenResponse tokenResponse = getTokenResponse(code, redirectUri);
-            accessToken = tokenResponse.getAccessToken();
-            refreshToken = tokenResponse.getRefreshToken();
-            LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");
-        }
+        TokenResponse tokenResponse = getTokenResponse(code, redirectUri);
+        String accessToken = tokenResponse.getAccessToken();
+        String refreshToken = tokenResponse.getRefreshToken();
+        LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");
         Userinfoplus userinfo = getUserInfo(accessToken);
         long userID;
         Token dockstoreToken = null;
@@ -365,7 +361,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         if (googleToken == null) {
             LOG.info("Could not find user's Google token. Making new one...");
             // CREATE GOOGLE TOKEN
-            googleToken = createGoogleToken(accessToken, refreshToken, userID, googleLoginName);
+            googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM);
             tokenDAO.create(googleToken);
             // Update user profile too
             user = userDAO.findById(userID);
@@ -393,17 +389,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         } else {
             throw new CustomWebApplicationException("Could not get Google user info using token.", HttpStatus.SC_EXPECTATION_FAILED);
         }
-    }
-
-    public static Token createGoogleToken(String accessToken, String refreshToken, long userID, String googleLoginName) {
-        Token googleToken;
-        googleToken = new Token();
-        googleToken.setTokenSource(TokenType.GOOGLE_COM);
-        googleToken.setContent(accessToken);
-        googleToken.setRefreshToken(refreshToken);
-        googleToken.setUserId(userID);
-        googleToken.setUsername(googleLoginName);
-        return googleToken;
     }
 
     /**

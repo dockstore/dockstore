@@ -100,6 +100,14 @@ public class Token implements Comparable<Token> {
     public Token() {
     }
 
+    public Token(String content, String refreshToken, long userId, String username, TokenType tokenSource) {
+        this.setContent(content);
+        this.setRefreshToken(refreshToken);
+        this.setUserId(userId);
+        this.setUsername(username);
+        this.setTokenSource(tokenSource);
+    }
+
     public static Token extractToken(List<Token> tokens, TokenType source) {
         for (Token token : tokens) {
             if (token.getTokenSource().equals(source)) {
