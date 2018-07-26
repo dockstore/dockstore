@@ -138,17 +138,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.cachingAuthenticator = cachingAuthenticator;
     }
 
-    public static Token createGoogleToken(String accessToken, String refreshToken, long userID, String googleLoginName) {
-        Token googleToken;
-        googleToken = new Token();
-        googleToken.setTokenSource(TokenType.GOOGLE_COM);
-        googleToken.setContent(accessToken);
-        googleToken.setRefreshToken(refreshToken);
-        googleToken.setUserId(userID);
-        googleToken.setUsername(googleLoginName);
-        return googleToken;
-    }
-
     @GET
     @Path("/{tokenId}")
     @Timed
@@ -404,6 +393,17 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         } else {
             throw new CustomWebApplicationException("Could not get Google user info using token.", HttpStatus.SC_EXPECTATION_FAILED);
         }
+    }
+
+    public static Token createGoogleToken(String accessToken, String refreshToken, long userID, String googleLoginName) {
+        Token googleToken;
+        googleToken = new Token();
+        googleToken.setTokenSource(TokenType.GOOGLE_COM);
+        googleToken.setContent(accessToken);
+        googleToken.setRefreshToken(refreshToken);
+        googleToken.setUserId(userID);
+        googleToken.setUsername(googleLoginName);
+        return googleToken;
     }
 
     /**
