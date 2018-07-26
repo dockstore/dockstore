@@ -30,8 +30,10 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.Tool;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -122,7 +124,7 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient();
+        ApiClient client = getWebClient(USER_2_USERNAME);
         ContainersApi toolsApi = new ContainersApi(client);
         return toolsApi;
     }
@@ -715,5 +717,60 @@ public class GeneralIT extends BaseIT {
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
         assertEquals("The tool should be manual, there are " + count, 1, count);
+    }
+
+    /**
+     * This tests that zip file can be downloaded or not based on published state and auth.
+     */
+    @Test
+    public void downloadZipFileTestAuth() {
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
+        ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
+
+        final ApiClient anonWebClient = getWebClient(false, null);
+        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
+
+        final ApiClient otherUserWebClient = getWebClient(true, "OtherUser");
+        ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
+
+        // Register and refresh tool
+        DockstoreTool tool = ownerContainersApi.registerManual(getContainer());
+        DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
+        Long toolId = refresh.getId();
+        Long versionId = refresh.getTags().get(0).getId();
+
+        // Try downloading unpublished
+        // Owner: Should pass
+        ownerContainersApi.getToolZip(toolId, versionId);
+        // Anon: Should fail
+        boolean success = true;
+        try {
+            anonContainersApi.getToolZip(toolId, versionId);
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("User does not have access to tool.", !success);
+        }
+        // Other user: Should fail
+        success = true;
+        try {
+            otherUserContainersApi.getToolZip(toolId, versionId);
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("User does not have access to tool.", !success);
+        }
+
+        // Publish
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        ownerContainersApi.publish(toolId, publishRequest);
+
+        // Try downloading published
+        // Owner: Should pass
+        ownerContainersApi.getToolZip(toolId, versionId);
+        // Anon: Should pass
+        anonContainersApi.getToolZip(toolId, versionId);
+        // Other user: Should pass
+        otherUserContainersApi.getToolZip(toolId, versionId);
     }
 }

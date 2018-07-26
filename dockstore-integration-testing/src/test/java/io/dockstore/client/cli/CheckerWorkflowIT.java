@@ -76,7 +76,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testCWLToolAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         ContainersApi containersApi = new ContainersApi(webClient);
 
@@ -178,7 +178,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testCWLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
@@ -265,7 +265,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testWDLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
@@ -337,7 +337,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testAddCheckerToStub() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -362,7 +362,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testRegisteringToolWithUnderscoreInName() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         ContainersApi containersApi = new ContainersApi(webClient);
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -390,7 +390,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testRegisteringWorkflowWithUnderscoreInName() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // Manually register a workflow

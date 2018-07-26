@@ -1590,14 +1590,18 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     public Response getWorkflowZip(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
-        Workflow workflow;
-        if (user.isPresent()) {
-            workflow = workflowDAO.findById(workflowId);
+
+        Workflow workflow = workflowDAO.findById(workflowId);
+        if (workflow.getIsPublished()) {
             checkEntry(workflow);
-            checkCanReadWorkflow(user.get(), workflow);
         } else {
-            workflow = workflowDAO.findPublishedById(workflowId);
             checkEntry(workflow);
+            if (user.isPresent()) {
+                checkCanReadWorkflow(user.get(), workflow);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
+            }
         }
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);

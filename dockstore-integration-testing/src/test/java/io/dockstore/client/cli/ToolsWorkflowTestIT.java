@@ -63,7 +63,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
     private WorkflowsApi setupWebService() throws ApiException {
-        ApiClient webClient = WorkflowIT.getWebClient();
+        ApiClient webClient = WorkflowIT.getWebClient(USER_1_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         return workflowApi;
     }
@@ -87,7 +87,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
                 .findFirst();
 
         //getting the dag json string
-        final String basePath = WorkflowIT.getWebClient().getBasePath();
+        final String basePath = WorkflowIT.getWebClient(USER_1_USERNAME).getBasePath();
         URL url = new URL(basePath + "/workflows/" + githubWorkflow.getId() + "/tools/" + master.get().getId());
         List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
 

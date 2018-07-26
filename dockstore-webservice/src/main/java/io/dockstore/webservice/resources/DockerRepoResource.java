@@ -1047,14 +1047,18 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public Response getToolZip(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
-        Tool tool;
-        if (user.isPresent()) {
-            tool = toolDAO.findById(toolId);
+
+        Tool tool = toolDAO.findById(toolId);
+        if (tool.getIsPublished()) {
             checkEntry(tool);
-            checkUser(user.get(), tool);
         } else {
-            tool = toolDAO.findPublishedById(toolId);
             checkEntry(tool);
+            if (user.isPresent()) {
+                checkUser(user.get(), tool);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
+            }
         }
 
         Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
