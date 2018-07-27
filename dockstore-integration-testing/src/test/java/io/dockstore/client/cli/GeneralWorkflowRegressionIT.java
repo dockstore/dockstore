@@ -102,7 +102,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This test checks that refresh all workflows (with a mix of stub and full) and refresh individual.  It then tries to publish them
      */
     @Test
-    public void testRefreshAndPublishOld() throws ExecuteException {
+    public void testRefreshAndPublishOld() {
         // Set up DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -154,7 +154,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This test manually publishing a workflow and grabbing valid descriptor
      */
     @Test
-    public void testManualPublishAndGrabWDLOld() throws ExecuteException {
+    public void testManualPublishAndGrabWDLOld() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
                         "--repository", "hello-dockstore-workflow", "--organization", "DockstoreTestUser2", "--git-version-control",
@@ -169,7 +169,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests adding and removing labels from a workflow
      */
     @Test
-    public void testLabelEditingOld() throws ExecuteException {
+    public void testLabelEditingOld() {
         // Set up DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -202,7 +202,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests that a user can update a workflow version
      */
     @Test
-    public void testUpdateWorkflowVersionOld() throws ExecuteException {
+    public void testUpdateWorkflowVersionOld() {
         // Set up DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -227,7 +227,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests that a restub will work on an unpublished, full workflow
      */
     @Test
-    public void testRestubOld() throws ExecuteException {
+    public void testRestubOld() {
         // Set up DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -249,7 +249,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * Tests that convert with valid imports will work (for WDL)
      */
     @Test
-    public void testRefreshAndConvertWithImportsWDLOld() throws ExecuteException {
+    public void testRefreshAndConvertWithImportsWDLOld() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "refresh", "--script" });
         runOldDockstoreClient(dockstore,
@@ -274,7 +274,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * Tests that a developer can launch a WDL workflow locally, instead of getting files from Dockstore
      */
     @Test
-    public void testLocalLaunchWDLOld() throws ExecuteException {
+    public void testLocalLaunchWDLOld() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry",
                         ResourceHelpers.resourceFilePath("wdl.wdl"), "--json", ResourceHelpers.resourceFilePath("wdl.json"), "--script" });
@@ -284,7 +284,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * Tests that a developer can launch a WDL workflow with a File input being a directory
      */
     @Test
-    public void testLocalLaunchWDLWithDirOld() throws ExecuteException {
+    public void testLocalLaunchWDLWithDirOld() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--local-entry",
                         ResourceHelpers.resourceFilePath("directorytest.wdl"), "--json",
@@ -330,7 +330,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests the dirty bit attribute for workflow versions with github
      */
     @Test
-    public void testGithubDirtyBitOld() throws ExecuteException {
+    public void testGithubDirtyBitOld() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -377,7 +377,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests the dirty bit attribute for workflow versions with bitbucket
      */
     @Test
-    public void testBitbucketDirtyBitOld() throws ExecuteException {
+    public void testBitbucketDirtyBitOld() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -425,7 +425,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      */
     @Test
     @Category(SlowTest.class)
-    public void testGitlab() throws ExecuteException {
+    public void testGitlab() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -513,7 +513,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests manually publishing a gitlab workflow
      */
     @Test
-    public void testManualPublishGitlabOld() throws ExecuteException {
+    public void testManualPublishGitlabOld() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -540,7 +540,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests that WDL files are properly parsed for secondary WDL files
      */
     @Test
-    public void testWDLWithImportsOld() throws ExecuteException {
+    public void testWDLWithImportsOld() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -565,7 +565,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This tests basic concepts with workflow test parameter files
      */
     @Test
-    public void testTestParameterFileOld() throws ExecuteException {
+    public void testTestParameterFileOld() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -641,7 +641,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * This currently fails
      */
     @Test
-    public void testVerifyOld() throws IOException {
+    public void testVerifyOld() {
         // Setup DB
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -711,7 +711,7 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
      * If the user has metadata, test will pass as long as the user's metadata isn't the same as Github already
      */
     @Test
-    public void testRefreshingUserMetadataOld() throws ExecuteException {
+    public void testRefreshingUserMetadataOld() {
         // Setup database
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -728,10 +728,9 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
     /**
      * Tests that the workflow can be manually registered (and published) and then launched once the json and input file is attained
      *
-     * @throws ExecuteException
      */
     @Test
-    public void testActualWorkflowLaunch() throws ExecuteException {
+    public void testActualWorkflowLaunch() {
         // manual publish the workflow
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "manual_publish",
