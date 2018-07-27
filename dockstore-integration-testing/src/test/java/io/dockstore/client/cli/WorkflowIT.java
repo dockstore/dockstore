@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -331,11 +330,12 @@ public class WorkflowIT extends BaseIT {
                         "test", "cwl", null);
         Workflow refresh = workflowApi.refresh(workflow.getId());
         Long workflowId = refresh.getId();
-        Long versionId = refresh.getWorkflowVersions().get(0).getId();
+        WorkflowVersion workflowVersion = refresh.getWorkflowVersions().get(0);
+        Long versionId = workflowVersion.getId();
 
         // Download unpublished workflow version
         workflowApi.getWorkflowZip(workflowId, versionId);
-        byte[] arbitraryURL = getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        byte[] arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, webClient);
         Path write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
         ZipFile zipFile = new ZipFile(write.toFile());
@@ -344,7 +344,7 @@ public class WorkflowIT extends BaseIT {
         // should not be able to get zip anonymously before publication
         boolean thrownException = false;
         try {
-            getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+            SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
             }, getWebClient(false, null));
         } catch (Exception e) {
             thrownException = true;
@@ -353,11 +353,25 @@ public class WorkflowIT extends BaseIT {
 
         // Download published workflow version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--script" });
-        arbitraryURL = getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, getWebClient(false, null));
         write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
         zipFile = new ZipFile(write.toFile());
         assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+
+        // download and unzip via CLI
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "download", "--entry", toolpath + ":" + workflowVersion.getName(), "--script" });
+        zipFile.stream().forEach(entry -> {
+            File innerFile = new File(System.getProperty("user.dir"),entry.getName());
+            assert(innerFile.exists());
+            assert(innerFile.delete());
+        });
+
+        // download zip via CLI
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "download", "--entry", toolpath + ":" + workflowVersion.getName(), "--zip", "--script" });
+        File downloadedZip = new File(workflow.getWorkflowName() + ".zip");
+        assert(downloadedZip.exists());
+        assert(downloadedZip.delete());
     }
 
     /**
@@ -415,12 +429,6 @@ public class WorkflowIT extends BaseIT {
         anonWorkflowApi.getWorkflowZip(workflowId, versionId);
         // Other user: Should pass
         otherUserWorkflowApi.getWorkflowZip(workflowId, versionId);
-    }
-
-    private <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
-        return client
-            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
-                new String[] { "BEARER" }, type);
     }
 
     @Test

@@ -25,6 +25,8 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 
+import javax.ws.rs.core.GenericType;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
@@ -46,18 +48,16 @@ import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.NAME_HEADER;
-import static io.dockstore.common.DescriptorLanguage.NFL_STRING;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.boolWord;
 import static io.dockstore.client.cli.ArgumentUtility.columnWidthsWorkflow;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
@@ -76,6 +76,9 @@ import static io.dockstore.client.cli.Client.COMMAND_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.NFL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 
 /**
  * This stub will eventually implement all operations on the CLI that are
@@ -86,12 +89,12 @@ import static io.dockstore.client.cli.JCommanderUtility.printJCommanderHelp;
 public class WorkflowClient extends AbstractEntryClient {
 
     protected static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
-    protected static final String UPDATE_WORKFLOW = "update_workflow";
+    private static final String UPDATE_WORKFLOW = "update_workflow";
     protected final WorkflowsApi workflowsApi;
     protected final UsersApi usersApi;
     protected final Client client;
-    protected JCommander jCommander;
-    protected CommandLaunch commandLaunch;
+    private JCommander jCommander;
+    private CommandLaunch commandLaunch;
 
     public WorkflowClient(WorkflowsApi workflowApi, UsersApi usersApi, Client client, boolean isAdmin) {
         this.workflowsApi = workflowApi;
@@ -237,7 +240,7 @@ public class WorkflowClient extends AbstractEntryClient {
     @Override
     public void handleEntry2json(List<String> args) throws ApiException, IOException {
         String commandName = "entry2json";
-        String[] argv = args.toArray(new String[args.size()]);
+        String[] argv = args.toArray(new String[0]);
         String[] argv1 = { commandName };
         String[] both = ArrayUtils.addAll(argv1, argv);
         CommandEntry2json commandEntry2json = new CommandEntry2json();
@@ -261,7 +264,7 @@ public class WorkflowClient extends AbstractEntryClient {
     @Override
     public void handleEntry2tsv(List<String> args) throws ApiException, IOException {
         String commandName = "entry2tsv";
-        String[] argv = args.toArray(new String[args.size()]);
+        String[] argv = args.toArray(new String[0]);
         String[] argv1 = { commandName };
         String[] both = ArrayUtils.addAll(argv1, argv);
         CommandEntry2tsv commandEntry2tsv = new CommandEntry2tsv();
@@ -292,7 +295,7 @@ public class WorkflowClient extends AbstractEntryClient {
         return languageCLient.generateInputJson(entry, json);
     }
 
-    protected Workflow getDockstoreWorkflowByPath(String path) {
+    private Workflow getDockstoreWorkflowByPath(String path) {
         // simply getting published descriptors does not require permissions
         Workflow workflow = null;
         try {
@@ -329,12 +332,39 @@ public class WorkflowClient extends AbstractEntryClient {
     }
 
     /**
+     * Disturbingly similar to WorkflowClient#downloadTargetEntry, could use cleanup refactoring
+     * @param toolpath a unique identifier for an entry, called a path for workflows and tools
+     * @param unzip unzip the entry after downloading
+     */
+    protected void downloadTargetEntry(String toolpath, boolean unzip) throws IOException {
+        String[] parts = toolpath.split(":");
+        String path = parts[0];
+        String tag = (parts.length > 1) ? parts[1] : null;
+        Workflow workflow = getDockstoreWorkflowByPath(path);
+        Optional<WorkflowVersion> first = workflow.getWorkflowVersions().stream().filter(foo -> foo.getName().equalsIgnoreCase(tag))
+            .findFirst();
+        if (first.isPresent()) {
+            Long versionId = first.get().getId();
+            byte[] arbitraryURL = SwaggerUtility
+                .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
+                }, workflowsApi.getApiClient());
+            File zipFile = new File(workflow.getWorkflowName() + ".zip");
+            FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
+            if (unzip) {
+                SwaggerUtility.unzipFile(zipFile);
+            }
+        } else {
+            throw new RuntimeException("version not found");
+        }
+    }
+
+    /**
      * @param args Arguments entered into the CLI
      */
     @Override
     public void launch(final List<String> args) {
         String commandName = "launch";
-        String[] argv = args.toArray(new String[args.size()]);
+        String[] argv = args.toArray(new String[0]);
         String[] argv1 = { commandName };
         String[] both = ArrayUtils.addAll(argv1, argv);
         this.jCommander.parse(both);

@@ -36,6 +36,7 @@ public final class ArgumentUtility {
 
     public static final String CONVERT = "convert";
     public static final String LAUNCH = "launch";
+    public static final String DOWNLOAD = "download";
     public static final String NAME_HEADER = "NAME";
     public static final String DESCRIPTION_HEADER = "DESCRIPTION";
     public static final String GIT_HEADER = "Git Repo";

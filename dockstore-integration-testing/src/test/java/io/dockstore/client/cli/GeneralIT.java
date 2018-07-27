@@ -17,8 +17,12 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -33,7 +37,6 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
-import io.swagger.client.model.Tool;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
 import org.junit.Before;
@@ -125,8 +128,7 @@ public class GeneralIT extends BaseIT {
      */
     private ContainersApi setupWebService() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME);
-        ContainersApi toolsApi = new ContainersApi(client);
-        return toolsApi;
+        return new ContainersApi(client);
     }
 
     /**
@@ -723,7 +725,7 @@ public class GeneralIT extends BaseIT {
      * This tests that zip file can be downloaded or not based on published state and auth.
      */
     @Test
-    public void downloadZipFileTestAuth() {
+    public void downloadZipFileTestAuth() throws IOException {
         final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
         ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
 
@@ -737,7 +739,8 @@ public class GeneralIT extends BaseIT {
         DockstoreTool tool = ownerContainersApi.registerManual(getContainer());
         DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
         Long toolId = refresh.getId();
-        Long versionId = refresh.getTags().get(0).getId();
+        Tag tag = refresh.getTags().get(0);
+        Long versionId = tag.getId();
 
         // Try downloading unpublished
         // Owner: Should pass
@@ -772,5 +775,24 @@ public class GeneralIT extends BaseIT {
         anonContainersApi.getToolZip(toolId, versionId);
         // Other user: Should pass
         otherUserContainersApi.getToolZip(toolId, versionId);
+
+        // test that these zips can be downloaded via CLI
+
+        // download zip via CLI
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "download", "--entry", refresh.getToolPath() + ":" + tag.getName(), "--zip", "--script" });
+        File downloadedZip = new File(refresh.getName() + ".zip");
+        // record entries
+        List<String> collect = new ZipFile(downloadedZip).stream().map(ZipEntry::getName).collect(Collectors.toList());
+        assert(downloadedZip.exists());
+        assert(downloadedZip.delete());
+        
+
+        // download and unzip via CLI while at it
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "download", "--entry", refresh.getToolPath() + ":" + tag.getName(), "--script" });
+        collect.forEach(entry -> {
+            File innerFile = new File(System.getProperty("user.dir"), entry);
+            assert (innerFile.exists());
+            assert (innerFile.delete());
+        });
     }
 }
