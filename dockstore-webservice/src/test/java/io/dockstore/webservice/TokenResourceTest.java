@@ -1,6 +1,7 @@
 package io.dockstore.webservice;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 
 import javax.ws.rs.client.Entity;
@@ -88,6 +89,15 @@ public class TokenResourceTest {
         return fakeToken;
     }
 
+    private static Token getFakeGoogleToken() {
+        Token fakeToken = new Token();
+        fakeToken.setContent("fakeContent");
+        fakeToken.setTokenSource(TokenType.GOOGLE_COM);
+        fakeToken.setUserId(1);
+        fakeToken.setUsername("potato@gmail.com");
+        return fakeToken;
+    }
+
     private static Token getFakeNewDockstoreToken() {
         Token fakeToken = new Token();
         fakeToken.setContent("fakeContent");
@@ -139,17 +149,19 @@ public class TokenResourceTest {
                 .header(javax.ws.rs.core.HttpHeaders.AUTHORIZATION, "Basic potato")
                 .post(Entity.json("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n"));
 
-        // Verifies that a new user with the gmail username is created
-        verify(enduserDAO).create(argThat(user -> user.getUsername().equals("potato@gmail.com")));
-        // Two tokens should have been created, the Dockstore token and the Google Token
-        InOrder inOrder = inOrder(tokenDAO, tokenDAO);
+        // Verifies a sequence of creations:
+        // 1. User is first created
+        // 2. Dockstore token is created
+        // 3. Google token is created
+        InOrder inOrder = inOrder(enduserDAO, tokenDAO, tokenDAO, tokenResourceSpy);
+        inOrder.verify(enduserDAO).create(argThat(user -> user.getUsername().equals("potato@gmail.com")));
         inOrder.verify(tokenDAO, times(1))
                 .create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.DOCKSTORE)));
         inOrder.verify(tokenDAO, times(1))
                 .create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.GOOGLE_COM)));
+        // Check profile is updated only once after all the previous things happen
+        inOrder.verify(tokenResourceSpy, times(1)).updateGoogleUserMetaData(any(), any());
 
-        // Check profile is update once only once
-        verify(tokenResourceSpy, times(1)).updateGoogleUserMetaData(any(), any());
         final String responseBody = potato.readEntity(String.class);
         try {
             Token token = mapper.readValue(responseBody, Token.class);
@@ -172,11 +184,19 @@ public class TokenResourceTest {
                 .header(javax.ws.rs.core.HttpHeaders.AUTHORIZATION, "Basic potato")
                 .post(Entity.json("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n"));
 
-        // Only created the Google token
-        verify(tokenDAO, times(1))
+        // Verifies a sequence of creations:
+        // 1. User is not created
+        // 2. Dockstore token is not created
+        // 3. Google token is created
+        InOrder inOrder = inOrder(enduserDAO, tokenDAO, tokenDAO, tokenResourceSpy);
+        inOrder.verify(enduserDAO, times(0)).create(any());
+        inOrder.verify(tokenDAO, times(0))
+                .create(argThat(aBar -> (aBar.getUsername().equals(aBar.getTokenSource() == TokenType.DOCKSTORE))));
+        inOrder.verify(tokenDAO, times(1))
                 .create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.GOOGLE_COM)));
-        // Check profile is update once only once
-        verify(tokenResourceSpy, times(1)).updateGoogleUserMetaData(any(), any());
+        // Check profile is updated only once after all the previous things happen
+        inOrder.verify(tokenResourceSpy, times(1)).updateGoogleUserMetaData(any(), any());
+
         final String responseBody = response.readEntity(String.class);
 
         try {
@@ -196,15 +216,20 @@ public class TokenResourceTest {
         doReturn(getFakeExistingDockstoreToken()).when(tokenDAO).findById(any());
         doReturn(getFakeUser()).when(enduserDAO).findByUsername(anyString());
         doReturn(Collections.singletonList(getFakeExistingDockstoreToken())).when(tokenDAO).findDockstoreByUserId(anyLong());
-        doReturn(Collections.singletonList(getFakeExistingDockstoreToken())).when(tokenDAO).findGoogleByUserId(anyLong());
+        doReturn(Arrays.asList(getFakeGoogleToken(), getFakeExistingDockstoreToken())).when(tokenDAO).findGoogleByUserId(anyLong());
         Response response = resources.target("/auth/tokens/google").request()
                 .header(javax.ws.rs.core.HttpHeaders.AUTHORIZATION, "Basic potato")
                 .post(Entity.json("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n"));
 
-        // Create no tokens, existing user with a Dockstore token and Google token already
-        verify(tokenDAO, times(0)).create(any());
-        // Check profile is update 0 times, since the token already exists
-        verify(tokenResourceSpy, times(0)).updateGoogleUserMetaData(any(), any());
+        // Verifies a sequence of creations:
+        // 1. User is not created
+        // 2. No tokens are created
+        InOrder inOrder = inOrder(enduserDAO, tokenDAO, tokenResourceSpy);
+        inOrder.verify(enduserDAO, times(0)).create(any());
+        inOrder.verify(tokenDAO, times(0))
+                .create(any());
+        // Check profile is not updated
+        inOrder.verify(tokenResourceSpy, times(0)).updateGoogleUserMetaData(any(), any());
         final String responseBody = response.readEntity(String.class);
 
         try {
