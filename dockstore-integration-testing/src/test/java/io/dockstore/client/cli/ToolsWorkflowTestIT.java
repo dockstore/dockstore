@@ -21,7 +21,6 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeoutException;
 
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
@@ -29,9 +28,7 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
@@ -64,8 +61,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
 
     private WorkflowsApi setupWebService() throws ApiException {
         ApiClient webClient = WorkflowIT.getWebClient(USER_1_USERNAME);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        return workflowApi;
+        return new WorkflowsApi(webClient);
     }
 
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
@@ -75,13 +71,13 @@ public class ToolsWorkflowTestIT extends BaseIT {
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
-        Assert.assertTrue(githubWorkflow.getWorkflowName().equals(TEST_WORKFLOW_NAME));
+        Assert.assertEquals(githubWorkflow.getWorkflowName(), TEST_WORKFLOW_NAME);
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
-        Assert.assertTrue(refresh.getWorkflowName().equals(TEST_WORKFLOW_NAME));
+        Assert.assertEquals(refresh.getWorkflowName(), TEST_WORKFLOW_NAME);
 
         Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch))
                 .findFirst();
@@ -89,9 +85,8 @@ public class ToolsWorkflowTestIT extends BaseIT {
         //getting the dag json string
         final String basePath = WorkflowIT.getWebClient(USER_1_USERNAME).getBasePath();
         URL url = new URL(basePath + "/workflows/" + githubWorkflow.getId() + "/tools/" + master.get().getId());
-        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
 
-        return strings;
+        return Resources.readLines(url, Charset.forName("UTF-8"));
     }
 
     private int countToolInJSON(List<String> strings) {

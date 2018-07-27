@@ -1,6 +1,5 @@
 package io.dockstore.client.cli;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
@@ -15,8 +14,6 @@ import io.swagger.client.model.Workflow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -28,6 +25,8 @@ import static io.dockstore.client.cli.ArgumentUtility.printHelpHeader;
 import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.printUsageHelp;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
+import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
+import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 
 /**
  * This implements all operations on the CLI that are specific to checkers
@@ -244,6 +243,7 @@ public class CheckerClient extends WorkflowClient {
             // Retrieve arguments
             String entryPath = reqVal(args, "--entry");
             String version = reqVal(args, "--version");
+            final boolean unzip = !args.contains("--zip");
 
             // Get entry from path
             Entry entry = getDockstoreEntry(entryPath);
@@ -254,9 +254,7 @@ public class CheckerClient extends WorkflowClient {
             // Download files
             if (entry != null && checkerWorkflow != null) {
                 try {
-                    File downloadFolder = new File(currentDirectory);
-                    String entryToDownload = checkerWorkflow.getFullWorkflowPath() + ":" + version;
-                    downloadDescriptorFiles(entryToDownload, checkerWorkflow.getDescriptorType(), downloadFolder);
+                    downloadTargetEntry(entryPath + ":" + version, unzip);
                     out("Files have been successfully downloaded to the current directory.");
                 } catch (IOException ex) {
                     exceptionMessage(ex, "Problems downloading files to " + currentDirectory, Client.IO_ERROR);
@@ -277,8 +275,9 @@ public class CheckerClient extends WorkflowClient {
         out("  Downloads all checker workflow files for the given entry and stores them in the current directory.");
         out("");
         out("Required Parameters:");
-        out("  --entry <entry>                   Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("  --version <version>               Entry version");
+        out("  --entry <entry>          Complete entry path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        out("  --version <version>      Checker version");
+        out("  --zip                    Keep the zip file rather than uncompress the files within");
         out("");
         printHelpFooter();
     }
