@@ -1,7 +1,7 @@
 package io.dockstore.webservice;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Response;
@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.mockito.InOrder;
+import org.mockito.internal.util.reflection.FieldSetter;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -48,11 +49,11 @@ public class TokenResourceTest {
     private static final TokenDAO tokenDAO = mock(TokenDAO.class);
     private static final UserDAO enduserDAO = mock(UserDAO.class);
     private static final HttpClient client = HttpClientBuilder.create().build();
-    private static final CachingAuthenticator cachingAuthenticator = mock(CachingAuthenticator.class);
+    private static final CachingAuthenticator<String, User> cachingAuthenticator = mock(CachingAuthenticator.class);
     private static final DockstoreWebserviceConfiguration configuration = mock(DockstoreWebserviceConfiguration.class);
     // response.readEntity(Token.class) appears to have issues reading the "token" property, using a different mapper instead
     private static ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    ;
+
     private static TokenResource tokenResourceSpy = spy(
             new TokenResource(tokenDAO, enduserDAO, client, cachingAuthenticator, configuration));
 
@@ -63,7 +64,7 @@ public class TokenResourceTest {
     private static TokenResponse getFakeTokenResponse() {
         TokenResponse fakeTokenResponse = new TokenResponse();
         fakeTokenResponse.setAccessToken("fakeAccessToken");
-        fakeTokenResponse.setExpiresInSeconds(9001l);
+        fakeTokenResponse.setExpiresInSeconds(9001L);
         fakeTokenResponse.setRefreshToken("fakeRefreshToken");
         return fakeTokenResponse;
     }
@@ -100,6 +101,11 @@ public class TokenResourceTest {
         User fakeUser = new User();
         fakeUser.setUsername("fakeUser");
         fakeUser.setIsAdmin(false);
+        try {
+            FieldSetter.setField(fakeUser, fakeUser.getClass().getDeclaredField("id"), 1L);
+        } catch (NoSuchFieldException e) {
+            Assert.fail();
+        }
         fakeUser.setAvatarUrl("https://dockstore.org/assets/images/dockstore/logo.png");
         fakeUser.setCurator(false);
         return fakeUser;
@@ -109,8 +115,9 @@ public class TokenResourceTest {
     public void setup() {
         doReturn(getFakeTokenResponse()).when(tokenResourceSpy).getTokenResponse(anyString(), anyString());
         doReturn(getFakeUserinfoplus()).when(tokenResourceSpy).getUserInfo(anyString());
-        doReturn(1l).when(tokenDAO).create(any());
-        doReturn(getFakeUser()).when(enduserDAO).findById(anyLong());
+        doReturn(1L).when(tokenDAO).create(any());
+        doReturn(getFakeUser()).when(enduserDAO).findById(1L);
+        doReturn(1L).when(enduserDAO).create(any());
     }
 
     @After
@@ -132,11 +139,14 @@ public class TokenResourceTest {
                 .header(javax.ws.rs.core.HttpHeaders.AUTHORIZATION, "Basic potato")
                 .post(Entity.json("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n"));
 
+        // Verifies that a new user with the gmail username is created
+        verify(enduserDAO).create(argThat(user -> user.getUsername().equals("potato@gmail.com")));
         // Two tokens should have been created, the Dockstore token and the Google Token
-        Token fakeDockstoreToken = getFakeExistingDockstoreToken();
         InOrder inOrder = inOrder(tokenDAO, tokenDAO);
-        inOrder.verify(tokenDAO, times(1)).create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.DOCKSTORE)));
-        inOrder.verify(tokenDAO, times(1)).create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.GOOGLE_COM)));
+        inOrder.verify(tokenDAO, times(1))
+                .create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.DOCKSTORE)));
+        inOrder.verify(tokenDAO, times(1))
+                .create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.GOOGLE_COM)));
 
         // Check profile is update once only once
         verify(tokenResourceSpy, times(1)).updateGoogleUserMetaData(any(), any());
@@ -144,10 +154,7 @@ public class TokenResourceTest {
         try {
             Token token = mapper.readValue(responseBody, Token.class);
             // Check that the token has the right info
-            Assert.assertEquals(1l, token.getUserId());
-            Assert.assertEquals("fakeContent", token.getContent());
-            Assert.assertEquals("potato@gmail.com", token.getUsername());
-            Assert.assertEquals(TokenType.DOCKSTORE, token.getTokenSource());
+            Assert.assertEquals(getFakeNewDockstoreToken(), token);
         } catch (IOException e) {
             Assert.fail("Mapper problem: " + e.getMessage());
         }
@@ -160,25 +167,22 @@ public class TokenResourceTest {
     public void getGoogleTokenExistingUserNoGoogleToken() {
         doReturn(getFakeExistingDockstoreToken()).when(tokenDAO).findById(any());
         doReturn(getFakeUser()).when(enduserDAO).findByUsername(anyString());
-        doReturn(Arrays.asList(getFakeExistingDockstoreToken())).when(tokenDAO).findDockstoreByUserId(anyLong());
+        doReturn(Collections.singletonList(getFakeExistingDockstoreToken())).when(tokenDAO).findDockstoreByUserId(anyLong());
         Response response = resources.target("/auth/tokens/google").request()
                 .header(javax.ws.rs.core.HttpHeaders.AUTHORIZATION, "Basic potato")
                 .post(Entity.json("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n"));
 
         // Only created the Google token
-        verify(tokenDAO, times(1)).create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.GOOGLE_COM)));
+        verify(tokenDAO, times(1))
+                .create(argThat(aBar -> (aBar.getUsername().equals("potato@gmail.com") && aBar.getTokenSource() == TokenType.GOOGLE_COM)));
         // Check profile is update once only once
         verify(tokenResourceSpy, times(1)).updateGoogleUserMetaData(any(), any());
         final String responseBody = response.readEntity(String.class);
 
         try {
             Token token = mapper.readValue(responseBody, Token.class);
-            Assert.assertEquals(token, getFakeExistingDockstoreToken());
             // Check that the token has the right info
-            Assert.assertEquals(1l, token.getUserId());
-            Assert.assertEquals("fakeContent", token.getContent());
-            Assert.assertEquals("fakeDockstoreTokenUsername", token.getUsername());
-            Assert.assertEquals(TokenType.DOCKSTORE, token.getTokenSource());
+            Assert.assertEquals(getFakeExistingDockstoreToken(), token);
         } catch (IOException e) {
             Assert.fail("Mapper problem: " + e.getMessage());
         }
@@ -191,8 +195,8 @@ public class TokenResourceTest {
     public void getGoogleTokenExistingUserWithGoogleToken() {
         doReturn(getFakeExistingDockstoreToken()).when(tokenDAO).findById(any());
         doReturn(getFakeUser()).when(enduserDAO).findByUsername(anyString());
-        doReturn(Arrays.asList(getFakeExistingDockstoreToken())).when(tokenDAO).findDockstoreByUserId(anyLong());
-        doReturn(Arrays.asList(getFakeExistingDockstoreToken())).when(tokenDAO).findGoogleByUserId(anyLong());
+        doReturn(Collections.singletonList(getFakeExistingDockstoreToken())).when(tokenDAO).findDockstoreByUserId(anyLong());
+        doReturn(Collections.singletonList(getFakeExistingDockstoreToken())).when(tokenDAO).findGoogleByUserId(anyLong());
         Response response = resources.target("/auth/tokens/google").request()
                 .header(javax.ws.rs.core.HttpHeaders.AUTHORIZATION, "Basic potato")
                 .post(Entity.json("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n"));
@@ -206,10 +210,7 @@ public class TokenResourceTest {
         try {
             Token token = mapper.readValue(responseBody, Token.class);
             // Check that the token has the right info
-            Assert.assertEquals(1l, token.getUserId());
-            Assert.assertEquals("fakeContent", token.getContent());
-            Assert.assertEquals("fakeDockstoreTokenUsername", token.getUsername());
-            Assert.assertEquals(TokenType.DOCKSTORE, token.getTokenSource());
+            Assert.assertEquals(getFakeExistingDockstoreToken(), token);
         } catch (IOException e) {
             Assert.fail("Mapper problem: " + e.getMessage());
         }
