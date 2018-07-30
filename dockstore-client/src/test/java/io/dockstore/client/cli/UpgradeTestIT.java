@@ -76,7 +76,7 @@ public class UpgradeTestIT {
     }
 
     @Before
-    public void setup() throws IOException {
+    public void setup() {
 
         this.objectMapper = mock(ObjectMapper.class);
         Client.setObjectMapper(objectMapper);
@@ -101,7 +101,7 @@ public class UpgradeTestIT {
     }
 
     @Test
-    public void upgradeTest() throws IOException {
+    public void upgradeTest() {
         //if current is older, upgrade to the most stable version right away
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.3-beta.1";
@@ -112,7 +112,7 @@ public class UpgradeTestIT {
     }
 
     @Test
-    public void upTestStableOption() throws IOException {
+    public void upTestStableOption() {
         //if the current is newer and unstable, output "--upgrade-stable" command option
         String detectedVersion = "0.3-beta.1";  //detectedVersion is the latest stable
         String currentVersion = "0.4-beta.0";   //current is newer and unstable
@@ -123,7 +123,7 @@ public class UpgradeTestIT {
     }
 
     @Test
-    public void upTestUnstableOption() throws IOException {
+    public void upTestUnstableOption() {
         //else if current is the latest stable version, output "you are currently running the most stable version"
         //         and option to "--upgrade-unstable"
         String detectedVersion = "0.4-beta.1";
@@ -135,7 +135,7 @@ public class UpgradeTestIT {
     }
 
     @Test
-    public void upgradeStable() throws IOException {
+    public void upgradeStable() {
         //if the current is not latest stable, upgrade to the latest stable version
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.4-beta.0";  //can also be 0.3-beta.1 , as long as it's not latest stable
@@ -146,7 +146,7 @@ public class UpgradeTestIT {
     }
 
     @Test
-    public void upgradeStableOption() throws IOException {
+    public void upgradeStableOption() {
         //if the current is latest stable, output option to "--upgrade-unstable"
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.4-beta.1";
@@ -157,7 +157,7 @@ public class UpgradeTestIT {
     }
 
     @Test
-    public void upgradeUnstable() throws IOException {
+    public void upgradeUnstable() {
         //if the current is not latest unstable, upgrade to the most unstable version
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.3-beta.0";
@@ -168,7 +168,7 @@ public class UpgradeTestIT {
     }
 
     @Test
-    public void upgradeUnstableOption() throws IOException {
+    public void upgradeUnstableOption() {
         //if the current is latest unstable, output option to "--upgrade-stable"'
         String detectedVersion = "0.4-beta.1";
         String currentVersion = "0.4-beta.0";

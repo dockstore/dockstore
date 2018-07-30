@@ -47,7 +47,7 @@ public class ToolClassesApiServiceImpl extends ToolClassesApiService {
     }
 
     @Override
-    public Response toolClassesGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) throws NotFoundException {
+    public Response toolClassesGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) {
         final List<ToolClass> toolTypes = new ArrayList<ToolClass>();
         toolTypes.add(getCommandLineToolClass());
         toolTypes.add(getWorkflowClass());

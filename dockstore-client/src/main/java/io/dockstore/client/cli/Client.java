@@ -63,7 +63,6 @@ import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.model.Metadata;
 import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -638,7 +637,7 @@ public class Client {
      * --------------
      */
 
-    private void clean() throws IOException, ConfigurationException {
+    private void clean() throws IOException {
         final INIConfiguration configuration = Utilities.parseConfig(getConfigFile());
         final String cacheDirectory = getCacheDirectory(configuration);
         FileUtils.deleteDirectory(new File(cacheDirectory));
@@ -766,10 +765,9 @@ public class Client {
      * Setup method called by client and by consonance to setup a Dockstore client
      *
      * @param args
-     * @throws ConfigurationException
      */
     @SuppressWarnings("WeakerAccess")
-    public void setupClientEnvironment(List<String> args) throws ConfigurationException {
+    public void setupClientEnvironment(List<String> args) {
         INIConfiguration config = getIniConfiguration(args);
         // pull out the variables from the config
         String token = config.getString("token", "");

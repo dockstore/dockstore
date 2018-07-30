@@ -777,8 +777,6 @@ public abstract class AbstractEntryClient {
                     launchWdl(localFilePath, argsList, true);
                 } catch (ApiException e) {
                     exceptionMessage(e, "API error launching entry", Client.API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             } else if (!content.equals(LanguageType.WDL) && descriptor == null) {
                 //extension is wdl but the content is not wdl
@@ -805,8 +803,6 @@ public abstract class AbstractEntryClient {
                     launchNextFlow(localFilePath, argsList, true);
                 } catch (ApiException e) {
                     exceptionMessage(e, "API error launching entry", Client.API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             } else if (!content.equals(LanguageType.NEXTFLOW) && descriptor == null) {
                 //extension is wdl but the content is not wdl
@@ -833,8 +829,6 @@ public abstract class AbstractEntryClient {
                     launchWdl(localFilePath, argsList, true);
                 } catch (ApiException e) {
                     exceptionMessage(e, "API error launching entry", Client.API_ERROR);
-                } catch (IOException e) {
-                    exceptionMessage(e, "IO error launching entry", IO_ERROR);
                 }
             } else {
                 errorMessage(invalidWorkflowMessage, CLIENT_ERROR);
@@ -962,7 +956,7 @@ public abstract class AbstractEntryClient {
         launchWdl(entry, args, isLocalEntry);
     }
 
-    private void launchWdl(String entry, final List<String> args, boolean isLocalEntry) throws IOException, ApiException {
+    private void launchWdl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
         final String uuid = optVal(args, "--uuid", null);
@@ -970,7 +964,7 @@ public abstract class AbstractEntryClient {
         client.launch(entry, isLocalEntry, null, json, null, wdlOutputTarget, uuid);
     }
 
-    private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws IOException, ApiException {
+    private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);

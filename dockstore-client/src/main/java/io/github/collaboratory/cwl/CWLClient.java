@@ -371,7 +371,7 @@ public class CWLClient implements LanguageClientInterface {
             final File tempFile = File.createTempFile("temp", "json");
             Yaml yaml = new Yaml();
             final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
-            Map<String, Object> map = (Map<String, Object>)yaml.load(fileInputStream);
+            Map<String, Object> map = yaml.load(fileInputStream);
             JSONObject jsonObject = new JSONObject(map);
             final String jsonContent = jsonObject.toString();
             FileUtils.write(tempFile, jsonContent, StandardCharsets.UTF_8);

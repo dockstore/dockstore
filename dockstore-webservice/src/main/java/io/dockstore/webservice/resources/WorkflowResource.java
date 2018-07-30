@@ -1429,7 +1429,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "Entry Id of parent tool/workflow.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "Descriptor type of the workflow, either cwl or wdl.", required = true, allowableValues = "cwl, wdl") @PathParam("descriptorType") String descriptorType) {
         // Find the entry
-        MutablePair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
 
         // Check if valid descriptor type
         if (!Objects.equals(descriptorType, DescriptorType.CWL.toString().toLowerCase()) && !Objects.equals(descriptorType, DescriptorType.WDL.toString().toLowerCase())) {
@@ -1437,20 +1437,20 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
 
         // Check if the entry exists
-        if (entryPair.getValue() == null) {
+        if (entry == null) {
             throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Don't allow workflow stubs
-        if (Objects.equals(entryPair.getKey(), "workflow")) {
-            Workflow workflow = (Workflow) entryPair.getValue();
+        if (entry instanceof Workflow) {
+            Workflow workflow = (Workflow) entry;
             if (Objects.equals(workflow.getMode().name(), WorkflowMode.STUB.toString())) {
                 throw new CustomWebApplicationException("Checker workflows cannot be added to workflow stubs.", HttpStatus.SC_BAD_REQUEST);
             }
         }
 
         // Ensure that the entry has no checker workflows already
-        if (entryPair.getValue().getCheckerWorkflow() != null) {
+        if (entry.getCheckerWorkflow() != null) {
             throw new CustomWebApplicationException("The given entry already has a checker workflow.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1465,9 +1465,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         String workflowName;
 
         // Grab information if tool
-        if (Objects.equals(entryPair.getKey(), "tool")) {
+        if (entry instanceof Tool) {
             // Get tool
-            Tool tool = (Tool)entryPair.getValue();
+            Tool tool = (Tool)entry;
 
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
@@ -1504,9 +1504,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             // Determine last updated
             lastUpdated = tool.getLastUpdated();
 
-        } else if (Objects.equals(entryPair.getKey(), "workflow")) {
+        } else if (entry instanceof Workflow) {
             // Get workflow
-            Workflow workflow = (Workflow)entryPair.getValue();
+            Workflow workflow = (Workflow)entry;
 
             // Copy over common attributes
             defaultTestParameterPath = workflow.getDefaultTestParameterFilePath();
@@ -1560,12 +1560,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         elasticManager.handleIndexUpdate(checkerWorkflow, ElasticMode.UPDATE);
 
         // Update original entry with checker id
-        entryPair.getValue().setCheckerWorkflow(checkerWorkflow);
+        entry.setCheckerWorkflow(checkerWorkflow);
 
         // Return the original entry
-        MutablePair<String, Entry> originalEntryPair = toolDAO.findEntryById(entryId);
-        return originalEntryPair.getValue();
-
+        return toolDAO.getGenericEntryById(entryId);
     }
 
 

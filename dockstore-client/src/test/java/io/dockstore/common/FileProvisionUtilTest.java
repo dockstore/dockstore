@@ -30,14 +30,14 @@ import static org.junit.Assert.assertTrue;
  */
 public class FileProvisionUtilTest {
     @Test
-    public void downloadPlugins() throws Exception {
+    public void downloadPlugins() {
         File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.cwltool.ini");
         INIConfiguration config = Utilities.parseConfig(iniFile.getAbsolutePath());
         FileProvisionUtil.downloadPlugins(config);
     }
 
     @Test
-    public void createPluginJSONFile() throws Exception {
+    public void createPluginJSONFile() {
         String userHome = System.getProperty("user.home");
         String pluginFile = userHome + File.separator + ".dockstore" + File.separator + PLUGINS_JSON_FILENAME;
         FileProvisionUtil.createPluginJSONFile(pluginFile);

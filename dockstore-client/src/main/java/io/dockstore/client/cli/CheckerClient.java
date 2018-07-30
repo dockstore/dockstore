@@ -76,7 +76,7 @@ public class CheckerClient extends WorkflowClient {
     }
 
     @Override
-    public boolean processEntryCommands(List<String> args, String activeCommand) throws IOException, ApiException {
+    public boolean processEntryCommands(List<String> args, String activeCommand) throws ApiException {
         if (null != activeCommand) {
             switch (activeCommand) {
             case "add":

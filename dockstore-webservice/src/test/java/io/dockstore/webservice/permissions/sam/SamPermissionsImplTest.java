@@ -72,22 +72,22 @@ public class SamPermissionsImplTest {
         ownerPolicy = new AccessPolicyResponseEntry();
         ownerPolicy.setPolicyName(SamConstants.OWNER_POLICY);
         AccessPolicyMembership accessPolicyMembership = new AccessPolicyMembership();
-        accessPolicyMembership.setRoles(Arrays.asList(new String[] {SamConstants.OWNER_ROLE}));
-        accessPolicyMembership.setMemberEmails(Arrays.asList(new String [] {"jdoe@ucsc.edu"}));
+        accessPolicyMembership.setRoles(Arrays.asList(SamConstants.OWNER_ROLE));
+        accessPolicyMembership.setMemberEmails(Arrays.asList("jdoe@ucsc.edu"));
         ownerPolicy.setPolicy(accessPolicyMembership);
 
         writerPolicy = new AccessPolicyResponseEntry();
         writerPolicy.setPolicyName(SamConstants.WRITE_POLICY);
         AccessPolicyMembership writerMembership = new AccessPolicyMembership();
-        writerMembership.setRoles(Arrays.asList(new String[] {SamConstants.WRITE_ROLE}));
-        writerMembership.setMemberEmails(Arrays.asList(new String[] { JANE_DOE_GMAIL_COM }));
+        writerMembership.setRoles(Arrays.asList(SamConstants.WRITE_ROLE));
+        writerMembership.setMemberEmails(Arrays.asList(JANE_DOE_GMAIL_COM));
         writerPolicy.setPolicy(writerMembership);
 
         readerPolicy = new AccessPolicyResponseEntry();
         readerPolicy.setPolicyName(SamConstants.READ_POLICY);
         AccessPolicyMembership readerMembership = new AccessPolicyMembership();
-        readerMembership.setRoles(Arrays.asList(new String[] {SamConstants.READ_ROLE}));
-        readerMembership.setMemberEmails(Arrays.asList(new String[] { JANE_DOE_GMAIL_COM }));
+        readerMembership.setRoles(Arrays.asList(SamConstants.READ_ROLE));
+        readerMembership.setMemberEmails(Arrays.asList(JANE_DOE_GMAIL_COM));
         readerPolicy.setPolicy(readerMembership);
 
         TokenDAO tokenDAO = Mockito.mock(TokenDAO.class);
@@ -125,7 +125,7 @@ public class SamPermissionsImplTest {
         readerAccessPolicyResponseEntry = new AccessPolicyResponseEntry();
         readerAccessPolicyResponseEntry.setPolicy(readerAccessPolicyMemebership);
         readerAccessPolicyResponseEntry.setPolicyName(SamConstants.READ_POLICY);
-        readerAccessPolicyResponseEntry.getPolicy().addRolesItem(SamConstants.READ_POLICY.toString());
+        readerAccessPolicyResponseEntry.getPolicy().addRolesItem(SamConstants.READ_POLICY);
         readerAccessPolicyResponseEntry.getPolicy().addMemberEmailsItem(JANE_DOE_GMAIL_COM);
 
         final User.Profile profile = new User.Profile();

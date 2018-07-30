@@ -623,7 +623,7 @@ public class LauncherCWL {
         String stderr = execute.getRight().replaceAll("(?m)^", "\t");
 
         outputIntegrationOutput(outputDir, execute, stdout, stderr, FilenameUtils.getName(command.get(0)));
-        Map<String, Object> obj = (Map<String, Object>)yaml.load(execute.getLeft());
+        Map<String, Object> obj = yaml.load(execute.getLeft());
         return obj;
     }
 
