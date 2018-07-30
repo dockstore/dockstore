@@ -622,7 +622,7 @@ public class ToolClient extends AbstractEntryClient {
                 .getArbitraryURL("/containers/" + container.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
                 }, containersApi.getApiClient());
             try {
-                File zipFile = new File(container.getName() + ".zip");
+                File zipFile = new File(zipToolPath(container));
                 FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
                 if (unzip) {
                     SwaggerUtility.unzipFile(zipFile);
@@ -635,7 +635,9 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-
+    public static String zipToolPath(DockstoreTool container) {
+        return container.getToolPath().replaceAll("/", "_") + ".zip";
+    }
 
     public void handleLabels(String entryPath, Set<String> addsSet, Set<String> removesSet) {
         // Try and update the labels for the given container

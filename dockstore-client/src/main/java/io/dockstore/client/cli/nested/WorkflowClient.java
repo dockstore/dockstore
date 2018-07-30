@@ -348,7 +348,7 @@ public class WorkflowClient extends AbstractEntryClient {
             byte[] arbitraryURL = SwaggerUtility
                 .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
                 }, workflowsApi.getApiClient());
-            File zipFile = new File(workflow.getWorkflowName() + ".zip");
+            File zipFile = new File(workflow.getFullWorkflowPath().replaceAll("/", "_") + ".zip");
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
                 SwaggerUtility.unzipFile(zipFile);
@@ -356,6 +356,10 @@ public class WorkflowClient extends AbstractEntryClient {
         } else {
             throw new RuntimeException("version not found");
         }
+    }
+
+    public static String zipWorkflowPath(Workflow workflow) {
+        return workflow.getFullWorkflowPath().replaceAll("/", "_") + ".zip";
     }
 
     /**
