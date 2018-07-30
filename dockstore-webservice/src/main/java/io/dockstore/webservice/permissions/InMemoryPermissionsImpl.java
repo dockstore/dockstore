@@ -62,6 +62,7 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
 
     @Override
     public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
+        PermissionsInterface.checkUserNotOriginalOwner(permission.getEmail(), workflow);
         Map<String, Role> entryMap = resourceToUsersAndRolesMap.get(workflow.getWorkflowPath());
         checkIfOwner(requester, workflow, entryMap);
         if (entryMap == null) {

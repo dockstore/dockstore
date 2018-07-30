@@ -169,17 +169,17 @@ public interface PermissionsInterface {
     }
 
     /**
-     * Checks if a the email is an "original owner" of a workflow, and throws a
+     * Checks if a the username is an "original owner" of a workflow, and throws a
      * {@link CustomWebApplicationException} if it is. To be used as a check so
-     * that original owners never remove themselves as owners.
+     * that original owners can never be removed as owners.
      *
      *
-     * @param email
+     * @param username
      * @param workflow
      */
-    static void checkUserNotOriginalOwner(String email, Workflow workflow) {
-        if (workflow.getUsers().stream().anyMatch(u ->  email.equals(u.getUsername()))) {
-            throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
+    static void checkUserNotOriginalOwner(String username, Workflow workflow) {
+        if (workflow.getUsers().stream().anyMatch(u ->  username.equals(u.getUsername()))) {
+            throw new CustomWebApplicationException(username + " is an original owner and their permissions cannot be modified", HttpStatus.SC_FORBIDDEN);
         }
     }
 }
