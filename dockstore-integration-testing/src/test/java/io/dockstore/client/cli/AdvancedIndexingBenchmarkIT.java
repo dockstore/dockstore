@@ -101,7 +101,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     private SessionFactory sessionFactory;
     private javax.ws.rs.client.Client client;
 
-    public String randomIdentifier() {
+    private String randomIdentifier() {
         StringBuilder builder = new StringBuilder();
         while (builder.toString().length() == 0) {
             int length = RAND.nextInt(5) + 5;

@@ -92,12 +92,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     /**
      * Global instance of the HTTP transport.
      */
-    private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+    public static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
     /**
      * Global instance of the JSON factory.
      */
-    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
+    public static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
@@ -115,7 +115,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String gitlabRedirectUri;
     private final String gitlabClientSecret;
     private final String googleClientID;
-    private final String googleRedirectUri;
     private final String googleClientSecret;
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
@@ -133,7 +132,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.gitlabRedirectUri = configuration.getGitlabRedirectURI();
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
-        this.googleRedirectUri = configuration.getGoogleRedirectURI();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -314,7 +312,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         JsonObject satellizerObject = element.getAsJsonObject();
         final String code = satellizerObject.get("code").getAsString();
         final String redirectUri = satellizerObject.get("redirectUri").getAsString();
-        TokenResponse tokenResponse = getTokenResponse(code, redirectUri);
+        TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri);
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
         LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");
@@ -365,7 +363,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             tokenDAO.create(googleToken);
             // Update user profile too
             user = userDAO.findById(userID);
-            updateGoogleUserMetaData(userinfo, user);
+            GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
             LOG.info("Google token created for {}", googleLoginName);
         } else {
             // Update tokens if exists
@@ -382,7 +380,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      * @param accessToken Google access token
      * @return
      */
-    public Userinfoplus getUserInfo(String accessToken) {
+    private Userinfoplus getUserInfo(String accessToken) {
         Optional<Userinfoplus> userinfoplus = GoogleHelper.userinfoplusFromToken(accessToken);
         if (userinfoplus.isPresent()) {
             return userinfoplus.get();
@@ -391,32 +389,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
     }
 
-    /**
-     * Gets the Google TokenResponse
-     *
-     * @param code        The satellizer code
-     * @param redirectUri The Google redirectUri
-     * @return
-     */
-    public TokenResponse getTokenResponse(String code, String redirectUri) {
-        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                JSON_FACTORY, new GenericUrl(GoogleHelper.GOOGLE_ENCODED_URL),
-                new ClientParametersAuthentication(googleClientID, googleClientSecret), googleClientID,
-                GoogleHelper.GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL).build();
-        try {
-            TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUri)
-                    .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-            return tokenResponse;
-        } catch (IOException e) {
-            LOG.error("Retrieving accessToken was unsuccessful");
-            throw new CustomWebApplicationException("Could not retrieve google.com token based on code", HttpStatus.SC_BAD_REQUEST);
-        }
-    }
 
-    public void updateGoogleUserMetaData(Userinfoplus userinfo, User user) {
-        GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
-
-    }
 
     @GET
     @Timed
