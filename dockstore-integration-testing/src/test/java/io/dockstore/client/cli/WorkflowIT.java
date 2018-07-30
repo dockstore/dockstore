@@ -280,10 +280,9 @@ public class WorkflowIT extends BaseIT {
 
     /**
      * This tests workflow convert entry2json when the main descriptor is nested far within the GitHub repo with secondary descriptors too
-     * @throws IOException
      */
     @Test
-    public void testEntryConvertWDLWithSecondaryDescriptors() throws IOException {
+    public void testEntryConvertWDLWithSecondaryDescriptors() {
         String toolpath = SourceControl.GITHUB.toString() + "/dockstore-testing/skylab";
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);

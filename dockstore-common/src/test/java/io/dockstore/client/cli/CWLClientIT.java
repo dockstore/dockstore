@@ -47,7 +47,7 @@ public class CWLClientIT {
     }
 
     @Test
-    public void parseCWL() throws Exception {
+    public void parseCWL() {
         final URL resource = Resources.getResource("cwl.json");
         final CWL cwl = new CWL();
         final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile());
@@ -56,7 +56,7 @@ public class CWLClientIT {
     }
 
     @Test
-    public void extractCWLTypes() throws Exception {
+    public void extractCWLTypes() {
         final URL resource = Resources.getResource("cwl.json");
         final CWL cwl = new CWL();
         final ImmutablePair<String, String> output = cwl.parseCWL(resource.getFile());
@@ -67,7 +67,7 @@ public class CWLClientIT {
     }
 
     @Test
-    public void testFileConversions() throws Exception {
+    public void testFileConversions() {
         final Object file1 = CWL.getStub("File", null);
         assertTrue(file1 instanceof Map && "/tmp/fill_me_in.txt".equals(((Map)file1).get("path")));
         final Object file2 = CWL.getStub("File", "foobar");
