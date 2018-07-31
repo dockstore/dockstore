@@ -182,7 +182,7 @@ public final class GoogleHelper {
                 .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
         } catch (IOException e) {
             LOG.error("Retrieving accessToken was unsuccessful");
-            throw new CustomWebApplicationException("Could not retrieve google.com token based on code", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Could not retrieve google token based on code", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
