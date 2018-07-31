@@ -15,7 +15,9 @@
  */
 package io.dockstore.webservice;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.google.api.client.auth.oauth2.TokenResponse;
@@ -28,6 +30,7 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.UserDAO;
 import io.swagger.client.api.TokensApi;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -75,6 +78,7 @@ public class TokenResourceIT extends BaseIT {
     public ExpectedException thrown = ExpectedException.none();
 
     private TokenDAO tokenDAO;
+    private UserDAO userDAO;
 
     private static TokenResponse getFakeTokenResponse() {
         TokenResponse fakeTokenResponse = new TokenResponse();
@@ -89,6 +93,7 @@ public class TokenResourceIT extends BaseIT {
         fakeUserinfoplus.setEmail("potato@gmail.com");
         fakeUserinfoplus.setGivenName("Beef");
         fakeUserinfoplus.setFamilyName("Stew");
+        fakeUserinfoplus.setName("Beef Stew");
         fakeUserinfoplus.setGender("New classification");
         fakeUserinfoplus.setPicture("https://dockstore.org/assets/images/dockstore/logo.png");
         return fakeUserinfoplus;
@@ -126,6 +131,7 @@ public class TokenResourceIT extends BaseIT {
         DockstoreWebserviceApplication application = SUPPORT.getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         this.tokenDAO = new TokenDAO(sessionFactory);
+        this.userDAO = new UserDAO(sessionFactory);
 
         // non-confidential test database sequences seem messed up and need to be iterated past, but other tests may depend on ids
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("alter sequence enduser_id_seq increment by 50 restart with 100");
@@ -165,6 +171,7 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals("potato@gmail.com", token.getUsername());
         Assert.assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
         Assert.assertEquals(100, token.getId().longValue());
+        checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString()));
         verify(GoogleHelper.class);
     }
 
@@ -194,7 +201,7 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals("user1@user.com", token.getUsername());
         Assert.assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
         Assert.assertEquals(2, token.getId().longValue());
-
+        checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString(), TokenType.GITHUB_COM.toString()));
         verify(GoogleHelper.class);
     }
 
@@ -227,7 +234,32 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals("user1@user.com", token.getUsername());
         Assert.assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
         Assert.assertEquals(2, token.getId().longValue());
-
+        checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString(), TokenType.GITHUB_COM.toString()));
         verify(GoogleHelper.class);
+    }
+
+    /**
+     * Checks that the user profiles exist
+     * @param userId        Id of the user
+     * @param profileKeys   Profiles to check that it exists
+     */
+    private void checkUserProfiles(Long userId, List<String> profileKeys) {
+        User user = userDAO.findById(userId);
+        Map<String, User.Profile> userProfiles = user.getUserProfiles();
+        profileKeys.forEach(profileKey -> Assert.assertTrue(userProfiles.containsKey(profileKey)));
+        if (profileKeys.contains(TokenType.GOOGLE_COM.toString())) {
+            checkGoogleUserProfile(userProfiles);
+        }
+    }
+
+    /**
+     * Checks that the Google user profile matches the Google Userinfoplus
+     * @param userProfiles
+     */
+    private void checkGoogleUserProfile(Map<String, User.Profile> userProfiles) {
+        User.Profile googleProfile = userProfiles.get(TokenType.GOOGLE_COM.toString());
+        Assert.assertTrue(googleProfile.email.equals("potato@gmail.com") && googleProfile.avatarURL
+                .equals("https://dockstore.org/assets/images/dockstore/logo.png") && googleProfile.company == null
+                && googleProfile.location == null && googleProfile.name.equals("Beef Stew"));
     }
 }
