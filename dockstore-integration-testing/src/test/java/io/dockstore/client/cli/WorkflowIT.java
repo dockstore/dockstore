@@ -36,6 +36,7 @@ import javax.ws.rs.core.GenericType;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.LanguageType;
@@ -368,7 +369,7 @@ public class WorkflowIT extends BaseIT {
 
         // download zip via CLI
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "download", "--entry", toolpath + ":" + workflowVersion.getName(), "--zip", "--script" });
-        File downloadedZip = new File(workflow.getWorkflowName() + ".zip");
+        File downloadedZip = new File(new WorkflowClient(null, null, null, false).zipFilename(workflow));
         assert(downloadedZip.exists());
         assert(downloadedZip.delete());
     }

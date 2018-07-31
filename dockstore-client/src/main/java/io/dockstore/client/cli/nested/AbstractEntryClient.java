@@ -92,7 +92,7 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  *
  * @author dyuen
  */
-public abstract class AbstractEntryClient {
+public abstract class AbstractEntryClient<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     protected boolean isAdmin = false;
@@ -909,6 +909,13 @@ public abstract class AbstractEntryClient {
 
         }
     }
+
+    /**
+     * Create a path for the type of entry this handles
+     * @param entry
+     * @return create filename
+     */
+    public abstract String zipFilename(T entry);
 
     private void launchCwl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException, IOException {
         final String yamlRun = optVal(args, "--yaml", null);

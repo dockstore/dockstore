@@ -75,7 +75,7 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  *
  * @author dyuen
  */
-public class ToolClient extends AbstractEntryClient {
+public class ToolClient extends AbstractEntryClient<DockstoreTool> {
     public static final String UPDATE_TOOL = "update_tool";
     private static final Logger LOG = LoggerFactory.getLogger(ToolClient.class);
     private final Client client;
@@ -622,7 +622,7 @@ public class ToolClient extends AbstractEntryClient {
                 .getArbitraryURL("/containers/" + container.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
                 }, containersApi.getApiClient());
             try {
-                File zipFile = new File(container.getName() + ".zip");
+                File zipFile = new File(zipFilename(container));
                 FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
                 if (unzip) {
                     SwaggerUtility.unzipFile(zipFile);
@@ -635,7 +635,10 @@ public class ToolClient extends AbstractEntryClient {
         }
     }
 
-
+    @Override
+    public String zipFilename(DockstoreTool container) {
+        return container.getToolPath().replaceAll("/", "_") + ".zip";
+    }
 
     public void handleLabels(String entryPath, Set<String> addsSet, Set<String> removesSet) {
         // Try and update the labels for the given container
