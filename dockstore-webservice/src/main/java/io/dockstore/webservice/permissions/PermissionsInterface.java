@@ -173,13 +173,17 @@ public interface PermissionsInterface {
      * {@link CustomWebApplicationException} if it is. To be used as a check so
      * that original owners can never be removed as owners.
      *
+     * This method compares <code>username</code> against <code>User.getUsername()</code> of the <code>workflow</code>'s users, only.
+     * That username property is currently set with either the Github username or the Google user email, depending
+     * on the order in which the user linked accounts.
      *
      * @param username
      * @param workflow
      */
     static void checkUserNotOriginalOwner(String username, Workflow workflow) {
         if (workflow.getUsers().stream().anyMatch(u ->  username.equals(u.getUsername()))) {
-            throw new CustomWebApplicationException(username + " is an original owner and their permissions cannot be modified", HttpStatus.SC_FORBIDDEN);
+            throw new CustomWebApplicationException(username + " is an original owner and their permissions cannot be modified",
+                    HttpStatus.SC_FORBIDDEN);
         }
     }
 }

@@ -252,7 +252,11 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * Throws a CustomWebApplication if <code>email</code> is an original owner, a user
      * that owns <code>workflow</code> in Dockstore.
      *
-     * Can't just check the username; also need to check profiles.
+     * The {@link User} class has a <code>username</code> property, which currently can get set to either the user's GitHub id
+     * or Google email, depending on the order that the user associated those accounts. The method first tries to match
+     * comparing the email against the username -- if it doesn't find it, it looks in the user profiles for the email.
+     *
+     *
      * @param email must not be null
      * @param workflow
      */
