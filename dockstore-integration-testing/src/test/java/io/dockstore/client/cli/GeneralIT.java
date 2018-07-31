@@ -781,7 +781,7 @@ public class GeneralIT extends BaseIT {
 
         // download zip via CLI
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "download", "--entry", refresh.getToolPath() + ":" + tag.getName(), "--zip", "--script" });
-        File downloadedZip = new File(ToolClient.zipToolPath(refresh));
+        File downloadedZip = new File(new ToolClient(null, false).zipFilename(refresh));
         // record entries
         List<String> collect = new ZipFile(downloadedZip).stream().map(ZipEntry::getName).collect(Collectors.toList());
         assert(downloadedZip.exists());

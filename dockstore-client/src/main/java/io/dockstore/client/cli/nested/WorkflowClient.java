@@ -86,7 +86,7 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  *
  * @author dyuen
  */
-public class WorkflowClient extends AbstractEntryClient {
+public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
     protected static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
     private static final String UPDATE_WORKFLOW = "update_workflow";
@@ -348,7 +348,7 @@ public class WorkflowClient extends AbstractEntryClient {
             byte[] arbitraryURL = SwaggerUtility
                 .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
                 }, workflowsApi.getApiClient());
-            File zipFile = new File(workflow.getFullWorkflowPath().replaceAll("/", "_") + ".zip");
+            File zipFile = new File(zipFilename(workflow));
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
                 SwaggerUtility.unzipFile(zipFile);
@@ -358,7 +358,8 @@ public class WorkflowClient extends AbstractEntryClient {
         }
     }
 
-    public static String zipWorkflowPath(Workflow workflow) {
+    @Override
+    public String zipFilename(Workflow workflow) {
         return workflow.getFullWorkflowPath().replaceAll("/", "_") + ".zip";
     }
 

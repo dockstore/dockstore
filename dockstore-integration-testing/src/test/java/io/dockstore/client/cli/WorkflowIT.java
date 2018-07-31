@@ -369,7 +369,7 @@ public class WorkflowIT extends BaseIT {
 
         // download zip via CLI
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "download", "--entry", toolpath + ":" + workflowVersion.getName(), "--zip", "--script" });
-        File downloadedZip = new File(WorkflowClient.zipWorkflowPath(workflow));
+        File downloadedZip = new File(new WorkflowClient(null, null, null, false).zipFilename(workflow));
         assert(downloadedZip.exists());
         assert(downloadedZip.delete());
     }
