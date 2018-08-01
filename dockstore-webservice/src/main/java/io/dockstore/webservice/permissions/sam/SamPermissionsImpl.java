@@ -90,6 +90,8 @@ public class SamPermissionsImpl implements PermissionsInterface {
      */
     @Override
     public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
+        // If original owner, you can't mess with their permissions
+        checkEmailNotOriginalOwner(permission.getEmail(), workflow);
         ResourcesApi resourcesApi = getResourcesApi(requester);
         try {
             final String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
@@ -228,7 +230,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public void removePermission(User user, Workflow workflow, String email, Role role) {
-        PermissionsInterface.checkUserNotOriginalOwner(email, workflow);
+        checkEmailNotOriginalOwner(email, workflow);
         ResourcesApi resourcesApi = getResourcesApi(user);
         String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
         try {
@@ -243,6 +245,32 @@ public class SamPermissionsImpl implements PermissionsInterface {
         } catch (ApiException e) {
             LOG.error(MessageFormat.format("Error removing {0} from workflow {1}", email, encodedPath), e);
             throw new CustomWebApplicationException("Error removing permissions", e.getCode());
+        }
+    }
+
+    /**
+     * Throws a CustomWebApplication if <code>email</code> is an original owner, a user
+     * that owns <code>workflow</code> in Dockstore.
+     *
+     * The {@link User} class has a <code>username</code> property, which currently can get set to either the user's GitHub id
+     * or Google email, depending on the order that the user associated those accounts. The method first tries to match
+     * comparing the email against the username -- if it doesn't find it, it looks in the user profiles for the email.
+     *
+     *
+     * @param email must not be null
+     * @param workflow
+     */
+    void checkEmailNotOriginalOwner(String email, Workflow workflow) {
+        assert email != null;
+        final boolean isOwner = workflow.getUsers().stream().anyMatch(u -> {
+            if (email.equals(u.getUsername())) {
+                return true;
+            }
+            final User.Profile profile = u.getUserProfiles().get(TokenType.GOOGLE_COM.toString());
+            return profile != null && email.equals(profile.email);
+        });
+        if (isOwner) {
+            throw new CustomWebApplicationException(email + " is an original owner and their permissions cannot be modified", HttpStatus.SC_FORBIDDEN);
         }
     }
 

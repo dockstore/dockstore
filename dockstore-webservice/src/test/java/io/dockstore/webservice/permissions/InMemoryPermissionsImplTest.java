@@ -69,13 +69,13 @@ public class InMemoryPermissionsImplTest {
         Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size(), 0);
         final Permission permission = new Permission();
         permission.setRole(Role.WRITER);
-        permission.setEmail(JOHN_DOE_EXAMPLE_COM);
+        permission.setEmail(janeDoeUser.getUsername());
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
         inMemoryPermissions.setPermission(johnDoeUser, gooWorkflow, permission);
-        Assert.assertEquals(1, inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size());
+        Assert.assertEquals(1, inMemoryPermissions.workflowsSharedWithUser(janeDoeUser).size());
         permission.setRole(Role.READER);
         inMemoryPermissions.setPermission(johnDoeUser, dockstoreOrgWorkflow, permission);
-        final Map<Role, List<String>> roleListMap = inMemoryPermissions.workflowsSharedWithUser(johnDoeUser);
+        final Map<Role, List<String>> roleListMap = inMemoryPermissions.workflowsSharedWithUser(janeDoeUser);
         Assert.assertEquals(2, roleListMap.size());
         Assert.assertEquals(DOCKSTORE_ORG_JOHN_MYWORKFLOW, roleListMap.get(Role.READER).get(0));
     }
@@ -98,10 +98,10 @@ public class InMemoryPermissionsImplTest {
     @Test
     public void canDoAction() {
         Assert.assertEquals(inMemoryPermissions.workflowsSharedWithUser(johnDoeUser).size(), 0);
-        final Permission permission = new Permission(JOHN_DOE_EXAMPLE_COM, Role.READER);
+        final Permission permission = new Permission(janeDoeUser.getUsername(), Role.READER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
-        Assert.assertTrue(inMemoryPermissions.canDoAction(johnDoeUser, fooWorkflow, Role.Action.READ));
-        Assert.assertFalse(inMemoryPermissions.canDoAction(johnDoeUser, fooWorkflow, Role.Action.WRITE));
+        Assert.assertTrue(inMemoryPermissions.canDoAction(janeDoeUser, fooWorkflow, Role.Action.READ));
+        Assert.assertFalse(inMemoryPermissions.canDoAction(janeDoeUser, fooWorkflow, Role.Action.WRITE));
     }
 
     @Test

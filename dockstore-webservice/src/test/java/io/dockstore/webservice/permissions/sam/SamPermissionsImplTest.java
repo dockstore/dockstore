@@ -50,6 +50,7 @@ public class SamPermissionsImplTest {
     public static final String GOO_WORKFLOW_NAME = "goo";
     public static final String DOCKSTORE_ORG_WORKFLOW_NAME = "dockstore.org/john/myworkflow";
     public static final String JANE_DOE_GMAIL_COM = "jane.doe@gmail.com";
+    public static final String JANE_DOE_GITHUB_ID = "jdoe";
     private AccessPolicyResponseEntry ownerPolicy;
     private AccessPolicyResponseEntry writerPolicy;
     private AccessPolicyResponseEntry readerPolicy;
@@ -396,6 +397,15 @@ public class SamPermissionsImplTest {
         final Map<Role, List<String>> sharedWithUser2 = samPermissionsImpl.workflowsSharedWithUser(userMock);
         Assert.assertEquals(1, sharedWithUser.size());
         Assert.assertEquals(Role.WRITER, sharedWithUser.entrySet().iterator().next().getKey());
+    }
+
+    @Test
+    public void testNotOriginalOwnerWithEmailNotUsername() {
+        when(userMock.getUsername()).thenReturn(JANE_DOE_GITHUB_ID);
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        thrown.expect(CustomWebApplicationException.class);
+        samPermissionsImpl.checkEmailNotOriginalOwner(JANE_DOE_GMAIL_COM, fooWorkflow);
+        samPermissionsImpl.checkEmailNotOriginalOwner("johndoe@example.com", fooWorkflow);
     }
 
     private void setupInitializePermissionsMocks(String encodedPath) {
