@@ -17,6 +17,7 @@
 package io.dockstore.webservice.permissions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,15 +95,37 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
         final List<Permission> permissions = getWorkflowPermissions(workflow);
         if (isOwner(user, permissions)) {
             return permissions;
-        } else {
-            final String userKey = userKey(user);
-            final List<Permission> userPermissions = permissions.stream()
-                    .filter(p -> p.getEmail().equals(userKey)).collect(Collectors.toList());
-            if (userPermissions.isEmpty()) {
-                throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
-            }
-            return userPermissions;
         }
+        throw new CustomWebApplicationException("Forbidden", HttpStatus.SC_FORBIDDEN);
+    }
+
+    @Override
+    public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
+        if (workflow.getUsers().contains(user)) {
+            return Arrays.asList(Role.Action.values());
+        }
+        final ArrayList<Role.Action> actions = new ArrayList<>();
+        final List<Permission> permissions = getWorkflowPermissions(workflow);
+        final String userKey = userKey(user);
+        final Optional<Permission> permission = permissions.stream().filter(p ->
+            p.getEmail().equals(userKey)
+        ).findFirst();
+        if (permission.isPresent()) {
+            final Role role = permission.get().getRole();
+            switch (role) {
+            case OWNER:
+                actions.add(Role.Action.SHARE);
+                actions.add(Role.Action.DELETE);
+                // No break statement on purpose
+            case WRITER:
+                actions.add(Role.Action.WRITE);
+                // No break statement on purpose
+            case READER:
+                actions.add(Role.Action.READ);
+            default: // Checkstyle complains otherwise
+            }
+        }
+        return actions;
     }
 
     private boolean isOwner(User user, List<Permission> workflowPermissions) {

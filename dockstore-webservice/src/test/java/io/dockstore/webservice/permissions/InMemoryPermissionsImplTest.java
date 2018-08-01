@@ -112,12 +112,32 @@ public class InMemoryPermissionsImplTest {
     }
 
     @Test
-    public void testSelfPermissions() {
+    public void testOwnersActions() {
+        // Test that reader can see her own permission even if she is not an owner
+        final Permission permission = new Permission("jane", Role.OWNER);
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        final List<Role.Action> actions = inMemoryPermissions.getActionsForWorkflow(janeDoeUser, fooWorkflow);
+        Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
+    }
+
+    @Test
+    public void testWritersActions() {
+        // Test that reader can see her own permission even if she is not an owner
+        final Permission permission = new Permission("jane", Role.WRITER);
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        final List<Role.Action> actions = inMemoryPermissions.getActionsForWorkflow(janeDoeUser, fooWorkflow);
+        Assert.assertEquals(2, actions.size());
+        Assert.assertTrue(actions.contains(Role.Action.WRITE) && actions.contains(Role.Action.WRITE));
+    }
+
+    @Test
+    public void testReadersActions() {
         // Test that reader can see her own permission even if she is not an owner
         final Permission permission = new Permission("jane", Role.READER);
         inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
-        final List<Permission> permissions = inMemoryPermissions.getPermissionsForWorkflow(janeDoeUser, fooWorkflow);
-        Assert.assertEquals(1, permissions.size());
+        final List<Role.Action> actions = inMemoryPermissions.getActionsForWorkflow(janeDoeUser, fooWorkflow);
+        Assert.assertEquals(1, actions.size());
+        Assert.assertTrue(actions.contains(Role.Action.READ));
     }
 
     @Test

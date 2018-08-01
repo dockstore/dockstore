@@ -39,6 +39,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -614,9 +615,8 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
-        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished()));
+        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
-
         return tools;
     }
 
@@ -1035,5 +1035,42 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         if (tool.getMode() == ToolMode.HOSTED) {
             throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{toolId}/zip/{tagId}")
+    @ApiOperation(value = "Download a ZIP file of a tool and all associated files.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Produces("application/zip")
+    public Response getToolZip(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
+        @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
+
+        Tool tool = toolDAO.findById(toolId);
+        if (tool.getIsPublished()) {
+            checkEntry(tool);
+        } else {
+            checkEntry(tool);
+            if (user.isPresent()) {
+                checkUser(user.get(), tool);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
+            }
+        }
+
+        Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()
+            .orElseThrow(() -> new CustomWebApplicationException("Could not find tag", HttpStatus.SC_NOT_FOUND));
+        Set<SourceFile> sourceFiles = tag.getSourceFiles();
+        if (sourceFiles == null || sourceFiles.size() == 0) {
+            throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
+        }
+
+        String fileName = tool.getToolPath().replaceAll("/", "-") + ".zip";
+
+        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
+            .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 }

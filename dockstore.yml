@@ -21,10 +21,12 @@ googleRedirectURI: <fill me in>
 # A list of external client ids that Google tokens have been issued against that Dockstore will accept
 externalGoogleClientIds: <fill me in>
         
-# the following values describe where the webservice is being run (and on what port and using what scheme) to configure swagger
-hostname: <fill me in>
-scheme: http
-port: 8080
+# the following values describe where the webservice is being run (and on what port and using what scheme) to configure swagger, rss, and trs URLs
+externalConfig:
+  basePath: /
+  hostname: <fill me in>
+  scheme: http
+  port: 8080
 
 authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 

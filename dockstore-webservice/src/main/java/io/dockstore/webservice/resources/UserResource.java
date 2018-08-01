@@ -34,13 +34,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
@@ -84,15 +82,14 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
-    private final DockstoreWebserviceConfiguration configuration;
+
     public UserResource(TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, WorkflowResource workflowResource,
-            DockerRepoResource dockerRepoResource, DockstoreWebserviceConfiguration configuration) {
+        DockerRepoResource dockerRepoResource) {
         this.userDAO = userDAO;
         this.groupDAO = groupDAO;
         this.tokenDAO = tokenDAO;
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
-        this.configuration = configuration;
         elasticManager = new ElasticManager();
     }
 
@@ -106,36 +103,6 @@ public class UserResource implements AuthenticatedResourceInterface {
         group.setName(name);
         long create = groupDAO.create(group);
         return groupDAO.findById(create);
-    }
-
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/groups/{groupId}")
-    @RolesAllowed("admin")
-    @ApiOperation(value = "Deletes a group, admin only", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Response.class)
-    @ApiResponses(@ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid groupId value"))
-    public Response deleteGroup(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Group id to delete", required = true) @PathParam("groupId") Long groupId) {
-        Group group = groupDAO.findById(groupId);
-
-        groupDAO.delete(group);
-
-        group = groupDAO.findById(groupId);
-        if (group == null) {
-            return Response.ok().build();
-        } else {
-            return Response.serverError().build();
-        }
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @RolesAllowed("admin")
-    @ApiOperation(value = "List all known users", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List all users. Admin only.", response = User.class, responseContainer = "List")
-    public List<User> listUsers(@ApiParam(hidden = true) @Auth User user) {
-        return userDAO.findAll();
     }
 
     @GET
@@ -589,7 +556,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Update metadata for logged in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Update metadata for logged in user.", response = User.class)
     public User updateLoggedInUserMetadata(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Token source", allowableValues = "google.com, github.com") @QueryParam("source") TokenType source) {
         User dbuser = userDAO.findById(user.getId());
-        if (source.equals(TokenType.GOOGLE_COM) || source.equals(null)) {
+        if (source.equals(TokenType.GOOGLE_COM)) {
             updateGoogleAccessToken(user.getId());
         }
         dbuser.updateUserMetadata(tokenDAO, source);
@@ -600,11 +567,9 @@ public class UserResource implements AuthenticatedResourceInterface {
      * Updates the user's google access token in the DB
      * @param userId    The user's ID
      */
-    public void updateGoogleAccessToken(Long userId) {
+    private void updateGoogleAccessToken(Long userId) {
         List<Token> googleByUserId = tokenDAO.findGoogleByUserId(userId);
-        if (googleByUserId.isEmpty()) {
-            return;
-        } else {
+        if (!googleByUserId.isEmpty()) {
             Token googleToken = googleByUserId.get(0);
             Optional<String> validAccessToken = GoogleHelper
                     .getValidAccessToken(googleToken);

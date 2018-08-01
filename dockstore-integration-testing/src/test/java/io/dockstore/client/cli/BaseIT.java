@@ -47,6 +47,9 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  */
 @Category(ConfidentialTest.class)
 public class BaseIT {
+    public final String ADMIN_USERNAME = "admin@admin.com";
+    public final String USER_1_USERNAME = "DockstoreTestUser";
+    public final String USER_2_USERNAME = "DockstoreTestUser2";
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
@@ -80,14 +83,20 @@ public class BaseIT {
      * @throws IOException
      * @throws TimeoutException
      */
-    protected static ApiClient getWebClient() {
+    protected static ApiClient getWebClient(boolean authenticated, String username) {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         File configFile = FileUtils.getFile("src", "test", "resources", "config2");
         INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
         ApiClient client = new ApiClient();
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-            .runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>())));
+        if (authenticated) {
+            client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
+                .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';", new ScalarHandler<>())));
+        }
         return client;
+    }
+
+    protected static ApiClient getWebClient(String username){
+        return getWebClient(true, username);
     }
 }

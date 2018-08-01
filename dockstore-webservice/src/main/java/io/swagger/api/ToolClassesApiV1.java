@@ -15,6 +15,8 @@
  */
 package io.swagger.api;
 
+import java.util.Optional;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -44,6 +46,6 @@ public class ToolClassesApiV1 {
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = 200, message = "An array of methods that match the filter.", response = ToolClass.class, responseContainer = "List") })
     public Response toolClassesGet(@Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) throws NotFoundException {
-        return delegate.toolClassesGet(securityContext, containerContext);
+        return delegate.toolClassesGet(securityContext, containerContext, Optional.empty());
     }
 }

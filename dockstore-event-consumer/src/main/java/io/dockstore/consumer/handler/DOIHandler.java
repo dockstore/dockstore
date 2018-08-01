@@ -133,8 +133,8 @@ public class DOIHandler implements MessageHandler<DOIMessage> {
                     // file name is passsed in but seems to be ignore
                     filesApi.createFile(depositionID, tempFile.toFile(), new File(file.getPath()).getName());
                 }
-// TODO: this would be fleshed out to populate descriptors, secondary descriptors, test json, dockerfiles, etc.
-// TODO: this could use a progress indicator, uploading docker images seems slow
+                // TODO: this would be fleshed out to populate descriptors, secondary descriptors, test json, dockerfiles, etc.
+                // TODO: this could use a progress indicator, uploading docker images seems slow
                 //DepositionFile file = filesApi.createFile(depositionID, dockerImageFile, dockerImageFile.getAbsolutePath());
                 // LOG.info(file.toString());
 

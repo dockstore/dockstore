@@ -15,18 +15,47 @@
  */
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.ZipFile;
+
+import javax.ws.rs.core.GenericType;
 
 import com.google.gson.Gson;
+import io.swagger.client.ApiClient;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.VerifyRequest;
+import org.apache.commons.io.FileUtils;
 
 public final class SwaggerUtility {
 
     private SwaggerUtility() {
 
+    }
+
+    public static <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
+        return client
+            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
+                new String[] { "BEARER" }, type);
+    }
+
+    public static void unzipFile(File zipFile) throws IOException {
+        ZipFile zipFileActual = new ZipFile(zipFile);
+        zipFileActual.stream().forEach(zipEntry -> {
+            String fileName = zipEntry.getName();
+            File newFile = new File(System.getProperty("user.dir"), fileName);
+            try {
+                newFile.getParentFile().mkdirs();
+                FileUtils.copyInputStreamToFile(zipFileActual.getInputStream(zipEntry), newFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        FileUtils.deleteQuietly(zipFile);
     }
 
     /**

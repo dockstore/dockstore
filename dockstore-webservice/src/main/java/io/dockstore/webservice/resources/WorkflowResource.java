@@ -44,6 +44,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
@@ -706,7 +708,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         List<Workflow> workflows = workflowDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(workflows);
         stripContent(workflows);
-        response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished()));
+        response.addHeader("X-total-count", String.valueOf(workflowDAO.countAllPublished(Optional.of(filter))));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return workflows;
     }
@@ -728,7 +730,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                             return workflow;
                         }
                         return null;
-                    }).filter(w -> w != null).collect(Collectors.toList());
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
                     return new SharedWorkflows(e.getKey(), workflows);
                 })
                 .filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0)
@@ -807,10 +809,21 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/path/workflow/{repository}/actions")
+    @ApiOperation(value = "Gets all actions a user can perform on a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "", response = Role.Action.class, responseContainer = "List")
+    public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        Workflow workflow = workflowDAO.findByPath(path, false);
+        checkEntry(workflow);
+        return this.permissionsInterface.getActionsForWorkflow(user, workflow);
+    }
+
     @PATCH
     @Timed
     @UnitOfWork
-    @Path("/path/workfow/{repository}/permissions")
+    @Path("/path/workflow/{repository}/permissions")
     @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Adds a permission for a workflow. The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
@@ -828,7 +841,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @DELETE
     @Timed
     @UnitOfWork
-    @Path("/path/workfow/{repository}/permissions")
+    @Path("/path/workflow/{repository}/permissions")
     @ApiOperation(value = "Remove the specified user role for a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Removes a role from a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
@@ -1416,7 +1429,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "Entry Id of parent tool/workflow.", required = true) @PathParam("entryId") Long entryId,
         @ApiParam(value = "Descriptor type of the workflow, either cwl or wdl.", required = true, allowableValues = "cwl, wdl") @PathParam("descriptorType") String descriptorType) {
         // Find the entry
-        MutablePair<String, Entry> entryPair = toolDAO.findEntryById(entryId);
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
 
         // Check if valid descriptor type
         if (!Objects.equals(descriptorType, DescriptorType.CWL.toString().toLowerCase()) && !Objects.equals(descriptorType, DescriptorType.WDL.toString().toLowerCase())) {
@@ -1424,20 +1437,20 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
 
         // Check if the entry exists
-        if (entryPair.getValue() == null) {
+        if (entry == null) {
             throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
         }
 
         // Don't allow workflow stubs
-        if (Objects.equals(entryPair.getKey(), "workflow")) {
-            Workflow workflow = (Workflow) entryPair.getValue();
+        if (entry instanceof Workflow) {
+            Workflow workflow = (Workflow) entry;
             if (Objects.equals(workflow.getMode().name(), WorkflowMode.STUB.toString())) {
                 throw new CustomWebApplicationException("Checker workflows cannot be added to workflow stubs.", HttpStatus.SC_BAD_REQUEST);
             }
         }
 
         // Ensure that the entry has no checker workflows already
-        if (entryPair.getValue().getCheckerWorkflow() != null) {
+        if (entry.getCheckerWorkflow() != null) {
             throw new CustomWebApplicationException("The given entry already has a checker workflow.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1452,9 +1465,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         String workflowName;
 
         // Grab information if tool
-        if (Objects.equals(entryPair.getKey(), "tool")) {
+        if (entry instanceof Tool) {
             // Get tool
-            Tool tool = (Tool)entryPair.getValue();
+            Tool tool = (Tool)entry;
 
             // Generate workflow name
             workflowName = MoreObjects.firstNonNull(tool.getToolname(), "");
@@ -1491,9 +1504,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             // Determine last updated
             lastUpdated = tool.getLastUpdated();
 
-        } else if (Objects.equals(entryPair.getKey(), "workflow")) {
+        } else if (entry instanceof Workflow) {
             // Get workflow
-            Workflow workflow = (Workflow)entryPair.getValue();
+            Workflow workflow = (Workflow)entry;
 
             // Copy over common attributes
             defaultTestParameterPath = workflow.getDefaultTestParameterFilePath();
@@ -1547,12 +1560,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         elasticManager.handleIndexUpdate(checkerWorkflow, ElasticMode.UPDATE);
 
         // Update original entry with checker id
-        entryPair.getValue().setCheckerWorkflow(checkerWorkflow);
+        entry.setCheckerWorkflow(checkerWorkflow);
 
         // Return the original entry
-        MutablePair<String, Entry> originalEntryPair = toolDAO.findEntryById(entryId);
-        return originalEntryPair.getValue();
-
+        return toolDAO.getGenericEntryById(entryId);
     }
 
 
@@ -1565,5 +1576,41 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         if (workflow.getMode() == WorkflowMode.HOSTED) {
             throw new WebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{workflowId}/zip/{workflowVersionId}")
+    @ApiOperation(value = "Download a ZIP file of a workflow and all associated files.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @Produces("application/zip")
+    public Response getWorkflowZip(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+
+        Workflow workflow = workflowDAO.findById(workflowId);
+        if (workflow.getIsPublished()) {
+            checkEntry(workflow);
+        } else {
+            checkEntry(workflow);
+            if (user.isPresent()) {
+                checkCanReadWorkflow(user.get(), workflow);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
+            }
+        }
+
+        WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
+        Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        if (sourceFiles == null || sourceFiles.size() == 0) {
+            throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
+        }
+
+        String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
+
+        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
+            .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 }

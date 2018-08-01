@@ -30,7 +30,6 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -101,7 +100,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
         cleanStatePrivate1(support, CONFIG_PATH);
         // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
-        getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
+        // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
 
     /**
@@ -118,6 +117,16 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "test.confidential1");
         application.run("db", "migrate", configPath, "--include", "1.4.0");
         application.run("db", "migrate", configPath, "--include", "1.5.0");
+    }
+
+    public static void runMigration(List<String> migrationList, Application<DockstoreWebserviceConfiguration> application, String configPath) {
+        migrationList.forEach(migration -> {
+            try {
+                application.run("db", "migrate", configPath, "--include", migration);
+            } catch (Exception e) {
+                Assert.fail();
+            }
+        });
     }
 
     /**
@@ -189,7 +198,7 @@ public final class CommonTestUtilities {
         return new TestingPostgres(parseConfig);
     }
 
-    public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws ExecuteException, RuntimeException {
+    public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws RuntimeException {
         List<String> commandList = new ArrayList<>();
         commandList.add(dockstore.getAbsolutePath());
         commandList.addAll(Arrays.asList(commandArray));

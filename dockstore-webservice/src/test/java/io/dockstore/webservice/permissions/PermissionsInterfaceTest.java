@@ -1,6 +1,7 @@
 package io.dockstore.webservice.permissions;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,11 @@ public class PermissionsInterfaceTest {
             @Override
             public Map<Role, List<String>> workflowsSharedWithUser(User user) {
                 return null;
+            }
+
+            @Override
+            public List<Role.Action> getActionsForWorkflow(User user, Workflow workflow) {
+                return Collections.emptyList();
             }
 
             @Override

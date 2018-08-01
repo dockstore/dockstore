@@ -95,6 +95,14 @@ public interface PermissionsInterface {
     }
 
     /**
+     * List all {@link Role.Action} <code>user</code> can perform on <code>workflow</code>.
+     * @param user
+     * @param workflow
+     * @return a list of allowed actions on a workflow, possibly empty
+     */
+    List<Role.Action> getActionsForWorkflow(User user, Workflow workflow);
+
+    /**
      * Removes the <code>email</code> from the <code>role</code> from
      * <code>workflow</code>'s permissions.
      * @param user the requester, must be an owner of <code>workflow</code> or an admin.

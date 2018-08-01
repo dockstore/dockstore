@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import com.google.common.base.Charsets;
@@ -55,7 +56,7 @@ public class BridgeHelper {
                 // Grab file located at URL
                 try {
                     try (InputStream inputStream = new URL(importUrl).openStream()) {
-                        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "UTF-8");
+                        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
                         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
                         String line;
                         while ((line = bufferedReader.readLine()) != null) {

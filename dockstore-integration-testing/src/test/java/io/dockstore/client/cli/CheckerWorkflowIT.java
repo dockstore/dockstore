@@ -76,7 +76,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testCWLToolAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         ContainersApi containersApi = new ContainersApi(webClient);
 
@@ -178,7 +178,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testCWLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
@@ -206,6 +206,10 @@ public class CheckerWorkflowIT extends BaseIT {
 
         // Refresh workflow
         Workflow refreshedEntry = workflowApi.refresh(githubWorkflow.getId());
+
+        // Should be able to download zip for first version
+        Workflow checkerWorkflow = workflowApi.getWorkflow(refreshedEntry.getCheckerId());
+        workflowApi.getWorkflowZip(checkerWorkflow.getId(), checkerWorkflow.getWorkflowVersions().get(0).getId());
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile
         refreshedEntry.getUsers().forEach(entryUser -> {
@@ -239,6 +243,9 @@ public class CheckerWorkflowIT extends BaseIT {
             .runSelectStatement("select count(*) from workflow where ispublished = true", new ScalarHandler<>());
         assertEquals("Two workflows should be published (one being the checker), there are " + count7, 2, count7);
 
+        // Should still be able to download zip for first version
+        workflowApi.getWorkflowZip(checkerWorkflow.getId(), checkerWorkflow.getWorkflowVersions().get(0).getId());
+
         // Unpublish workflow
         workflowApi.publish(githubWorkflow.getId(), unpublishRequest);
 
@@ -258,7 +265,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testWDLWorkflowAddCheckerRefreshPublishUnpublish() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
@@ -330,7 +337,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testAddCheckerToStub() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -355,7 +362,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testRegisteringToolWithUnderscoreInName() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         ContainersApi containersApi = new ContainersApi(webClient);
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -383,7 +390,7 @@ public class CheckerWorkflowIT extends BaseIT {
     @Test
     public void testRegisteringWorkflowWithUnderscoreInName() throws ApiException {
         // Setup for test
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // Manually register a workflow

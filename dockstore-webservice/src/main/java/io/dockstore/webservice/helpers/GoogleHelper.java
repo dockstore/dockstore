@@ -5,17 +5,24 @@ import java.security.GeneralSecurityException;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
+import com.google.api.client.auth.oauth2.BearerToken;
+import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.http.GenericUrl;
 import com.google.api.client.json.jackson.JacksonFactory;
 import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Tokeninfo;
 import com.google.api.services.oauth2.model.Userinfoplus;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.resources.TokenResource;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +32,8 @@ import org.slf4j.LoggerFactory;
  */
 public final class GoogleHelper {
     // Prefix for Dockstore usernames where the account was originally registered with Google
-    public static final String GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL = "https://accounts.google.com/o/oauth2/v2/auth";
-    public static final String GOOGLE_ENCODED_URL = "https://www.googleapis.com/oauth2/v4/token";
+    private static final String GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL = "https://accounts.google.com/o/oauth2/v2/auth";
+    private static final String GOOGLE_ENCODED_URL = "https://www.googleapis.com/oauth2/v4/token";
 
     private static final Logger LOG = LoggerFactory.getLogger(GoogleHelper.class);
 
@@ -34,6 +41,7 @@ public final class GoogleHelper {
 
     private GoogleHelper() {
     }
+
 
     public static void setConfig(DockstoreWebserviceConfiguration config) {
         GoogleHelper.config = config;
@@ -152,7 +160,30 @@ public final class GoogleHelper {
     }
 
     private static boolean isValidToken(String googleToken) {
-        return tokenInfoFromToken(googleToken).map(tokenInfo -> isValidAudience(tokenInfo)).orElse(false);
+        return tokenInfoFromToken(googleToken).map(GoogleHelper::isValidAudience).orElse(false);
+    }
+
+    /**
+     * Gets the Google TokenResponse
+     *
+     * @param googleClientID
+     * @param googleClientSecret
+     * @param code        The satellizer code
+     * @param redirectUri The Google redirectUri
+     * @return
+     */
+    public static TokenResponse getTokenResponse(String googleClientID, String googleClientSecret, String code, String redirectUri) {
+        final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), TokenResource.HTTP_TRANSPORT,
+            TokenResource.JSON_FACTORY, new GenericUrl(GoogleHelper.GOOGLE_ENCODED_URL),
+            new ClientParametersAuthentication(googleClientID, googleClientSecret), googleClientID,
+            GoogleHelper.GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL).build();
+        try {
+            return flow.newTokenRequest(code).setRedirectUri(redirectUri)
+                .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+        } catch (IOException e) {
+            LOG.error("Retrieving accessToken was unsuccessful");
+            throw new CustomWebApplicationException("Could not retrieve google token based on code", HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
 }

@@ -66,7 +66,7 @@ public class ExtendedTRSIT extends BaseIT {
 
     @Test
     public void testVerificationOnSourceFileLevelForWorkflows() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         String defaultTestParameterFilePath = "/test.json";
@@ -133,7 +133,7 @@ public class ExtendedTRSIT extends BaseIT {
      */
     @Test
     public void testVerificationOnSourceFileLevelForTools() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = new DockstoreTool();

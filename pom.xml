@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.5.0-alpha.7-SNAPSHOT</version>
+    <version>1.5.0-alpha.9-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -1205,6 +1205,7 @@
                         <configuration>
                             <append>true</append>
                             <excludes>
+                                <exclude>io/dockstore/webservice/resources/Description.*</exclude>
                                 <exclude>io/dockstore/common/Bridge.*</exclude>
                                 <!-- exclude client classes, but not the server classes to help guide tests -->
                                 <exclude>io/swagger/client/**/*</exclude>
