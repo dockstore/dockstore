@@ -294,19 +294,19 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     /**
      * Adds a Google token to the existing user if user is authenticated already.
-     * Otherwise, create a new Dockstore account too and also add token
+     * Otherwise, see table below on what should happen.
      * <table border="1">
      * <tr>
-     * <td>  </td> <td><b> Have GitHub account no Google Token </td><td> <b>Have GitHub account with Google token </td> <td> <b>No GitHub Account </td>
+     * <td>  </td> <td><b> Have GitHub account no Google Token (no GitHub account) </td><td> <b>Have GitHub account with Google token </td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account no Google token </td> <td> Login with Google </td><td> Login with GitHub </td> <td> Login with Google </td>
+     * <td> <b>Have Google Account no Google token </td> <td> Login with Google </td><td> Login with GitHub </td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account with Google token </td> <td> Login with Google </td><td> Login with Google </td> <td> Login with Google </td>
+     * <td> <b>Have Google Account with Google token </td> <td> Login with Google </td><td> Login with Google </td>
      * </tr>
      * <tr>
-     * <td> <b>No Google Account </td> <td> Create Google account </td><td> Login with GitHub </td> <td> Create Google Account  </td>
+     * <td> <b>No Google Account </td> <td> Create Google account </td><td> Login with GitHub </td>
      * </tr>
      * </table>
      *

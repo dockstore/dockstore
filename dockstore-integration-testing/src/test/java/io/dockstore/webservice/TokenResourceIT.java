@@ -113,7 +113,7 @@ public class TokenResourceIT extends BaseIT {
         Token fakeToken = new Token();
         fakeToken.setContent("fakeContent");
         fakeToken.setTokenSource(TokenType.GOOGLE_COM);
-        fakeToken.setUserId(100);
+        fakeToken.setUserId(1);
         fakeToken.setUsername("potato@gmail.com");
         return fakeToken;
     }
