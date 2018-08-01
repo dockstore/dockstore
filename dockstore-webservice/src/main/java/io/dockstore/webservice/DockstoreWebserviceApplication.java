@@ -28,11 +28,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.common.base.MoreObjects;
-import io.dockstore.webservice.helpers.GoogleHelper;
-import io.dockstore.webservice.permissions.PermissionsFactory;
-import io.dockstore.webservice.permissions.PermissionsInterface;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
+import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
@@ -45,18 +42,17 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
 import io.dockstore.webservice.helpers.ElasticManager;
+import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
-import io.dockstore.webservice.jdbi.FileDAO;
-import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
-import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
-import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
+import io.dockstore.webservice.permissions.PermissionsFactory;
+import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
@@ -233,13 +229,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
-        final WorkflowVersionDAO workflowVersionDAO = new WorkflowVersionDAO(hibernate.getSessionFactory());
 
         final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
-        final LabelDAO labelDAO = new LabelDAO(hibernate.getSessionFactory());
-        final FileDAO fileDAO = new FileDAO(hibernate.getSessionFactory());
-        final FileFormatDAO fileFormatDAO = new FileFormatDAO(hibernate.getSessionFactory());
 
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
         LOG.info("This is our custom logger saying that we're about to load authenticators");
@@ -257,13 +249,11 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final HttpClient httpClient = new HttpClientBuilder(environment).using(configuration.getHttpClientConfiguration()).build(getName());
 
         final PermissionsInterface authorizer = PermissionsFactory.getAuthorizer(tokenDAO, configuration);
-        final WorkflowResource workflowResource = new WorkflowResource(httpClient, userDAO, tokenDAO, toolDAO, workflowDAO,
-            workflowVersionDAO, labelDAO, fileDAO, fileFormatDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), authorizer);
+        final WorkflowResource workflowResource = new WorkflowResource(httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), authorizer);
         environment.jersey().register(workflowResource);
 
         // Note workflow resource must be passed to the docker repo resource, as the workflow resource refresh must be called for checker workflows
-        final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, userDAO, tokenDAO, toolDAO, tagDAO,
-                labelDAO, fileDAO, fileFormatDAO, configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource);
+        final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource);
         environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
 
@@ -282,8 +272,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
         environment.jersey().register(new MetadataResource(toolDAO, workflowDAO, configuration));
-        environment.jersey().register(new HostedToolResource(userDAO, toolDAO, tagDAO, fileDAO, authorizer));
-        environment.jersey().register(new HostedWorkflowResource(userDAO, workflowDAO, workflowVersionDAO, fileDAO, authorizer));
+        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer));
+        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer));
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
 
 

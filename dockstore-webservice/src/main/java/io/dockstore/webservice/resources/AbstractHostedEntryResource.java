@@ -43,8 +43,10 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
+import io.dockstore.webservice.helpers.FileFormatHelper;
 import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
+import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.VersionDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
@@ -55,6 +57,7 @@ import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiParam;
 import org.apache.http.HttpStatus;
+import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,16 +73,17 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         implements AuthenticatedResourceInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
-    private static final String PATCH_METHOD = "PATCH";
     final ElasticManager elasticManager;
     private final FileDAO fileDAO;
     private final UserDAO userDAO;
     private final PermissionsInterface permissionsInterface;
+    private final FileFormatDAO fileFormatDAO;
 
-    AbstractHostedEntryResource(FileDAO fileDAO, UserDAO userDAO, PermissionsInterface permissionsInterface) {
-        this.fileDAO = fileDAO;
+    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
+        this.fileFormatDAO = new FileFormatDAO(sessionFactory);
+        this.fileDAO = new FileDAO(sessionFactory);
         this.elasticManager = new ElasticManager();
-        this.userDAO = userDAO;
+        this.userDAO = new UserDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
     }
 
@@ -154,6 +158,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
         entry.setLastModified(version.getLastModified());
+        FileFormatHelper.updateFileFormats(entry.getVersions(), fileFormatDAO);
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);

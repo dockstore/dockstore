@@ -761,6 +761,29 @@ public class WorkflowIT extends BaseIT {
         assertEquals("There should be 5 valid version tags, there are " + count4, 6, count4);
     }
 
+    @Test
+    public void testHostedWorkflowMetadata() throws IOException {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", "CWL", null, null);
+        SourceFile source = new SourceFile();
+        // note that this workflow contains metadata defined on the inputs to the workflow in the old (pre-map) CWL way that is still valid v1.0 CWL
+        source.setPath("/Dockstore.cwl");
+        source.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        source.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
+        SourceFile source1 = new SourceFile();
+        source1.setPath("sorttool.cwl");
+        source1.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        source1.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/sorttool.cwl")), StandardCharsets.UTF_8));
+        SourceFile source2 = new SourceFile();
+        source2.setPath("revtool.cwl");
+        source2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        source2.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
+        Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        assertTrue(!workflow.getInputFileFormats().isEmpty());
+        assertTrue(!workflow.getOutputFileFormats().isEmpty());
+    }
+
     /**
      * This tests that a nested WDL workflow (three levels) is properly parsed
      * @throws ApiException

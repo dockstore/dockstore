@@ -28,14 +28,13 @@ import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ElasticMode;
-import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -48,10 +47,10 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
 
-    public HostedToolResource(UserDAO userDAO, ToolDAO toolDAO, TagDAO tagDAO, FileDAO fileDAO, PermissionsInterface permissionsInterface) {
-        super(fileDAO, userDAO, permissionsInterface);
-        this.tagDAO = tagDAO;
-        this.toolDAO = toolDAO;
+    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
+        super(sessionFactory, permissionsInterface);
+        this.tagDAO = new TagDAO(sessionFactory);
+        this.toolDAO = new ToolDAO(sessionFactory);
     }
 
     @Override
