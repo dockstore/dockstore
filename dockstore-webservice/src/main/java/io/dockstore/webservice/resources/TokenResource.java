@@ -297,16 +297,16 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      * Otherwise, see table below on what should happen.
      * <table border="1">
      * <tr>
-     * <td>  </td> <td><b> Have GitHub account no Google Token (no GitHub account) </td><td> <b>Have GitHub account with Google token </td>
+     * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account no Google token </td> <td> Login with Google </td><td> Login with GitHub </td>
+     * <td> <b>Have Google Account no Google token</td> <td>Login with Google (1)</td> <td>Login with GitHub (2)</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account with Google token </td> <td> Login with Google </td><td> Login with Google </td>
+     * <td> <b>Have Google Account with Google token</td> <td>Login with Google (3)</td> <td> Login with Google (4)</td>
      * </tr>
      * <tr>
-     * <td> <b>No Google Account </td> <td> Create Google account </td><td> Login with GitHub </td>
+     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub (6)</td>
      * </tr>
      * </table>
      *
