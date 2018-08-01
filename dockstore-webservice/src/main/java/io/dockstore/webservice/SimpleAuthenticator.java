@@ -26,7 +26,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.resources.TokenResource;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
 import org.hibernate.Hibernate;
@@ -95,7 +94,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         List<Token> tokens = dao.findByUserId(user.getId());
         final Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
         if (googleToken == null) {
-            dao.create(TokenResource.createGoogleToken(credentials, null, user.getId(), user.getUsername()));
+            dao.create(new Token(credentials, null, user.getId(), user.getUsername(), TokenType.GOOGLE_COM));
         } else {
             googleToken.setContent(credentials);
             dao.update(googleToken);
@@ -107,7 +106,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         GoogleHelper.updateUserFromGoogleUserinfoplus(userinfoPlus, user);
         user.setUsername(userinfoPlus.getEmail());
         final long userID = userDAO.create(user);
-        dao.create(TokenResource.createGoogleToken(credentials, null, userID, user.getUsername()));
+        dao.create(new Token(credentials, null, userID, user.getUsername(), TokenType.GOOGLE_COM));
         return user;
     }
 

@@ -76,7 +76,7 @@ public class User implements Principal, Comparable<User> {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
-    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the container in this web service", position = 0, readOnly = true)
     private long id;
 
     @Column(nullable = false, unique = true)
@@ -187,7 +187,7 @@ public class User implements Principal, Comparable<User> {
      * @param tokenDAO The TokenDAO to access the user's tokens
      * @return True if the user has a GitHub token and updating the GitHub profile was successful
      */
-    public boolean updateGithubMetadata(final TokenDAO tokenDAO) {
+    private boolean updateGithubMetadata(final TokenDAO tokenDAO) {
         List<Token> githubByUserId = tokenDAO.findGithubByUserId(getId());
         if (githubByUserId.isEmpty()) {
             return false;
@@ -206,7 +206,7 @@ public class User implements Principal, Comparable<User> {
      * @param tokenDAO The TokenDAO to access the user's tokens
      * @return True if the user has a Google token and updating the Google profile was successful
      */
-    public boolean updateGoogleMetadata(final TokenDAO tokenDAO) {
+    private boolean updateGoogleMetadata(final TokenDAO tokenDAO) {
         List<Token> googleByUserId = tokenDAO.findGoogleByUserId(getId());
         if (googleByUserId.isEmpty()) {
             return false;
@@ -332,6 +332,10 @@ public class User implements Principal, Comparable<User> {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     /**

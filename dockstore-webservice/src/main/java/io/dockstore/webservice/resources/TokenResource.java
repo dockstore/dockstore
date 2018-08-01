@@ -17,7 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,14 +39,11 @@ import com.google.api.client.auth.oauth2.AuthorizationCodeFlow;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.ClientParametersAuthentication;
 import com.google.api.client.auth.oauth2.TokenResponse;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
-import com.google.api.services.oauth2.Oauth2;
 import com.google.api.services.oauth2.model.Userinfoplus;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
@@ -96,12 +92,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     /**
      * Global instance of the HTTP transport.
      */
-    private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
+    public static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
     /**
      * Global instance of the JSON factory.
      */
-    private static final JsonFactory JSON_FACTORY = new JacksonFactory();
+    public static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     private static final String QUAY_URL = "https://quay.io/api/v1/";
     private static final String BITBUCKET_URL = "https://bitbucket.org/";
@@ -119,13 +115,12 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     private final String gitlabRedirectUri;
     private final String gitlabClientSecret;
     private final String googleClientID;
-    private final String googleRedirectUri;
     private final String googleClientSecret;
     private final HttpClient client;
     private final CachingAuthenticator<String, User> cachingAuthenticator;
 
     public TokenResource(TokenDAO tokenDAO, UserDAO enduserDAO, HttpClient client, CachingAuthenticator<String, User> cachingAuthenticator,
-        DockstoreWebserviceConfiguration configuration) {
+            DockstoreWebserviceConfiguration configuration) {
         this.tokenDAO = tokenDAO;
         userDAO = enduserDAO;
         this.githubClientID = configuration.getGithubClientID();
@@ -137,7 +132,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         this.gitlabRedirectUri = configuration.getGitlabRedirectURI();
         this.googleClientID = configuration.getGoogleClientID();
         this.googleClientSecret = configuration.getGoogleClientSecret();
-        this.googleRedirectUri = configuration.getGoogleRedirectURI();
         this.client = client;
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -146,7 +140,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/{tokenId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Get a specific token by id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get a specific token by id", response = Token.class)
+    @ApiOperation(value = "Get a specific token by id", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Get a specific token by id", response = Token.class)
     @ApiResponses({ @ApiResponse(code = HttpStatus.SC_BAD_REQUEST, message = "Invalid ID supplied"),
             @ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "Token not found") })
     public Token listToken(@ApiParam(hidden = true) @Auth User user,
@@ -161,9 +156,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/quay.io")
-    @ApiOperation(value = "Add a new quay IO token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
-            + "Once a user has approved permissions for Collaboratory"
-            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new quay IO token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
+            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
+                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addQuayToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("access_token") String accessToken) {
         if (accessToken.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access token.", HttpStatus.SC_BAD_REQUEST);
@@ -227,9 +222,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/gitlab.com")
-    @ApiOperation(value = "Add a new gitlab.com token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
-            + "Once a user has approved permissions for Collaboratory"
-            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new gitlab.com token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
+            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
+                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGitlabToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
         final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
                 JSON_FACTORY, new GenericUrl(GITLAB_URL + "oauth/token"),
@@ -285,9 +280,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/github")
-    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
-        notes = "A post method is required by saetillizer to send the GitHub token",
-        response = Token.class)
+    @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by saetillizer to send the GitHub token", response = Token.class)
     public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
@@ -301,135 +295,121 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     /**
      * Adds a Google token to the existing user if user is authenticated already.
      * Otherwise, create a new Dockstore account too and also add token
-     * @param authUser      The optional Dockstore-authenticated user
-     * @param satellizerJson    Satellizer object returned by satellizer
-     * @return              The user's Dockstore token
+     *
+     * @param authUser       The optional Dockstore-authenticated user
+     * @param satellizerJson Satellizer object returned by satellizer
+     * @return The user's Dockstore token
      */
     @POST
     @Timed
     @UnitOfWork
     @Path("/google")
-    @ApiOperation(value = "Allow satellizer to post a new Google token to dockstore", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) },
-            notes = "A post method is required by satellizer to send the Google token",
-            response = Token.class)
+    @ApiOperation(value = "Allow satellizer to post a new Google token to dockstore", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the Google token", response = Token.class)
     public Token addGoogleToken(@ApiParam(hidden = true) @Auth Optional<User> authUser, @ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
-
         final String code = satellizerObject.get("code").getAsString();
         final String redirectUri = satellizerObject.get("redirectUri").getAsString();
-        String accessToken = null;
-        String refreshToken = null;
-        if (accessToken == null) {
-            final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                    JSON_FACTORY, new GenericUrl(GoogleHelper.GOOGLE_ENCODED_URL),
-                    new ClientParametersAuthentication(googleClientID, googleClientSecret), googleClientID,
-                GoogleHelper.GOOGLE_AUTHORIZATION_SERVICE_ENCODED_URL).build();
-            try {
-                TokenResponse tokenResponse = flow.newTokenRequest(code).setRedirectUri(redirectUri).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-                accessToken = tokenResponse.getAccessToken();
-                refreshToken = tokenResponse.getRefreshToken();
-                LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");
-            } catch (IOException e) {
-                LOG.error("Retrieving accessToken was unsuccessful");
-                throw new CustomWebApplicationException("Could not retrieve google.com token based on code", HttpStatus.SC_BAD_REQUEST);
+        TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri);
+        String accessToken = tokenResponse.getAccessToken();
+        String refreshToken = tokenResponse.getRefreshToken();
+        LOG.info("Token expires in " + tokenResponse.getExpiresInSeconds().toString() + " seconds.");
+        Userinfoplus userinfo = getUserInfo(accessToken);
+        long userID;
+        Token dockstoreToken = null;
+        Token googleToken = null;
+        String googleLoginName = userinfo.getEmail();
+        User user = userDAO.findByUsername(googleLoginName);
+
+        List<Token> googleByUsername = tokenDAO.findTokenByUsername(userinfo.getEmail(), TokenType.GOOGLE_COM);
+        if (user == null && !authUser.isPresent() && googleByUsername.isEmpty()) {
+            user = new User();
+            // Pull user information from Google
+            user.setUsername(userinfo.getEmail());
+            userID = userDAO.create(user);
+
+            // CREATE DOCKSTORE TOKEN
+            dockstoreToken = createDockstoreToken(userID, googleLoginName);
+        } else {
+            if (authUser.isPresent()) {
+                userID = authUser.get().getId();
+            } else if (user != null) {
+                userID = user.getId();
+            } else {
+                userID = googleByUsername.get(0).getUserId();
+            }
+            List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
+            if (!tokens.isEmpty()) {
+                dockstoreToken = tokens.get(0);
+            }
+
+            tokens = tokenDAO.findGoogleByUserId(userID);
+            if (!tokens.isEmpty()) {
+                googleToken = tokens.get(0);
             }
         }
-        GoogleCredential credential =
-                new GoogleCredential().setAccessToken(accessToken);
-        try {
-            Oauth2 oauth2 = new Oauth2.Builder(GoogleNetHttpTransport.newTrustedTransport(), JSON_FACTORY, credential).setApplicationName(
-                    "").build();
-            Userinfoplus userinfo = oauth2.userinfo().get().execute();
-            long userID;
-            Token dockstoreToken = null;
-            Token googleToken = null;
-            String googleLoginName = userinfo.getEmail();
-            User user = userDAO.findByUsername(googleLoginName);
-            List<Token> googleByUsername = tokenDAO.findTokenByUsername(userinfo.getEmail(), TokenType.GOOGLE_COM);
-            if (user == null && !authUser.isPresent() && googleByUsername.isEmpty()) {
-                user = new User();
-                // Pull user information from Google
-                GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
-                user.setUsername(userinfo.getEmail());
-                userID = userDAO.create(user);
 
+        if (dockstoreToken == null) {
+            LOG.info("Could not find user's dockstore token. Making new one...");
+            dockstoreToken = createDockstoreToken(userID, googleLoginName);
+        }
 
-                // CREATE DOCKSTORE TOKEN
-                dockstoreToken = createDockstoreToken(userID, googleLoginName);
+        if (googleToken == null) {
+            LOG.info("Could not find user's Google token. Making new one...");
+            // CREATE GOOGLE TOKEN
+            googleToken = new Token(accessToken, refreshToken, userID, googleLoginName, TokenType.GOOGLE_COM);
+            tokenDAO.create(googleToken);
+            // Update user profile too
+            user = userDAO.findById(userID);
+            GoogleHelper.updateUserFromGoogleUserinfoplus(userinfo, user);
+            LOG.info("Google token created for {}", googleLoginName);
+        } else {
+            // Update tokens if exists
+            googleToken.setContent(accessToken);
+            googleToken.setRefreshToken(refreshToken);
+            tokenDAO.update(googleToken);
+        }
+        return dockstoreToken;
+    }
 
-            } else {
-                if (authUser.isPresent()) {
-                    userID = authUser.get().getId();
-                } else if (user != null) {
-                    userID = user.getId();
-                } else {
-                    userID = googleByUsername.get(0).getUserId();
-                }
-                List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
-                if (!tokens.isEmpty()) {
-                    dockstoreToken = tokens.get(0);
-                }
-
-                tokens = tokenDAO.findGoogleByUserId(userID);
-                if (!tokens.isEmpty()) {
-                    googleToken = tokens.get(0);
-                }
-            }
-
-            if (dockstoreToken == null) {
-                LOG.info("Could not find user's dockstore token. Making new one...");
-                dockstoreToken = createDockstoreToken(userID, googleLoginName);
-            }
-
-            if (googleToken == null) {
-                LOG.info("Could not find user's Google token. Making new one...");
-                // CREATE GOOGLE TOKEN
-                googleToken = createGoogleToken(accessToken, refreshToken, userID, googleLoginName);
-                tokenDAO.create(googleToken);
-                LOG.info("Google token created for {}", googleLoginName);
-            } else {
-                // Update tokens if exists
-                googleToken.setContent(accessToken);
-                googleToken.setRefreshToken(refreshToken);
-                tokenDAO.update(googleToken);
-            }
-            return dockstoreToken;
-        } catch (GeneralSecurityException | IOException e) {
-            throw new CustomWebApplicationException(e.getMessage() + ". Could not use OAuth 2.0 client credentials.", HttpStatus.SC_BAD_REQUEST);
+    /**
+     * Get the Google Userinfoplus object
+     *
+     * @param accessToken Google access token
+     * @return
+     */
+    private Userinfoplus getUserInfo(String accessToken) {
+        Optional<Userinfoplus> userinfoplus = GoogleHelper.userinfoplusFromToken(accessToken);
+        if (userinfoplus.isPresent()) {
+            return userinfoplus.get();
+        } else {
+            throw new CustomWebApplicationException("Could not get Google user info using token.", HttpStatus.SC_EXPECTATION_FAILED);
         }
     }
 
-    public static Token createGoogleToken(String accessToken, String refreshToken, long userID, String googleLoginName) {
-        Token googleToken;
-        googleToken = new Token();
-        googleToken.setTokenSource(TokenType.GOOGLE_COM);
-        googleToken.setContent(accessToken);
-        googleToken.setRefreshToken(refreshToken);
-        googleToken.setUserId(userID);
-        googleToken.setUsername(googleLoginName);
-        return googleToken;
-    }
+
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/github.com")
-    @ApiOperation(value = "Add a new github.com token, used by github.com redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
+    @ApiOperation(value = "Add a new github.com token, used by github.com redirect", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
             + "Once a user has approved permissions for Collaboratory"
             + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addGithubToken(@ApiParam(hidden = true) @Auth User authUser, @QueryParam("code") String code) {
 
-
         String accessToken = null;
         for (int i = 0; i < githubClientID.size() && accessToken == null; i++) {
-            final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(), HTTP_TRANSPORT,
-                    JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
+            final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
+                    HTTP_TRANSPORT, JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
                     new ClientParametersAuthentication(githubClientID.get(i), githubClientSecret.get(i)), githubClientID.get(i),
                     "https://github.com/login/oauth/authorize").build();
             try {
-                TokenResponse tokenResponse = flow.newTokenRequest(code).setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
+                TokenResponse tokenResponse = flow.newTokenRequest(code)
+                        .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
                 accessToken = tokenResponse.getAccessToken();
             } catch (IOException e) {
                 LOG.error("Retrieving accessToken was unsuccessful");
@@ -529,9 +509,10 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org")
-    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes =
-            "This is used as part of the OAuth 2 web flow. " + "Once a user has approved permissions for Collaboratory"
-                    + "Their browser will load the redirect URI which should resolve here", response = Token.class)
+    @ApiOperation(value = "Add a new bitbucket.org token, used by quay.io redirect", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "This is used as part of the OAuth 2 web flow. "
+            + "Once a user has approved permissions for Collaboratory"
+            + "Their browser will load the redirect URI which should resolve here", response = Token.class)
     public Token addBitbucketToken(@ApiParam(hidden = true) @Auth User user, @QueryParam("code") String code) {
         if (code.isEmpty()) {
             throw new CustomWebApplicationException("Please provide an access code", HttpStatus.SC_BAD_REQUEST);
@@ -607,7 +588,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Timed
     @UnitOfWork
     @Path("/bitbucket.org/refresh")
-    @ApiOperation(value = "Refresh Bitbucket token", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The Bitbucket token expire in one hour. When this happens you'll get 401 responses", response = Token.class)
+    @ApiOperation(value = "Refresh Bitbucket token", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The Bitbucket token expire in one hour. When this happens you'll get 401 responses", response = Token.class)
     public Token refreshBitbucketToken(@ApiParam(hidden = true) @Auth User user) {
         List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
 
