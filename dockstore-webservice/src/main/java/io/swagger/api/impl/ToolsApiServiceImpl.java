@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.SecurityContext;
 
 import avro.shaded.com.google.common.base.Joiner;
@@ -119,10 +121,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     private Response buildToolResponse(Entry container, String version, boolean returnJustVersions) {
         Response response;
         if (container == null) {
-            response = Response.status(Response.Status.NOT_FOUND).build();
+            response = Response.status(Status.NOT_FOUND).build();
         } else if (!container.getIsPublished()) {
             // check whether this is registered
-            response = Response.status(Response.Status.UNAUTHORIZED).build();
+            response = Response.status(Status.UNAUTHORIZED).build();
         } else {
             io.swagger.model.Tool tool = ToolsImplCommon.convertEntryToTool(container, config);
             assert (tool != null);
@@ -130,7 +132,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             if (version != null) {
                 tool.getVersions().removeIf(v -> !v.getName().equals(version));
                 if (tool.getVersions().size() != 1) {
-                    response = Response.status(Response.Status.NOT_FOUND).build();
+                    response = Response.status(Status.NOT_FOUND).build();
                 } else {
                     response = Response.ok(tool.getVersions().get(0)).build();
                 }
@@ -186,7 +188,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         ContainerRequestContext value, Optional<User> user) {
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, null,
             value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"), user);
@@ -196,11 +198,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public Response toolsIdVersionsVersionIdTypeDescriptorRelativePathGet(String type, String id, String versionId, String relativePath,
         SecurityContext securityContext, ContainerRequestContext value, Optional<User> user) {
         if (type == null) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            return Response.status(Status.BAD_REQUEST).build();
         }
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, relativePath,
             value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"), user);
@@ -210,11 +212,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     public Response toolsIdVersionsVersionIdTypeTestsGet(String type, String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
         if (type == null) {
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            return Response.status(Status.BAD_REQUEST).build();
         }
         SourceFile.FileType fileType = getFileType(type);
         if (fileType == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Status.NOT_FOUND).build();
         }
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
@@ -232,7 +234,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         case NEXTFLOW_TEST_PARAMS:
             return getFileByToolVersionID(id, versionId, SourceFile.FileType.NEXTFLOW_TEST_PARAMS, null, plainTextResponse, user);
         default:
-            return Response.status(Response.Status.BAD_REQUEST).build();
+            return Response.status(Status.BAD_REQUEST).build();
         }
     }
 
@@ -448,14 +450,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         Entry<?,?> entry = getEntry(parsedID, user);
         // check whether this is registered
         if (entry == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "incorrect id");
+            return Response.status(status).build();
         }
 
         final io.swagger.model.Tool convertedTool = ToolsImplCommon.convertEntryToTool(entry, config);
 
         String finalVersionId = versionId;
         if (convertedTool == null || convertedTool.getVersions() == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Status.NOT_FOUND).build();
         }
         final Optional<ToolVersion> convertedToolVersion = convertedTool.getVersions().stream()
             .filter(toolVersion -> toolVersion.getName().equalsIgnoreCase(finalVersionId)).findFirst();
@@ -471,7 +474,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         }
 
         if (!entryVersion.isPresent()) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "version not found");
+            return Response.status(status).build();
         }
 
         String urlBuilt;
@@ -510,7 +514,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
                     toolTestsList.add(toolTests);
                 }
-                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
+                return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
                     unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull).collect(Collectors.joining("\n"))
                         : toolTestsList).build();
             case DOCKERFILE:
@@ -523,7 +527,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     toolVersion.setContainerfile(true);
                     List<ToolContainerfile> containerfilesList = new ArrayList<>();
                     containerfilesList.add(dockerfile);
-                    return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                    return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? dockerfile.getContainerfile() : containerfilesList).build();
                 }
             default:
@@ -538,7 +542,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         path = ((Tag)entryVersion.get()).getCwlPath();
                         primaryDescriptors.add(path);
                     } else {
-                        return Response.status(Response.Status.NOT_FOUND).build();
+                        return Response.status(Status.NOT_FOUND).build();
                     }
                 } else {
                     path = ((WorkflowVersion)entryVersion.get()).getWorkflowPath();
@@ -567,14 +571,34 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     }
                     Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
                     if (toolDescriptor == null) {
-                        return Response.status(Response.Status.NOT_FOUND).build();
+                        return Response.status(Status.NOT_FOUND).build();
                     }
-                    return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                    return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
                         .entity(unwrap ? sourceFile.getContent() : toolDescriptor).build();
                 }
             }
         }
-        return Response.status(Response.Status.NOT_FOUND).build();
+        Response.StatusType status = getExtendedStatus(Status.NOT_FOUND, "version found, but file not found (bad filename, invalid file, etc.)");
+        return Response.status(status).build();
+    }
+
+    private Response.StatusType getExtendedStatus(Status status, String additionalMessage) {
+        return new Response.StatusType() {
+            @Override
+            public int getStatusCode() {
+                return status.getStatusCode();
+            }
+
+            @Override
+            public Status.Family getFamily() {
+                return status.getFamily();
+            }
+
+            @Override
+            public String getReasonPhrase() {
+                return status.getReasonPhrase() + " : " + additionalMessage;
+            }
+        };
     }
 
     /**
@@ -641,7 +665,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 return Response.noContent().build();
             }
         } else {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return Response.status(Status.NOT_FOUND).build();
         }
     }
 
@@ -738,8 +762,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private boolean isWDL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
-        return Stream.of(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL)
-            .anyMatch(type::equals);
+        return Arrays.asList(SourceFile.FileType.WDL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_WDL)
+            .contains(type);
     }
 
     /**
@@ -749,7 +773,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private boolean isNFL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
-        return Stream.of(SourceFile.FileType.NEXTFLOW_CONFIG, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.NEXTFLOW, SourceFile.FileType.NEXTFLOW_TEST_PARAMS).anyMatch(type::equals);
+        return Arrays.asList(SourceFile.FileType.NEXTFLOW_CONFIG, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.NEXTFLOW,
+            SourceFile.FileType.NEXTFLOW_TEST_PARAMS).contains(type);
     }
 
     private String cleanRelativePath(String relativePath) {
