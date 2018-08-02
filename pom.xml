@@ -870,7 +870,7 @@
                     <configuration>
                         <excludedGroups>${excludeGroups}</excludedGroups>
                         <!-- enforce that tests should be independent -->
-			            <runOrder>random</runOrder>
+                        <runOrder>random</runOrder>
                         <!-- re-run flaky tests once -->
                         <rerunFailingTestsCount>1</rerunFailingTestsCount>
                     </configuration>
