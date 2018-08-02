@@ -80,10 +80,10 @@ public class TokenResourceIT extends BaseIT {
 
     private TokenDAO tokenDAO;
     private UserDAO userDAO;
-    private static long initialTokenCount;
+    private long initialTokenCount;
     private final String satellizerJSON = "{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n";
     private final static String GOOGLE_ACCOUNT_USERNAME = "potato@gmail.com";
-    private final static String GITHUB_ACCOUNT_USERNAME = "user1@user.com";
+    private final static String GITHUB_ACCOUNT_USERNAME = "potato";
 
     private static TokenResponse getFakeTokenResponse() {
         TokenResponse fakeTokenResponse = new TokenResponse();
@@ -177,18 +177,19 @@ public class TokenResourceIT extends BaseIT {
 
     /**
      * Covers case 1, 3, and 5 of the 6 cases listed below. It checks that the user to be logged into is correct.
+     * Below table indicates what happens when the "Login with Google" button in the UI2 is clicked
      * <table border="1">
      * <tr>
      * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account no Google token</td> <td>Login with Google (1)</td> <td>Login with GitHub (2)</td>
+     * <td> <b>Have Google Account no Google token</td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account with Google token</td> <td>Login with Google (3)</td> <td> Login with Google (4)</td>
+     * <td> <b>Have Google Account with Google token</td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
      * </tr>
      * <tr>
-     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub (6)</td>
+     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
      * </tr>
      * </table>
      */
@@ -218,18 +219,19 @@ public class TokenResourceIT extends BaseIT {
 
     /**
      * Covers case 2 and 4 of the 6 cases listed below. It checks that the user to be logged into is correct.
+     * Below table indicates what happens when the "Login with Google" button in the UI2 is clicked
      * <table border="1">
      * <tr>
      * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account no Google token</td> <td>Login with Google (1)</td> <td>Login with GitHub (2)</td>
+     * <td> <b>Have Google Account no Google token</td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account with Google token</td> <td>Login with Google (3)</td> <td> Login with Google (4)</td>
+     * <td> <b>Have Google Account with Google token</td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
      * </tr>
      * <tr>
-     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub (6)</td>
+     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
      * </tr>
      * </table>
      */
@@ -271,18 +273,19 @@ public class TokenResourceIT extends BaseIT {
 
     /**
      * Covers case 6 of the 6 cases listed below. It checks that the user to be logged into is correct.
+     * Below table indicates what happens when the "Login with Google" button in the UI2 is clicked
      * <table border="1">
      * <tr>
      * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account no Google token</td> <td>Login with Google (1)</td> <td>Login with GitHub (2)</td>
+     * <td> <b>Have Google Account no Google token</td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account with Google token</td> <td>Login with Google (3)</td> <td> Login with Google (4)</td>
+     * <td> <b>Have Google Account with Google token</td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
      * </tr>
      * <tr>
-     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub (6)</td>
+     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
      * </tr>
      * </table>
      */

@@ -294,19 +294,19 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     /**
      * Adds a Google token to the existing user if user is authenticated already.
-     * Otherwise, see table below on what should happen.
+     * Otherwise, below table indicates what happens when the "Login with Google" button in the UI2 is clicked
      * <table border="1">
      * <tr>
      * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account no Google token</td> <td>Login with Google (1)</td> <td>Login with GitHub (2)</td>
+     * <td> <b>Have Google Account no Google token</td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
      * </tr>
      * <tr>
-     * <td> <b>Have Google Account with Google token</td> <td>Login with Google (3)</td> <td> Login with Google (4)</td>
+     * <td> <b>Have Google Account with Google token</td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
      * </tr>
      * <tr>
-     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub (6)</td>
+     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
      * </tr>
      * </table>
      *
@@ -336,13 +336,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         Token googleToken = null;
         String googleLoginName = userinfo.getEmail();
         User user;
-        User googleUser;
-        googleUser = userDAO.findByUsername(googleLoginName);
-        List<Token> tokensByGoogleUsername = tokenDAO.findTokenByUsername(userinfo.getEmail(), TokenType.GOOGLE_COM);
+
         if (authUser.isPresent()) {
             // Just linking token
             userID = authUser.get().getId();
         } else {
+            User googleUser = userDAO.findByUsername(googleLoginName);
+            List<Token> tokensByGoogleUsername = tokenDAO.findTokenByUsername(userinfo.getEmail(), TokenType.GOOGLE_COM);
             // Determining which account to login to
             if (googleUser == null) {
                 if (tokensByGoogleUsername.size() == 0) {
