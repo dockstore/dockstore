@@ -857,6 +857,10 @@
                     <configuration>
                         <excludedGroups>${excludeGroups}</excludedGroups>
                         <skipTests>${skipTests}</skipTests>
+                        <!-- enforce that tests should be independent -->
+                        <runOrder>random</runOrder>
+                        <!-- re-run flaky tests once -->
+                        <rerunFailingTestsCount>1</rerunFailingTestsCount>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -865,6 +869,10 @@
                     <version>${maven-failsafe.version}</version>
                     <configuration>
                         <excludedGroups>${excludeGroups}</excludedGroups>
+                        <!-- enforce that tests should be independent -->
+                        <runOrder>random</runOrder>
+                        <!-- re-run flaky tests once -->
+                        <rerunFailingTestsCount>1</rerunFailingTestsCount>
                     </configuration>
                 </plugin>
                 <plugin>
