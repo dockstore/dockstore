@@ -33,6 +33,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.annotations.Beta;
 import com.google.common.base.Strings;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.VerifyRequest;
@@ -244,6 +245,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
     @POST
     @Timed
     @UnitOfWork
+    @Beta
     @Path("/{containerId}/requestDOI/{tagId}")
     @ApiOperation(value = "Request a DOI for this version of a tool", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List")
     public Set<Tag> requestDOIForToolTag(@ApiParam(hidden = true) @Auth User user,

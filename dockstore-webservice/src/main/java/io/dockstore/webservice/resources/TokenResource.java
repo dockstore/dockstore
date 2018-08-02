@@ -583,22 +583,4 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
         throw new CustomWebApplicationException("User not found", HttpStatus.SC_INTERNAL_SERVER_ERROR);
     }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/bitbucket.org/refresh")
-    @ApiOperation(value = "Refresh Bitbucket token", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The Bitbucket token expire in one hour. When this happens you'll get 401 responses", response = Token.class)
-    public Token refreshBitbucketToken(@ApiParam(hidden = true) @Auth User user) {
-        List<Token> tokens = tokenDAO.findBitbucketByUserId(user.getId());
-
-        if (tokens.isEmpty()) {
-            throw new CustomWebApplicationException("User's Bitbucket token not found.", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        Token bitbucketToken = tokens.get(0);
-
-        return refreshBitbucketToken(bitbucketToken, client, tokenDAO, bitbucketClientID, bitbucketClientSecret);
-    }
 }

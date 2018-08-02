@@ -696,16 +696,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @GET
     @Timed
     @UnitOfWork
-    @Path("/search")
-    @ApiOperation(value = "Search for matching registered containers.", notes = "Search on the name (full path name) and description. NO authentication", response = Tool.class, responseContainer = "List", tags = {
-            "containers" })
-    public List<Tool> search(@QueryParam("pattern") String word) {
-        return toolDAO.searchPattern(word);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
     @Path("/tags")
     @ApiOperation(value = "List the tags for a registered container", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "List", hidden = true)
     public List<Tag> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("containerId") long containerId) {

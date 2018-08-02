@@ -53,16 +53,12 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
-import io.dockstore.webservice.resources.BitbucketOrgAuthenticationResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
 import io.dockstore.webservice.resources.EntryResource;
-import io.dockstore.webservice.resources.GitHubComAuthenticationResource;
-import io.dockstore.webservice.resources.GitLabComAuthenticationResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.MetadataResource;
-import io.dockstore.webservice.resources.QuayIOAuthenticationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
@@ -216,9 +212,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         beanConfig.setResourcePackage("io.dockstore.webservice.resources,io.swagger.api");
         beanConfig.setScan(true);
         ElasticManager.setConfig(configuration);
-        final QuayIOAuthenticationResource resource2 = new QuayIOAuthenticationResource(configuration.getQuayClientID(),
-                configuration.getQuayRedirectURI());
-        environment.jersey().register(resource2);
         environment.jersey().property(CommonProperties.FEATURE_AUTO_DISCOVERY_DISABLE, true);
         environment.jersey().register(new JsonProcessingExceptionMapper(true));
 
@@ -256,18 +249,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final DockerRepoResource dockerRepoResource = new DockerRepoResource(environment.getObjectMapper(), httpClient, hibernate.getSessionFactory(), configuration.getBitbucketClientID(), configuration.getBitbucketClientSecret(), workflowResource);
         environment.jersey().register(dockerRepoResource);
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
-
-        final GitHubComAuthenticationResource resource3 = new GitHubComAuthenticationResource(configuration.getGithubClientID(),
-                configuration.getGithubRedirectURI());
-        environment.jersey().register(resource3);
-
-        final BitbucketOrgAuthenticationResource resource4 = new BitbucketOrgAuthenticationResource(configuration.getBitbucketClientID());
-        environment.jersey().register(resource4);
-
-        final GitLabComAuthenticationResource resource5 = new GitLabComAuthenticationResource(configuration.getGitlabClientID(),
-                configuration.getGitlabRedirectURI());
-        environment.jersey().register(resource5);
-
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
         environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));

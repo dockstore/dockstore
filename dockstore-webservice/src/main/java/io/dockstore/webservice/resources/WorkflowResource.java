@@ -48,6 +48,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.annotations.Beta;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
@@ -549,6 +550,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @PUT
     @Timed
     @UnitOfWork
+    @Beta
     @Path("/{workflowId}/requestDOI/{workflowVersionId}")
     @ApiOperation(value = "Request a DOI for this version of a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
@@ -910,16 +912,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
         filterContainersForHiddenTags(workflow);
         return workflow;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/search")
-    @ApiOperation(value = "Search for matching published workflows.", notes = "Search on the name (full path name) and description. NO authentication", response = Workflow.class, responseContainer = "List", tags = {
-        "workflows" })
-    public List<Workflow> search(@QueryParam("pattern") String word) {
-        return workflowDAO.searchPattern(word);
     }
 
     @GET
