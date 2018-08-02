@@ -339,7 +339,7 @@ public class WorkflowIT extends BaseIT {
         }, webClient);
         Path write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
         ZipFile zipFile = new ZipFile(write.toFile());
-        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
 
         // should not be able to get zip anonymously before publication
         boolean thrownException = false;
@@ -357,7 +357,7 @@ public class WorkflowIT extends BaseIT {
         }, getWebClient(false, null));
         write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
         zipFile = new ZipFile(write.toFile());
-        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
 
         // download and unzip via CLI
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "download", "--entry", toolpath + ":" + workflowVersion.getName(), "--script" });
