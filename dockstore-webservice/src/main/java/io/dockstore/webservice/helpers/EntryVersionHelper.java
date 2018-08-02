@@ -42,6 +42,7 @@ import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.LabelDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 
@@ -63,7 +64,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param version Name of the version to set
      * @param id Id of entry
      * @param user User
-     * @param elasticManager
+     * @param elasticManager notify on updates
      */
     default Entry updateDefaultVersionHelper(String version, long id, User user, ElasticManager elasticManager) {
         Entry entry = getDAO().findById(id);
@@ -308,13 +309,14 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     /**
      * Creates a zip file in the tmp dir for the given files
      * @param sourceFiles Set of sourcefiles
-     * @return Zip file
      */
     default void writeStreamAsZip(Set<SourceFile> sourceFiles, OutputStream outputStream) {
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
-                ZipEntry secondaryZipEntry = new ZipEntry(sourceFile.getPath());
+                // remove quirk of working directory
+                String stripStart = StringUtils.stripStart(sourceFile.getPath(), "./");
+                ZipEntry secondaryZipEntry = new ZipEntry(stripStart);
                 zipOutputStream.putNextEntry(secondaryZipEntry);
                 zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));
             }

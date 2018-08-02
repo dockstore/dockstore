@@ -17,9 +17,14 @@
 package io.dockstore.client.cli;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
+import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Registry;
@@ -30,6 +35,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -122,9 +128,8 @@ public class GeneralIT extends BaseIT {
      * @throws ApiException
      */
     private ContainersApi setupWebService() throws ApiException {
-        ApiClient client = getWebClient();
-        ContainersApi toolsApi = new ContainersApi(client);
-        return toolsApi;
+        ApiClient client = getWebClient(USER_2_USERNAME);
+        return new ContainersApi(client);
     }
 
     /**
@@ -715,5 +720,80 @@ public class GeneralIT extends BaseIT {
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
         assertEquals("The tool should be manual, there are " + count, 1, count);
+    }
+
+    /**
+     * This tests that zip file can be downloaded or not based on published state and auth.
+     */
+    @Test
+    public void downloadZipFileTestAuth() throws IOException {
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
+        ContainersApi ownerContainersApi = new ContainersApi(ownerWebClient);
+
+        final ApiClient anonWebClient = getWebClient(false, null);
+        ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
+
+        final ApiClient otherUserWebClient = getWebClient(true, "OtherUser");
+        ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
+
+        // Register and refresh tool
+        DockstoreTool tool = ownerContainersApi.registerManual(getContainer());
+        DockstoreTool refresh = ownerContainersApi.refresh(tool.getId());
+        Long toolId = refresh.getId();
+        Tag tag = refresh.getTags().get(0);
+        Long versionId = tag.getId();
+
+        // Try downloading unpublished
+        // Owner: Should pass
+        ownerContainersApi.getToolZip(toolId, versionId);
+        // Anon: Should fail
+        boolean success = true;
+        try {
+            anonContainersApi.getToolZip(toolId, versionId);
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("User does not have access to tool.", !success);
+        }
+        // Other user: Should fail
+        success = true;
+        try {
+            otherUserContainersApi.getToolZip(toolId, versionId);
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("User does not have access to tool.", !success);
+        }
+
+        // Publish
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        ownerContainersApi.publish(toolId, publishRequest);
+
+        // Try downloading published
+        // Owner: Should pass
+        ownerContainersApi.getToolZip(toolId, versionId);
+        // Anon: Should pass
+        anonContainersApi.getToolZip(toolId, versionId);
+        // Other user: Should pass
+        otherUserContainersApi.getToolZip(toolId, versionId);
+
+        // test that these zips can be downloaded via CLI
+
+        // download zip via CLI
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "download", "--entry", refresh.getToolPath() + ":" + tag.getName(), "--zip", "--script" });
+        File downloadedZip = new File(new ToolClient(null, false).zipFilename(refresh));
+        // record entries
+        List<String> collect = new ZipFile(downloadedZip).stream().map(ZipEntry::getName).collect(Collectors.toList());
+        assert(downloadedZip.exists());
+        assert(downloadedZip.delete());
+        
+
+        // download and unzip via CLI while at it
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "download", "--entry", refresh.getToolPath() + ":" + tag.getName(), "--script" });
+        collect.forEach(entry -> {
+            File innerFile = new File(System.getProperty("user.dir"), entry);
+            assert (innerFile.exists());
+            assert (innerFile.delete());
+        });
     }
 }

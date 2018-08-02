@@ -95,6 +95,14 @@ public interface PermissionsInterface {
     }
 
     /**
+     * List all {@link Role.Action} <code>user</code> can perform on <code>workflow</code>.
+     * @param user
+     * @param workflow
+     * @return a list of allowed actions on a workflow, possibly empty
+     */
+    List<Role.Action> getActionsForWorkflow(User user, Workflow workflow);
+
+    /**
      * Removes the <code>email</code> from the <code>role</code> from
      * <code>workflow</code>'s permissions.
      * @param user the requester, must be an owner of <code>workflow</code> or an admin.
@@ -161,17 +169,21 @@ public interface PermissionsInterface {
     }
 
     /**
-     * Checks if a the email is an "original owner" of a workflow, and throws a
+     * Checks if a the username is an "original owner" of a workflow, and throws a
      * {@link CustomWebApplicationException} if it is. To be used as a check so
-     * that original owners never remove themselves as owners.
+     * that original owners can never be removed as owners.
      *
+     * This method compares <code>username</code> against <code>User.getUsername()</code> of the <code>workflow</code>'s users, only.
+     * That username property is currently set with either the Github username or the Google user email, depending
+     * on the order in which the user linked accounts.
      *
-     * @param email
+     * @param username
      * @param workflow
      */
-    static void checkUserNotOriginalOwner(String email, Workflow workflow) {
-        if (workflow.getUsers().stream().anyMatch(u ->  email.equals(u.getUsername()))) {
-            throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
+    static void checkUserNotOriginalOwner(String username, Workflow workflow) {
+        if (workflow.getUsers().stream().anyMatch(u ->  username.equals(u.getUsername()))) {
+            throw new CustomWebApplicationException(username + " is an original owner and their permissions cannot be modified",
+                    HttpStatus.SC_FORBIDDEN);
         }
     }
 }

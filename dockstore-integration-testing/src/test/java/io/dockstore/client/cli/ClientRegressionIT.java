@@ -99,7 +99,7 @@ public class ClientRegressionIT extends BaseIT {
     }
 
     @Test
-    public void testPluginEnableOldClient() throws ExecuteException {
+    public void testPluginEnableOldClient() {
         String[] commandArray1 = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin",
                 "download" };
         ImmutablePair<String, String> stringStringImmutablePair1 = runOldDockstoreClient(dockstore, commandArray1);
@@ -113,7 +113,7 @@ public class ClientRegressionIT extends BaseIT {
     }
 
     @Test
-    public void testPluginDisableOldClient() throws ExecuteException {
+    public void testPluginDisableOldClient() {
         String[] commandArray = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin",
                 "download" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
@@ -158,10 +158,9 @@ public class ClientRegressionIT extends BaseIT {
     /**
      * Tests that the unpublished tool can be published, refreshed, then launched once the json and input file is attained
      *
-     * @throws ExecuteException
      */
     @Test
-    public void testActualToolLaunch() throws ExecuteException {
+    public void testActualToolLaunch() {
         // manual publish the workflow
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--entry",

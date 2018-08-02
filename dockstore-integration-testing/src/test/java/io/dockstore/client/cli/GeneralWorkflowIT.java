@@ -493,9 +493,9 @@ public class GeneralWorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testUpdateWorkflowPath() throws IOException, TimeoutException, ApiException {
+    public void testUpdateWorkflowPath() throws ApiException {
         // Set up webservice
-        ApiClient webClient = WorkflowIT.getWebClient();
+        ApiClient webClient = WorkflowIT.getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);

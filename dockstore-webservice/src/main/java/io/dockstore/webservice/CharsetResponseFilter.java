@@ -15,9 +15,8 @@
  */
 package io.dockstore.webservice;
 
-import java.io.IOException;
-
 import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.core.MediaType;
@@ -35,10 +34,9 @@ public class CharsetResponseFilter implements ContainerResponseFilter {
      *
      * @param requestContext  request context.
      * @param responseContext response context.
-     * @throws IOException if an I/O exception occurs.
      */
     @Override
-    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
+    public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) {
         MediaType contentType = responseContext.getMediaType();
         if (contentType != null) {
             if (!contentType.toString().toLowerCase().contains("charset=utf-8")) {

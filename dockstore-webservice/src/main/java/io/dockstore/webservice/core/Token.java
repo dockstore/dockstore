@@ -63,7 +63,7 @@ public class Token implements Comparable<Token> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the token in this web service", position = 0, readOnly = true)
     private long id;
 
     @Column(nullable = false)
@@ -98,6 +98,14 @@ public class Token implements Comparable<Token> {
     private Timestamp dbUpdateDate;
 
     public Token() {
+    }
+
+    public Token(String content, String refreshToken, long userId, String username, TokenType tokenSource) {
+        this.setContent(content);
+        this.setRefreshToken(refreshToken);
+        this.setUserId(userId);
+        this.setUsername(username);
+        this.setTokenSource(tokenSource);
     }
 
     public static Token extractToken(List<Token> tokens, TokenType source) {
@@ -217,4 +225,7 @@ public class Token implements Comparable<Token> {
         return MoreObjects.toStringHelper(this).add("id", id).add("tokenSource", tokenSource).add("username", username).toString();
     }
 
+    public void setId(long id) {
+        this.id = id;
+    }
 }

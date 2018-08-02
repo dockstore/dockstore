@@ -177,27 +177,35 @@ public class CWLHandler implements LanguageHandlerInterface {
         Yaml yaml = new Yaml();
         try {
             Map<String, ?> map = yaml.loadAs(content, Map.class);
-            Object outputs = map.get(type);
-            if (outputs instanceof Map) {
-                Map<String, ?> outputsMap = (Map<String, ?>)outputs;
+            Object targetType = map.get(type);
+            if (targetType instanceof Map) {
+                Map<String, ?> outputsMap = (Map<String, ?>)targetType;
                 outputsMap.forEach((k, v) -> {
-                    if (v instanceof Map) {
-                        Map<String, String> outputMap = (Map<String, String>)v;
-                        String format = outputMap.get("format");
-                        if (format != null) {
-                            FileFormat fileFormat = new FileFormat();
-                            fileFormat.setValue(format);
-                            fileFormats.add(fileFormat);
-                        }
-                    }
+                    handlePotentialFormatEntry(fileFormats, v);
+                });
+            } else if (targetType instanceof List) {
+                ((List)targetType).forEach(v -> {
+                    handlePotentialFormatEntry(fileFormats, v);
                 });
             } else {
-                LOG.debug(type + " is not a map.");
+                LOG.debug(type + " is not comprehensible.");
             }
-        } catch (YAMLException e) {
-            SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");
+        } catch (YAMLException | NullPointerException e) {
+            LOG.error("Could not process content from entry as yaml");
         }
         return fileFormats;
+    }
+
+    private void handlePotentialFormatEntry(Set<FileFormat> fileFormats, Object v) {
+        if (v instanceof Map) {
+            Map<String, String> outputMap = (Map<String, String>)v;
+            String format = outputMap.get("format");
+            if (format != null) {
+                FileFormat fileFormat = new FileFormat();
+                fileFormat.setValue(format);
+                fileFormats.add(fileFormat);
+            }
+        }
     }
 
     @Override

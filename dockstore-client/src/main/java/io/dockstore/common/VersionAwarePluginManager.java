@@ -41,6 +41,8 @@ import ro.fortsoft.pf4j.util.NotFileFilter;
 public class VersionAwarePluginManager extends DefaultPluginManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(VersionAwarePluginManager.class);
+    // Version 0.0.0 -> Up to 1.4; Version 0.0.1 -> 1.5
+    private static final Version SYSTEM_VERSION = Version.forIntegers(0, 0, 1);
     // maps plugin id -> version, directory path
     private Map<String, Pair<Version, File>> pluginVersionMap = new HashMap<>();
 
@@ -51,6 +53,7 @@ public class VersionAwarePluginManager extends DefaultPluginManager {
      */
     VersionAwarePluginManager(File pluginsDirectory) {
         super(pluginsDirectory);
+        setSystemVersion(SYSTEM_VERSION);
     }
 
     void cleanupOldVersions() {

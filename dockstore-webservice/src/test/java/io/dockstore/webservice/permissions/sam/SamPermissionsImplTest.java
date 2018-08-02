@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SamPermissionsImplTest {
@@ -47,6 +50,7 @@ public class SamPermissionsImplTest {
     public static final String GOO_WORKFLOW_NAME = "goo";
     public static final String DOCKSTORE_ORG_WORKFLOW_NAME = "dockstore.org/john/myworkflow";
     public static final String JANE_DOE_GMAIL_COM = "jane.doe@gmail.com";
+    public static final String JANE_DOE_GITHUB_ID = "jdoe";
     private AccessPolicyResponseEntry ownerPolicy;
     private AccessPolicyResponseEntry writerPolicy;
     private AccessPolicyResponseEntry readerPolicy;
@@ -69,22 +73,22 @@ public class SamPermissionsImplTest {
         ownerPolicy = new AccessPolicyResponseEntry();
         ownerPolicy.setPolicyName(SamConstants.OWNER_POLICY);
         AccessPolicyMembership accessPolicyMembership = new AccessPolicyMembership();
-        accessPolicyMembership.setRoles(Arrays.asList(new String[] {SamConstants.OWNER_ROLE}));
-        accessPolicyMembership.setMemberEmails(Arrays.asList(new String [] {"jdoe@ucsc.edu"}));
+        accessPolicyMembership.setRoles(Arrays.asList(SamConstants.OWNER_ROLE));
+        accessPolicyMembership.setMemberEmails(Arrays.asList("jdoe@ucsc.edu"));
         ownerPolicy.setPolicy(accessPolicyMembership);
 
         writerPolicy = new AccessPolicyResponseEntry();
         writerPolicy.setPolicyName(SamConstants.WRITE_POLICY);
         AccessPolicyMembership writerMembership = new AccessPolicyMembership();
-        writerMembership.setRoles(Arrays.asList(new String[] {SamConstants.WRITE_ROLE}));
-        writerMembership.setMemberEmails(Arrays.asList(new String[] { JANE_DOE_GMAIL_COM }));
+        writerMembership.setRoles(Arrays.asList(SamConstants.WRITE_ROLE));
+        writerMembership.setMemberEmails(Arrays.asList(JANE_DOE_GMAIL_COM));
         writerPolicy.setPolicy(writerMembership);
 
         readerPolicy = new AccessPolicyResponseEntry();
         readerPolicy.setPolicyName(SamConstants.READ_POLICY);
         AccessPolicyMembership readerMembership = new AccessPolicyMembership();
-        readerMembership.setRoles(Arrays.asList(new String[] {SamConstants.READ_ROLE}));
-        readerMembership.setMemberEmails(Arrays.asList(new String[] { JANE_DOE_GMAIL_COM }));
+        readerMembership.setRoles(Arrays.asList(SamConstants.READ_ROLE));
+        readerMembership.setMemberEmails(Arrays.asList(JANE_DOE_GMAIL_COM));
         readerPolicy.setPolicy(readerMembership);
 
         TokenDAO tokenDAO = Mockito.mock(TokenDAO.class);
@@ -122,7 +126,7 @@ public class SamPermissionsImplTest {
         readerAccessPolicyResponseEntry = new AccessPolicyResponseEntry();
         readerAccessPolicyResponseEntry.setPolicy(readerAccessPolicyMemebership);
         readerAccessPolicyResponseEntry.setPolicyName(SamConstants.READ_POLICY);
-        readerAccessPolicyResponseEntry.getPolicy().addRolesItem(SamConstants.READ_POLICY.toString());
+        readerAccessPolicyResponseEntry.getPolicy().addRolesItem(SamConstants.READ_POLICY);
         readerAccessPolicyResponseEntry.getPolicy().addMemberEmailsItem(JANE_DOE_GMAIL_COM);
 
         final User.Profile profile = new User.Profile();
@@ -144,11 +148,11 @@ public class SamPermissionsImplTest {
     }
 
     @Test
-    public void testAccessPolicyResponseEntryToUserPermissionsDuplicateEmails() {
+    public void testRemoveDuplicateEmails() {
         // If a user belongs to two different roles, which the UI does not support, just return
         // the most powerful role.
         final List<Permission> permissions = samPermissionsImpl
-                .accessPolicyResponseEntryToUserPermissions(Arrays.asList(ownerPolicy, writerPolicy, readerPolicy));
+                .removeDuplicateEmails(Arrays.asList(ownerPermission, writerPermission, readerPermission));
         Assert.assertEquals(
                 permissions.size(), 2);
         Assert.assertTrue(permissions.contains(ownerPermission));
@@ -244,7 +248,6 @@ public class SamPermissionsImplTest {
             Assert.fail();
             e.printStackTrace();
         }
-
     }
 
     @Test
@@ -269,6 +272,28 @@ public class SamPermissionsImplTest {
         }
     }
 
+    /**
+     * Verifies that if a user already has a permission on a workflow, and we then set a different permission, that the
+     * call to remove the old permission is made.
+     *
+     * @throws ApiException
+     */
+    @Test
+    public void setPermissionRemovesExistingPermission() throws ApiException {
+        final Permission readerPermission = new Permission(JANE_DOE_GMAIL_COM, Role.READER);
+        final String encodedPath = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath))
+                .thenReturn(Arrays.asList(writerPolicy));
+        setupInitializePermissionsMocks(encodedPath);
+        doNothing().when(resourcesApiMock)
+                .removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.WRITE_POLICY, JANE_DOE_GMAIL_COM);
+        samPermissionsImpl.setPermission(userMock, fooWorkflow, readerPermission);
+        verify(resourcesApiMock, times(1))
+                .removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.WRITE_POLICY, JANE_DOE_GMAIL_COM);
+    }
+
+
+
     @Test
     public void removePermissionTest() throws ApiException {
         when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, SamConstants.WORKFLOW_PREFIX  + FOO_WORKFLOW_NAME))
@@ -290,22 +315,46 @@ public class SamPermissionsImplTest {
         Assert.assertEquals(0, sharedWithUser.size());
     }
 
-    /**
-     * Test that a reader gets herself back
-     * @throws ApiException
-     */
     @Test
-    public void testSelfPermissions() throws ApiException {
+    public void testOwnersActions() throws ApiException {
         final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
-        when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
-                .thenThrow(new ApiException(HttpStatus.SC_FORBIDDEN, "Unauthorized"));
-        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.READ)))
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
                 .thenReturn(Boolean.TRUE);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
+    }
+
+    @Test
+    public void testWritersActions() throws ApiException {
+        final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
+                .thenReturn(Boolean.FALSE);
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.WRITE)))
+                .thenReturn(Boolean.TRUE);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(2, actions.size());
+        Assert.assertTrue(actions.contains(Role.Action.WRITE) && actions.contains(Role.Action.READ));
+    }
+
+    @Test
+    public void testReadersActions() throws ApiException {
+        final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.SHARE)))
+                .thenReturn(Boolean.FALSE);
         when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.WRITE)))
                 .thenReturn(Boolean.FALSE);
-        final List<Permission> permissions = samPermissionsImpl.getPermissionsForWorkflow(userMock, fooWorkflow);
-        Assert.assertEquals(1, permissions.size());
-        Assert.assertEquals(Role.READER, permissions.iterator().next().getRole());
+        when(resourcesApiMock.resourceAction(SamConstants.RESOURCE_TYPE, resourceId, SamConstants.toSamAction(Role.Action.READ)))
+                .thenReturn(Boolean.TRUE);
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(1, actions.size());
+        Assert.assertTrue(actions.contains(Role.Action.READ));
+    }
+
+    @Test
+    public void testDockstoreOwnerNoSamPermissions() {
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        final List<Role.Action> actions = samPermissionsImpl.getActionsForWorkflow(userMock, fooWorkflow);
+        Assert.assertEquals(Role.Action.values().length, actions.size()); // Owner can perform all actions
     }
 
     /**
@@ -348,6 +397,15 @@ public class SamPermissionsImplTest {
         final Map<Role, List<String>> sharedWithUser2 = samPermissionsImpl.workflowsSharedWithUser(userMock);
         Assert.assertEquals(1, sharedWithUser.size());
         Assert.assertEquals(Role.WRITER, sharedWithUser.entrySet().iterator().next().getKey());
+    }
+
+    @Test
+    public void testNotOriginalOwnerWithEmailNotUsername() {
+        when(userMock.getUsername()).thenReturn(JANE_DOE_GITHUB_ID);
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        thrown.expect(CustomWebApplicationException.class);
+        samPermissionsImpl.checkEmailNotOriginalOwner(JANE_DOE_GMAIL_COM, fooWorkflow);
+        samPermissionsImpl.checkEmailNotOriginalOwner("johndoe@example.com", fooWorkflow);
     }
 
     private void setupInitializePermissionsMocks(String encodedPath) {

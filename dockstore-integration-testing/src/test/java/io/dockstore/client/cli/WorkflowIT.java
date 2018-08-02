@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +37,7 @@ import javax.ws.rs.core.GenericType;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.LanguageType;
@@ -125,7 +125,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testStubRefresh() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
 
@@ -145,7 +145,7 @@ public class WorkflowIT extends BaseIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -190,7 +190,7 @@ public class WorkflowIT extends BaseIT {
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false));
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false, null));
         Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(webClient);
         boolean exceptionThrown = false;
         try {
@@ -222,7 +222,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testHostedDelete() {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
@@ -239,7 +239,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testHostedEdit() {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         UsersApi usersApi = new UsersApi(webClient);
         User user = usersApi.getUser();
@@ -259,7 +259,7 @@ public class WorkflowIT extends BaseIT {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
             .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
@@ -285,7 +285,7 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void testEntryConvertWDLWithSecondaryDescriptors() {
         String toolpath = SourceControl.GITHUB.toString() + "/dockstore-testing/skylab";
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "dockstore-testing/skylab", "/pipelines/smartseq2_single_sample/SmartSeq2SingleSample.wdl",
@@ -321,7 +321,7 @@ public class WorkflowIT extends BaseIT {
     @Test
     public void downloadZipFile() throws IOException {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // Register and refresh workflow
@@ -330,21 +330,22 @@ public class WorkflowIT extends BaseIT {
                         "test", "cwl", null);
         Workflow refresh = workflowApi.refresh(workflow.getId());
         Long workflowId = refresh.getId();
-        Long versionId = refresh.getWorkflowVersions().get(0).getId();
+        WorkflowVersion workflowVersion = refresh.getWorkflowVersions().get(0);
+        Long versionId = workflowVersion.getId();
 
         // Download unpublished workflow version
         workflowApi.getWorkflowZip(workflowId, versionId);
-        byte[] arbitraryURL = getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        byte[] arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
         }, webClient);
         Path write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
         ZipFile zipFile = new ZipFile(write.toFile());
-        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
 
         // should not be able to get zip anonymously before publication
         boolean thrownException = false;
         try {
-            getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
-            }, getWebClient(false));
+            SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+            }, getWebClient(false, null));
         } catch (Exception e) {
             thrownException = true;
         }
@@ -352,17 +353,82 @@ public class WorkflowIT extends BaseIT {
 
         // Download published workflow version
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "publish", "--entry", toolpath, "--script" });
-        arbitraryURL = getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
-        }, getWebClient(false));
+        arbitraryURL = SwaggerUtility.getArbitraryURL("/workflows/" + workflowId + "/zip/" + versionId, new GenericType<byte[]>() {
+        }, getWebClient(false, null));
         write = Files.write(File.createTempFile("temp", "zip").toPath(), arbitraryURL);
         zipFile = new ZipFile(write.toFile());
-        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("/md5sum/md5sum-workflow.cwl"));
+        assertTrue("zip file seems incorrect", zipFile.stream().map(ZipEntry::getName).collect(Collectors.toList()).contains("md5sum/md5sum-workflow.cwl"));
+
+        // download and unzip via CLI
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "download", "--entry", toolpath + ":" + workflowVersion.getName(), "--script" });
+        zipFile.stream().forEach(entry -> {
+            File innerFile = new File(System.getProperty("user.dir"),entry.getName());
+            assert(innerFile.exists());
+            assert(innerFile.delete());
+        });
+
+        // download zip via CLI
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "download", "--entry", toolpath + ":" + workflowVersion.getName(), "--zip", "--script" });
+        File downloadedZip = new File(new WorkflowClient(null, null, null, false).zipFilename(workflow));
+        assert(downloadedZip.exists());
+        assert(downloadedZip.delete());
     }
 
-    private <T> T getArbitraryURL(String url, GenericType<T> type, ApiClient client) {
-        return client
-            .invokeAPI(url, "GET", new ArrayList<>(), null, new HashMap<>(), new HashMap<>(), "application/zip", "application/zip",
-                new String[] { "BEARER" }, type);
+    /**
+     * This tests that zip file can be downloaded or not based on published state and auth.
+     */
+    @Test
+    public void downloadZipFileTestAuth() {
+        final ApiClient ownerWebClient = getWebClient(USER_2_USERNAME);
+        WorkflowsApi ownerWorkflowApi = new WorkflowsApi(ownerWebClient);
+
+        final ApiClient anonWebClient = getWebClient(false, null);
+        WorkflowsApi anonWorkflowApi = new WorkflowsApi(anonWebClient);
+
+        final ApiClient otherUserWebClient = getWebClient(true, "OtherUser");
+        WorkflowsApi otherUserWorkflowApi = new WorkflowsApi(otherUserWebClient);
+
+        // Register and refresh workflow
+        Workflow workflow = ownerWorkflowApi
+                .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
+                        "test", "cwl", null);
+        Workflow refresh = ownerWorkflowApi.refresh(workflow.getId());
+        Long workflowId = refresh.getId();
+        Long versionId = refresh.getWorkflowVersions().get(0).getId();
+
+        // Try downloading unpublished
+        // Owner: Should pass
+        ownerWorkflowApi.getWorkflowZip(workflowId, versionId);
+        // Anon: Should fail
+        boolean success = true;
+        try {
+            anonWorkflowApi.getWorkflowZip(workflowId, versionId);
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("User does not have access to workflow.", !success);
+        }
+        // Other user: Should fail
+        success = true;
+        try {
+            otherUserWorkflowApi.getWorkflowZip(workflowId, versionId);
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("User does not have access to workflow.", !success);
+        }
+
+        // Publish
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        ownerWorkflowApi.publish(workflowId, publishRequest);
+
+        // Try downloading published
+        // Owner: Should pass
+        ownerWorkflowApi.getWorkflowZip(workflowId, versionId);
+        // Anon: Should pass
+        anonWorkflowApi.getWorkflowZip(workflowId, versionId);
+        // Other user: Should pass
+        otherUserWorkflowApi.getWorkflowZip(workflowId, versionId);
     }
 
     @Test
@@ -371,7 +437,7 @@ public class WorkflowIT extends BaseIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
 
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         Workflow workflow = workflowApi
@@ -408,7 +474,7 @@ public class WorkflowIT extends BaseIT {
         String toolpath = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/md5sum-checker/test";
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
                 .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl",
@@ -436,7 +502,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testNextFlowRefresh() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -481,7 +547,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testNextFlowWorkflowWithImages() {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -531,7 +597,7 @@ public class WorkflowIT extends BaseIT {
         testingPostgres.runUpdateStatement("update enduser set isadmin = 't' where username = 'DockstoreTestUser2';");
         long userId = 1;
 
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         UsersApi usersApi = new UsersApi(webClient);
         final List<Workflow> workflow = usersApi.refreshWorkflows(userId);
 
@@ -591,7 +657,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testPublishingAndListingOfPublished() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         // should start with nothing published
@@ -645,7 +711,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testManualRegisterThenPublish() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -695,13 +761,36 @@ public class WorkflowIT extends BaseIT {
         assertEquals("There should be 5 valid version tags, there are " + count4, 6, count4);
     }
 
+    @Test
+    public void testHostedWorkflowMetadata() throws IOException {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", "CWL", null, null);
+        SourceFile source = new SourceFile();
+        // note that this workflow contains metadata defined on the inputs to the workflow in the old (pre-map) CWL way that is still valid v1.0 CWL
+        source.setPath("/Dockstore.cwl");
+        source.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        source.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
+        SourceFile source1 = new SourceFile();
+        source1.setPath("sorttool.cwl");
+        source1.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        source1.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/sorttool.cwl")), StandardCharsets.UTF_8));
+        SourceFile source2 = new SourceFile();
+        source2.setPath("revtool.cwl");
+        source2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        source2.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
+        Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        assertTrue(!workflow.getInputFileFormats().isEmpty());
+        assertTrue(!workflow.getOutputFileFormats().isEmpty());
+    }
+
     /**
      * This tests that a nested WDL workflow (three levels) is properly parsed
      * @throws ApiException
      */
     @Test
     public void testNestedWdlWorkflow() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -751,7 +840,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = new DockstoreTool();
@@ -828,7 +917,7 @@ public class WorkflowIT extends BaseIT {
      */
     @Test
     public void testManualRegisterErrors() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         UsersApi usersApi = new UsersApi(webClient);
@@ -859,7 +948,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testSecondaryFileOperations() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json");
@@ -886,7 +975,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testRelativeSecondaryFileOperations() throws ApiException, URISyntaxException, IOException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
@@ -959,14 +1048,15 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testAnonAndAdminGA4GH() throws ApiException {
-        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient());
+
+    public void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
+        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME));
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
         workflowApi.refresh(workflowByPathGithub.getId());
 
         // should not be able to get content normally
-        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false));
+        Ga4GhApi anonymousGa4Ghv2Api = new Ga4GhApi(getWebClient(false, null));
         boolean thrownException = false;
         try {
             anonymousGa4Ghv2Api
@@ -986,7 +1076,7 @@ public class WorkflowIT extends BaseIT {
         assert (thrownListException);
 
         // can get content via admin user
-        Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(getWebClient());
+        Ga4GhApi adminGa4Ghv2Api = new Ga4GhApi(getWebClient(USER_2_USERNAME));
 
         List<ToolFile> toolFiles = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeFilesGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, "master");
@@ -1031,7 +1121,7 @@ public class WorkflowIT extends BaseIT {
 
     @Test
     public void testAliasOperations() throws ApiException {
-        final ApiClient webClient = getWebClient();
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);

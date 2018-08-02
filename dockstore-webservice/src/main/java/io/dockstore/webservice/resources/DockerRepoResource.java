@@ -86,6 +86,7 @@ import io.swagger.model.DescriptorType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
+import org.hibernate.SessionFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -118,16 +119,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private final ElasticManager elasticManager;
     private final WorkflowResource workflowResource;
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
-            LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
+    public DockerRepoResource(ObjectMapper mapper, HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
         objectMapper = mapper;
-        this.userDAO = userDAO;
-        this.tokenDAO = tokenDAO;
-        this.tagDAO = tagDAO;
-        this.labelDAO = labelDAO;
-        this.fileDAO = fileDAO;
-        this.fileFormatDAO = fileFormatDAO;
+        this.userDAO = new UserDAO(sessionFactory);
+        this.tokenDAO = new TokenDAO(sessionFactory);
+        this.tagDAO = new TagDAO(sessionFactory);
+        this.labelDAO = new LabelDAO(sessionFactory);
+        this.fileDAO = new FileDAO(sessionFactory);
+        this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.client = client;
 
         this.bitbucketClientID = bitbucketClientID;
@@ -135,7 +134,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         this.workflowResource = workflowResource;
 
-        this.toolDAO = toolDAO;
+        this.toolDAO = new ToolDAO(sessionFactory);
         elasticManager = new ElasticManager();
     }
 
@@ -615,9 +614,8 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
         stripContent(tools);
-        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished()));
+        response.addHeader("X-total-count", String.valueOf(toolDAO.countAllPublished(Optional.of(filter))));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
-
         return tools;
     }
 
@@ -1048,14 +1046,18 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     public Response getToolZip(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "toolId", required = true) @PathParam("toolId") Long toolId,
         @ApiParam(value = "tagId", required = true) @PathParam("tagId") Long tagId) {
-        Tool tool;
-        if (user.isPresent()) {
-            tool = toolDAO.findById(toolId);
+
+        Tool tool = toolDAO.findById(toolId);
+        if (tool.getIsPublished()) {
             checkEntry(tool);
-            checkUser(user.get(), tool);
         } else {
-            tool = toolDAO.findPublishedById(toolId);
             checkEntry(tool);
+            if (user.isPresent()) {
+                checkUser(user.get(), tool);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
+            }
         }
 
         Tag tag = tool.getTags().stream().filter(innertag -> innertag.getId() == tagId).findFirst()

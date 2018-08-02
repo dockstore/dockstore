@@ -24,7 +24,6 @@ import java.util.List;
 
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dropwizard.testing.ResourceHelpers;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.util.Lists;
 import org.junit.Assert;
@@ -41,7 +40,7 @@ public class NextflowIT {
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
 
     @Test
-    public void demoNextFlowLaunch() throws IOException, ConfigurationException {
+    public void demoNextFlowLaunch() throws IOException {
         // looks like this has to run from the current working directory, which sucks
         File userDir = new File(System.getProperty("user.dir"));
         File testFileDirectory = FileUtils.getFile("src", "test", "resources", "nextflow_rnatoy");

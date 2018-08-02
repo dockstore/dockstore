@@ -29,7 +29,7 @@ import io.swagger.model.Metadata;
 
 public class MetadataApiServiceImpl extends MetadataApiService {
     @Override
-    public Response metadataGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) throws NotFoundException {
+    public Response metadataGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) {
         Metadata metadata = new Metadata();
         metadata.setCountry("CAN");
         metadata.setApiVersion("2.0.0");

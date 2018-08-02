@@ -78,7 +78,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
 
     @Before
     @Override
-    public void resetDBBetweenTests() throws Exception {
+    public void resetDBBetweenTests() {
         /** do nothing, do not load sample data */
     }
 
@@ -101,7 +101,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     private SessionFactory sessionFactory;
     private javax.ws.rs.client.Client client;
 
-    public String randomIdentifier() {
+    private String randomIdentifier() {
         StringBuilder builder = new StringBuilder();
         while (builder.toString().length() == 0) {
             int length = RAND.nextInt(5) + 5;
@@ -116,7 +116,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         client = ClientBuilder.newClient();
         client.register(jacksonJsonProvider);
@@ -130,12 +130,12 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         client.close();
     }
 
     @Test
-    public void testCreate10000Tools() throws Exception {
+    public void testCreate10000Tools() {
         this.sessionFactory = application.getHibernate().getSessionFactory();
         try {
             Transaction transaction = this.sessionFactory.openSession().getTransaction();

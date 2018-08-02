@@ -26,8 +26,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dockstore.webservice.resources.TokenResource;
-import io.dropwizard.auth.AuthenticationException;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.hibernate.UnitOfWork;
 import org.hibernate.Hibernate;
@@ -43,7 +41,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
     private final TokenDAO dao;
     private final UserDAO userDAO;
 
-    public SimpleAuthenticator(TokenDAO dao, UserDAO userDAO) {
+    SimpleAuthenticator(TokenDAO dao, UserDAO userDAO) {
         this.dao = dao;
         this.userDAO = userDAO;
     }
@@ -56,11 +54,10 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
      *
      * @param credentials
      * @return an optional user
-     * @throws AuthenticationException
      */
     @UnitOfWork
     @Override
-    public Optional<User> authenticate(String credentials) throws AuthenticationException {
+    public Optional<User> authenticate(String credentials) {
         LOG.debug("SimpleAuthenticator called with {}", credentials);
         final Token token = dao.findByContent(credentials);
         if (token != null) { // It's a valid Dockstore token
@@ -97,7 +94,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         List<Token> tokens = dao.findByUserId(user.getId());
         final Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
         if (googleToken == null) {
-            dao.create(TokenResource.createGoogleToken(credentials, null, user.getId(), user.getUsername()));
+            dao.create(new Token(credentials, null, user.getId(), user.getUsername(), TokenType.GOOGLE_COM));
         } else {
             googleToken.setContent(credentials);
             dao.update(googleToken);
@@ -109,7 +106,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         GoogleHelper.updateUserFromGoogleUserinfoplus(userinfoPlus, user);
         user.setUsername(userinfoPlus.getEmail());
         final long userID = userDAO.create(user);
-        dao.create(TokenResource.createGoogleToken(credentials, null, userID, user.getUsername()));
+        dao.create(new Token(credentials, null, userID, user.getUsername(), TokenType.GOOGLE_COM));
         return user;
     }
 

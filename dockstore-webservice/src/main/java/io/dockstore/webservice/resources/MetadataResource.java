@@ -105,12 +105,12 @@ public class MetadataResource {
     }
 
     private String createWorkflowURL(Workflow workflow) {
-        return config.getScheme() + "://" + config.getHostname() + (config.getUiPort() == null ? "" : ":" + config.getUiPort()) + "/workflows/"
+        return config.getExternalConfig().getScheme() + "://" + config.getExternalConfig().getHostname() + (config.getExternalConfig().getUiPort() == null ? "" : ":" + config.getExternalConfig().getUiPort()) + "/workflows/"
                 + workflow.getWorkflowPath();
     }
 
     private String createToolURL(Tool tool) {
-        return config.getScheme() + "://" + config.getHostname() + (config.getUiPort() == null ? "" : ":" + config.getUiPort())
+        return config.getExternalConfig().getScheme() + "://" + config.getExternalConfig().getHostname() + (config.getExternalConfig().getUiPort() == null ? "" : ":" + config.getExternalConfig().getUiPort())
             + "/containers/" + tool.getToolPath();
     }
 
