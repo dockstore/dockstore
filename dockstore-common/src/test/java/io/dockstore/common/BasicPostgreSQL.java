@@ -104,8 +104,8 @@ public class BasicPostgreSQL {
         runUpdateStatement("delete from user_entry;");
         runUpdateStatement("delete from endusergroup;");
         runUpdateStatement("delete from starred;");
-        runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from token;");
+        runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from version_sourcefile;");
         runUpdateStatement("delete from sourcefile;");
         runUpdateStatement("delete from tool_tag;");
