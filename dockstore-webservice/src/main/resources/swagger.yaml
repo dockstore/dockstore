@@ -1040,24 +1040,6 @@ paths:
             $ref: "#/definitions/Token"
       security:
       - BEARER: []
-  /auth/tokens/bitbucket.org/refresh:
-    get:
-      tags:
-      - "tokens"
-      summary: "Refresh Bitbucket token"
-      description: "The Bitbucket token expire in one hour. When this happens you'll\
-        \ get 401 responses"
-      operationId: "refreshBitbucketToken"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Token"
-      security:
-      - BEARER: []
   /auth/tokens/github:
     post:
       tags:
@@ -1592,27 +1574,6 @@ paths:
               type: "array"
               items:
                 type: "object"
-  /containers/search:
-    get:
-      tags:
-      - "containers"
-      summary: "Search for matching registered containers."
-      description: "Search on the name (full path name) and description. NO authentication"
-      operationId: "search"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "pattern"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/DockstoreTool"
   /containers/{containerId}:
     get:
       tags:
@@ -2496,69 +2457,6 @@ paths:
             $ref: "#/definitions/Entry"
       security:
       - BEARER: []
-  /integration.bitbucket.org:
-    get:
-      tags:
-      - "integration.bitbucket.org"
-      summary: "Display an authorization link for bitbucket.org"
-      description: "This is a stop-gap GUI for displaying a link that allows a user\
-        \ to start the OAuth 2 web flow"
-      operationId: "getView"
-      produces:
-      - "text/html"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/BitbucketOrgView"
-  /integration.github.com:
-    get:
-      tags:
-      - "integration.github.com"
-      summary: "Display an authorization link for github.com"
-      description: "This is a stop-gap GUI for displaying a link that allows a user\
-        \ to start the OAuth 2 web flow"
-      operationId: "getView"
-      produces:
-      - "text/html"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/GithubComView"
-  /integration.gitlab.com:
-    get:
-      tags:
-      - "integration.gitlab.com"
-      summary: "Display an authorization link for gitlab.com"
-      description: "This is a stop-gap GUI for displaying a link that allows a user\
-        \ to start the OAuth 2 web flow"
-      operationId: "getView"
-      produces:
-      - "text/html"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/GitlabComView"
-  /integration.quay.io:
-    get:
-      tags:
-      - "integration.quay.io"
-      summary: "Display an authorization link for quay.io"
-      description: "More notes about this method"
-      operationId: "getView"
-      produces:
-      - "text/html"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/QuayIOView"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -3826,27 +3724,6 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Workflow"
-  /workflows/search:
-    get:
-      tags:
-      - "workflows"
-      summary: "Search for matching published workflows."
-      description: "Search on the name (full path name) and description. NO authentication"
-      operationId: "search"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "pattern"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Workflow"
   /workflows/shared:
     get:
       tags:
@@ -4793,18 +4670,6 @@ definitions:
     properties:
       content:
         type: "string"
-  BitbucketOrgAuthenticationResource:
-    type: "object"
-    properties:
-      clientID:
-        type: "string"
-      view:
-        $ref: "#/definitions/BitbucketOrgView"
-  BitbucketOrgView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/BitbucketOrgAuthenticationResource"
   DescriptorLanguageBean:
     type: "object"
     properties:
@@ -5162,34 +5027,6 @@ definitions:
         description: "String representation of the file format"
     description: "This describes an input or output file format that is associated\
       \ with an entry in the dockstore"
-  GitHubComAuthenticationResource:
-    type: "object"
-    properties:
-      clientID:
-        type: "string"
-      redirectURI:
-        type: "string"
-      view:
-        $ref: "#/definitions/GithubComView"
-  GitLabComAuthenticationResource:
-    type: "object"
-    properties:
-      clientID:
-        type: "string"
-      redirectURI:
-        type: "string"
-      view:
-        $ref: "#/definitions/GitlabComView"
-  GithubComView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/GitHubComAuthenticationResource"
-  GitlabComView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/GitLabComAuthenticationResource"
   Group:
     type: "object"
     properties:
@@ -5293,20 +5130,6 @@ definitions:
       publish:
         type: "boolean"
         readOnly: true
-  QuayIOAuthenticationResource:
-    type: "object"
-    properties:
-      clientID:
-        type: "string"
-      redirectURI:
-        type: "string"
-      view:
-        $ref: "#/definitions/QuayIOView"
-  QuayIOView:
-    type: "object"
-    properties:
-      parent:
-        $ref: "#/definitions/QuayIOAuthenticationResource"
   RegistryBean:
     type: "object"
     properties:
