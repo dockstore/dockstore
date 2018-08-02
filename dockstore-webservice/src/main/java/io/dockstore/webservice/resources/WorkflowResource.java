@@ -102,6 +102,7 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
+import org.hibernate.SessionFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -137,25 +138,23 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     private final String bitbucketClientSecret;
     private final PermissionsInterface permissionsInterface;
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public WorkflowResource(HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, WorkflowDAO workflowDAO,
-        WorkflowVersionDAO workflowVersionDAO, LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID,
+    public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
         String bitbucketClientSecret, PermissionsInterface permissionsInterface) {
-        this.userDAO = userDAO;
-        this.tokenDAO = tokenDAO;
-        this.workflowVersionDAO = workflowVersionDAO;
-        this.toolDAO = toolDAO;
-        this.labelDAO = labelDAO;
-        this.fileDAO = fileDAO;
+        this.userDAO = new UserDAO(sessionFactory);
+        this.tokenDAO = new TokenDAO(sessionFactory);
+        this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
+        this.toolDAO = new ToolDAO(sessionFactory);
+        this.labelDAO = new LabelDAO(sessionFactory);
+        this.fileDAO = new FileDAO(sessionFactory);
         this.client = client;
-        this.fileFormatDAO = fileFormatDAO;
+        this.fileFormatDAO = new FileFormatDAO(sessionFactory);
 
         this.bitbucketClientID = bitbucketClientID;
         this.bitbucketClientSecret = bitbucketClientSecret;
 
         this.permissionsInterface = permissionsInterface;
 
-        this.workflowDAO = workflowDAO;
+        this.workflowDAO = new WorkflowDAO(sessionFactory);
         elasticManager = new ElasticManager();
     }
 

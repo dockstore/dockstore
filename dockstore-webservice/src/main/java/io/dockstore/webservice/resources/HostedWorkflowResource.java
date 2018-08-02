@@ -30,8 +30,6 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.jdbi.FileDAO;
-import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -40,6 +38,7 @@ import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -53,11 +52,10 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
 
-    public HostedWorkflowResource(UserDAO userDAO, WorkflowDAO workflowDAO, WorkflowVersionDAO workflowVersionDAO, FileDAO fileDAO,
-            PermissionsInterface permissionsInterface) {
-        super(fileDAO, userDAO, permissionsInterface);
-        this.workflowVersionDAO = workflowVersionDAO;
-        this.workflowDAO = workflowDAO;
+    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
+        super(sessionFactory, permissionsInterface);
+        this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
+        this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
     }
 

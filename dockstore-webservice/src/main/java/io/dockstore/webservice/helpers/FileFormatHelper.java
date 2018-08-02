@@ -48,7 +48,7 @@ public final class FileFormatHelper {
      * The original set of FileFormats contains FileFormats already present in the DB.  This uses the one from the DB to avoid duplicates.
      * @param fileFormatDAO The FileFormatDAO used to access the DB
      * @param fileFormats   The original set of FileFormats that may contain duplicates from the DB.
-     * @return
+     * @return the merged set of fileformats
      */
     private static SortedSet<FileFormat> getFileFormatsFromDatabase(FileFormatDAO fileFormatDAO, SortedSet<FileFormat> fileFormats) {
         SortedSet<FileFormat> fileFormatsFromDB = new TreeSet<>();

@@ -86,6 +86,7 @@ import io.swagger.model.DescriptorType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.hibernate.Hibernate;
+import org.hibernate.SessionFactory;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.slf4j.Logger;
@@ -118,16 +119,14 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private final ElasticManager elasticManager;
     private final WorkflowResource workflowResource;
 
-    @SuppressWarnings("checkstyle:parameternumber")
-    public DockerRepoResource(ObjectMapper mapper, HttpClient client, UserDAO userDAO, TokenDAO tokenDAO, ToolDAO toolDAO, TagDAO tagDAO,
-            LabelDAO labelDAO, FileDAO fileDAO, FileFormatDAO fileFormatDAO, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
+    public DockerRepoResource(ObjectMapper mapper, HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret, WorkflowResource workflowResource) {
         objectMapper = mapper;
-        this.userDAO = userDAO;
-        this.tokenDAO = tokenDAO;
-        this.tagDAO = tagDAO;
-        this.labelDAO = labelDAO;
-        this.fileDAO = fileDAO;
-        this.fileFormatDAO = fileFormatDAO;
+        this.userDAO = new UserDAO(sessionFactory);
+        this.tokenDAO = new TokenDAO(sessionFactory);
+        this.tagDAO = new TagDAO(sessionFactory);
+        this.labelDAO = new LabelDAO(sessionFactory);
+        this.fileDAO = new FileDAO(sessionFactory);
+        this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.client = client;
 
         this.bitbucketClientID = bitbucketClientID;
@@ -135,7 +134,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         this.workflowResource = workflowResource;
 
-        this.toolDAO = toolDAO;
+        this.toolDAO = new ToolDAO(sessionFactory);
         elasticManager = new ElasticManager();
     }
 
