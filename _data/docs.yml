@@ -30,6 +30,7 @@
     - publisher-tutorials/advanced-features
     - publisher-tutorials/aws-batch
     - publisher-tutorials/azure-batch
+    - publisher-tutorials/login-functionality
 
 - title: Extras
   link: extras
