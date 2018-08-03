@@ -33,7 +33,12 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,6 +53,18 @@ public abstract class GA4GHIT {
             DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
     protected static javax.ws.rs.client.Client client;
     final String basePath = String.format("http://localhost:%d/" + getApiVersion(), SUPPORT.getLocalPort());
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
+
+    @Rule
+    public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
+
+    @Rule
+    public ExpectedException thrown= ExpectedException.none();
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
