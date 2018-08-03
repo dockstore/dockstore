@@ -769,7 +769,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     protected void handleSearch(String pattern) {
         try {
-            List<Workflow> workflows = workflowsApi.search(pattern);
+            List<Workflow> workflows = workflowsApi.allPublishedWorkflows(null, null, pattern, null, null);
 
             out("MATCHING WORKFLOWS");
             printLineBreak();

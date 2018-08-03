@@ -301,17 +301,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-views</artifactId>
-            <version>${dropwizard.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-views-freemarker</artifactId>
-            <version>${dropwizard.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-validator</artifactId>
@@ -763,7 +752,6 @@
 
                             <usedDependencies>
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
-                                <usedDependency>io.dropwizard:dropwizard-views-freemarker</usedDependency>
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
                                 <usedDepdenency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</usedDepdenency>
                             </usedDependencies>
