@@ -79,7 +79,6 @@ import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
 import io.dropwizard.migrations.MigrationsBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import io.dropwizard.views.ViewBundle;
 import io.swagger.api.MetadataApi;
 import io.swagger.api.MetadataApiV1;
 import io.swagger.api.ToolClassesApi;
@@ -152,8 +151,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         // serve static html as well
         bootstrap.addBundle(new AssetsBundle("/assets/", "/static/"));
-        // enable views
-        bootstrap.addBundle(new ViewBundle<>());
 
         // for database migrations.xml
         bootstrap.addBundle(new MigrationsBundle<DockstoreWebserviceConfiguration>() {
