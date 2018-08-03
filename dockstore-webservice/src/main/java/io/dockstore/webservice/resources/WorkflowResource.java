@@ -114,6 +114,7 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
+ * TODO: remember to document new security concerns for hosted vs other workflows
  * @author dyuen
  */
 @Path("/workflows")
@@ -178,6 +179,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
 
         checkNotHosted(workflow);
+        checkCanWriteWorkflow(user, workflow);
 
         workflow.setMode(WorkflowMode.STUB);
 
@@ -523,7 +525,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         checkEntry(workflow);
         // Note: if you set someone as an admin, they are not actually admin right away. Users must wait until after the
         // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
-        checkUser(user, workflow);
+        checkAdmin(user);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -718,24 +720,22 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("shared")
-    @ApiOperation(value = "All workflows shared with user", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "List all workflows shared with user", tags = { "workflows"}, response = SharedWorkflows.class, responseContainer = "List")
+    @ApiOperation(value = "All workflows shared with user", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List all workflows shared with user", tags = {
+        "workflows" }, response = SharedWorkflows.class, responseContainer = "List")
     public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
-        return this.permissionsInterface
-                .workflowsSharedWithUser(user).entrySet().stream()
-                .map(e -> {
-                    final List<Workflow> workflows = e.getValue().stream().map(path -> {
-                        // TODO: Fetch workflows in bulk rather than 1 by 1.
-                        final Workflow workflow = workflowDAO.findByPath(path, false);
-                        // If user is the owner of the workflow, don't include it as shared with
-                        if (workflow != null && !workflow.getUsers().contains(user)) {
-                            return workflow;
-                        }
-                        return null;
-                    }).filter(Objects::nonNull).collect(Collectors.toList());
-                    return new SharedWorkflows(e.getKey(), workflows);
-                })
-                .filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0)
-                .collect(Collectors.toList());
+        return this.permissionsInterface.workflowsSharedWithUser(user).entrySet().stream().map(e -> {
+            final List<Workflow> workflows = e.getValue().stream().map(path -> {
+                // TODO: Fetch workflows in bulk rather than 1 by 1.
+                final Workflow workflow = workflowDAO.findByPath(path, false);
+                // If user is the owner of the workflow, don't include it as shared with
+                if (workflow != null && !workflow.getUsers().contains(user)) {
+                    return workflow;
+                }
+                return null;
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+            return new SharedWorkflows(e.getKey(), workflows);
+        }).filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0).collect(Collectors.toList());
     }
 
     @GET
@@ -1063,6 +1063,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
+        checkCanWriteWorkflow(user, workflow);
         checkNotHosted(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
@@ -1106,6 +1107,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths, @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
+        checkCanWriteWorkflow(user, workflow);
         checkNotHosted(workflow);
 
         Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream()
@@ -1237,7 +1239,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         Workflow w = workflowDAO.findById(workflowId);
         checkEntry(w);
-
         checkCanWriteWorkflow(user, w);
 
         // create a map for quick lookup
@@ -1270,8 +1271,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version", response = String.class)
-    public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+    public String getWorkflowDag(@ApiParam(hidden = true) @Auth Optional<User> user, @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkOptionalAuthRead(user, workflow);
+
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
@@ -1297,9 +1301,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/tools/{workflowVersionId}")
     @ApiOperation(value = "Get the Tools for a given workflow version", response = String.class)
-    public String getTableToolContent(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+    public String getTableToolContent(@ApiParam(hidden = true) @Auth Optional<User> user, @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkOptionalAuthRead(user, workflow);
+
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         if (workflowVersion == null) {
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
@@ -1427,10 +1434,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only cwl and wdl are valid.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Check if the entry exists
-        if (entry == null) {
-            throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
-        }
+        checkEntry(entry);
+        checkUser(user, entry);
 
         // Don't allow workflow stubs
         if (entry instanceof Workflow) {
@@ -1581,17 +1586,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
-        if (workflow.getIsPublished()) {
-            checkEntry(workflow);
-        } else {
-            checkEntry(workflow);
-            if (user.isPresent()) {
-                checkCanReadWorkflow(user.get(), workflow);
-            } else {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                        HttpStatus.SC_FORBIDDEN);
-            }
-        }
+        checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
@@ -1603,5 +1598,26 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
+    }
+
+    /**
+     * This method checks that a workflow can be read in two situations
+     * 1) A published workflow
+     * 2) A workflow that is unpublished but that I have access to
+     * @param user
+     * @param workflow
+     */
+    private void checkOptionalAuthRead(Optional<User> user, Workflow workflow) {
+        if (workflow.getIsPublished()) {
+            checkEntry(workflow);
+        } else {
+            checkEntry(workflow);
+            if (user.isPresent()) {
+                checkCanReadWorkflow(user.get(), workflow);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                        HttpStatus.SC_FORBIDDEN);
+            }
+        }
     }
 }

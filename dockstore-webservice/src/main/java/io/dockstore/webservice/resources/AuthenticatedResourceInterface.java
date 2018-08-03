@@ -51,6 +51,18 @@ public interface AuthenticatedResourceInterface {
     }
 
     /**
+     * Check if admin
+     *
+     * @param user
+     */
+    default void checkAdmin(User user) {
+        if (!user.getIsAdmin()) {
+            throw new CustomWebApplicationException("Forbidden: you need to be an admin to perform this operation.",
+                HttpStatus.SC_FORBIDDEN);
+        }
+    }
+
+    /**
      * Check if admin or if tool belongs to user
      *
      * @param user

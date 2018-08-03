@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class SwaggerTester {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractHostedEntryResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SwaggerTester.class);
 
 
     private SwaggerTester() {
