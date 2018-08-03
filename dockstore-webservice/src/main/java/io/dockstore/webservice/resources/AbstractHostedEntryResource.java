@@ -151,7 +151,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
         boolean isValidVersion = checkValidVersion(versionSourceFiles, entry);
         if (!isValidVersion) {
-            throw new WebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
         }
         version.setValid(true);
         version.setVersionEditor(user);
@@ -170,11 +170,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private void checkHosted(T entry) {
         if (entry instanceof Tool) {
             if (((Tool)entry).getMode() != ToolMode.HOSTED) {
-                throw new WebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
             }
         } else if (entry instanceof Workflow) {
             if (((Workflow)entry).getMode() != WorkflowMode.HOSTED) {
-                throw new WebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);
             }
         }
     }
@@ -183,7 +183,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
                 && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
                 && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
-            throw new WebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
         }
     }
 

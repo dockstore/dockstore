@@ -404,7 +404,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
-            throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
         return responseBuilder.build();
     }
@@ -826,7 +826,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 error.setCode(HttpStatus.SC_BAD_REQUEST);
                 error.setMessage("Tool ID should have at least 3 separate segments, seperated by /");
                 Response errorResponse = Response.status(HttpStatus.SC_BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON).build();
-                throw new WebApplicationException(errorResponse);
+                throw new CustomWebApplicationException(errorResponse);
             }
         }
 
