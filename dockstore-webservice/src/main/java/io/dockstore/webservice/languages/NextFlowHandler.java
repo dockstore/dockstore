@@ -310,7 +310,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             Map<String, List<String>> processNameToInputChannels = new HashMap<>();
             Map<String, List<String>> processNameToOutputChannels = new HashMap<>();
 
-            for (GroovySourceAST processAST : processList) {
+            processList.forEach((GroovySourceAST processAST) -> {
                 String processName = getProcessValue(processAST);
 
                 // Get a list of all channels that the process depends on
@@ -320,23 +320,25 @@ public class NextFlowHandler implements LanguageHandlerInterface {
                 // Get a list of all channels that the process writes to
                 List<String> outputs = getOutputDependencyList(processAST);
                 processNameToOutputChannels.put(processName, outputs);
-            }
+            });
 
             // Create a map of process name to dependent processes
-            for (String processName : processNameToInputChannels.keySet()) {
+            processNameToInputChannels.keySet().forEach((String processName) -> {
                 List<String> dependencies = new ArrayList<>();
-                for (String channelRead : processNameToInputChannels.get(processName)) {
-                    for (String dependentProcessName : processNameToOutputChannels.keySet()) {
-                        for (String channelWrite : processNameToOutputChannels.get(dependentProcessName)) {
-                            if (Objects.equals(channelRead, channelWrite)) {
-                                dependencies.add(dependentProcessName);
-                                break;
-                            }
+                processNameToInputChannels.get(processName).forEach((String channelRead) -> {
+                    processNameToOutputChannels.keySet().forEach((String dependentProcessName) -> {
+                        Optional<String> temp = processNameToOutputChannels.get(dependentProcessName)
+                                .stream()
+                                .filter(channelWrite -> Objects.equals(channelRead, channelWrite))
+                                .findFirst();
+
+                        if (temp.isPresent()) {
+                            dependencies.add(dependentProcessName);
                         }
-                    }
-                }
+                    });
+                });
                 map.put(processName, dependencies);
-            }
+            });
         } catch (IOException | TokenStreamException | RecognitionException e) {
             LOG.warn("could not parse", e);
         }
