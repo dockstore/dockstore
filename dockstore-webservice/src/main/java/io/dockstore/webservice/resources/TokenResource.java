@@ -294,7 +294,21 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     /**
      * Adds a Google token to the existing user if user is authenticated already.
-     * Otherwise, create a new Dockstore account too and also add token
+     * Otherwise, below table indicates what happens when the "Login with Google" button in the UI2 is clicked
+     * <table border="1">
+     * <tr>
+     * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
+     * </tr>
+     * <tr>
+     * <td> <b>Have Google Account no Google token</td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
+     * </tr>
+     * <tr>
+     * <td> <b>Have Google Account with Google token</td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
+     * </tr>
+     * <tr>
+     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
+     * </tr>
+     * </table>
      *
      * @param authUser       The optional Dockstore-authenticated user
      * @param satellizerJson Satellizer object returned by satellizer
@@ -321,34 +335,52 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         Token dockstoreToken = null;
         Token googleToken = null;
         String googleLoginName = userinfo.getEmail();
-        User user = userDAO.findByUsername(googleLoginName);
+        User user;
 
-        List<Token> googleByUsername = tokenDAO.findTokenByUsername(userinfo.getEmail(), TokenType.GOOGLE_COM);
-        if (user == null && !authUser.isPresent() && googleByUsername.isEmpty()) {
-            user = new User();
-            // Pull user information from Google
-            user.setUsername(userinfo.getEmail());
-            userID = userDAO.create(user);
-
-            // CREATE DOCKSTORE TOKEN
-            dockstoreToken = createDockstoreToken(userID, googleLoginName);
+        if (authUser.isPresent()) {
+            // Just linking token
+            userID = authUser.get().getId();
         } else {
-            if (authUser.isPresent()) {
-                userID = authUser.get().getId();
-            } else if (user != null) {
-                userID = user.getId();
-            } else {
-                userID = googleByUsername.get(0).getUserId();
-            }
-            List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
-            if (!tokens.isEmpty()) {
-                dockstoreToken = tokens.get(0);
-            }
+            User googleUser = userDAO.findByUsername(googleLoginName);
+            List<Token> tokensByGoogleUsername = tokenDAO.findTokenByUsername(userinfo.getEmail(), TokenType.GOOGLE_COM);
+            // Determining which account to login to
+            if (googleUser == null) {
+                if (tokensByGoogleUsername.size() == 0) {
+                    // No Google account, no GitHub account with Google token
+                    user = new User();
+                    // Pull user information from Google
+                    user.setUsername(userinfo.getEmail());
+                    userID = userDAO.create(user);
 
-            tokens = tokenDAO.findGoogleByUserId(userID);
-            if (!tokens.isEmpty()) {
-                googleToken = tokens.get(0);
+                    // CREATE DOCKSTORE TOKEN
+                    dockstoreToken = createDockstoreToken(userID, googleLoginName);
+                } else {
+                    // No Google account, have GitHub account with Google token
+                    userID = tokensByGoogleUsername.get(0).getUserId();
+                }
+            } else {
+                Optional<Token> gitHubAccountWithGoogleToken = tokensByGoogleUsername.stream()
+                        .filter(token -> token.getUserId() != googleUser.getId()).findFirst();
+                Optional<Token> googleAccountWithGoogleToken = tokensByGoogleUsername.stream()
+                        .filter(token -> token.getUserId() == googleUser.getId()).findFirst();
+                if (gitHubAccountWithGoogleToken.isPresent() && !googleAccountWithGoogleToken.isPresent()) {
+                    // GitHub account with Google token and Google account with no Google Token
+                    userID = gitHubAccountWithGoogleToken.get().getUserId();
+                } else {
+                    // All other cases
+                    userID = googleUser.getId();
+                }
             }
+        }
+
+        List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);
+        if (!tokens.isEmpty()) {
+            dockstoreToken = tokens.get(0);
+        }
+
+        tokens = tokenDAO.findGoogleByUserId(userID);
+        if (!tokens.isEmpty()) {
+            googleToken = tokens.get(0);
         }
 
         if (dockstoreToken == null) {
@@ -388,8 +420,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             throw new CustomWebApplicationException("Could not get Google user info using token.", HttpStatus.SC_EXPECTATION_FAILED);
         }
     }
-
-
 
     @GET
     @Timed

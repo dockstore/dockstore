@@ -36,7 +36,7 @@
             <column name="email"/>
             <column name="isadmin" valueBoolean="false"/>
             <column name="location"/>
-            <column name="username" value="user1@user.com"/>
+            <column name="username" value="potato"/>
         </insert>
     </changeSet>
     <changeSet author="dyuen (generated)" id="1511389821166-4">
@@ -90,7 +90,7 @@
             <column name="refreshtoken"/>
             <column name="tokensource" value="dockstore"/>
             <column name="userid" valueNumeric="2"/>
-            <column name="username" value="user1@user.com"/>
+            <column name="username" value="potato"/>
         </insert>
     </changeSet>
     <changeSet author="dyuen (generated)-edited" id="1511389821166-6">

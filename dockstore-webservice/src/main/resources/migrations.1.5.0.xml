@@ -179,4 +179,11 @@
             v.verified='true' and (s.type='CWL_TEST_JSON' OR s.type='WDL_TEST_JSON')
         </sql>
     </changeSet>
+    <changeSet author="gluu" id="no-orphaned-tokens">
+        <sql dbms="postgresql">
+            <comment>Delete tokens that do not belong to any users</comment>
+            DELETE from token where userid not in (select id from enduser)
+        </sql>
+        <addForeignKeyConstraint baseTableName="token" baseColumnNames="userid" constraintName="fk_userid_with_enduser" referencedTableName="enduser" referencedColumnNames="id"/>
+    </changeSet>
 </databaseChangeLog>
