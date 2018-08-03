@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -822,11 +821,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
          */
         private void checkToolId(List<String> toolIdStringSegments) {
             if (toolIdStringSegments.size() < SEGMENTS_IN_ID) {
-                Error error = new Error();
-                error.setCode(HttpStatus.SC_BAD_REQUEST);
-                error.setMessage("Tool ID should have at least 3 separate segments, seperated by /");
-                Response errorResponse = Response.status(HttpStatus.SC_BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON).build();
-                throw new CustomWebApplicationException(errorResponse);
+                throw new CustomWebApplicationException("Tool ID should have at least 3 separate segments, seperated by /", HttpStatus.SC_BAD_REQUEST);
             }
         }
 
