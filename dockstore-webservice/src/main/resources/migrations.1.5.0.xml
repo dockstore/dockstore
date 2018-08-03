@@ -179,4 +179,11 @@
             v.verified='true' and (s.type='CWL_TEST_JSON' OR s.type='WDL_TEST_JSON')
         </sql>
     </changeSet>
+
+    <changeSet author="dyuen (generated)" id="namechanged">
+        <addColumn tableName="enduser">
+            <column name="nameaccepted" type="bool"/>
+        </addColumn>
+        <addUniqueConstraint columnNames="username" constraintName="username_unique" tableName="enduser"/>
+    </changeSet>
 </databaseChangeLog>

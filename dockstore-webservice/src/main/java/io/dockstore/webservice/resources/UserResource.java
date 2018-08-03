@@ -142,6 +142,23 @@ public class UserResource implements AuthenticatedResourceInterface {
         return foundUser;
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}")
+    @ApiOperation(value = "Get user with id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    public User changeUsername(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to change") @QueryParam("username") String username) {
+        checkUser(authUser, authUser.getId());
+        // check that the user has no content
+        if (!authUser.getEntries().isEmpty()) {
+            throw new CustomWebApplicationException("User already has content, cannot change username.", HttpStatus.SC_BAD_REQUEST);
+        }
+        authUser.setUsername(username);
+        authUser.setNameAccepted(true);
+        userDAO.clearCache();
+        return userDAO.findById(authUser.getId());
+    }
+
     @GET
     @Timed
     @UnitOfWork

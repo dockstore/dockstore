@@ -47,6 +47,13 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return list(namedQuery("io.dockstore.webservice.core.User.findAll"));
     }
 
+    /**
+     * Deprecated method, is mostly likely dangerous if the username can be changed
+     * @param username
+     * @deprecated likely dangerous to use with changing usernames
+     * @return
+     */
+    @Deprecated
     public User findByUsername(String username) {
         Query query = namedQuery("io.dockstore.webservice.core.User.findByUsername").setParameter("username", username);
         return (User)query.uniqueResult();
