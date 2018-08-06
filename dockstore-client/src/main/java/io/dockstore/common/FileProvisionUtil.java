@@ -119,8 +119,11 @@ public final class FileProvisionUtil {
             // a larger buffer improves copy performance
             // we can also split this (local file copy) out into a plugin later
             final int largeBuffer = 100;
-            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, size, size > 0 ? listener : null);
+            Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, size, listener);
         } finally {
+            if (size == CopyStreamEvent.UNKNOWN_STREAM_SIZE) {
+                System.out.println('\r' + "100%                                                                ");
+            }
             // finalize output from the printer
             System.out.println();
         }
