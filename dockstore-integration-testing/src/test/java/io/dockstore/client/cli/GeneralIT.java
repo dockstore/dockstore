@@ -730,12 +730,12 @@ public class GeneralIT extends BaseIT {
     public void testCheckUser() {
         ApiClient client = getWebClient(USER_2_USERNAME);
         UsersApi userApi = new UsersApi(client);
-        boolean userOneExists = userApi.checkUserExists((long)1);
-        assertTrue("User 1 should exist", userOneExists);
-        boolean userTwoExists = userApi.checkUserExists((long)2);
-        assertTrue("User 2 should exist", userTwoExists);
-        boolean fakeUserExists = userApi.checkUserExists((long)1000);
-        assertTrue("User 1000 should not exist", !fakeUserExists);
+        boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
+        assertTrue("User DockstoreTestUser2 should exist", userOneExists);
+        boolean userTwoExists = userApi.checkUserExists("OtherUser");
+        assertTrue("User OtherUser should exist", userTwoExists);
+        boolean fakeUserExists = userApi.checkUserExists("NotARealUser");
+        assertTrue("User NotARealUser should not exist", !fakeUserExists);
     }
 
     /**

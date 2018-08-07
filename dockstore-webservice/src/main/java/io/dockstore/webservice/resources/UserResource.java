@@ -145,10 +145,10 @@ public class UserResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/checkUser/{userId}")
-    @ApiOperation(value = "Check if user with some id exists", response = Boolean.class)
-    public boolean checkUserExists(@ApiParam("User id to check") @PathParam("userId") long userId) {
-        User foundUser = userDAO.findById(userId);
+    @Path("/checkUser/{username}")
+    @ApiOperation(value = "Check if user with some username exists", response = Boolean.class)
+    public boolean checkUserExists(@ApiParam("User name to check") @PathParam("username") String username) {
+        User foundUser = userDAO.findByUsername(username);
         return foundUser != null;
     }
 
