@@ -7,7 +7,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dropwizard.auth.AuthenticationException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

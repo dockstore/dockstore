@@ -60,7 +60,6 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.swagger.api.ToolsApiService;
-import io.swagger.model.Error;
 import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolFile;
 import io.swagger.model.ToolTests;
