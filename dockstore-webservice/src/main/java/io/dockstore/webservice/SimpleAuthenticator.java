@@ -68,7 +68,7 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
             return userinfoPlusFromToken(credentials)
                     .map(userinfoPlus -> {
                         final String email = userinfoPlus.getEmail();
-                        User user = userDAO.findByUsername(email);
+                        User user = userDAO.findByGoogleEmail(email);
                         if (user != null) {
                             updateGoogleToken(credentials, user);
                         } else {
