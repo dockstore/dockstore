@@ -157,7 +157,7 @@ public class TokenResourceIT extends BaseIT {
     public void getGoogleTokenNewUser() {
         TokensApi tokensApi = new TokensApi(getWebClient(false, "n/a"));
         io.swagger.client.model.Token token = tokensApi
-            .addGoogleToken("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n");
+            .addGoogleToken("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n", true);
 
         // check that the user has the correct two tokens
         List<Token> byUserId = tokenDAO.findByUserId(token.getUserId());
@@ -187,7 +187,7 @@ public class TokenResourceIT extends BaseIT {
 
         TokensApi tokensApi = new TokensApi(getWebClient(true, "user1@user.com"));
         io.swagger.client.model.Token token = tokensApi
-            .addGoogleToken("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n");
+            .addGoogleToken("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n", false);
 
         // check that the user ends up with the correct two tokens
         byUserId = tokenDAO.findByUserId(token.getUserId());
@@ -220,7 +220,7 @@ public class TokenResourceIT extends BaseIT {
 
         TokensApi tokensApi = new TokensApi(getWebClient(true, "user1@user.com"));
         io.swagger.client.model.Token token = tokensApi
-            .addGoogleToken("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n");
+            .addGoogleToken("{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n", false);
 
         // check that the user ends up with the correct two tokens
         byUserId = tokenDAO.findByUserId(token.getUserId());

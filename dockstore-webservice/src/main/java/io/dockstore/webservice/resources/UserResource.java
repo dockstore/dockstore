@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -146,17 +147,33 @@ public class UserResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{userId}")
-    @ApiOperation(value = "Get user with id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User changeUsername(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("User to change") @QueryParam("username") String username) {
+    @ApiOperation(value = "Change username if possible", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    public User changeUsername(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
         checkUser(authUser, authUser.getId());
-        // check that the user has no content
-        if (!authUser.getEntries().isEmpty()) {
-            throw new CustomWebApplicationException("User already has content, cannot change username.", HttpStatus.SC_BAD_REQUEST);
+        Pattern pattern = Pattern.compile("^[a-zA-Z]+[a-zA-Z0-9.-_]*$");
+        if (!pattern.asPredicate().test(username)) {
+            throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
+        }
+        if (!authUser.canChangeUsername()) {
+            throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
         authUser.setUsername(username);
-        authUser.setNameAccepted(true);
+        authUser.setSetupComplete(true);
         userDAO.clearCache();
         return userDAO.findById(authUser.getId());
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{userId}")
+    @ApiOperation(value = "Delete user if possible", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
+    public boolean selfDestruct(@ApiParam(hidden = true) @Auth User authUser) {
+        checkUser(authUser, authUser.getId());
+        if (!authUser.canChangeUsername()) {
+            throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
+        }
+        return userDAO.delete(authUser);
     }
 
     @GET

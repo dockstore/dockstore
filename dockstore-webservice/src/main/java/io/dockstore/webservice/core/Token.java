@@ -48,7 +48,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "token")
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
-    @NamedQuery(name = "io.dockstore.webservice.core.Token.findBySource", query = "SELECT t FROM Token t WHERE t.tokenSource = :source"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findDockstoreByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'dockstore'"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findGithubByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId AND t.tokenSource = 'github.com'"),
