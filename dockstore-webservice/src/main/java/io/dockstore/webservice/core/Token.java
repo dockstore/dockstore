@@ -29,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -45,7 +46,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel(value = "Token", description = "Access tokens for this web service and integrated services like quay.io and github")
 @Entity
-@Table(name = "token")
+@Table(name = "token", uniqueConstraints = @UniqueConstraint(columnNames = { "username", "tokenSource" }))
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId"),

@@ -1311,14 +1311,6 @@ paths:
         can create new users
       description: A post method is required by saetillizer to send the GitHub token
       operationId: addToken
-      parameters:
-        - name: register
-          in: query
-          description: register
-          required: false
-          schema:
-            type: boolean
-            default: false
       responses:
         '200':
           description: successful operation
@@ -1387,14 +1379,6 @@ paths:
       summary: Allow satellizer to post a new Google token to dockstore
       description: A post method is required by satellizer to send the Google token
       operationId: addGoogleToken
-      parameters:
-        - name: register
-          in: query
-          description: register
-          required: false
-          schema:
-            type: boolean
-            default: false
       responses:
         '200':
           description: successful operation

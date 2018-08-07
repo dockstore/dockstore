@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.Random;
 
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -297,7 +296,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
      *
      * @param authUser          The optional Dockstore-authenticated user
      * @param satellizerJson    Satellizer object returned by satellizer
-     * @param registerUser      used by registration, allows for creation of new users
      * @return The user's Dockstore token
      */
     @POST
@@ -306,12 +304,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/google")
     @ApiOperation(value = "Allow satellizer to post a new Google token to dockstore", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by satellizer to send the Google token", response = Token.class)
-    public Token addGoogleToken(@ApiParam(hidden = true) @Auth Optional<User> authUser, @ApiParam("code") String satellizerJson, @ApiParam(value = "register", defaultValue = "false") @DefaultValue("false") @QueryParam("register")  boolean registerUser) {
+    public Token addGoogleToken(@ApiParam(hidden = true) @Auth Optional<User> authUser, @ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
         final String code = satellizerObject.get("code").getAsString();
         final String redirectUri = satellizerObject.get("redirectUri").getAsString();
+        final boolean registerUser = satellizerObject.has("register") && satellizerObject.get("register").getAsBoolean();
         TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri);
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
@@ -396,12 +395,13 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     @Path("/github")
     @ApiOperation(value = "Allow satellizer to post a new GitHub token to dockstore, used by login, can create new users", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "A post method is required by saetillizer to send the GitHub token", response = Token.class)
-    public Token addToken(@ApiParam("code") String satellizerJson, @ApiParam(value = "register", defaultValue = "false") @DefaultValue("false") @QueryParam("register")  boolean register) {
+    public Token addToken(@ApiParam("code") String satellizerJson) {
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
         final String code = satellizerObject.get("code").getAsString();
-        return handleGitHubUser(null, code, register);
+        final boolean registerUser = satellizerObject.has("register") && satellizerObject.get("register").getAsBoolean();
+        return handleGitHubUser(null, code, registerUser);
     }
     @GET
     @Timed

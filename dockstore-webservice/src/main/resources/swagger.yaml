@@ -1057,12 +1057,6 @@ paths:
         required: false
         schema:
           type: "string"
-      - name: "register"
-        in: "query"
-        description: "register"
-        required: false
-        type: "boolean"
-        default: false
       responses:
         200:
           description: "successful operation"
@@ -1132,12 +1126,6 @@ paths:
         required: false
         schema:
           type: "string"
-      - name: "register"
-        in: "query"
-        description: "register"
-        required: false
-        type: "boolean"
-        default: false
       responses:
         200:
           description: "successful operation"
