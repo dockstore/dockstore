@@ -131,11 +131,11 @@ public class User implements Principal, Comparable<User> {
     @JsonIgnore
     private final SortedSet<Entry> starredEntries;
 
-    @Column
+    @Column(columnDefinition = "default 'false'")
     @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
     private boolean curator;
 
-    @Column
+    @Column(columnDefinition = "default 'false'")
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
     private boolean setupComplete = false;
 

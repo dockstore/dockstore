@@ -204,5 +204,6 @@
             update user_profile p set username = coalesce(username, (select username from enduser e where p.id = e.id and e.username like '%@%' and p.token_type = 'google.com'));
         </sql>
         <addUniqueConstraint columnNames="username, token_type" constraintName="one_sign_in_method_by_profile" tableName="user_profile"/>
+        <addUniqueConstraint columnNames="username, tokensource" constraintName="one_token_link_per_identify" tableName="token"/>
     </changeSet>
 </databaseChangeLog>
