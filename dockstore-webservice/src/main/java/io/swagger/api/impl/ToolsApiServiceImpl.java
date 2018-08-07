@@ -404,7 +404,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
-            throw new WebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Could not construct page links", HttpStatus.SC_BAD_REQUEST);
         }
         return responseBuilder.build();
     }

@@ -106,7 +106,9 @@ public class MigrationIT {
         final long count = testingPostgres.runSelectStatement("select count(funkfile) from tool", new ScalarHandler<>());
         // count will be zero, but there should be no exception
         Assert.assertTrue("could select from new column", count == 0);
-
+        final long orphanedTokensCount = testingPostgres
+                .runSelectStatement("select count(*) from token where userid not in (select id from enduser)", new ScalarHandler<>());
+        Assert.assertEquals(0, orphanedTokensCount);
         // reset state
         testingPostgres.runUpdateStatement("alter table tool drop funkfile");
     }

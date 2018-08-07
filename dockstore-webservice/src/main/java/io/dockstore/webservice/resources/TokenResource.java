@@ -279,7 +279,21 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     /**
      * Adds a Google token to the existing user if user is authenticated already.
-     * Otherwise, create a new Dockstore account too and also add token
+     * Otherwise, below table indicates what happens when the "Login with Google" button in the UI2 is clicked
+     * <table border="1">
+     * <tr>
+     * <td></td> <td><b> Have GitHub account no Google Token (no GitHub account)</td> <td><b>Have GitHub account with Google token</td>
+     * </tr>
+     * <tr>
+     * <td> <b>Have Google Account no Google token</td> <td>Login with Google account (1)</td> <td>Login with GitHub account(2)</td>
+     * </tr>
+     * <tr>
+     * <td> <b>Have Google Account with Google token</td> <td>Login with Google account (3)</td> <td> Login with Google account (4)</td>
+     * </tr>
+     * <tr>
+     * <td> <b>No Google Account</td> <td> Create Google account (5)</td> <td>Login with GitHub account (6)</td>
+     * </tr>
+     * </table>
      *
      * @param authUser          The optional Dockstore-authenticated user
      * @param satellizerJson    Satellizer object returned by satellizer
@@ -389,7 +403,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         final String code = satellizerObject.get("code").getAsString();
         return handleGitHubUser(null, code, register);
     }
-
     @GET
     @Timed
     @UnitOfWork
