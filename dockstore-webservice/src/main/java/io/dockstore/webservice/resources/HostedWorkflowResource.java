@@ -51,9 +51,9 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
-    private final String DEFAULT_CWL_PATH = "/Dockstore.cwl";
-    private final String DEFAULT_WDL_PATH = "/Dockstore.wdl";
-    private final String DEFAULT_NEXTFLOW_PATH = "/nextflow.config";
+    private final String defaultCWLPath = "/Dockstore.cwl";
+    private final String defaultWDLPath = "/Dockstore.wdl";
+    private final String defaultNextflowPath = "/nextflow.config";
 
     public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
         super(sessionFactory, permissionsInterface);
@@ -122,11 +122,11 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     private String getDefaultWorkflowPath(String descriptorType) {
         if (Objects.equals(descriptorType, "cwl")) {
-            return DEFAULT_CWL_PATH;
+            return defaultCWLPath;
         } else if (Objects.equals(descriptorType, "wdl")) {
-            return DEFAULT_WDL_PATH;
+            return defaultWDLPath;
         } else if (Objects.equals(descriptorType, "nfl")) {
-            return DEFAULT_NEXTFLOW_PATH;
+            return defaultNextflowPath;
         }
         return null;
     }
