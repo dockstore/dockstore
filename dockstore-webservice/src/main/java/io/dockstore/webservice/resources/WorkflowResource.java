@@ -1565,7 +1565,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     private void checkNotHosted(Workflow workflow) {
         if (workflow.getMode() == WorkflowMode.HOSTED) {
-            throw new WebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Cannot modify hosted entries this way", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
