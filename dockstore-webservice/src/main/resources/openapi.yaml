@@ -4,7 +4,7 @@ info:
     This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.5.0-alpha.9-SNAPSHOT
+  version: 1.5.0-alpha.10-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -2893,6 +2893,28 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
+  '/users/checkUser/{userId}':
+    get:
+      tags:
+        - users
+      summary: Check if user with some id exists
+      description: ''
+      operationId: checkUserExists
+      parameters:
+        - name: userId
+          in: path
+          description: User id to check
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: boolean
   /users/groups:
     get:
       tags:

@@ -145,6 +145,16 @@ public class UserResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/checkUser/{userId}")
+    @ApiOperation(value = "Check if user with some id exists", response = Boolean.class)
+    public boolean checkUserExists(@ApiParam("User id to check") @PathParam("userId") long userId) {
+        User foundUser = userDAO.findById(userId);
+        return foundUser != null;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{userId}/tokens")
     @ApiOperation(value = "Get tokens with user id", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Token.class, responseContainer = "List")
     public List<Token> getUserTokens(@ApiParam(hidden = true) @Auth User user,

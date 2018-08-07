@@ -34,6 +34,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -720,6 +721,21 @@ public class GeneralIT extends BaseIT {
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
         assertEquals("The tool should be manual, there are " + count, 1, count);
+    }
+
+    /**
+     * Tests that you can properly check if a user exists
+     */
+    @Test
+    public void testCheckUser() {
+        ApiClient client = getWebClient(USER_2_USERNAME);
+        UsersApi userApi = new UsersApi(client);
+        boolean userOneExists = userApi.checkUserExists((long)1);
+        assertTrue("User 1 should exist", userOneExists);
+        boolean userTwoExists = userApi.checkUserExists((long)2);
+        assertTrue("User 2 should exist", userTwoExists);
+        boolean fakeUserExists = userApi.checkUserExists((long)1000);
+        assertTrue("User 1000 should not exist", !fakeUserExists);
     }
 
     /**
