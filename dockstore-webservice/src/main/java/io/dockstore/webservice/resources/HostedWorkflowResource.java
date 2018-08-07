@@ -51,6 +51,9 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
+    private final String DEFAULT_CWL_PATH = "/Dockstore.cwl";
+    private final String DEFAULT_WDL_PATH = "/Dockstore.wdl";
+    private final String DEFAULT_NEXTFLOW_PATH = "/nextflow.config";
 
     public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
         super(sessionFactory, permissionsInterface);
@@ -112,8 +115,20 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setSourceControl(SourceControl.DOCKSTORE);
         workflow.setDescriptorType(descriptorType);
         workflow.setLastUpdated(new Date());
+        workflow.setDefaultWorkflowPath(getDefaultWorkflowPath(descriptorType));
         workflow.getUsers().add(user);
         return workflow;
+    }
+
+    private String getDefaultWorkflowPath(String descriptorType) {
+        if (Objects.equals(descriptorType, "cwl")) {
+            return DEFAULT_CWL_PATH;
+        } else if (Objects.equals(descriptorType, "wdl")) {
+            return DEFAULT_WDL_PATH;
+        } else if (Objects.equals(descriptorType, "nfl")) {
+            return DEFAULT_NEXTFLOW_PATH;
+        }
+        return null;
     }
 
     @Override
@@ -127,7 +142,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion getVersion(Workflow workflow) {
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
-        version.setWorkflowPath("/Dockstore." + workflow.getDescriptorType());
+        version.setWorkflowPath(getDefaultWorkflowPath(workflow.getDescriptorType()));
         version.setLastModified(new Date());
         return version;
     }
@@ -142,7 +157,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Workflow entry) {
         SourceFile.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = "/Dockstore." + entry.getDescriptorType().toLowerCase();
+        String mainDescriptorPath = getDefaultWorkflowPath(entry.getDescriptorType());
         for (SourceFile sourceFile : sourceFiles) {
             if (Objects.equals(sourceFile.getPath(), mainDescriptorPath)) {
                 return LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent());

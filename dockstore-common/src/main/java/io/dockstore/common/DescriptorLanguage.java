@@ -23,7 +23,7 @@ package io.dockstore.common;
  */
 public enum DescriptorLanguage {
     // Add new descriptor language here
-    CWL("CWL", "Common Workflow Language"), WDL("WDL", "Workflow Description Language"), NEXTFLOW("NEXTFLOW", "Nextflow");
+    CWL("CWL", "Common Workflow Language"), WDL("WDL", "Workflow Description Language"), NEXTFLOW("NFL", "Nextflow");
 
     public static final String CWL_STRING = "cwl";
     public static final String WDL_STRING = "wdl";
