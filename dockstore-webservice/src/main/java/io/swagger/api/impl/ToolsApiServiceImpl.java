@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -60,6 +61,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.swagger.api.ToolsApiService;
+import io.swagger.model.Error;
 import io.swagger.model.ToolContainerfile;
 import io.swagger.model.ToolFile;
 import io.swagger.model.ToolTests;
@@ -820,7 +822,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
          */
         private void checkToolId(List<String> toolIdStringSegments) {
             if (toolIdStringSegments.size() < SEGMENTS_IN_ID) {
-                throw new CustomWebApplicationException("Tool ID should have at least 3 separate segments, seperated by /", HttpStatus.SC_BAD_REQUEST);
+                Error error = new Error();
+                error.setCode(HttpStatus.SC_BAD_REQUEST);
+                error.setMessage("Tool ID should have at least 3 separate segments, seperated by /");
+                Response errorResponse = Response.status(HttpStatus.SC_BAD_REQUEST).entity(error).type(MediaType.APPLICATION_JSON).build();
+                throw new WebApplicationException(errorResponse);
             }
         }
 
