@@ -346,6 +346,7 @@ public class User implements Principal, Comparable<User> {
         this.id = id;
     }
 
+    @JsonIgnore
     public boolean isSetupComplete() {
         return setupComplete || canChangeUsername();
     }
@@ -354,8 +355,10 @@ public class User implements Principal, Comparable<User> {
      * Returns whether a user has the current ability to change their username.
      * TODO: this may need to eventually become more sophisticated and take into account
      * shared content
+     * // ignoring for now, this synthetic field may need to be calculated more sparingly and causes issues
      * @return true iff the user really can change their username
      */
+    @JsonIgnore
     public boolean canChangeUsername() {
         return this.getEntries().stream().anyMatch(Entry::getIsPublished);
     }

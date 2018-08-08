@@ -16,26 +16,6 @@
 
 package io.dockstore.webservice.resources;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
@@ -65,6 +45,25 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -154,26 +153,29 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (!pattern.asPredicate().test(username)) {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
-        if (!authUser.canChangeUsername()) {
+        User user = userDAO.findById(authUser.getId());
+        if (!user.canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
-        authUser.setUsername(username);
-        authUser.setSetupComplete(true);
+        user.setUsername(username);
+        user.setSetupComplete(true);
         userDAO.clearCache();
-        return userDAO.findById(authUser.getId());
+        return userDAO.findById(user.getId());
     }
 
     @DELETE
     @Timed
     @UnitOfWork
-    @Path("/{userId}")
+    @Path("/user")
     @ApiOperation(value = "Delete user if possible", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
-    public boolean selfDestruct(@ApiParam(hidden = true) @Auth User authUser) {
+    public boolean selfDestruct(
+            @ApiParam(hidden = true) @Auth User authUser) {
         checkUser(authUser, authUser.getId());
-        if (!authUser.canChangeUsername()) {
+        User user = userDAO.findById(authUser.getId());
+        if (!user.canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
-        return userDAO.delete(authUser);
+        return userDAO.delete(user);
     }
 
     @GET

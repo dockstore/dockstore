@@ -3077,6 +3077,21 @@ paths:
                 $ref: '#/components/schemas/User'
       security:
         - BEARER: []
+    delete:
+      tags:
+        - users
+      summary: Delete user if possible
+      description: ''
+      operationId: selfDestruct
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: boolean
+      security:
+        - BEARER: []
   /users/user/updateUserMetadata:
     get:
       tags:
@@ -3170,21 +3185,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-      security:
-        - BEARER: []
-    delete:
-      tags:
-        - users
-      summary: Delete user if possible
-      description: ''
-      operationId: selfDestruct
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: boolean
       security:
         - BEARER: []
   '/users/{userId}/containers':
@@ -6167,7 +6167,6 @@ components:
       required:
         - curator
         - isAdmin
-        - setupComplete
       properties:
         id:
           type: integer
@@ -6195,9 +6194,6 @@ components:
         curator:
           type: boolean
           description: Indicates whether this user is a curator
-        setupComplete:
-          type: boolean
-          description: Indicates whether this user has accepted their username
       description: End users for the dockstore
     VerificationInformation:
       type: object

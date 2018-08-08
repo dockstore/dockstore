@@ -16,13 +16,13 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.User;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * @author xliu
@@ -78,7 +78,8 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
 
     public boolean delete(User user) {
         try {
-            user.getUserProfiles().values().forEach(profile -> currentSession().delete(profile));
+
+            // user.getUserProfiles().values().forEach(profile -> currentSession().delete(profile));
             //TODO: might want to clean up better later, but prototype for now
             currentSession().delete(user);
             currentSession().clear();
