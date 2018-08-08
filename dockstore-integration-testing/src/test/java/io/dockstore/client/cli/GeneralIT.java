@@ -724,10 +724,11 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
-     * Tests that you can properly check if a user exists
+     * Tests that you can properly check if a user with some username exists
      */
     @Test
     public void testCheckUser() {
+        // Authorized user should pass
         ApiClient client = getWebClient(USER_2_USERNAME);
         UsersApi userApi = new UsersApi(client);
         boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
@@ -736,6 +737,17 @@ public class GeneralIT extends BaseIT {
         assertTrue("User OtherUser should exist", userTwoExists);
         boolean fakeUserExists = userApi.checkUserExists("NotARealUser");
         assertTrue("User NotARealUser should not exist", !fakeUserExists);
+
+        // Unauthorized user should fail
+        ApiClient unauthClient = getWebClient(false, "");
+        UsersApi unauthUserApi = new UsersApi(unauthClient);
+        boolean failed = false;
+        try {
+            unauthUserApi.checkUserExists("DockstoreTestUser2");
+        } catch (ApiException ex) {
+            failed = true;
+        }
+        assertTrue("Should throw an expection when not authorized.", failed);
     }
 
     /**
