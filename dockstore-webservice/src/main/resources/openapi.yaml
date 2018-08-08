@@ -2893,6 +2893,29 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
+  '/users/checkUser/{username}':
+    get:
+      tags:
+        - users
+      summary: Check if user with some username exists
+      description: ''
+      operationId: checkUserExists
+      parameters:
+        - name: username
+          in: path
+          description: User name to check
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: boolean
+      security:
+        - BEARER: []
   /users/groups:
     get:
       tags:

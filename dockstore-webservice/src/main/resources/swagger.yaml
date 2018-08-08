@@ -2602,6 +2602,28 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SourceControlBean"
+  /users/checkUser/{username}:
+    get:
+      tags:
+      - "users"
+      summary: "Check if user with some username exists"
+      description: ""
+      operationId: "checkUserExists"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "username"
+        in: "path"
+        description: "User name to check"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "boolean"
+      security:
+      - BEARER: []
   /users/groups:
     get:
       tags:
