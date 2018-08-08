@@ -51,4 +51,10 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         Query query = namedQuery("io.dockstore.webservice.core.User.findByUsername").setParameter("username", username);
         return (User)query.uniqueResult();
     }
+
+    public User findByGoogleEmail(String email) {
+        final Query query = namedQuery("io.dockstore.webservice.core.User.findByGoogleEmail")
+                .setParameter("email", email);
+        return (User)query.uniqueResult();
+    }
 }

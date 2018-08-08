@@ -51,7 +51,7 @@ public class SimpleAuthenticatorTest {
         when(tokenDAO.findByContent(credentials)).thenReturn(null);
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
-        when(userDAO.findByUsername(USER_EMAIL)).thenReturn(user);
+        when(userDAO.findByGoogleEmail(USER_EMAIL)).thenReturn(user);
         Assert.assertEquals(user, simpleAuthenticator.authenticate(credentials).get());
     }
 
