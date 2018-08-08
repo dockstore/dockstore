@@ -2914,6 +2914,8 @@ paths:
             application/json:
               schema:
                 type: boolean
+      security:
+        - BEARER: []
   /users/groups:
     get:
       tags:

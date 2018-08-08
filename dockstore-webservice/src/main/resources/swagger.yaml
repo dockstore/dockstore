@@ -2622,6 +2622,8 @@ paths:
           description: "successful operation"
           schema:
             type: "boolean"
+      security:
+      - BEARER: []
   /users/groups:
     get:
       tags:
