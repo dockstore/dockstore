@@ -189,7 +189,7 @@
 
     <changeSet author="dyuen (generated)" id="namechanged">
         <addColumn tableName="enduser">
-            <column name="setupcomplete" type="bool" defaultValue="true"/>
+            <column name="setupcomplete" type="bool" defaultValue="false"/>
         </addColumn>
         <addColumn tableName="user_profile">
             <column name="username" type="text"/>
@@ -205,5 +205,11 @@
         </sql>
         <addUniqueConstraint columnNames="username, token_type" constraintName="one_sign_in_method_by_profile" tableName="user_profile"/>
         <addUniqueConstraint columnNames="username, tokensource" constraintName="one_token_link_per_identify" tableName="token"/>
+        <createIndex indexName="profile_by_email" tableName="user_profile">
+            <column name="email"/>
+        </createIndex>
+        <createIndex indexName="profile_by_username" tableName="user_profile">
+            <column name="username"/>
+        </createIndex>
     </changeSet>
 </databaseChangeLog>
