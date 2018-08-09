@@ -154,14 +154,14 @@ public class UserResource implements AuthenticatedResourceInterface {
         return new ExtendedUserData(foundUser);
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
-    @Path("/{userId}")
+    @Path("/user/changeUsername")
     @ApiOperation(value = "Change username if possible", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
     public User changeUsername(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
         checkUser(authUser, authUser.getId());
-        Pattern pattern = Pattern.compile("^[a-zA-Z]+[a-zA-Z0-9.-_]*$");
+        Pattern pattern = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
         if (!pattern.asPredicate().test(username)) {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }

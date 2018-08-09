@@ -2802,6 +2802,28 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
+  /users/user/changeUsername:
+    post:
+      tags:
+      - "users"
+      summary: "Change username if possible"
+      description: ""
+      operationId: "changeUsername"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "username"
+        in: "query"
+        description: "Username to change to"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/User"
+      security:
+      - BEARER: []
   /users/user/extended:
     get:
       tags:
@@ -2882,27 +2904,6 @@ paths:
         required: true
         type: "integer"
         format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
-      security:
-      - BEARER: []
-    put:
-      tags:
-      - "users"
-      summary: "Change username if possible"
-      description: ""
-      operationId: "changeUsername"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "username"
-        in: "query"
-        description: "Username to change to"
-        required: false
-        type: "string"
       responses:
         200:
           description: "successful operation"

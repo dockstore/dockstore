@@ -3092,6 +3092,29 @@ paths:
                 type: boolean
       security:
         - BEARER: []
+  /users/user/changeUsername:
+    post:
+      tags:
+        - users
+      summary: Change username if possible
+      description: ''
+      operationId: changeUsername
+      parameters:
+        - name: username
+          in: query
+          description: Username to change to
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
   /users/user/extended:
     get:
       tags:
@@ -3172,28 +3195,6 @@ paths:
           schema:
             type: integer
             format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-      security:
-        - BEARER: []
-    put:
-      tags:
-        - users
-      summary: Change username if possible
-      description: ''
-      operationId: changeUsername
-      parameters:
-        - name: username
-          in: query
-          description: Username to change to
-          required: false
-          schema:
-            type: string
       responses:
         '200':
           description: successful operation
