@@ -2802,6 +2802,23 @@ paths:
             type: "boolean"
       security:
       - BEARER: []
+  /users/user/extended:
+    get:
+      tags:
+      - "users"
+      summary: "Get additional information on the logged-in user"
+      description: ""
+      operationId: "getExtendedUserData"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/ExtendedUserData"
+      security:
+      - BEARER: []
   /users/user/updateUserMetadata:
     get:
       tags:
@@ -5076,6 +5093,14 @@ definitions:
         format: "int32"
       message:
         type: "string"
+  ExtendedUserData:
+    type: "object"
+    properties:
+      canChangeUsername:
+        type: "boolean"
+        description: "Whether a user can change their username"
+        readOnly: true
+    description: "Contains expensive data for end users for the dockstore"
   FileFormat:
     type: "object"
     required:
@@ -5734,6 +5759,7 @@ definitions:
     required:
     - "curator"
     - "isAdmin"
+    - "setupComplete"
     properties:
       id:
         type: "integer"
@@ -5766,6 +5792,10 @@ definitions:
         type: "boolean"
         position: 11
         description: "Indicates whether this user is a curator"
+      setupComplete:
+        type: "boolean"
+        position: 12
+        description: "Indicates whether this user has accepted their username"
     description: "End users for the dockstore"
   VerificationInformation:
     type: "object"

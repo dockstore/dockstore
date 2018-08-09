@@ -337,7 +337,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             } else if (user != null) {
                 userID = user.getId();
             } else {
-                throw new CustomWebApplicationException("Something odd happened with GitHub login ", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                throw new CustomWebApplicationException("Something odd happened with Google login ", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             List<Token> tokens = tokenDAO.findDockstoreByUserId(userID);

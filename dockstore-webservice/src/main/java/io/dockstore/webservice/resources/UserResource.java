@@ -16,11 +16,32 @@
 
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -45,25 +66,6 @@ import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -142,6 +144,16 @@ public class UserResource implements AuthenticatedResourceInterface {
         return foundUser;
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/user/extended")
+    @ApiOperation(value = "Get additional information on the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
+    public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Auth User user) {
+        User foundUser = userDAO.findById(user.getId());
+        return new ExtendedUserData(foundUser);
+    }
+
     @PUT
     @Timed
     @UnitOfWork
@@ -154,7 +166,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
         User user = userDAO.findById(authUser.getId());
-        if (!user.canChangeUsername()) {
+        if (!new ExtendedUserData(user).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
         user.setUsername(username);
@@ -172,7 +184,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             @ApiParam(hidden = true) @Auth User authUser) {
         checkUser(authUser, authUser.getId());
         User user = userDAO.findById(authUser.getId());
-        if (!user.canChangeUsername()) {
+        if (!new ExtendedUserData(user).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
         return userDAO.delete(user);
@@ -626,4 +638,5 @@ public class UserResource implements AuthenticatedResourceInterface {
             }
         }
     }
+
 }
