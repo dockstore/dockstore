@@ -56,6 +56,7 @@ import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GitHubSourceCodeRepo;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.SourceCodeRepoFactory;
@@ -417,21 +418,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
     }
 
     private Token handleGitHubUser(User authUser, String code, boolean registerUser) {
-        String accessToken = null;
-        for (int i = 0; i < githubClientID.size() && accessToken == null; i++) {
-            final AuthorizationCodeFlow flow = new AuthorizationCodeFlow.Builder(BearerToken.authorizationHeaderAccessMethod(),
-                    HTTP_TRANSPORT, JSON_FACTORY, new GenericUrl("https://github.com/login/oauth/access_token"),
-                    new ClientParametersAuthentication(githubClientID.get(i), githubClientSecret.get(i)), githubClientID.get(i),
-                    "https://github.com/login/oauth/authorize").build();
-            try {
-                TokenResponse tokenResponse = flow.newTokenRequest(code)
-                        .setRequestInitializer(request -> request.getHeaders().setAccept("application/json")).execute();
-                accessToken = tokenResponse.getAccessToken();
-            } catch (IOException e) {
-                LOG.error("Retrieving accessToken was unsuccessful");
-                throw new CustomWebApplicationException("Could not retrieve github.com token based on code", HttpStatus.SC_BAD_REQUEST);
-            }
-        }
+        String accessToken = GitHubHelper.getGitHubAccessToken(code, this.githubClientID, this.githubClientSecret);
 
         String githubLogin;
         Token dockstoreToken = null;
@@ -446,19 +433,26 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         User user = userDAO.findByGitHubUsername(githubLogin);
         long userID;
         if (registerUser) {
-            // check that there was no previous user
+            // check that there was no previous user, but by default use the github login
+            String username = githubLogin;
+            int count = 1;
+            while (userDAO.findByUsername(username) != null) {
+                username = githubLogin + count++;
+            }
+
             if (user == null && authUser == null) {
-                user = new User();
-                user.setUsername(githubLogin);
+                User newUser = new User();
+                newUser.setUsername(username);
 
                 // Pull user information from Github
-                Token dummyToken = new Token();
-                dummyToken.setContent(accessToken);
-                dummyToken.setUsername(githubLogin);
-                dummyToken.setTokenSource(TokenType.GITHUB_COM);
-                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(dummyToken, null);
-                user = gitHubSourceCodeRepo.getUserMetadata(user);
-                userID = userDAO.create(user);
+                Token initialGitHubToken = new Token();
+                initialGitHubToken.setContent(accessToken);
+                initialGitHubToken.setUsername(githubLogin);
+                initialGitHubToken.setTokenSource(TokenType.GITHUB_COM);
+                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(initialGitHubToken, null);
+                newUser = gitHubSourceCodeRepo.getUserMetadata(newUser);
+                userID = userDAO.create(newUser);
+                user = userDAO.findById(userID);
             } else {
                 throw new CustomWebApplicationException("User already exists, cannot register new user", HttpStatus.SC_FORBIDDEN);
             }
@@ -484,7 +478,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
-            dockstoreToken = createDockstoreToken(userID, githubLogin);
+            dockstoreToken = createDockstoreToken(userID, user.getUsername());
         }
 
         if (githubToken == null) {
@@ -500,6 +494,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         }
         return dockstoreToken;
     }
+
+
 
     private Token createDockstoreToken(long userID, String githubLogin) {
         Token dockstoreToken;
