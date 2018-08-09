@@ -138,7 +138,7 @@ public class TokenResourceIT extends BaseIT {
         // user is user from test data database
         User fakeUser = new User();
         fakeUser.setUsername(GITHUB_ACCOUNT_USERNAME);
-        fakeUser.setId(1);
+        fakeUser.setId(2);
         return fakeUser;
     }
 
@@ -442,48 +442,41 @@ public class TokenResourceIT extends BaseIT {
      * For an existing user with a Google token, checks that no tokens were created
      */
     @Test
-    public void getGoogleTokenExistingUserWithGoogleToken() {
+    public void getGoogleTokenExistingUserWithGoogleToken() throws Exception {
         // check that the user has the correct one token
-        List<Token> byUserId = tokenDAO.findByUserId(getFakeUser().getId());
+        long id = getFakeUser().getId();
+        List<Token> byUserId = tokenDAO.findByUserId(id);
         Assert.assertEquals(1, byUserId.size());
         assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
-        // give the user a Google token in advance
-        Token fakeToken = new Token();
-        fakeToken.setContent("fakeContent");
-        fakeToken.setTokenSource(TokenType.GOOGLE_COM);
-        fakeToken.setUserId(1);
-        fakeToken.setUsername(GOOGLE_ACCOUNT_USERNAME1);
-        tokenDAO.create(fakeToken);
+        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
+        TokensApi tokensApi = new TokensApi(getWebClient(true, getFakeUser().getUsername()));
+        tokensApi.addGoogleToken(satellizerJSON);
 
-        // the second user here cannot link the same google account Google token now since the first account has one
-        boolean expectFailure = false;
-        try {
-            TokensApi tokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
-            tokensApi.addGoogleToken(satellizerJSON);
-        }  catch (ApiException e) {
-            expectFailure = true;
-        }
-        assertTrue(expectFailure);
+        // fake user should start with the previously created google token
+        byUserId = tokenDAO.findByUserId(id);
+        Assert.assertEquals(2, byUserId.size());
+        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.GOOGLE_COM));
+        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
 
-//        //TODO: need to improve mocking so that we can test linking the github account to the google account
-//        TokensApi tokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
-//        // github account is not authenticated
-//        io.swagger.client.model.Token token = tokensApi.addGithubToken("fakeCode");
-//
-//        // check that the user ends up with the correct two tokens
-//        byUserId = tokenDAO.findByUserId(token.getUserId());
-//        Assert.assertEquals(2, byUserId.size());
-//        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.GOOGLE_COM));
-//        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
-//
-//        // Check that the token has the right info but ignore randomly generated content
-//        Token fakeExistingDockstoreToken = getFakeExistingDockstoreToken();
-//        // looks like we retain the old github username when no other is provided
-//        Assert.assertEquals(GITHUB_ACCOUNT_USERNAME, token.getUsername());
-//        Assert.assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
-//        Assert.assertEquals(2, token.getId().longValue());
-//        checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString(), TokenType.GITHUB_COM.toString()));
+        mockGitHub(GITHUB_ACCOUNT_USERNAME);
+        // going back to the first user, we want to add a github token to their profile
+        io.swagger.client.model.Token token = tokensApi.addGithubToken("fakeCode");
+
+        // check that the user ends up with the correct two tokens
+        byUserId = tokenDAO.findByUserId(id);
+        Assert.assertEquals(3, byUserId.size());
+        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.GITHUB_COM));
+        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.DOCKSTORE));
+        assertTrue(byUserId.stream().anyMatch(t -> t.getTokenSource() == TokenType.GOOGLE_COM));
+
+        // Check that the token has the right info but ignore randomly generated content
+        Token fakeExistingDockstoreToken = getFakeExistingDockstoreToken();
+        // looks like we retain the old github username when no other is provided
+        Assert.assertEquals(GITHUB_ACCOUNT_USERNAME, token.getUsername());
+        Assert.assertEquals(fakeExistingDockstoreToken.getTokenSource().toString(), token.getTokenSource());
+        Assert.assertEquals(2, token.getId().longValue());
+        checkUserProfiles(token.getUserId(), Arrays.asList(TokenType.GOOGLE_COM.toString(), TokenType.GITHUB_COM.toString()));
         verify(GoogleHelper.class);
     }
 

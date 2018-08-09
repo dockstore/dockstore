@@ -354,7 +354,7 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
         if (dockstoreToken == null) {
             LOG.info("Could not find user's dockstore token. Making new one...");
-            dockstoreToken = createDockstoreToken(userID, googleLoginName);
+            dockstoreToken = createDockstoreToken(userID, user.getUsername());
         }
 
         if (googleToken == null) {
