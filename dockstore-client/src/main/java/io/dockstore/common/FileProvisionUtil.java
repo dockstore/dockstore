@@ -32,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
@@ -43,6 +44,7 @@ import org.apache.commons.net.io.CopyStreamListener;
 import org.apache.commons.net.io.Util;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
@@ -108,11 +110,7 @@ public final class FileProvisionUtil {
         };
         System.out.println("Downloading: " + src.toString() + " to " + dest.toString());
 
-        long size;
-        try (FileContent srcContent = src.getContent()) {
-            // odd concurrency issue
-            size = srcContent.getSize();
-        }
+        long size = getSize(src).map(s -> s.longValue()).orElse(CopyStreamEvent.UNKNOWN_STREAM_SIZE);
 
         try (FileContent srcContent = src.getContent();
             FileContent destContent = dest.getContent();
@@ -123,8 +121,20 @@ public final class FileProvisionUtil {
             final int largeBuffer = 100;
             Util.copyStream(inputStream, outputStream, Util.DEFAULT_COPY_BUFFER_SIZE * largeBuffer, size, listener);
         } finally {
+            if (size == CopyStreamEvent.UNKNOWN_STREAM_SIZE) {
+                System.out.println('\r' + "100%                                                                ");
+            }
             // finalize output from the printer
             System.out.println();
+        }
+    }
+
+    private static Optional<Long> getSize(FileObject src)  {
+        try {
+            FileContent srcContent = src.getContent();
+            return Optional.of(Long.valueOf(srcContent.getSize()));
+        } catch (FileSystemException e) {
+            return Optional.empty();
         }
     }
 
