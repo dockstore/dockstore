@@ -23,6 +23,7 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
+import io.swagger.client.api.WorkflowsApi;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -31,6 +32,8 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests operations frrom the UserResource
@@ -68,17 +71,21 @@ public class UserResourceIT extends BaseIT {
         } catch (ApiException e) {
             shouldFail = true;
         }
-        Assert.assertTrue(shouldFail);
+        assertTrue(shouldFail);
 
         client = getAdminWebClient();
         userApi = new UsersApi(client);
-        Assert.assertTrue(userApi.getUser() != null);
+        Assert.assertNotNull(userApi.getUser());
         // try to delete with published workflows
+        userApi.get
+        WorkflowsApi workflowsApi = new WorkflowsApi(client);
+
+
 
         // add a few workflows
         // then unpublish them
 
-        Assert.assertTrue(userApi.selfDestruct());
+        assertTrue(userApi.selfDestruct());
         // need to test that profiles are cascaded to and cleared
     }
 }
