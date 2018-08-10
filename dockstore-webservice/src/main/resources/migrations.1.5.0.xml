@@ -186,4 +186,30 @@
         </sql>
         <addForeignKeyConstraint baseTableName="token" baseColumnNames="userid" constraintName="fk_userid_with_enduser" referencedTableName="enduser" referencedColumnNames="id"/>
     </changeSet>
+
+    <changeSet author="dyuen (generated)" id="namechanged">
+        <addColumn tableName="enduser">
+            <column name="setupcomplete" type="bool" defaultValue="false"/>
+        </addColumn>
+        <addColumn tableName="user_profile">
+            <column name="username" type="text"/>
+        </addColumn>
+        <addUniqueConstraint columnNames="username" constraintName="username_unique" tableName="enduser"/>
+        <comment> migrate existing usernames to profiles based on whether or not they have an
+        @' as a proxy for whether they are from github or google </comment>
+        <sql dbms="postgresql">
+            update user_profile p set username = coalesce((select username from enduser e where p.id = e.id and e.username not like '%@%' and p.token_type = 'github.com'));
+        </sql>
+        <sql dbms="postgresql">
+            update user_profile p set username = coalesce(username, (select username from enduser e where p.id = e.id and e.username like '%@%' and p.token_type = 'google.com'));
+        </sql>
+        <addUniqueConstraint columnNames="username, token_type" constraintName="one_sign_in_method_by_profile" tableName="user_profile"/>
+        <addUniqueConstraint columnNames="username, tokensource" constraintName="one_token_link_per_identify" tableName="token"/>
+        <createIndex indexName="profile_by_email" tableName="user_profile">
+            <column name="email"/>
+        </createIndex>
+        <createIndex indexName="profile_by_username" tableName="user_profile">
+            <column name="username"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>

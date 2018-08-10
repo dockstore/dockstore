@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.security.RolesAllowed;
@@ -40,6 +41,7 @@ import com.google.common.collect.Lists;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.ExtendedUserData;
 import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
@@ -140,6 +142,52 @@ public class UserResource implements AuthenticatedResourceInterface {
         User foundUser = userDAO.findById(user.getId());
         Hibernate.initialize(foundUser.getUserProfiles());
         return foundUser;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/user/extended")
+    @ApiOperation(value = "Get additional information on the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
+    public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Auth User user) {
+        User foundUser = userDAO.findById(user.getId());
+        return new ExtendedUserData(foundUser);
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/user/changeUsername")
+    @ApiOperation(value = "Change username if possible", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    public User changeUsername(@ApiParam(hidden = true) @Auth User authUser, @ApiParam("Username to change to") @QueryParam("username") String username) {
+        checkUser(authUser, authUser.getId());
+        Pattern pattern = Pattern.compile("^[a-zA-Z]+[.a-zA-Z0-9-_]*$");
+        if (!pattern.asPredicate().test(username)) {
+            throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
+        }
+        User user = userDAO.findById(authUser.getId());
+        if (!new ExtendedUserData(user).canChangeUsername()) {
+            throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
+        }
+        user.setUsername(username);
+        user.setSetupComplete(true);
+        userDAO.clearCache();
+        return userDAO.findById(user.getId());
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/user")
+    @ApiOperation(value = "Delete user if possible", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Boolean.class)
+    public boolean selfDestruct(
+            @ApiParam(hidden = true) @Auth User authUser) {
+        checkUser(authUser, authUser.getId());
+        User user = userDAO.findById(authUser.getId());
+        if (!new ExtendedUserData(user).canChangeUsername()) {
+            throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
+        }
+        return userDAO.delete(user);
     }
 
     @GET
@@ -590,4 +638,5 @@ public class UserResource implements AuthenticatedResourceInterface {
             }
         }
     }
+
 }

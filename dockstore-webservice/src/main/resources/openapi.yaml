@@ -1306,7 +1306,9 @@ paths:
     post:
       tags:
         - tokens
-      summary: Allow satellizer to post a new GitHub token to dockstore
+      summary: >-
+        Allow satellizer to post a new GitHub token to dockstore, used by login,
+        can create new users
       description: A post method is required by saetillizer to send the GitHub token
       operationId: addToken
       responses:
@@ -1324,7 +1326,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: 'Add a new github.com token, used by github.com redirect'
+      summary: 'Add a new github.com token, used by accounts page'
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -3073,6 +3075,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - users
+      summary: Delete user if possible
+      description: ''
+      operationId: selfDestruct
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: boolean
+      security:
+        - BEARER: []
+  /users/user/changeUsername:
+    post:
+      tags:
+        - users
+      summary: Change username if possible
+      description: ''
+      operationId: changeUsername
+      parameters:
+        - name: username
+          in: query
+          description: Username to change to
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  /users/user/extended:
+    get:
+      tags:
+        - users
+      summary: Get additional information on the logged-in user
+      description: ''
+      operationId: getExtendedUserData
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedUserData'
       security:
         - BEARER: []
   /users/user/updateUserMetadata:
@@ -5458,6 +5514,14 @@ components:
           format: int32
         message:
           type: string
+    ExtendedUserData:
+      type: object
+      properties:
+        canChangeUsername:
+          type: boolean
+          description: Whether a user can change their username
+          readOnly: true
+      description: Contains expensive data for end users for the dockstore
     FileFormat:
       type: object
       required:
@@ -5568,6 +5632,8 @@ components:
         location:
           type: string
         bio:
+          type: string
+        username:
           type: string
     PublishRequest:
       type: object
@@ -6126,6 +6192,7 @@ components:
       required:
         - curator
         - isAdmin
+        - setupComplete
       properties:
         id:
           type: integer
@@ -6153,6 +6220,9 @@ components:
         curator:
           type: boolean
           description: Indicates whether this user is a curator
+        setupComplete:
+          type: boolean
+          description: Indicates whether this user has accepted their username
       description: End users for the dockstore
     VerificationInformation:
       type: object
