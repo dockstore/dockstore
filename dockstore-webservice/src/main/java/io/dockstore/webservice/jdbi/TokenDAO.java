@@ -50,10 +50,6 @@ public class TokenDAO extends AbstractDAO<Token> {
         session.flush();
     }
 
-    public List<Token> findAll() {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findAll"));
-    }
-
     public List<Token> findByUserId(long userId) {
         return list(namedQuery("io.dockstore.webservice.core.Token.findByUserId").setParameter("userId", userId));
     }
@@ -80,10 +76,6 @@ public class TokenDAO extends AbstractDAO<Token> {
 
     public List<Token> findGitlabByUserId(long userId) {
         return list(namedQuery("io.dockstore.webservice.core.Token.findGitlabByUserId").setParameter("userId", userId));
-    }
-
-    public List<Token> findBySource(String source) {
-        return list(namedQuery("io.dockstore.webservice.core.Token.findBySource").setParameter("source", source));
     }
 
     public Token findByContent(String content) {

@@ -16,29 +16,11 @@
 
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import javax.ws.rs.core.UriBuilder;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.common.Constants;
 import io.dockstore.common.Registry;
-import io.dockstore.common.Utilities;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -51,7 +33,6 @@ import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.MetadataApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
 import io.swagger.client.model.Group;
@@ -69,14 +50,9 @@ import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
-import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -87,6 +63,20 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+
+import javax.ws.rs.core.UriBuilder;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -101,7 +91,7 @@ import static org.junit.Assert.fail;
  * @author xliu
  */
 @Category(ConfidentialTest.class)
-public class SwaggerClientIT {
+public class SwaggerClientIT extends BaseIT {
 
     private static final String QUAY_IO_TEST_ORG_TEST6 = "quay.io/test_org/test6";
     private static final String REGISTRY_HUB_DOCKER_COM_SEQWARE_SEQWARE = "registry.hub.docker.com/seqware/seqware/test5";
@@ -119,50 +109,6 @@ public class SwaggerClientIT {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-
-    @BeforeClass
-    public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
-        SUPPORT.before();
-    }
-
-    @AfterClass
-    public static void afterClass(){
-        SUPPORT.after();
-    }
-
-    @Before
-    public void clearDBandSetup() throws Exception {
-        CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
-    }
-
-    private static ApiClient getWebClient() {
-        return getWebClient(true, false);
-    }
-
-    private static ApiClient getAdminWebClient() {
-        return getWebClient(true, true);
-    }
-    
-    private static ApiClient getAnonymousWebClient() {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        ApiClient client = new ApiClient();
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        return client;
-    }
-
-    private static ApiClient getWebClient(boolean correctUser, boolean admin) {
-        File configFile = FileUtils.getFile("src", "test", "resources", "config");
-        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
-        ApiClient client = new ApiClient();
-        ApiKeyAuth bearer = (ApiKeyAuth)client.getAuthentication("BEARER");
-        bearer.setApiKeyPrefix("BEARER");
-        bearer.setApiKey((correctUser ? parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2)
-                : "foobar"));
-        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
-        return client;
-    }
 
     @Test
     public void testListUsersTools() throws ApiException {

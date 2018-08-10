@@ -16,16 +16,20 @@
 
 package io.dockstore.webservice.jdbi;
 
-import java.util.List;
-
 import io.dockstore.webservice.core.User;
 import org.hibernate.Query;
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * @author xliu
  */
 public class UserDAO extends AbstractDockstoreDAO<User> {
+    private static final Logger LOG = LoggerFactory.getLogger(UserDAO.class);
+
     public UserDAO(SessionFactory factory) {
         super(factory);
     }
@@ -47,6 +51,14 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
         return list(namedQuery("io.dockstore.webservice.core.User.findAll"));
     }
 
+    /**
+     * Deprecated method, is mostly likely dangerous if the username can be changed
+     *
+     * @param username
+     * @return
+     * @deprecated likely dangerous to use with changing usernames
+     */
+    @Deprecated
     public User findByUsername(String username) {
         Query query = namedQuery("io.dockstore.webservice.core.User.findByUsername").setParameter("username", username);
         return (User)query.uniqueResult();
@@ -54,7 +66,27 @@ public class UserDAO extends AbstractDockstoreDAO<User> {
 
     public User findByGoogleEmail(String email) {
         final Query query = namedQuery("io.dockstore.webservice.core.User.findByGoogleEmail")
-                .setParameter("email", email);
+            .setParameter("email", email);
         return (User)query.uniqueResult();
+    }
+
+    public User findByGitHubUsername(String username) {
+        final Query query = namedQuery("io.dockstore.webservice.core.User.findByGitHubUsername")
+            .setParameter("username", username);
+        return (User)query.uniqueResult();
+    }
+
+    public boolean delete(User user) {
+        try {
+
+            // user.getUserProfiles().values().forEach(profile -> currentSession().delete(profile));
+            //TODO: might want to clean up better later, but prototype for now
+            currentSession().delete(user);
+            currentSession().clear();
+        } catch (Exception e) {
+            LOG.error("something happened with delete, probably cascades are broken", e);
+            return false;
+        }
+        return true;
     }
 }

@@ -36,6 +36,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
@@ -68,10 +69,11 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel(value = "User", description = "End users for the dockstore")
 @Entity
-@Table(name = "enduser")
+@Table(name = "enduser", uniqueConstraints = @UniqueConstraint(columnNames = { "username" }))
 @NamedQueries({ @NamedQuery(name = "io.dockstore.webservice.core.User.findAll", query = "SELECT t FROM User t"),
-        @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username"),
-        @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleEmail", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.email = :email)")})
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByUsername", query = "SELECT t FROM User t WHERE t.username = :username"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleEmail", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.email = :email)"),
+    @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)") })
 @SuppressWarnings("checkstyle:magicnumber")
 public class User implements Principal, Comparable<User> {
     @Id
@@ -89,8 +91,10 @@ public class User implements Principal, Comparable<User> {
     private boolean isAdmin;
 
     @ElementCollection(targetClass = Profile.class)
-    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "id",
-            "token_type" }))
+    @JoinTable(name = "user_profile", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = {
+            @UniqueConstraint(columnNames = { "id", "token_type" }),
+            @UniqueConstraint(columnNames = { "username", "token_type" }) }, indexes = {
+            @Index(name = "profile_by_username", columnList = "username"), @Index(name = "profile_by_email", columnList = "email") })
     @MapKeyColumn(name = "token_type", columnDefinition = "text")
     @ApiModelProperty(value = "Profile information of the user retrieved from 3rd party sites (GitHub, Google, etc)")
     @OrderBy("id")
@@ -130,9 +134,13 @@ public class User implements Principal, Comparable<User> {
     @JsonIgnore
     private final SortedSet<Entry> starredEntries;
 
-    @Column
+    @Column(columnDefinition = "boolean default 'false'")
     @ApiModelProperty(value = "Indicates whether this user is a curator", required = true, position = 11)
     private boolean curator;
+
+    @Column(columnDefinition = "boolean default 'false'")
+    @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
+    private boolean setupComplete = false;
 
     public User() {
         groups = new TreeSet<>();
@@ -339,9 +347,17 @@ public class User implements Principal, Comparable<User> {
         this.id = id;
     }
 
+    public boolean isSetupComplete() {
+        return setupComplete;
+    }
+
+    public void setSetupComplete(boolean setupComplete) {
+        this.setupComplete = setupComplete;
+    }
+
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)
-     * The order of the properties are important, the UI lists these properties in this order
+     * The order of the properties are important, the UI lists these properties in this order.
      */
     @Embeddable
     public static class Profile {
@@ -357,6 +373,14 @@ public class User implements Principal, Comparable<User> {
         public String location;
         @Column(columnDefinition = "text")
         public String bio;
+        /**
+         * Redundant with token, but needed since tokens can be deleted.
+         * i.e. if usernames can change and tokens can be deleted, we need somewhere to let
+         * token-less users login
+         */
+        @Column(columnDefinition = "text")
+        public String username;
+
         @Column(updatable = false)
         @CreationTimestamp
         private Timestamp dbCreateDate;
