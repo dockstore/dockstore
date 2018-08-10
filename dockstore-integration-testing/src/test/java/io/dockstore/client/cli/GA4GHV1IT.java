@@ -35,6 +35,7 @@ import org.junit.Test;
 import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -252,7 +253,11 @@ public class GA4GHV1IT extends GA4GHIT {
     public void toolsIdGet4Workflows() throws Exception {
         // Insert the 4 workflows into the database using migrations
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
+        Response response2 = checkedResponse(basePath + "tools");
         checkedResponse(basePath + "tools");
+        List<ToolV1> responseObject2 = response2.readEntity(new GenericType<List<ToolV1>>() {
+        });
+        assertNotNull(responseObject2);
         // Check responses
         Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
         ToolV1 responseObject = response.readEntity(ToolV1.class);
