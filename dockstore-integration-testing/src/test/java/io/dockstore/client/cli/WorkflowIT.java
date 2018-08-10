@@ -618,7 +618,7 @@ public class WorkflowIT extends BaseIT {
         Workflow mtaNf = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         mtaNf.setWorkflowPath("/nextflow.config");
-        mtaNf.setDescriptorType(SourceFile.TypeEnum.NEXTFLOW.toString());
+        mtaNf.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(mtaNf.getId(), mtaNf);
         workflowApi.refresh(mtaNf.getId());
         // publish this way? (why is the auto-generated variable private?)

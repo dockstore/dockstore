@@ -121,6 +121,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     private String getDefaultWorkflowPath(String descriptorType) {
+        descriptorType = descriptorType.toLowerCase();
         if (Objects.equals(descriptorType, "cwl")) {
             return defaultCWLPath;
         } else if (Objects.equals(descriptorType, "wdl")) {
