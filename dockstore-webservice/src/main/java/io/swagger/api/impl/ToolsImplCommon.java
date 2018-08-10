@@ -65,43 +65,14 @@ public final class ToolsImplCommon {
      *
      * @param urlWithWorkDirectory
      * @param sourceFile The Dockstore SourceFile
-     * @param type the desired type from the webservice request
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
-    static ExtendedFileWrapper sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile, SourceFile.FileType type) {
+    static ExtendedFileWrapper sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile) {
         String processedSourceFilePath = StringUtils.prependIfMissing(sourceFile.getPath(), "/");
         String url = StringUtils.removeEnd(urlWithWorkDirectory, "/") + processedSourceFilePath;
-        DescriptorType resultType;
-        if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_CWL)) {
-            resultType = DescriptorType.CWL;
-        } else if (sourceFile.getType().equals(SourceFile.FileType.DOCKSTORE_WDL)) {
-            resultType = DescriptorType.WDL;
-        } else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW) {
-            resultType = DescriptorType.NFL;
-        } else if (sourceFile.getType() == SourceFile.FileType.NEXTFLOW_CONFIG) {
-            resultType = DescriptorType.NFL;
-        } else {
-            // just take the request word for it
-            switch (type) {
-            case DOCKSTORE_CWL:
-                resultType = DescriptorType.CWL;
-                break;
-            case DOCKSTORE_WDL:
-                resultType = DescriptorType.WDL;
-                break;
-            case NEXTFLOW:
-                resultType = DescriptorType.NFL;
-                break;
-            default:
-                LOG.error("This source file is not a recognized descriptor.");
-                return null;
-            }
-        }
-
         ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
-        toolDescriptor.setDescriptor(sourceFile.getContent());
+        toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);
-        toolDescriptor.setType(resultType);
         toolDescriptor.setOriginalFile(sourceFile);
         return toolDescriptor;
     }
@@ -401,7 +372,7 @@ public final class ToolsImplCommon {
         }
         ExtendedFileWrapper toolTests = new ExtendedFileWrapper();
         toolTests.setUrl(urlWithWorkDirectory + sourceFile.getPath());
-        toolTests.setDescriptor(sourceFile.getContent());
+        toolTests.setContent(sourceFile.getContent());
         toolTests.setOriginalFile(sourceFile);
         return toolTests;
     }

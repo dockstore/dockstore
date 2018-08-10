@@ -202,7 +202,7 @@ public class WorkflowIT extends BaseIT {
         assertTrue(exceptionThrown);
         FileWrapper adminToolDesciptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
-        assertTrue("could not get content via optional auth", adminToolDesciptor != null && !adminToolDesciptor.getDescriptor().isEmpty());
+        assertTrue("could not get content via optional auth", adminToolDesciptor != null && !adminToolDesciptor.getContent().isEmpty());
 
         workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
             public Boolean isPublish() { return true;}
@@ -1101,15 +1101,13 @@ public class WorkflowIT extends BaseIT {
                 // enable later with a simplification to TRS
                 FileWrapper test = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
-                assertTrue("test exists", !test.getDescriptor().isEmpty());
-                assertNotNull("type was null", test.getType());
+                assertTrue("test exists", !test.getContent().isEmpty());
                 count.incrementAndGet();
             } else if (file.getFileType() == ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR || file.getFileType() == ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) {
                 // annoyingly, some files are tool tests, some are tooldescriptor
                 FileWrapper toolDescriptor = adminGa4Ghv2Api.toolsIdVersionsVersionIdTypeDescriptorRelativePathGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW,
                     "master", file.getPath());
-                assertTrue("descriptor exists", !toolDescriptor.getDescriptor().isEmpty());
-                assertNotNull("type was null", toolDescriptor.getType());
+                assertTrue("descriptor exists", !toolDescriptor.getContent().isEmpty());
                 count.incrementAndGet();
             } else {
                 fail();

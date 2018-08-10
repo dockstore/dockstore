@@ -45,8 +45,6 @@ public class ExtendedFileWrapper extends FileWrapper  {
             return false;
         }
         FileWrapper fileWrapper = (FileWrapper)o;
-        return Objects.equals(super.getType(), fileWrapper.getType()) &&
-            Objects.equals(super.getDescriptor(), fileWrapper.getDescriptor()) &&
-            Objects.equals(super.getUrl(), fileWrapper.getUrl());
+        return Objects.equals(super.getContent(), fileWrapper.getContent()) && Objects.equals(super.getUrl(), fileWrapper.getUrl());
     }
 }

@@ -61,11 +61,10 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapper actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile, SourceFile.FileType.DOCKSTORE_WDL);
+        FileWrapper actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile);
         FileWrapper expectedToolDescriptor = new FileWrapper();
-        expectedToolDescriptor.setType(DescriptorType.WDL);
         expectedToolDescriptor.setUrl("/Dockstore.wdl");
-        expectedToolDescriptor.setDescriptor(PLACEHOLDER_CONTENT);
+        expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
         assertEquals(actualToolDescriptor, expectedToolDescriptor);
     }
 
@@ -76,11 +75,10 @@ public class ToolsImplCommonTest {
         sourceFile.setPath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
-        FileWrapper actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile, SourceFile.FileType.DOCKSTORE_CWL);
+        FileWrapper actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile);
         FileWrapper expectedToolDescriptor = new FileWrapper();
-        expectedToolDescriptor.setType(DescriptorType.CWL);
         expectedToolDescriptor.setUrl("/Dockstore.cwl");
-        expectedToolDescriptor.setDescriptor(PLACEHOLDER_CONTENT);
+        expectedToolDescriptor.setContent(PLACEHOLDER_CONTENT);
         assertEquals(actualToolDescriptor, expectedToolDescriptor);
     }
 
@@ -347,7 +345,7 @@ public class ToolsImplCommonTest {
         sourceFile.setId(9001);
         FileWrapper actualToolTests = ToolsImplCommon.sourceFileToToolTests("", sourceFile);
         FileWrapper expectedToolTests = new FileWrapper();
-        expectedToolTests.setDescriptor(PLACEHOLDER_CONTENT);
+        expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");
         assertEquals(actualToolTests, expectedToolTests);
     }

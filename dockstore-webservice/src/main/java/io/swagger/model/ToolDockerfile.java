@@ -40,7 +40,7 @@ public class ToolDockerfile {
     }
 
     public ToolDockerfile(FileWrapper containerfile) {
-        this.dockerfile = containerfile.getDescriptor();
+        this.dockerfile = containerfile.getContent();
         this.url = containerfile.getUrl();
     }
 

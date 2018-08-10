@@ -456,7 +456,7 @@ public class SwaggerClientIT {
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
         final FileWrapper cwl = toolApi
                 .toolsIdVersionsVersionIdTypeDescriptorGet("cwl","registry.hub.docker.com/seqware/seqware/test5", "master");
-        assertTrue(cwl.getDescriptor().contains("cwlstuff"));
+        assertTrue(cwl.getContent().contains("cwlstuff"));
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();

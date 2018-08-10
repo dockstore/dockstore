@@ -22,7 +22,6 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.testing.DropwizardTestSupport;
-import io.swagger.client.model.FileWrapper;
 import io.swagger.model.Error;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
@@ -116,12 +115,7 @@ public abstract class GA4GHIT {
      * This tests the /tools/{id}/versions/{version-id}/{type}/descriptor endpoint
      */
     @Test
-    public void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor");
-        FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
-        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
-    }
+    public abstract void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception;
 
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} endpoint
@@ -134,13 +128,11 @@ public abstract class GA4GHIT {
         toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot();
     }
 
-    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal() throws Exception {
-        Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
-        FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
-        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
-    }
+    protected abstract void toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal() throws Exception;
+
+    protected abstract void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception;
+
+    protected abstract void toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot() throws Exception;
 
     /**
      * Tests PLAIN GET /tools/{id}/versions/{version_id}/{type}/descriptor/{relative_path} with:
@@ -231,31 +223,17 @@ public abstract class GA4GHIT {
     @Test
     public abstract void testRelativePathEndpointWorkflowTestParameterFileJSON() throws Exception;
 
-    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
-        FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
-        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
-    }
-
-    private void toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot() throws Exception {
-        Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
-        FileWrapper responseObject = response.readEntity(FileWrapper.class);
-        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
-        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
-    }
-
     /**
      * This tests the /tools/{id}/versions/{version_id}/{type}/tests endpoint
      */
     @Test
     public abstract void testToolsIdVersionsVersionIdTypeTests() throws Exception;
 
-    void assertDescriptor(String descriptor) {
-        assertThat(descriptor).contains("type");
-        assertThat(descriptor).contains("descriptor");
-    }
+    /**
+     * checks that a descriptor or equivalent has the right fields
+     * @param descriptor the descriptor to check
+     */
+    abstract void assertDescriptor(String descriptor);
 
     protected abstract void assertTool(String tool, boolean isTool);
 

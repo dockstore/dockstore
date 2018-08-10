@@ -27,6 +27,7 @@ import io.swagger.model.FileWrapper;
 import io.swagger.model.Metadata;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.Tool;
+import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
 import io.swagger.model.ToolTestsV1;
 import io.swagger.model.ToolV1;
@@ -92,7 +93,8 @@ public final class ApiVersionConverter {
         } else if (SourceFile.TEST_FILE_TYPES.contains(wrapper.getOriginalFile().getType())) {
             return new ToolTestsV1(wrapper);
         } else {
-            return wrapper;
+            ToolDescriptor descriptor = new ToolDescriptor(wrapper);
+            return descriptor;
         }
     }
 

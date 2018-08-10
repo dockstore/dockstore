@@ -519,21 +519,21 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     toolTestsList.add(toolTests);
                 }
                 return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
-                    unwrap ? toolTestsList.stream().map(FileWrapper::getDescriptor).filter(Objects::nonNull).collect(Collectors.joining("\n"))
+                    unwrap ? toolTestsList.stream().map(FileWrapper::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n"))
                         : toolTestsList).build();
             case DOCKERFILE:
                 Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
                     .filter(sourcefile -> ((SourceFile)sourcefile).getType() == SourceFile.FileType.DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
                     ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
-                    dockerfile.setDescriptor(potentialDockerfile.get().getContent());
+                    dockerfile.setContent(potentialDockerfile.get().getContent());
                     dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
                     dockerfile.setOriginalFile(potentialDockerfile.get());
                     toolVersion.setContainerfile(true);
                     List<FileWrapper> containerfilesList = new ArrayList<>();
                     containerfilesList.add(dockerfile);
                     return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? dockerfile.getDescriptor() : containerfilesList).build();
+                        .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
                 }
             default:
                 Set<String> primaryDescriptors = new HashSet<>();
@@ -574,7 +574,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         && !primaryDescriptors.contains(sourceFile.getPath())) {
                         sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
                     }
-                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile, type);
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
                     if (toolDescriptor == null) {
                         return Response.status(Status.NOT_FOUND).build();
                     }

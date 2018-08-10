@@ -787,8 +787,8 @@ paths:
         - name: alias
           in: query
           description: >-
-            OPTIONAL for tool registries that support aliases If provided will
-            only return Data Objects with the given alias.
+            OPTIONAL for tool registries that support aliases. If provided will
+            only return entries with the given alias.
           required: false
           schema:
             type: string
@@ -1097,7 +1097,8 @@ paths:
         in the same or other directories that can be reached as a relative path.
         This endpoint can be useful for workflow engine implementations like
         cwltool to programmatically download all the descriptors for a tool and
-        run it
+        run it. This can optionally include other files described with
+        FileWrappers such as test parameters and containerfiles. 
       operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
       parameters:
         - name: type
@@ -5471,32 +5472,24 @@ components:
         entry in the dockstore
     FileWrapper:
       type: object
-      required:
-        - type
       properties:
-        type:
+        content:
           type: string
-          enum:
-            - CWL
-            - WDL
-            - NFL
-        descriptor:
-          type: string
-          description: The content of the file itself.
+          description: The content of the file itself. One of url or content is required.
         url:
           type: string
           description: >-
             Optional url to the underlying content, should include version
             information, and can include a git hash.  Note that this URL should
             resolve to the raw unwrapped content that would otherwise be
-            available in content.
+            available in content. One of url or content is required.
       description: >-
-        A file provides content for one of; - A tool descriptor is a metadata
+        A file provides content for one of - A tool descriptor is a metadata
         document that describes one or more tools. - A tool document that
         describes how to test with one or more sample test JSON. - A
         containerfile is a document that describes how to build a particular
         container image. Examples include Dockerfiles for creating Docker images
-        and Singularity recipes for Singularity images
+        and Singularity recipes for Singularity images 
     Group:
       type: object
       properties:

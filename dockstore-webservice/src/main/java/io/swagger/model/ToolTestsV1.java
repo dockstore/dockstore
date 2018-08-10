@@ -35,7 +35,7 @@ public class ToolTestsV1   {
     private String url = null;
 
     public ToolTestsV1(FileWrapper containerfile) {
-        this.test = containerfile.getDescriptor();
+        this.test = containerfile.getContent();
         this.url = containerfile.getUrl();
     }
 

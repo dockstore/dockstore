@@ -28,6 +28,7 @@ import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolTestsV1;
 import io.swagger.client.model.ToolV1;
 import io.swagger.client.model.ToolVersionV1;
+import io.swagger.model.ToolDescriptor;
 import org.apache.http.HttpStatus;
 import org.junit.Test;
 
@@ -125,6 +126,40 @@ public class GA4GHV1IT extends GA4GHIT {
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
+    @Override
+    public void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
+    }
+
+    @Override
+    protected void toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal() throws Exception {
+        Response response = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
+    }
+
+    @Override
+    protected void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
+        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
+    }
+
+    @Override
+    protected void toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot() throws Exception {
+        Response response = checkedResponse(
+            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
+        ToolDescriptor responseObject = response.readEntity(ToolDescriptor.class);
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
+    }
+
     @Test
     @Override
     public void testRelativePathEndpointToolTestParameterFileJSON() {
@@ -170,6 +205,12 @@ public class GA4GHV1IT extends GA4GHIT {
         });
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject).contains("test")).isTrue();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+    }
+
+    @Override
+    void assertDescriptor(String descriptor) {
+        assertThat(descriptor).contains("type");
+        assertThat(descriptor).contains("descriptor");
     }
 
     @Test
