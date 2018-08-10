@@ -489,12 +489,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolTests'
+                  $ref: '#/components/schemas/ToolTestsV1'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolTests'
+                  $ref: '#/components/schemas/ToolTestsV1'
         '404':
           description: The tool can not be output in the specified type.
           content:
@@ -502,12 +502,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolTests'
+                  $ref: '#/components/schemas/ToolTestsV1'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolTests'
+                  $ref: '#/components/schemas/ToolTestsV1'
   '/api/ga4gh/v2/extended/containers/{organization}':
     get:
       tags:
@@ -787,8 +787,8 @@ paths:
         - name: alias
           in: query
           description: >-
-            OPTIONAL for tool registries that support aliases If provided will
-            only return Data Objects with the given alias.
+            OPTIONAL for tool registries that support aliases. If provided will
+            only return entries with the given alias.
           required: false
           schema:
             type: string
@@ -1015,12 +1015,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolContainerfile'
+                  $ref: '#/components/schemas/FileWrapper'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolContainerfile'
+                  $ref: '#/components/schemas/FileWrapper'
         '404':
           description: There are no container specifications for this tool
           content:
@@ -1073,10 +1073,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ToolDescriptor'
+                $ref: '#/components/schemas/FileWrapper'
             text/plain:
               schema:
-                $ref: '#/components/schemas/ToolDescriptor'
+                $ref: '#/components/schemas/FileWrapper'
         '404':
           description: The tool descriptor can not be found.
           content:
@@ -1097,7 +1097,8 @@ paths:
         in the same or other directories that can be reached as a relative path.
         This endpoint can be useful for workflow engine implementations like
         cwltool to programmatically download all the descriptors for a tool and
-        run it
+        run it. This can optionally include other files described with
+        FileWrappers such as test parameters and containerfiles. 
       operationId: toolsIdVersionsVersionIdTypeDescriptorRelativePathGet
       parameters:
         - name: type
@@ -1145,10 +1146,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ToolDescriptor'
+                $ref: '#/components/schemas/FileWrapper'
             text/plain:
               schema:
-                $ref: '#/components/schemas/ToolDescriptor'
+                $ref: '#/components/schemas/FileWrapper'
         '404':
           description: The tool can not be output in the specified type.
           content:
@@ -1262,12 +1263,12 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolTests'
+                  $ref: '#/components/schemas/FileWrapper'
             text/plain:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ToolTests'
+                  $ref: '#/components/schemas/FileWrapper'
         '404':
           description: The tool can not be output in the specified type.
           content:
@@ -5533,6 +5534,26 @@ components:
       description: >-
         This describes an input or output file format that is associated with an
         entry in the dockstore
+    FileWrapper:
+      type: object
+      properties:
+        content:
+          type: string
+          description: The content of the file itself. One of url or content is required.
+        url:
+          type: string
+          description: >-
+            Optional url to the underlying content, should include version
+            information, and can include a git hash.  Note that this URL should
+            resolve to the raw unwrapped content that would otherwise be
+            available in content. One of url or content is required.
+      description: >-
+        A file provides content for one of - A tool descriptor is a metadata
+        document that describes one or more tools. - A tool document that
+        describes how to test with one or more sample test JSON. - A
+        containerfile is a document that describes how to build a particular
+        container image. Examples include Dockerfiles for creating Docker images
+        and Singularity recipes for Singularity images 
     Group:
       type: object
       properties:
@@ -5965,25 +5986,6 @@ components:
       description: >-
         Describes a class (type) of tool allowing us to categorize workflows,
         tasks, and maybe even other entities (such as services) separately
-    ToolContainerfile:
-      type: object
-      required:
-        - containerfile
-      properties:
-        containerfile:
-          type: string
-          description: The container specification for this tool.
-        url:
-          type: string
-          example: >-
-            https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile
-          description: >-
-            Optional url to the file used to build this image, should include
-            version information, and can include a git hash
-      description: >-
-        A containerfile is a document that describes how to build a particular
-        container image. Examples include Dockerfiles for creating Docker images
-        and Singularity recipes for Singularity images
     ToolDescriptor:
       type: object
       required:
@@ -6042,7 +6044,7 @@ components:
             - SECONDARY_DESCRIPTOR
             - CONTAINERFILE
             - OTHER
-    ToolTests:
+    ToolTestsV1:
       type: object
       properties:
         test:

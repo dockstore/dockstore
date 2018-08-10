@@ -62,9 +62,9 @@ import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.AuthenticatedResourceInterface;
 import io.swagger.api.ToolsApiService;
 import io.swagger.model.Error;
-import io.swagger.model.ToolContainerfile;
+import io.swagger.model.ExtendedFileWrapper;
+import io.swagger.model.FileWrapper;
 import io.swagger.model.ToolFile;
-import io.swagger.model.ToolTests;
 import io.swagger.model.ToolVersion;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
@@ -191,7 +191,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, null,
-            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
     }
 
     @Override
@@ -205,7 +205,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             return Response.status(Status.NOT_FOUND).build();
         }
         return getFileByToolVersionID(id, versionId, fileType, relativePath,
-            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || StringUtils.containsIgnoreCase(type, "plain"), user);
+            contextContainsPlainText(value) || StringUtils.containsIgnoreCase(type, "plain"), user);
+    }
+
+    private boolean contextContainsPlainText(ContainerRequestContext value) {
+        return value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE);
     }
 
     @Override
@@ -221,7 +225,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
         // The getFileType version never returns *TEST_JSON filetypes.  Linking CWL_TEST_JSON with DOCKSTORE_CWL and etc until solved.
         boolean plainTextResponse =
-            value.getAcceptableMediaTypes().contains(MediaType.TEXT_PLAIN_TYPE) || type.toLowerCase().contains("plain");
+            contextContainsPlainText(value) || type.toLowerCase().contains("plain");
         switch (fileType) {
         case CWL_TEST_JSON:
         case DOCKSTORE_CWL:
@@ -259,8 +263,8 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     @Override
     public Response toolsIdVersionsVersionIdContainerfileGet(String id, String versionId, SecurityContext securityContext,
         ContainerRequestContext value, Optional<User> user) {
-        boolean unwrap = !value.getAcceptableMediaTypes().contains(MediaType.APPLICATION_JSON_TYPE);
-        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, unwrap, user);
+        // matching behaviour of the descriptor endpoint
+        return getFileByToolVersionID(id, versionId, DOCKERFILE, null, contextContainsPlainText(value), user);
     }
 
     @SuppressWarnings("CheckStyle")
@@ -508,27 +512,28 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     LOG.warn("intentionally ignoring failure to get source files", e);
                 }
 
-                List<ToolTests> toolTestsList = new ArrayList<>();
+                List<FileWrapper> toolTestsList = new ArrayList<>();
 
                 for (SourceFile file : testSourceFiles) {
-                    ToolTests toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
+                    FileWrapper toolTests = ToolsImplCommon.sourceFileToToolTests(urlBuilt, file);
                     toolTestsList.add(toolTests);
                 }
-                return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
-                    unwrap ? toolTestsList.stream().map(ToolTests::getTest).filter(Objects::nonNull).collect(Collectors.joining("\n"))
+                return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON).entity(
+                    unwrap ? toolTestsList.stream().map(FileWrapper::getContent).filter(Objects::nonNull).collect(Collectors.joining("\n"))
                         : toolTestsList).build();
             case DOCKERFILE:
                 Optional<SourceFile> potentialDockerfile = entryVersion.get().getSourceFiles().stream()
                     .filter(sourcefile -> ((SourceFile)sourcefile).getType() == SourceFile.FileType.DOCKERFILE).findFirst();
                 if (potentialDockerfile.isPresent()) {
-                    ToolContainerfile dockerfile = new ToolContainerfile();
-                    dockerfile.setContainerfile(potentialDockerfile.get().getContent());
+                    ExtendedFileWrapper dockerfile = new ExtendedFileWrapper();
+                    dockerfile.setContent(potentialDockerfile.get().getContent());
                     dockerfile.setUrl(urlBuilt + ((Tag)entryVersion.get()).getDockerfilePath());
+                    dockerfile.setOriginalFile(potentialDockerfile.get());
                     toolVersion.setContainerfile(true);
-                    List<ToolContainerfile> containerfilesList = new ArrayList<>();
+                    List<FileWrapper> containerfilesList = new ArrayList<>();
                     containerfilesList.add(dockerfile);
-                    return Response.status(Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
-                        .entity(unwrap ? dockerfile.getContainerfile() : containerfilesList).build();
+                    return Response.status(Response.Status.OK).type(unwrap ? MediaType.TEXT_PLAIN : MediaType.APPLICATION_JSON)
+                        .entity(unwrap ? dockerfile.getContent() : containerfilesList).build();
                 }
             default:
                 Set<String> primaryDescriptors = new HashSet<>();
@@ -569,7 +574,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                         && !primaryDescriptors.contains(sourceFile.getPath())) {
                         sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
                     }
-                    Object toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
                     if (toolDescriptor == null) {
                         return Response.status(Status.NOT_FOUND).build();
                     }

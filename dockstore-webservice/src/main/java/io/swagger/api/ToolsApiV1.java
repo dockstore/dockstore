@@ -34,7 +34,7 @@ import io.swagger.api.factories.ToolsApiServiceFactory;
 import io.swagger.api.impl.ApiVersionConverter;
 import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
-import io.swagger.model.ToolTests;
+import io.swagger.model.ToolTestsV1;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersionV1;
 
@@ -172,12 +172,12 @@ public class ToolsApiV1 {
     @Path("/{id}/versions/{version_id}/{type}/tests")
     @UnitOfWork
     @Produces( { "application/json", "text/plain" })
-    @io.swagger.annotations.ApiOperation(value = "Get an array of test JSONs suitable for use with this descriptor type.", notes = "", response = ToolTests.class, responseContainer = "List", tags = {
+    @io.swagger.annotations.ApiOperation(value = "Get an array of test JSONs suitable for use with this descriptor type.", notes = "", response = ToolTestsV1.class, responseContainer = "List", tags = {
         "GA4GHV1", })
     @io.swagger.annotations.ApiResponses(value = {
-        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool test JSON response.", response = ToolTests.class, responseContainer = "List"),
+        @io.swagger.annotations.ApiResponse(code = 200, message = "The tool test JSON response.", response = ToolTestsV1.class, responseContainer = "List"),
 
-        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolTests.class, responseContainer = "List") })
+        @io.swagger.annotations.ApiResponse(code = 404, message = "The tool can not be output in the specified type.", response = ToolTestsV1.class, responseContainer = "List") })
     public Response toolsIdVersionsVersionIdTypeTestsGet(
         @ApiParam(value = "The output type of the descriptor. If not specified it is up to the underlying implementation to determine which output type to return. Plain types return the bare descriptor while the \"non-plain\" types return a descriptor wrapped with metadata", required = true, allowableValues = "CWL, WDL, PLAIN_CWL, PLAIN_WDL") @PathParam("type") String type,
         @ApiParam(value = "A unique identifier of the tool, scoped to this registry, for example `123456`", required = true) @PathParam("id") String id,
