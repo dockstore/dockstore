@@ -7,7 +7,6 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
-import io.dropwizard.auth.AuthenticationException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +51,7 @@ public class SimpleAuthenticatorTest {
         when(tokenDAO.findByContent(credentials)).thenReturn(null);
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
-        when(userDAO.findByUsername(USER_EMAIL)).thenReturn(user);
+        when(userDAO.findByGoogleEmail(USER_EMAIL)).thenReturn(user);
         Assert.assertEquals(user, simpleAuthenticator.authenticate(credentials).get());
     }
 

@@ -105,6 +105,9 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
     private static final String PAGINATION_LIMIT = "100";
 
+    @Context
+    private javax.ws.rs.container.ResourceContext rc;
+
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
     private final ToolDAO toolDAO;
@@ -483,7 +486,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
 
         long id = toolDAO.create(tool);
 
-        // Helper.refreshContainer(id, authToken.getUserId(), client, objectMapper, userDAO, toolDAO, tokenDAO, tagDAO, fileDAO);
         return toolDAO.findById(id);
     }
 
@@ -609,7 +611,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
         @Context HttpServletResponse response) {
-        // delete the next line if GUI pagination is not working by 1.5.0 release
         int maxLimit = Math.min(Integer.parseInt(PAGINATION_LIMIT), limit);
         List<Tool> tools = toolDAO.findAllPublished(offset, maxLimit, filter, sortCol, sortOrder);
         filterContainersForHiddenTags(tools);
@@ -673,34 +674,6 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
         } catch (ArrayIndexOutOfBoundsException e) {
             throw new CustomWebApplicationException(path + " not found", HttpStatus.SC_NOT_FOUND);
         }
-    }
-
-    @PUT
-    @Timed
-    @UnitOfWork
-    @Path("/shareWithUser")
-    @ApiOperation(value = "User shares a container with a chosen user", notes = "Needs to be fleshed out.", hidden = true)
-    public void shareWithUser(@QueryParam("container_id") Long containerId, @QueryParam("user_id") Long userId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @PUT
-    @Timed
-    @UnitOfWork
-    @Path("/shareWithGroup")
-    @ApiOperation(value = "User shares a container with a chosen group", notes = "Needs to be fleshed out.", hidden = true)
-    public void shareWithGroup(@QueryParam("container_id") Long containerId, @QueryParam("group_id") Long groupId) {
-        throw new UnsupportedOperationException();
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/search")
-    @ApiOperation(value = "Search for matching registered containers.", notes = "Search on the name (full path name) and description. NO authentication", response = Tool.class, responseContainer = "List", tags = {
-            "containers" })
-    public List<Tool> search(@QueryParam("pattern") String word) {
-        return toolDAO.searchPattern(word);
     }
 
     @GET
@@ -841,11 +814,7 @@ public class DockerRepoResource implements AuthenticatedResourceInterface, Entry
     @Path("/dockerRegistryList")
     @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
-        List<Registry.RegistryBean> registryList = new ArrayList<>();
-        for (Registry r : Registry.values()) {
-            registryList.add(new Registry.RegistryBean(r));
-        }
-        return registryList;
+        return rc.getResource(MetadataResource.class).getDockerRegistries();
     }
 
     @PUT

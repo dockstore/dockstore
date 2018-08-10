@@ -213,10 +213,4 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             }
         }
     }
-
-    public List<T> searchPattern(String pattern) {
-        pattern = '%' + pattern + '%';
-        return list(
-                namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".searchPattern").setParameter("pattern", pattern));
-    }
 }

@@ -198,7 +198,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
 
     protected void handleSearch(String pattern) {
         try {
-            List<DockstoreTool> containers = containersApi.search(pattern);
+            List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, pattern, null, null);
 
             out("MATCHING TOOLS");
             printLineBreak();

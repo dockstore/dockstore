@@ -25,7 +25,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 
 import io.dockstore.webservice.core.User;
-import io.swagger.api.NotFoundException;
 import io.swagger.api.ToolClassesApiService;
 import io.swagger.model.ToolClass;
 

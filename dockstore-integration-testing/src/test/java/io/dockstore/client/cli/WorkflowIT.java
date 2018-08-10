@@ -583,7 +583,7 @@ public class WorkflowIT extends BaseIT {
         long dockerCount = list.stream().filter(tool -> !tool.get("docker").isEmpty()).count();
         assertEquals("tool table is populated with docker images", dockerCount, list.size());
         assertTrue("workflow dag should be present", map.entrySet().size() >= 2);
-        assertTrue("workflow dag is not as large as expected", map.get("nodes").size() >= 11 && map.get("edges").size() >= 10);
+        assertTrue("workflow dag is not as large as expected", map.get("nodes").size() >= 11 && map.get("edges").size() >= 13);
     }
 
     /**

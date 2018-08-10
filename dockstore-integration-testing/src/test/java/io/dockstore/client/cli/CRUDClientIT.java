@@ -18,6 +18,7 @@ package io.dockstore.client.cli;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 import com.google.common.collect.Lists;
@@ -37,6 +38,7 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import io.swagger.model.DescriptorType;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -124,6 +126,7 @@ public class CRUDClientIT extends BaseIT {
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file2));
         first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         Assert.assertEquals("correct number of source files", 3, first.get().getSourceFiles().size());
+        String revisionWithTestFile = first.get().getName();
 
         // delete a file
         file2.setContent(null);
@@ -139,10 +142,24 @@ public class CRUDClientIT extends BaseIT {
         long count = dockstoreTool.getTags().stream().filter(tag -> tag.getVersionEditor() != null).count();
         Assert.assertEquals("all versions do not seem to have editors", count, dockstoreTool.getTags().size());
 
+        // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publically
+        ContainersApi otherUserApi = new ContainersApi(getWebClient(USER_1_USERNAME));
+        boolean thrownException = false;
+        try {
+            otherUserApi.getTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile);
+        } catch (ApiException e) {
+            thrownException = true;
+        }
+        Assert.assertTrue(thrownException);
+
         // Publish tool
         ContainersApi containersApi = new ContainersApi(getWebClient(ADMIN_USERNAME));
         PublishRequest pub = SwaggerUtility.createPublishRequest(true);
         containersApi.publish(dockstoreTool.getId(), pub);
+
+        // files should be visible afterwards
+        List<SourceFile> files = otherUserApi.getTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile);
+        Assert.assertTrue(!files.isEmpty() &&!files.get(0).getContent().isEmpty());
     }
 
     @Test
@@ -168,7 +185,6 @@ public class CRUDClientIT extends BaseIT {
         Assert.assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> Assert.assertNull("getWorkflow() endpoint should not have user profiles", user.getUserProfiles()));
         Assert.assertEquals(container, hostedTool);
-
     }
 
     @Test
@@ -216,11 +232,24 @@ public class CRUDClientIT extends BaseIT {
         long count = dockstoreWorkflow.getWorkflowVersions().stream().filter(tag -> tag.getVersionEditor() != null).count();
         Assert.assertEquals("all versions do not seem to have editors", count, dockstoreWorkflow.getWorkflowVersions().size());
 
+        // ensure that we cannot retrieve files until publication, important for hosted workflows which don't exist publically
+        WorkflowsApi otherUserApi = new WorkflowsApi(getWebClient(USER_1_USERNAME));
+        boolean thrownException = false;
+        try {
+            otherUserApi.cwl(dockstoreWorkflow.getId(), first.get().getName());
+        } catch (ApiException e) {
+            thrownException = true;
+        }
+        Assert.assertTrue(thrownException);
+
         // Publish workflow
         WorkflowsApi workflowsApi = new WorkflowsApi(getWebClient(ADMIN_USERNAME));
         PublishRequest pub = SwaggerUtility.createPublishRequest(true);
         workflowsApi.publish(dockstoreWorkflow.getId(), pub);
 
+        // files should be visible afterwards
+        file = otherUserApi.cwl(dockstoreWorkflow.getId(), first.get().getName());
+        Assert.assertTrue(!file.getContent().isEmpty());
     }
 
     /**

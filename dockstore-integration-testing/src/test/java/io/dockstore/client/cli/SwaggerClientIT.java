@@ -562,12 +562,11 @@ public class SwaggerClientIT {
     public void testContainerSearch() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-
-        List<DockstoreTool> containers = containersApi.search("test6");
+        List<DockstoreTool> containers = containersApi.allPublishedContainers(null, null, "test6", null, null);
         assertEquals(1, containers.size());
         assertEquals(containers.get(0).getPath(), QUAY_IO_TEST_ORG_TEST6);
 
-        containers = containersApi.search("test52");
+        containers = containers = containersApi.allPublishedContainers(null, null, "test52", null, null);
         assertTrue(containers.isEmpty());
     }
 

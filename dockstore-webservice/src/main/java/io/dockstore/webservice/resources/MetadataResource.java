@@ -61,6 +61,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import okhttp3.Cache;
 import org.apache.http.HttpStatus;
+import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,9 +79,9 @@ public class MetadataResource {
     private final WorkflowDAO workflowDAO;
     private final DockstoreWebserviceConfiguration config;
 
-    public MetadataResource(ToolDAO toolDAO, WorkflowDAO workflowDAO, DockstoreWebserviceConfiguration config) {
-        this.toolDAO = toolDAO;
-        this.workflowDAO = workflowDAO;
+    public MetadataResource(SessionFactory sessionFactory, DockstoreWebserviceConfiguration config) {
+        this.toolDAO = new ToolDAO(sessionFactory);
+        this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.config = config;
     }
 

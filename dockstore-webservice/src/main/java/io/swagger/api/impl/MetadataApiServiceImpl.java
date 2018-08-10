@@ -24,7 +24,6 @@ import javax.ws.rs.core.SecurityContext;
 
 import io.dockstore.webservice.core.User;
 import io.swagger.api.MetadataApiService;
-import io.swagger.api.NotFoundException;
 import io.swagger.model.Metadata;
 
 public class MetadataApiServiceImpl extends MetadataApiService {
