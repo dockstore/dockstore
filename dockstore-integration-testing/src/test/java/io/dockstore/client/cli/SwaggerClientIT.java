@@ -16,6 +16,21 @@
 
 package io.dockstore.client.cli;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import javax.ws.rs.core.UriBuilder;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
@@ -44,7 +59,7 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
 import io.swagger.client.model.Token;
-import io.swagger.client.model.FileWrapper;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.ToolDockerfile;
 import io.swagger.client.model.ToolVersionV1;
 import io.swagger.client.model.User;
@@ -63,20 +78,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-
-import javax.ws.rs.core.UriBuilder;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -400,9 +401,9 @@ public class SwaggerClientIT extends BaseIT {
         final ToolDockerfile toolDockerfile = toolApi
                 .toolsIdVersionsVersionIdDockerfileGet("registry.hub.docker.com/seqware/seqware/test5", "master");
         assertTrue(toolDockerfile.getDockerfile().contains("dockerstuff"));
-        final FileWrapper cwl = toolApi
-                .toolsIdVersionsVersionIdTypeDescriptorGet("cwl","registry.hub.docker.com/seqware/seqware/test5", "master");
-        assertTrue(cwl.getContent().contains("cwlstuff"));
+        ToolDescriptor cwl = toolApi
+            .toolsIdVersionsVersionIdTypeDescriptorGet("cwl", "registry.hub.docker.com/seqware/seqware/test5", "master");
+        assertTrue(cwl.getDescriptor().contains("cwlstuff"));
 
         // hit up the plain text versions
         final String basePath = client.getBasePath();
