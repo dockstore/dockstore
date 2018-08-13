@@ -21,17 +21,22 @@ import java.util.List;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
+import io.dockstore.webservice.core.SourceFile;
+import io.swagger.model.ExtendedFileWrapper;
+import io.swagger.model.FileWrapper;
 import io.swagger.model.Metadata;
 import io.swagger.model.MetadataV1;
 import io.swagger.model.Tool;
-import io.swagger.model.ToolContainerfile;
+import io.swagger.model.ToolDescriptor;
 import io.swagger.model.ToolDockerfile;
+import io.swagger.model.ToolTestsV1;
 import io.swagger.model.ToolV1;
 import io.swagger.model.ToolVersion;
 import io.swagger.model.ToolVersionV1;
 
 /**
- * @author gluu
+ * Converts between the V2 version of the GA4GH TRS to V1
+ * @author gluu, dyuen
  * @since 21/12/17
  */
 public final class ApiVersionConverter {
@@ -46,17 +51,18 @@ public final class ApiVersionConverter {
                 if (innerObject instanceof Tool) {
                     Tool tool = (Tool)innerObject;
                     newArrayList.add(new ToolV1(tool));
-                } else {
-                    if (innerObject instanceof ToolVersion) {
-                        ToolVersion toolVersion = (ToolVersion)innerObject;
-                        newArrayList.add(new ToolVersionV1(toolVersion));
-                    } else {
-                        if (innerObject instanceof ToolContainerfile) {
-                            return getResponse(new ToolDockerfile((ToolContainerfile)innerObject), response.getHeaders());
-                        } else {
-                            return getResponse(object, response.getHeaders());
-                        }
+                } else if (innerObject instanceof ToolVersion) {
+                    ToolVersion toolVersion = (ToolVersion)innerObject;
+                    newArrayList.add(new ToolVersionV1(toolVersion));
+                } else if (innerObject instanceof ExtendedFileWrapper) {
+                    // v1 annoying expects a 1 Dockerfile list to be returned unwrapped
+                    Object extendedWrapperConverted = getExtendedWrapperConverted((ExtendedFileWrapper)innerObject);
+                    if (arrayList.size() == 1 && ((ExtendedFileWrapper)innerObject).getOriginalFile().getType() == SourceFile.FileType.DOCKERFILE) {
+                        return getResponse(extendedWrapperConverted, response.getHeaders());
                     }
+                    newArrayList.add(extendedWrapperConverted);
+                } else {
+                    newArrayList.add(innerObject);
                 }
             }
             return getResponse(newArrayList, response.getHeaders());
@@ -72,12 +78,24 @@ public final class ApiVersionConverter {
             Metadata metadata = (Metadata)object;
             MetadataV1 metadataV1 = new MetadataV1(metadata);
             return getResponse(metadataV1, response.getHeaders());
-        } else if (object instanceof ToolContainerfile) {
-            ToolContainerfile containerfile = (ToolContainerfile)object;
-            ToolDockerfile dockerfile = new ToolDockerfile(containerfile);
-            return getResponse(dockerfile, response.getHeaders());
+        } else if (object instanceof FileWrapper) {
+            if (object instanceof ExtendedFileWrapper) {
+                return getResponse(getExtendedWrapperConverted((ExtendedFileWrapper)object), response.getHeaders());
+            }
+            return getResponse(object, response.getHeaders());
         }
         return response;
+    }
+
+    private static Object getExtendedWrapperConverted(ExtendedFileWrapper wrapper) {
+        if (wrapper.getOriginalFile().getType() == SourceFile.FileType.DOCKERFILE) {
+            return new ToolDockerfile(wrapper);
+        } else if (SourceFile.TEST_FILE_TYPES.contains(wrapper.getOriginalFile().getType())) {
+            return new ToolTestsV1(wrapper);
+        } else {
+            ToolDescriptor descriptor = new ToolDescriptor(wrapper);
+            return descriptor;
+        }
     }
 
     private static Response getResponse(Object object, MultivaluedMap<String, Object> headers) {

@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.5.0-alpha.9-SNAPSHOT"
+  version: "1.5.0-alpha.10-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -403,13 +403,13 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/ToolTests"
+              $ref: "#/definitions/ToolTestsV1"
         404:
           description: "The tool can not be output in the specified type."
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/ToolTests"
+              $ref: "#/definitions/ToolTestsV1"
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
       tags:
@@ -653,8 +653,8 @@ paths:
         type: "string"
       - name: "alias"
         in: "query"
-        description: "OPTIONAL for tool registries that support aliases If provided\
-          \ will only return Data Objects with the given alias."
+        description: "OPTIONAL for tool registries that support aliases. If provided\
+          \ will only return entries with the given alias."
         required: false
         type: "string"
       - name: "registry"
@@ -830,7 +830,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/ToolContainerfile"
+              $ref: "#/definitions/FileWrapper"
         404:
           description: "There are no container specifications for this tool"
           schema:
@@ -872,7 +872,7 @@ paths:
         200:
           description: "The tool descriptor."
           schema:
-            $ref: "#/definitions/ToolDescriptor"
+            $ref: "#/definitions/FileWrapper"
         404:
           description: "The tool descriptor can not be found."
           schema:
@@ -886,7 +886,9 @@ paths:
         \ descriptors. This returns additional descriptors for the specified tool\
         \ in the same or other directories that can be reached as a relative path.\
         \ This endpoint can be useful for workflow engine implementations like cwltool\
-        \ to programmatically download all the descriptors for a tool and run it"
+        \ to programmatically download all the descriptors for a tool and run it.\
+        \ This can optionally include other files described with FileWrappers such\
+        \ as test parameters and containerfiles. "
       operationId: "toolsIdVersionsVersionIdTypeDescriptorRelativePathGet"
       produces:
       - "application/json"
@@ -927,7 +929,7 @@ paths:
         200:
           description: "The tool descriptor."
           schema:
-            $ref: "#/definitions/ToolDescriptor"
+            $ref: "#/definitions/FileWrapper"
         404:
           description: "The tool can not be output in the specified type."
           schema:
@@ -1012,7 +1014,7 @@ paths:
           schema:
             type: "array"
             items:
-              $ref: "#/definitions/ToolTests"
+              $ref: "#/definitions/FileWrapper"
         404:
           description: "The tool can not be output in the specified type."
           schema:
@@ -1044,7 +1046,8 @@ paths:
     post:
       tags:
       - "tokens"
-      summary: "Allow satellizer to post a new GitHub token to dockstore"
+      summary: "Allow satellizer to post a new GitHub token to dockstore, used by\
+        \ login, can create new users"
       description: "A post method is required by saetillizer to send the GitHub token"
       operationId: "addToken"
       produces:
@@ -1067,7 +1070,7 @@ paths:
     get:
       tags:
       - "tokens"
-      summary: "Add a new github.com token, used by github.com redirect"
+      summary: "Add a new github.com token, used by accounts page"
       description: "This is used as part of the OAuth 2 web flow. Once a user has\
         \ approved permissions for CollaboratoryTheir browser will load the redirect\
         \ URI which should resolve here"
@@ -2602,6 +2605,28 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SourceControlBean"
+  /users/checkUser/{username}:
+    get:
+      tags:
+      - "users"
+      summary: "Check if user with some username exists"
+      description: ""
+      operationId: "checkUserExists"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "username"
+        in: "path"
+        description: "User name to check"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "boolean"
+      security:
+      - BEARER: []
   /users/groups:
     get:
       tags:
@@ -2761,6 +2786,61 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/User"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "users"
+      summary: "Delete user if possible"
+      description: ""
+      operationId: "selfDestruct"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "boolean"
+      security:
+      - BEARER: []
+  /users/user/changeUsername:
+    post:
+      tags:
+      - "users"
+      summary: "Change username if possible"
+      description: ""
+      operationId: "changeUsername"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "username"
+        in: "query"
+        description: "Username to change to"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/User"
+      security:
+      - BEARER: []
+  /users/user/extended:
+    get:
+      tags:
+      - "users"
+      summary: "Get additional information on the logged-in user"
+      description: ""
+      operationId: "getExtendedUserData"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/ExtendedUserData"
       security:
       - BEARER: []
   /users/user/updateUserMetadata:
@@ -5016,6 +5096,14 @@ definitions:
         format: "int32"
       message:
         type: "string"
+  ExtendedUserData:
+    type: "object"
+    properties:
+      canChangeUsername:
+        type: "boolean"
+        description: "Whether a user can change their username"
+        readOnly: true
+    description: "Contains expensive data for end users for the dockstore"
   FileFormat:
     type: "object"
     required:
@@ -5027,6 +5115,24 @@ definitions:
         description: "String representation of the file format"
     description: "This describes an input or output file format that is associated\
       \ with an entry in the dockstore"
+  FileWrapper:
+    type: "object"
+    properties:
+      content:
+        type: "string"
+        description: "The content of the file itself. One of url or content is required."
+      url:
+        type: "string"
+        description: "Optional url to the underlying content, should include version\
+          \ information, and can include a git hash.  Note that this URL should resolve\
+          \ to the raw unwrapped content that would otherwise be available in content.\
+          \ One of url or content is required."
+    description: "A file provides content for one of - A tool descriptor is a metadata\
+      \ document that describes one or more tools. - A tool document that describes\
+      \ how to test with one or more sample test JSON. - A containerfile is a document\
+      \ that describes how to build a particular container image. Examples include\
+      \ Dockerfiles for creating Docker images and Singularity recipes for Singularity\
+      \ images "
   Group:
     type: "object"
     properties:
@@ -5123,6 +5229,8 @@ definitions:
       location:
         type: "string"
       bio:
+        type: "string"
+      username:
         type: "string"
   PublishRequest:
     type: "object"
@@ -5465,22 +5573,6 @@ definitions:
         description: "A longer explanation of what this class is and what it can accomplish"
     description: "Describes a class (type) of tool allowing us to categorize workflows,\
       \ tasks, and maybe even other entities (such as services) separately"
-  ToolContainerfile:
-    type: "object"
-    required:
-    - "containerfile"
-    properties:
-      containerfile:
-        type: "string"
-        description: "The container specification for this tool."
-      url:
-        type: "string"
-        example: "https://raw.githubusercontent.com/ICGC-TCGA-PanCancer/pcawg_delly_workflow/c83478829802b4d36374870843821abe1b625a71/delly_docker/Dockerfile"
-        description: "Optional url to the file used to build this image, should include\
-          \ version information, and can include a git hash"
-    description: "A containerfile is a document that describes how to build a particular\
-      \ container image. Examples include Dockerfiles for creating Docker images and\
-      \ Singularity recipes for Singularity images"
   ToolDescriptor:
     type: "object"
     required:
@@ -5532,7 +5624,7 @@ definitions:
         - "SECONDARY_DESCRIPTOR"
         - "CONTAINERFILE"
         - "OTHER"
-  ToolTests:
+  ToolTestsV1:
     type: "object"
     properties:
       test:
@@ -5672,6 +5764,7 @@ definitions:
     required:
     - "curator"
     - "isAdmin"
+    - "setupComplete"
     properties:
       id:
         type: "integer"
@@ -5704,6 +5797,10 @@ definitions:
         type: "boolean"
         position: 11
         description: "Indicates whether this user is a curator"
+      setupComplete:
+        type: "boolean"
+        position: 12
+        description: "Indicates whether this user has accepted their username"
     description: "End users for the dockstore"
   VerificationInformation:
     type: "object"

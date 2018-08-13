@@ -31,10 +31,13 @@ public class ProgressPrinter {
     private static final int SIZE_OF_PROGRESS_BAR = 50;
     private static final int MAX_HEADER_LENGTH = 30;
     private static final int PROGRESS_INCREMENT = 1;
+    private static final String INDETERMINATE_INDICATOR = "##########";
     private final int threads;
     private final String header;
     private boolean printedBefore = false;
     private int progress = 0;
+    private int spinnerIndex = 0;
+    private boolean spinnerAscending = true;
 
     public ProgressPrinter() {
         this.threads = 1;
@@ -58,52 +61,93 @@ public class ProgressPrinter {
      */
     public void handleProgress(long totalBytesTransferred, long streamSize) {
 
-        BigDecimal numerator = BigDecimal.valueOf(totalBytesTransferred);
-        BigDecimal denominator = BigDecimal.valueOf(streamSize);
-        BigDecimal fraction = numerator.divide(denominator, new MathContext(2, RoundingMode.HALF_EVEN));
-        BigDecimal percentage = fraction.movePointRight(2);
+        if (streamSize <= 0) { // Unknown size
+            if (System.console() != null) {
+                System.out.print(generateIntedeteminateBar());
 
-        if (percentage.intValue() == progress) {
-            /* don't bother refreshing if no progress made */
-            return;
-        }
-
-        BigDecimal outOfTwenty = fraction.multiply(new BigDecimal(SIZE_OF_PROGRESS_BAR));
-        StringBuilder builder = new StringBuilder(header);
-        if (threads == 1) {
-            if (printedBefore) {
-                builder.append('\r');
-            }
-        }
-
-        builder.append("[");
-        for (int i = 0; i < SIZE_OF_PROGRESS_BAR; i++) {
-            if (i < outOfTwenty.intValue()) {
-                builder.append("#");
-            } else {
-                builder.append(" ");
-            }
-        }
-
-        builder.append("] ");
-        builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
-
-        Console console = System.console();
-
-        if (console != null || numerator.equals(denominator)) {
-            if (threads == 1) {
-                System.out.print(builder);
-            } else {
-                // do not refresh too often with multithreading
-                if (percentage.intValue() < progress + PROGRESS_INCREMENT) {
-                    return;
+                if (spinnerAscending) {
+                    spinnerIndex++;
+                    if (spinnerIndex == SIZE_OF_PROGRESS_BAR) {
+                        spinnerIndex = SIZE_OF_PROGRESS_BAR - 1;
+                        spinnerAscending = false;
+                    }
+                } else {
+                    spinnerIndex--;
+                    if (spinnerIndex < 0) {
+                        spinnerIndex = 0;
+                        spinnerAscending = true;
+                    }
                 }
+            }
+        } else {
+            BigDecimal numerator = BigDecimal.valueOf(totalBytesTransferred);
+            BigDecimal denominator = BigDecimal.valueOf(streamSize);
+            BigDecimal fraction = numerator.divide(denominator, new MathContext(2, RoundingMode.HALF_EVEN));
+            BigDecimal percentage = fraction.movePointRight(2);
 
-                System.out.println(builder);
+            if (percentage.intValue() == progress) {
+                /* don't bother refreshing if no progress made */
+                return;
+            }
+
+            BigDecimal outOfTwenty = fraction.multiply(new BigDecimal(SIZE_OF_PROGRESS_BAR));
+            StringBuilder builder = new StringBuilder(header);
+            if (threads == 1) {
+                if (printedBefore) {
+                    builder.append('\r');
+                }
+            }
+
+            builder.append("[");
+            for (int i = 0; i < SIZE_OF_PROGRESS_BAR; i++) {
+                if (i < outOfTwenty.intValue()) {
+                    builder.append("#");
+                } else {
+                    builder.append(" ");
+                }
+            }
+
+            builder.append("] ");
+            builder.append(percentage.setScale(0, BigDecimal.ROUND_HALF_EVEN).toPlainString()).append("%");
+
+            Console console = System.console();
+
+            if (console != null || numerator.equals(denominator)) {
+                if (threads == 1) {
+                    System.out.print(builder);
+                } else {
+                    // do not refresh too often with multithreading
+                    if (percentage.intValue() < progress + PROGRESS_INCREMENT) {
+                        return;
+                    }
+
+                    System.out.println(builder);
+                }
+            }
+            // track progress
+            printedBefore = true;
+            progress = percentage.intValue();
+        }
+    }
+
+    private String generateIntedeteminateBar() {
+        final StringBuilder sb = new StringBuilder("\r[");
+        if (spinnerIndex < INDETERMINATE_INDICATOR.length()) {
+            sb.append(INDETERMINATE_INDICATOR);
+            for (int i = INDETERMINATE_INDICATOR.length(); i < SIZE_OF_PROGRESS_BAR; i++) {
+                sb.append(' ');
+            }
+        } else {
+            final int limit = Math.min(spinnerIndex, SIZE_OF_PROGRESS_BAR - INDETERMINATE_INDICATOR.length());
+            for (int i = 0; i < limit; i++) {
+                sb.append(' ');
+            }
+            sb.append(INDETERMINATE_INDICATOR);
+            for (int i = limit + INDETERMINATE_INDICATOR.length(); i < SIZE_OF_PROGRESS_BAR; i++) {
+                sb.append(' ');
             }
         }
-        // track progress
-        printedBefore = true;
-        progress = percentage.intValue();
+        sb.append("] Unknown size");
+        return sb.toString();
     }
 }
