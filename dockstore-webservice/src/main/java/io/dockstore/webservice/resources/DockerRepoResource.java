@@ -107,7 +107,7 @@ public class DockerRepoResource
 
     private static final Logger LOG = LoggerFactory.getLogger(DockerRepoResource.class);
     private static final String PAGINATION_LIMIT = "100";
-    private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted tools";
+    private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published tools, authentication can be provided for restricted tools";
 
     @Context
     private javax.ws.rs.container.ResourceContext rc;
