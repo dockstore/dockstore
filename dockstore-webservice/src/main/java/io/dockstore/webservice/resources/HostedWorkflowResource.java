@@ -16,6 +16,8 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -51,12 +53,20 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
+    private final String defaultCWLPath = "/Dockstore.cwl";
+    private final String defaultWDLPath = "/Dockstore.wdl";
+    private final String defaultNextflowPath = "/nextflow.config";
+    private Map<String, String> descriptorTypeToDefaultDescriptorPath;
 
     public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
         super(sessionFactory, permissionsInterface);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
+        this.descriptorTypeToDefaultDescriptorPath = new HashMap<>();
+        this.descriptorTypeToDefaultDescriptorPath.put("cwl", defaultCWLPath);
+        this.descriptorTypeToDefaultDescriptorPath.put("wdl", defaultWDLPath);
+        this.descriptorTypeToDefaultDescriptorPath.put("nfl", defaultNextflowPath);
     }
 
     @Override
@@ -112,10 +122,11 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setSourceControl(SourceControl.DOCKSTORE);
         workflow.setDescriptorType(descriptorType);
         workflow.setLastUpdated(new Date());
+        workflow.setDefaultWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(descriptorType.toLowerCase()));
         workflow.getUsers().add(user);
         return workflow;
     }
-
+    
     @Override
     @ApiOperation(nickname = "editHostedWorkflow", value = "Non-idempotent operation for creating new revisions of hosted workflows", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted workflows", response = Workflow.class)
@@ -127,7 +138,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion getVersion(Workflow workflow) {
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
-        version.setWorkflowPath("/Dockstore." + workflow.getDescriptorType());
+        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorType().toLowerCase()));
         version.setLastModified(new Date());
         return version;
     }
@@ -142,7 +153,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Workflow entry) {
         SourceFile.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = "/Dockstore." + entry.getDescriptorType().toLowerCase();
+        String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
         for (SourceFile sourceFile : sourceFiles) {
             if (Objects.equals(sourceFile.getPath(), mainDescriptorPath)) {
                 return LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent());

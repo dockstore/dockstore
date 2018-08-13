@@ -728,10 +728,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
     }
 
     /**
-     * Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL)
+     * Filters the source files to only show the ones that are possibly relevant to the type (CWL or WDL or NFL)
      *
      * @param sourceFiles The original source files for the Tool
-     * @param type        The type (CWL or WDL), nextflow is not currently handled
+     * @param type        The type (CWL or WDL or NFL)
      * @return A list of source files that are possibly relevant to the type (CWL or WDL)
      */
     private List<SourceFile> filterSourcefiles(Set<SourceFile> sourceFiles, String type) {

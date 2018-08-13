@@ -20,7 +20,7 @@ package io.dockstore.common;
  * Moved here from dockstore-client.
  */
 public enum LanguageType {
-    CWL("cwl"), WDL("wdl"), NEXTFLOW("nextflow"), NONE("none");
+    CWL("cwl"), WDL("wdl"), NEXTFLOW("nfl"), NONE("none");
     public final String desc;
 
     LanguageType(String name) {

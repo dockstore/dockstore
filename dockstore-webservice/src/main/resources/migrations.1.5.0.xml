@@ -186,7 +186,6 @@
         </sql>
         <addForeignKeyConstraint baseTableName="token" baseColumnNames="userid" constraintName="fk_userid_with_enduser" referencedTableName="enduser" referencedColumnNames="id"/>
     </changeSet>
-
     <changeSet author="dyuen (generated)" id="namechanged">
         <addColumn tableName="enduser">
             <column name="setupcomplete" type="bool" defaultValue="false"/>
@@ -211,5 +210,10 @@
         <createIndex indexName="profile_by_username" tableName="user_profile">
             <column name="username"/>
         </createIndex>
+    </changeSet>
+    <changeSet id="changeNextflowToNFL" author="agduncan">
+        <sql dbms="postgresql">
+            UPDATE workflow SET descriptorType='nfl' WHERE descriptorType='nextflow'
+        </sql>
     </changeSet>
 </databaseChangeLog>
