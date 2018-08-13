@@ -16,6 +16,8 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -54,12 +56,17 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final String defaultCWLPath = "/Dockstore.cwl";
     private final String defaultWDLPath = "/Dockstore.wdl";
     private final String defaultNextflowPath = "/nextflow.config";
+    private Map<String, String> descriptorTypeToDefaultDescriptorPath;
 
     public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
         super(sessionFactory, permissionsInterface);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
+        this.descriptorTypeToDefaultDescriptorPath = new HashMap<>();
+        this.descriptorTypeToDefaultDescriptorPath.put("cwl", defaultCWLPath);
+        this.descriptorTypeToDefaultDescriptorPath.put("wdl", defaultWDLPath);
+        this.descriptorTypeToDefaultDescriptorPath.put("nfl", defaultNextflowPath);
     }
 
     @Override
@@ -115,23 +122,11 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setSourceControl(SourceControl.DOCKSTORE);
         workflow.setDescriptorType(descriptorType);
         workflow.setLastUpdated(new Date());
-        workflow.setDefaultWorkflowPath(getDefaultWorkflowPath(descriptorType));
+        workflow.setDefaultWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(descriptorType.toLowerCase()));
         workflow.getUsers().add(user);
         return workflow;
     }
-
-    private String getDefaultWorkflowPath(String descriptorType) {
-        descriptorType = descriptorType.toLowerCase();
-        if (Objects.equals(descriptorType, "cwl")) {
-            return defaultCWLPath;
-        } else if (Objects.equals(descriptorType, "wdl")) {
-            return defaultWDLPath;
-        } else if (Objects.equals(descriptorType, "nfl")) {
-            return defaultNextflowPath;
-        }
-        return null;
-    }
-
+    
     @Override
     @ApiOperation(nickname = "editHostedWorkflow", value = "Non-idempotent operation for creating new revisions of hosted workflows", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted workflows", response = Workflow.class)
@@ -143,7 +138,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected WorkflowVersion getVersion(Workflow workflow) {
         WorkflowVersion version = new WorkflowVersion();
         version.setReferenceType(Version.ReferenceType.TAG);
-        version.setWorkflowPath(getDefaultWorkflowPath(workflow.getDescriptorType()));
+        version.setWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(workflow.getDescriptorType().toLowerCase()));
         version.setLastModified(new Date());
         return version;
     }
@@ -158,7 +153,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Workflow entry) {
         SourceFile.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = getDefaultWorkflowPath(entry.getDescriptorType());
+        String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
         for (SourceFile sourceFile : sourceFiles) {
             if (Objects.equals(sourceFile.getPath(), mainDescriptorPath)) {
                 return LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent());
