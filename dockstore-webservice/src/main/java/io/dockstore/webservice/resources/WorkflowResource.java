@@ -857,7 +857,7 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/path/workflow/{repository}/actions")
     @ApiOperation(value = "Gets all actions a user can perform on a workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "", response = Role.Action.class, responseContainer = "List")
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, false);
@@ -1008,7 +1008,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile cwl(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
         return getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL, user);
@@ -1019,7 +1020,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/wdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile wdl(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
         return getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL, user);
@@ -1030,7 +1032,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/nextflow")
     @ApiOperation(value = "Get the corresponding nextflow.config file on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile nextflow(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
         return getSourceFile(workflowId, tag, FileType.NEXTFLOW_CONFIG, user);
@@ -1041,7 +1044,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryCwlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path) {
@@ -1053,7 +1057,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/wdl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryWdlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path) {
@@ -1065,7 +1070,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/nextflow/{relative-path}")
     @ApiOperation(value = "Get the corresponding nextflow documents on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryNextFlowPath(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path) {
@@ -1078,7 +1084,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/secondaryCwl")
     @ApiOperation(value = "Get the corresponding cwl documents on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List")
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryCwl(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
         return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL, user);
@@ -1089,7 +1096,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/secondaryWdl")
     @ApiOperation(value = "Get the corresponding wdl documents on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List")
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryWdl(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
         return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL, user);
@@ -1100,7 +1108,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/secondaryNextflow")
     @ApiOperation(value = "Get the corresponding Nextflow documents on Github.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List")
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryNextflow(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
         return getAllSecondaryFiles(workflowId, tag, FileType.NEXTFLOW, user);
@@ -1111,7 +1120,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
     @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
-        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List")
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("version") String version) {
 
@@ -1694,6 +1704,5 @@ public class WorkflowResource
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
-
 
 }

@@ -711,9 +711,10 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/dockerfile")
     @ApiOperation(value = "Get the corresponding Dockerfile on Github.", tags = {
-        "containers" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile dockerfile(@ApiParam(hidden = true) @Auth Optional<User> user, @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId,
-        @QueryParam("tag") String tag) {
+        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public SourceFile dockerfile(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
 
         return getSourceFile(containerId, tag, FileType.DOCKERFILE, user);
     }
@@ -722,7 +723,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/{containerId}/verifiedSources")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+    @ApiOperation(value = "Get the sources that verified a particular tool.", tags = {
         "containers" }, notes = "Does not need authentication", response = String.class)
     public String verifiedSources(@ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
@@ -748,7 +749,8 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/cwl")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile cwl(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
         return getSourceFile(containerId, tag, FileType.DOCKSTORE_CWL, user);
@@ -759,7 +761,8 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/wdl")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile wdl(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
         return getSourceFile(containerId, tag, FileType.DOCKSTORE_WDL, user);
@@ -770,7 +773,8 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/cwl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryCwlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path) {
@@ -782,7 +786,8 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/wdl/{relative-path}")
     @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class)
+        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryWdlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @PathParam("relative-path") String path) {
@@ -794,7 +799,8 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/secondaryCwl")
     @ApiOperation(value = "Get a list of secondary CWL files from Git.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List")
+        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryCwl(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
         return getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_CWL, user);
@@ -805,7 +811,8 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/secondaryWdl")
     @ApiOperation(value = "Get a list of secondary WDL files from Git.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List")
+        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> secondaryWdl(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag) {
         return getAllSecondaryFiles(containerId, tag, FileType.DOCKSTORE_WDL, user);
@@ -816,7 +823,8 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/testParameterFiles")
     @ApiOperation(value = "Get the corresponding wdl test parameter files.", tags = {
-        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List")
+        "containers" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL, NFL") @QueryParam("descriptorType") String descriptorType) {
