@@ -44,6 +44,7 @@ import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
@@ -331,12 +332,18 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         return workflow;
     }
 
+    public File downloadTargetEntry(String toolpath, ToolDescriptor.TypeEnum type, boolean unzip) throws IOException {
+        return downloadTargetEntry(toolpath, type, unzip, new File(System.getProperty("user.dir")));
+    }
+
     /**
      * Disturbingly similar to WorkflowClient#downloadTargetEntry, could use cleanup refactoring
      * @param toolpath a unique identifier for an entry, called a path for workflows and tools
      * @param unzip unzip the entry after downloading
+     * @param directory directory to unzip descriptors into
+     * @return path to the primary descriptor
      */
-    protected void downloadTargetEntry(String toolpath, boolean unzip) throws IOException {
+    public File downloadTargetEntry(String toolpath, ToolDescriptor.TypeEnum type, boolean unzip, File directory) throws IOException {
         String[] parts = toolpath.split(":");
         String path = parts[0];
         String tag = (parts.length > 1) ? parts[1] : null;
@@ -351,8 +358,9 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             File zipFile = new File(zipFilename(workflow));
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
-                SwaggerUtility.unzipFile(zipFile);
+                SwaggerUtility.unzipFile(zipFile, directory);
             }
+            return new File(directory, first.get().getWorkflowPath());
         } else {
             throw new RuntimeException("version not found");
         }

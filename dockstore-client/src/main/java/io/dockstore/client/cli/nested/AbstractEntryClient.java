@@ -47,6 +47,7 @@ import io.github.collaboratory.wdl.WDLClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -276,12 +277,25 @@ public abstract class AbstractEntryClient<T> {
     protected abstract void refreshTargetEntry(String toolpath);
 
     /**
-     * Download a specific entry of this type.
+     * Download a specific entry of this type. Download into the current directory.
      *
+     * @param type relevant for tools which have multiple languages
      * @param toolpath a unique identifier for an entry, called a path for workflows and tools
      * @param unzip unzip the entry after downloading
+     * @return the path to the primary descriptor
      */
-    protected abstract void downloadTargetEntry(String toolpath, boolean unzip) throws IOException;
+    public abstract File downloadTargetEntry(String toolpath, ToolDescriptor.TypeEnum type, boolean unzip) throws IOException;
+
+    /**
+     * Download a specific entry of this type.
+     *
+     * @param directory directory to unzip into
+     * @param type relevant for tools which have multiple languages
+     * @param toolpath a unique identifier for an entry, called a path for workflows and tools
+     * @param unzip unzip the entry after downloading
+     * @return the path to the primary descriptor
+     */
+    public abstract File downloadTargetEntry(String toolpath, ToolDescriptor.TypeEnum type, boolean unzip, File directory) throws IOException;
 
     /**
      * Grab the descriptor for an entry. TODO: descriptorType should probably be an enum, may need to play with generics to make it
@@ -851,7 +865,7 @@ public abstract class AbstractEntryClient<T> {
             final String entry = reqVal(args, "--entry");
             final boolean unzip = !args.contains("--zip");
             try {
-                downloadTargetEntry(entry, unzip);
+                downloadTargetEntry(entry, null, unzip);
             } catch (ApiException e) {
                 exceptionMessage(e, "error downloading workflow, perhaps an incorrect ID?",
                     Client.API_ERROR);
@@ -1006,26 +1020,6 @@ public abstract class AbstractEntryClient<T> {
     }
 
     public abstract Client getClient();
-
-    /**
-     * @param entry
-     * @param descriptor
-     * @param tempDir
-     * @return a file representing not the directory, but the primary descriptor inside the directory
-     * @throws ApiException
-     * @throws IOException
-     */
-    public File downloadDescriptorFiles(String entry, String descriptor, File tempDir) throws ApiException, IOException {
-        final SourceFile descriptorFromServer = getDescriptorFromServer(entry, descriptor);
-        final File primaryFile = new File(tempDir, descriptorFromServer.getPath());
-        primaryFile.getParentFile().mkdirs();
-        Files.asCharSink(primaryFile, StandardCharsets.UTF_8).write(descriptorFromServer.getContent());
-        // Download imported descriptors (secondary descriptors)
-        downloadDescriptors(entry, descriptor, primaryFile.getParentFile());
-        return primaryFile;
-    }
-
-    public abstract List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir);
 
     /**
      * help text output
