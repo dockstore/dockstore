@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.5.0-alpha.10-SNAPSHOT"
+  version: "1.5.0-beta.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -1654,7 +1654,8 @@ paths:
       tags:
       - "containers"
       summary: "Get the corresponding Dockstore.cwl file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted tools"
       operationId: "cwl"
       produces:
       - "application/json"
@@ -1679,7 +1680,8 @@ paths:
       tags:
       - "containers"
       summary: "Get the corresponding Dockstore.cwl file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted tools"
       operationId: "secondaryCwlPath"
       produces:
       - "application/json"
@@ -1853,7 +1855,8 @@ paths:
       tags:
       - "containers"
       summary: "Get a list of secondary CWL files from Git."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted tools"
       operationId: "secondaryCwl"
       produces:
       - "application/json"
@@ -1880,7 +1883,8 @@ paths:
       tags:
       - "containers"
       summary: "Get a list of secondary WDL files from Git."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted tools"
       operationId: "secondaryWdl"
       produces:
       - "application/json"
@@ -2052,7 +2056,8 @@ paths:
       tags:
       - "containers"
       summary: "Get the corresponding wdl test parameter files."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted tools"
       operationId: "getTestParameterFiles"
       produces:
       - "application/json"
@@ -2319,7 +2324,8 @@ paths:
       tags:
       - "containers"
       summary: "Get the corresponding Dockstore.wdl file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted tools"
       operationId: "wdl"
       produces:
       - "application/json"
@@ -2344,7 +2350,8 @@ paths:
       tags:
       - "containers"
       summary: "Get the corresponding Dockstore.wdl file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted tools"
       operationId: "secondaryWdlPath"
       produces:
       - "application/json"
@@ -3923,7 +3930,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding Dockstore.cwl file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "cwl"
       produces:
       - "application/json"
@@ -3948,7 +3956,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding Dockstore.cwl file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "secondaryCwlPath"
       produces:
       - "application/json"
@@ -4069,7 +4078,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding nextflow.config file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "nextflow"
       produces:
       - "application/json"
@@ -4094,7 +4104,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding nextflow documents on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "secondaryNextFlowPath"
       produces:
       - "application/json"
@@ -4259,7 +4270,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding cwl documents on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "secondaryCwl"
       produces:
       - "application/json"
@@ -4286,7 +4298,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding Nextflow documents on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "secondaryNextflow"
       produces:
       - "application/json"
@@ -4313,7 +4326,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding wdl documents on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "secondaryWdl"
       produces:
       - "application/json"
@@ -4390,7 +4404,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding test parameter files."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "getTestParameterFiles"
       produces:
       - "application/json"
@@ -4629,7 +4644,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding Dockstore.wdl file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "wdl"
       produces:
       - "application/json"
@@ -4654,7 +4670,8 @@ paths:
       tags:
       - "workflows"
       summary: "Get the corresponding Dockstore.wdl file on Github."
-      description: "Does not need authentication"
+      description: "Does not require authentication for published workflows, authentication\
+        \ can be provided for restricted workflows"
       operationId: "secondaryWdlPath"
       produces:
       - "application/json"

@@ -4,7 +4,7 @@ info:
     This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.5.0-alpha.10-SNAPSHOT
+  version: 1.5.0-beta.0-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -1922,7 +1922,9 @@ paths:
       tags:
         - containers
       summary: Get the corresponding Dockstore.cwl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted tools
       operationId: cwl
       parameters:
         - name: containerId
@@ -1949,7 +1951,9 @@ paths:
       tags:
         - containers
       summary: Get the corresponding Dockstore.cwl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted tools
       operationId: secondaryCwlPath
       parameters:
         - name: containerId
@@ -2127,7 +2131,9 @@ paths:
       tags:
         - containers
       summary: Get a list of secondary CWL files from Git.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted tools
       operationId: secondaryCwl
       parameters:
         - name: containerId
@@ -2156,7 +2162,9 @@ paths:
       tags:
         - containers
       summary: Get a list of secondary WDL files from Git.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted tools
       operationId: secondaryWdl
       parameters:
         - name: containerId
@@ -2333,7 +2341,9 @@ paths:
       tags:
         - containers
       summary: Get the corresponding wdl test parameter files.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted tools
       operationId: getTestParameterFiles
       parameters:
         - name: containerId
@@ -2603,7 +2613,9 @@ paths:
       tags:
         - containers
       summary: Get the corresponding Dockstore.wdl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted tools
       operationId: wdl
       parameters:
         - name: containerId
@@ -2630,7 +2642,9 @@ paths:
       tags:
         - containers
       summary: Get the corresponding Dockstore.wdl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted tools
       operationId: secondaryWdlPath
       parameters:
         - name: containerId
@@ -4269,7 +4283,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding Dockstore.cwl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: cwl
       parameters:
         - name: workflowId
@@ -4296,7 +4312,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding Dockstore.cwl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryCwlPath
       parameters:
         - name: workflowId
@@ -4422,7 +4440,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding nextflow.config file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: nextflow
       parameters:
         - name: workflowId
@@ -4449,7 +4469,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding nextflow documents on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryNextFlowPath
       parameters:
         - name: workflowId
@@ -4616,7 +4638,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding cwl documents on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryCwl
       parameters:
         - name: workflowId
@@ -4645,7 +4669,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding Nextflow documents on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryNextflow
       parameters:
         - name: workflowId
@@ -4674,7 +4700,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding wdl documents on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryWdl
       parameters:
         - name: workflowId
@@ -4749,7 +4777,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding test parameter files.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: getTestParameterFiles
       parameters:
         - name: workflowId
@@ -4992,7 +5022,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding Dockstore.wdl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: wdl
       parameters:
         - name: workflowId
@@ -5019,7 +5051,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding Dockstore.wdl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryWdlPath
       parameters:
         - name: workflowId

@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -150,8 +151,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType narrow the file to a specific type
      * @return return the primary descriptor or Dockerfile
      */
-    default SourceFile getSourceFile(long entryId, String tag, SourceFile.FileType fileType) {
-        return getSourceFileByPath(entryId, tag, fileType, null);
+    default SourceFile getSourceFile(long entryId, String tag, SourceFile.FileType fileType, Optional<User> user) {
+        return getSourceFileByPath(entryId, tag, fileType, null, user);
     }
 
     /**
@@ -164,8 +165,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param path     a specific path to a file
      * @return a single file depending on parameters
      */
-    default SourceFile getSourceFileByPath(long entryId, String tag, SourceFile.FileType fileType, String path) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType);
+    default SourceFile getSourceFileByPath(long entryId, String tag, SourceFile.FileType fileType, String path, Optional<User> user) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(entryId, tag, fileType, user);
         for (Map.Entry<String, ImmutablePair<SourceFile, FileDescription>> entry : sourceFiles.entrySet()) {
             if (path != null) {
                 //db stored paths are absolute, convert relative to absolute
@@ -186,8 +187,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType);
+    default List<SourceFile> getAllSecondaryFiles(long workflowId, String tag, SourceFile.FileType fileType, Optional<User> user) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
         return sourceFiles.entrySet().stream()
             .filter(entry -> entry.getValue().getLeft().getType().equals(fileType) && !entry.getValue().right.primaryDescriptor)
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
@@ -200,8 +201,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param fileType the filetype we want to consider
      * @return a list of SourceFile
      */
-    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, SourceFile.FileType fileType) {
-        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType);
+    default List<SourceFile> getAllSourceFiles(long workflowId, String tag, SourceFile.FileType fileType, Optional<User> user) {
+        final Map<String, ImmutablePair<SourceFile, FileDescription>> sourceFiles = this.getSourceFiles(workflowId, tag, fileType, user);
         return sourceFiles.entrySet().stream().filter(entry -> entry.getValue().getLeft().getType().equals(fileType))
             .map(entry -> entry.getValue().getLeft()).collect(Collectors.toList());
     }
@@ -214,9 +215,11 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @return a map of file paths -> pairs of sourcefiles and descriptions of those sourcefiles
      */
     default Map<String, ImmutablePair<SourceFile, FileDescription>> getSourceFiles(long workflowId, String tag,
-            SourceFile.FileType fileType) {
+            SourceFile.FileType fileType, Optional<User> user) {
         T entry = getDAO().findById(workflowId);
         checkEntry(entry);
+        checkOptionalAuthRead(user, entry);
+
         // tighten permissions for hosted tools and workflows
         if (!entry.getIsPublished()) {
             if (entry instanceof Tool && ((Tool)entry).getMode() == ToolMode.HOSTED) {

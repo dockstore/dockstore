@@ -502,12 +502,12 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 // this only works for test parameters associated with tools
                 List<SourceFile> testSourceFiles = new ArrayList<>();
                 try {
-                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type));
+                    testSourceFiles.addAll(toolHelper.getAllSourceFiles(entry.getId(), versionId, type, user));
                 } catch (CustomWebApplicationException e) {
                     LOG.warn("intentionally ignoring failure to get test parameters", e);
                 }
                 try {
-                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type));
+                    testSourceFiles.addAll(workflowHelper.getAllSourceFiles(entry.getId(), versionId, type, user));
                 } catch (CustomWebApplicationException e) {
                     LOG.warn("intentionally ignoring failure to get source files", e);
                 }
