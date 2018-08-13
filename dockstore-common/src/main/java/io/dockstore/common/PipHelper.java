@@ -22,7 +22,7 @@ public final class PipHelper {
      * @return              The most recently changed pip requirements file to the Dockstore client version (can be older, but not newer)
      */
     public static String convertSemVerToAvailableVersion(String semVerString) {
-        if (semVerString == null) {
+        if (semVerString == null || "development-build".equals(semVerString)) {
             semVerString = "9001.9001.9001";
         }
         Version semVer = Version.valueOf(semVerString);
