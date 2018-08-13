@@ -520,6 +520,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             profile.bio = myself.getBlog();  // ? not sure about this mapping in the new api
             profile.location = myself.getLocation();
             profile.company = myself.getCompany();
+            profile.username = myself.getLogin();
             Map<String, User.Profile> userProfile = user.getUserProfiles();
             userProfile.put(TokenType.GITHUB_COM.toString(), profile);
             user.setAvatarUrl(myself.getAvatarUrl());

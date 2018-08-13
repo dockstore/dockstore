@@ -153,7 +153,7 @@ public final class CommonTestUtilities {
         if (isNewApplication) {
             application = support.newApplication();
         } else {
-            application= support.getApplication();
+            application = support.getApplication();
         }
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
         application.run("db", "migrate", configPath, "--include", "1.3.0.generated");

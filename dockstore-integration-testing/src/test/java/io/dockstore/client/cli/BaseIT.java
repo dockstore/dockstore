@@ -15,10 +15,6 @@
  */
 package io.dockstore.client.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
@@ -27,6 +23,7 @@ import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.client.ApiClient;
+import io.swagger.client.auth.ApiKeyAuth;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
@@ -38,6 +35,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
@@ -91,12 +92,46 @@ public class BaseIT {
         client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
         if (authenticated) {
             client.addDefaultHeader("Authorization", "Bearer " + (testingPostgres
-                .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';", new ScalarHandler<>())));
+                    .runSelectStatement("select content from token where tokensource='dockstore' and username= '" + username + "';",
+                            new ScalarHandler<>())));
         }
         return client;
     }
 
-    protected static ApiClient getWebClient(String username){
+    /**
+     * the following were migrated from SwaggerClientIT and can be eventually merged. Note different config file used
+     */
+
+    protected static ApiClient getWebClient(String username) {
         return getWebClient(true, username);
+    }
+
+    protected static ApiClient getWebClient() {
+        return getWebClient(true, false);
+    }
+
+    protected static ApiClient getAdminWebClient() {
+        return getWebClient(true, true);
+    }
+
+    protected static ApiClient getAnonymousWebClient() {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        ApiClient client = new ApiClient();
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        return client;
+    }
+
+    protected static ApiClient getWebClient(boolean correctUser, boolean admin) {
+        File configFile = FileUtils.getFile("src", "test", "resources", "config");
+        INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        ApiClient client = new ApiClient();
+        ApiKeyAuth bearer = (ApiKeyAuth) client.getAuthentication("BEARER");
+        bearer.setApiKeyPrefix("BEARER");
+        bearer.setApiKey((correctUser ?
+                parseConfig.getString(admin ? Constants.WEBSERVICE_TOKEN_USER_1 : Constants.WEBSERVICE_TOKEN_USER_2) :
+                "foobar"));
+        client.setBasePath(parseConfig.getString(Constants.WEBSERVICE_BASE_PATH));
+        return client;
     }
 }

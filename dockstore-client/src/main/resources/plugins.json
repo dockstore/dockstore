@@ -7,4 +7,9 @@
   },{
     "name": "dockstore-file-synapse-plugin",
     "version": "0.0.5"
-  }]
+  }, {
+    "name": "dockstore-datastore-object-service-plugin",
+    "version": "0.0.1",
+    "location": "https://github.com/dockstore/data-object-service-plugin/releases/download/0.0.1/dockstore-file-dos-plugin-0.0.1.zip"
+  }
+  ]

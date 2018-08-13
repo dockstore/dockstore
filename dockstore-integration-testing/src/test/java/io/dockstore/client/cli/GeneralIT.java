@@ -34,6 +34,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
@@ -720,6 +721,33 @@ public class GeneralIT extends BaseIT {
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where mode = '" + DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH + "' and giturl = '" + gitUrl + "' and name = 'my-md5sum' and namespace = 'dockstoretestuser2' and toolname = 'altname'", new ScalarHandler<>());
         assertEquals("The tool should be manual, there are " + count, 1, count);
+    }
+
+    /**
+     * Tests that you can properly check if a user with some username exists
+     */
+    @Test
+    public void testCheckUser() {
+        // Authorized user should pass
+        ApiClient client = getWebClient(USER_2_USERNAME);
+        UsersApi userApi = new UsersApi(client);
+        boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
+        assertTrue("User DockstoreTestUser2 should exist", userOneExists);
+        boolean userTwoExists = userApi.checkUserExists("OtherUser");
+        assertTrue("User OtherUser should exist", userTwoExists);
+        boolean fakeUserExists = userApi.checkUserExists("NotARealUser");
+        assertTrue("User NotARealUser should not exist", !fakeUserExists);
+
+        // Unauthorized user should fail
+        ApiClient unauthClient = getWebClient(false, "");
+        UsersApi unauthUserApi = new UsersApi(unauthClient);
+        boolean failed = false;
+        try {
+            unauthUserApi.checkUserExists("DockstoreTestUser2");
+        } catch (ApiException ex) {
+            failed = true;
+        }
+        assertTrue("Should throw an expection when not authorized.", failed);
     }
 
     /**
