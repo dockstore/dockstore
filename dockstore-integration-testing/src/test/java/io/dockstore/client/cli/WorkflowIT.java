@@ -200,9 +200,9 @@ public class WorkflowIT extends BaseIT {
             exceptionThrown = true;
         }
         assertTrue(exceptionThrown);
-        FileWrapper adminToolDesciptor = adminGa4Ghv2Api
+        FileWrapper adminToolDescriptor = adminGa4Ghv2Api
             .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
-        assertTrue("could not get content via optional auth", adminToolDesciptor != null && !adminToolDesciptor.getContent().isEmpty());
+        assertTrue("could not get content via optional auth", adminToolDescriptor != null && !adminToolDescriptor.getContent().isEmpty());
 
         workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
             public Boolean isPublish() { return true;}
@@ -1113,7 +1113,7 @@ public class WorkflowIT extends BaseIT {
                 fail();
             }
         });
-        assertTrue("did not count expected number of files", count.get() >= 5);
+        assertTrue("did not count expected (5) number of files, got" + count.get(), count.get() >= 5);
     }
 
 
