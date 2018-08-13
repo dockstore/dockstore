@@ -30,6 +30,7 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.swagger.model.DescriptorType;
+import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolVersion;
@@ -344,7 +345,7 @@ public class ToolsImplCommonTest {
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
         FileWrapper actualToolTests = ToolsImplCommon.sourceFileToToolTests("", sourceFile);
-        FileWrapper expectedToolTests = new FileWrapper();
+        ExtendedFileWrapper expectedToolTests = new ExtendedFileWrapper();
         expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");
         assertEquals(expectedToolTests, actualToolTests);
