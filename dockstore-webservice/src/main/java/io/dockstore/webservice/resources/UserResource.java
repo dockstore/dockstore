@@ -55,6 +55,7 @@ import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
+import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -64,6 +65,7 @@ import io.swagger.annotations.ApiResponses;
 import io.swagger.annotations.Authorization;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
+import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,15 +86,17 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
+    private final CachingAuthenticator cachingAuthenticator;
 
-    public UserResource(TokenDAO tokenDAO, UserDAO userDAO, GroupDAO groupDAO, WorkflowResource workflowResource,
-        DockerRepoResource dockerRepoResource) {
-        this.userDAO = userDAO;
-        this.groupDAO = groupDAO;
-        this.tokenDAO = tokenDAO;
+    public UserResource(SessionFactory sessionFactory, WorkflowResource workflowResource,
+        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator) {
+        this.userDAO = new UserDAO(sessionFactory);
+        this.groupDAO = new GroupDAO(sessionFactory);
+        this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
         elasticManager = new ElasticManager();
+        this.cachingAuthenticator = cachingAuthenticator;
     }
 
     @POST
@@ -187,6 +191,14 @@ public class UserResource implements AuthenticatedResourceInterface {
         if (!new ExtendedUserData(user).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
+
+        List<Token> byUserId = tokenDAO.findByUserId(user.getId());
+        for (Token token : byUserId) {
+            tokenDAO.delete(token);
+            // invalidate tokens from caching authenticator
+            cachingAuthenticator.invalidate(token.getContent());
+        }
+
         return userDAO.delete(user);
     }
 
