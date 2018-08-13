@@ -347,6 +347,6 @@ public class ToolsImplCommonTest {
         FileWrapper expectedToolTests = new FileWrapper();
         expectedToolTests.setContent(PLACEHOLDER_CONTENT);
         expectedToolTests.setUrl("/test.cwl.json");
-        assertEquals(actualToolTests, expectedToolTests);
+        assertEquals(expectedToolTests, actualToolTests);
     }
 }
