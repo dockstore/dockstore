@@ -45,7 +45,6 @@ import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.helpers.PersistenceExceptionMapper;
 import io.dockstore.webservice.helpers.TransactionExceptionMapper;
-import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -219,8 +218,6 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
         final WorkflowDAO workflowDAO = new WorkflowDAO(hibernate.getSessionFactory());
-
-        final GroupDAO groupDAO = new GroupDAO(hibernate.getSessionFactory());
         final TagDAO tagDAO = new TagDAO(hibernate.getSessionFactory());
 
         LOG.info("Cache directory for OkHttp is: " + cache.directory().getAbsolutePath());
@@ -248,7 +245,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new DockerRepoTagResource(toolDAO, tagDAO));
         environment.jersey().register(new TokenResource(tokenDAO, userDAO, httpClient, cachingAuthenticator, configuration));
 
-        environment.jersey().register(new UserResource(tokenDAO, userDAO, groupDAO, workflowResource, dockerRepoResource));
+        environment.jersey().register(new UserResource(getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator));
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer));
