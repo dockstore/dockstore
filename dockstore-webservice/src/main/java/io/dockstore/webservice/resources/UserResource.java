@@ -279,6 +279,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @GET
+    @Beta
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}/users")
@@ -293,6 +294,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @GET
+    @Beta
     @Timed
     @UnitOfWork
     @Path("/groups")
@@ -302,6 +304,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @GET
+    @Beta
     @Timed
     @UnitOfWork
     @Path("/groups/{groupId}")
@@ -311,6 +314,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @PUT
+    @Beta
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups")
@@ -335,6 +339,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     }
 
     @DELETE
+    @Beta
     @Timed
     @UnitOfWork
     @Path("/{userId}/groups/{groupId}")
