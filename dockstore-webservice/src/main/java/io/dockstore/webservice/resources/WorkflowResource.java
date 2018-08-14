@@ -114,16 +114,22 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
 /**
+ * TODO: remember to document new security concerns for hosted vs other workflows
+ *
  * @author dyuen
  */
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 @Path("/workflows")
 @Api("workflows")
 @Produces(MediaType.APPLICATION_JSON)
-public class WorkflowResource implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface, SourceControlResourceInterface {
+public class WorkflowResource
+    implements AuthenticatedResourceInterface, EntryVersionHelper<Workflow, WorkflowVersion, WorkflowDAO>, StarrableResourceInterface,
+    SourceControlResourceInterface {
     private static final String CWL_CHECKER = "_cwl_checker";
     private static final String WDL_CHECKER = "_wdl_checker";
     private static final Logger LOG = LoggerFactory.getLogger(WorkflowResource.class);
     private static final String PAGINATION_LIMIT = "100";
+    private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for published workflows, authentication can be provided for restricted workflows";
     private final ElasticManager elasticManager;
     private final UserDAO userDAO;
     private final TokenDAO tokenDAO;
@@ -139,8 +145,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     private final String bitbucketClientSecret;
     private final PermissionsInterface permissionsInterface;
 
-    public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID,
-        String bitbucketClientSecret, PermissionsInterface permissionsInterface) {
+    public WorkflowResource(HttpClient client, SessionFactory sessionFactory, String bitbucketClientID, String bitbucketClientSecret,
+        PermissionsInterface permissionsInterface) {
         this.userDAO = new UserDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
@@ -161,6 +167,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
     /**
      * TODO: this should not be a GET either
+     *
      * @param user
      * @param workflowId
      * @return
@@ -169,8 +176,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/{workflowId}/restub")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Restub a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
-    public Workflow restub(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+    @ApiOperation(value = "Restub a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Restubs a full, unpublished workflow.", response = Workflow.class)
+    public Workflow restub(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         // Check that workflow is valid to restub
         if (workflow.getIsPublished()) {
@@ -178,6 +187,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         }
 
         checkNotHosted(workflow);
+        checkCanWriteWorkflow(user, workflow);
 
         workflow.setMode(WorkflowMode.STUB);
 
@@ -190,7 +200,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         // Do we maintain the checker workflow association? For now we won't
         workflow.setCheckerWorkflow(null);
 
-
         elasticManager.handleIndexUpdate(workflow, ElasticMode.DELETE);
         return workflow;
 
@@ -199,9 +208,9 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     /**
      * For each valid token for a git hosting service, refresh all workflows
      *
-     * @param user         a user to refresh workflows for
-     * @param organization limit the refresh to particular organizations if given
-     * @param alreadyProcessed     skip particular workflows if already refreshed, previously used for debugging
+     * @param user             a user to refresh workflows for
+     * @param organization     limit the refresh to particular organizations if given
+     * @param alreadyProcessed skip particular workflows if already refreshed, previously used for debugging
      */
     void refreshStubWorkflowsForUser(User user, String organization, Set<Long> alreadyProcessed) {
 
@@ -249,13 +258,15 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
      * @param user                    the user that made the request to refresh
      * @param organization            if specified, only refresh if workflow belongs to the organization
      */
-    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization, Set<Long> alreadyProcessed) {
+    private void refreshHelper(final SourceCodeRepoInterface sourceCodeRepoInterface, User user, String organization,
+        Set<Long> alreadyProcessed) {
         /* helpful code for testing, this was used to refresh a users existing workflows
            with a fixed github token for all users
          */
         boolean statsCollection = false;
         if (statsCollection) {
-            List<Workflow> workflows = userDAO.findById(user.getId()).getEntries().stream().filter(entry -> entry instanceof Workflow).map(obj -> (Workflow)obj).collect(Collectors.toList());
+            List<Workflow> workflows = userDAO.findById(user.getId()).getEntries().stream().filter(entry -> entry instanceof Workflow)
+                .map(obj -> (Workflow)obj).collect(Collectors.toList());
             Map<String, String> workflowGitUrl2Name = new HashMap<>();
             for (Workflow workflow : workflows) {
                 workflowGitUrl2Name.put(workflow.getGitUrl(), workflow.getOrganization() + "/" + workflow.getRepository());
@@ -328,8 +339,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targeted", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow refresh(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+    @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targeted", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkUser(user, workflow);
@@ -354,7 +367,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             }
         }
 
-        final Workflow newWorkflow = sourceCodeRepo.getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
+        final Workflow newWorkflow = sourceCodeRepo
+            .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
         updateDBWorkflowWithSourceControlWorkflow(workflow, newWorkflow);
         FileFormatHelper.updateFileFormats(newWorkflow.getVersions(), fileFormatDAO);
@@ -431,25 +445,29 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Get a registered workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
-    public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+    @ApiOperation(value = "Get a registered workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
+    public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
-        checkCanReadWorkflow(user, workflow);
+        checkCanRead(user, workflow);
 
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
         return workflow;
     }
 
-
     @PUT
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/labels")
-    @ApiOperation(value = "Update the labels linked to a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
-    public Workflow updateLabels(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings, @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+    @ApiOperation(value = "Update the labels linked to a workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Labels are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Workflow.class)
+    public Workflow updateLabels(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Tool to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "Comma-delimited list of labels.", required = true) @QueryParam("labels") String labelStrings,
+        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         return this.updateLabels(user, workflowId, labelStrings, labelDAO, elasticManager);
     }
 
@@ -457,8 +475,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Update the workflow with the given workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+    @ApiOperation(value = "Update the workflow with the given workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
         Workflow wf = workflowDAO.findById(workflowId);
         checkEntry(wf);
@@ -469,7 +489,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         if (duplicate != null && duplicate.getId() != workflowId) {
             LOG.info(user.getUsername() + ": " + "duplicate workflow found: {}" + workflow.getWorkflowPath());
-            throw new CustomWebApplicationException("Workflow " + workflow.getWorkflowPath() + " already exists.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Workflow " + workflow.getWorkflowPath() + " already exists.",
+                HttpStatus.SC_BAD_REQUEST);
         }
 
         updateInfo(wf, workflow);
@@ -484,16 +505,19 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/defaultVersion")
-    @ApiOperation(value = "Update the default version of the given workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, nickname = "updateWorkflowDefaultVersion")
-    public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-                                   @ApiParam(value = "Version name to set as default", required = true) String version) {
+    @ApiOperation(value = "Update the default version of the given workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, nickname = "updateWorkflowDefaultVersion")
+    public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "Version name to set as default", required = true) String version) {
         return (Workflow)updateDefaultVersionHelper(version, workflowId, user, elasticManager);
     }
 
     // Used to update workflow manually (not refresh)
     private void updateInfo(Workflow oldWorkflow, Workflow newWorkflow) {
         // If workflow is FULL and descriptor type is being changed throw an error
-        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) && !Objects.equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
+        if (Objects.equals(oldWorkflow.getMode(), WorkflowMode.FULL) && !Objects
+            .equals(oldWorkflow.getDescriptorType(), newWorkflow.getDescriptorType())) {
             throw new CustomWebApplicationException("You cannot change the descriptor type of a FULL workflow.", HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -516,14 +540,17 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/verify/{workflowVersionId}")
     @RolesAllowed("admin")
-    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
-    public Set<WorkflowVersion> verifyWorkflowVersion(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId, @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
+    @ApiOperation(value = "Verify or unverify a workflow. ADMIN ONLY", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> verifyWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId,
+        @ApiParam(value = "Object containing verification information.", required = true) VerifyRequest verifyRequest) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         // Note: if you set someone as an admin, they are not actually admin right away. Users must wait until after the
         // expireAfterAccess time in the authenticationCachePolicy expires (10m by default)
-        checkUser(user, workflow);
+        checkAdmin(user);
 
         WorkflowVersion workflowVersion = workflowVersionDAO.findById(workflowVersionId);
         if (workflowVersion == null) {
@@ -552,7 +579,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Beta
     @Path("/{workflowId}/requestDOI/{workflowVersionId}")
-    @ApiOperation(value = "Request a DOI for this version of a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
+    @ApiOperation(value = "Request a DOI for this version of a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
@@ -584,8 +612,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
-    @ApiOperation(value = "Change the workflow paths", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = Workflow.class)
-    public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+    @ApiOperation(value = "Change the workflow paths", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = Workflow.class)
+    public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
 
         Workflow wf = workflowDAO.findById(workflowId);
@@ -610,8 +640,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/users")
-    @ApiOperation(value = "Get users of a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
-    public List<User> getUsers(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+    @ApiOperation(value = "Get users of a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
+    public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
 
@@ -636,7 +668,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/organization/{organization}/published")
     @ApiOperation(value = "List all published workflows belonging to the specified namespace", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
-    public List<Workflow> getPublishedWorkflowsByOrganization(@ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
+    public List<Workflow> getPublishedWorkflowsByOrganization(
+        @ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
         List<Workflow> workflows = workflowDAO.findPublishedByOrganization(organization);
         filterContainersForHiddenTags(workflows);
         return workflows;
@@ -646,8 +679,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/publish")
-    @ApiOperation(value = "Publish or unpublish a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
-    public Workflow publish(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
+    @ApiOperation(value = "Publish or unpublish a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
+    public Workflow publish(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
         Workflow c = workflowDAO.findById(workflowId);
         checkEntry(c);
@@ -699,7 +734,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         "workflows" }, notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> allPublishedWorkflows(
         @ApiParam(value = "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.") @QueryParam("offset") String offset,
-        @ApiParam(value = "Amount of records to return in a given page, limited to " + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+        @ApiParam(value = "Amount of records to return in a given page, limited to "
+            + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
         @ApiParam(value = "Filter, this is a search string that filters the results.") @DefaultValue("") @QueryParam("filter") String filter,
         @ApiParam(value = "Sort column") @DefaultValue("stars") @QueryParam("sortCol") String sortCol,
         @ApiParam(value = "Sort order", allowableValues = "asc,desc") @DefaultValue("desc") @QueryParam("sortOrder") String sortOrder,
@@ -718,50 +754,52 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("shared")
-    @ApiOperation(value = "All workflows shared with user", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "List all workflows shared with user", tags = { "workflows"}, response = SharedWorkflows.class, responseContainer = "List")
+    @ApiOperation(value = "All workflows shared with user", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List all workflows shared with user", tags = {
+        "workflows" }, response = SharedWorkflows.class, responseContainer = "List")
     public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
-        return this.permissionsInterface
-                .workflowsSharedWithUser(user).entrySet().stream()
-                .map(e -> {
-                    final List<Workflow> workflows = e.getValue().stream().map(path -> {
-                        // TODO: Fetch workflows in bulk rather than 1 by 1.
-                        final Workflow workflow = workflowDAO.findByPath(path, false);
-                        // If user is the owner of the workflow, don't include it as shared with
-                        if (workflow != null && !workflow.getUsers().contains(user)) {
-                            return workflow;
-                        }
-                        return null;
-                    }).filter(Objects::nonNull).collect(Collectors.toList());
-                    return new SharedWorkflows(e.getKey(), workflows);
-                })
-                .filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0)
-                .collect(Collectors.toList());
+        return this.permissionsInterface.workflowsSharedWithUser(user).entrySet().stream().map(e -> {
+            final List<Workflow> workflows = e.getValue().stream().map(path -> {
+                // TODO: Fetch workflows in bulk rather than 1 by 1.
+                final Workflow workflow = workflowDAO.findByPath(path, false);
+                // If user is the owner of the workflow, don't include it as shared with
+                if (workflow != null && !workflow.getUsers().contains(user)) {
+                    return workflow;
+                }
+                return null;
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+            return new SharedWorkflows(e.getKey(), workflows);
+        }).filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0).collect(Collectors.toList());
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}")
-    @ApiOperation(value = "Get a workflow by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
-    public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    @ApiOperation(value = "Get a workflow by path", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
+    public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
 
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
-        checkCanReadWorkflow(user, workflow);
+        checkCanRead(user, workflow);
         return workflow;
     }
 
     /**
      * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user
      * does not have permission, throws a {@link CustomWebApplicationException}.
+     *
      * @param user
      * @param workflow
      */
-    private void checkCanReadWorkflow(User user, Workflow workflow) {
+    @Override
+    public void checkCanRead(User user, Entry workflow) {
         try {
             checkUser(user, workflow);
         } catch (CustomWebApplicationException ex) {
-            if (!permissionsInterface.canDoAction(user, workflow, Role.Action.READ)) {
+            if (!permissionsInterface.canDoAction(user, (Workflow)workflow, Role.Action.READ)) {
                 throw ex;
             }
         }
@@ -770,6 +808,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     /**
      * Checks if <code>user</code> has permission to write <code>workflow</code>. If the user
      * does not have permission, throws a {@link CustomWebApplicationException}.
+     *
      * @param user
      * @param workflow
      */
@@ -786,6 +825,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     /**
      * Checks if <code>user</code> has permission to share <code>workflow</code>. If the user
      * does not have permission, throws a {@link CustomWebApplicationException}.
+     *
      * @param user
      * @param workflow
      */
@@ -803,8 +843,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
-    @ApiOperation(value = "Get all permissions for a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all permissions for a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
-    public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    @ApiOperation(value = "Get all permissions for a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all permissions for a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
         return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
@@ -814,8 +856,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/actions")
-    @ApiOperation(value = "Gets all actions a user can perform on a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "", response = Role.Action.class, responseContainer = "List")
-    public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    @ApiOperation(value = "Gets all actions a user can perform on a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
+    public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
         return this.permissionsInterface.getActionsForWorkflow(user, workflow);
@@ -825,10 +869,11 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
-    @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Adds a permission for a workflow. The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
+    @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Adds a permission for a workflow. The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-            @ApiParam(value = "user permission", required = true) Permission permission) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @ApiParam(value = "user permission", required = true) Permission permission) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
         // TODO: Remove this guard when ready to expand sharing to non-hosted workflows. https://github.com/ga4gh/dockstore/issues/1593
@@ -843,11 +888,12 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
-    @ApiOperation(value = "Remove the specified user role for a workflow", authorizations = { @Authorization(value =  JWT_SECURITY_DEFINITION_NAME)}, notes = "Removes a role from a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    @ApiOperation(value = "Remove the specified user role for a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Removes a role from a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
-            @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
-            @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
+        @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
+        @ApiParam(value = "role", required = true) @QueryParam("role") Role role) {
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
         this.permissionsInterface.removePermission(user, workflow, email, role);
@@ -858,8 +904,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/path/entry/{repository}")
-    @ApiOperation(value = "Get an entry by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Gets an entry from the path. Enter full path.", response = Entry.class)
-    public Entry getEntryByPath(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    @ApiOperation(value = "Get an entry by path", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Gets an entry from the path. Enter full path.", response = Entry.class)
+    public Entry getEntryByPath(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, false);
 
         // Check if the entry exists
@@ -893,7 +941,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/path/{repository}")
-    @ApiOperation(value = "Get a list of workflows by path", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of workflows by path", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
@@ -918,12 +967,13 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/versions")
-    @ApiOperation(value = "List the versions for a published workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
+    @ApiOperation(value = "List the versions for a published workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
         Workflow repository = workflowDAO.findById(workflowId);
         checkEntry(repository);
 
-        checkCanReadWorkflow(user, repository);
+        checkCanRead(user, repository);
 
         return new ArrayList<>(repository.getVersions());
     }
@@ -932,13 +982,15 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/verifiedSources")
-    @ApiOperation(value = "Get a semicolon delimited list of verified sources", tags = { "workflows" }, notes = "Does not need authentication", response = String.class)
+    @ApiOperation(value = "Get a semicolon delimited list of verified sources", tags = {
+        "workflows" }, notes = "Does not need authentication", response = String.class)
     public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
 
         Set<String> verifiedSourcesArray = new HashSet<>();
-        workflow.getWorkflowVersions().stream().filter(Version::isVerified).forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
+        workflow.getWorkflowVersions().stream().filter(Version::isVerified)
+            .forEach((WorkflowVersion v) -> verifiedSourcesArray.add(v.getVerifiedSource()));
 
         JSONArray jsonArray;
         try {
@@ -955,18 +1007,24 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/cwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile cwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL);
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public SourceFile cwl(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
+        return getSourceFile(workflowId, tag, FileType.DOCKSTORE_CWL, user);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/wdl")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile wdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL);
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public SourceFile wdl(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
+        return getSourceFile(workflowId, tag, FileType.DOCKSTORE_WDL, user);
     }
 
     @GET
@@ -974,28 +1032,37 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/nextflow")
     @ApiOperation(value = "Get the corresponding nextflow.config file on Github.", tags = {
-        "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile nextflow(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-        @QueryParam("tag") String tag) {
-        return getSourceFile(workflowId, tag, FileType.NEXTFLOW_CONFIG);
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public SourceFile nextflow(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
+        return getSourceFile(workflowId, tag, FileType.NEXTFLOW_CONFIG, user);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/cwl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryCwlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
-        return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path);
+    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public SourceFile secondaryCwlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
+        @PathParam("relative-path") String path) {
+        return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_CWL, path, user);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/wdl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryWdlPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
-        return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path);
+    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public SourceFile secondaryWdlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
+        @PathParam("relative-path") String path) {
+        return getSourceFileByPath(workflowId, tag, FileType.DOCKSTORE_WDL, path, user);
     }
 
     @GET
@@ -1003,29 +1070,37 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/nextflow/{relative-path}")
     @ApiOperation(value = "Get the corresponding nextflow documents on Github.", tags = {
-        "workflows" }, notes = "Does not need authentication", response = SourceFile.class)
-    public SourceFile secondaryNextFlowPath(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-        @QueryParam("tag") String tag, @PathParam("relative-path") String path) {
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public SourceFile secondaryNextFlowPath(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag,
+        @PathParam("relative-path") String path) {
 
-        return getSourceFileByPath(workflowId, tag, FileType.NEXTFLOW, path);
+        return getSourceFileByPath(workflowId, tag, FileType.NEXTFLOW, path, user);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/secondaryCwl")
-    @ApiOperation(value = "Get the corresponding cwl documents on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryCwl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL);
+    @ApiOperation(value = "Get the corresponding cwl documents on Github.", tags = {
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public List<SourceFile> secondaryCwl(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
+        return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_CWL, user);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/secondaryWdl")
-    @ApiOperation(value = "Get the corresponding wdl documents on Github.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryWdl(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
-        return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL);
+    @ApiOperation(value = "Get the corresponding wdl documents on Github.", tags = {
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public List<SourceFile> secondaryWdl(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
+        return getAllSecondaryFiles(workflowId, tag, FileType.DOCKSTORE_WDL, user);
     }
 
     @GET
@@ -1033,40 +1108,48 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/secondaryNextflow")
     @ApiOperation(value = "Get the corresponding Nextflow documents on Github.", tags = {
-        "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> secondaryNextflow(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-        @QueryParam("tag") String tag) {
-        return getAllSecondaryFiles(workflowId, tag, FileType.NEXTFLOW);
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public List<SourceFile> secondaryNextflow(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("tag") String tag) {
+        return getAllSecondaryFiles(workflowId, tag, FileType.NEXTFLOW, user);
     }
 
     @GET
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Get the corresponding test parameter files.", tags = { "workflows" }, notes = "Does not need authentication", response = SourceFile.class, responseContainer = "List")
-    public List<SourceFile> getTestParameterFiles(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId,
-        @QueryParam("version") String version) {
+    @ApiOperation(value = "Get the corresponding test parameter files.", tags = {
+        "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, responseContainer = "List", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public List<SourceFile> getTestParameterFiles(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("version") String version) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         FileType testParameterType = workflow.getTestParameterType();
-        return getAllSourceFiles(workflowId, version, testParameterType);
+        return getAllSourceFiles(workflowId, version, testParameterType, user);
     }
 
     @PUT
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Add test parameter files for a given version.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths, @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody,
+    @ApiOperation(value = "Add test parameter files for a given version.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> addTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody,
         @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
+        checkCanWriteWorkflow(user, workflow);
         checkNotHosted(workflow);
 
         if (workflow.getMode() == WorkflowMode.STUB) {
-            String msg = "The workflow \'" + workflow.getWorkflowPath() + "\' is a STUB. Refresh the workflow if you want to add test parameter files";
+            String msg = "The workflow \'" + workflow.getWorkflowPath()
+                + "\' is a STUB. Refresh the workflow if you want to add test parameter files";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -1101,11 +1184,15 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/testParameterFiles")
-    @ApiOperation(value = "Delete test parameter files for a given version.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
-    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
-        @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths, @QueryParam("version") String version) {
+    @ApiOperation(value = "Delete test parameter files for a given version.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = SourceFile.class, responseContainer = "Set")
+    public Set<SourceFile> deleteTestParameterFiles(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "List of paths.", required = true) @QueryParam("testParameterPaths") List<String> testParameterPaths,
+        @QueryParam("version") String version) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
+        checkCanWriteWorkflow(user, workflow);
         checkNotHosted(workflow);
 
         Optional<WorkflowVersion> potentialWorfklowVersion = workflow.getWorkflowVersions().stream()
@@ -1113,7 +1200,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         if (!potentialWorfklowVersion.isPresent()) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.");
-            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.",
+            throw new CustomWebApplicationException(
+                "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' does not exist.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1121,7 +1209,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         if (!workflowVersion.isValid()) {
             LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.");
-            throw new CustomWebApplicationException("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.",
+            throw new CustomWebApplicationException(
+                "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.",
                 HttpStatus.SC_BAD_REQUEST);
         }
 
@@ -1129,7 +1218,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
 
         // Remove test parameter files
         FileType testParameterType = workflow.getTestParameterType();
-        testParameterPaths.forEach(path -> sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType));
+        testParameterPaths
+            .forEach(path -> sourceFiles.removeIf((SourceFile v) -> v.getPath().equals(path) && v.getType() == testParameterType));
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflowVersion.getSourceFiles();
     }
@@ -1139,12 +1229,15 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/manualRegister")
     @SuppressWarnings("checkstyle:ParameterNumber")
-    @ApiOperation(value = "Manually register a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Manually register workflow (public or private).", response = Workflow.class)
-    public Workflow manualRegister(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
-        @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath, @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
-        @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName, @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
+    @ApiOperation(value = "Manually register a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Manually register workflow (public or private).", response = Workflow.class)
+    public Workflow manualRegister(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
+        @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
+        @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
+        @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
+        @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
         @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
-
 
         // Set up source code interface and ensure token is set up
         // construct git url like git@github.com:ga4gh/dockstore-ui.git
@@ -1178,7 +1271,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                     + " and ends in the file nextflow.config", HttpStatus.SC_BAD_REQUEST);
         } else if (!"nfl".equals(descriptorType) && !defaultWorkflowPath.endsWith(descriptorType)) {
             throw new CustomWebApplicationException(
-                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
+                "Please ensure that the given workflow path '" + defaultWorkflowPath + "' is of type " + descriptorType
+                    + " and has the file extension " + descriptorType, HttpStatus.SC_BAD_REQUEST);
         }
 
         Workflow duplicate = workflowDAO.findByPath(sourceControlEnum.toString() + '/' + completeWorkflowPath, false);
@@ -1231,13 +1325,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/workflowVersions")
-    @ApiOperation(value = "Update the workflow versions linked to a workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
-    public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
+    @ApiOperation(value = "Update the workflow versions linked to a workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
+    public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "List of modified workflow versions", required = true) List<WorkflowVersion> workflowVersions) {
 
         Workflow w = workflowDAO.findById(workflowId);
         checkEntry(w);
-
         checkCanWriteWorkflow(user, w);
 
         // create a map for quick lookup
@@ -1270,8 +1365,13 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/dag/{workflowVersionId}")
     @ApiOperation(value = "Get the DAG for a given workflow version", response = String.class)
-    public String getWorkflowDag(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+    public String getWorkflowDag(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
         Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkOptionalAuthRead(user, workflow);
+
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         SourceFile mainDescriptor = getMainDescriptorFile(workflowVersion);
 
@@ -1297,9 +1397,14 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/tools/{workflowVersionId}")
     @ApiOperation(value = "Get the Tools for a given workflow version", response = String.class)
-    public String getTableToolContent(@ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
+    public String getTableToolContent(@ApiParam(hidden = true) @Auth Optional<User> user,
+        @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
+        @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
+        checkEntry(workflow);
+        checkOptionalAuthRead(user, workflow);
+
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         if (workflowVersion == null) {
             throw new CustomWebApplicationException("workflow version " + workflowVersionId + " does not exist", HttpStatus.SC_BAD_REQUEST);
@@ -1377,7 +1482,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/star")
     @ApiOperation(value = "Stars a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public void starEntry(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
+    public void starEntry(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
         Workflow workflow = workflowDAO.findById(workflowId);
 
@@ -1390,7 +1496,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @UnitOfWork
     @Path("/{workflowId}/unstar")
     @ApiOperation(value = "Unstars a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
-    public void unstarEntry(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
+    public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         unstarEntryHelper(workflow, user, "workflow", workflow.getWorkflowPath());
         elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
@@ -1401,7 +1508,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Returns list of users who starred the given Workflow", response = User.class, responseContainer = "List")
-    public Set<User> getStarredUsers(@ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
+    public Set<User> getStarredUsers(
+        @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
 
@@ -1412,7 +1520,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
     @Timed
     @UnitOfWork
     @Path("/{entryId}/registerCheckerWorkflow/{descriptorType}")
-    @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
+    @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
     @SuppressWarnings("checkstyle:MagicNumber")
     public Entry registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Path of the main descriptor of the checker workflow (located in associated tool/workflow repository)", required = true) @QueryParam("checkerWorkflowPath") String checkerWorkflowPath,
@@ -1423,18 +1532,18 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(entryId);
 
         // Check if valid descriptor type
-        if (!Objects.equals(descriptorType, DescriptorType.CWL.toString().toLowerCase()) && !Objects.equals(descriptorType, DescriptorType.WDL.toString().toLowerCase())) {
-            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only cwl and wdl are valid.", HttpStatus.SC_BAD_REQUEST);
+        if (!Objects.equals(descriptorType, DescriptorType.CWL.toString().toLowerCase()) && !Objects
+            .equals(descriptorType, DescriptorType.WDL.toString().toLowerCase())) {
+            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type. Only cwl and wdl are valid.",
+                HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Check if the entry exists
-        if (entry == null) {
-            throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
-        }
+        checkEntry(entry);
+        checkUser(user, entry);
 
         // Don't allow workflow stubs
         if (entry instanceof Workflow) {
-            Workflow workflow = (Workflow) entry;
+            Workflow workflow = (Workflow)entry;
             if (Objects.equals(workflow.getMode().name(), WorkflowMode.STUB.toString())) {
                 throw new CustomWebApplicationException("Checker workflows cannot be added to workflow stubs.", HttpStatus.SC_BAD_REQUEST);
             }
@@ -1471,7 +1580,8 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
                 workflowName += "_cwl_checker";
                 defaultTestParameterPath = tool.getDefaultTestCwlParameterFile();
             } else {
-                throw new UnsupportedOperationException("The descriptor type " + descriptorType + " is not valid.\nSupported types include cwl and wdl.");
+                throw new UnsupportedOperationException(
+                    "The descriptor type " + descriptorType + " is not valid.\nSupported types include cwl and wdl.");
             }
 
             // Determine gitUrl
@@ -1514,9 +1624,10 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
             if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.CWL.toString().toLowerCase())) {
                 workflowName += CWL_CHECKER;
             } else if (Objects.equals(workflow.getDescriptorType().toLowerCase(), DescriptorType.WDL.toString().toLowerCase())) {
-                workflowName +=  WDL_CHECKER;
+                workflowName += WDL_CHECKER;
             } else {
-                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().toLowerCase() + " is not valid.\nSupported types include cwl and wdl.");
+                throw new UnsupportedOperationException("The descriptor type " + workflow.getDescriptorType().toLowerCase()
+                    + " is not valid.\nSupported types include cwl and wdl.");
             }
         } else {
             throw new CustomWebApplicationException("No entry with the given ID exists.", HttpStatus.SC_BAD_REQUEST);
@@ -1557,7 +1668,6 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         return toolDAO.getGenericEntryById(entryId);
     }
 
-
     @Override
     public WorkflowDAO getDAO() {
         return this.workflowDAO;
@@ -1581,17 +1691,7 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
 
         Workflow workflow = workflowDAO.findById(workflowId);
-        if (workflow.getIsPublished()) {
-            checkEntry(workflow);
-        } else {
-            checkEntry(workflow);
-            if (user.isPresent()) {
-                checkCanReadWorkflow(user.get(), workflow);
-            } else {
-                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
-                        HttpStatus.SC_FORBIDDEN);
-            }
-        }
+        checkOptionalAuthRead(user, workflow);
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
@@ -1604,4 +1704,5 @@ public class WorkflowResource implements AuthenticatedResourceInterface, EntryVe
         return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
+
 }

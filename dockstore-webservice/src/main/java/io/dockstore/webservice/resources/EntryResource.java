@@ -77,6 +77,7 @@ public class EntryResource implements AuthenticatedResourceInterface {
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
         Entry<? extends Entry, ? extends Version> c = toolDAO.getGenericEntryById(id);
         checkEntry(c);
+        checkUserCanUpdate(user, c);
         // compute differences
         Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));

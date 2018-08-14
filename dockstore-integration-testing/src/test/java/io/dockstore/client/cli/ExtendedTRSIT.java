@@ -35,6 +35,7 @@ import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.Workflow;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -65,27 +66,53 @@ public class ExtendedTRSIT extends BaseIT {
 
 
     @Test
-    public void testVerificationOnSourceFileLevelForWorkflows() throws ApiException {
+    public void testVerificationOnSourceFileLevelForWorkflowsAsOwner() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        testVerificationWithGivenClient(webClient, webClient);
+    }
 
+    @Test(expected = ApiException.class)
+    public void testVerificationOnSourceFileLevelForWorkflowsAsAnon() throws ApiException {
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getAnonymousWebClient());
+    }
+
+    @Test(expected = ApiException.class)
+    public void testVerificationOnSourceFileLevelForWorkflowsAsWrongUser() throws ApiException {
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(USER_1_USERNAME));
+    }
+
+    // TODO: need two valid users in DB
+    @Test
+    @Ignore
+    public void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
+        // user 2 seems to be an admin in the DB
+        testVerificationWithGivenClient(getWebClient(USER_1_USERNAME), getWebClient(USER_2_USERNAME));
+    }
+
+    private void testVerificationWithGivenClient(ApiClient registeringUser, ApiClient verifyingUser) {
         String defaultTestParameterFilePath = "/test.json";
         String id = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
         String awesomePlatform = "awesome platform";
         String crummyPlatform = "crummy platform";
+        final Workflow workflowByPathGithub;
+        {
+            // do initial registration as registeringUser
+            WorkflowsApi workflowApi = new WorkflowsApi(registeringUser);
+            workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
+                defaultTestParameterFilePath);
+            workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
 
+            // refresh and publish the workflow
+            final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+            workflowApi.publish(workflow.getId(), new PublishRequest() {
+                public Boolean isPublish() { return true;}
+            });
+        }
 
-        workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", defaultTestParameterFilePath);
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
-
-        // refresh and publish the workflow
-        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
-        workflowApi.publish(workflow.getId(), new PublishRequest(){
-            public Boolean isPublish() { return true;}
-        });
+        // use the passed webclient here
 
         // check on URLs for workflows via ga4gh calls
-        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
+        ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(verifyingUser);
         // try to add verification metadata
         Map<String, Object> stringObjectMap = extendedGa4GhApi
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master",
@@ -99,21 +126,26 @@ public class ExtendedTRSIT extends BaseIT {
         // assert some things about map structure
         Assert.assertTrue("verification information seems off", stringObjectMap.containsKey(awesomePlatform) && stringObjectMap.containsKey(
             crummyPlatform) && stringObjectMap.get(
-            awesomePlatform) instanceof java.util.Map && stringObjectMap.get(crummyPlatform) instanceof java.util.Map && ((Map)stringObjectMap.get(
+            awesomePlatform) instanceof Map && stringObjectMap.get(crummyPlatform) instanceof Map && ((Map)stringObjectMap.get(
             awesomePlatform)).size() == 2 && ((Map)stringObjectMap.get(awesomePlatform)).get("metadata").equals("metadata")
         );
 
         // verification on a sourcefile level should flow up to to version and entry level
-        Ga4GhApi api = new Ga4GhApi(webClient);
+        Ga4GhApi api = new Ga4GhApi(verifyingUser);
         Tool tool = api.toolsIdGet(id);
-        Assert.assertTrue("verification states do not seem to flow up", tool.isVerified() && tool.getVersions().stream().allMatch(ToolVersion::isVerified));
+        Assert.assertTrue("verification states do not seem to flow up", tool.isVerified() && tool.getVersions().stream().allMatch(
+            ToolVersion::isVerified));
 
-        // refresh should not destroy verification data
-        workflowApi.refresh(workflowByPathGithub.getId());
-        stringObjectMap = extendedGa4GhApi
-            .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master",
-                defaultTestParameterFilePath, crummyPlatform, "new metadata", true);
-        Assert.assertEquals(2, stringObjectMap.size());
+        {
+            // refresh as the owner
+            WorkflowsApi workflowApi = new WorkflowsApi(registeringUser);
+            // refresh should not destroy verification data
+            workflowApi.refresh(workflowByPathGithub.getId());
+            stringObjectMap = extendedGa4GhApi
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, crummyPlatform, "new metadata",
+                    true);
+            Assert.assertEquals(2, stringObjectMap.size());
+        }
 
         // try to remove verification metadata
         extendedGa4GhApi

@@ -16,6 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
@@ -48,6 +49,18 @@ public interface AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("No entries provided", HttpStatus.SC_BAD_REQUEST);
         }
         entry.forEach(this::checkEntry);
+    }
+
+    /**
+     * Check if admin
+     *
+     * @param user
+     */
+    default void checkAdmin(User user) {
+        if (!user.getIsAdmin()) {
+            throw new CustomWebApplicationException("Forbidden: you need to be an admin to perform this operation.",
+                HttpStatus.SC_FORBIDDEN);
+        }
     }
 
     /**
@@ -137,4 +150,36 @@ public interface AuthenticatedResourceInterface {
         checkUser(user, entry);
     }
 
+    /**
+     * Override for resources that are permissions aware.
+     * Currently done for WorkflowResource
+     * @param user
+     * @param workflow
+     */
+    default void checkCanRead(User user, Entry workflow) {
+        throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+            HttpStatus.SC_FORBIDDEN);
+    }
+
+    /**
+     * This method checks that a workflow can be read in two situations
+     * 1) A published workflow
+     * 2) A workflow that is unpublished but that I have access to
+     *
+     * @param user
+     * @param entry
+     */
+    default void checkOptionalAuthRead(Optional<User> user, Entry entry) {
+        if (entry.getIsPublished()) {
+            checkEntry(entry);
+        } else {
+            checkEntry(entry);
+            if (user.isPresent()) {
+                checkCanRead(user.get(), entry);
+            } else {
+                throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
+                    HttpStatus.SC_FORBIDDEN);
+            }
+        }
+    }
 }

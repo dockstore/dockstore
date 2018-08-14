@@ -16,22 +16,15 @@
 
 package io.dockstore.client.cli;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeoutException;
 
-import com.google.common.io.Resources;
+import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WorkflowTest;
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
-import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
 import org.junit.Assert;
@@ -43,11 +36,10 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-
 /**
  * Created by jpatricia on 24/06/16.
  */
-@Category({ConfidentialTest.class, WorkflowTest.class})
+@Category( { ConfidentialTest.class, WorkflowTest.class })
 public class DAGWorkflowTestIT extends BaseIT {
 
     @Before
@@ -62,37 +54,26 @@ public class DAGWorkflowTestIT extends BaseIT {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
-    private WorkflowsApi setupWebService() throws ApiException {
-        ApiClient webClient = WorkflowIT.getWebClient(USER_1_USERNAME);
-        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-        return workflowApi;
-    }
-
-    private List<String> getJSON(String repo, String fileName, String descType, String branch)
-            throws IOException, ApiException {
+    private List<String> getJSON(String repo, String fileName, String descType, String branch) throws ApiException {
         final String TEST_WORKFLOW_NAME = "test-workflow";
-        WorkflowsApi workflowApi = setupWebService();
+        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_1_USERNAME));
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
 
-
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
-        Assert.assertTrue(githubWorkflow.getWorkflowName().equals(TEST_WORKFLOW_NAME));
+        Assert.assertEquals(githubWorkflow.getWorkflowName(), TEST_WORKFLOW_NAME);
 
         // Publish github workflow
         Workflow refresh = workflowApi.refresh(githubWorkflow.getId());
 
         // This checks if a workflow whose default name is test-workflow remains as test-workflow and not null or empty string after refresh
-        Assert.assertTrue(refresh.getWorkflowName().equals(TEST_WORKFLOW_NAME));
+        Assert.assertEquals(refresh.getWorkflowName(), TEST_WORKFLOW_NAME);
 
         Optional<WorkflowVersion> master = refresh.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals(branch))
-                .findFirst();
+            .findFirst();
 
         //getting the dag json string
-        final String basePath = WorkflowIT.getWebClient(USER_1_USERNAME).getBasePath();
-        URL url = new URL(basePath + "/workflows/" + githubWorkflow.getId() + "/dag/" + master.get().getId());
-        List<String> strings = Resources.readLines(url, Charset.forName("UTF-8"));
-
-        return strings;
+        String workflowDag = workflowApi.getWorkflowDag(githubWorkflow.getId(), master.get().getId());
+        return Lists.newArrayList(workflowDag);
     }
 
     private int countNodeInJSON(List<String> strings) {
@@ -115,7 +96,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testWorkflowDAGCWL() throws IOException, ApiException {
+    public void testWorkflowDAGCWL() throws ApiException {
         // Input: 1st-workflow.cwl
         // Repo: test_workflow_cwl
         // Branch: master
@@ -130,12 +111,12 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
         Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
         Assert.assertTrue("edge should connect untar and compile",
-                strings.get(0).contains("\"source\":\"dockstore_untar\",\"target\":\"dockstore_compile\""));
+            strings.get(0).contains("\"source\":\"dockstore_untar\",\"target\":\"dockstore_compile\""));
 
     }
 
     @Test
-    public void testWorkflowDAGWDLSingleNode() throws IOException, ApiException {
+    public void testWorkflowDAGWDLSingleNode() throws ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: master
@@ -148,19 +129,19 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have four nodes (including start and end)", countNode, 4);
         Assert.assertTrue("node data should have hello as task", strings.get(0).contains("hello"));
-        Assert.assertTrue("should have first edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_hello\"}}"));
-        Assert.assertTrue("should have second edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_helper\"}}"));
-        Assert.assertTrue("should have third edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"dockstore_helper\",\"target\":\"UniqueEndKey\"}}"));
-        Assert.assertTrue("should have fourth edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"dockstore_hello\",\"target\":\"UniqueEndKey\"}}"));
+        Assert.assertTrue("should have first edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_hello\"}}"));
+        Assert.assertTrue("should have second edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_helper\"}}"));
+        Assert.assertTrue("should have third edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"dockstore_helper\",\"target\":\"UniqueEndKey\"}}"));
+        Assert.assertTrue("should have fourth edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"dockstore_hello\",\"target\":\"UniqueEndKey\"}}"));
 
     }
 
     @Test
-    public void testWorkflowDAGWDLMultipleNodes() throws IOException, ApiException {
+    public void testWorkflowDAGWDLMultipleNodes() throws ApiException {
         // Input: hello.wdl
         // Repo: hello-dockstore-workflow
         // Branch: master
@@ -175,21 +156,21 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertTrue("node data should have ps as tool", strings.get(0).contains("ps"));
         Assert.assertTrue("node data should have cgrep as tool", strings.get(0).contains("cgrep"));
         Assert.assertTrue("node data should have wc as tool", strings.get(0).contains("wc"));
-        Assert.assertTrue("should have first edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_ps\"}}"));
-        Assert.assertTrue("should have second edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_cgrep\"}}"));
-        Assert.assertTrue("should have third edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_wc\"}}"));
-        Assert.assertTrue("should have fourth edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"dockstore_wc\",\"target\":\"UniqueEndKey\"}}"));
-        Assert.assertTrue("should have fifth edge", strings.get(0).contains(
-                "{\"data\":{\"source\":\"dockstore_cgrep\",\"target\":\"UniqueEndKey\"}}"));
+        Assert.assertTrue("should have first edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"UniqueBeginKey\",\"target\":\"dockstore_ps\"}}"));
+        Assert.assertTrue("should have second edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_cgrep\"}}"));
+        Assert.assertTrue("should have third edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"dockstore_ps\",\"target\":\"dockstore_wc\"}}"));
+        Assert.assertTrue("should have fourth edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"dockstore_wc\",\"target\":\"UniqueEndKey\"}}"));
+        Assert.assertTrue("should have fifth edge",
+            strings.get(0).contains("{\"data\":{\"source\":\"dockstore_cgrep\",\"target\":\"UniqueEndKey\"}}"));
 
     }
 
     @Test
-    public void testWorkflowDAGCWLMissingTool() throws IOException, ApiException {
+    public void testWorkflowDAGCWLMissingTool() throws ApiException {
         // Input: Dockstore.cwl
         // Repo: hello-dockstore-workflow
         // Branch: testCWL
@@ -204,7 +185,7 @@ public class DAGWorkflowTestIT extends BaseIT {
 
     @Test
     @Ignore("This test will fail as long as we are not using validation on WDL workflows and are assuming that if the file exists it is valid")
-    public void testWorkflowDAGWDLMissingTask() throws IOException, ApiException {
+    public void testWorkflowDAGWDLMissingTask() throws ApiException {
         // Input: hello.wdl
         // Repo: test_workflow_wdl
         // Branch: missing_docker
@@ -218,7 +199,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testDAGImportSyntax() throws IOException, ApiException {
+    public void testDAGImportSyntax() throws ApiException {
         // Input: Dockstore.cwl
         // Repo: dockstore-whalesay-imports
         // Branch: master
@@ -233,11 +214,11 @@ public class DAGWorkflowTestIT extends BaseIT {
         Assert.assertTrue("node data should have untar as tool", strings.get(0).contains("untar"));
         Assert.assertTrue("node data should have compile as tool", strings.get(0).contains("compile"));
         Assert.assertTrue("edge should connect untar and compile",
-                strings.get(0).contains("\"source\":\"dockstore_untar\",\"target\":\"dockstore_compile\""));
+            strings.get(0).contains("\"source\":\"dockstore_untar\",\"target\":\"dockstore_compile\""));
     }
 
     @Test
-    public void testDAGCWL1Syntax() throws IOException, ApiException {
+    public void testDAGCWL1Syntax() throws ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: develop
@@ -254,7 +235,7 @@ public class DAGWorkflowTestIT extends BaseIT {
     }
 
     @Test
-    public void testHintsExpressionTool() throws IOException, ApiException {
+    public void testHintsExpressionTool() throws ApiException {
         // Input: preprocess_vcf.cwl
         // Repo: OxoG-Dockstore-Tools
         // Branch: hints_ExpressionTool
@@ -262,18 +243,18 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Return: DAG with 19 nodes
 
         final List<String> strings = getJSON("DockstoreTestUser2/OxoG-Dockstore-Tools", "/preprocess_vcf.cwl", "cwl",
-                "hints_ExpressionTool");
+            "hints_ExpressionTool");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have 19 nodes", countNode, 19);
         Assert.assertTrue("should have end with gather_sanger_indels and merge_vcfs",
-                strings.get(0).contains("\"source\":\"dockstore_gather_sanger_indels\",\"target\":\"dockstore_merge_vcfs\""));
+            strings.get(0).contains("\"source\":\"dockstore_gather_sanger_indels\",\"target\":\"dockstore_merge_vcfs\""));
         Assert.assertTrue("should have end with filter and normalize",
-                strings.get(0).contains("\"source\":\"dockstore_filter\",\"target\":\"dockstore_normalize\""));
+            strings.get(0).contains("\"source\":\"dockstore_filter\",\"target\":\"dockstore_normalize\""));
         Assert.assertTrue("should have docker requirement for vcf_merge", strings.get(0).contains(
-                "\"name\":\"merge_vcfs\",\"run\":\"vcf_merge.cwl\",\"id\":\"dockstore_merge_vcfs\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools\""));
+            "\"name\":\"merge_vcfs\",\"run\":\"vcf_merge.cwl\",\"id\":\"dockstore_merge_vcfs\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools\""));
         Assert.assertTrue("should have docker requirement for clean", strings.get(0).contains(
-                "\"name\":\"clean\",\"run\":\"clean_vcf.cwl\",\"id\":\"dockstore_clean\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools:1.0.0\""));
+            "\"name\":\"clean\",\"run\":\"clean_vcf.cwl\",\"id\":\"dockstore_clean\",\"type\":\"tool\",\"tool\":\"https://hub.docker.com/r/pancancer/pcawg-oxog-tools\",\"docker\":\"pancancer/pcawg-oxog-tools:1.0.0\""));
     }
 }

@@ -30,7 +30,7 @@ public class ExtendedUserData {
 
     public ExtendedUserData(User user) {
         Hibernate.initialize(user.getEntries());
-        this.canChangeUsername = !user.getEntries().stream().anyMatch(Entry::getIsPublished);
+        this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished);
     }
 
     /**

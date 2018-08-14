@@ -1922,7 +1922,9 @@ paths:
       tags:
         - containers
       summary: Get the corresponding Dockstore.cwl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published tools, authentication can
+        be provided for restricted tools
       operationId: cwl
       parameters:
         - name: containerId
@@ -1944,12 +1946,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/containers/{containerId}/cwl/{relative-path}':
     get:
       tags:
         - containers
       summary: Get the corresponding Dockstore.cwl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published tools, authentication can
+        be provided for restricted tools
       operationId: secondaryCwlPath
       parameters:
         - name: containerId
@@ -1976,12 +1982,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/containers/{containerId}/dockerfile':
     get:
       tags:
         - containers
       summary: Get the corresponding Dockerfile on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published tools, authentication can
+        be provided for restricted tools
       operationId: dockerfile
       parameters:
         - name: containerId
@@ -2003,6 +2013,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/containers/{containerId}/labels':
     put:
       tags:
@@ -2127,7 +2139,9 @@ paths:
       tags:
         - containers
       summary: Get a list of secondary CWL files from Git.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published tools, authentication can
+        be provided for restricted tools
       operationId: secondaryCwl
       parameters:
         - name: containerId
@@ -2151,12 +2165,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/containers/{containerId}/secondaryWdl':
     get:
       tags:
         - containers
       summary: Get a list of secondary WDL files from Git.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published tools, authentication can
+        be provided for restricted tools
       operationId: secondaryWdl
       parameters:
         - name: containerId
@@ -2180,6 +2198,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/containers/{containerId}/star':
     put:
       tags:
@@ -2333,7 +2353,9 @@ paths:
       tags:
         - containers
       summary: Get the corresponding wdl test parameter files.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published tools, authentication can
+        be provided for restricted tools
       operationId: getTestParameterFiles
       parameters:
         - name: containerId
@@ -2367,6 +2389,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
     put:
       tags:
         - containers
@@ -2545,7 +2569,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.cwl file on Github.
+      summary: Get the sources that verified a particular tool.
       description: Does not need authentication
       operationId: verifiedSources
       parameters:
@@ -2603,7 +2627,9 @@ paths:
       tags:
         - containers
       summary: Get the corresponding Dockstore.wdl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published tools, authentication can
+        be provided for restricted tools
       operationId: wdl
       parameters:
         - name: containerId
@@ -2625,12 +2651,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/containers/{containerId}/wdl/{relative-path}':
     get:
       tags:
         - containers
       summary: Get the corresponding Dockstore.wdl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published tools, authentication can
+        be provided for restricted tools
       operationId: secondaryWdlPath
       parameters:
         - name: containerId
@@ -2657,6 +2687,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/containers/{toolId}/defaultVersion':
     put:
       tags:
@@ -2924,7 +2956,7 @@ paths:
       tags:
         - users
       summary: List all groups
-      description: ''
+      description: This is not tied into PermissionsInterface but could be
       operationId: allGroups
       responses:
         '200':
@@ -2963,7 +2995,7 @@ paths:
       tags:
         - users
       summary: List a group
-      description: ''
+      description: This is not tied into PermissionsInterface but could be
       operationId: getGroup
       parameters:
         - name: groupId
@@ -2987,7 +3019,7 @@ paths:
       tags:
         - users
       summary: Get users that belongs to a group
-      description: ''
+      description: This is not tied into PermissionsInterface but could be
       operationId: getUsersFromGroup
       parameters:
         - name: groupId
@@ -3320,7 +3352,7 @@ paths:
       tags:
         - users
       summary: Get groups that the user belongs to
-      description: ''
+      description: This is not tied into PermissionsInterface but could be
       operationId: getGroupsFromUser
       parameters:
         - name: userId
@@ -3345,7 +3377,7 @@ paths:
       tags:
         - users
       summary: Add a group to a user
-      description: ''
+      description: This is not tied into PermissionsInterface but could be
       operationId: addGroupToUser
       parameters:
         - name: userId
@@ -3376,7 +3408,7 @@ paths:
       tags:
         - users
       summary: Remove a user from a group
-      description: ''
+      description: This is not tied into PermissionsInterface but could be
       operationId: removeUserFromGroup
       parameters:
         - name: userId
@@ -4269,7 +4301,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding Dockstore.cwl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: cwl
       parameters:
         - name: workflowId
@@ -4291,12 +4325,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/cwl/{relative-path}':
     get:
       tags:
         - workflows
       summary: Get the corresponding Dockstore.cwl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryCwlPath
       parameters:
         - name: workflowId
@@ -4323,6 +4361,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/dag/{workflowVersionId}':
     get:
       tags:
@@ -4422,7 +4462,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding nextflow.config file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: nextflow
       parameters:
         - name: workflowId
@@ -4444,12 +4486,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/nextflow/{relative-path}':
     get:
       tags:
         - workflows
       summary: Get the corresponding nextflow documents on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryNextFlowPath
       parameters:
         - name: workflowId
@@ -4476,6 +4522,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/publish':
     post:
       tags:
@@ -4616,7 +4664,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding cwl documents on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryCwl
       parameters:
         - name: workflowId
@@ -4640,12 +4690,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/secondaryNextflow':
     get:
       tags:
         - workflows
       summary: Get the corresponding Nextflow documents on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryNextflow
       parameters:
         - name: workflowId
@@ -4669,12 +4723,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/secondaryWdl':
     get:
       tags:
         - workflows
       summary: Get the corresponding wdl documents on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryWdl
       parameters:
         - name: workflowId
@@ -4698,6 +4756,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/star':
     put:
       tags:
@@ -4749,7 +4809,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding test parameter files.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: getTestParameterFiles
       parameters:
         - name: workflowId
@@ -4773,6 +4835,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
     put:
       tags:
         - workflows
@@ -4992,7 +5056,9 @@ paths:
       tags:
         - workflows
       summary: Get the corresponding Dockstore.wdl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: wdl
       parameters:
         - name: workflowId
@@ -5014,12 +5080,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/wdl/{relative-path}':
     get:
       tags:
         - workflows
       summary: Get the corresponding Dockstore.wdl file on Github.
-      description: Does not need authentication
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: secondaryWdlPath
       parameters:
         - name: workflowId
@@ -5046,6 +5116,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SourceFile'
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/workflowVersions':
     put:
       tags:
