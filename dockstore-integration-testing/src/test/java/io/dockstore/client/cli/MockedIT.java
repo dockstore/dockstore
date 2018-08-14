@@ -95,7 +95,7 @@ public class MockedIT {
         SourceFile file = mock(SourceFile.class);
         when(file.getContent()).thenReturn(sourceFileContents);
         doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
-        when(file.getPath()).thenReturn("Dockstore.cwl");
+        when(file.getPath()).thenReturn(sourceFile.getAbsolutePath());
 
         // change getDescriptorFromServer to downloadTargetEntry
         doReturn(sourceFile).when(toolClient).downloadTargetEntry(eq("quay.io/collaboratory/dockstore-tool-linux-sort"),
@@ -106,11 +106,11 @@ public class MockedIT {
         final String sourceFileArraysContents = FileUtils.readFileToString(sourceFileArrays, StandardCharsets.UTF_8);
         SourceFile file2 = mock(SourceFile.class);
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
-        when(file2.getPath()).thenReturn("Dockstore.cwl");
+        when(file2.getPath()).thenReturn(sourceFileArrays.getAbsolutePath());
         doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
 
         // change getDescriptorFromServer to downloadTargetEntry
-        doReturn(sourceFile).when(toolClient).downloadTargetEntry(eq("quay.io/collaboratory/arrays"),
+        doReturn(sourceFileArrays).when(toolClient).downloadTargetEntry(eq("quay.io/collaboratory/arrays"),
             eq(ToolDescriptor.TypeEnum.CWL), eq(true), any(File.class));
 
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
