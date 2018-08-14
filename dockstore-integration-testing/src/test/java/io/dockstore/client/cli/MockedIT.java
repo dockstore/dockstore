@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import avro.shaded.com.google.common.collect.Lists;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -29,6 +28,7 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.User;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -47,7 +47,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -96,7 +96,10 @@ public class MockedIT {
         when(file.getContent()).thenReturn(sourceFileContents);
         doReturn(file).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/dockstore-tool-linux-sort", "cwl");
         when(file.getPath()).thenReturn("Dockstore.cwl");
-        doReturn(Lists.newArrayList()).when(toolClient).downloadDescriptors(anyString(), anyString(), any(File.class));
+
+        // change getDescriptorFromServer to downloadTargetEntry
+        doReturn(sourceFile).when(toolClient).downloadTargetEntry(eq("quay.io/collaboratory/dockstore-tool-linux-sort"),
+            eq(ToolDescriptor.TypeEnum.CWL), eq(true), any(File.class));
 
         // mock return of a more complicated CWL file
         File sourceFileArrays = new File(ResourceHelpers.resourceFilePath("arrays.cwl"));
@@ -105,6 +108,10 @@ public class MockedIT {
         when(file2.getContent()).thenReturn(sourceFileArraysContents);
         when(file2.getPath()).thenReturn("Dockstore.cwl");
         doReturn(file2).when(toolClient).getDescriptorFromServer("quay.io/collaboratory/arrays", "cwl");
+
+        // change getDescriptorFromServer to downloadTargetEntry
+        doReturn(sourceFile).when(toolClient).downloadTargetEntry(eq("quay.io/collaboratory/arrays"),
+            eq(ToolDescriptor.TypeEnum.CWL), eq(true), any(File.class));
 
         FileUtils.deleteQuietly(new File("/tmp/wc1.out"));
         FileUtils.deleteQuietly(new File("/tmp/wc2.out"));

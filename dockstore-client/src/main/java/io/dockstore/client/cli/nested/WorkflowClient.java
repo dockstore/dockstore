@@ -346,7 +346,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     public File downloadTargetEntry(String toolpath, ToolDescriptor.TypeEnum type, boolean unzip, File directory) throws IOException {
         String[] parts = toolpath.split(":");
         String path = parts[0];
-        String tag = (parts.length > 1) ? parts[1] : null;
+        // match behaviour from getDescriptorFromServer, use master if no version is provided
+        String tag = (parts.length > 1) ? parts[1] : "master";
         Workflow workflow = getDockstoreWorkflowByPath(path);
         Optional<WorkflowVersion> first = workflow.getWorkflowVersions().stream().filter(foo -> foo.getName().equalsIgnoreCase(tag))
             .findFirst();
@@ -1115,35 +1116,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             errorMessage("No workflow found with path " + entry, Client.API_ERROR);
         }
         return file;
-    }
-
-    public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
-        // In the future, delete tmp files
-        String[] parts = entry.split(":");
-        String path = parts[0];
-        String version = (parts.length > 1) ? parts[1] : "master";
-
-        Workflow workflow = getDockstoreWorkflowByPath(path);
-
-        List<SourceFile> result = new ArrayList<>();
-        if (workflow != null) {
-            try {
-                List<SourceFile> files;
-                if (descriptor.toLowerCase().equals(CWL_STRING)) {
-                    files = workflowsApi.secondaryCwl(workflow.getId(), version);
-                } else if (descriptor.toLowerCase().equals(WDL_STRING)) {
-                    files = workflowsApi.secondaryWdl(workflow.getId(), version);
-                } else {
-                    throw new UnsupportedOperationException("other languages not supported yet");
-                }
-                writeSourceFilesToDisk(tempDir, result, files);
-            } catch (ApiException e) {
-                exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
-            } catch (IOException e) {
-                exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
-            }
-        }
-        return result;
     }
 
     @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry.")
