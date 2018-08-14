@@ -13,6 +13,7 @@ import com.github.zafarkhaja.semver.Version;
  * @since 13/04/18
  */
 public final class PipHelper {
+    public static final String DEV_SEM_VER = "development-build";
     private PipHelper() { }
 
     /**
@@ -22,7 +23,7 @@ public final class PipHelper {
      * @return              The most recently changed pip requirements file to the Dockstore client version (can be older, but not newer)
      */
     public static String convertSemVerToAvailableVersion(String semVerString) {
-        if (semVerString == null || "development-build".equals(semVerString)) {
+        if (semVerString == null || DEV_SEM_VER.equals(semVerString)) {
             semVerString = "9001.9001.9001";
         }
         Version semVer = Version.valueOf(semVerString);
