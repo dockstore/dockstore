@@ -65,6 +65,7 @@ import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import io.swagger.model.DescriptorType;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -768,10 +769,28 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testDuplicateHostedWorkflowCreation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        HostedApi hostedApi = new HostedApi(webClient);
+        hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+        thrown.expectMessage("already exists");
+        hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+    }
+
+    @Test
+    public void testDuplicateHostedToolCreation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        HostedApi hostedApi = new HostedApi(webClient);
+        hostedApi.createHostedTool("name", DescriptorType.CWL.toString(), Registry.DOCKER_HUB.toString(), "namespace");
+        thrown.expectMessage("already exists");
+        hostedApi.createHostedTool("name", DescriptorType.CWL.toString(), Registry.DOCKER_HUB.toString(), "namespace");
+    }
+
+    @Test
     public void testHostedWorkflowMetadataAndLaunch() throws IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", "CWL", null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
 
         // make a couple garbage edits
         SourceFile source = new SourceFile();

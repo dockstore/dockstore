@@ -40,6 +40,7 @@ import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
@@ -83,6 +84,10 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted workflow", response = Workflow.class)
     public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace) {
+        Workflow duplicate = workflowDAO.findByPath(getEntry(user, registry, name, descriptorType, namespace).getWorkflowPath(), false);
+        if (duplicate != null) {
+            throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
         return super.createHosted(user, registry, name, descriptorType, namespace);
     }
 
