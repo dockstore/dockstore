@@ -132,5 +132,23 @@ public class UserResourceIT extends BaseIT {
         assertTrue(userApi.getExtendedUserData().isCanChangeUsername());
         assertTrue(userApi.selfDestruct());
         //TODO need to test that profiles are cascaded to and cleared
+
+
+        // I shouldn't be able to get info on myself after deletion
+        boolean expectedFailToGetInfo = false;
+        try {
+            userApi.getUser();
+        } catch (ApiException e) {
+            expectedFailToGetInfo = true;
+        }
+        assertTrue(expectedFailToGetInfo);
+
+        expectedFailToGetInfo = false;
+        try {
+            userApi.getExtendedUserData();
+        } catch (ApiException e) {
+            expectedFailToGetInfo = true;
+        }
+        assertTrue(expectedFailToGetInfo);
     }
 }

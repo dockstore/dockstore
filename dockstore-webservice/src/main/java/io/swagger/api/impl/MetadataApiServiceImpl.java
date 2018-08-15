@@ -26,6 +26,8 @@ import io.dockstore.webservice.core.User;
 import io.swagger.api.MetadataApiService;
 import io.swagger.model.Metadata;
 
+import static io.dockstore.common.PipHelper.DEV_SEM_VER;
+
 public class MetadataApiServiceImpl extends MetadataApiService {
     @Override
     public Response metadataGet(SecurityContext securityContext, ContainerRequestContext containerContext, Optional<User> user) {
@@ -34,7 +36,7 @@ public class MetadataApiServiceImpl extends MetadataApiService {
         metadata.setApiVersion("2.0.0");
         metadata.setFriendlyName("Dockstore");
         String implVersion = ToolsApiServiceImpl.class.getPackage().getImplementationVersion();
-        implVersion = implVersion == null ? "development-build" : implVersion;
+        implVersion = implVersion == null ? DEV_SEM_VER : implVersion;
         metadata.setVersion(implVersion);
         return Response.ok(metadata).build();
     }

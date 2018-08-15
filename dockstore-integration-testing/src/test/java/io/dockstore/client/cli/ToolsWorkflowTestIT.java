@@ -17,16 +17,13 @@
 package io.dockstore.client.cli;
 
 import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
 
-import com.google.common.io.Resources;
+import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.WorkflowTest;
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.Workflow;
@@ -59,15 +56,10 @@ public class ToolsWorkflowTestIT extends BaseIT {
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
-    private WorkflowsApi setupWebService() throws ApiException {
-        ApiClient webClient = WorkflowIT.getWebClient(USER_1_USERNAME);
-        return new WorkflowsApi(webClient);
-    }
-
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
             throws IOException, ApiException {
         final String TEST_WORKFLOW_NAME = "test-workflow";
-        WorkflowsApi workflowApi = setupWebService();
+        WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_1_USERNAME));
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");
 
         // This checks if a workflow whose default name was manually registered as test-workflow remains as test-workflow and not null or empty string
@@ -83,10 +75,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
                 .findFirst();
 
         //getting the dag json string
-        final String basePath = WorkflowIT.getWebClient(USER_1_USERNAME).getBasePath();
-        URL url = new URL(basePath + "/workflows/" + githubWorkflow.getId() + "/tools/" + master.get().getId());
-
-        return Resources.readLines(url, Charset.forName("UTF-8"));
+        return Lists.newArrayList(workflowApi.getTableToolContent(githubWorkflow.getId(), master.get().getId()));
     }
 
     private int countToolInJSON(List<String> strings) {
