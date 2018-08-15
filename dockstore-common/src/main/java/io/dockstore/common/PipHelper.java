@@ -13,16 +13,17 @@ import com.github.zafarkhaja.semver.Version;
  * @since 13/04/18
  */
 public final class PipHelper {
+    public static final String DEV_SEM_VER = "development-build";
     private PipHelper() { }
 
     /**
      * Figures out which pip requirements file to resolve to since not every clientVersion changes the pip requirements.
      * This function should be modified every time a new pip requirements file is added.
      * @param semVerString  The Dockstore client version
-     * @return              The most recently changed pip requirements file to the Dockstore client version (can be older, but not newer)
+     * @return              The most recently changed pip requirements file to the Dockstore client version
      */
     public static String convertSemVerToAvailableVersion(String semVerString) {
-        if (semVerString == null) {
+        if (semVerString == null || DEV_SEM_VER.equals(semVerString)) {
             semVerString = "9001.9001.9001";
         }
         Version semVer = Version.valueOf(semVerString);
