@@ -19,4 +19,4 @@ fi
 
 # hook up integration tests with elastic search
 docker pull elasticsearch:5.5                                                                                                                                                                             
-docker run -p 9200:9200 -p 9300:9300 -d elasticsearch:5.5                
+docker run -p 9200:9200 -d elasticsearch:5.5                
