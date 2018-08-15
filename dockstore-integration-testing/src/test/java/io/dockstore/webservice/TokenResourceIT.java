@@ -34,6 +34,7 @@ import io.dockstore.webservice.helpers.GitHubHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
@@ -66,6 +67,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.niceMock;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.mockStaticStrict;
 import static org.powermock.api.easymock.PowerMock.replay;
@@ -182,6 +184,32 @@ public class TokenResourceIT extends BaseIT {
         Assert.assertEquals(100, token.getId().longValue());
         checkUserProfiles(token.getUserId(), Collections.singletonList(TokenType.GOOGLE_COM.toString()));
         verify(GoogleHelper.class);
+
+        // check that the tokens work
+        ApiClient webClient = getWebClient(false, "n/a");
+        UsersApi userApi = new UsersApi(webClient);
+        tokensApi = new TokensApi(webClient);
+
+        int expectedFailCount = 0;
+        for(Token currToken : byUserId) {
+            webClient.addDefaultHeader("Authorization", "Bearer " + currToken.getContent());
+            assertNotNull(userApi.getUser());
+            tokensApi.deleteToken(currToken.getId());
+
+            // check that deleting a token invalidates it
+            try {
+                userApi.getUser();
+            } catch (ApiException e) {
+                expectedFailCount++;
+            }
+            // shouldn't be able to even get the token
+            try {
+                tokensApi.listToken(currToken.getId());
+            } catch (ApiException e) {
+                expectedFailCount++;
+            }
+        }
+        assertEquals(4, expectedFailCount);
     }
 
 

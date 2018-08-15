@@ -15,6 +15,10 @@
  */
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.TimeoutException;
+
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
@@ -36,10 +40,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
@@ -48,6 +48,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  */
 @Category(ConfidentialTest.class)
 public class BaseIT {
+    public static final String OTHER_USERNAME = "OtherUser";
     public final String ADMIN_USERNAME = "admin@admin.com";
     public final String USER_1_USERNAME = "DockstoreTestUser";
     public final String USER_2_USERNAME = "DockstoreTestUser2";

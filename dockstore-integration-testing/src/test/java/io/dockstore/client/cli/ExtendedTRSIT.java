@@ -35,7 +35,6 @@ import io.swagger.client.model.ToolVersion;
 import io.swagger.client.model.Workflow;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -79,14 +78,12 @@ public class ExtendedTRSIT extends BaseIT {
     @Test(expected = ApiException.class)
     public void testVerificationOnSourceFileLevelForWorkflowsAsWrongUser() throws ApiException {
         testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(USER_1_USERNAME));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(OTHER_USERNAME));
     }
 
-    // TODO: need two valid users in DB
-    @Test
-    @Ignore
+    @Test(expected = ApiException.class)
     public void testVerificationOnSourceFileLevelForWorkflowsAsAdmin() throws ApiException {
-        // user 2 seems to be an admin in the DB
-        testVerificationWithGivenClient(getWebClient(USER_1_USERNAME), getWebClient(USER_2_USERNAME));
+        testVerificationWithGivenClient(getWebClient(USER_2_USERNAME), getWebClient(ADMIN_USERNAME));
     }
 
     private void testVerificationWithGivenClient(ApiClient registeringUser, ApiClient verifyingUser) {
