@@ -41,8 +41,6 @@ public class ToolClientTest {
     private ContainertagsApi containertagsApi;
     private UsersApi usersApi;
     private Client client;
-    private DockstoreTool dockstoreTool;
-    private ApiException apiException;
 
     @Before
     public void setup() {
@@ -50,8 +48,8 @@ public class ToolClientTest {
         containertagsApi = Mockito.mock(ContainertagsApi.class);
         usersApi = Mockito.mock(UsersApi.class);
         client = Mockito.mock(Client.class);
-        dockstoreTool = Mockito.mock(DockstoreTool.class);
-        apiException = Mockito.mock(ApiException.class);
+        DockstoreTool dockstoreTool = Mockito.mock(DockstoreTool.class);
+        ApiException apiException = Mockito.mock(ApiException.class);
         when(apiException.getCode()).thenReturn(HttpStatus.SC_BAD_REQUEST);
         when(dockstoreTool.getId()).thenReturn(CONTAINER_ID);
         when(containersApi.cwl(CONTAINER_ID, MISSING_TAG)).thenThrow(apiException);

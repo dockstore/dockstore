@@ -109,7 +109,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace,
         @ApiParam(value = "name", required = true) @QueryParam("name") String name,
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
-        checkType(descriptorType);
+        descriptorType = checkType(descriptorType);
         T entry = getEntry(user, registry, name, descriptorType, namespace);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
@@ -178,12 +178,13 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
     }
 
-    private void checkType(String descriptorType) {
+    private String checkType(String descriptorType) {
         if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
                 && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
                 && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
             throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
         }
+        return descriptorType.toLowerCase();
     }
 
     /**

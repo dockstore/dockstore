@@ -19,6 +19,7 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -351,6 +352,11 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         Workflow workflow = getDockstoreWorkflowByPath(path);
         Optional<WorkflowVersion> first = workflow.getWorkflowVersions().stream().filter(foo -> foo.getName().equalsIgnoreCase(tag))
             .findFirst();
+        // if no master is present (for example, for hosted workflows), fail over to the latest descriptor
+        if (!first.isPresent()) {
+            first = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getLastModified));
+        }
+
         if (first.isPresent()) {
             Long versionId = first.get().getId();
             byte[] arbitraryURL = SwaggerUtility

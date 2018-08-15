@@ -1,0 +1,7 @@
+{
+  "input": {
+    "class": "File",
+    "path": "hello_world.json",
+    "format": "http://edamontology.org/format_2572"
+  }
+}
