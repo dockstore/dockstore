@@ -111,11 +111,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType) {
         checkType(descriptorType);
         T entry = getEntry(user, registry, name, descriptorType, namespace);
+        checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
         elasticManager.handleIndexUpdate(byId, ElasticMode.UPDATE);
         return byId;
     }
+
+    protected abstract void checkForDuplicatePath(Entry entry);
 
     protected abstract T getEntry(User user, String registry, String name, String descriptorType, String namespace);
 

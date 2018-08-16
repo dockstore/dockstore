@@ -40,6 +40,8 @@ import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
@@ -108,6 +110,15 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, action)) {
                 throw ex;
             }
+        }
+    }
+
+    @Override
+    protected void checkForDuplicatePath(Entry entry) {
+        Workflow workflow = (Workflow)entry;
+        MutablePair<String, Entry> duplicate = getEntryDAO().findEntryByPath(workflow.getWorkflowPath(), false);
+        if (duplicate != null) {
+            throw new CustomWebApplicationException("A workflow already exists with that path. Please change the workflow name to something unique.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
