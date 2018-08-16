@@ -94,8 +94,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    protected void checkForDuplicatePath(Entry entry) {
-        Tool tool = (Tool)entry;
+    protected void checkForDuplicatePath(Tool tool) {
         MutablePair<String, Entry> duplicate = getEntryDAO().findEntryByPath(tool.getToolPath(), false);
         if (duplicate != null) {
             throw new CustomWebApplicationException("A tool already exists with that path. Please change the tool name to something unique.", HttpStatus.SC_BAD_REQUEST);

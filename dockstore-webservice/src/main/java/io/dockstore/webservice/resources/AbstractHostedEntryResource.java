@@ -118,7 +118,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return byId;
     }
 
-    protected abstract void checkForDuplicatePath(Entry entry);
+    protected abstract void checkForDuplicatePath(T entry);
 
     /**
      * TODO: ugly, too many strings lead to an easy mix-up of order.

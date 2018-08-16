@@ -114,8 +114,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected void checkForDuplicatePath(Entry entry) {
-        Workflow workflow = (Workflow)entry;
+    protected void checkForDuplicatePath(Workflow workflow) {
         MutablePair<String, Entry> duplicate = getEntryDAO().findEntryByPath(workflow.getWorkflowPath(), false);
         if (duplicate != null) {
             throw new CustomWebApplicationException("A workflow already exists with that path. Please change the workflow name to something unique.", HttpStatus.SC_BAD_REQUEST);
