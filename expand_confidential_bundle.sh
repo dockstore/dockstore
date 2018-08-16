@@ -13,4 +13,6 @@ unzip -p $zipArchive config_file.txt >dockstore-integration-testing/src/test/res
 unzip -p $zipArchive config_file2.txt >dockstore-integration-testing/src/test/resources/config_file2.txt
 unzip -p $zipArchive migrations.test.confidential1.xml >dockstore-webservice/src/main/resources/migrations.test.confidential1.xml
 unzip -p $zipArchive migrations.test.confidential2.xml >dockstore-webservice/src/main/resources/migrations.test.confidential2.xml
+unzip -p $zipArchive migrations.test.confidential1_1.5.0.xml >dockstore-webservice/src/main/resources/migrations.test.confidential1_1.5.0.xml
+unzip -p $zipArchive migrations.test.confidential2_1.5.0.xml >dockstore-webservice/src/main/resources/migrations.test.confidential2_1.5.0.xml
 unzip -p $zipArchive dockstoreTest.yml >dockstore-integration-testing/src/test/resources/dockstoreTest.yml

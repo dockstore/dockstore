@@ -1237,11 +1237,6 @@ paths:
         description: "For tools, the Docker registry"
         required: false
         type: "string"
-      - name: "namespace"
-        in: "query"
-        description: "For tools, the Docker namespace"
-        required: false
-        type: "string"
       - name: "name"
         in: "query"
         description: "name"
@@ -1251,6 +1246,11 @@ paths:
         in: "query"
         description: "Descriptor type"
         required: true
+        type: "string"
+      - name: "namespace"
+        in: "query"
+        description: "For tools, the Docker namespace"
+        required: false
         type: "string"
       responses:
         200:
@@ -3372,11 +3372,6 @@ paths:
         description: "For tools, the Docker registry"
         required: false
         type: "string"
-      - name: "namespace"
-        in: "query"
-        description: "For tools, the Docker namespace"
-        required: false
-        type: "string"
       - name: "name"
         in: "query"
         description: "name"
@@ -3386,6 +3381,11 @@ paths:
         in: "query"
         description: "Descriptor type"
         required: true
+        type: "string"
+      - name: "namespace"
+        in: "query"
+        description: "For tools, the Docker namespace"
+        required: false
         type: "string"
       responses:
         200:
