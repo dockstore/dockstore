@@ -39,6 +39,7 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
+import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.common.CommonTestUtilities.checkToolList;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
@@ -79,7 +80,7 @@ public class ClientIT extends BaseIT {
 
     @Test
     public void testListEntriesWithoutCreds() throws IOException, ApiException {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+        systemExit.expectSystemExitWithStatus(API_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(false), "tool", "list" });
     }
 
@@ -178,7 +179,7 @@ public class ClientIT extends BaseIT {
 
     @Test
     public void manualRegisterADuplicate() throws IOException {
-        systemExit.expectSystemExitWithStatus(Client.API_ERROR);
+        systemExit.expectSystemExitWithStatus(API_ERROR);
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "manual_publish", "--registry",
             Registry.QUAY_IO.name(), Registry.QUAY_IO.toString(), "--namespace", "pypi", "--name", "bd2k-python-lib", "--git-url",
             "git@github.com:funky-user/test2.git", "--git-reference", "refs/head/master" });
@@ -239,6 +240,18 @@ public class ClientIT extends BaseIT {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--client-version", "1.4.0", "--python-version", "3"});
         Assert.assertTrue(systemOutRule.getLog().contains("avro-cwl=="));
         assertDepsCommandOutput();
+    }
+
+    /**
+     * Tests the 'dockstore deps' command with an unrecognized runner
+     * Passes if there was an error and log message
+     * @throws IOException
+     */
+    @Test
+    public void testDepsCommandWithUnknownRunners() throws IOException {
+        systemExit.expectSystemExitWithStatus(API_ERROR);
+        systemExit.checkAssertionAfterwards(()->Assert.assertTrue(systemOutRule.getLog().contains("Could not get runner dependencies")));
+        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--runner", "cromwell"});
     }
 
     /**
