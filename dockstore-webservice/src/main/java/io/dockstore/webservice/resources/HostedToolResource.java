@@ -21,6 +21,7 @@ import java.util.Set;
 
 import javax.ws.rs.Path;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
@@ -34,6 +35,7 @@ import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
@@ -67,6 +69,10 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted tool", response = Tool.class)
     public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace) {
+        Tool duplicate = toolDAO.findByPath(getEntry(user, registry, name, descriptorType, namespace).getPath(), false);
+        if (duplicate != null) {
+            throw new CustomWebApplicationException("A tool with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
+        }
         return super.createHosted(user, registry, name, descriptorType, namespace);
     }
 

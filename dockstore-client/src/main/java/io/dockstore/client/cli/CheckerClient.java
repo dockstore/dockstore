@@ -254,7 +254,7 @@ public class CheckerClient extends WorkflowClient {
             // Download files
             if (entry != null && checkerWorkflow != null) {
                 try {
-                    downloadTargetEntry(entryPath + ":" + version, unzip);
+                    downloadTargetEntry(entryPath + ":" + version, null, unzip);
                     out("Files have been successfully downloaded to the current directory.");
                 } catch (IOException ex) {
                     exceptionMessage(ex, "Problems downloading files to " + currentDirectory, Client.IO_ERROR);

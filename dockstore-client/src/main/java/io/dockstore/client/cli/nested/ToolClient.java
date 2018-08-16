@@ -44,6 +44,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
 import io.swagger.client.model.Tag;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import org.apache.commons.io.FileUtils;
@@ -588,7 +589,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         }
     }
 
-    protected void refreshTargetEntry(String toolpath) {
+    public void refreshTargetEntry(String toolpath) {
         try {
             DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
             final Long containerId = container.getId();
@@ -603,19 +604,36 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         }
     }
 
+    public File downloadTargetEntry(String toolpath,  ToolDescriptor.TypeEnum type, boolean unzip) {
+        return downloadTargetEntry(toolpath, type, unzip, new File(System.getProperty("user.dir")));
+    }
+
     /**
      * Disturbingly similar to WorkflowClient#downloadTargetEntry, could use cleanup refactoring
      * @param toolpath a unique identifier for an entry, called a path for workflows and tools
      * @param unzip unzip the entry after downloading
+     * @param type descriptor type
+     * @param directory directory to unzip descriptors into
+     * @return path to the primary descriptor
      */
-    protected void downloadTargetEntry(String toolpath, boolean unzip) {
+    public File downloadTargetEntry(String toolpath, ToolDescriptor.TypeEnum type, boolean unzip, File directory) {
         String[] parts = toolpath.split(":");
-
         String path = parts[0];
 
         String tag = (parts.length > 1) ? parts[1] : null;
+
         DockstoreTool container = getDockstoreTool(path);
-        Optional<Tag> first = container.getTags().stream().filter(foo -> foo.getName().equalsIgnoreCase(tag)).findFirst();
+        if (tag == null && container.getDefaultVersion() != null) {
+            tag = container.getDefaultVersion();
+        }
+
+        // as a last resort, use latest to match pre-existing behavior from EntryVersionHelper
+        if (tag == null) {
+            tag = "latest";
+        }
+
+        final String fixTag = tag;
+        Optional<Tag> first = container.getTags().stream().filter(foo -> foo.getName().equalsIgnoreCase(fixTag)).findFirst();
         if (first.isPresent()) {
             Long versionId = first.get().getId();
             byte[] arbitraryURL = SwaggerUtility
@@ -625,8 +643,9 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 File zipFile = new File(zipFilename(container));
                 FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
                 if (unzip) {
-                    SwaggerUtility.unzipFile(zipFile);
+                    SwaggerUtility.unzipFile(zipFile, directory);
                 }
+                return new File(directory, type == ToolDescriptor.TypeEnum.CWL ? first.get().getCwlPath() : first.get().getWdlPath());
             } catch (IOException e) {
                 throw new RuntimeException("could not write zip file to disk, out of space?");
             }
@@ -1081,35 +1100,6 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
     @Override
     public Client getClient() {
         return client;
-    }
-
-    public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
-        // In the future, delete tmp files
-        String[] parts = entry.split(":");
-        String path = parts[0];
-        String version = (parts.length > 1) ? parts[1] : "master";
-
-        DockstoreTool tool = getDockstoreTool(path);
-
-        List<SourceFile> result = new ArrayList<>();
-        if (tool != null) {
-            try {
-                List<SourceFile> files;
-                if (descriptor.toLowerCase().equals("cwl")) {
-                    files = containersApi.secondaryCwl(tool.getId(), version);
-                } else if (descriptor.toLowerCase().equals("wdl")) {
-                    files = containersApi.secondaryWdl(tool.getId(), version);
-                } else {
-                    throw new UnsupportedOperationException("other languages not supported yet");
-                }
-                writeSourceFilesToDisk(tempDir, result, files);
-            } catch (ApiException e) {
-                exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
-            } catch (IOException e) {
-                exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
-            }
-        }
-        return result;
     }
 
     @Override

@@ -65,6 +65,7 @@ import io.swagger.client.model.ToolFile;
 import io.swagger.client.model.User;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import io.swagger.model.DescriptorType;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -310,9 +311,7 @@ public class WorkflowIT extends BaseIT {
         stringList.add("\"SmartSeq2SingleCell.hisat2_ref_name\": \"String\"");
         stringList.add("\"SmartSeq2SingleCell.rsem_ref_index\": \"File\"");
         stringList.add("\"SmartSeq2SingleCell.gene_ref_flat\": \"File\"");
-        stringList.forEach(string -> {
-            Assert.assertTrue(systemOutRule.getLog().contains(string));
-        });
+        stringList.forEach(string -> Assert.assertTrue(systemOutRule.getLog().contains(string)));
     }
 
     /**
@@ -484,7 +483,7 @@ public class WorkflowIT extends BaseIT {
 
         workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", workflow.getId(), "cwl", "checker-input-cwl.json");
 
-        refresh = workflowApi.refresh(workflow.getId());
+        workflowApi.refresh(workflow.getId());
 
         // should be able to launch properly with correct credentials even though the workflow is not published
         FileUtils.writeStringToFile(new File("md5sum.input"), "foo" , StandardCharsets.UTF_8);
@@ -653,7 +652,7 @@ public class WorkflowIT extends BaseIT {
     /**
      * This test does not use admin rights, note that a number of operations go through the UserApi to get this to work
      *
-     * @throws ApiException
+     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     public void testPublishingAndListingOfPublished() throws ApiException {
@@ -691,14 +690,14 @@ public class WorkflowIT extends BaseIT {
         });
         List<Workflow> workflows = workflowApi.allPublishedWorkflows(null, null, null, null, null);
         // test offset
-        assertTrue("offset does not seem to be working",
-            Objects.equals(workflowApi.allPublishedWorkflows("1", null, null, null, null).get(0).getId(), workflows.get(1).getId()));
+        assertEquals("offset does not seem to be working", workflowApi.allPublishedWorkflows("1", null, null, null, null).get(0).getId(),
+            workflows.get(1).getId());
         // test limit
         assertEquals(1, workflowApi.allPublishedWorkflows(null, 1, null, null, null).size());
         // test custom sort column
         List<Workflow> ascId = workflowApi.allPublishedWorkflows(null, null, null, "id", "asc");
         List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc");
-        assertTrue("sort by id does not seem to be working", Objects.equals(ascId.get(0).getId(), descId.get(descId.size() - 1).getId()));
+        assertEquals("sort by id does not seem to be working", ascId.get(0).getId(), descId.get(descId.size() - 1).getId());
         // test filter
         List<Workflow> filtered = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
         assertEquals(1, filtered.size());
@@ -707,7 +706,7 @@ public class WorkflowIT extends BaseIT {
     /**
      * Tests manual registration and publishing of a github and bitbucket workflow
      *
-     * @throws ApiException
+     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     public void testManualRegisterThenPublish() throws ApiException {
@@ -762,39 +761,84 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
-    public void testHostedWorkflowMetadata() throws IOException {
+    public void testCreationOfIncorrectHostedWorkflowTypeGarbage() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", "CWL", null, null);
+        thrown.expect(ApiException.class);
+        hostedApi.createHostedWorkflow("name", "garbage type", null, null);
+    }
+
+    @Test
+    public void testDuplicateHostedWorkflowCreation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        HostedApi hostedApi = new HostedApi(webClient);
+        hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+        thrown.expectMessage("already exists");
+        hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+    }
+
+    @Test
+    public void testDuplicateHostedToolCreation() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        HostedApi hostedApi = new HostedApi(webClient);
+        hostedApi.createHostedTool("name", DescriptorType.CWL.toString(), Registry.DOCKER_HUB.toString(), "namespace");
+        thrown.expectMessage("already exists");
+        hostedApi.createHostedTool("name", DescriptorType.CWL.toString(), Registry.DOCKER_HUB.toString(), "namespace");
+    }
+
+    @Test
+    public void testHostedWorkflowMetadataAndLaunch() throws IOException {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        HostedApi hostedApi = new HostedApi(webClient);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+
+        // make a couple garbage edits
         SourceFile source = new SourceFile();
-        // note that this workflow contains metadata defined on the inputs to the workflow in the old (pre-map) CWL way that is still valid v1.0 CWL
         source.setPath("/Dockstore.cwl");
+        source.setContent("cwlVersion: v1.0 \n class: Workflow");
         source.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        source.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
         SourceFile source1 = new SourceFile();
         source1.setPath("sorttool.cwl");
+        source1.setContent("foo");
         source1.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
-        source1.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/sorttool.cwl")), StandardCharsets.UTF_8));
         SourceFile source2 = new SourceFile();
         source2.setPath("revtool.cwl");
+        source2.setContent("foo");
         source2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+
+        source.setContent("cwlVersion: v1.0 \n class: Workflow");
+        source1.setContent("food");
+        source2.setContent("food");
+        hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+
+        // note that this workflow contains metadata defined on the inputs to the workflow in the old (pre-map) CWL way that is still valid v1.0 CWL
+        source.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
+        source1.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/sorttool.cwl")), StandardCharsets.UTF_8));
         source2.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/revtool.cwl")), StandardCharsets.UTF_8));
         Workflow workflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
         assertTrue(!workflow.getInputFileFormats().isEmpty());
         assertTrue(!workflow.getOutputFileFormats().isEmpty());
+
+
+        // launch the workflow, note that the latest version of the workflow should launch (i.e. the working one)
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "launch", "--entry", workflow.getFullWorkflowPath() , "--json" , ResourceHelpers.resourceFilePath("revsort-job.json") ,  "--script" });
+
+
+        WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
+        workflowsApi.publish(workflow.getId(), SwaggerUtility.createPublishRequest(true));
+        // should also launch successfully with the wrong credentials when published
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "launch", "--entry", workflow.getFullWorkflowPath() , "--json" , ResourceHelpers.resourceFilePath("revsort-job.json") ,  "--script" });
     }
 
     /**
      * This tests that a nested WDL workflow (three levels) is properly parsed
-     * @throws ApiException
+     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     public void testNestedWdlWorkflow() throws ApiException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
-
-        UsersApi usersApi = new UsersApi(webClient);
-        final Long userId = usersApi.getUser().getId();
 
         // Set up postgres
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -836,7 +880,7 @@ public class WorkflowIT extends BaseIT {
      * Tests manual registration of a tool and check that descriptors are downloaded properly.
      * Description is pulled properly from an $include.
      *
-     * @throws ApiException
+     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     public void testManualRegisterToolWithMixinsAndSymbolicLinks() throws ApiException, URISyntaxException, IOException {
@@ -913,7 +957,7 @@ public class WorkflowIT extends BaseIT {
     /**
      * Tests that trying to register a duplicate workflow fails, and that registering a non-existant repository failes
      *
-     * @throws ApiException
+     * @throws ApiException exception used for errors coming back from the web service
      */
     @Test
     public void testManualRegisterErrors() throws ApiException {

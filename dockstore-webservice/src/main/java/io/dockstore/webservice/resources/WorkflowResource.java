@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -1695,13 +1696,14 @@ public class WorkflowResource
 
         WorkflowVersion workflowVersion = getWorkflowVersion(workflow, workflowVersionId);
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        java.nio.file.Path path = Paths.get(workflowVersion.getWorkingDirectory());
         if (sourceFiles == null || sourceFiles.size() == 0) {
             throw new CustomWebApplicationException("no files found to zip", HttpStatus.SC_NO_CONTENT);
         }
 
         String fileName = workflow.getWorkflowPath().replaceAll("/", "-") + ".zip";
 
-        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
+        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 

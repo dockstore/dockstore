@@ -19,6 +19,7 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +45,7 @@ import io.swagger.client.model.Label;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.StarRequest;
+import io.swagger.client.model.ToolDescriptor;
 import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
@@ -331,18 +333,30 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         return workflow;
     }
 
+    public File downloadTargetEntry(String toolpath, ToolDescriptor.TypeEnum type, boolean unzip) throws IOException {
+        return downloadTargetEntry(toolpath, type, unzip, new File(System.getProperty("user.dir")));
+    }
+
     /**
      * Disturbingly similar to WorkflowClient#downloadTargetEntry, could use cleanup refactoring
      * @param toolpath a unique identifier for an entry, called a path for workflows and tools
      * @param unzip unzip the entry after downloading
+     * @param directory directory to unzip descriptors into
+     * @return path to the primary descriptor
      */
-    protected void downloadTargetEntry(String toolpath, boolean unzip) throws IOException {
+    public File downloadTargetEntry(String toolpath, ToolDescriptor.TypeEnum type, boolean unzip, File directory) throws IOException {
         String[] parts = toolpath.split(":");
         String path = parts[0];
-        String tag = (parts.length > 1) ? parts[1] : null;
+        // match behaviour from getDescriptorFromServer, use master if no version is provided
+        String tag = (parts.length > 1) ? parts[1] : "master";
         Workflow workflow = getDockstoreWorkflowByPath(path);
         Optional<WorkflowVersion> first = workflow.getWorkflowVersions().stream().filter(foo -> foo.getName().equalsIgnoreCase(tag))
             .findFirst();
+        // if no master is present (for example, for hosted workflows), fail over to the latest descriptor
+        if (!first.isPresent()) {
+            first = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getLastModified));
+        }
+
         if (first.isPresent()) {
             Long versionId = first.get().getId();
             byte[] arbitraryURL = SwaggerUtility
@@ -351,8 +365,9 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             File zipFile = new File(zipFilename(workflow));
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
-                SwaggerUtility.unzipFile(zipFile);
+                SwaggerUtility.unzipFile(zipFile, directory);
             }
+            return new File(directory, first.get().getWorkflowPath());
         } else {
             throw new RuntimeException("version not found");
         }
@@ -1107,35 +1122,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             errorMessage("No workflow found with path " + entry, Client.API_ERROR);
         }
         return file;
-    }
-
-    public List<SourceFile> downloadDescriptors(String entry, String descriptor, File tempDir) {
-        // In the future, delete tmp files
-        String[] parts = entry.split(":");
-        String path = parts[0];
-        String version = (parts.length > 1) ? parts[1] : "master";
-
-        Workflow workflow = getDockstoreWorkflowByPath(path);
-
-        List<SourceFile> result = new ArrayList<>();
-        if (workflow != null) {
-            try {
-                List<SourceFile> files;
-                if (descriptor.toLowerCase().equals(CWL_STRING)) {
-                    files = workflowsApi.secondaryCwl(workflow.getId(), version);
-                } else if (descriptor.toLowerCase().equals(WDL_STRING)) {
-                    files = workflowsApi.secondaryWdl(workflow.getId(), version);
-                } else {
-                    throw new UnsupportedOperationException("other languages not supported yet");
-                }
-                writeSourceFilesToDisk(tempDir, result, files);
-            } catch (ApiException e) {
-                exceptionMessage(e, "Error getting file(s) from server", Client.API_ERROR);
-            } catch (IOException e) {
-                exceptionMessage(e, "Error writing to File", Client.IO_ERROR);
-            }
-        }
-        return result;
     }
 
     @Parameters(separators = "=", commandDescription = "Spit out a json run file for a given entry.")

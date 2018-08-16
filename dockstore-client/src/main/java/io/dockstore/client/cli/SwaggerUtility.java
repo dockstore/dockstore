@@ -44,10 +44,14 @@ public final class SwaggerUtility {
     }
 
     public static void unzipFile(File zipFile) throws IOException {
+        unzipFile(zipFile, new File(System.getProperty("user.dir")));
+    }
+
+    public static void unzipFile(File zipFile, File unzipDirectory) throws IOException {
         ZipFile zipFileActual = new ZipFile(zipFile);
         zipFileActual.stream().forEach(zipEntry -> {
             String fileName = zipEntry.getName();
-            File newFile = new File(System.getProperty("user.dir"), fileName);
+            File newFile = new File(unzipDirectory, fileName);
             try {
                 newFile.getParentFile().mkdirs();
                 FileUtils.copyInputStreamToFile(zipFileActual.getInputStream(zipEntry), newFile);

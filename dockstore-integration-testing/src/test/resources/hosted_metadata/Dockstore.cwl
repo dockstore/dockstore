@@ -58,16 +58,16 @@ outputs:
 # tool "sorttool.cwl#input".
 steps:
   - id: rev
-    inputs:
+    in:
       - { id: input, source: "#input" }
-    outputs:
+    out:
       - { id: output }
     run: revtool.cwl
 
   - id: sorted
-    inputs:
+    in:
       - { id: input, source: "#rev/output" }
       - { id: reverse, source: "#reverse_sort" }
-    outputs:
+    out:
       - { id: output }
     run: sorttool.cwl
