@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -1065,8 +1066,9 @@ public class DockerRepoResource
         }
 
         String fileName = tool.getToolPath().replaceAll("/", "-") + ".zip";
+        java.nio.file.Path path = Paths.get(tag.getWorkingDirectory());
 
-        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output))
+        return Response.ok().entity((StreamingOutput)output -> writeStreamAsZip(sourceFiles, output, path))
             .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"").build();
     }
 }

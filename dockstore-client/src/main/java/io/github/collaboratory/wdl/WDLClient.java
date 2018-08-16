@@ -45,7 +45,7 @@ import io.dockstore.common.Utilities;
 import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.cwl.LauncherCWL;
 import io.swagger.client.ApiException;
-import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
@@ -59,7 +59,6 @@ import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.IO_ERROR;
-import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 
 /**
  * Grouping code for launching WDL tools and workflows
@@ -129,7 +128,6 @@ public class WDLClient implements LanguageClientInterface {
         File parameterFile = new File(jsonRun);
         File cromwellTargetFile = getCromwellTargetFile();
 
-        final SourceFile wdlFromServer;
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
@@ -138,7 +136,8 @@ public class WDLClient implements LanguageClientInterface {
             File localPrimaryDescriptorFile;
             if (!isLocalEntry) {
                 // Grab WDL(s) from server and store in a temporary directory, maintaining directory structure
-                localPrimaryDescriptorFile = abstractEntryClient.downloadDescriptorFiles(entry, WDL_STRING, tempLaunchDirectory);
+                localPrimaryDescriptorFile = abstractEntryClient
+                    .downloadTargetEntry(entry, ToolDescriptor.TypeEnum.WDL, true, tempLaunchDirectory);
             } else {
                 localPrimaryDescriptorFile = new File(entry);
             }
@@ -347,7 +346,7 @@ public class WDLClient implements LanguageClientInterface {
      */
     public String generateInputJson(String entry, final boolean json) throws ApiException, IOException {
         final File tempDir = Files.createTempDir();
-        final File primaryFile = abstractEntryClient.downloadDescriptorFiles(entry, WDL_STRING, tempDir);
+        final File primaryFile = abstractEntryClient.downloadTargetEntry(entry, ToolDescriptor.TypeEnum.WDL, true, tempDir);
 
         if (json) {
             final List<String> wdlDocuments = Lists.newArrayList(primaryFile.getAbsolutePath());
