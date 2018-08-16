@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.ws.rs.Path;
@@ -35,6 +36,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.Api;
@@ -43,6 +45,8 @@ import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -52,12 +56,10 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("hosted")
 @Path("/workflows")
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
+    private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
-    private final String defaultCWLPath = "/Dockstore.cwl";
-    private final String defaultWDLPath = "/Dockstore.wdl";
-    private final String defaultNextflowPath = "/nextflow.config";
     private Map<String, String> descriptorTypeToDefaultDescriptorPath;
 
     public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
@@ -66,8 +68,11 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
         this.descriptorTypeToDefaultDescriptorPath = new HashMap<>();
+        String defaultCWLPath = "/Dockstore.cwl";
         this.descriptorTypeToDefaultDescriptorPath.put("cwl", defaultCWLPath);
+        String defaultWDLPath = "/Dockstore.wdl";
         this.descriptorTypeToDefaultDescriptorPath.put("wdl", defaultWDLPath);
+        String defaultNextflowPath = "/nextflow.config";
         this.descriptorTypeToDefaultDescriptorPath.put("nfl", defaultNextflowPath);
     }
 
@@ -142,6 +147,14 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted workflows", response = Workflow.class)
     public Workflow editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
+    }
+
+    @Override
+    protected void populateMetadata(Set<SourceFile> sourceFiles, Workflow workflow, WorkflowVersion version) {
+        LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
+        Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(version.getWorkflowPath())).findFirst();
+        first.ifPresent(sourceFile -> LOG.info("refreshing metadata based on " + sourceFile.getPath() + " from " + version.getName()));
+        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(workflow, sourceFile.getContent(), sourceFiles));
     }
 
     @Override

@@ -1493,12 +1493,6 @@ paths:
           required: false
           schema:
             type: string
-        - name: namespace
-          in: query
-          description: 'For tools, the Docker namespace'
-          required: false
-          schema:
-            type: string
         - name: name
           in: query
           description: name
@@ -1509,6 +1503,12 @@ paths:
           in: query
           description: Descriptor type
           required: true
+          schema:
+            type: string
+        - name: namespace
+          in: query
+          description: 'For tools, the Docker namespace'
+          required: false
           schema:
             type: string
       responses:
@@ -3692,12 +3692,6 @@ paths:
           required: false
           schema:
             type: string
-        - name: namespace
-          in: query
-          description: 'For tools, the Docker namespace'
-          required: false
-          schema:
-            type: string
         - name: name
           in: query
           description: name
@@ -3708,6 +3702,12 @@ paths:
           in: query
           description: Descriptor type
           required: true
+          schema:
+            type: string
+        - name: namespace
+          in: query
+          description: 'For tools, the Docker namespace'
+          required: false
           schema:
             type: string
       responses:

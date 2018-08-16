@@ -1,0 +1,1 @@
+../../../../dockstore-webservice/src/test/resources/metadata_example2.wdl
