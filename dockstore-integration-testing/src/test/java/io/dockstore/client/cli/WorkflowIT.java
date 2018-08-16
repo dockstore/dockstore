@@ -832,24 +832,6 @@ public class WorkflowIT extends BaseIT {
     }
 
     /**
-     * This tests that you cannot register a duplicate hosted workflow
-     */
-    @Test
-    public void testHostedWorkflowDuplicate() {
-        final ApiClient webClient = getWebClient(USER_2_USERNAME);
-        HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", "CWL", null, null);
-        boolean success = true;
-        try {
-            Workflow hostedWorkflowDuplicate = hostedApi.createHostedWorkflow("name", "CWL", null, null);
-        } catch (ApiException ex) {
-            success = false;
-        } finally {
-            assertTrue("The workflow cannot be registered as it is a duplicate.", !success);
-        }
-    }
-
-    /**
      * This tests that a nested WDL workflow (three levels) is properly parsed
      * @throws ApiException exception used for errors coming back from the web service
      */
