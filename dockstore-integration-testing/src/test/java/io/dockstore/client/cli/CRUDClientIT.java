@@ -283,6 +283,25 @@ public class CRUDClientIT extends BaseIT {
     }
 
     /**
+     * This tests that you cannot register a duplicate hosted tool
+     */
+    @Test
+    public void testHostedToolDuplicate() {
+        final ApiClient webClient = getWebClient(ADMIN_USERNAME);
+        HostedApi hostedApi = new HostedApi(webClient);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        boolean success = true;
+        try {
+            DockstoreTool hostedToolDuplicate = hostedApi.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        } catch (ApiException ex) {
+            success = false;
+        } finally {
+            assertTrue("The tool cannot be registered as it is a duplicate.", !success);
+        }
+    }
+
+
+    /**
      * Ensures that hosted tools cannot be updated
      */
     @Test
