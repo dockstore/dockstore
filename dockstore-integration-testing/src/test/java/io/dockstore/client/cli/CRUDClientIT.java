@@ -110,11 +110,11 @@ public class CRUDClientIT extends BaseIT {
 
     @Test
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    public void testToolEditing(){
+    public void testToolEditing() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
         SourceFile descriptorFile = new SourceFile();
-        descriptorFile.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
+        descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         descriptorFile.setPath("/Dockstore.cwl");
         SourceFile dockerfile = new SourceFile();
@@ -197,11 +197,11 @@ public class CRUDClientIT extends BaseIT {
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     @Test
-    public void testWorkflowEditing(){
+    public void testWorkflowEditing() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
         Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", "cwl", null, null);
         SourceFile file = new SourceFile();
-        file.setContent("cwlVersion: v1.0\\nclass: Workflow\\ninputs:\\ninp: File\\nex: string\\noutputs:\\nclassout:\\ntype: File\\noutputSource: compile/classfile\\nsteps:\\nuntar:\\nrun: tar-param.cwl\\nin:\\ntarfile: inp\\nextractfile: ex\\nout: [example_out]\\ncompile:\\nrun: arguments.cwl\\nin:\\nsrc: untar/example_out\\nout: [classfile]");
+        file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
@@ -210,7 +210,7 @@ public class CRUDClientIT extends BaseIT {
         assertTrue("a workflow lacks a date", first.get().getLastModified() != null && first.get().getLastModified().getTime() != 0);
 
         SourceFile file2 = new SourceFile();
-        file2.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nlabel: Example trivial wrapper for Java 7 compiler\\nhints:\\nDockerRequirement:\\ndockerPull: java:7-jdk\\nbaseCommand: javac\\narguments: [\"-d\", $(runtime.outdir)]\\ninputs:\\nsrc:\\ntype: File\\ninputBinding:\\nposition: 1\\noutputs:\\nclassfile:\\ntype: File\\noutputBinding:\\nglob: \"*.class\"");
+        file2.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("arguments.cwl")), StandardCharsets.UTF_8));
         file2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file2.setPath("/arguments.cwl");
         // add one file and include the old one implicitly
@@ -219,7 +219,7 @@ public class CRUDClientIT extends BaseIT {
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
 
         SourceFile file3 = new SourceFile();
-        file3.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: [tar, xf]\\ninputs:\\ntarfile:\\ntype: File\\ninputBinding:\\nposition: 1\\nextractfile:\\ntype: string\\ninputBinding:\\nposition: 2\\noutputs:\\nexample_out:\\ntype: File\\noutputBinding:\\nglob: $(inputs.extractfile)");
+        file3.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         file3.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file3.setPath("/tar-param.cwl");
         // add one file and include the old one implicitly
@@ -330,7 +330,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted tools can have their default path updated
      */
     @Test
-    public void testUpdatingDefaultVersionHostedTool() {
+    public void testUpdatingDefaultVersionHostedTool() throws IOException {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -338,7 +338,7 @@ public class CRUDClientIT extends BaseIT {
         // Add a tool with a version
         DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", LanguageType.CWL.toString(), "quay.io", "coolNamespace");
         SourceFile descriptorFile = new SourceFile();
-        descriptorFile.setContent("cwlVersion: v1.0\\nclass: CommandLineTool\\nbaseCommand: echo\\ninputs:\\nmessage:\\ntype: string\\ninputBinding:\\nposition: 1\\noutputs: []");
+        descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         descriptorFile.setPath("/Dockstore.cwl");
         SourceFile dockerfile = new SourceFile();
@@ -357,7 +357,7 @@ public class CRUDClientIT extends BaseIT {
      * Ensures that hosted workflows can have their default path updated
      */
     @Test
-    public void testUpdatingDefaultVersionHostedWorkflow() {
+    public void testUpdatingDefaultVersionHostedWorkflow() throws IOException {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         WorkflowsApi workflowsApi = new WorkflowsApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
@@ -365,7 +365,7 @@ public class CRUDClientIT extends BaseIT {
         // Add a workflow with a version
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", LanguageType.CWL.toString(), null, null);
         SourceFile file = new SourceFile();
-        file.setContent("cwlVersion: v1.0\\nclass: Workflow\\ninputs:\\ninp: File\\nex: string\\noutputs:\\nclassout:\\ntype: File\\noutputSource: compile/classfile\\nsteps:\\nuntar:\\nrun: tar-param.cwl\\nin:\\ntarfile: inp\\nextractfile: ex\\nout: [example_out]\\ncompile:\\nrun: arguments.cwl\\nin:\\nsrc: untar/example_out\\nout: [classfile]");
+        file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
