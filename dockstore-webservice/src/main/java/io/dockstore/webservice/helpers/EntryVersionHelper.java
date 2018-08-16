@@ -18,6 +18,7 @@ package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -324,13 +325,15 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
     /**
      * Creates a zip file in the tmp dir for the given files
      * @param sourceFiles Set of sourcefiles
+     * @param workingDirectory need a working directory to translate relative paths (which we store) to absolute paths
      */
-    default void writeStreamAsZip(Set<SourceFile> sourceFiles, OutputStream outputStream) {
+    default void writeStreamAsZip(Set<SourceFile> sourceFiles, OutputStream outputStream, Path workingDirectory) {
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
+                Path resolve = workingDirectory.resolve(sourceFile.getPath());
                 // remove quirk of working directory
-                String stripStart = StringUtils.stripStart(sourceFile.getPath(), "./");
+                String stripStart = StringUtils.stripStart(resolve.toFile().toString(), "./");
                 ZipEntry secondaryZipEntry = new ZipEntry(stripStart);
                 zipOutputStream.putNextEntry(secondaryZipEntry);
                 zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));

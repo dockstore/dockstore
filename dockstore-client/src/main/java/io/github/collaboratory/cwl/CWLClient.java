@@ -44,6 +44,7 @@ import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.FileProvisioning;
 import io.swagger.client.ApiException;
+import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -54,7 +55,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
-import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
@@ -92,11 +92,11 @@ public class CWLClient implements LanguageClientInterface {
             abstractEntryClient.getClient().checkForCWLDependencies();
         }
 
-        final File tempDir = Files.createTempDir();
+        File tempDir = Files.createTempDir();
         File tempCWL;
         if (!isLocalEntry) {
             try {
-                tempCWL = abstractEntryClient.downloadDescriptorFiles(entry, "cwl", tempDir);
+                tempCWL = abstractEntryClient.downloadTargetEntry(entry, ToolDescriptor.TypeEnum.CWL, true, tempDir);
             } catch (ApiException e) {
                 if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
                     exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
@@ -319,7 +319,7 @@ public class CWLClient implements LanguageClientInterface {
      */
     public String generateInputJson(String entry, final boolean json) throws ApiException, IOException {
         final File tempDir = Files.createTempDir();
-        final File primaryFile = abstractEntryClient.downloadDescriptorFiles(entry, CWL_STRING, tempDir);
+        final File primaryFile = abstractEntryClient.downloadTargetEntry(entry, ToolDescriptor.TypeEnum.CWL, true, tempDir);
 
         // need to suppress output
         final ImmutablePair<String, String> output = abstractEntryClient.getCwlUtil().parseCWL(primaryFile.getAbsolutePath());

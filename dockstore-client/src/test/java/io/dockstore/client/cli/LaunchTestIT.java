@@ -480,7 +480,7 @@ public class LaunchTestIT {
 
         args.add(0, ResourceHelpers.resourceFilePath(useCache ? "config.withCache" : "config"));
         args.add(0, "--config");
-        Client.main(args.toArray(new String[args.size()]));
+        Client.main(args.toArray(new String[0]));
     }
 
     private void runToolThreaded(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client) {
