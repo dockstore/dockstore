@@ -40,6 +40,7 @@ import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 
@@ -84,10 +85,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted workflow", response = Workflow.class)
     public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace) {
-        Workflow duplicate = workflowDAO.findByPath(getEntry(user, registry, name, descriptorType, namespace).getWorkflowPath(), false);
-        if (duplicate != null) {
-            throw new CustomWebApplicationException("A workflow with the same path and name already exists.", HttpStatus.SC_BAD_REQUEST);
-        }
         return super.createHosted(user, registry, name, descriptorType, namespace);
     }
 
@@ -113,6 +110,14 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             if (!(entry instanceof Workflow) || !permissionsInterface.canDoAction(user, (Workflow)entry, action)) {
                 throw ex;
             }
+        }
+    }
+
+    @Override
+    protected void checkForDuplicatePath(Workflow workflow) {
+        MutablePair<String, Entry> duplicate = getEntryDAO().findEntryByPath(workflow.getWorkflowPath(), false);
+        if (duplicate != null) {
+            throw new CustomWebApplicationException("A workflow already exists with that path. Please change the workflow name to something unique.", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
