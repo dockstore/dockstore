@@ -636,9 +636,12 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         Optional<Tag> first = container.getTags().stream().filter(foo -> foo.getName().equalsIgnoreCase(fixTag)).findFirst();
         if (first.isPresent()) {
             Long versionId = first.get().getId();
+            // https://github.com/ga4gh/dockstore/issues/1712 client seems to use jersey logging which is not controlled from logback
+            containersApi.getApiClient().setDebugging(false);
             byte[] arbitraryURL = SwaggerUtility
                 .getArbitraryURL("/containers/" + container.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
                 }, containersApi.getApiClient());
+            containersApi.getApiClient().setDebugging(Client.DEBUG.get());
             try {
                 File zipFile = new File(zipFilename(container));
                 FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
