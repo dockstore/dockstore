@@ -443,14 +443,6 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             if (user == null && authUser == null) {
                 User newUser = new User();
                 newUser.setUsername(username);
-
-                // Pull user information from Github
-                Token initialGitHubToken = new Token();
-                initialGitHubToken.setContent(accessToken);
-                initialGitHubToken.setUsername(githubLogin);
-                initialGitHubToken.setTokenSource(TokenType.GITHUB_COM);
-                GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(initialGitHubToken, null);
-                newUser = gitHubSourceCodeRepo.getUserMetadata(newUser);
                 userID = userDAO.create(newUser);
                 user = userDAO.findById(userID);
             } else {
@@ -490,7 +482,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
             githubToken.setUserId(userID);
             githubToken.setUsername(githubLogin);
             tokenDAO.create(githubToken);
-            LOG.info("Github token created for {}", githubLogin);
+            user = userDAO.findById(userID);
+            GitHubSourceCodeRepo gitHubSourceCodeRepo = (GitHubSourceCodeRepo)SourceCodeRepoFactory.createSourceCodeRepo(githubToken, null);
+            gitHubSourceCodeRepo.getUserMetadata(user);
         }
         return dockstoreToken;
     }
