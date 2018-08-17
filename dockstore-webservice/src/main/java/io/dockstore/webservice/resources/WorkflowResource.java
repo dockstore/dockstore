@@ -1365,7 +1365,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/dag/{workflowVersionId}")
-    @ApiOperation(value = "Get the DAG for a given workflow version", response = String.class)
+    @ApiOperation(value = "Get the DAG for a given workflow version", response = String.class, notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public String getWorkflowDag(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
@@ -1397,7 +1398,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/tools/{workflowVersionId}")
-    @ApiOperation(value = "Get the Tools for a given workflow version", response = String.class)
+    @ApiOperation(value = "Get the Tools for a given workflow version", notes = OPTIONAL_AUTH_MESSAGE, response = String.class, authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public String getTableToolContent(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "workflowVersionId", required = true) @PathParam("workflowVersionId") Long workflowVersionId) {
