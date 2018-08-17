@@ -795,7 +795,7 @@ public class WorkflowIT extends BaseIT {
         // make a couple garbage edits
         SourceFile source = new SourceFile();
         source.setPath("/Dockstore.cwl");
-        source.setContent("cwlVersion: v1.0 \n class: Workflow");
+        source.setContent("cwlVersion: v1.0\nclass: Workflow");
         source.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         SourceFile source1 = new SourceFile();
         source1.setPath("sorttool.cwl");
@@ -807,7 +807,7 @@ public class WorkflowIT extends BaseIT {
         source2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
 
-        source.setContent("cwlVersion: v1.0 \n class: Workflow");
+        source.setContent("cwlVersion: v1.0\nclass: Workflow");
         source1.setContent("food");
         source2.setContent("food");
         hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));

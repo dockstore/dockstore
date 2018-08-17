@@ -27,8 +27,10 @@ import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class WDLParseTest {
 
@@ -38,8 +40,8 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
-        Assert.assertTrue("incorrect author", entry.getAuthor().contains("Chip Stewart"));
-        Assert.assertTrue("incorrect email", entry.getEmail().contains("stewart@broadinstitute.org"));
+        assertTrue("incorrect author", entry.getAuthor().contains("Chip Stewart"));
+        assertTrue("incorrect email", entry.getEmail().contains("stewart@broadinstitute.org"));
     }
 
     @Test
@@ -48,8 +50,8 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
-        Assert.assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        Assert.assertTrue("incorrect email", entry.getEmail().isEmpty());
+        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
+        assertTrue("incorrect email", entry.getEmail().isEmpty());
     }
 
     @Test
@@ -58,7 +60,7 @@ public class WDLParseTest {
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
             .parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
-        Assert.assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
-        Assert.assertTrue("incorrect email", entry.getDescription().equals("This is a cool workflow"));
+        assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
+        assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
     }
 }

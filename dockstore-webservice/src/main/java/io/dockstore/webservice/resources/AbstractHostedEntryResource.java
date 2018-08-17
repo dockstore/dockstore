@@ -166,6 +166,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
         version.setValid(true);
         version.setVersionEditor(user);
+        populateMetadata(versionSourceFiles, entry, version);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
         entry.setLastModified(version.getLastModified());
@@ -175,6 +176,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
     }
+
+    protected abstract void populateMetadata(Set<SourceFile> sourceFiles, T entry, U version);
 
     protected abstract boolean checkValidVersion(Set<SourceFile> sourceFiles, T entry);
 
