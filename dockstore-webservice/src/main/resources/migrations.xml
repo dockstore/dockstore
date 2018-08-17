@@ -17,15 +17,16 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
-
     <include file="migrations.1.3.0.legacy.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.3.0.generated.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.3.1.consistency.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.confidential1.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.confidential2.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.4.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.samepaths.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.testworkflow.xml" relativeToChangelogFile="true"/>
-    <include file="migrations.test.confidential1.xml" relativeToChangelogFile="true"/>
-    <include file="migrations.test.confidential2.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.confidential1_1.5.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test.confidential2_1.5.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

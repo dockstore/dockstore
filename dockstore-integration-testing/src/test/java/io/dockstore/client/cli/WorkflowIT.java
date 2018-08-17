@@ -97,9 +97,9 @@ import static org.junit.Assert.fail;
 public class WorkflowIT extends BaseIT {
 
     public static final String DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/hello-dockstore-workflow";
+    public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
-    private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     // workflow with external library in lib directory
     private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
     // workflow that uses containers
@@ -384,7 +384,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient anonWebClient = getWebClient(false, null);
         WorkflowsApi anonWorkflowApi = new WorkflowsApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClient(true, "OtherUser");
+        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
         WorkflowsApi otherUserWorkflowApi = new WorkflowsApi(otherUserWebClient);
 
         // Register and refresh workflow
