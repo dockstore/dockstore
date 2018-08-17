@@ -303,6 +303,83 @@ public class SamPermissionsImpl implements PermissionsInterface {
         }
     }
 
+    @Override
+    public void selfDestruct(User user) {
+        if (googleToken(user) != null) {
+            final ResourcesApi resourcesApi = getResourcesApi(user);
+            try {
+                final List<String> resourceIds = ownedResourceIds(resourcesApi);
+                checkUserIsOnlyMember(resourceIds, resourcesApi);
+                for (String resourceId : resourceIds) {
+                    resourcesApi.deleteResource(SamConstants.RESOURCE_TYPE, resourceId);
+                }
+            } catch (ApiException e) {
+                throw new CustomWebApplicationException("Error deleting user", e.getCode());
+            }
+        }
+    }
+
+
+    @Override
+    public boolean isSharing(User user) {
+        if (googleToken(user) == null) {
+            return false;
+        }
+        final ResourcesApi resourcesApi = getResourcesApi(user);
+        try {
+            final List<String> resourceIds = ownedResourceIds(resourcesApi);
+            checkUserIsOnlyMember(resourceIds, resourcesApi);
+            return false;
+        } catch (ApiException e) {
+            // User is not in SAM, which means they aren't sharing anything
+            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+                return false;
+            }
+            LOG.error("Error fetching user's shared resources", e);
+            // Unknown error, assume they could be sharing to be safe
+            return true;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    void checkUserIsOnlyMember(List<String> resourceIds, ResourcesApi resourcesApi) {
+        for (String resourceId : resourceIds) {
+            final List<AccessPolicyResponseEntry> entries;
+            try {
+                entries = resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId);
+            } catch (ApiException e) {
+                LOG.error(MessageFormat.format("Error getting resource policies for {}", resourceId), e);
+                throw new CustomWebApplicationException("Error getting resource policies", e.getCode());
+            }
+            final boolean userIsOnlyMember = entries.stream().noneMatch(entry -> {
+                if (entry.getPolicyName().equals(SamConstants.OWNER_POLICY)) {
+                    return entry.getPolicy().getMemberEmails().size() > 1; // There should be one owner
+                } else {
+                    return entry.getPolicy().getMemberEmails().size() > 0;
+                }
+            });
+            if (!userIsOnlyMember) {
+                throw new CustomWebApplicationException("The user is sharing at least one workflow and cannot be deleted.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+    }
+
+    private List<String> ownedResourceIds(ResourcesApi resourcesApi) throws ApiException {
+        try {
+            return resourcesApi.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE)
+                    .stream()
+                    .filter(p -> SamConstants.OWNER_POLICY.equals(p.getAccessPolicyName()))
+                    .map(p -> p.getResourceId())
+                    .collect(Collectors.toList());
+        } catch (ApiException e) {
+            if (e.getCode() == HttpStatus.SC_UNAUTHORIZED) {
+                // User is not in SAM
+                return Collections.emptyList();
+            }
+            throw e;
+        }
+    }
     private ApiClient getApiClient(User user) {
         ApiClient apiClient = new ApiClient() {
             @Override
