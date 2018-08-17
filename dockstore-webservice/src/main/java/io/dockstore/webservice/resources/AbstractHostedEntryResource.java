@@ -110,6 +110,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
         @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace) {
         descriptorType = checkType(descriptorType);
+        user = userDAO.findById(user.getId());
         T entry = getEntry(user, registry, name, descriptorType, namespace);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
@@ -156,6 +157,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
+        user = userDAO.findById(user.getId());
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
         U version = getVersion(entry);
@@ -215,6 +217,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
+        user = userDAO.findById(user.getId());
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
         entry.getVersions().removeIf(v -> Objects.equals(v.getName(), version));
