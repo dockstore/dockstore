@@ -23,6 +23,7 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.HostedApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.User;
@@ -87,6 +88,11 @@ public class UserResourceIT extends BaseIT {
         UsersApi userApi = new UsersApi(client);
         userApi.changeUsername("foo");
         assertEquals("foo", userApi.getUser().getUsername());
+
+        // Add hosted workflow, should use new username
+        HostedApi userHostedApi = new HostedApi(client);
+        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", "cwl", null, null);
+        assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo", hostedWorkflow.getOrganization());
     }
 
 
