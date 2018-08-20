@@ -4,7 +4,7 @@ info:
     This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.5.0-beta.1-SNAPSHOT
+  version: 1.5.0-beta.2-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -4368,7 +4368,9 @@ paths:
       tags:
         - workflows
       summary: Get the DAG for a given workflow version
-      description: ''
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: getWorkflowDag
       parameters:
         - name: workflowId
@@ -4392,6 +4394,8 @@ paths:
             application/json:
               schema:
                 type: string
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/defaultVersion':
     put:
       tags:
@@ -4924,7 +4928,9 @@ paths:
       tags:
         - workflows
       summary: Get the Tools for a given workflow version
-      description: ''
+      description: >-
+        Does not require authentication for published workflows, authentication
+        can be provided for restricted workflows
       operationId: getTableToolContent
       parameters:
         - name: workflowId
@@ -4948,6 +4954,8 @@ paths:
             application/json:
               schema:
                 type: string
+      security:
+        - BEARER: []
   '/workflows/{workflowId}/unstar':
     delete:
       tags:
