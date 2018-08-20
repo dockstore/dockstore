@@ -343,7 +343,7 @@ public class TokenResourceIT extends BaseIT {
         try {
             unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration);
             Assert.fail();
-        } catch (Exception e){
+        } catch (ApiException e){
             Assert.assertEquals("User already exists, cannot register new user", e.getMessage());;
             // Call should fail
         }
@@ -352,7 +352,7 @@ public class TokenResourceIT extends BaseIT {
         try {
             unAuthenticatedTokensApi.addToken(satellizerJSONForRegistration);
             Assert.fail();
-        } catch (Exception e){
+        } catch (ApiException e){
             Assert.assertTrue(e.getMessage().contains("already exists"));
             // Call should fail
         }
