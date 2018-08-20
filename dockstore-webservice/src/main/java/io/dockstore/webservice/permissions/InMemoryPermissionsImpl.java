@@ -185,11 +185,11 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
             throw new CustomWebApplicationException("The user is sharing at least one workflow and cannot be deleted.",
                     HttpStatus.SC_BAD_REQUEST);
         } else {
-           user.getEntries().stream().forEach(e -> {
-               if (e instanceof Workflow) {
-                   resourceToUsersAndRolesMap.remove(((Workflow)e).getWorkflowPath());
-               }
-           });
+            user.getEntries().stream().forEach(e -> {
+                if (e instanceof Workflow) {
+                    resourceToUsersAndRolesMap.remove(((Workflow)e).getWorkflowPath());
+                }
+            });
         }
     }
 
