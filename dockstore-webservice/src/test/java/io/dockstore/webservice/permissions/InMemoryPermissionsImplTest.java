@@ -157,14 +157,14 @@ public class InMemoryPermissionsImplTest {
         Assert.assertTrue(inMemoryPermissions.isSharing(johnDoeUser));
     }
 
+    @Test
     public void testSelfDestruct() {
         // Nothing shared at all
         Assert.assertFalse(inMemoryPermissions.isSharing(johnDoeUser));
 
         inMemoryPermissions.selfDestruct(johnDoeUser);
         // Share with Jane
-        final Permission permission = new Permission("jane", Role.OWNER);
-        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, new Permission("jane", Role.OWNER));
         thrown.expect(CustomWebApplicationException.class);
         inMemoryPermissions.selfDestruct(johnDoeUser);
     }
