@@ -248,6 +248,7 @@ public class ClientIT extends BaseIT {
      * @throws IOException
      */
     @Test
+    @Ignore("Ignored until there are more than one runner.")
     public void testDepsCommandWithUnknownRunners() throws IOException {
         systemExit.expectSystemExitWithStatus(API_ERROR);
         systemExit.checkAssertionAfterwards(()->Assert.assertTrue(systemOutRule.getLog().contains("Could not get runner dependencies")));
@@ -274,7 +275,7 @@ public class ClientIT extends BaseIT {
     @Test
     public void testDepsCommandHelp() throws IOException {
         Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "deps", "--help" });
-        Assert.assertTrue(systemOutRule.getLog().contains("Print tool/workflow runner dependencies"));
+        Assert.assertTrue(systemOutRule.getLog().contains("Print cwltool runner dependencies"));
     }
 
     private void assertDepsCommandOutput() {
