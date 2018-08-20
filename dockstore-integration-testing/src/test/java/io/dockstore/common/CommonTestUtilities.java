@@ -109,7 +109,7 @@ public final class CommonTestUtilities {
      * @param configPath
      * @throws Exception
      */
-    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
+    private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
         application.run("db", "migrate", configPath, "--include", "1.3.0.generated");
@@ -117,6 +117,7 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "test.confidential1");
         application.run("db", "migrate", configPath, "--include", "1.4.0");
         application.run("db", "migrate", configPath, "--include", "1.5.0");
+        application.run("db", "migrate", configPath, "--include", "test.confidential1_1.5.0");
     }
 
     public static void runMigration(List<String> migrationList, Application<DockstoreWebserviceConfiguration> application, String configPath) {
@@ -161,6 +162,7 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "test.confidential2");
         application.run("db", "migrate", configPath, "--include", "1.4.0");
         application.run("db", "migrate", configPath, "--include", "1.5.0");
+        application.run("db", "migrate", configPath, "--include", "test.confidential2_1.5.0");
     }
 
     /**

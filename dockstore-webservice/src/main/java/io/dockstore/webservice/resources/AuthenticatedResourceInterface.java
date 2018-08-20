@@ -31,7 +31,7 @@ public interface AuthenticatedResourceInterface {
     /**
      * Check if tool is null
      *
-     * @param entry
+     * @param entry entry to check permissions for
      */
     default void checkEntry(Entry entry) {
         if (entry == null) {
@@ -42,7 +42,7 @@ public interface AuthenticatedResourceInterface {
     /**
      * Check if tool is null
      *
-     * @param entry
+     * @param entry entry to check permissions for
      */
     default void checkEntry(List<? extends Entry> entry) {
         if (entry == null) {
@@ -54,7 +54,7 @@ public interface AuthenticatedResourceInterface {
     /**
      * Check if admin
      *
-     * @param user
+     * @param user the user that is requesting something
      */
     default void checkAdmin(User user) {
         if (!user.getIsAdmin()) {
@@ -66,8 +66,8 @@ public interface AuthenticatedResourceInterface {
     /**
      * Check if admin or if tool belongs to user
      *
-     * @param user
-     * @param entry
+     * @param user the user that is requesting something
+     * @param entry entry to check permissions for
      */
     default void checkUser(User user, Entry entry) {
         if (!user.getIsAdmin() && (entry.getUsers()).stream().noneMatch(u -> ((User)(u)).getId() == user.getId())) {
@@ -79,7 +79,7 @@ public interface AuthenticatedResourceInterface {
     /**
      * Check if admin or if container belongs to user
      *
-     * @param user
+     * @param user the user that is requesting something
      * @param list
      */
     static void checkUser(User user, List<? extends Entry> list) {
@@ -94,7 +94,7 @@ public interface AuthenticatedResourceInterface {
     /**
      * Check if admin or correct user
      *
-     * @param user
+     * @param user the user that is requesting something
      * @param id
      */
     default void checkUser(User user, long id) {
@@ -107,8 +107,8 @@ public interface AuthenticatedResourceInterface {
      * Checks if a user can read an entry. Default implementation
      * is to invoke <code>checkUser</code>. Implmenations that support
      * more nuanched sharing should override.
-     * @param user
-     * @param entry
+     * @param user the user that is requesting something
+     * @param entry entry to check permissions for()
      */
     default void checkUserCanRead(User user, Entry entry) {
         checkUser(user, entry);
@@ -119,8 +119,8 @@ public interface AuthenticatedResourceInterface {
      * is to invoke <code>checkUser</code>. Implementations that support
      * more nuanced sharing should override.
      *
-     * @param user
-     * @param entry
+     * @param user the user that is requesting something
+     * @param entry entry to check permissions for()
      */
     default void checkUserCanUpdate(User user, Entry entry) {
         checkUser(user, entry);
@@ -131,8 +131,8 @@ public interface AuthenticatedResourceInterface {
      * is to invoke <code>checkUser</code>. Implementations that support
      * more nuanced sharing should override.
      *
-     * @param user
-     * @param entry
+     * @param user the user that is requesting something
+     * @param entry entry to check permissions for()
      */
     default void checkUserCanDelete(User user, Entry entry) {
         checkUser(user, entry);
@@ -143,8 +143,8 @@ public interface AuthenticatedResourceInterface {
      * is to invoke <code>checkUser</code>. Implmentations that support
      * more nuanced sharing should override.
      *
-     * @param user
-     * @param entry
+     * @param user the user that is requesting something
+     * @param entry entry to check permissions for()
      */
     default void checkUserCanShare(User user, Entry entry) {
         checkUser(user, entry);
@@ -153,10 +153,10 @@ public interface AuthenticatedResourceInterface {
     /**
      * Override for resources that are permissions aware.
      * Currently done for WorkflowResource
-     * @param user
-     * @param workflow
+     * @param user the user that is requesting something
+     * @param entry entry to check permissions for()
      */
-    default void checkCanRead(User user, Entry workflow) {
+    default void checkCanRead(User user, Entry entry) {
         throw new CustomWebApplicationException("Forbidden: you do not have the credentials required to access this entry.",
             HttpStatus.SC_FORBIDDEN);
     }
@@ -166,8 +166,8 @@ public interface AuthenticatedResourceInterface {
      * 1) A published workflow
      * 2) A workflow that is unpublished but that I have access to
      *
-     * @param user
-     * @param entry
+     * @param user the user that is requesting something
+     * @param entry entry to check permissions for()
      */
     default void checkOptionalAuthRead(Optional<User> user, Entry entry) {
         if (entry.getIsPublished()) {
