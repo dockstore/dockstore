@@ -181,7 +181,10 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
 
     @Override
     public void selfDestruct(User user) {
-
+        if (isSharing(user)) {
+            throw new CustomWebApplicationException("The user is sharing at least one workflow and cannot be deleted.",
+                    HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @Override
