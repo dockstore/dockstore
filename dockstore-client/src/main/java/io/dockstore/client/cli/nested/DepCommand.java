@@ -53,7 +53,7 @@ public final class DepCommand {
         private String clientVersion = getClass().getPackage().getImplementationVersion();
         @Parameter(names = "--python-version", description = "Python version")
         private String pythonVersion = "2";
-        @Parameter(names = "--runner", description = "tool/workflow runner")
+        @Parameter(names = "--runner", description = "tool/workflow runner. Available options: 'cwltool'")
         private String runner = "cwltool";
         @Parameter(names = "--help", description = "Prints help for deps", help = true)
         private boolean help = false;
