@@ -210,6 +210,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
     @Override
     public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String relativePath, Boolean verified,
         String metadata) {
+
         ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
         ToolsApiServiceImpl.ParsedRegistryID parsedID = new ToolsApiServiceImpl.ParsedRegistryID(id);
         Entry entry = impl.getEntry(parsedID, Optional.empty());

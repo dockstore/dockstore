@@ -49,6 +49,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.api.PublishRequest;
 import io.dockstore.webservice.api.StarRequest;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.SourceFile.FileType;
@@ -830,6 +831,26 @@ public class DockerRepoResource
         @ApiParam(value = "Tool id", required = true) @PathParam("containerId") Long containerId, @QueryParam("tag") String tag,
         @ApiParam(value = "Descriptor Type", required = true, allowableValues = "CWL, WDL, NFL") @QueryParam("descriptorType") String descriptorType) {
         return getAllSourceFiles(containerId, tag, Workflow.getTestParameterType(descriptorType), user);
+    }
+
+    /**
+     * Checks if <code>user</code> has permission to read <code>workflow</code>. If the user
+     * does not have permission, throws a {@link CustomWebApplicationException}.
+     *
+     * @param user
+     * @param tool
+     */
+    @Override
+    public void checkCanRead(User user, Entry tool) {
+        try {
+            checkUser(user, tool);
+        } catch (CustomWebApplicationException ex) {
+            LOG.info("permissions are not yet tool aware");
+            //TODO permissions will eventually need to know about tools too
+            //            if (!permissionsInterface.canDoAction(user, (Workflow)workflow, Role.Action.READ)) {
+            //                throw ex;
+            //            }
+        }
     }
 
     /*

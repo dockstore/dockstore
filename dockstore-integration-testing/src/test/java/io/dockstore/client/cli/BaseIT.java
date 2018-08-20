@@ -15,6 +15,8 @@
  */
 package io.dockstore.client.cli;
 
+import java.io.File;
+
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
 import io.dockstore.common.Constants;
@@ -36,10 +38,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 
 /**
@@ -48,9 +46,11 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  */
 @Category(ConfidentialTest.class)
 public class BaseIT {
-    public final String ADMIN_USERNAME = "admin@admin.com";
-    public final String USER_1_USERNAME = "DockstoreTestUser";
     public final String USER_2_USERNAME = "DockstoreTestUser2";
+    static final String OTHER_USERNAME = "OtherUser";
+    final String ADMIN_USERNAME = "admin@admin.com";
+    final String USER_1_USERNAME = "DockstoreTestUser";
+    final String CURATOR_USERNAME = "curator@curator.com";
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
         DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
@@ -81,8 +81,6 @@ public class BaseIT {
     /**
      * Shared convenience method
      * @return
-     * @throws IOException
-     * @throws TimeoutException
      */
     protected static ApiClient getWebClient(boolean authenticated, String username) {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
@@ -110,7 +108,7 @@ public class BaseIT {
         return getWebClient(true, false);
     }
 
-    protected static ApiClient getAdminWebClient() {
+    static ApiClient getAdminWebClient() {
         return getWebClient(true, true);
     }
 

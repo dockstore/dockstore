@@ -111,11 +111,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace) {
         descriptorType = checkType(descriptorType);
         T entry = getEntry(user, registry, name, descriptorType, namespace);
+        checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
         elasticManager.handleIndexUpdate(byId, ElasticMode.UPDATE);
         return byId;
     }
+
+    protected abstract void checkForDuplicatePath(T entry);
 
     /**
      * TODO: ugly, too many strings lead to an easy mix-up of order.
@@ -163,6 +166,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
         version.setValid(true);
         version.setVersionEditor(user);
+        populateMetadata(versionSourceFiles, entry, version);
         long l = getVersionDAO().create(version);
         entry.getVersions().add(getVersionDAO().findById(l));
         entry.setLastModified(version.getLastModified());
@@ -172,6 +176,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
     }
+
+    protected abstract void populateMetadata(Set<SourceFile> sourceFiles, T entry, U version);
 
     protected abstract boolean checkValidVersion(Set<SourceFile> sourceFiles, T entry);
 
