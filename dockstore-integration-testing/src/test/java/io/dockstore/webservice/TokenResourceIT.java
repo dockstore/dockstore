@@ -38,6 +38,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -260,17 +261,18 @@ public class TokenResourceIT extends BaseIT {
 
         // Login with Google still works
         io.swagger.client.model.Token token = unAuthenticatedTokensApi.addGoogleToken(satellizerJSON);
-        Assert.assertEquals(100l, (long)token.getUserId());
+        Assert.assertEquals(TokenType.DOCKSTORE.toString(), token.getTokenSource());
+
         // Login with GitHub still works
         io.swagger.client.model.Token fakeGitHubCode = unAuthenticatedTokensApi.addToken(satellizerJSON);
-        Assert.assertEquals(100l, (long)fakeGitHubCode.getUserId());
+        Assert.assertEquals(TokenType.DOCKSTORE.toString(), fakeGitHubCode.getTokenSource());
     }
 
     private void registerAndLinkUnavailableTokens(TokensApi unAuthenticatedTokensApi) throws Exception {
         // Should not be able to register new Dockstore account when profiles already exist
         registerNewUsersWithExisting(unAuthenticatedTokensApi);
         // Can't link tokens to other Dockstore accounts
-        addUnavailableGitHubTokenToGoogleUser(unAuthenticatedTokensApi);
+        addUnavailableGitHubTokenToGoogleUser();
         addUnavailableGoogleTokenToGitHubUser();
     }
 
@@ -353,15 +355,16 @@ public class TokenResourceIT extends BaseIT {
      * Trying to link GOOGLE_ACCOUNT_USERNAME1 Google account to Dockstore account 2 should fail
      * @throws Exception
      */
-    private void addUnavailableGoogleTokenToGitHubUser() throws Exception {
+    private void addUnavailableGoogleTokenToGitHubUser() {
         mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
         TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
         // Cannot add token to other user with the same Google account
         try {
             otherUserTokensApi.addGoogleToken(satellizerJSON);
             Assert.fail();
-        } catch (Exception e){
-            Assert.assertTrue(e.getMessage().contains("already exists."));;
+        } catch (ApiException e){
+            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            Assert.assertTrue(e.getMessage().contains("already exists"));;
             // Call should fail
         }
     }
@@ -372,14 +375,15 @@ public class TokenResourceIT extends BaseIT {
      * Trying to link GITHUB_ACCOUNT_USERNAME GitHub account to Dockstore account 1 should fail
      * @throws Exception
      */
-    private void addUnavailableGitHubTokenToGoogleUser(TokensApi unAuthenticatedTokensApi) throws Exception {
+    private void addUnavailableGitHubTokenToGoogleUser() throws Exception {
         mockGitHub(CUSTOM_USERNAME1);
         TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME2));
         try {
             otherUserTokensApi.addGithubToken("potato");
             Assert.fail();
-        } catch (Exception e){
-            Assert.assertTrue(e.getMessage().contains("already exists."));;
+        } catch (ApiException e){
+            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            Assert.assertTrue(e.getMessage().contains("already exists"));;
             // Call should fail
         }
     }
