@@ -288,10 +288,12 @@ public class TokenResourceIT extends BaseIT {
 
         // Login with Google still works
         io.swagger.client.model.Token token = unAuthenticatedTokensApi.addGoogleToken(satellizerJSON);
+        Assert.assertEquals(CUSTOM_USERNAME2, token.getUsername());
         Assert.assertEquals(TokenType.DOCKSTORE.toString(), token.getTokenSource());
 
         // Login with GitHub still works
         io.swagger.client.model.Token fakeGitHubCode = unAuthenticatedTokensApi.addToken(satellizerJSON);
+        Assert.assertEquals(CUSTOM_USERNAME2, fakeGitHubCode.getUsername());
         Assert.assertEquals(TokenType.DOCKSTORE.toString(), fakeGitHubCode.getTokenSource());
     }
 
