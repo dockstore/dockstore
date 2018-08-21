@@ -32,6 +32,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -39,6 +40,8 @@ import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -48,6 +51,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Api("hosted")
 @Path("/containers")
 public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, ToolDAO, TagDAO> {
+    private static final Logger LOG = LoggerFactory.getLogger(HostedToolResource.class);
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
 
@@ -91,6 +95,16 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted tools", response = Tool.class)
     public Tool editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
+    }
+
+    @Override
+    protected void populateMetadata(Set<SourceFile> sourceFiles, Tool entry, Tag tag) {
+        for (SourceFile file : sourceFiles) {
+            if (file.getPath().equals(tag.getCwlPath()) || file.getPath().equals(tag.getWdlPath())) {
+                LOG.info("refreshing metadata based on " + file.getPath() + " from " + tag.getName());
+                LanguageHandlerFactory.getInterface(file.getType()).parseWorkflowContent(entry, file.getContent(), sourceFiles);
+            }
+        }
     }
 
     @Override

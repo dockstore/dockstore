@@ -105,13 +105,13 @@ public class BasicPostgreSQL {
         runUpdateStatement("delete from endusergroup;");
         runUpdateStatement("delete from starred;");
         runUpdateStatement("delete from token;");
-        runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from version_sourcefile;");
         runUpdateStatement("delete from sourcefile;");
         runUpdateStatement("delete from tool_tag;");
         runUpdateStatement("delete from tag;");
         runUpdateStatement("delete from workflow_workflowversion;");
         runUpdateStatement("delete from workflowversion;");
+        runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from entry_label;");
         runUpdateStatement("delete from label;");
         runUpdateStatement("delete from workflow;");

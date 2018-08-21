@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -179,6 +180,16 @@ public class UserResource implements AuthenticatedResourceInterface {
         user.setUsername(username);
         user.setSetupComplete(true);
         userDAO.clearCache();
+        List<Token> tokens = tokenDAO.findByUserId(user.getId());
+        Optional<Token> dockstoreToken = tokens
+                .stream()
+                .filter((Token token) -> Objects.equals(TokenType.DOCKSTORE, token.getTokenSource()))
+                .findFirst();
+
+        if (dockstoreToken.isPresent()) {
+            dockstoreToken.get().setUsername(username);
+            cachingAuthenticator.invalidate(dockstoreToken.get().getContent());
+        }
         return userDAO.findById(user.getId());
     }
 

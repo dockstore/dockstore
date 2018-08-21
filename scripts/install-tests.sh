@@ -16,3 +16,7 @@ if [ "${TESTING_PROFILE}" = "toil-integration-tests" ]; then
 else
     pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.5.0/requirements.txt
 fi
+
+# hook up integration tests with elastic search
+docker pull elasticsearch:5.6.3
+docker run -p 9200:9200 -d elasticsearch:5.6.3

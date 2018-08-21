@@ -733,7 +733,7 @@ public class GeneralIT extends BaseIT {
         UsersApi userApi = new UsersApi(client);
         boolean userOneExists = userApi.checkUserExists("DockstoreTestUser2");
         assertTrue("User DockstoreTestUser2 should exist", userOneExists);
-        boolean userTwoExists = userApi.checkUserExists("OtherUser");
+        boolean userTwoExists = userApi.checkUserExists(BaseIT.OTHER_USERNAME);
         assertTrue("User OtherUser should exist", userTwoExists);
         boolean fakeUserExists = userApi.checkUserExists("NotARealUser");
         assertTrue("User NotARealUser should not exist", !fakeUserExists);
@@ -761,7 +761,7 @@ public class GeneralIT extends BaseIT {
         final ApiClient anonWebClient = getWebClient(false, null);
         ContainersApi anonContainersApi = new ContainersApi(anonWebClient);
 
-        final ApiClient otherUserWebClient = getWebClient(true, "OtherUser");
+        final ApiClient otherUserWebClient = getWebClient(true, OTHER_USERNAME);
         ContainersApi otherUserContainersApi = new ContainersApi(otherUserWebClient);
 
         // Register and refresh tool
