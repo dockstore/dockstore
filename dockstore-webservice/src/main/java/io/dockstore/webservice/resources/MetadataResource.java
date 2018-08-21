@@ -26,6 +26,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -40,15 +41,18 @@ import javax.ws.rs.core.Response;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.io.Resources;
 import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.PipHelper;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
+import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
-import io.dockstore.common.PipHelper;
+import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.resources.rss.RSSEntry;
@@ -60,6 +64,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import okhttp3.Cache;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -91,6 +96,7 @@ public class MetadataResource {
     @Path("sitemap")
     @ApiOperation(value = "List all workflow and tool paths.", notes = "NO authentication")
     public String sitemap() {
+        //TODO needs to be more efficient via JPA query
         List<Tool> tools = toolDAO.findAllPublished();
         List<Workflow> workflows = workflowDAO.findAllPublished();
         StringBuilder builder = new StringBuilder();
@@ -123,8 +129,10 @@ public class MetadataResource {
     @ApiOperation(value = "List all tools and workflows in creation order", notes = "NO authentication")
     public String rssFeed() {
 
-        List<Tool> tools = toolDAO.findAllPublished();
-        List<Workflow> workflows = workflowDAO.findAllPublished();
+        final int limit = 50;
+        List<Tool> tools = toolDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
+        List<Workflow> workflows = workflowDAO.findAllPublished("0", limit, null, "dbUpdateDate", "desc");
+
         List<Entry> dbEntries =  new ArrayList<>();
         dbEntries.addAll(tools);
         dbEntries.addAll(workflows);
@@ -134,7 +142,7 @@ public class MetadataResource {
         RSSFeed feed = new RSSFeed();
 
         RSSHeader header = new RSSHeader();
-        header.setCopyright("Copyright 2017 OICR");
+        header.setCopyright("Copyright 2018 OICR");
         header.setTitle("Dockstore");
         header.setDescription("Dockstore, developed by the Cancer Genome Collaboratory, is an open platform used by the GA4GH for sharing Docker-based tools described with either the Common Workflow Language (CWL) or the Workflow Description Language (WDL).");
         header.setLanguage("en");
@@ -148,20 +156,25 @@ public class MetadataResource {
             RSSEntry entry = new RSSEntry();
             if (dbEntry instanceof Workflow) {
                 Workflow workflow = (Workflow)dbEntry;
-                entry.setTitle(workflow.getWorkflowPath());
+                Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream().filter(v -> v.getDbUpdateDate() != null)
+                    .max(Comparator.comparing(Version::getDbUpdateDate));
+                entry.setTitle(workflow.getWorkflowPath() + (max.map(workflowVersion -> ":" + workflowVersion.getName()).orElse("")));
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
             } else if (dbEntry instanceof Tool) {
                 Tool tool = (Tool)dbEntry;
-                entry.setTitle(tool.getPath());
+                Optional<Tag> max = tool.getTags().stream().filter(v -> v.getDbUpdateDate() != null)
+                    .max(Comparator.comparing(Version::getDbUpdateDate));
+                entry.setTitle(tool.getPath() + (max.map(tag -> ":" + tag.getName()).orElse("")));
                 String toolURL = createToolURL(tool);
                 entry.setGuid(toolURL);
                 entry.setLink(toolURL);
             } else {
                 throw new CustomWebApplicationException("Unknown data type unsupported for RSS feed.", HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
-            entry.setDescription(dbEntry.getDescription());
+            final int arbitraryDescriptionLimit = 200;
+            entry.setDescription(StringUtils.truncate(dbEntry.getDescription(), arbitraryDescriptionLimit));
             Calendar instance = Calendar.getInstance();
             instance.setTime(dbEntry.getLastUpdated());
             entry.setPubDate(RSSFeed.formatDate(instance));

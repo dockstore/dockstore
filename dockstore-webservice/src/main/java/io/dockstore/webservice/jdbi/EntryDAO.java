@@ -27,6 +27,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Root;
 
 import com.google.common.base.MoreObjects;
@@ -205,10 +206,11 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                     query.orderBy(cb.asc(cb.size(entry.<Collection>get("starredUsers"))));
                 }
             } else {
+                Path<Object> sortPath = entry.get(sortCol);
                 if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(entry.get(sortCol)));
+                    query.orderBy(cb.desc(sortPath)).where(sortPath.isNotNull());
                 } else {
-                    query.orderBy(cb.asc(entry.get(sortCol)));
+                    query.orderBy(cb.asc(sortPath)).where(sortPath.isNotNull());
                 }
             }
         }

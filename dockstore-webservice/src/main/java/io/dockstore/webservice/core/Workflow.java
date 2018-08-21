@@ -153,6 +153,16 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         }
     }
 
+    @JsonProperty
+    @Override
+    public String getGitUrl() {
+        if (mode == WorkflowMode.HOSTED) {
+            // a null git url is a dockstore hosted workflow, fake a git url. Used by the UI
+            return "git@dockstore.org:workflows/" + this.getWorkflowPath()  + ".git";
+        }
+        return super.getGitUrl();
+    }
+
     @Override
     public Set<WorkflowVersion> getVersions() {
         return workflowVersions;
