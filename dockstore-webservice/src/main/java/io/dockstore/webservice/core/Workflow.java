@@ -137,6 +137,12 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         workflowVersions = new TreeSet<>();
     }
 
+    public Workflow(long id, String workflowName) {
+        super(id);
+        // this.userId = userId;
+        this.workflowName = workflowName;
+        workflowVersions = new TreeSet<>();
+    }
 
     @JsonProperty
     @Override
@@ -148,13 +154,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
         return super.getGitUrl();
     }
 
-
-    public Workflow(long id, String workflowName) {
-        super(id);
-        // this.userId = userId;
-        this.workflowName = workflowName;
-        workflowVersions = new TreeSet<>();
-    }
 
     @JsonProperty("parent_id")
     public Long getParentId() {
