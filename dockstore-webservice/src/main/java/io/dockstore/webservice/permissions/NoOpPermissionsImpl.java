@@ -51,6 +51,6 @@ public class NoOpPermissionsImpl implements PermissionsInterface {
 
     @Override
     public boolean isSharing(User user) {
-        return true;
+        return false;
     }
 }
