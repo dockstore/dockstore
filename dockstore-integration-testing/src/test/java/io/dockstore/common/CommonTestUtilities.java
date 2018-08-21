@@ -88,6 +88,7 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", CONFIG_PATH, "--include", "test");
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
         application.run("db", "migrate", CONFIG_PATH, "--include", "1.5.0");
+        application.run("db", "migrate", CONFIG_PATH, "--include", "test_1.5.0");
 
     }
 
