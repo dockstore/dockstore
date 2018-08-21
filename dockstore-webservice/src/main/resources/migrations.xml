@@ -29,4 +29,5 @@
     <include file="migrations.test.testworkflow.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential1_1.5.0.xml" relativeToChangelogFile="true"/>
     <include file="migrations.test.confidential2_1.5.0.xml" relativeToChangelogFile="true"/>
+    <include file="migrations.test_1.5.0.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
