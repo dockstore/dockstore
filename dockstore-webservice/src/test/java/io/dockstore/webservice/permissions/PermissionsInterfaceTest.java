@@ -80,6 +80,16 @@ public class PermissionsInterfaceTest {
             public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
                 return false;
             }
+
+            @Override
+            public void selfDestruct(User user) {
+
+            }
+
+            @Override
+            public boolean isSharing(User user) {
+                return false;
+            }
         };
     }
 

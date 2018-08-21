@@ -45,6 +45,7 @@ public class InMemoryPermissionsImplTest {
         profile.email = JOHN_DOE_EXAMPLE_COM;
         johnDoeUser.getUserProfiles().put(TokenType.GOOGLE_COM.toString(), profile);
         johnDoeUser.setUsername(JOHN_DOE_EXAMPLE_COM);
+        johnDoeUser.getEntries().add(fooWorkflow);
 
         when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(johnDoeUser)));
         when(gooWorkflow.getWorkflowPath()).thenReturn("goo");
@@ -145,5 +146,27 @@ public class InMemoryPermissionsImplTest {
         inMemoryPermissions.getPermissionsForWorkflow(janeDoeUser, fooWorkflow);
     }
 
+    @Test
+    public void testIsSharing() {
+        // Nothing shared at all
+        Assert.assertFalse(inMemoryPermissions.isSharing(johnDoeUser));
+
+        // Share with Jane
+        final Permission permission = new Permission("jane", Role.OWNER);
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, permission);
+        Assert.assertTrue(inMemoryPermissions.isSharing(johnDoeUser));
+    }
+
+    @Test
+    public void testSelfDestruct() {
+        // Nothing shared at all
+        Assert.assertFalse(inMemoryPermissions.isSharing(johnDoeUser));
+
+        inMemoryPermissions.selfDestruct(johnDoeUser);
+        // Share with Jane
+        inMemoryPermissions.setPermission(johnDoeUser, fooWorkflow, new Permission("jane", Role.OWNER));
+        thrown.expect(CustomWebApplicationException.class);
+        inMemoryPermissions.selfDestruct(johnDoeUser);
+    }
 
 }

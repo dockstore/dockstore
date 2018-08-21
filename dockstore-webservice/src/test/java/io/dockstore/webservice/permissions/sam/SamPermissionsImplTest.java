@@ -56,6 +56,7 @@ public class SamPermissionsImplTest {
     private AccessPolicyResponseEntry readerPolicy;
     private SamPermissionsImpl samPermissionsImpl;
     private User userMock = Mockito.mock(User.class);
+    private User noGoogleUser = Mockito.mock(User.class);
     private ResourcesApi resourcesApiMock;
     private ApiClient apiClient;
     private Workflow fooWorkflow;
@@ -408,6 +409,87 @@ public class SamPermissionsImplTest {
         samPermissionsImpl.checkEmailNotOriginalOwner("johndoe@example.com", fooWorkflow);
     }
 
+    @Test
+    public void testIsSharingNotInSam() throws ApiException {
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
+                .thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized"));
+        Assert.assertFalse(samPermissionsImpl.isSharing(userMock));
+    }
+
+    @Test
+    public void testIsSharingUserInSam() throws ApiException {
+        final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        ResourceAndAccessPolicy reader = resourceAndAccessPolicyHelper(resourceId, SamConstants.READ_POLICY);
+        ResourceAndAccessPolicy writer = resourceAndAccessPolicyHelper(resourceId, SamConstants.WRITE_POLICY);
+        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
+
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
+                .thenReturn(Collections.emptyList()) // case 1
+                .thenReturn(Arrays.asList(reader, writer)) // case 2
+                .thenReturn(Arrays.asList(owner)) // case 3
+                .thenReturn(Arrays.asList(owner)); // case 4
+        // Case 1: No resources are shared
+        Assert.assertFalse(samPermissionsImpl.isSharing(userMock));
+
+        // Case 2: Being shared with, but not sharing
+        Assert.assertFalse(samPermissionsImpl.isSharing(userMock));
+
+        // Case 3: Is owner, but not shared with anybody
+        AccessPolicyResponseEntry onlyOwner = new AccessPolicyResponseEntry();
+        onlyOwner.setPolicy(new AccessPolicyMembership());
+        onlyOwner.setPolicyName(SamConstants.OWNER_POLICY);
+        onlyOwner.getPolicy().getMemberEmails().add(JANE_DOE_GMAIL_COM);
+        when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
+                .thenReturn(Arrays.asList(onlyOwner));
+        Assert.assertFalse(samPermissionsImpl.isSharing(userMock));
+
+        // Case 4: Is owner, and is being shared
+        onlyOwner.getPolicy().getMemberEmails().add("jdoe@ucsc.edu");
+        Assert.assertTrue(samPermissionsImpl.isSharing(userMock));
+    }
+
+    @Test
+    public void testSelfDestruct() throws ApiException {
+        // Case 0. User doesn't have Google token
+        samPermissionsImpl.selfDestruct(noGoogleUser);
+
+        final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        ResourceAndAccessPolicy reader = resourceAndAccessPolicyHelper(resourceId, SamConstants.READ_POLICY);
+        ResourceAndAccessPolicy writer = resourceAndAccessPolicyHelper(resourceId, SamConstants.WRITE_POLICY);
+        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
+
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
+                .thenThrow(new ApiException(HttpStatus.SC_UNAUTHORIZED, "Unauthorized")) // case 1
+                .thenReturn(Collections.emptyList()) // case 2
+                .thenReturn(Arrays.asList(reader, writer)) // case 3
+                .thenReturn(Arrays.asList(owner)) // case 4
+                .thenReturn(Arrays.asList(owner)); // case 5
+
+        // Case 1. User has Google token, but is not in SAM
+        samPermissionsImpl.selfDestruct(userMock);
+
+        // Case 2. User has Google token, in SAM, has no resources
+        samPermissionsImpl.selfDestruct(userMock);
+
+        // Case 3. User is not owner, but has workflows shared with
+        samPermissionsImpl.selfDestruct(userMock);
+
+        // Case 4. User is owner, but is not sharing with anybody
+        AccessPolicyResponseEntry onlyOwner = new AccessPolicyResponseEntry();
+        onlyOwner.setPolicy(new AccessPolicyMembership());
+        onlyOwner.setPolicyName(SamConstants.OWNER_POLICY);
+        onlyOwner.getPolicy().getMemberEmails().add(JANE_DOE_GMAIL_COM);
+        when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
+                .thenReturn(Arrays.asList(onlyOwner));
+        samPermissionsImpl.selfDestruct(userMock);
+
+        // Case 5. User is owner and has shared
+        onlyOwner.getPolicy().getMemberEmails().add("jdoe@ucsc.edu");
+        thrown.expect(CustomWebApplicationException.class);
+        samPermissionsImpl.selfDestruct(userMock);
+
+    }
+
     private void setupInitializePermissionsMocks(String encodedPath) {
         try {
             doNothing().when(resourcesApiMock).createResourceWithDefaults(anyString(), anyString());
@@ -415,6 +497,13 @@ public class SamPermissionsImplTest {
         } catch (ApiException e) {
             Assert.fail();
         }
+    }
+
+    private ResourceAndAccessPolicy resourceAndAccessPolicyHelper(String resourceId, String policyName) {
+        final ResourceAndAccessPolicy policy = new ResourceAndAccessPolicy();
+        policy.setResourceId(resourceId);
+        policy.setAccessPolicyName(policyName);
+        return policy;
     }
 
 }

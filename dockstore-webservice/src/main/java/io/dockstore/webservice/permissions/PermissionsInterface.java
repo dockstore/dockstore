@@ -124,8 +124,23 @@ public interface PermissionsInterface {
     boolean canDoAction(User user, Workflow workflow, Role.Action action);
 
     /**
+     * Deletes all sharing artifacts that the user is an owner of. This method will fail with a {@link CustomWebApplicationException}
+     * if the user is sharing anything.
+     * @param user
+     */
+    void selfDestruct(User user);
+
+    /**
+     * Indicates whether a user is sharing any workflows.
+     *
+     * @param user
+     * @return
+     */
+    boolean isSharing(User user);
+
+    /**
      * Merges two lists of permissions, removing any duplicate users. If there
-     * are duplicates, gives precendence to <code>dockstoreOwners</code>.
+     * are duplicates, gives precedence to <code>dockstoreOwners</code>.
      *
      * @param dockstoreOwners
      * @param nativePermissions

@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Workflow;
@@ -58,7 +57,6 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
      * this implementation, because we may only have the name, and not the email, of users logged in with GitHub.
      */
     private final Map<String, Map<String, Role>> resourceToUsersAndRolesMap = new ConcurrentHashMap<>();
-    private DockstoreWebserviceConfiguration configuration;
 
     @Override
     public List<Permission> setPermission(User requester, Workflow workflow, Permission permission) {
@@ -179,6 +177,34 @@ public class InMemoryPermissionsImpl implements PermissionsInterface {
                 return false;
             }
         }).orElse(false);
+    }
+
+    @Override
+    public void selfDestruct(User user) {
+        if (isSharing(user)) {
+            throw new CustomWebApplicationException("The user is sharing at least one workflow and cannot be deleted.",
+                    HttpStatus.SC_BAD_REQUEST);
+        } else {
+            user.getEntries().stream().forEach(e -> {
+                if (e instanceof Workflow) {
+                    resourceToUsersAndRolesMap.remove(((Workflow)e).getWorkflowPath());
+                }
+            });
+        }
+    }
+
+    @Override
+    public boolean isSharing(User user) {
+        final String userKey = userKey(user);
+        return user.getEntries().stream().anyMatch(e -> {
+            if (e instanceof Workflow) {
+                final Map<String, Role> map = resourceToUsersAndRolesMap.get(((Workflow)e).getWorkflowPath());
+                if (map != null && map.keySet().stream().anyMatch(u -> !userKey.equals(u))) {
+                    return true;
+                }
+            }
+            return false;
+        });
     }
 
     private Optional<Role> getRole(User requester, Workflow workflow) {
