@@ -133,9 +133,9 @@ public class ToolsExtendedApi {
 
     @POST
     @UnitOfWork
-    @RolesAllowed( { "curator", "admin" })
+    @RolesAllowed({ "curator", "admin" })
     @Path("/{id}/versions/{version_id}/{type}/tests/{relative_path : .+}")
-    @Produces( { "application/json" })
+    @Produces({ "application/json" })
     @io.swagger.annotations.ApiOperation(value = "Annotate test JSON with information on whether it ran successfully on particular platforms plus metadata", notes = "Test JSON can be annotated with whether they ran correctly keyed by platform and associated with some metadata ", response = Map.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     @io.swagger.annotations.ApiResponses(value = {

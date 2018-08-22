@@ -50,6 +50,10 @@ jobs:
       env:
         - TESTING_PROFILE=toil-integration-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
+    - stage: integration-tests
+      env:
+        - TESTING_PROFILE=regression-integration-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
 
     # no point in running coverage if we don't pass integration tests
     - stage: coverage 
