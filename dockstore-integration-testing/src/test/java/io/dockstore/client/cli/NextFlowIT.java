@@ -79,8 +79,10 @@ public class NextFlowIT extends BaseIT {
 
         workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER_NEXTFLOW_WORKFLOW);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+
+        // Tests that nf-core nextflow.config files can be parsed
         List<SourceFile> sourceFileList = new ArrayList<>(
-            refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("v2.0")).findFirst().get()
+            refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("nfcore")).findFirst().get()
                 .getSourceFiles());
         Assert.assertEquals(4, sourceFileList.size());
         Assert.assertTrue("files are not what we expected", sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/AMPA-BIGTABLE.pl")) && sourceFileList.stream().anyMatch(file -> file.getPath().equals("bin/multi-AMPA-BIGTABLE.pl")));
