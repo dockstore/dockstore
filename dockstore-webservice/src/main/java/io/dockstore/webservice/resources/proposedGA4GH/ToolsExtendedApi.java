@@ -141,8 +141,7 @@ public class ToolsExtendedApi {
     @io.swagger.annotations.ApiResponses(value = {
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_OK, message = "The tool test JSON response.", response = Map.class),
         @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "The tool test cannot be found to annotate.", response = Error.class),
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = "Credentials not provided or incorrect", response = Error.class),
-        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_NOT_FOUND, message = "ID or path incorrect", response = Error.class) })
+        @io.swagger.annotations.ApiResponse(code = HttpStatus.SC_UNAUTHORIZED, message = "Credentials not provided or incorrect", response = Error.class) })
     @SuppressWarnings("checkstyle:parameternumber")
     public Response toolsIdVersionsVersionIdTypeTestsPost(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "The type of the underlying descriptor. Allowable values include \"CWL\", \"WDL\", \"NFL\".", required = true) @PathParam("type") String type,

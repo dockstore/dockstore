@@ -719,7 +719,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: ID or path incorrect
+          description: The tool test cannot be found to annotate.
           content:
             application/json:
               schema:

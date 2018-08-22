@@ -590,7 +590,7 @@ paths:
           schema:
             $ref: "#/definitions/Error"
         404:
-          description: "ID or path incorrect"
+          description: "The tool test cannot be found to annotate."
           schema:
             $ref: "#/definitions/Error"
       security:
