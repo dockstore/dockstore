@@ -791,6 +791,8 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         HostedApi hostedApi = new HostedApi(webClient);
         Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+        assertNotNull(hostedWorkflow.getLastModifiedDate());
+        assertNotNull(hostedWorkflow.getLastUpdated());
 
         // make a couple garbage edits
         SourceFile source = new SourceFile();
@@ -810,7 +812,9 @@ public class WorkflowIT extends BaseIT {
         source.setContent("cwlVersion: v1.0\nclass: Workflow");
         source1.setContent("food");
         source2.setContent("food");
-        hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        final Workflow updatedHostedWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
+        assertNotNull(updatedHostedWorkflow.getLastModifiedDate());
+        assertNotNull(updatedHostedWorkflow.getLastUpdated());
 
         // note that this workflow contains metadata defined on the inputs to the workflow in the old (pre-map) CWL way that is still valid v1.0 CWL
         source.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
