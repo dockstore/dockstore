@@ -42,6 +42,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 import javax.persistence.SequenceGenerator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
@@ -323,6 +324,24 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setCommitID(String commitID) {
         this.commitID = commitID;
+    }
+
+    @JsonIgnore
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    public void setDbCreateDate(Timestamp dbCreateDate) {
+        this.dbCreateDate = dbCreateDate;
+    }
+
+    @JsonIgnore
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
+
+    public void setDbUpdateDate(Timestamp dbUpdateDate) {
+        this.dbUpdateDate = dbUpdateDate;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }

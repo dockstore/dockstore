@@ -56,6 +56,7 @@ import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -89,15 +90,17 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
+    private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
 
-    public UserResource(SessionFactory sessionFactory, WorkflowResource workflowResource,
-        DockerRepoResource dockerRepoResource, CachingAuthenticator cachingAuthenticator) {
+    public UserResource(SessionFactory sessionFactory, WorkflowResource workflowResource, DockerRepoResource dockerRepoResource,
+            CachingAuthenticator cachingAuthenticator, PermissionsInterface authorizer) {
         this.userDAO = new UserDAO(sessionFactory);
         this.groupDAO = new GroupDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
+        this.authorizer = authorizer;
         elasticManager = new ElasticManager();
         this.cachingAuthenticator = cachingAuthenticator;
     }
@@ -159,7 +162,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Get additional information on the logged-in user", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = ExtendedUserData.class)
     public ExtendedUserData getExtendedUserData(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
-        return new ExtendedUserData(foundUser);
+        return new ExtendedUserData(foundUser, this.authorizer);
     }
 
     @POST
@@ -174,7 +177,7 @@ public class UserResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException("Username pattern invalid", HttpStatus.SC_BAD_REQUEST);
         }
         User user = userDAO.findById(authUser.getId());
-        if (!new ExtendedUserData(user).canChangeUsername()) {
+        if (!new ExtendedUserData(user, this.authorizer).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot change username, user not ready", HttpStatus.SC_BAD_REQUEST);
         }
         user.setUsername(username);
@@ -202,9 +205,11 @@ public class UserResource implements AuthenticatedResourceInterface {
             @ApiParam(hidden = true) @Auth User authUser) {
         checkUser(authUser, authUser.getId());
         User user = userDAO.findById(authUser.getId());
-        if (!new ExtendedUserData(user).canChangeUsername()) {
+        if (!new ExtendedUserData(user, this.authorizer).canChangeUsername()) {
             throw new CustomWebApplicationException("Cannot delete user, user not ready for deletion", HttpStatus.SC_BAD_REQUEST);
         }
+        // Remove dangling sharing artifacts before getting rid of tokens
+        this.authorizer.selfDestruct(user);
 
         List<Token> byUserId = tokenDAO.findByUserId(user.getId());
         for (Token token : byUserId) {

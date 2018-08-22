@@ -43,4 +43,14 @@ public class NoOpPermissionsImpl implements PermissionsInterface {
     public boolean canDoAction(User user, Workflow workflow, Role.Action action) {
         return false;
     }
+
+    @Override
+    public void selfDestruct(User user) {
+        // Do nothing
+    }
+
+    @Override
+    public boolean isSharing(User user) {
+        return false;
+    }
 }

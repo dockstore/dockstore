@@ -39,6 +39,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.TokensApi;
 import io.swagger.client.api.UsersApi;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.http.HttpStatus;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.context.internal.ManagedSessionContext;
@@ -67,6 +68,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.niceMock;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.mockStaticStrict;
@@ -103,6 +105,7 @@ public class TokenResourceIT extends BaseIT {
     private final String satellizerJSON = "{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n";
     private final String satellizerJSONForRegistration = "{\"code\": \"fakeCode\", \"register\": true, \"redirectUri\": \"fakeRedirectUri\"}";
     private final static String GOOGLE_ACCOUNT_USERNAME1 = "potato@gmail.com";
+    private final static String GOOGLE_ACCOUNT_USERNAME2 = "beef@gmail.com";
     private final static String CUSTOM_USERNAME1 = "tuber";
     private final static String CUSTOM_USERNAME2 = "fubar";
     private final static String GITHUB_ACCOUNT_USERNAME = "potato";
@@ -256,6 +259,163 @@ public class TokenResourceIT extends BaseIT {
         assertEquals(usersApi2.changeUsername("better.name").getUsername(), "better.name");
     }
 
+    /**
+     * Super large test that generally revolves around 3 accounts
+     * Account 1 (primary account): Google-created Dockstore account that is called GOOGLE_ACCOUNT_USERNAME1 but then changes to CUSTOM_USERNAME2
+     * and has the GOOGLE_ACCOUNT_USERNAME1 Google account linked and CUSTOM_USERNAME1 GitHub account linked
+     * Account 2: Google-created Dockstore account that is called GOOGLE_ACCOUNT_USERNAME2 and has GOOGLE_ACCOUNT_USERNAME2 Google account linked
+     * Account 3: GitHub-created Dockstore account that is called GITHUB_ACCOUNT_USERNAME and has GITHUB_ACCOUNT_USERNAME GitHub account linked
+     *
+     * @throws Exception
+     */
+    @Test
+    public void loginRegisterTestWithMultipleAccounts() throws Exception {
+        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
+        createAccount1(unAuthenticatedTokensApi);
+        createAccount2(unAuthenticatedTokensApi);
+
+        registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
+
+        // Change Account 1 username to CUSTOM_USERNAME2
+        UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
+        io.swagger.client.model.User user = mainUsersApi.changeUsername(CUSTOM_USERNAME2);
+        Assert.assertEquals(CUSTOM_USERNAME2, user.getUsername());
+
+        registerAndLinkUnavailableTokens(unAuthenticatedTokensApi);
+
+        mockGitHub(CUSTOM_USERNAME1);
+        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
+
+        // Login with Google still works
+        io.swagger.client.model.Token token = unAuthenticatedTokensApi.addGoogleToken(satellizerJSON);
+        Assert.assertEquals(CUSTOM_USERNAME2, token.getUsername());
+        Assert.assertEquals(TokenType.DOCKSTORE.toString(), token.getTokenSource());
+
+        // Login with GitHub still works
+        io.swagger.client.model.Token fakeGitHubCode = unAuthenticatedTokensApi.addToken(satellizerJSON);
+        Assert.assertEquals(CUSTOM_USERNAME2, fakeGitHubCode.getUsername());
+        Assert.assertEquals(TokenType.DOCKSTORE.toString(), fakeGitHubCode.getTokenSource());
+    }
+
+    private void registerAndLinkUnavailableTokens(TokensApi unAuthenticatedTokensApi) throws Exception {
+        // Should not be able to register new Dockstore account when profiles already exist
+        registerNewUsersWithExisting(unAuthenticatedTokensApi);
+        // Can't link tokens to other Dockstore accounts
+        addUnavailableGitHubTokenToGoogleUser();
+        addUnavailableGoogleTokenToGitHubUser();
+    }
+
+    @Test
+    public void recreateAccountsAfterSelfDestruct() throws Exception {
+        TokensApi unAuthenticatedTokensApi = new TokensApi(getWebClient(false, "n/a"));
+        createAccount1(unAuthenticatedTokensApi);
+        registerNewUsersAfterSelfDestruct(unAuthenticatedTokensApi);
+    }
+
+    /**
+     * Creates the Account 1: Google-created Dockstore account that is called GOOGLE_ACCOUNT_USERNAME1 but then changes to CUSTOM_USERNAME2
+     * and has the GOOGLE_ACCOUNT_USERNAME1 Google account linked and CUSTOM_USERNAME1 GitHub account linked
+     * @param unAuthenticatedTokensApi
+     * @throws Exception
+     */
+    private void createAccount1(TokensApi unAuthenticatedTokensApi) throws Exception {
+        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
+        io.swagger.client.model.Token account1DockstoreToken = unAuthenticatedTokensApi
+                .addGoogleToken(satellizerJSONForRegistration);
+        Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME1, account1DockstoreToken.getUsername());
+        mockGitHub(CUSTOM_USERNAME1);
+        TokensApi mainUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
+        mainUserTokensApi.addGithubToken("fakeGitHubCode");
+    }
+
+    private void createAccount2(TokensApi unAuthenticatedTokensApi) throws Exception {
+        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME2);
+        io.swagger.client.model.Token otherGoogleUserToken = unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration);
+        Assert.assertEquals(GOOGLE_ACCOUNT_USERNAME2, otherGoogleUserToken.getUsername());
+    }
+
+    /**
+     *
+     * @throws Exception
+     */
+    private void registerNewUsersWithExisting(TokensApi unAuthenticatedTokensApi) throws Exception {
+        mockGitHub(CUSTOM_USERNAME1);
+        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
+        // Cannot create new user with the same Google account
+        try {
+            unAuthenticatedTokensApi.addGoogleToken(satellizerJSONForRegistration);
+            Assert.fail();
+        } catch (ApiException e){
+            Assert.assertEquals("User already exists, cannot register new user", e.getMessage());;
+            // Call should fail
+        }
+
+        // Cannot create new user with the same GitHub account
+        try {
+            unAuthenticatedTokensApi.addToken(satellizerJSONForRegistration);
+            Assert.fail();
+        } catch (ApiException e){
+            Assert.assertTrue(e.getMessage().contains("already exists"));
+            // Call should fail
+        }
+    }
+
+    /**
+     * After self-destructing the GOOGLE_ACCOUNT_USERNAME1, its previous linked accounts can be used:
+     * GOOGLE_ACCOUNT_USERNAME1 Google account and CUSTOM_USERNAME1 GitHub account
+     * @throws Exception
+     */
+    private void registerNewUsersAfterSelfDestruct(TokensApi unAuthenticatedTokensApi) throws Exception {
+        UsersApi mainUsersApi = new UsersApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME1));
+        Boolean aBoolean = mainUsersApi.selfDestruct();
+        assertTrue(aBoolean);
+        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
+        io.swagger.client.model.Token recreatedGoogleToken = unAuthenticatedTokensApi
+                .addGoogleToken(satellizerJSONForRegistration);
+        mockGitHub(CUSTOM_USERNAME1);
+        io.swagger.client.model.Token recreatedGitHubToken = unAuthenticatedTokensApi
+                .addToken(satellizerJSONForRegistration);
+        assertNotSame(recreatedGitHubToken.getUserId(), recreatedGoogleToken.getUserId());
+    }
+
+    /**
+     * Dockstore account 1: has GOOGLE_ACCOUNT_USERNAME1 Google account linked
+     * Dockstore account 2: has GITHUB_ACCOUNT_USERNAME GitHub account linked
+     * Trying to link GOOGLE_ACCOUNT_USERNAME1 Google account to Dockstore account 2 should fail
+     * @throws Exception
+     */
+    private void addUnavailableGoogleTokenToGitHubUser() {
+        mockGoogleHelper(GOOGLE_ACCOUNT_USERNAME1);
+        TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GITHUB_ACCOUNT_USERNAME));
+        // Cannot add token to other user with the same Google account
+        try {
+            otherUserTokensApi.addGoogleToken(satellizerJSON);
+            Assert.fail();
+        } catch (ApiException e){
+            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            Assert.assertTrue(e.getMessage().contains("already exists"));;
+            // Call should fail
+        }
+    }
+
+    /**
+     * Dockstore account 1: has GOOGLE_ACCOUNT_USERNAME2 Google account linked
+     * Dockstore account 2: has GITHUB_ACCOUNT_USERNAME GitHub account linked
+     * Trying to link GITHUB_ACCOUNT_USERNAME GitHub account to Dockstore account 1 should fail
+     * @throws Exception
+     */
+    private void addUnavailableGitHubTokenToGoogleUser() throws Exception {
+        mockGitHub(CUSTOM_USERNAME1);
+        TokensApi otherUserTokensApi = new TokensApi(getWebClient(true, GOOGLE_ACCOUNT_USERNAME2));
+        try {
+            otherUserTokensApi.addGithubToken("potato");
+            Assert.fail();
+        } catch (ApiException e){
+            Assert.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, e.getCode());
+            Assert.assertTrue(e.getMessage().contains("already exists"));;
+            // Call should fail
+        }
+    }
 
     /**
      * Covers case 1, 3, and 5 of the 6 cases listed below. It checks that the user to be logged into is correct.
@@ -403,6 +563,7 @@ public class TokenResourceIT extends BaseIT {
 
         GHMyself myself = niceMock(GHMyself.class);
         expect(myself.getLogin()).andReturn(username).anyTimes();
+        expect(myself.getAvatarUrl()).andReturn("https://dockstore.org/assets/images/dockstore/logo2.png").anyTimes();
         expect(githubMock.getMyself()).andReturn(myself).anyTimes();
         GHRateLimit value = new GHRateLimit();
         value.remaining = 100;

@@ -16,6 +16,7 @@
 package io.dockstore.webservice.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.Hibernate;
@@ -28,9 +29,9 @@ public class ExtendedUserData {
     @ApiModelProperty(value = "Whether a user can change their username")
     private boolean canChangeUsername;
 
-    public ExtendedUserData(User user) {
+    public ExtendedUserData(User user, PermissionsInterface authorizer) {
         Hibernate.initialize(user.getEntries());
-        this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished);
+        this.canChangeUsername = user.getEntries().stream().noneMatch(Entry::getIsPublished) && !authorizer.isSharing(user);
     }
 
     /**
