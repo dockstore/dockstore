@@ -225,7 +225,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
             Set<Tag> versions = tool.getVersions();
             versionOptional = versions.stream().filter(tag -> tag.getName().equals(versionId)).findFirst();
         } else {
-            return Response.noContent().build();
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
         if (versionOptional.isPresent()) {
             Version version = versionOptional.get();
