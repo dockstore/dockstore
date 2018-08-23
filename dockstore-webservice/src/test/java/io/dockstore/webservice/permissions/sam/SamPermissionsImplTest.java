@@ -492,6 +492,18 @@ public class SamPermissionsImplTest {
 
     }
 
+    /**
+     * Tests this use case:
+     *
+     * <ol>
+     *     <li>User creates a SAM resource with the SAM API directly. When you do that, the writer and reader policies are
+     *     not added.</li>
+     *     <li>Using Dockstore API, user then adds an email to Writer role.</li>
+     * </ol>
+     *
+     * This tests that the writer policy gets added to the resource.
+     * @throws ApiException
+     */
     @Test
     public void testSetPermissionWhenResourceCreatedWithoutAllPolicies() throws ApiException {
         when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));

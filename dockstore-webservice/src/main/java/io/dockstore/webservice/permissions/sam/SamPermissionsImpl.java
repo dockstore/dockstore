@@ -292,7 +292,12 @@ public class SamPermissionsImpl implements PermissionsInterface {
             addPolicy(resourcesApi, encodedPath, SamConstants.READ_POLICY);
         } catch (ApiException e) {
             if (e.getCode() == HttpStatus.SC_CONFLICT) {
-                handleConflict(encodedPath);
+                // The SAM resource already exists, but it is owned a different user.
+                // This should never occur if only using Dockstore APIs, but could happen if a user accesses SAM API directly.
+                final String message = MessageFormat.format(
+                        "An unexpected error occurred. Please send a private message to \"admins\" at https://discuss.dockstore.org and mention \"SAM {0}\"",
+                        encodedPath);
+                throw new CustomWebApplicationException(message, HttpStatus.SC_CONFLICT);
             } else {
                 throw new CustomWebApplicationException("Error initializing permissions", e.getCode());
             }
@@ -304,19 +309,6 @@ public class SamPermissionsImpl implements PermissionsInterface {
         policy.addRolesItem(policyName); // The role name and the policy name are the same
         resourcesApi.overwritePolicy(SamConstants.RESOURCE_TYPE, resourceId, policyName, policy);
 
-    }
-
-    /**
-     * Handles the case where a SAM resource already exists for this workflow. In normal usage of Dockstore APIs
-     * this shouldn't occur, but it can happen if another user access the SAM API directly and creates the resource.
-     *
-     * @param resourceId
-     */
-    private void handleConflict(String resourceId) {
-        final String message = MessageFormat.format(
-                "An unexpected error occurred. Please send a private message to \"admins\" at https://discuss.dockstore.org and mention \"SAM {0}\"",
-                resourceId);
-        throw new CustomWebApplicationException(message, HttpStatus.SC_CONFLICT);
     }
 
     @Override
