@@ -130,11 +130,10 @@ public class BasicPostgreSQL {
         }
     }
 
-    protected boolean runUpdateStatement(String query, Object... params) {
+    protected int runUpdateStatement(String query, Object... params) {
         try {
             QueryRunner run = new QueryRunner(dataSource);
-            run.update(query, params);
-            return true;
+            return run.update(query, params);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);

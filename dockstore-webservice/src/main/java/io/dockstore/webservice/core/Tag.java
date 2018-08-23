@@ -21,6 +21,7 @@ import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -202,14 +203,13 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, name, reference, imageId, dockerfilePath);
+        return Objects.hash(id, name, reference);
     }
 
     @Override
-    public int compareTo(Tag that) {
+    public int compareTo(@NotNull Tag that) {
         return ComparisonChain.start().compare(this.name, that.name, Ordering.natural().nullsFirst())
-            .compare(this.reference, reference, Ordering.natural().nullsFirst())
-            .compare(this.imageId, that.imageId, Ordering.natural().nullsFirst()).result();
+            .compare(this.reference, reference, Ordering.natural().nullsFirst()).result();
     }
 
     @Override
