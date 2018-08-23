@@ -485,7 +485,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 languageCLient.launch(entry, true, yamlRun, jsonRun, tsvRuns, null, uuid);
                 break;
             case WDL:
-                languageCLient.launch(entry, true, null, jsonRun, null, wdlOutputTarget, uuid);
+                languageCLient.launch(entry, true, yamlRun, jsonRun, null, wdlOutputTarget, uuid);
                 break;
             case NEXTFLOW:
                 languageCLient.launch(entry, true, null, jsonRun, null, null, uuid);
