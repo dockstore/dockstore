@@ -485,7 +485,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 languageCLient.launch(entry, true, yamlRun, jsonRun, tsvRuns, null, uuid);
                 break;
             case WDL:
-                languageCLient.launch(entry, true, null, jsonRun, null, wdlOutputTarget, uuid);
+                languageCLient.launch(entry, true, yamlRun, jsonRun, null, wdlOutputTarget, uuid);
                 break;
             case NEXTFLOW:
                 languageCLient.launch(entry, true, null, jsonRun, null, null, uuid);
@@ -1151,7 +1151,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         private String entry;
         @Parameter(names = "--json", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs")
         private String json;
-        @Parameter(names = "--yaml", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs (Only for CWL)")
+        @Parameter(names = "--yaml", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs")
         private String yaml;
         @Parameter(names = "--tsv", description = "One row corresponds to parameters for one run in the dockstore (Only for CWL)")
         private String tsv;
