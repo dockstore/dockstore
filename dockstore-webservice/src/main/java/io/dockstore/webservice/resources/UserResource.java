@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.resources;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -53,9 +54,12 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.EntryVersionHelper;
 import io.dockstore.webservice.helpers.GoogleHelper;
+import io.dockstore.webservice.jdbi.EntryDAO;
 import io.dockstore.webservice.jdbi.GroupDAO;
 import io.dockstore.webservice.jdbi.TokenDAO;
+import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.auth.CachingAuthenticator;
@@ -90,6 +94,8 @@ public class UserResource implements AuthenticatedResourceInterface {
 
     private final WorkflowResource workflowResource;
     private final DockerRepoResource dockerRepoResource;
+    private final WorkflowDAO workflowDAO;
+    private final ToolDAO toolDAO;
     private PermissionsInterface authorizer;
     private final CachingAuthenticator cachingAuthenticator;
 
@@ -98,6 +104,8 @@ public class UserResource implements AuthenticatedResourceInterface {
         this.userDAO = new UserDAO(sessionFactory);
         this.groupDAO = new GroupDAO(sessionFactory);
         this.tokenDAO = new TokenDAO(sessionFactory);
+        this.workflowDAO = new WorkflowDAO(sessionFactory);
+        this.toolDAO = new ToolDAO(sessionFactory);
         this.workflowResource = workflowResource;
         this.dockerRepoResource = dockerRepoResource;
         this.authorizer = authorizer;
@@ -210,6 +218,24 @@ public class UserResource implements AuthenticatedResourceInterface {
         }
         // Remove dangling sharing artifacts before getting rid of tokens
         this.authorizer.selfDestruct(user);
+
+        // Delete entries for which this user is the only user
+        user.getEntries().stream()
+                // The getIsPublished() check is arguably redundant as canChangeUsername(), above, already checks, but just in case...
+                .filter(e -> e.getUsers().size() == 1 && !e.getIsPublished())
+                .forEach(entry -> {
+                    EntryDAO entryDAO;
+                    if (entry instanceof Workflow) {
+                        entryDAO = workflowDAO;
+                    } else if (entry instanceof Tool) {
+                        entryDAO = toolDAO;
+                    } else {
+                        throw new CustomWebApplicationException(
+                                MessageFormat.format("Unexpected entry type {0}", entry.getClass().toString()),
+                                HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                    }
+                    entryDAO.delete(entry);
+                });
 
         List<Token> byUserId = tokenDAO.findByUserId(user.getId());
         for (Token token : byUserId) {
