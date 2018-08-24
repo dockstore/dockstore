@@ -382,6 +382,8 @@ public abstract class AbstractImageRegistry {
 
         }
         FileFormatHelper.updateFileFormats(tool.getTags(), fileFormatDAO);
+        // ensure updated tags are saved to the database, not sure why this is necessary. See GeneralIT#testImageIDUpdateDuringRefresh
+        tool.getTags().forEach(tagDAO::create);
         toolDAO.create(tool);
     }
 

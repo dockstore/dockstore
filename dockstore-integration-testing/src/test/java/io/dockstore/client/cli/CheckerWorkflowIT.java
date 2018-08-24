@@ -23,8 +23,10 @@ import io.dockstore.common.WorkflowTest;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Entry;
 import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.Workflow;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -40,6 +42,8 @@ import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Confidential tests for checker workflows
@@ -103,10 +107,10 @@ public class CheckerWorkflowIT extends BaseIT {
         DockstoreTool refresh = containersApi.refresh(githubTool.getId());
 
         // Check if the output file format is added to the file_formats property
-        Assert.assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671"))));
-        Assert.assertTrue(refresh.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671")));
-        Assert.assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
-        Assert.assertTrue(refresh.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
+        assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671"))));
+        assertTrue(refresh.getOutputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("http://edamontology.org/data_3671")));
+        assertTrue(refresh.getTags().stream().anyMatch(tag -> tag.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat"))));
+        assertTrue(refresh.getInputFileFormats().stream().anyMatch(fileFormat -> fileFormat.getValue().equals("file://fakeFileFormat")));
 
         // Add checker workflow
         workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-tool.cwl", githubTool.getId(), "cwl", null);
@@ -115,7 +119,7 @@ public class CheckerWorkflowIT extends BaseIT {
         DockstoreTool refreshedEntry = containersApi.refresh(githubTool.getId());
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile
-        Assert.assertTrue("There should be at least one user of the workflow", refreshedEntry.getUsers().size() > 0);
+        assertTrue("There should be at least one user of the workflow", refreshedEntry.getUsers().size() > 0);
         refreshedEntry.getUsers().forEach(entryUser -> {
             Assert.assertNotEquals("refresh() endpoint should have user profiles", null, entryUser.getUserProfiles());
         });
@@ -166,6 +170,81 @@ public class CheckerWorkflowIT extends BaseIT {
         final long count9 = testingPostgres
             .runSelectStatement("select count(*) from tool where ispublished = true", new ScalarHandler<>());
         assertEquals("the tool should not be published, there are " + count9, 0, count9);
+    }
+
+    /**
+     * This series of tests for
+     * should be able to refresh all or the organization when a checker stub is present without a failure (constraints issue from #1405)
+     */
+
+    @Test
+    public void testCheckerWorkflowAndRefreshIssueByAll() {
+        testCheckerWorkflowAndRefresh(true, true);
+    }
+
+    @Test
+    public void testCheckerWorkflowAndRefreshIssueByOrganization() {
+        testCheckerWorkflowAndRefresh(true, false);
+    }
+
+    @Test
+    public void testCheckerWorkflowAndRefreshIssueByAllToolVersion() {
+        testCheckerWorkflowAndRefresh(false, true);
+    }
+
+    @Test
+    public void testCheckerWorkflowAndRefreshIssueByOrganizationToolVersion() {
+        testCheckerWorkflowAndRefresh(false, false);
+    }
+
+    private void testCheckerWorkflowAndRefresh(boolean workflow, boolean all) {
+        // Setup for test
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        ContainersApi containersApi = new ContainersApi(webClient);
+
+        long baseEntryId;
+        if (workflow) {
+
+            // Manually register a workflow
+            Workflow githubWorkflow = workflowApi
+                .manualRegister("github", "DockstoreTestUser2/md5sum-checker", "/md5sum/md5sum-workflow.cwl", "", "cwl", "/testcwl.json");
+            // Refresh the workflow
+            baseEntryId = workflowApi.refresh(githubWorkflow.getId()).getId();
+        } else {
+            // Manually register a tool
+            DockstoreTool newTool = new DockstoreTool();
+            newTool.setMode(DockstoreTool.ModeEnum.MANUAL_IMAGE_PATH);
+            newTool.setName("my-md5sum");
+            newTool.setGitUrl("git@github.com:DockstoreTestUser2/md5sum-checker.git");
+            newTool.setDefaultDockerfilePath("/md5sum/Dockerfile");
+            newTool.setDefaultCwlPath("/md5sum/md5sum-tool.cwl");
+            newTool.setRegistryString(Registry.QUAY_IO.toString());
+            newTool.setNamespace("dockstoretestuser2");
+            newTool.setToolname("altname");
+            newTool.setPrivateAccess(false);
+            newTool.setDefaultCWLTestParameterFile("/testcwl.json");
+            DockstoreTool githubTool = containersApi.registerManual(newTool);
+
+            // Refresh the workflow
+            DockstoreTool refresh = containersApi.refresh(githubTool.getId());
+            baseEntryId = refresh.getId();
+        }
+
+        // Add checker workflow
+        final Entry checkerWorkflowBase = workflowApi
+            .registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", baseEntryId, "cwl", null);
+        final Workflow stubCheckerWorkflow = workflowApi.getWorkflow(checkerWorkflowBase.getCheckerId());
+        assertSame(stubCheckerWorkflow.getMode(), Workflow.ModeEnum.STUB);
+
+        // should be able to refresh all or the organization when a checker stub is present without a failure (constraints issue from #1405)
+        UsersApi usersApi = new UsersApi(webClient);
+        final Long id = usersApi.getUser().getId();
+        if (all) {
+            usersApi.refreshWorkflows(id);
+        } else {
+            usersApi.refreshWorkflowsByOrganization(id, stubCheckerWorkflow.getOrganization());
+        }
     }
 
     /**
