@@ -4,7 +4,7 @@ info:
     This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.5.0-beta.3-SNAPSHOT
+  version: 1.5.0-beta.4-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -38,14 +38,6 @@ tags:
     description: Optional experimental extensions of the GA4GH API
   - name: hosted
     description: Created and modify hosted entries in the dockstore
-  - name: integration.bitbucket.org
-    description: stop-gap allowing developers to associate with bitbucket
-  - name: integration.github.com
-    description: stop-gap allowing developers to associate with github
-  - name: integration.gitlab.com
-    description: stop-gap allowing developers to associate with gitlab
-  - name: integration.quay.io
-    description: stop-gap allowing developers to associate with quay.io
   - name: metadata
   - name: tokens
     description: 'List, modify, refresh, and delete tokens for external services'
@@ -720,6 +712,12 @@ paths:
                 type: object
                 additionalProperties:
                   type: object
+        '401':
+          description: Credentials not provided or incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: The tool test cannot be found to annotate.
           content:
