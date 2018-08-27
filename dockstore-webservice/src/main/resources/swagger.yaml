@@ -3477,8 +3477,8 @@ paths:
         type: "string"
       - name: "workflowName"
         in: "query"
-        description: "Workflow name"
-        required: false
+        description: "Workflow name, set to empty if none required"
+        required: true
         type: "string"
       - name: "descriptorType"
         in: "query"
@@ -4850,16 +4850,16 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      output_file_formats:
+      has_checker:
+        type: "boolean"
+        readOnly: true
+      input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      has_checker:
-        type: "boolean"
-        readOnly: true
-      input_file_formats:
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -5061,16 +5061,16 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      output_file_formats:
+      has_checker:
+        type: "boolean"
+        readOnly: true
+      input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      has_checker:
-        type: "boolean"
-        readOnly: true
-      input_file_formats:
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -5909,16 +5909,16 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      output_file_formats:
+      has_checker:
+        type: "boolean"
+        readOnly: true
+      input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      has_checker:
-        type: "boolean"
-        readOnly: true
-      input_file_formats:
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true

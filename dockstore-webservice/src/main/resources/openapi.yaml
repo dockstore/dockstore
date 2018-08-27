@@ -3800,8 +3800,8 @@ paths:
             type: string
         - name: workflowName
           in: query
-          description: Workflow name
-          required: false
+          description: 'Workflow name, set to empty if none required'
+          required: true
           schema:
             type: string
         - name: descriptorType
@@ -5310,16 +5310,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
@@ -5509,16 +5509,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
@@ -6355,16 +6355,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
