@@ -130,6 +130,12 @@ public class BasicPostgreSQL {
         }
     }
 
+    /**
+     * Run an SQL query. For testing purposes only.
+     * @param query sql query
+     * @param params parameters for the query
+     * @return number of rows updated
+     */
     protected int runUpdateStatement(String query, Object... params) {
         try {
             QueryRunner run = new QueryRunner(dataSource);
