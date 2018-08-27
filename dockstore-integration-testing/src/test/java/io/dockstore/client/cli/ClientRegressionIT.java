@@ -25,7 +25,6 @@ import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiException;
-import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Assert;
@@ -43,6 +42,7 @@ import org.junit.rules.TemporaryFolder;
 import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.checkToolList;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests a variety of basic dockstore CLI commands along with some tool commands
@@ -63,7 +63,7 @@ public class ClientRegressionIT extends BaseIT {
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
     static URL url;
     static File dockstore;
-    static File testJson;
+    private static File testJson;
 
     @BeforeClass
     public static void getOldDockstoreClient() throws IOException {
@@ -71,7 +71,7 @@ public class ClientRegressionIT extends BaseIT {
         url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
-        dockstore.setExecutable(true);
+        assertTrue(dockstore.setExecutable(true));
         url = new URL("https://raw.githubusercontent.com/DockstoreTestUser/dockstore_parameter_test/master/test.cwl.json");
         testJson = temporaryFolder.newFile("test.cwl.json");
         FileUtils.copyURLToFile(url, testJson);
@@ -102,13 +102,13 @@ public class ClientRegressionIT extends BaseIT {
     public void testPluginEnableOldClient() {
         String[] commandArray1 = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin",
                 "download" };
-        ImmutablePair<String, String> stringStringImmutablePair1 = runOldDockstoreClient(dockstore, commandArray1);
+        runOldDockstoreClient(dockstore, commandArray1);
         String[] commandArray2 = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest1/configWithPlugins"), "plugin",
                 "list" };
         ImmutablePair<String, String> stringStringImmutablePair2 = runOldDockstoreClient(dockstore, commandArray2);
         String stdout = stringStringImmutablePair2.getLeft();
-        Assert.assertTrue(stdout.contains("dockstore-file-synapse-plugin"));
-        Assert.assertTrue(stdout.contains("dockstore-file-s3-plugin"));
+        assertTrue(stdout.contains("dockstore-file-synapse-plugin"));
+        assertTrue(stdout.contains("dockstore-file-s3-plugin"));
         Assert.assertFalse(stdout.contains("dockstore-icgc-storage-client-plugin"));
     }
 
@@ -116,13 +116,13 @@ public class ClientRegressionIT extends BaseIT {
     public void testPluginDisableOldClient() {
         String[] commandArray = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin",
                 "download" };
-        ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
+        runOldDockstoreClient(dockstore, commandArray);
         commandArray = new String[] { "--config", ResourceHelpers.resourceFilePath("pluginsTest2/configWithPlugins"), "plugin", "list" };
-        stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
+        ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
         String stdout = stringStringImmutablePair.getLeft();
         Assert.assertFalse(stdout.contains("dockstore-file-synapse-plugin"));
         Assert.assertFalse(stdout.contains("dockstore-file-s3-plugin"));
-        Assert.assertTrue(stdout.contains("dockstore-file-icgc-storage-client-plugin"));
+        assertTrue(stdout.contains("dockstore-file-icgc-storage-client-plugin"));
     }
 
     @Test
@@ -131,19 +131,19 @@ public class ClientRegressionIT extends BaseIT {
         ImmutablePair<String, String> stringStringImmutablePair;
         try {
             stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
-            Assert.assertTrue(stringStringImmutablePair.getLeft().contains("Dockstore version 1.3.6"));
+            assertTrue(stringStringImmutablePair.getLeft().contains("Dockstore version " + OLD_DOCKSTORE_VERSION));
         } catch (Exception e) {
             // Sometimes there's an error: Can't find the latest version. Something might be wrong with the connection to Github.
         }
         commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "--server-metadata" };
         stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
-        Assert.assertTrue(stringStringImmutablePair.getLeft().contains("version"));
+        assertTrue(stringStringImmutablePair.getLeft().contains("version"));
         systemOutRule.clearLog();
     }
 
     @Test
     public void testCacheCleaningOld() throws IOException {
-        ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore,
+        runOldDockstoreClient(dockstore,
                 new String[] { "--config", TestUtility.getConfigFileLocation(true), "--clean-cache" });
         systemOutRule.clearLog();
     }
@@ -151,7 +151,7 @@ public class ClientRegressionIT extends BaseIT {
     @Test
     public void pluginDownloadOld() throws IOException {
         String[] commandArray = new String[] { "--config", TestUtility.getConfigFileLocation(true), "plugin", "download" };
-        ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
+        runOldDockstoreClient(dockstore, commandArray);
         systemOutRule.clearLog();
     }
 
@@ -172,9 +172,9 @@ public class ClientRegressionIT extends BaseIT {
         String[] commandArray = { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "launch", "--entry",
                 "quay.io/dockstoretestuser/test_input_json", "--json", testJson.getAbsolutePath(), "--script" };
         ImmutablePair<String, String> stringStringImmutablePair = runOldDockstoreClient(dockstore, commandArray);
-        Assert.assertTrue("Final process status was not a success",
+        assertTrue("Final process status was not a success",
                 (stringStringImmutablePair.getLeft().contains("Final process status is success")));
-        Assert.assertTrue("Final process status was not a success",
+        assertTrue("Final process status was not a success",
                 (stringStringImmutablePair.getRight().contains("Final process status is success")));
 
     }

@@ -38,14 +38,6 @@ tags:
     description: Optional experimental extensions of the GA4GH API
   - name: hosted
     description: Created and modify hosted entries in the dockstore
-  - name: integration.bitbucket.org
-    description: stop-gap allowing developers to associate with bitbucket
-  - name: integration.github.com
-    description: stop-gap allowing developers to associate with github
-  - name: integration.gitlab.com
-    description: stop-gap allowing developers to associate with gitlab
-  - name: integration.quay.io
-    description: stop-gap allowing developers to associate with quay.io
   - name: metadata
   - name: tokens
     description: 'List, modify, refresh, and delete tokens for external services'
@@ -720,6 +712,12 @@ paths:
                 type: object
                 additionalProperties:
                   type: object
+        '401':
+          description: Credentials not provided or incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '404':
           description: The tool test cannot be found to annotate.
           content:
@@ -5312,16 +5310,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
@@ -5511,16 +5509,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
@@ -6357,16 +6355,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true

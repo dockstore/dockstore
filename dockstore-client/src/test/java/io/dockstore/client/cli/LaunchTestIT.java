@@ -32,6 +32,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,6 +41,7 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
 
+import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static org.junit.Assert.assertEquals;
@@ -102,6 +104,61 @@ public class LaunchTestIT {
         Client client = new Client();
         // do not use a cache
         runWorkflow(cwlFile, args, api, usersApi, client, false);
+    }
+
+    @Test
+    public void wdlWorkflowCorrectFlags() {
+        File yamlTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.yaml"));
+        File jsonTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.json"));
+
+        ArrayList<String> yamlFileWithJSONFlag = getLaunchWorkflowStringList();
+        yamlFileWithJSONFlag.add("--json");
+        yamlFileWithJSONFlag.add(yamlTestParameterFile.getAbsolutePath());
+
+        ArrayList<String> yamlFileWithYAMLFlag = getLaunchWorkflowStringList();
+        yamlFileWithYAMLFlag.add("--yaml");
+        yamlFileWithYAMLFlag.add(yamlTestParameterFile.getAbsolutePath());
+
+        ArrayList<String> jsonFileWithJSONFlag = getLaunchWorkflowStringList();
+        jsonFileWithJSONFlag.add("--json");
+        jsonFileWithJSONFlag.add(jsonTestParameterFile.getAbsolutePath());
+
+        ArrayList<String> jsonFileWithYAMLFlag = getLaunchWorkflowStringList();
+        jsonFileWithYAMLFlag.add("--yaml");
+        jsonFileWithYAMLFlag.add(jsonTestParameterFile.getAbsolutePath());
+
+        Client.main(yamlFileWithJSONFlag.toArray(new String[0]));
+        Client.main(yamlFileWithYAMLFlag.toArray(new String[0]));
+        Client.main(jsonFileWithJSONFlag.toArray(new String[0]));
+        Client.main(jsonFileWithYAMLFlag.toArray(new String[0]));
+    }
+
+
+    @Test
+    public void yamlAndJsonWorkflowCorrect() {
+        File yamlTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.yaml"));
+        File jsonTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.json"));
+
+        ArrayList<String> args = getLaunchWorkflowStringList();
+        args.add("--yaml");
+        args.add(yamlTestParameterFile.getAbsolutePath());
+        args.add("--json");
+        args.add(jsonTestParameterFile.getAbsolutePath());
+        exit.expectSystemExitWithStatus(CLIENT_ERROR);
+        exit.checkAssertionAfterwards(() -> Assert.assertTrue(systemErrRule.getLog().contains("Missing required flag")));
+        Client.main(args.toArray(new String[0]));
+    }
+
+    private ArrayList<String> getLaunchWorkflowStringList() {
+        File descriptorFile = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
+            return new ArrayList<String>() {{
+                add("--config");
+                add(ResourceHelpers.resourceFilePath("config"));
+                add("workflow");
+                add("launch");
+                add("--local-entry");
+                add(descriptorFile.getAbsolutePath());
+            }};
     }
 
     @Test

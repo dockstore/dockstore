@@ -13,6 +13,8 @@ fi
 
 if [ "${TESTING_PROFILE}" = "toil-integration-tests" ]; then
     pip2.7 install --user toil[cwl]==3.15.0
+elif [ "${TESTING_PROFILE}" = "regression-integration-tests" ]; then
+    pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.4.0/requirements.txt
 else
     pip2.7 install --user -r dockstore-webservice/src/main/resources/requirements/1.5.0/requirements.txt
 fi

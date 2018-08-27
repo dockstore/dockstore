@@ -16,6 +16,7 @@
 package io.github.collaboratory.wdl;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -50,8 +51,10 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -120,12 +123,11 @@ public class WDLClient implements LanguageClientInterface {
     public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid)
         throws ApiException {
 
-        assert (yamlRun == null && jsonRun != null && csvRuns == null);
-        if (!(yamlRun == null && jsonRun != null && csvRuns == null)) {
-            errorMessage("dockstore: Missing required flag --json", CLIENT_ERROR);
+        boolean hasRequiredFlags = ((yamlRun != null || jsonRun != null) && ((yamlRun != null) != (jsonRun != null)) && csvRuns == null);
+        if (!hasRequiredFlags) {
+            errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
         }
 
-        File parameterFile = new File(jsonRun);
         File cromwellTargetFile = getCromwellTargetFile();
 
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
@@ -154,7 +156,8 @@ public class WDLClient implements LanguageClientInterface {
             // Convert parameter JSON to a map
             WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(abstractEntryClient.getConfigFile());
             Gson gson = new Gson();
-            String jsonString = FileUtils.readFileToString(parameterFile, StandardCharsets.UTF_8);
+            // Don't care whether it's actually a yaml or already a json, just convert to json anyways
+            String jsonString = convertYAMLtoJSON(jsonRun != null ? jsonRun : yamlRun);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
             final List<String> wdlRun;
 
@@ -261,6 +264,15 @@ public class WDLClient implements LanguageClientInterface {
         }
         notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
         return 0;
+    }
+
+    // Converts a yaml file path to a json string
+    public String convertYAMLtoJSON(String yamlRun) throws IOException {
+        Yaml yaml = new Yaml();
+        final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
+        Map<String, Object> map = yaml.load(fileInputStream);
+        JSONObject jsonObject = new JSONObject(map);
+        return jsonObject.toString();
     }
 
     /**

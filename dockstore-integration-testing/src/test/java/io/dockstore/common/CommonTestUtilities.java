@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class CommonTestUtilities {
 
-    public final static String OLD_DOCKSTORE_VERSION = "1.3.6";
+    public final static String OLD_DOCKSTORE_VERSION = "1.4.5";
     private static final Logger LOG = LoggerFactory.getLogger(CommonTestUtilities.class);
 
     // Travis is slow, need to wait up to 1 min for webservice to return

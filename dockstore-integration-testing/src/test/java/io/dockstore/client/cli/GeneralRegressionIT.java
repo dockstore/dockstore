@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Registry;
@@ -32,13 +31,10 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
-import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
-import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -54,6 +50,7 @@ import org.junit.rules.TemporaryFolder;
 import static io.dockstore.common.CommonTestUtilities.OLD_DOCKSTORE_VERSION;
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static io.dockstore.common.CommonTestUtilities.runOldDockstoreClient;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -83,7 +80,7 @@ public class GeneralRegressionIT extends BaseIT {
         url = new URL("https://github.com/ga4gh/dockstore/releases/download/" + OLD_DOCKSTORE_VERSION + "/dockstore");
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
-        dockstore.setExecutable(true);
+        assertTrue(dockstore.setExecutable(true));
     }
 
     @Before
@@ -96,9 +93,7 @@ public class GeneralRegressionIT extends BaseIT {
      * This method will create and register a new container for testing
      *
      * @return DockstoreTool
-     * @throws IOException
-     * @throws TimeoutException
-     * @throws ApiException
+     * @throws ApiException comes back from a web service error
      */
     private DockstoreTool getContainer() {
         DockstoreTool c = new DockstoreTool();
@@ -140,19 +135,18 @@ public class GeneralRegressionIT extends BaseIT {
      * this method will set up the webservice and return the container api
      *
      * @return ContainersApi
-     * @throws ApiException
+     * @throws ApiException comes back from a web service error
      */
     private ContainersApi setupWebService() throws ApiException {
         ApiClient client = getWebClient(USER_2_USERNAME);
-        ContainersApi toolsApi = new ContainersApi(client);
-        return toolsApi;
+        return new ContainersApi(client);
     }
 
     /**
      * this method will set up the databse and select data needed
      *
      * @return cwl/wdl/dockerfile path of the tool's tag in the database
-     * @throws ApiException
+     * @throws ApiException comes back from a web service error
      */
     private String getPathfromDB(String type) {
         // Set up DB
@@ -189,12 +183,12 @@ public class GeneralRegressionIT extends BaseIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from entry_label where entryid = '2'", new ScalarHandler<>());
-        assertTrue("there should be 2 labels for the given container, there are " + count, count == 2);
+        assertEquals("there should be 2 labels for the given container, there are " + count, 2, count);
 
         final long count2 = testingPostgres.runSelectStatement(
                 "select count(*) from label where value = 'quay' or value = 'github' or value = 'dockerhub' or value = 'alternate'",
                 new ScalarHandler<>());
-        assertTrue("there should be 4 labels in the database (No Duplicates), there are " + count2, count2 == 4);
+        assertEquals("there should be 4 labels in the database (No Duplicates), there are " + count2, 4, count2);
     }
 
     /**
@@ -211,7 +205,7 @@ public class GeneralRegressionIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
-        assertTrue("there should now be an invalid tag, found " + count, count == 1);
+        assertEquals("there should now be an invalid tag, found " + count, 1, count);
 
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
@@ -226,7 +220,7 @@ public class GeneralRegressionIT extends BaseIT {
                 "select count(*) from tag,tool_tag,tool where tool.registry = '" + Registry.QUAY_IO.toString()
                         + "' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithub' and tool.toolname = '' and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
-        assertTrue("the invalid tag should now be valid, found " + count2, count2 == 0);
+        assertEquals("the invalid tag should now be valid, found " + count2, 0, count2);
     }
 
     /**
@@ -249,9 +243,9 @@ public class GeneralRegressionIT extends BaseIT {
         final long count = testingPostgres.runSelectStatement(
                 " select count(*) from  tool_tag, tool where tool_tag.toolid = tool.id and giturl ='git@github.com:dockstoretestuser2/quayandgithubalternate.git' and toolname = 'alternate'",
                 new ScalarHandler<>());
-        assertTrue(
-                "there should be 3 tags, 2  that are autogenerated (master and latest) and the newly added masterTest tag, found " + count,
-                count == 3);
+        assertEquals(
+            "there should be 3 tags, 2  that are autogenerated (master and latest) and the newly added masterTest tag, found " + count, 3,
+            count);
 
     }
 
@@ -266,14 +260,14 @@ public class GeneralRegressionIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
-        assertTrue("there should be 1 hidden tag", count == 1);
+        assertEquals("there should be 1 hidden tag", 1, count);
 
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithub", "--name", "master", "--hidden", "false", "--script" });
 
         final long count2 = testingPostgres.runSelectStatement("select count(*) from tag where hidden = 't'", new ScalarHandler<>());
-        assertTrue("there should be 0 hidden tag", count2 == 0);
+        assertEquals("there should be 0 hidden tag", 0, count2);
     }
 
     /**
@@ -291,7 +285,7 @@ public class GeneralRegressionIT extends BaseIT {
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
 
-        assertTrue("there should now be 1 invalid tag, found " + count, count == 1);
+        assertEquals("there should now be 1 invalid tag, found " + count, 1, count);
 
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "version_tag", "update", "--entry",
@@ -300,7 +294,7 @@ public class GeneralRegressionIT extends BaseIT {
         final long count2 = testingPostgres.runSelectStatement(
                 "select count(*) from tag,tool_tag,tool where tool.registry = '"+ Registry.QUAY_IO.toString() +"' and tool.namespace = 'dockstoretestuser2' and tool.name = 'quayandgithubwdl' and tool.toolname IS NULL and tool.id=tool_tag.toolid and tag.id=tool_tag.tagid and valid = 'f'",
                 new ScalarHandler<>());
-        assertTrue("the tag should now be valid", count2 == 0);
+        assertEquals("the tag should now be valid", 0, count2);
 
     }
 
@@ -327,7 +321,7 @@ public class GeneralRegressionIT extends BaseIT {
 
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(*) from tag where name = 'masterTest'", new ScalarHandler<>());
-        assertTrue("there should be no tags with the name masterTest", count == 0);
+        assertEquals("there should be no tags with the name masterTest", 0, count);
     }
 
     /**
@@ -363,7 +357,7 @@ public class GeneralRegressionIT extends BaseIT {
         long count = testingPostgres
                 .runSelectStatement("select count(*) from tool where registry = '"+ Registry.QUAY_IO.toString() +"' and namespace = 'dockstoretestuser2' and name = 'quayandgithubwdl';",
                         new ScalarHandler<>());
-        assertTrue("should be two after republishing", count == 2);
+        assertEquals("should be two after republishing", 2, count);
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "publish", "--unpub", "--entry",
                         "quay.io/dockstoretestuser2/quayandgithubwdl" });
@@ -460,7 +454,7 @@ public class GeneralRegressionIT extends BaseIT {
 
         //check if the tag's dockerfile path have the same cwl path or not in the database
         final String path = getPathfromDB("cwlpath");
-        assertTrue("the cwl path should be changed to /test1.cwl", path.equals("/test1.cwl"));
+        assertEquals("the cwl path should be changed to /test1.cwl", "/test1.cwl", path);
     }
 
     /**
@@ -485,7 +479,7 @@ public class GeneralRegressionIT extends BaseIT {
 
         //check if the tag's wdl path have the same wdl path or not in the database
         final String path = getPathfromDB("wdlpath");
-        assertTrue("the cwl path should be changed to /test1.wdl", path.equals("/test1.wdl"));
+        assertEquals("the cwl path should be changed to /test1.wdl", "/test1.wdl", path);
     }
 
     /**
@@ -510,6 +504,6 @@ public class GeneralRegressionIT extends BaseIT {
 
         //check if the tag's dockerfile path have the same dockerfile path or not in the database
         final String path = getPathfromDB("dockerfilepath");
-        assertTrue("the cwl path should be changed to /test1/Dockerfile", path.equals("/test1/Dockerfile"));
+        assertEquals("the cwl path should be changed to /test1/Dockerfile", "/test1/Dockerfile", path);
     }
 }

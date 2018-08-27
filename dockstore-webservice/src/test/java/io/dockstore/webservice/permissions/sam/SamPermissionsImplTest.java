@@ -38,8 +38,10 @@ import org.mockito.Mockito;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -74,21 +76,21 @@ public class SamPermissionsImplTest {
         ownerPolicy = new AccessPolicyResponseEntry();
         ownerPolicy.setPolicyName(SamConstants.OWNER_POLICY);
         AccessPolicyMembership accessPolicyMembership = new AccessPolicyMembership();
-        accessPolicyMembership.setRoles(Arrays.asList(SamConstants.OWNER_ROLE));
+        accessPolicyMembership.setRoles(Arrays.asList(SamConstants.OWNER_POLICY));
         accessPolicyMembership.setMemberEmails(Arrays.asList("jdoe@ucsc.edu"));
         ownerPolicy.setPolicy(accessPolicyMembership);
 
         writerPolicy = new AccessPolicyResponseEntry();
         writerPolicy.setPolicyName(SamConstants.WRITE_POLICY);
         AccessPolicyMembership writerMembership = new AccessPolicyMembership();
-        writerMembership.setRoles(Arrays.asList(SamConstants.WRITE_ROLE));
+        writerMembership.setRoles(Arrays.asList(SamConstants.WRITE_POLICY));
         writerMembership.setMemberEmails(Arrays.asList(JANE_DOE_GMAIL_COM));
         writerPolicy.setPolicy(writerMembership);
 
         readerPolicy = new AccessPolicyResponseEntry();
         readerPolicy.setPolicyName(SamConstants.READ_POLICY);
         AccessPolicyMembership readerMembership = new AccessPolicyMembership();
-        readerMembership.setRoles(Arrays.asList(SamConstants.READ_ROLE));
+        readerMembership.setRoles(Arrays.asList(SamConstants.READ_POLICY));
         readerMembership.setMemberEmails(Arrays.asList(JANE_DOE_GMAIL_COM));
         readerPolicy.setPolicy(readerMembership);
 
@@ -488,6 +490,47 @@ public class SamPermissionsImplTest {
         thrown.expect(CustomWebApplicationException.class);
         samPermissionsImpl.selfDestruct(userMock);
 
+    }
+
+    /**
+     * Tests this use case:
+     *
+     * <ol>
+     *     <li>User creates a SAM resource with the SAM API directly. When you do that, the writer and reader policies are
+     *     not added.</li>
+     *     <li>Using Dockstore API, user then adds an email to Writer role.</li>
+     * </ol>
+     *
+     * This tests that the writer policy gets added to the resource.
+     * @throws ApiException
+     */
+    @Test
+    public void testSetPermissionWhenResourceCreatedWithoutAllPolicies() throws ApiException {
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
+                .thenReturn(Arrays.asList(owner));
+        setupInitializePermissionsMocks(resourceId);
+        samPermissionsImpl.setPermission(userMock, fooWorkflow, new Permission("johndoe@example.com", Role.WRITER));
+        verify(resourcesApiMock, times(1)).overwritePolicy(eq(SamConstants.RESOURCE_TYPE), anyString(), eq(SamConstants.WRITE_POLICY), any());
+    }
+
+    @Test
+    public void testSamPolicyOwnedbyAnother() throws ApiException {
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        final String resourceId = SamConstants.WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        when(resourcesApiMock.listResourcePolicies(SamConstants.RESOURCE_TYPE, resourceId))
+                .thenThrow(new ApiException(HttpStatus.SC_NOT_FOUND, "")); // If you don't have permissions, you get a 404
+        doThrow(new ApiException(HttpStatus.SC_CONFLICT, ""))
+                .when(resourcesApiMock)
+                .createResourceWithDefaults(SamConstants.RESOURCE_TYPE, resourceId);
+        try {
+            samPermissionsImpl.setPermission(userMock, fooWorkflow, new Permission("johndoe@example.com", Role.WRITER));
+            Assert.fail("Expected setPermission to throw exception");
+        } catch (CustomWebApplicationException ex) {
+            Assert.assertTrue(ex.getMessage().contains(" 409 "));
+        }
     }
 
     private void setupInitializePermissionsMocks(String encodedPath) {

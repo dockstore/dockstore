@@ -100,6 +100,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
                     encodedPath).stream().filter(entry -> entry.getPolicy().getMemberEmails().contains(permission.getEmail()))
                     .collect(Collectors.toList());
             final String samPolicyName = permissionSamMap.get(permission.getRole());
+            ensurePolicyExists(policyList, samPolicyName, encodedPath, resourcesApi);
             // If the email does not already belong to the policy, add it.
             if (!policyList.stream().anyMatch(entry -> entry.getPolicyName().equals(samPolicyName))) {
                 resourcesApi.addUserToPolicy(SamConstants.RESOURCE_TYPE, encodedPath, samPolicyName,
@@ -122,6 +123,13 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     ResourcesApi getResourcesApi(User requester) {
         return new ResourcesApi(getApiClient(requester));
+    }
+
+    private void ensurePolicyExists(List<AccessPolicyResponseEntry> policyList, String policyName, String resourceId, ResourcesApi resourcesApi)
+            throws ApiException {
+        if (policyList.stream().noneMatch(policy -> policyName.equals(policy.getPolicyName()))) {
+            addPolicy(resourcesApi, resourceId, policyName);
+        }
     }
 
     private List<AccessPolicyResponseEntry> ensureResourceExists(Workflow workflow, User requester, ResourcesApi resourcesApi, String encodedPath) {
@@ -205,7 +213,8 @@ public class SamPermissionsImpl implements PermissionsInterface {
             return PermissionsInterface.mergePermissions(dockstoreOwners, removeDuplicateEmails(samPermissions));
         } catch (ApiException e) {
             final String errorGettingPermissions = "Error getting permissions";
-            if (e.getCode() != HttpStatus.SC_NOT_FOUND) { // If 404, SAM resource has not been created; just return Dockstore owners
+            // 404 - SAM resource has not been created, or user doesn't have access; just return Dockstore owners
+            if (e.getCode() != HttpStatus.SC_NOT_FOUND) {
                 throw new CustomWebApplicationException(errorGettingPermissions, e.getCode());
             }
         }
@@ -279,17 +288,27 @@ public class SamPermissionsImpl implements PermissionsInterface {
         String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
         try {
             resourcesApi.createResourceWithDefaults(SamConstants.RESOURCE_TYPE, encodedPath);
-
-            final AccessPolicyMembership writerPolicy = new AccessPolicyMembership();
-            writerPolicy.addRolesItem("writer");
-            resourcesApi.overwritePolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.WRITE_POLICY, writerPolicy);
-
-            final AccessPolicyMembership readerPolicy = new AccessPolicyMembership();
-            readerPolicy.addRolesItem("reader");
-            resourcesApi.overwritePolicy(SamConstants.RESOURCE_TYPE, encodedPath, SamConstants.READ_POLICY, readerPolicy);
+            addPolicy(resourcesApi, encodedPath, SamConstants.WRITE_POLICY);
+            addPolicy(resourcesApi, encodedPath, SamConstants.READ_POLICY);
         } catch (ApiException e) {
-            throw new CustomWebApplicationException("Error initializing permissions", e.getCode());
+            if (e.getCode() == HttpStatus.SC_CONFLICT) {
+                // The SAM resource already exists, but it is owned a different user.
+                // This should never occur if only using Dockstore APIs, but could happen if a user accesses SAM API directly.
+                final String message = MessageFormat.format(
+                        "An unexpected error occurred. Please send a private message to \"admins\" at https://discuss.dockstore.org and mention \"SAM {0}\"",
+                        encodedPath);
+                throw new CustomWebApplicationException(message, HttpStatus.SC_CONFLICT);
+            } else {
+                throw new CustomWebApplicationException("Error initializing permissions", e.getCode());
+            }
         }
+    }
+
+    private void addPolicy(ResourcesApi resourcesApi, String resourceId, String policyName) throws ApiException {
+        final AccessPolicyMembership policy = new AccessPolicyMembership();
+        policy.addRolesItem(policyName); // The role name and the policy name are the same
+        resourcesApi.overwritePolicy(SamConstants.RESOURCE_TYPE, resourceId, policyName, policy);
+
     }
 
     @Override
