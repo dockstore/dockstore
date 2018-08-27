@@ -4,7 +4,7 @@ permalink: /docs/publisher-tutorials/best-practices/
 ---
 # Best Practices
 
-Here, we document some best practices for creating CWL tools as we understand them. Our intention is that this document will evolve as CWL evolves so feel free to provide suggestions and/or improvements.
+Here, we document some best practices for creating tools as we understand them. Our intention is that this document will evolve as the descriptor languages evolves so feel free to provide suggestions and/or improvements.  
 
 ## Recommended CWL Fields
 
@@ -117,7 +117,17 @@ $ dockstore tool launch --local-entry  metadata_example.cwl --json sample.json
 
 ## Metadata and Authorship
 
-For all developers, we recommend the following minimal metadata for your tool and workflows.
+Dockstore parses metadata and displays it in the tool/workflow's "Info" tab.  Metadata must be present in the descriptor or else the highlighted sections below will not appear.
+
+![info-tab-metadata](/assets/images/docs/best_practices/info-tab-metadata.png)
+
+Additionally, metadata such as the "Author" can be used in Dockstore search.
+
+![search-metadata](/assets/images/docs/best_practices/search-metadata.png)
+
+For all developers, we highly recommend the following minimal metadata for your tool and workflows.  
+
+### CWL 
 This example includes metadata allowing others to cite your tool.
 
 *metadata_example2.cwl*
@@ -184,6 +194,8 @@ s:codeRepository: https://github.com/common-workflow-language/common-workflow-la
 s:dateCreated: "2016-12-13"
 s:license: https://www.apache.org/licenses/LICENSE-2.0
 ```
+
+### WDL
 
 For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  
 
