@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -567,8 +568,11 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 out(builder.toString());
 
                 out("GIT REPO:");
-                out(workflow.getGitUrl());
-
+                if (Objects.equals(workflow.getMode(), Workflow.ModeEnum.HOSTED)) {
+                    out("Dockstore.org");
+                } else {
+                    out(workflow.getGitUrl());
+                }
             }
 
         } catch (ApiException ex) {
