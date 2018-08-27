@@ -5310,16 +5310,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
@@ -5509,16 +5509,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
@@ -6355,16 +6355,16 @@ components:
           type: string
           format: date-time
           readOnly: true
-        has_checker:
-          type: boolean
-          readOnly: true
-        input_file_formats:
+        output_file_formats:
           type: array
           readOnly: true
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
-        output_file_formats:
+        has_checker:
+          type: boolean
+          readOnly: true
+        input_file_formats:
           type: array
           readOnly: true
           uniqueItems: true

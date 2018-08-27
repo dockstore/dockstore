@@ -39,7 +39,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>https://quay.io/api/v1/discovery</inputSpec>
+                            <inputSpec>${project.basedir}/discovery.formatted.json</inputSpec>
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
