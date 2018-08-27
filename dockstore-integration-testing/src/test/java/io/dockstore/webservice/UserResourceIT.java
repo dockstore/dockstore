@@ -113,6 +113,10 @@ public class UserResourceIT extends BaseIT {
         client = getWebClient(USER_2_USERNAME);
         userApi = new UsersApi(client);
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
+        final ApiClient adminWebClient = getWebClient(ADMIN_USERNAME);
+
+        final WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminWebClient);
+
 
         User user = userApi.getUser();
         Assert.assertNotNull(user);
@@ -121,6 +125,11 @@ public class UserResourceIT extends BaseIT {
         final Workflow workflowByPath = workflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
         // refresh targeted
         workflowsApi.refresh(workflowByPath.getId());
+
+        // Verify that admin can access unpublished workflow, because admin is going to verify later
+        // that the workflow is gone
+        adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+
         // publish one
         workflowsApi.publish(workflowByPath.getId(), SwaggerUtility.createPublishRequest(true));
 
@@ -139,6 +148,15 @@ public class UserResourceIT extends BaseIT {
         assertTrue(userApi.selfDestruct());
         //TODO need to test that profiles are cascaded to and cleared
 
+        // Verify that self-destruct also deleted the workflow
+        boolean expectedAdminAccessToFail = false;
+        try {
+            adminWorkflowsApi.getWorkflowByPath(WorkflowIT.DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+
+        } catch (ApiException e) {
+            expectedAdminAccessToFail = true;
+        }
+        assertTrue(expectedAdminAccessToFail);
 
         // I shouldn't be able to get info on myself after deletion
         boolean expectedFailToGetInfo = false;

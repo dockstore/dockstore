@@ -48,7 +48,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 public class BaseIT {
     public final String USER_2_USERNAME = "DockstoreTestUser2";
     static final String OTHER_USERNAME = "OtherUser";
-    final String ADMIN_USERNAME = "admin@admin.com";
+    public final String ADMIN_USERNAME = "admin@admin.com";
     final String USER_1_USERNAME = "DockstoreTestUser";
     final String CURATOR_USERNAME = "curator@curator.com";
 
