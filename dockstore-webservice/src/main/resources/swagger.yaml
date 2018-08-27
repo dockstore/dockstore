@@ -4850,16 +4850,16 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
-      input_file_formats:
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      output_file_formats:
+      has_checker:
+        type: "boolean"
+        readOnly: true
+      input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -5061,16 +5061,16 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
-      input_file_formats:
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      output_file_formats:
+      has_checker:
+        type: "boolean"
+        readOnly: true
+      input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
@@ -5909,16 +5909,16 @@ definitions:
         type: "string"
         format: "date-time"
         readOnly: true
-      has_checker:
-        type: "boolean"
-        readOnly: true
-      input_file_formats:
+      output_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      output_file_formats:
+      has_checker:
+        type: "boolean"
+        readOnly: true
+      input_file_formats:
         type: "array"
         readOnly: true
         uniqueItems: true
