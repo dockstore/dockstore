@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -70,6 +71,7 @@ import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
+import static io.swagger.client.model.DockstoreTool.ModeEnum.HOSTED;
 
 /**
  * Implement all operations that have to do with tools.
@@ -743,7 +745,11 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 errorMessage("This container is not published.", Client.COMMAND_ERROR);
             } else {
 
-                Date dateUploaded = Date.from(container.getLastBuild().toInstant());
+                Date lastBuild = container.getLastBuild();
+                Date dateUploaded = null;
+                if (lastBuild != null) {
+                    dateUploaded = Date.from(lastBuild.toInstant());
+                }
 
                 String description = container.getDescription();
                 if (description == null) {
@@ -760,13 +766,14 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                     date = dateUploaded.toString();
                 }
 
-                out("");
                 out("DESCRIPTION:");
                 out(description);
                 out("AUTHOR:");
                 out(author);
-                out("DATE UPLOADED:");
-                out(date);
+                if (dateUploaded != null) {
+                    out("DATE UPLOADED:");
+                    out(date);
+                }
                 out("TAGS");
 
                 List<Tag> tags = container.getTags();
@@ -781,11 +788,14 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
 
                 out(builder.toString());
 
-                out("GIT REPO:");
-                out(container.getGitUrl());
-                out("QUAY.IO REPO:");
-                out("http://quay.io/repository/" + container.getNamespace() + "/" + container.getName());
-                // out(container.toString());
+                out("SOURCE CONTROL:");
+                if (Objects.equals(container.getMode(), HOSTED)) {
+                    out("Dockstore.org");
+                } else {
+                    out(container.getGitUrl());
+                }
+                out("DOCKER IMAGE:");
+                out(container.getNamespace() + "/" + container.getName() + " on " + container.getRegistryString());
             }
         } catch (ApiException ex) {
             exceptionMessage(ex, "Could not find container", Client.API_ERROR);
