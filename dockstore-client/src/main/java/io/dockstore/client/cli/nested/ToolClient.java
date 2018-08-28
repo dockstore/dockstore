@@ -132,7 +132,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         int descWidth = maxWidths[1] + Client.PADDING;
         int gitWidth = maxWidths[2] + Client.PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s%-16s%-10s";
-        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Descriptor", "Automated");
+        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "ON DOCKSTORE?", "DESCRIPTOR", "AUTOMATED");
 
         for (DockstoreTool container : containers) {
             String descriptor = "No";
@@ -154,6 +154,8 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 if (description.length() > MAX_DESCRIPTION) {
                     description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
                 }
+            } else {
+                description = "";
             }
 
             outFormatted(format, container.getToolPath(), description, gitUrl, boolWord(container.isIsPublished()), descriptor, automated);
@@ -581,6 +583,8 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
+
+            out("Refreshing all tools...");
             List<DockstoreTool> containers = usersApi.refresh(user.getId());
 
             out("YOUR UPDATED TOOLS");
@@ -595,6 +599,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         try {
             DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
             final Long containerId = container.getId();
+            out("Refreshing tool...");
             DockstoreTool updatedContainer = containersApi.refresh(containerId);
             List<DockstoreTool> containerList = new ArrayList<>();
             containerList.add(updatedContainer);

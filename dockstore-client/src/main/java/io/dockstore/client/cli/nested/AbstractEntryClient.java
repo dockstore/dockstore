@@ -105,6 +105,8 @@ public abstract class AbstractEntryClient<T> {
             if (description.length() > MAX_DESCRIPTION) {
                 description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
             }
+        } else {
+            description = "";
         }
         return description;
     }
@@ -149,6 +151,7 @@ public abstract class AbstractEntryClient<T> {
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
         out("");
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
+        out("");
         out("  " + DOWNLOAD + "         :  download " + getEntryType() + "s to the local directory");
         printClientSpecificHelp();
         if (isAdmin) {

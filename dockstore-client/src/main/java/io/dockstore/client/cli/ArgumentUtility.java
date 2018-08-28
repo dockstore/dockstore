@@ -39,7 +39,7 @@ public final class ArgumentUtility {
     public static final String DOWNLOAD = "download";
     public static final String NAME_HEADER = "NAME";
     public static final String DESCRIPTION_HEADER = "DESCRIPTION";
-    public static final String GIT_HEADER = "Git Repo";
+    public static final String GIT_HEADER = "GIT REPO";
     public static final int MAX_DESCRIPTION = 50;
 
     private static final Logger LOG = LoggerFactory.getLogger(ArgumentUtility.class);
