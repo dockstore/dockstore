@@ -235,7 +235,7 @@ public final class CommonTestUtilities {
     public static void checkToolList(String log) {
         Assert.assertTrue(log.contains("NAME"));
         Assert.assertTrue(log.contains("DESCRIPTION"));
-        Assert.assertTrue(log.contains("Git Repo"));
+        Assert.assertTrue(log.contains("GIT REPO"));
     }
 
     public static class TestingPostgres extends BasicPostgreSQL {
