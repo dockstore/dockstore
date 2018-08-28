@@ -4,7 +4,7 @@ permalink: /docs/publisher-tutorials/best-practices/
 ---
 # Best Practices
 
-Here, we document some best practices for creating tools as we understand them. Our intention is that this document will evolve as the descriptor languages evolves so feel free to provide suggestions and/or improvements.  
+Here, we document some best practices for creating tools as we understand them. Our intention is that this document will evolve as descriptor languages evolves so feel free to provide suggestions and/or improvements.  
 
 ## Recommended CWL Fields
 
@@ -117,7 +117,7 @@ $ dockstore tool launch --local-entry  metadata_example.cwl --json sample.json
 
 ## Metadata and Authorship
 
-Dockstore parses metadata and displays it in the tool/workflow's "Info" tab.  Metadata must be present in the descriptor or else the highlighted sections below will not appear.
+Dockstore parses metadata and displays it in the tool/workflow's "Info" tab.  The highlighted sections below will appear once metadata is added to the descriptor.
 
 ![info-tab-metadata](/assets/images/docs/best_practices/info-tab-metadata.png)
 
