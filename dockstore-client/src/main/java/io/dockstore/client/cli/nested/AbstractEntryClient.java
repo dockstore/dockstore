@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -105,9 +106,8 @@ public abstract class AbstractEntryClient<T> {
             if (description.length() > MAX_DESCRIPTION) {
                 description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
             }
-        } else {
-            description = "";
         }
+        description = MoreObjects.firstNonNull(description, "");
         return description;
     }
 

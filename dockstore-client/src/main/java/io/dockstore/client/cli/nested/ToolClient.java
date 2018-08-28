@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.GenericType;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.SwaggerUtility;
@@ -154,9 +155,9 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 if (description.length() > MAX_DESCRIPTION) {
                     description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
                 }
-            } else {
-                description = "";
             }
+
+            description = MoreObjects.firstNonNull(description, "");
 
             outFormatted(format, container.getToolPath(), description, gitUrl, boolWord(container.isIsPublished()), descriptor, automated);
         }
