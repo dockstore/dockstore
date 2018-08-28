@@ -513,7 +513,7 @@ public class SwaggerClientIT extends BaseIT {
         assertEquals(1, containers.size());
         assertEquals(containers.get(0).getPath(), QUAY_IO_TEST_ORG_TEST6);
 
-        containers = containers = containersApi.allPublishedContainers(null, null, "test52", null, null);
+        containers = containersApi.allPublishedContainers(null, null, "test52", null, null);
         assertTrue(containers.isEmpty());
     }
 

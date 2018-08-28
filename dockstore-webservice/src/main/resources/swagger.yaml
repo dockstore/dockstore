@@ -3477,7 +3477,7 @@ paths:
         type: "string"
       - name: "workflowName"
         in: "query"
-        description: "Workflow name"
+        description: "Workflow name, set to empty if none required"
         required: true
         type: "string"
       - name: "descriptorType"

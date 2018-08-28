@@ -1236,7 +1236,7 @@ public class WorkflowResource
         @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
         @ApiParam(value = "Workflow repository", required = true) @QueryParam("workflowPath") String workflowPath,
         @ApiParam(value = "Workflow container new descriptor path (CWL or WDL) and/or name", required = true) @QueryParam("defaultWorkflowPath") String defaultWorkflowPath,
-        @ApiParam(value = "Workflow name", required = true) @QueryParam("workflowName") String workflowName,
+        @ApiParam(value = "Workflow name, set to empty if none required", required = true) @QueryParam("workflowName") String workflowName,
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
         @ApiParam(value = "Default test parameter file path") @QueryParam("defaultTestParameterFilePath") String defaultTestParameterFilePath) {
 

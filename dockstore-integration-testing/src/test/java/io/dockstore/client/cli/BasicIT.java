@@ -39,6 +39,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Basic confidential integration tests, focusing on publishing/unpublishing both automatic and manually added tools
@@ -78,14 +79,18 @@ public class BasicIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
         // should have a certain number of tools based on github contents
         final long secondToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
+        assertTrue(startToolCount <= secondToolCount && secondToolCount > 1);
+
         // delete quay.io token
         testingPostgres.runUpdateStatement("delete from token where tokensource = 'quay.io'");
         // refresh
         systemExit.expectSystemExitWithStatus(6);
+        systemExit.checkAssertionAfterwards(() -> {
+            // should not delete tools
+            final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
+            Assert.assertEquals("there should be no change in count of tools", secondToolCount, thirdToolCount);
+        });
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "refresh", "--script" });
-        // should not delete tools
-        final long thirdToolCount = testingPostgres.runSelectStatement("select count(*) from tool", new ScalarHandler<>());
-        Assert.assertEquals("there should be no change in count of tools", secondToolCount, thirdToolCount);
     }
 
     /**
@@ -97,7 +102,7 @@ public class BasicIT extends BaseIT {
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh" });
         // should have a certain number of workflows based on github contents
         final long secondWorkflowCount = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
-        Assert.assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
+        assertTrue("should find non-zero number of workflows", secondWorkflowCount > 0);
 
         // refresh a specific workflow
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "workflow", "refresh", "--entry",
@@ -116,7 +121,7 @@ public class BasicIT extends BaseIT {
             .runSelectStatement("select count(*) from workflowversion", new ScalarHandler<>());
         final long updatedWorkflowVersionName = testingPostgres
             .runSelectStatement("select count(*) from workflowversion where name='master'", new ScalarHandler<>());
-        Assert.assertTrue("there should be only one version", updatedWorkflowVersionCount == 1 && updatedWorkflowVersionName == 1);
+        assertTrue("there should be only one version", updatedWorkflowVersionCount == 1 && updatedWorkflowVersionName == 1);
 
         // delete quay.io token
         testingPostgres.runUpdateStatement("delete from token where tokensource = 'github.com'");
@@ -130,7 +135,7 @@ public class BasicIT extends BaseIT {
         // should include nextflow example workflow stub
         final long nfWorkflowCount = testingPostgres
             .runSelectStatement("select count(*) from workflow where giturl like '%ampa-nf%'", new ScalarHandler<>());
-        Assert.assertTrue("should find non-zero number of next flow workflows", nfWorkflowCount > 0);
+        assertTrue("should find non-zero number of next flow workflows", nfWorkflowCount > 0);
 
         // refresh
         systemExit.expectSystemExit();
@@ -337,7 +342,7 @@ public class BasicIT extends BaseIT {
         // Check how many versions the entry has
         final long currentNumberOfTags = testingPostgres
                 .runSelectStatement("select count(*) from tool_tag where toolid = '"+ id + "'", new ScalarHandler<>());
-        Assert.assertTrue("There are no tags for this tool", currentNumberOfTags > 0);
+        assertTrue("There are no tags for this tool", currentNumberOfTags > 0);
 
         // This grabs the first tag that belongs to the tool
         final long firstTag = testingPostgres
@@ -1144,7 +1149,7 @@ public class BasicIT extends BaseIT {
             "--script" });
         final long count5 = testingPostgres
             .runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
-        Assert.assertTrue("there should be two sourcefiles that are test parameter files, there are " + count5, count5 == 2);
+        assertTrue("there should be two sourcefiles that are test parameter files, there are " + count5, count5 == 2);
 
         // refreshing again with the default paths set should not create extra redundant test parameter files
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry",
@@ -1155,9 +1160,9 @@ public class BasicIT extends BaseIT {
             "quay.io/dockstoretestuser/test_input_json" });
         final List<Long> testJsonCounts = testingPostgres
             .runSelectStatement("select count(*) from sourcefile s, version_sourcefile vs where (s.type = 'CWL_TEST_JSON' or s.type = 'WDL_TEST_JSON') and s.id = vs.sourcefileid group by vs.versionid", new ColumnListHandler<>());
-        Assert.assertTrue("there should be at least three sets of test json sourcefiles " + testJsonCounts.size(), testJsonCounts.size() >= 3);
+        assertTrue("there should be at least three sets of test json sourcefiles " + testJsonCounts.size(), testJsonCounts.size() >= 3);
         for(Long testJsonCount : testJsonCounts) {
-            Assert.assertTrue("there should be at most two test json for each version", testJsonCount <= 2);
+            assertTrue("there should be at most two test json for each version", testJsonCount <= 2);
         }
     }
 
@@ -1414,7 +1419,7 @@ public class BasicIT extends BaseIT {
 
         // Check that tool is published and has correct values
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
-        Assert.assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
+        assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
 
         // Update tool to public (shouldn't work)
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
@@ -1437,7 +1442,7 @@ public class BasicIT extends BaseIT {
 
         // Check that tool is published and has correct values
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test-images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
-        Assert.assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
+        assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
 
         // Manual publish incorrect path
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);

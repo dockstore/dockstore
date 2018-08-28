@@ -255,7 +255,7 @@ public final class CommonTestUtilities {
         }
 
         @Override
-        public boolean runUpdateStatement(String query, Object... params) {
+        public int runUpdateStatement(String query, Object... params) {
             return super.runUpdateStatement(query, params);
         }
     }

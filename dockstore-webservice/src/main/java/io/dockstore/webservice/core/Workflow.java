@@ -178,17 +178,6 @@ public class Workflow extends Entry<Workflow, WorkflowVersion> {
     }
 
     /**
-     * Used during refresh to update containers with information from remote
-     *
-     * @param workflow workflow to update from
-     */
-    public void update(Workflow workflow) {
-        super.update(workflow);
-        this.setMode(workflow.getMode());
-        this.setWorkflowName(workflow.getWorkflowName());
-    }
-
-    /**
      * Copies some of the attributes of the source workflow to the target workflow
      * There are two of these which seems redundant.
      *

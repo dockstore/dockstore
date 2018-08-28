@@ -57,7 +57,7 @@ public class ToolsWorkflowTestIT extends BaseIT {
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
 
     private List<String> getJSON(String repo, String fileName, String descType, String branch)
-            throws IOException, ApiException {
+            throws ApiException {
         final String TEST_WORKFLOW_NAME = "test-workflow";
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_1_USERNAME));
         Workflow githubWorkflow = workflowApi.manualRegister("github", repo, fileName, TEST_WORKFLOW_NAME, descType, "/test.json");

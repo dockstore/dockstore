@@ -560,6 +560,56 @@ public class GeneralIT extends BaseIT {
     }
 
     /**
+     * should be able to refresh a tool where image ids are changing (constraints issue from #1405)
+     * @throws ApiException should not see error from the webservice
+     */
+    @Test
+    public void testImageIDUpdateDuringRefresh() throws ApiException {
+        ContainersApi containersApi = setupWebService();
+
+        // register one more to give us something to look at
+        DockstoreTool c = getContainer();
+        c.setRegistry(DockstoreTool.RegistryEnum.QUAY_IO);
+        c.setNamespace("dockstoretestuser2");
+        c.setName("dockstore-tool-imports");
+        c.setMode(DockstoreTool.ModeEnum.AUTO_DETECT_QUAY_TAGS_AUTOMATED_BUILDS);
+        c = containersApi.registerManual(c);
+
+        assertTrue("should see one (or more) tags: " + c.getTags().size(), c.getTags().size() >= 1);
+
+        UsersApi usersApi = new UsersApi(containersApi.getApiClient());
+        final Long userid = usersApi.getUser().getId();
+        usersApi.refresh(userid);
+
+        CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
+        int size = containersApi.getContainer(c.getId()).getTags().size();
+        long size2 = containersApi.getContainer(c.getId()).getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        assertTrue(size == size2 && size >= 1);
+        // individual refresh should update image ids
+        containersApi.refresh(c.getId());
+        DockstoreTool container = containersApi.getContainer(c.getId());
+        size = container.getTags().size();
+        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        assertTrue(size2 == 0 && size >= 1);
+
+        // so should overall refresh
+        CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
+        usersApi.refresh(userid);
+        container = containersApi.getContainer(c.getId());
+        size = container.getTags().size();
+        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        assertTrue(size2 == 0 && size >= 1);
+
+        // so should organizational refresh
+        CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
+        usersApi.refreshToolsByOrganization(userid, container.getNamespace());
+        container = containersApi.getContainer(c.getId());
+        size = container.getTags().size();
+        size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        assertTrue(size2 == 0 && size >= 1);
+    }
+
+    /**
      * Tests that if a tool has a tag with mismatching tag name and tag reference, and it is set as the default tag
      * then the author metadata is properly grabbed.
      */
