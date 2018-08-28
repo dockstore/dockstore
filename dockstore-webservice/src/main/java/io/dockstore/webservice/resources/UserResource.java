@@ -632,7 +632,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Get the logged-in user's starred tools", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredTools(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        return u.getStarredEntries().stream().filter(element -> element instanceof Tool)
+        return u.getStarredEntries().stream().filter(element -> element instanceof Tool && element.getIsPublished())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -643,7 +643,7 @@ public class UserResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Get the logged-in user's starred workflows", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class, responseContainer = "List")
     public Set<Entry> getStarredWorkflows(@ApiParam(hidden = true) @Auth User user) {
         User u = userDAO.findById(user.getId());
-        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow)
+        return u.getStarredEntries().stream().filter(element -> element instanceof Workflow && element.getIsPublished())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
