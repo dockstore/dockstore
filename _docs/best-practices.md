@@ -21,103 +21,124 @@ For all developers, we highly recommend the following minimal metadata for your 
 ### CWL 
 This example includes metadata allowing others to cite your tool.
 
-*metadata_example2.cwl*
+*workflow.cwl*
 ```
 #!/usr/bin/env cwl-runner
 
-class: CommandLineTool
-id: Example tool
-label: Example tool
 cwlVersion: v1.0
+class: Workflow
 doc: |
-    An example tool demonstrating metadata. Note that this is an example and the metadata is not necessarily consistent.  
-
-requirements:
-  - class: ShellCommandRequirement
-
+    Implementing bamqc over and over again to get an idea of how easy or hard it is for a beginner to implement a basic workflow in different workflow systems.
 inputs:
-  bam_input:
+  bamfile:
     type: File
-    doc: The BAM file used as input
-    format: http://edamontology.org/format_2572
-    inputBinding:
-      position: 1
-
-stdout: output.txt
+  bedfile:
+    type: File
+  bamqc_pl:
+    type: File
+  flagstat2json:
+    type: File
 
 outputs:
-  report:
+  bamqc_json:
     type: File
-    format: http://edamontology.org/format_1964
-    outputBinding:
-      glob: "*.txt"
-    doc: A text file that contains a line count
+    outputSource: bamqc/outjson
+  flagstatjson:
+    type: File
+    outputSource: flagstat_json/flagstat_json
 
-baseCommand: ["wc", "-l"]
+steps:
+  flagstat:
+    run: flagstat.cwl
+    in:
+      bamfile: bamfile
+    out: [flagstat_file]
 
-$namespaces:
-  s: https://schema.org/
+  flagstat_json:
+    run: flagstat2json.cwl
+    in:
+      flagstat_file: flagstat/flagstat_file
+      flagstat2json: flagstat2json
+    out: [flagstat_json]
 
-$schemas:
-- http://dublincore.org/2012/06/14/dcterms.rdf
-- http://xmlns.com/foaf/spec/20140114.rdf
-- https://schema.org/docs/schema_org_rdfa.html
+  bamqc:
+    run: bamqc.cwl
+    in:
+      bamfile: bamfile
+      bedfile: bedfile
+      bamqc_pl: bamqc_pl
+      xtra_json: flagstat_json/flagstat_json
+    out: [ outjson ]
 
 s:author:
   - class: s:Person
-    s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@not-oicr.on.ca
-    s:name: Denis Yuen
-
-s:contributor:
-  - class: s:Person
-    s:id: http://orcid.org/0000-0002-7681-6415
-    s:email: briandoconnor@not-ucsc.org
-    s:name: Brian O'Connor
-  - class: s:Person
-    s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@not-oicr.on.ca
-    s:name: Denis Yuen
-
-
-s:citation: https://figshare.com/articles/Common_Workflow_Language_draft_3/3115156/2
-s:codeRepository: https://github.com/common-workflow-language/common-workflow-language
-s:dateCreated: "2016-12-13"
-s:license: https://www.apache.org/licenses/LICENSE-2.0
+    s:email: Morgan.Taschuk@oicr.on.ca
+    s:name: Morgan Taschuk
 ```
+This results in the workflow's Info Tab being populated like:
+![cwl-info-tab-metadata](/assets/images/docs/best_practices/cwl-info-tab-metadata.png)
 
 ### WDL
 
 For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  
 
 Additionally, this following example includes author, email, and description metadata:
-```
-task runtime_meta {
-  String memory_mb
-  String sample_id
-  String param
 
-  command {
-    java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
-  }
-  output {
-    File results = "${sample_id}.out"
-  }
-  runtime {
-    docker: "broadinstitute/baseimg"
-  }
-  parameter_meta {
-    memory_mb: "Amount of memory to allocate to the JVM"
-    param: "Some arbitrary parameter"
-    sample_id: "The ID of the sample in format foo_bar_baz"
-  }
-  meta {
-    author: "Denis Yuen"
-    email: "dyuen@not-oicr.on.ca"
-    description: "An example tool demonstrating metadata. Note that this is an example and the metadata is not necessarily consistent."
-  }
-}
+*bamqc.wdl*
 ```
+workflow BamQC {
+    String SAMTOOLS
+    File BAMFILE
+
+    call flagstat {
+        input : samtools=SAMTOOLS, bamfile=BAMFILE
+    }
+    call bamqc { 
+        input : samtools=SAMTOOLS, bamfile=BAMFILE, xtra_json=flagstat.flagstat_json
+    }
+    meta {
+        author: "Morgan Taschuk"
+        email: "Morgan.Taschuk@oicr.on.ca"
+        description: "Implementing bamqc over and over again to get an idea of how easy or hard it is for a beginner to implement a basic workflow in different workflow systems."
+    }
+}
+
+task flagstat {
+    String samtools
+    File flagstat_to_json
+    File bamfile
+    String dollar="$"
+    String outfile="flagstat.json"
+
+    command {
+        ${samtools} flagstat ${bamfile} | ${flagstat_to_json} > ${outfile}
+    }
+
+    output {
+        File flagstat_json = "${outfile}"
+    }
+
+}
+
+task bamqc {
+    String samtools
+    File bamqc_pl
+    File bamfile
+    File bedfile
+    String outjson
+    String xtra_json
+
+    command {
+        eval '${samtools} view ${bamfile} | perl ${bamqc_pl} -r ${bedfile} -j "${xtra_json}" > ${outjson}'
+    }
+    output {
+        File out = "${outjson}"
+    }
+}
+
+```
+This results in the workflow's Info Tab being populated like:
+![wdl-info-tab-metadata](/assets/images/docs/best_practices/wdl-info-tab-metadata.png)
 
 ## Extended CWL Metadata Example
 
