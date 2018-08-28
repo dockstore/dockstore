@@ -20,7 +20,9 @@ Docker repositories, like [Docker Hub](https://hub.docker.com/),  [Quay.io](http
 You can register your tools and workflows on Dockstore in three broad ways as depicted above. 
 
 A) Following our [tutorials](https://docs.dockstore.org/docs/prereqs/getting-started-with-docker/), you can save your descriptors on GitHub, build your Docker image automatically on Quay.io, and have Dockstore reach out and index your tools
+
 B) Dockstore can retrieve your workflow descriptors from GitHub and other source control methods. You are responsible for ensuring that your descriptors point at valid Docker images.
+
 C) You can use our new hosted workflows approach to store tools and workflows directly on dockstore.org to quickly get started, prototype your ideas, and share workflows with a limited audience.
 
 In all three cases, you will have an opportunity to clean-up and configure your work before publishing to the rest of the world to see. 
