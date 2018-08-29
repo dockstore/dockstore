@@ -18,8 +18,7 @@ Additionally, metadata is displayed in the tool/workflow's "Info" tab.  The high
 
 For all developers, we highly recommend the following minimal metadata for your tool and workflows.  
 
-### CWL 
-This example includes metadata allowing others to cite your tool.
+This example includes author, email, and description metadata:
 
 *workflow.cwl*
 ```
@@ -76,71 +75,10 @@ s:author:
     s:name: Morgan Taschuk
 ```
 This results in the workflow's Info Tab being populated like:
+
 ![cwl-info-tab-metadata](/assets/images/docs/best_practices/cwl-info-tab-metadata.png)
 
-### WDL
-
-For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  
-
-Additionally, this following example includes author, email, and description metadata:
-
-*bamqc.wdl*
-```
-workflow BamQC {
-    String SAMTOOLS
-    File BAMFILE
-
-    call flagstat {
-        input : samtools=SAMTOOLS, bamfile=BAMFILE
-    }
-    call bamqc { 
-        input : samtools=SAMTOOLS, bamfile=BAMFILE, xtra_json=flagstat.flagstat_json
-    }
-    meta {
-        author: "Morgan Taschuk"
-        email: "Morgan.Taschuk@oicr.on.ca"
-        description: "Implementing bamqc over and over again to get an idea of how easy or hard it is for a beginner to implement a basic workflow in different workflow systems."
-    }
-}
-
-task flagstat {
-    String samtools
-    File flagstat_to_json
-    File bamfile
-    String dollar="$"
-    String outfile="flagstat.json"
-
-    command {
-        ${samtools} flagstat ${bamfile} | ${flagstat_to_json} > ${outfile}
-    }
-
-    output {
-        File flagstat_json = "${outfile}"
-    }
-
-}
-
-task bamqc {
-    String samtools
-    File bamqc_pl
-    File bamfile
-    File bedfile
-    String outjson
-    String xtra_json
-
-    command {
-        eval '${samtools} view ${bamfile} | perl ${bamqc_pl} -r ${bedfile} -j "${xtra_json}" > ${outjson}'
-    }
-    output {
-        File out = "${outjson}"
-    }
-}
-
-```
-This results in the workflow's Info Tab being populated like:
-![wdl-info-tab-metadata](/assets/images/docs/best_practices/wdl-info-tab-metadata.png)
-
-## Extended CWL Metadata Example
+## Extended Metadata
 
 For those that are highly motivated, it is also possible to annotate your tool with a much larger amount of metadata. This example includes EDAM ontology tags as keywords (allowing the grouping of related tools), hints at hardware requirements in order to use the tool, and a few more metadata fields.
 
@@ -215,7 +153,7 @@ s:keywords: http://edamontology.org/topic_0091 , http://edamontology.org/topic_0
 s:programmingLanguage: C
 ```
 
-## Recommended CWL Input/Output Fields
+## Input/Output Fields
 
 Tools and workflows can take *File* types as input and produce them as output. We recommend indicating the format for *File* types. This helps document for others how to use your tool while allowing you to do some simple type-checking when creating parameter files.
 
