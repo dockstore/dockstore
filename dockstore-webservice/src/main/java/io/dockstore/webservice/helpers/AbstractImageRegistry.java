@@ -135,7 +135,7 @@ public abstract class AbstractImageRegistry {
         List<Tool> manualTools = toolDAO.findByMode(ToolMode.MANUAL_IMAGE_PATH);
 
         // Get all tools in the db for the given registry
-        List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO));
+        List<Tool> dbTools = new ArrayList<>(getToolsFromUser(userId, userDAO, toolDAO));
 
         // Filter DB tools and API tools to only include relevant tools
         manualTools.removeIf(test -> !test.getUsers().contains(user) || !test.getRegistry().equals(getRegistry().toString()));
@@ -499,15 +499,13 @@ public abstract class AbstractImageRegistry {
      * @param userDAO
      * @return
      */
-    private List<Tool> getToolsFromUser(Long userId, UserDAO userDAO) {
+    private List<Tool> getToolsFromUser(Long userId, UserDAO userDAO, ToolDAO toolDAO) {
         final Set<Entry> entries = userDAO.findById(userId).getEntries();
         List<Tool> toolList = new ArrayList<>();
-        for (Entry entry : entries) {
-            if (entry instanceof Tool) {
-                toolList.add((Tool)entry);
-            }
-        }
-
+        // getting tools indirectly via the user seems to retrieve shallow tools that cause lazy load issues during deletion
+        // optimize post 1.5.0, see #1779
+        entries.stream().filter(entry -> entry instanceof Tool).map(tool -> toolDAO.findById(tool.getId())).filter(Objects::nonNull)
+            .forEach(toolList::add);
         return toolList;
     }
 
@@ -536,7 +534,6 @@ public abstract class AbstractImageRegistry {
             }
             if (!exists && oldTool.getMode() != ToolMode.MANUAL_IMAGE_PATH) {
                 oldTool.removeUser(user);
-                // user.removeTool(oldTool);
                 toDelete.add(oldTool);
                 iterator.remove();
             }

@@ -17,6 +17,7 @@ package io.dockstore.client.cli;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +45,7 @@ import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.WAIT_TIME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author gluu
@@ -60,13 +62,13 @@ public class RefreshByOrgIT {
         SUPPORT.after();
     }
 
-    private static final List<String> newDockstoreTestUser2Tools = Arrays.asList("dockstore-tool-imports");
+    private static final List<String> newDockstoreTestUser2Tools = Collections.singletonList("dockstore-tool-imports");
     private static final List<String> newDockstoreTestUser2Workflows = Arrays
             .asList("dockerhubandgithub", "dockstore_empty_repo", "dockstore-whalesay-imports", "parameter_test_workflow",
                     "quayandgithubalternate", "OxoG-Dockstore-Tools", "test_workflow_cwl", "hello-dockstore-workflow", "quayandgithub",
                     "dockstore_workflow_cnv", "test_workflow_wdl", "quayandgithubwdl", "test_lastmodified", "dockstore-tool-imports");
-    private static final List<String> newDockstoreDotTestDotUser2Workflows = Arrays.asList("dockstore-workflow-example");
-    private static final List<String> newDockstore_TestUser2Workflows = Arrays.asList("dockstore-workflow");
+    private static final List<String> newDockstoreDotTestDotUser2Workflows = Collections.singletonList("dockstore-workflow-example");
+    private static final List<String> newDockstore_TestUser2Workflows = Collections.singletonList("dockstore-workflow");
     private static Client client;
     private static String token;
     private static String usersURLPrefix;
@@ -105,6 +107,24 @@ public class RefreshByOrgIT {
         assertThat(currentTools.size()).isGreaterThanOrEqualTo(4);
         previousTools = currentTools;
         previousWorkflows = currentWorkflows;
+    }
+
+    @Test
+    public void testToolDeletion() throws IOException {
+        // TODO: the tests in this class are a bit odd compared to more modern tests
+        usersURLPrefix = "http://localhost:%d/users/" + id;
+        checkInitialDB();
+        // insert a non-existent tool to be deleted during refresh
+        CommonTestUtilities.getTestingPostgres().runUpdateStatement("insert into tool (id, giturl, defaultdockerfilepath, mode, name, namespace, registry, ispublished) select 100, giturl, defaultdockerfilepath, mode, 'newtool', namespace, registry, ispublished from tool where id = 2;");
+        CommonTestUtilities.getTestingPostgres().runUpdateStatement("insert into user_entry (userid, entryid) values (1, 100)");
+        Long count = CommonTestUtilities.getTestingPostgres()
+            .runSelectStatement("select count(*) from tool where id = 100;", new ScalarHandler<>());
+        assertEquals(1, (long)count);
+        testRefreshToolsByOrg2();
+        count = CommonTestUtilities.getTestingPostgres()
+            .runSelectStatement("select count(*) from tool where id = 100;", new ScalarHandler<>());
+        // tool should have been deleted
+        assertEquals(0, (long)count);
     }
 
     @Test
@@ -198,10 +218,9 @@ public class RefreshByOrgIT {
         assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstore_TestUser2Workflows.size());
         previousWorkflows = currentWorkflows;
 
-        //TODO: "Broken on hotfix due to 'API V3 is no longer supported. Use API V4 instead'"
-//        testRefreshWorkflowsByOrg5();
-//        currentWorkflows = getWorkflows();
-//        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstoreDotTestDotUser2Workflows.size());
+        testRefreshWorkflowsByOrg5();
+        currentWorkflows = getWorkflows();
+        assertThat(currentWorkflows.size() - previousWorkflows.size()).isGreaterThanOrEqualTo(newDockstoreDotTestDotUser2Workflows.size());
     }
 
     /**
