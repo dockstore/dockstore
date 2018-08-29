@@ -4,6 +4,22 @@ permalink: /docs/publisher-tutorials/getting-started-with-dockstore/
 ---
 # Getting Started with Dockstore
 
+## Dockstore usernames
+
+Your username is user facing, so it will be visible in any public tools or workflows that you have. It is also what is used to share FireCloud workflows.
+
+If you register with GitHub, we will default to your GitHub username. If you register with Google, we will default to the email associated with your Google account.
+
+### Changing your username
+Currently you can only change your username assuming the following conditions are true:
+* You do not have any published tools or workflows
+* You do not have anything shared with you through FireCloud
+
+Important for Google Users! Your username will include an @ symbol, however @ symbols are not allowed in Dockstore usernames. We recommend you change your username to something that isn't an email.
+That way it won't be picked up by any spambots.
+
+You can change your username in the onboarding wizard during setup, or anytime on the accounts page at the Dockstore Account Controls tab.
+
 ## Linking With External Services
 
 If you have not gone through the onboarding wizard yet, the first step is to [login](https://www.dockstore.org/login) and link your external accounts. You can also get the command line tool we will use for most of the tasks in this tutorial.  For this tutorial you only need to have your GitHub and Quay.io accounts established. However, Dockstore supports the following external services:
@@ -27,8 +43,6 @@ Below, GitHub, Bitbucket, GitLab and Quay.io accounts have been linked, it is ne
 
 Next, the wizard will instruct you to setup the `dockstore` command line tool after linking your accounts, and upon completion you will be ready to use Dockstore.
 
-![Link accounts](/assets/images/docs/linking4.png)
-
 ## Register Your Tool in Dockstore
 
 Now that you have your `Dockerfile` and `Dockstore.cwl` in GitHub, have setup Quay.io to automatically build your Docker image, and have linked your accounts to Dockstore, it is time to register your tool.
@@ -39,13 +53,13 @@ In the authenticated Web UI, navigate to 'My Tools' to begin managing Docker ima
 
 ![My Tools](/assets/images/docs/register_ui.png)
 
-The left side menu is a list of all image repositories associated with the user, grouped lexicographically by namespace. Each tool is named after the docker location of the associated Docker image, in this example, `quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig`. Detailed information and links for each tool are located on the 'Info' tab. The 'Labels' tab allows editing of keywords to be associated with a tool for efficient searching and grouping. Settings such as the path to the Dockerfile and CWL Descriptor can be modified on a per-tag basis in the 'Versions' tab. The Dockerfile, CWL/WDL Descriptor and test parameter files may be viewed in the 'Files' tab, by the Version tag (corresponding to a Git tag/branch).
+The left side menu is a list of all image repositories associated with the user, grouped lexicographically by namespace. Each tool is named after the docker location of the associated Docker image, in this example, `quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig`. Detailed information and links for each tool are located on the 'Info' tab. The 'Launch' tab includes commands for launching the tool locally with the Dockstore CLI. The 'Labels' tab allows editing of keywords to be associated with a tool for efficient searching and grouping. Settings such as the path to the Dockerfile and CWL Descriptor can be modified on a per-tag basis in the 'Versions' tab. The Dockerfile, CWL/WDL Descriptor and test parameter files may be viewed in the 'Files' tab, by the Version tag (corresponding to a Git tag/branch).
 
 We also look for `/test.cwl.json` and `/test.wdl.json` in the git repositories on quick registration. These are the default test parameter file locations. Whenever a new version is added, we will check for these default files. You can also change these after quick registration. They will be applied to all versions that have not been edited, as well as any new versions that may appear.
 
 A tool is not visible on the public 'Tools' listing unless it is published. To publish a tool, press the yellow 'Publish' button in the top-right corner.
 
-For the tutorial, generally, you should hit the "Refresh All Tools" button to make sure Dockstore has examined your latest repositories on Quay.  Do this especially if you created a new repository like we did here.
+For the tutorial, generally, you should hit the "Refresh All" button to make sure Dockstore has examined your latest repositories on Quay.  Do this especially if you created a new repository like we did here.
 
  ![Refresh](/assets/images/docs/dockstore_refresh.png)
 
