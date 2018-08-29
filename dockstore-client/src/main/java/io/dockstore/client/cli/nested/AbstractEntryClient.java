@@ -100,14 +100,12 @@ public abstract class AbstractEntryClient<T> {
     protected boolean isAdmin = false;
 
     static String getCleanedDescription(String description) {
-        if (description != null) {
-            // strip control characters
-            description = CharMatcher.javaIsoControl().removeFrom(description);
-            if (description.length() > MAX_DESCRIPTION) {
-                description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
-            }
-        }
         description = MoreObjects.firstNonNull(description, "");
+        // strip control characters
+        description = CharMatcher.javaIsoControl().removeFrom(description);
+        if (description.length() > MAX_DESCRIPTION) {
+            description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
+        }
         return description;
     }
 
