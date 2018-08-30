@@ -2,26 +2,34 @@
 title: Getting Started With Docker
 permalink: /docs/prereqs/getting-started-with-docker/
 ---
+
 # Getting Started with Docker
 
-## Create Your Tool
+## Tutorial Goals
+* Learn about Docker
+* Create a Docker image for a real tool
+* Create a tag on locally
+* Test Docker image locally
 
-Docker is a fantastic tool for creating light-weight containers to run your tools.  What this means is it gives you a fast VM-like environment for Linux where you can automatically install dependencies, make configurations, and setup your tool exactly the way you want, as you would on a "normal" Linux host.  You can then quickly and easily share these Docker images with the world using registries like Quay.io (indexed by Dockstore), Docker Hub, and GitLab.  The full details on how to make new Docker images is beyond the scope of this site. Here we will go through a simple representative example. The end-product is a Dockerfile for your tool stored in a supported Git repository.  The steps, at a high level, are:
+## Introduction to Docker
 
-0. create a new repository on GitHub, Bitbucket, or GitLab
-0. create a `Dockerfile` in that repository that describes how to create a Docker image
-0. use the Docker tools to build and test your Docker image
-0. use the release process on GitHub, Bitbucket, or GitLab to make distinct release tags
-0. setup Quay.io (or Docker Hub or GitLab) to automatically build your Docker image
+Docker is a fantastic tool for creating light-weight containers to run your tools.  What this means is it gives you a fast VM-like environment for Linux where you can automatically install dependencies, make configurations, and setup your tool exactly the way you want, as you would on a "normal" Linux host.  You can then quickly and easily share these Docker images with the world using registries like Quay.io (indexed by Dockstore), Docker Hub, and GitLab.
 
+Here we will go through a simple representative example. The end-product is a Dockerfile for your tool stored in a supported Git repository.  The steps, at a high level, are:
+
+0. Create a new repository on GitHub
+0. Create a `Dockerfile` in that repository that describes how to create a Docker image
+0. Use the Docker tools to build and test your Docker image
+
+## Create a new repository
 See the [dockstore-tool-bamstats](https://github.com/CancerCollaboratory/dockstore-tool-bamstats) repository on GitHub which we created as an example. This is linked to the Quay.io repository at [dockstore-tool-bamstats](https://quay.io/repository/collaboratory/dockstore-tool-bamstats).
 
 For the rest of this tutorial, you may wish to work in your own repository with your own tool or "fork" the repository above into your own GitHub account.
 
-With a repository established in GitHub, the next step is to create the Docker image with BAMStats correctly installed.  You need to create a `Dockerfile`. this contains the instructions necessary for creating a Docker image that contains all the dependencies of BAMStats along with the executable itself.
+With a repository established in GitHub, the next step is to create the Docker image with BAMStats correctly installed.
 
 ## Creating a Dockerfile
-
+We will create the Docker image with BAMStats installed along with all of its dependencies. To do this we must create a `Dockerfile`.
 Here's my sample [Dockerfile](https://github.com/CancerCollaboratory/dockstore-tool-bamstats/blob/develop/Dockerfile):
 
 
@@ -103,7 +111,7 @@ An important thing to note, this `Dockerfile` just really scratches the surface.
 
 Read more on the development process at [https://docs.docker.com](https://docs.docker.com/). For information on building your Docker image on Quay.io we recommend their [tutorial](https://quay.io/tutorial/).
 
-## Building Docker Images
+### Building Docker Images
 
 Now that you've created the `Dockerfile` the next step is to build the image.
 The docker command line is used for this:
@@ -133,7 +141,7 @@ Great! This looks fine!
 
 ## Testing the Docker Image Locally
 
-OK, so you've built the image.  Now what?
+OK, so you've built the image and pushed to Quay.io.  Now what?
 
 The next step will be to test the tool directly via Docker to ensure that your `Dockerfile` is valid and correctly installed the tool.  If you were developing a new tool there might be multiple rounds of `docker build`, followed by testing with `docker run` before you get your Dockerfile right.  Here I'm executing the Docker image, launching it as a container (make sure you launch on a host with at least 8GB of RAM and dozens of GB of disk space!):
 
@@ -182,11 +190,8 @@ docker run -w="/home/ubuntu" -it -v `pwd`:/home/ubuntu quay.io/collaboratory/doc
 
 In the next section, we will also demonstrate how this command-line including the input file can be parameterized and constructed via CWL.
 
-## You Could Stop Here!
-
-At this point you have a working Docker image.  You could use the `docker push` command to send that to Quay.io or Docker Hub and share with others.  However, what you lose is a standardized way to describe how to run your tool.  That's what the CWL descriptor and Dockstore provide.  We think it's valuable and there's an increasing number of tools designed to work with CWL so there are benefits to not just stopping here.
-
 ## Next Steps
+**You could stop here!** However, what you lose is a standardized way to describe how to run your tool.  That's what descriptor languages and Dockstore provide.  We think it's valuable and there's an increasing number of tools and workflows designed to work with various descriptor languages so there are benefits to not just stopping here.
 
 There are three descriptor languages available on Dockstore. Follow the links to get an introduction.
 * [CWL](/docs/prereqs/getting-started-with-cwl/)

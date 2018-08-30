@@ -4,6 +4,15 @@ permalink: /docs/prereqs/getting-started-with-cwl/
 ---
 # Getting Started with CWL
 
+This tutorial is a continuation of [Getting Started With Docker](/docs/prereqs/getting-started-with-docker/). Please complete that tutorial prior to doing this one.
+
+## Tutorial Goals
+* Learn about the Common Workflow Language (CWL)
+* Create a basic CWL Tool which uses a Docker image
+* Run the Tool locally
+* Describe a sample parameterization of the Tool
+* Push the Tool onto GitHub
+
 ## Describe Your Tool in CWL
 
 Now that you have a git repository that includes a `Dockerfile`, you have tested it, and are satisfied that your tool works in Docker, the next step is to create a [CWL tool definition file](http://www.commonwl.org/). This YAML (Or JSON) file describes the inputs, outputs, and Docker image dependencies for your tool.
@@ -321,35 +330,9 @@ In my example, I should see a `1.25-6_1.1` listed for this Quay.io Docker reposi
 
 And I do, so this Docker image has been built successfully by Quay and is ready for sharing with the community.
 
-
-## Describe Your Tool in WDL
-
-It is also possible to describe tools via the [WDL language](https://github.com/openwdl/wdl). A tool can either be described in CWL-only or can be described with both WDL and CWL.
-
-In WDL, a tool can also be described as a one task WDL workflow.
-
-We provide a hello world example as follows:
-
-```
-task hello {
-  String name
-
-  command {
-    echo 'hello ${name}!'
-  }
-  output {
-    File response = stdout()
-  }
-}
-
-workflow test {
-  call hello
-}
-```
-
 ## Next Steps
 
-Follow the [next tutorial](/docs/publisher-tutorials/getting-started-with-dockstore/) to register your tool on Dockstore.
+Follow the [next tutorial](/docs/publisher-tutorials/dockstore-account/) to create an account on Dockstore and link third party services.
 
 ## See Also
 * [WDL](/docs/prereqs/getting-started-with-wdl/)

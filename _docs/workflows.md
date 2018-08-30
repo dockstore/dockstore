@@ -13,7 +13,7 @@ When Dockstore was first created, CWL was the only descriptor language we suppor
 | Language               | Tool          | Workflow   |
 | ---------------------  | ------------- | ---------- | 
 | CWL                    |  &#8226; Class: CommandLineTool             | &#8226; Class: Workflow           | 
-| WDL                    |  &#8226; A single task<br> &#8226; A workflow section that runs the task<br> &#8226; An associated Docker image     | &#8226; >1 task<br> &#8226; A workflow section that connects the tasks           |  
+| WDL                    |  &#8226; A single task with Docker image<br> &#8226; A workflow section that runs the task<br> &#8226; An associated Docker image     | &#8226; >1 task<br> &#8226; A workflow section that connects the tasks           |  
 | Nextflow               |  &#8226; N/A             |   &#8226; Any valid nextflow workflow         |
 {: .table .table-striped .table-condensed}
 
