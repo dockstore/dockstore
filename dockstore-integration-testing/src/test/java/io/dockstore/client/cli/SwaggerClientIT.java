@@ -79,6 +79,7 @@ import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import static io.dockstore.webservice.TokenResourceIT.GITHUB_ACCOUNT_USERNAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -581,6 +582,29 @@ public class SwaggerClientIT extends BaseIT {
         assertTrue(!tokens.isEmpty());
     }
 
+
+    @Test
+    public void testStarUnpublishedTool() throws ApiException {
+        ApiClient client = getWebClient(true, true);
+        ContainersApi containersApi = new ContainersApi(client);
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test1");
+        long containerId = container.getId();
+        assertEquals(1, containerId);
+
+        containersApi.publish(containerId, SwaggerUtility.createPublishRequest(false));
+        final ApiClient otherWebClient = getWebClient(GITHUB_ACCOUNT_USERNAME);
+        assertNotNull(new UsersApi(otherWebClient).getUser());
+        boolean expectedFailure = false;
+        try {
+            // should not be able to star unpublished entries as a different user
+            ContainersApi otherContainersApi = new ContainersApi(otherWebClient);
+            otherContainersApi.starEntry(containerId, SwaggerUtility.createStarRequest(true));
+        } catch (ApiException e) {
+            expectedFailure = true;
+        }
+        assertTrue(expectedFailure);
+    }
+
     /**
      * This tests if a tool can be starred twice.
      * This test will pass if this action cannot be performed.
@@ -592,10 +616,11 @@ public class SwaggerClientIT extends BaseIT {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
-        Assert.assertTrue("There should be at least one user of the workflow", container.getUsers().size() > 0);
+        assertTrue("There should be at least one user of the workflow", container.getUsers().size() > 0);
         Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
         assertEquals(2, containerId);
+
         StarRequest request = SwaggerUtility.createStarRequest(true);
         containersApi.starEntry(containerId, request);
         List<User> starredUsers = containersApi.getStarredUsers(container.getId());
@@ -604,6 +629,7 @@ public class SwaggerClientIT extends BaseIT {
         thrown.expect(ApiException.class);
         containersApi.starEntry(containerId, request);
     }
+
 
     /**
      * This tests if an already unstarred tool can be unstarred again.
@@ -689,7 +715,7 @@ public class SwaggerClientIT extends BaseIT {
         MetadataApi metadataApi = new MetadataApi(apiClient);
         String rssFeed = metadataApi.rssFeed();
         String sitemap = metadataApi.sitemap();
-        Assert.assertTrue("rss feed should be valid xml with at least 2 entries", rssFeed.contains("http://localhost/containers/quay.io/test_org/test6") && rssFeed.contains("http://localhost/workflows/github.com/A/l"));
+        assertTrue("rss feed should be valid xml with at least 2 entries", rssFeed.contains("http://localhost/containers/quay.io/test_org/test6") && rssFeed.contains("http://localhost/workflows/github.com/A/l"));
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setValidating(true);
@@ -697,10 +723,10 @@ public class SwaggerClientIT extends BaseIT {
         DocumentBuilder builder = factory.newDocumentBuilder();
         try (InputStream stream = IOUtils.toInputStream(rssFeed, StandardCharsets.UTF_8)) {
             Document doc = builder.parse(stream);
-            Assert.assertTrue("XML is not valid", doc.getStrictErrorChecking());
+            assertTrue("XML is not valid", doc.getStrictErrorChecking());
         }
 
-        Assert.assertTrue("sitemap with testing data should have at least 2 entries", sitemap.split("\n").length >= 2 && sitemap.contains("http://localhost/containers/quay.io/test_org/test6") && sitemap.contains("http://localhost/workflows/github.com/A/l"));
+        assertTrue("sitemap with testing data should have at least 2 entries", sitemap.split("\n").length >= 2 && sitemap.contains("http://localhost/containers/quay.io/test_org/test6") && sitemap.contains("http://localhost/workflows/github.com/A/l"));
     }
 
     @Test

@@ -99,6 +99,7 @@ public class TokenResourceIT extends BaseIT {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
+    public final static String GITHUB_ACCOUNT_USERNAME = "potato";
     private TokenDAO tokenDAO;
     private UserDAO userDAO;
     private long initialTokenCount;
@@ -108,7 +109,6 @@ public class TokenResourceIT extends BaseIT {
     private final static String GOOGLE_ACCOUNT_USERNAME2 = "beef@gmail.com";
     private final static String CUSTOM_USERNAME1 = "tuber";
     private final static String CUSTOM_USERNAME2 = "fubar";
-    private final static String GITHUB_ACCOUNT_USERNAME = "potato";
 
     private static TokenResponse getFakeTokenResponse() {
         TokenResponse fakeTokenResponse = new TokenResponse();
