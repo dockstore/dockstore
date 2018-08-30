@@ -1,18 +1,47 @@
 ---
-title: Getting Started With Dockstore
+title: Getting Started With Dockstore Tools
 permalink: /docs/publisher-tutorials/getting-started-with-dockstore/
 ---
-# Getting Started with Dockstore
+# Getting Started with Dockstore Tools
+
+## Register on Dockstore
+Dockstore supports login through GitHub using OAuth2. You can register at the [login/register page](https://www.dockstore.org/login).
+
+*Only available in 1.5.0*
+
+You can also login with your Google Account. This is required to use the workflow sharing feature for FireCloud workflows.
+
+## Dockstore usernames
+
+Your username will be visible in any public tool or workflow that you have. It is also what is used to share FireCloud workflows.
+
+If you register with GitHub, we will default to your GitHub username. As of 1.5.0, if you register with Google, we will default to the email associated with your Google account.
+
+### Changing your username
+*Only available in 1.5.0*
+
+You can change your username in the onboarding wizard during setup, or anytime on the accounts page at the Dockstore Account Controls tab.
+
+Currently you can only change your username when the following conditions are true:
+* You do not have any published tools or workflows
+* You do not have anything shared with you through FireCloud
+
+For Google users, your username will include an @ symbol, however @ symbols are not allowed in Dockstore usernames. We recommend you change your username to something that isn't an email.
+That way it won't be picked up by any spambots.
 
 ## Linking With External Services
 
-If you have not gone through the onboarding wizard yet, the first step is to [login](https://www.dockstore.org/login) and link your external accounts. You can also get the command line tool we will use for most of the tasks in this tutorial.  For this tutorial you only need to have your GitHub and Quay.io accounts established. However, Dockstore supports the following external services:
+Once you register you can start linking your external accounts. There is also a command line tool we will use for most of the tasks in this tutorial. For this tutorial you only need to have your GitHub and Quay.io accounts established. However, Dockstore supports the following external services:
 * GitHub
 * Bitbucket
 * GitLab
 * Quay.io
 
 Your link to GitHub is established on login and you will then be prompted to link your other accounts.
+
+*Only available in 1.5.0*
+
+If you registered with Google, you will also need to link your GitHub account to follow along with the tutorial.
 
 ![Link accounts](/assets/images/docs/linking1.png)
 
@@ -21,13 +50,11 @@ Your link to GitHub is established on login and you will then be prompted to lin
 
 ![Refresh tools](/assets/images/docs/linking2.png) -->
 
-Below, GitHub, Bitbucket, GitLab and Quay.io accounts have been linked, it is necessary for at least the GitHub account be linked in order to perform regular account activities.
+Below, GitHub, Google, and Quay.io accounts have been linked, it is necessary for at least the GitHub account be linked in order to perform regular account activities.
 
 ![Link accounts completed](/assets/images/docs/linking3.png)
 
 Next, the wizard will instruct you to setup the `dockstore` command line tool after linking your accounts, and upon completion you will be ready to use Dockstore.
-
-![Link accounts](/assets/images/docs/linking4.png)
 
 ## Register Your Tool in Dockstore
 
@@ -39,39 +66,33 @@ In the authenticated Web UI, navigate to 'My Tools' to begin managing Docker ima
 
 ![My Tools](/assets/images/docs/register_ui.png)
 
-The left side menu is a list of all image repositories associated with the user, grouped lexicographically by namespace. Each tool is named after the docker location of the associated Docker image, in this example, `quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig`. Detailed information and links for each tool are located on the 'Info' tab. The 'Labels' tab allows editing of keywords to be associated with a tool for efficient searching and grouping. Settings such as the path to the Dockerfile and CWL Descriptor can be modified on a per-tag basis in the 'Versions' tab. The Dockerfile, CWL/WDL Descriptor and test parameter files may be viewed in the 'Files' tab, by the Version tag (corresponding to a Git tag/branch).
+The left side menu is a list of all image repositories associated with the user, grouped lexicographically by namespace. Each tool is named after the docker location of the associated Docker image, in this example, `quay.io/collaboratory/dockstore-tool-bamstats`. Detailed information and links for each tool are located on the 'Info' tab. The 'Launch' tab includes commands for launching the tool locally with the Dockstore CLI. The 'Labels' tab allows editing of keywords to be associated with a tool for efficient searching and grouping. Settings such as the path to the Dockerfile and CWL Descriptor can be modified on a per-tag basis in the 'Versions' tab. The Dockerfile, CWL/WDL Descriptor and test parameter files may be viewed in the 'Files' tab, by the Version tag (corresponding to a Git tag/branch).
 
 We also look for `/test.cwl.json` and `/test.wdl.json` in the git repositories on quick registration. These are the default test parameter file locations. Whenever a new version is added, we will check for these default files. You can also change these after quick registration. They will be applied to all versions that have not been edited, as well as any new versions that may appear.
 
-A tool is not visible on the public 'Tools' listing unless it is published. To publish a tool, press the yellow 'Publish' button in the top-right corner.
+A tool is not visible on the public 'Tools' listing unless it is published. To publish a tool, press the 'Publish' button in the top-right corner.
 
-For the tutorial, generally, you should hit the "Refresh All Tools" button to make sure Dockstore has examined your latest repositories on Quay.  Do this especially if you created a new repository like we did here.
-
- ![Refresh](/assets/images/docs/dockstore_refresh.png)
+For the tutorial, generally, you should hit the "Refresh All" button to make sure Dockstore has examined your latest repositories on Quay.  Do this especially if you created a new repository like we did here.
 
 Now select the `collaboratory/dockstore-tool-bamstats` repository and click "Publish".  The tool is now listed on Dockstore!
-
-![Publish](/assets/images/docs/publish.png)
 
 You can also click on the "Versions" tab and should notice `1.25-6` is present and valid.  If any versions are invalid it is likely due to a path issue to the `Dockstore.cwl`, `Dockerfile`, or `Dockstore.wdl` (if used) files.  In BAMStats I used the default value of `Dockstore.cwl` and `Dockerfile` in the root repo directory so this was not an issue.
 
 ![Publish](/assets/images/docs/versions_toggle.png)
 
-Next, pick a version of your tool that you wish to present to the world by clicking on the radio selector in the Git Reference or Version column. This will determine which version of your CWL/WDL file will be used to find the author, email, and description in the case that it changes between versions. This also allows you to pre-select a version of your tool to present to users in the "Launch With" section, and the Dockerfile and Descriptor tabs.
+Next, pick a version of your tool that you wish to present to the world by clicking on the radio selector in the Version column. This will determine which version of your CWL/WDL file will be used to find the author, email, and description in the case that it changes between versions. This also allows you to pre-select a version of your tool to present to users in the "Launch With" section, and the Dockerfile and Descriptor tabs.
 
 ### Quick Registration of Alternate Tools
 
 Outside of this tutorial, you may wish to re-register a pre-existing tool with a new name. This can occur when you've quick registered a tool, but wish to create a new tool with a different descriptor based on the same Docker image when your Docker image supports a number of different commands.
 
-Consider the linked [repository](https://github.com/CancerCollaboratory/dockstore-tool-bamstats). If you've followed the tutorial, you will have this as a published tool. But wait, there's a `Dockstore2.cwl` in the same repo with a different command.
+Consider the linked [repository](https://github.com/dockstore/dockstore-tool-bamstats). If you've followed the tutorial, you will have this as a published tool. But wait, there's a `Dockstore2.cwl` in the same repo with a different command.
 
 To register this, follow the procedure below:
 
 First, make note of the GitHub repository that stores the descriptors for the tool.  
 
-![Existing tool](/assets/images/docs/alternate1.png)
-
-Second, hit the plus button under the organization and ensure that the GitHub repository and image registry match your previous tool. Note that we changed the default CWL Descriptor Path to `Dockstore2.cwl` to simulate an alternate descriptor for the same Docker image. Last but not least, change the tool name to distinguish the tool from the intial tool.
+Second, hit the plus button on the bottom right and select 'Use CWL, WDL or Nextflow from GitHub, BitBucket, etc'. Ensure that the GitHub repository and image registry match your previous tool. Note that we changed the default CWL Descriptor Path to `Dockstore2.cwl` to simulate an alternate descriptor for the same Docker image. Last but not least, change the tool name to distinguish the tool from the intial tool.
 
 ![Add alternate tool](/assets/images/docs/alternate2.png)
 
@@ -84,17 +105,17 @@ After clicking on "Add Tool" you should now see a new "Fully-Automated" tool tha
 
 Outside of this tutorial, in certain cases, it is not possible for Dockstore to register every existing tool, especially those with unusual project structures. Most notably, Docker Hub and GitLab images can not be automatically detected by Dockstore. The second possibility is that you have multiple CWL documents in a GitHub repository associated with multiple images. For those cases, it is necessary to manually register their details to Dockstore.
 
-Tools can be registered manually from the 'My Tools' page by pressing the 'Add Tool' button at the bottom of the right side bar, or any of the '+' buttons in each accordion namespace group. A modal dialog will appear as below:
+Tools can be registered manually from the 'My Tools' page by pressing the plus button at the bottom of the right of the page. A modal dialog will appear as below:
 
 ![Register Tool Manual](/assets/images/docs/register_container_manual.png)
+
+Select 'Use CWL, WDL or Nextflow from GitHub, BitBucket, etc' and click next.
 
 The Source Code Repository and Image Registry fields must be filled out, they are in the format `namespace/name` (the two paths may differ). The Dockerfile Path,  CWL/WDL Descriptor Paths, and CWL/WDL Test Parameter Paths are relative to the root of the Source Code Repository (and must begin with '/'), these will be the default locations to find their corresponding files, unless specified otherwise in the tags. The toolname is an optional 'suffix' appended to the Dockstore path, it allows for two repositories to share the same Git and Image Registry paths; the combination of Docker image registry path and toolname uniquely distinguishes tools in Dockstore.
 
 If you want to register a private Docker image and manage access, please click the "private" checkbox. You will also be asked for a tool maintainer email. This is the email of the person responsible for giving users access to your tool on external sites. If you do not provide a tool maintainer email, we will use the email found in the tool's CWL descriptor instead.
 
 Upon successful submission and registration of the tool, a resynchronization call will be made to fetch all available data from the given sources. If the image registry is Quay.io, existing version tags will be prepopulated for the Dockstore record.
-
-The user will then be taken to the 'Versions' tab of the new tool, where tags (corresponding to GitHub/Bitbucket/GitLab tag names) may be added.
 
 ![Versions Grid](/assets/images/docs/version_tags.png)
 
@@ -120,6 +141,9 @@ Usage: dockstore [mode] [flags] [command] [command parameters]
 Modes:
    tool                Puts dockstore into tool mode.
    workflow            Puts dockstore into workflow mode.
+   checker             Puts dockstore into checker mode.
+   plugin              Configure and debug plugins.
+   deps                Print tool/workflow runner dependencies.
 
 ------------------
 
@@ -134,10 +158,15 @@ Flags:
                        Default: false
   --upgrade            Upgrades to the latest stable release of Dockstore
                        Default: false
+  --upgrade-stable     Force upgrade to the latest stable release of Dockstore
+                       Default: false
+  --upgrade-unstable   Force upgrade to the latest unstable release of Dockstore
+                       Default: false
   --config <file>      Override config file
                        Default: ~/.dockstore/config
   --script             Will not check Github for newer versions of Dockstore
                        Default: false
+  --clean-cache        Delete the Dockstore launcher cache to save space
 
 ------------------
 ```
@@ -178,6 +207,8 @@ Commands:
 
   launch           :  launch Tools (locally)
 
+  download         :  download Tools to the local directory
+
   version_tag      :  updates version tags for an individual tool
 
   update_tool      :  updates certain fields of a tool
@@ -191,16 +222,11 @@ Flags:
                        Default: false
   --debug              Print debugging information
                        Default: false
-  --version            Print dockstore's version
-                       Default: false
-  --server-metadata    Print metdata describing the dockstore webservice
-                       Default: false
-  --upgrade            Upgrades to the latest stable release of Dockstore
-                       Default: false
   --config <file>      Override config file
                        Default: ~/.dockstore/config
-  --script             Will not check Github for newer versions of Dockstore
+  --script             For usage with scripts. Will not check for updates to Dockstore CLI.
                        Default: false
+
 
 ------------------
 ```
@@ -277,45 +303,45 @@ Optional parameters:
 
 #### [Fully-Automated](#Fully-Automated)
 
-How to create it:
+**How to create it**:
 
-Create by using the "Refresh All Tools" button.  This will scan through your Quay.io repositories and automatically register the tool on Dockstore.
+Create by using the "Refresh All" button.  This will scan through your Quay.io repositories and automatically register the tool on Dockstore.
 
-Requirements:
+**Requirements**:
 
 - Using a Quay.io registry with Quay.io linked to Dockstore.
 
-Benefits:
+**Benefits**:
 
 This build mode automatically adds versions to your tool with Quay tags and Git reference using the Quay.io build trigger.
 
-Limitations:
+**Limitations**:
 
 - Unable to easily deregister the tool
 - Unable to manually add versions
 - Cannot uniquely name the tool
 - Currently only works with Quay.io image registry
 
-When to use:  
+**When to use**:  
 
 Recommended when you are using a Quay.io registry, want a quick and easy way to register the tool, and want to avoid manually adding new versions to the tool.  Generally recommended for most tools.
 
 #### [Manual](#Manual)
 
-How to create it:
+**How to create it**:
 
-- Click Add Tool, fill in details
+- Click Plus button on the bottom right of the screen
 
-Requirements:
+**Requirements**:
 
 - Registry that has at least one tag
 - Token to the corresponding registry (if using Quay.io)
 
-Limitations:
+**Limitations**:
 
-- Have to manually the tool and also manually add each version (refresh will not work)
+- Have to manually add the tool and also manually add each version (refresh will not work)
 
-When to use:
+**When to use**:
 
 Recommended when you're not using Quay.io or if someone else has the same tool name already and you want your own tool instead.  Also if you are not using build triggers.
 
@@ -324,13 +350,12 @@ Recommended when you're not using Quay.io or if someone else has the same tool n
 Manual -> Fully-Automated:
 
 1. Deregister the manual tool
-2. Create a new Fully-Automated one (simply click "Refresh All Tools")
+2. Create a new Fully-Automated one (simply click "Refresh All")
 
 Fully-Automated -> Manual:
 
-1. Delete Quay.io repository
-2. "Refresh All Tools" (this will remove the tool from Dockstore)
-3. Create a new Manual tool (will have to recreate the Quay.io repository)
+1. Delete tool
+2. Create a new Manual tool (will have to recreate the Quay.io repository)
 
 ## Sharing the Tool
 
@@ -351,3 +376,5 @@ You can find tools on the Dockstore website or also through the `dockstore tool 
 ## Next Steps
 
 You can follow this basic pattern for each of your Docker-based tools.  Once registered, you can send links to your tools on Dockstore to colleagues and use it as a public platform for sharing your tools.
+
+Learn about [Workflows](/docs/publisher-tutorials/workflows/) and how they differ from tools.

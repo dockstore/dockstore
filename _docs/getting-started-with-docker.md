@@ -188,4 +188,7 @@ At this point you have a working Docker image.  You could use the `docker push` 
 
 ## Next Steps
 
-Follow the [next tutorial](/docs/prereqs/getting-started-with-cwl/) to describe your tool with CWL.
+There are three descriptor languages available on Dockstore. Follow the links to get an introduction.
+* [CWL](/docs/prereqs/getting-started-with-cwl/)
+* [WDL](/docs/prereqs/getting-started-with-wdl/)
+* [Nextflow](/docs/prereqs/getting-started-with-nextflow/)
