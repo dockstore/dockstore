@@ -23,7 +23,7 @@ A) Following our [tutorials](https://docs.dockstore.org/docs/prereqs/getting-sta
 
 B) Dockstore can retrieve your workflow descriptors from GitHub and other source control methods. You are responsible for ensuring that your descriptors point at valid Docker images.
 
-C) You can use our new hosted workflows approach to store tools and workflows directly on dockstore.org to quickly get started, prototype your ideas, and share workflows with a limited audience.
+C) As of Dockstore 1.5.0, you will be able to use our new hosted workflows approach to store tools and workflows directly on dockstore.org to quickly get started, prototype your ideas, and share workflows with a limited audience.
 
 In all three cases, you will have an opportunity to clean-up and configure your work before publishing to the rest of the world to see. 
 
