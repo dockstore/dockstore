@@ -2,9 +2,9 @@
 title: CWL Best Practices
 permalink: /docs/publisher-tutorials/best-practices/
 ---
-{% include_relative best-practices-header.md %}
+{% include_relative best-practices-intro.md %}
 
-{% include_relative authorship-metadata.md %}
+{% include_relative authorship-metadata-intro.md %}
 
 *workflow.cwl*
 ```
@@ -185,10 +185,7 @@ $schemas:
 - http://dublincore.org/2012/06/14/dcterms.rdf
 - http://xmlns.com/foaf/spec/20140114.rdf
 ```
-
-## Sample Parameter Files
-
-{% include_relative sample-parameter-files.md %}
+{% include_relative sample-parameter-files-intro.md %}
 
 *sample.json*
 ```
@@ -205,7 +202,7 @@ $schemas:
 }
 ```
 
-Now invoke `dockstore` with the tool wrapper and the input object on the command line:
+Now invoke `dockstore` with the tool wrapper and the input object on the command line and ensure that it succeeds:
 
 ```
 $ dockstore tool launch --local-entry  metadata_example.cwl --json sample.json

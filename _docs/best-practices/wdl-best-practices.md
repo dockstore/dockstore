@@ -2,9 +2,9 @@
 title: WDL Best Practices
 permalink: /docs/publisher-tutorials/wdl-best-practices/
 ---
-{% include_relative best-practices-header.md %}
+{% include_relative best-practices-intro.md %}
 
-{% include_relative authorship-metadata.md %}
+{% include_relative authorship-metadata-intro.md %}
 
 *wdl/bamqc.wdl*
 ```
@@ -63,9 +63,7 @@ This results in the workflow's Info Tab being populated like:
 
 ![wdl-info-tab-metadata](/assets/images/docs/best_practices/wdl-info-tab-metadata.png)
 
-## Sample Parameter Files
-
-{% include_relative sample-parameter-files.md %}
+{% include_relative sample-parameter-files-intro.md %}
 
 *local_bamqc_inputs.json*
 ```
@@ -79,7 +77,7 @@ This results in the workflow's Info Tab being populated like:
 }
 ```
 
-Now invoke `dockstore` with the workflow wrapper and the input object on the command line and make sure that it succeeds:
+Now invoke `dockstore` with the workflow wrapper and the input object on the command line and ensure that it succeeds:
 
 ```
 $ dockstore workflow launch --local-entry wdl/bamqc.wdl --json wdl/local_bamqc_inputs.json
