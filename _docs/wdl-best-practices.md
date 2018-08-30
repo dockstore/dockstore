@@ -1,26 +1,10 @@
 ---
-title: Best Practices
-permalink: /docs/publisher-tutorials/best-practices/
+title: WDL Best Practices
+permalink: /docs/publisher-tutorials/wdl-best-practices/
 ---
-# Best Practices
+{% include_relative best-practices-header.md %}
 
-Here, we document some best practices for creating tools as we understand them. Our intention is that this document will evolve as descriptor languages evolve so feel free to provide suggestions and/or improvements.  
-
-## Authorship Metadata
-
-Dockstore parses metadata and allows it to be used in Dockstore search which helps others find your tool/workflow more easily. "Author" is one of the metadata fields that is searchable:
-
-![search-metadata](/assets/images/docs/best_practices/search-metadata.png)
-
-Additionally, metadata is displayed in the tool/workflow's "Info" tab.  The highlighted sections below will appear once metadata is added to the descriptor:
-
-![info-tab-metadata](/assets/images/docs/best_practices/info-tab-metadata.png)
-
-For all developers, we highly recommend the following minimal metadata for your tool/workflow.  
-
-See the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define WDL metadata.  
-
-This example includes author, email, and description metadata:
+{% include_relative authorship-metadata.md %}
 
 *wdl/bamqc.wdl*
 ```
@@ -81,7 +65,7 @@ This results in the workflow's Info Tab being populated like:
 
 ## Sample Parameter Files
 
-Below is an example of a parameter file for the example above. We encourage checking in working examples of parameter files for your tool/workflow. This allows others to quickly work with your tool/workflow, starting from a "known good" parameterization.
+{% include_relative sample-parameter-files.md %}
 
 *local_bamqc_inputs.json*
 ```
