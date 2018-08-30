@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.GenericType;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.SwaggerUtility;
@@ -70,6 +72,7 @@ import static io.dockstore.client.cli.ArgumentUtility.printLineBreak;
 import static io.dockstore.client.cli.ArgumentUtility.reqVal;
 import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
+import static io.swagger.client.model.DockstoreTool.ModeEnum.HOSTED;
 
 /**
  * Implement all operations that have to do with tools.
@@ -130,7 +133,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         int descWidth = maxWidths[1] + Client.PADDING;
         int gitWidth = maxWidths[2] + Client.PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s%-16s%-10s";
-        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?", "Descriptor", "Automated");
+        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "ON DOCKSTORE?", "DESCRIPTOR", "AUTOMATED");
 
         for (DockstoreTool container : containers) {
             String descriptor = "No";
@@ -147,11 +150,9 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 gitUrl = container.getGitUrl();
             }
 
-            if (container.getDescription() != null) {
-                description = container.getDescription();
-                if (description.length() > MAX_DESCRIPTION) {
-                    description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
-                }
+            description = MoreObjects.firstNonNull(container.getDescription(), "");
+            if (description.length() > MAX_DESCRIPTION) {
+                description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
             }
 
             outFormatted(format, container.getToolPath(), description, gitUrl, boolWord(container.isIsPublished()), descriptor, automated);
@@ -579,6 +580,8 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
+
+            out("Refreshing all tools...");
             List<DockstoreTool> containers = usersApi.refresh(user.getId());
 
             out("YOUR UPDATED TOOLS");
@@ -593,6 +596,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         try {
             DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
             final Long containerId = container.getId();
+            out("Refreshing tool...");
             DockstoreTool updatedContainer = containersApi.refresh(containerId);
             List<DockstoreTool> containerList = new ArrayList<>();
             containerList.add(updatedContainer);
@@ -743,7 +747,11 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 errorMessage("This container is not published.", Client.COMMAND_ERROR);
             } else {
 
-                Date dateUploaded = Date.from(container.getLastBuild().toInstant());
+                Date lastBuild = container.getLastBuild();
+                Date dateUploaded = null;
+                if (lastBuild != null) {
+                    dateUploaded = Date.from(lastBuild.toInstant());
+                }
 
                 String description = container.getDescription();
                 if (description == null) {
@@ -760,13 +768,14 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                     date = dateUploaded.toString();
                 }
 
-                out("");
                 out("DESCRIPTION:");
                 out(description);
                 out("AUTHOR:");
                 out(author);
-                out("DATE UPLOADED:");
-                out(date);
+                if (dateUploaded != null) {
+                    out("DATE UPLOADED:");
+                    out(date);
+                }
                 out("TAGS");
 
                 List<Tag> tags = container.getTags();
@@ -781,11 +790,14 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
 
                 out(builder.toString());
 
-                out("GIT REPO:");
-                out(container.getGitUrl());
-                out("QUAY.IO REPO:");
-                out("http://quay.io/repository/" + container.getNamespace() + "/" + container.getName());
-                // out(container.toString());
+                out("SOURCE CONTROL:");
+                if (Objects.equals(container.getMode(), HOSTED)) {
+                    out("Dockstore.org");
+                } else {
+                    out(container.getGitUrl());
+                }
+                out("DOCKER IMAGE:");
+                out(container.getNamespace() + "/" + container.getName() + " on " + container.getRegistryString());
             }
         } catch (ApiException ex) {
             exceptionMessage(ex, "Could not find container", Client.API_ERROR);

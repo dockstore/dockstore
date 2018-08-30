@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -115,7 +116,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         int descWidth = maxWidths[1] + Client.PADDING;
         int gitWidth = maxWidths[2] + Client.PADDING;
         String format = "%-" + nameWidth + "s%-" + descWidth + "s%-" + gitWidth + "s%-16s";
-        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "On Dockstore?");
+        outFormatted(format, NAME_HEADER, DESCRIPTION_HEADER, GIT_HEADER, "ON DOCKSTORE?");
 
         for (Workflow workflow : workflows) {
             String gitUrl = "";
@@ -567,8 +568,11 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 out(builder.toString());
 
                 out("GIT REPO:");
-                out(workflow.getGitUrl());
-
+                if (Objects.equals(workflow.getMode(), Workflow.ModeEnum.HOSTED)) {
+                    out("Dockstore.org");
+                } else {
+                    out(workflow.getGitUrl());
+                }
             }
 
         } catch (ApiException ex) {
@@ -582,6 +586,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
+
+            out("Refreshing all workflows...");
             List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
 
             out("YOUR UPDATED WORKFLOWS");
@@ -597,6 +603,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         try {
             Workflow workflow = workflowsApi.getWorkflowByPath(path);
             final Long workflowId = workflow.getId();
+            out("Refreshing workflow...");
             Workflow updatedWorkflow = workflowsApi.refresh(workflowId);
             List<Workflow> workflowList = new ArrayList<>();
             workflowList.add(updatedWorkflow);
