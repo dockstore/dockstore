@@ -1,8 +1,8 @@
 ---
-title: Getting Started With Dockstore
+title: Getting Started With Dockstore Tools
 permalink: /docs/publisher-tutorials/getting-started-with-dockstore/
 ---
-# Getting Started with Dockstore
+# Getting Started with Dockstore Tools
 
 ## Register on Dockstore
 Dockstore supports login through GitHub using OAuth2. You can register at the [login/register page](https://www.dockstore.org/login).
