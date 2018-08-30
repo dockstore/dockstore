@@ -39,6 +39,7 @@ tags:
   - name: hosted
     description: Created and modify hosted entries in the dockstore
   - name: metadata
+    description: 'Information about Dockstore like RSS, sitemap, lists of dependencies, etc.'
   - name: tokens
     description: 'List, modify, refresh, and delete tokens for external services'
   - name: users
