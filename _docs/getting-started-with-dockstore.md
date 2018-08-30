@@ -376,3 +376,5 @@ You can find tools on the Dockstore website or also through the `dockstore tool 
 ## Next Steps
 
 You can follow this basic pattern for each of your Docker-based tools.  Once registered, you can send links to your tools on Dockstore to colleagues and use it as a public platform for sharing your tools.
+
+Learn about [Workflows](/docs/publisher-tutorials/workflows/) and how they differ from tools.

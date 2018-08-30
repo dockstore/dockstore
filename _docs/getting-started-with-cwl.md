@@ -350,3 +350,7 @@ workflow test {
 ## Next Steps
 
 Follow the [next tutorial](/docs/publisher-tutorials/getting-started-with-dockstore/) to register your tool on Dockstore.
+
+## See Also
+* [WDL](/docs/prereqs/getting-started-with-wdl/)
+* [Nextflow](/docs/prereqs/getting-started-with-nextflow/)

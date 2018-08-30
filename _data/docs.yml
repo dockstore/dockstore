@@ -4,6 +4,8 @@
   docs:
     - prereqs/getting-started-with-docker
     - prereqs/getting-started-with-cwl
+    - prereqs/getting-started-with-wdl
+    - prereqs/getting-started-with-nextflow
 
 - title: User Tutorials
   link: user-tutorials
@@ -20,10 +22,12 @@
   link: publisher-tutorials
   docs:
     - publisher-tutorials/getting-started-with-dockstore
+    - publisher-tutorials/workflows
+    - publisher-tutorials/hosted-tools-and-workflows
     - publisher-tutorials/for-developers
     - publisher-tutorials/docker-registries
     - publisher-tutorials/public-and-private-tools
-    - publisher-tutorials/workflows
+    - publisher-tutorials/advanced-topics
     - publisher-tutorials/checker-workflows
     - publisher-tutorials/checker-workflow-trs
     - publisher-tutorials/best-practices
