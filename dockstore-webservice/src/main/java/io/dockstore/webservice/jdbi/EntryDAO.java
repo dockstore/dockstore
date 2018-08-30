@@ -201,16 +201,16 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             // sorting by stars is a special case since it needs a join
             if ("stars".equalsIgnoreCase(sortCol)) {
                 if ("desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(cb.size(entry.<Collection>get("starredUsers"))));
+                    query.orderBy(cb.desc(cb.size(entry.<Collection>get("starredUsers"))), cb.desc(entry.get("id")));
                 } else {
-                    query.orderBy(cb.asc(cb.size(entry.<Collection>get("starredUsers"))));
+                    query.orderBy(cb.asc(cb.size(entry.<Collection>get("starredUsers"))), cb.desc(entry.get("id")));
                 }
             } else {
                 Path<Object> sortPath = entry.get(sortCol);
                 if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(sortPath)).where(sortPath.isNotNull());
+                    query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id"))).where(sortPath.isNotNull());
                 } else {
-                    query.orderBy(cb.asc(sortPath)).where(sortPath.isNotNull());
+                    query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id"))).where(sortPath.isNotNull());
                 }
             }
         }
