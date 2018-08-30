@@ -7,7 +7,7 @@ permalink: /docs/prereqs/getting-started-with-cwl/
 This tutorial is a continuation of [Getting Started With Docker](/docs/prereqs/getting-started-with-docker/). Please complete that tutorial prior to doing this one.
 
 ## Tutorial Goals
-* Learn about the Common Workflow Language (CWL)
+* Learn about the [Common Workflow Language (CWL)](https://www.commonwl.org/)
 * Create a basic CWL Tool which uses a Docker image
 * Run the Tool locally
 * Describe a sample parameterization of the Tool

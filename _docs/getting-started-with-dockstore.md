@@ -6,9 +6,14 @@ permalink: /docs/publisher-tutorials/getting-started-with-dockstore/
 
 This tutorial is a continuation of [Dockstore Account](/docs/publisher-tutorials/dockstore-account/). Please complete the tutorial prior to doing this one.
 
+## Tutorial Goals
+* Register a tool on Dockstore
+* Learn about Quick registration vs Manual Registration
+* Publish your tool
+
 ## Register Your Tool in Dockstore
 
-Now that you have your `Dockerfile` and `Dockstore.cwl` in GitHub, have setup Quay.io to automatically build your Docker image, and have linked your accounts to Dockstore, it is time to register your tool.
+Now that you have your `Dockerfile` and `Dockstore.cwl` in GitHub, have setup Quay.io to automatically build your Docker image, and have linked your accounts to Dockstore, it is time to register your tool. This tutorial will assume you are using CWL, though steps should be relatively similar with WDL.
 
 ### Quick Registration via the Web UI
 

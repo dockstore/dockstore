@@ -5,6 +5,8 @@ permalink: /docs/prereqs/getting-started-with-docker/
 
 # Getting Started with Docker
 
+This is the first part of a four part tutorial where you will create a tool called BAMStats and publish it onto Dockstore.
+
 ## Tutorial Goals
 * Learn about Docker
 * Create a Docker image for a real tool
