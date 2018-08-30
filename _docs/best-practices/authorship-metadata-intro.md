@@ -1,5 +1,3 @@
-## Authorship Metadata
-
 Dockstore parses metadata and allows it to be used in Dockstore search which helps others find your tool/workflow more easily. "Author" is one of the metadata fields that is searchable:
 
 ![search-metadata](/assets/images/docs/best_practices/search-metadata.png)

@@ -4,6 +4,8 @@ permalink: /docs/publisher-tutorials/best-practices/
 ---
 {% include_relative best-practices-intro.md %}
 
+## Authorship Metadata
+
 {% include_relative authorship-metadata-intro.md %}
 
 *workflow.cwl*

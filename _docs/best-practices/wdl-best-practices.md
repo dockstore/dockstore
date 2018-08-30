@@ -4,6 +4,10 @@ permalink: /docs/publisher-tutorials/wdl-best-practices/
 ---
 {% include_relative best-practices-intro.md %}
 
+## Authorship Metadata
+
+> For Dockstore 1.5.0+
+
 {% include_relative authorship-metadata-intro.md %}
 
 *wdl/bamqc.wdl*
