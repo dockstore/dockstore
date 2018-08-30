@@ -150,11 +150,10 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 gitUrl = container.getGitUrl();
             }
 
-            description = container.getDescription();
+            description = MoreObjects.firstNonNull(container.getDescription(), "");
             if (description.length() > MAX_DESCRIPTION) {
                 description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
             }
-            description = MoreObjects.firstNonNull(description, "");
 
             outFormatted(format, container.getToolPath(), description, gitUrl, boolWord(container.isIsPublished()), descriptor, automated);
         }
