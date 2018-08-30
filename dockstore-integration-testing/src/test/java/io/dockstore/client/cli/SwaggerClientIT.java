@@ -696,7 +696,7 @@ public class SwaggerClientIT extends BaseIT {
      */
     @Test
     public void testStarredToolsOrder() throws ApiException {
-        ApiClient apiClient = getWebClient();
+        ApiClient apiClient = getAdminWebClient();
         UsersApi usersApi = new UsersApi(apiClient);
         ContainersApi containersApi = new ContainersApi(apiClient);
         List<Long> containerIds1 = Arrays.asList((long)1, (long)2, (long)3, (long)4, (long)5);
