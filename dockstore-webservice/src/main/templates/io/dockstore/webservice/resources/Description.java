@@ -57,7 +57,8 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
     @Tag(name = "tokens", description = "List, modify, refresh, and delete tokens for external services"),
     @Tag(name = "workflows", description = "List and register workflows in the dockstore (CWL or WDL)"),
     @Tag(name = "hosted", description = "Created and modify hosted entries in the dockstore"),
-    @Tag(name = "users", description = "List, modify, and manage end users of the dockstore") }, externalDocs = @ExternalDocs(value = "Dockstore documentation", url = "https://www.dockstore.org/docs/getting-started"), securityDefinition = @SecurityDefinition(apiKeyAuthDefinitions = {
+    @Tag(name = "users", description = "List, modify, and manage end users of the dockstore"),
+    @Tag(name = "metadata", description = "Information about Dockstore like RSS, sitemap, lists of dependencies, etc.") }, externalDocs = @ExternalDocs(value = "Dockstore documentation", url = "https://www.dockstore.org/docs/getting-started"), securityDefinition = @SecurityDefinition(apiKeyAuthDefinitions = {
     @io.swagger.annotations.ApiKeyAuthDefinition(key = JWT_SECURITY_DEFINITION_NAME, in = io.swagger.annotations.ApiKeyAuthDefinition.ApiKeyLocation.HEADER, name = "Authorization") }))
 public class Description implements ReaderListener {
     @Override

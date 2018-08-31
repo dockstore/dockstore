@@ -846,6 +846,8 @@ public class DockerRepoResource
             checkUser(user, tool);
         } catch (CustomWebApplicationException ex) {
             LOG.info("permissions are not yet tool aware");
+            // should not throw away exception
+            throw ex;
             //TODO permissions will eventually need to know about tools too
             //            if (!permissionsInterface.canDoAction(user, (Workflow)workflow, Role.Action.READ)) {
             //                throw ex;
