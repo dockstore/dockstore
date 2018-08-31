@@ -145,7 +145,10 @@ s:programmingLanguage: C
 
 Tools and workflows can take *File* types as input and produce them as output. We recommend indicating the format for *File* types. This helps document for others how to use your tool while allowing you to do some simple type-checking when creating parameter files.
 
-For file formats, we recommend referencing existing ontologies (like EDAM in our example), reference a local ontology for your institution, or do not add a file format initially for quick development before sharing your tool with others.
+For file formats, we recommend one of the following before sharing your tool with others:
+- reference existing ontologies (like EDAM in our example)
+- reference a local ontology for your institution
+- not add a file format initially for quick development
 
 Note that as a value-add `cwltool` can do some basic reasoning based on file formats and warn you if there seem to be some obvious mismatches.
 
