@@ -3,8 +3,9 @@ title: Getting Started With CWL
 permalink: /docs/prereqs/getting-started-with-cwl/
 ---
 # Getting Started with CWL
-
-This tutorial is a continuation of [Getting Started With Docker](/docs/prereqs/getting-started-with-docker/). Please complete that tutorial prior to doing this one.
+<div class="alert alert-info">
+This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-docker/">Getting Started With Docker</a>. Please complete that tutorial prior to doing this one.
+</div>
 
 ## Tutorial Goals
 * Learn about the [Common Workflow Language (CWL)](https://www.commonwl.org/)
@@ -332,7 +333,7 @@ And I do, so this Docker image has been built successfully by Quay and is ready 
 
 ## Next Steps
 
-Follow the [next tutorial](/docs/publisher-tutorials/dockstore-account/) to create an account on Dockstore and link third party services.
+Follow the [next tutorial](/docs/publisher-tutorials/register-on-dockstore/) to create an account on Dockstore and link third party services.
 
 ## See Also
 * [WDL](/docs/prereqs/getting-started-with-wdl/)

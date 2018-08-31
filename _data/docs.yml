@@ -20,7 +20,7 @@
 - title: Publisher Tutorials
   link: publisher-tutorials
   docs:
-    - publisher-tutorials/dockstore-account
+    - publisher-tutorials/register-on-dockstore
     - publisher-tutorials/getting-started-with-dockstore
     - publisher-tutorials/workflows
     - publisher-tutorials/hosted-tools-and-workflows

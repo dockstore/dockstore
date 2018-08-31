@@ -2,10 +2,11 @@
 title: Getting Started With Dockstore Tools
 permalink: /docs/publisher-tutorials/getting-started-with-dockstore/
 ---
+<div class="alert alert-info">
+This tutorial is a continuation of <a href="/docs/publisher-tutorials/register-on-dockstore/">Dockstore Account</a>. Please complete the tutorial prior to doing this one.
+</div>
+
 # Getting Started with Dockstore Tools
-
-This tutorial is a continuation of [Dockstore Account](/docs/publisher-tutorials/dockstore-account/). Please complete the tutorial prior to doing this one.
-
 ## Tutorial Goals
 * Register a tool on Dockstore
 * Learn about Quick registration vs Manual Registration

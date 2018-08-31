@@ -2,10 +2,11 @@
 title: Getting Started With Nextflow
 permalink: /docs/prereqs/getting-started-with-nextflow/
 ---
+<div class="alert alert-info">
+This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-docker/">Getting Started With Docker</a>. Please complete that tutorial prior to doing this one.
+</div>
+
 # Getting Started with Nextflow
-
-This tutorial is a continuation of [Getting Started With Docker](/docs/prereqs/getting-started-with-docker/). Please complete that tutorial prior to doing this one.
-
 ## Tutorial Goals
 * Learn about [Nextflow](https://www.nextflow.io/)
 * Create a basic Nextflow Workflow which uses a Docker image
@@ -182,7 +183,7 @@ See this [link](/docs/prereqs/getting-started-with-cwl/#building-on-quayio).
 
 ## Next Steps
 
-Follow the [next tutorial](/docs/publisher-tutorials/dockstore-account/) to create an account on Dockstore and link third party services.
+Follow the [next tutorial](/docs/publisher-tutorials/register-on-dockstore/) to create an account on Dockstore and link third party services.
 
 ## See Also
 * [CWL](/docs/prereqs/getting-started-with-cwl/)
