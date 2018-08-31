@@ -17,7 +17,7 @@ This tutorial walks through the process of registering and sharing more complex 
 
 ## Comparison of Tools and Workflows Across Descriptor Languages
 
-When Dockstore was first created, CWL was the only descriptor language we supported. It had a very clear distinction between a Tool and a Workflow. Once we started adding new descriptor languages like WDL and Nextflow, we had to define our own definitions of Tools and Workflows for those languages. Some people might wonder why we have these distinctions, but we think they are important.
+When Dockstore was created, CWL was the first descriptor language we supported. It had a very clear distinction between a Tool and a Workflow. Descriptor languages like WDL and Nextflow are less clear about this distinction so we briefly describe our working definitions below: 
 
 | Language               | Tool          | Workflow   |
 | ---------------------  | ------------- | ---------- | 
