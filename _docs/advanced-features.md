@@ -27,7 +27,7 @@ In the following JSON file, this file indicates for a CWL run that the input fil
 }
 ```
 
-The Dockstore command-line allows you to specify that the input file can be at a HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), or an [ICGC storage id](http://docs.icgc.org/cloud/guide/#cloud-guide) in place of that path. For example the following indicates that the input file will be downloaded under HTTP.
+The Dockstore command-line allows you to specify that the input file can be at a HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](http://docs.icgc.org/cloud/guide/#cloud-guide), or a [DOS URI](https://github.com/ga4gh/data-object-service-schemas/issues/49) in place of that path. For example the following indicates that the input file will be downloaded under HTTP.
 
 ```
 {
@@ -65,6 +65,18 @@ For Synapse, you can add `synapse-api-key` and `synapse-user-name` to `~/.dockst
 
 Get more information on the implementing plugin at [synapse-plugin
 ](https://github.com/dockstore/synapse-plugin).
+
+### Data Object Service (DOS)
+
+*Only available in 1.5.0*
+
+Currently, no additional configuration is directly supported by the Data Object Service plugin.
+However, specifying a DOS URI will lead to downloading a file by either built-in
+support or by one of the plugins. If one of the plugins, that plugin may need to be
+configured, e.g., if a DOS URI leads to downloading a file from AWS S3, then you 
+may need to configure your AWS S3 plugin.
+
+Get more information on the implementing plugin at [data-object-service-plugin](https://github.com/dockstore/data-object-service-plugin).
 
 
 ## Input File Cache
