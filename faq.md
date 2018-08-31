@@ -11,7 +11,7 @@ permalink: /faq/
 The Dockstore CLI has utilities to generate JSON parameter files from entries on Dockstore (`dockstore tool convert`).
 
 When launching tools, the Dockstore CLI makes it easy to specify entries from Dockstore.
-We can also provision input and output files using HTTP, FTP, and S3. We also have preliminary support for [Synapse](https://www.synapse.org/) and the [ICGC Storage client](http://docs.icgc.org/cloud/guide/#storage-client-usage). Please see [file provisioning plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) to get more information on these two file transfer sources.
+We can also provision input and output files using HTTP, FTP, and S3. We also have preliminary support for [Synapse](https://www.synapse.org/) and the [ICGC Storage client](http://docs.icgc.org/cloud/guide/#storage-client-usage). Please see [file provisioning plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) for more information on these two file transfer sources.
 
 ## What environment do you test tools in?
 
@@ -126,7 +126,7 @@ For tools, the default version is uniquely identified by the tag from the Docker
 Setting the default version affects a number of elements including (but not limited to):
 
 1. It determines what is displayed in the 'Description' section of the 'Info' Tab
-1. It is first version other end users see when no version is specified. For example https://dockstore.org/containers/quay.io/pancancer/pcawg-bwa-mem-workflow is redirected to https://dockstore.org/containers/quay.io/pancancer/pcawg-bwa-mem-workflow:develop?tab=info 
+1. It is the first version other end users see when no version is specified. For example https://dockstore.org/containers/quay.io/pancancer/pcawg-bwa-mem-workflow is redirected to https://dockstore.org/containers/quay.io/pancancer/pcawg-bwa-mem-workflow:develop?tab=info 
 1. It is the version of the tool/workflow that is launched by default when users launch a tool/workflow from the Dockstore CLI.  
    For example, if version 1.0 is set as the default version of the quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig tool,
 
