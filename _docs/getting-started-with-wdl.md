@@ -73,7 +73,7 @@ workflow bamstatsWorkflow {
 }
 ```
 
-If you've completed the [CWL tutorial](/docs/prereqs/getting-started-with-cwl/), you may have noticed that this file is a lot smaller than the CWL file. That is because WDL does not support metadata as well as CWL. It is also a less verbose language in general. Let us break it down piece by piece.
+Let us break it down piece by piece.
 
 You'll notice that there are two main sections of the file. First is a task section where we define the task level inputs and outputs of a given step, along with the runtime. Next there is a workflow section, where we define workflow level inputs and outputs, along with the calling of the task.
 
@@ -187,7 +187,7 @@ So what's going on here?  What's the Dockstore CLI doing?  It can best be summed
 
 ![Lifecycle](/assets/images/docs/dockstore_lifecycle.png)
 
-The command line first provisions file.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs.  After provisioning the docker image is pulled and ran via the `Cromwell` command line. This uses the `Dockerfile.wdl` and parameterization JSON file (`test.wdl.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.
+The command line first provisions input files.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs pointing to remote files.  After provisioning the docker image is pulled and ran via the `Cromwell` command line. This uses the `Dockerfile.wdl` and parameterization JSON file (`test.wdl.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.
 
 **Tip:** you can use `--debug` to get much more information during this run, including the actual call to Cromwell (which can be super helpful in debugging):
 
@@ -198,13 +198,13 @@ java -jar /home/aduncan/.dockstore/libraries/cromwell-30.2.jar run /home/aduncan
 **Tip:** the `dockstore` CLI automatically create a `datastore` directory in the current working directory where you execute the command and uses it for inputs/outputs.  It can get quite large depending on the tool/inputs/outputs being used.  Plan accordingly e.g. execute the dockstore CLI in a directory located on a partition with sufficient storage.
 
 ## Adding a Test Parameter File
-See this [link](/docs/prereqs/getting-started-with-cwl/#adding-a-test-parameter-file).
+See [adding a test parameter file](/docs/prereqs/getting-started-with-cwl/#adding-a-test-parameter-file).
 
 ## Releasing on GitHub
-See this [link](/docs/prereqs/getting-started-with-cwl/#releasing-on-github).
+See [releasing on github](/docs/prereqs/getting-started-with-cwl/#releasing-on-github).
 
 ## Building on Quay.io
-See this [link](/docs/prereqs/getting-started-with-cwl/#building-on-quayio).
+See [building on quay.io](/docs/prereqs/getting-started-with-cwl/#building-on-quayio).
 
 ## Next Steps
 
