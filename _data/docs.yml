@@ -14,7 +14,6 @@
 - title: Advanced Developer
   link: publisher-tutorials
   docs:
-    - publisher-tutorials/advanced-topics
     - publisher-tutorials/docker-registries
     - publisher-tutorials/public-and-private-tools
     - publisher-tutorials/best-practices

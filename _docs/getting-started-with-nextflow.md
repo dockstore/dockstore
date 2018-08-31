@@ -18,10 +18,10 @@ This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-d
 
 **Note:** that because there is no concept of Nextflow as a tool, we will register BAMStats as a workflow. To learn about what a workflow is, see [Getting Started With Dockstore Workflows](/docs/publisher-tutorials/workflows/). Once you are done that page then come back here.
 
-Nextflow is a bit different from CWL and WDl. Instead of having only descriptor file, it is composed of two different files. A config file, `nextflow.config`, and a descriptor file, `main.nf`.
+Nextflow is a bit different from CWL and WDL. Instead of having only descriptor file, it is composed of two different files. A config file, `nextflow.config`, and a descriptor file, `main.nf`.
 
 ### Configuration File
-The `nextflow.config` file is used to store configuration information, such as Docker image and memory required to run. Below is the config file for our BAMStats workflow. The config file will group together similar information and settings within scopes, such as manifest and docker.
+The `nextflow.config` file is used to store configuration information, such as Docker image and memory required to run. Below is the config file for our BAMStats workflow. The config file groups together similar information and settings within scopes, such as manifest and docker.
 
 
 ```
