@@ -2,7 +2,16 @@
 title: Getting Started with Dockstore Workflows
 permalink: /docs/publisher-tutorials/workflows/
 ---
+
+<div class="alert alert-info">
+This tutorial is a continuation of <a href="/docs/publisher-tutorials/getting-started-with-dockstore/">Getting Started with Dockstore</a>. Please complete the tutorial prior to doing this one.
+</div>
+
 # Getting Started with Dockstore Workflows
+## Tutorial Goals
+* Register a workflow on Dockstore
+* Learn the differences between tools and workflows across Descriptor Languages
+* Publish your workflow
 
 This tutorial walks through the process of registering and sharing more complex workflows which are comprised of multiple tools (whether they are registered on Dockstore or not). Workflows as defined via the Dockstore are a composition of multiple tools, strung together in some sort of order (often a directed acyclic graph (DAG)). Workflows also are different from tools since they are not required to define their own environment, instead a workflow engine like [Arvados](https://arvados.org/) or [Cromwell](https://github.com/broadinstitute/cromwell) will provide the ability to execute a CWL or WDL workflow respectively.
 
