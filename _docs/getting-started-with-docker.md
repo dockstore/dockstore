@@ -21,7 +21,7 @@ Here we will go through a simple representative example. The end-product is a Do
 
 0. Create a new repository on GitHub
 0. Create a `Dockerfile` in that repository that describes how to create a Docker image
-0. Use the Docker tools to build and test your Docker image
+0. Use the Docker command line to build and test your Docker image
 
 ## Create a new repository
 See the [dockstore-tool-bamstats](https://github.com/CancerCollaboratory/dockstore-tool-bamstats) repository on GitHub which we created as an example. This is linked to the Quay.io repository at [dockstore-tool-bamstats](https://quay.io/repository/collaboratory/dockstore-tool-bamstats).
