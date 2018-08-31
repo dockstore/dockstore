@@ -1,39 +1,39 @@
 # Collection for each documentation page, grouped by tutorial type
-- title: Prerequisites
+- title: Developer Tutorial
   link: prereqs
   docs:
     - prereqs/getting-started-with-docker
     - prereqs/getting-started-with-cwl
     - prereqs/getting-started-with-wdl
     - prereqs/getting-started-with-nextflow
-
-- title: User Tutorials
-  link: user-tutorials
-  docs:
-    - user-tutorials/faceted-search
-    - user-tutorials/language-support
-    - user-tutorials/launch
-    - user-tutorials/dnastack-launch-with
-    - user-tutorials/firecloud-launch-with
-    - user-tutorials/starring
-
-- title: Publisher Tutorials
-  link: publisher-tutorials
-  docs:
     - publisher-tutorials/register-on-dockstore
     - publisher-tutorials/getting-started-with-dockstore
     - publisher-tutorials/workflows
     - publisher-tutorials/hosted-tools-and-workflows
+
+- title: Advanced Developer
+  link: publisher-tutorials
+  docs:
+    - publisher-tutorials/advanced-topics
     - publisher-tutorials/docker-registries
     - publisher-tutorials/public-and-private-tools
     - publisher-tutorials/best-practices
-    - publisher-tutorials/advanced-topics
     - publisher-tutorials/checker-workflows
     - publisher-tutorials/checker-workflow-trs
     - publisher-tutorials/for-developers
     - publisher-tutorials/advanced-features
     - publisher-tutorials/aws-batch
     - publisher-tutorials/azure-batch
+
+- title: End User Tutorials
+  link: user-tutorials
+  docs:
+    - user-tutorials/faceted-search
+    - user-tutorials/starring
+    - user-tutorials/language-support
+    - user-tutorials/launch
+    - user-tutorials/dnastack-launch-with
+    - user-tutorials/firecloud-launch-with
 
 - title: Extras
   link: extras
