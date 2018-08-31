@@ -666,7 +666,7 @@ public class WorkflowIT extends BaseIT {
         final Long userId = usersApi.getUser().getId();
         usersApi.refreshWorkflows(userId);
         assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null).isEmpty());
-        // ensure that sorting or filtering don't expose published workflows
+        // ensure that sorting or filtering don't expose unpublished workflows
         assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, "descriptorType", "asc").isEmpty());
         assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, "hello", null, null).isEmpty());
         assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, "hello", "descriptorType", "asc").isEmpty());
