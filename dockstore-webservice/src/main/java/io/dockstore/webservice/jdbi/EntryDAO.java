@@ -18,6 +18,7 @@ package io.dockstore.webservice.jdbi;
 
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +29,7 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
 import com.google.common.base.MoreObjects;
@@ -180,6 +182,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
     }
 
     private void processQuery(String filter, String sortCol, String sortOrder, CriteriaBuilder cb, CriteriaQuery query, Root<T> entry) {
+        List<Predicate> predicates = new ArrayList<>();
         if (!Strings.isNullOrEmpty(filter)) {
             // TODO: handle all search attributes that we want to hook up, this sucks since we didn't handle polymorphism quite right
             boolean toolMode = typeOfT == Tool.class;
@@ -187,7 +190,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             String repoName = toolMode ? "name" : "repository";
             String orgName = toolMode ? "namespace" : "organization";
 
-            query.where(cb.and(// get published workflows
+            predicates.add(cb.and(// get published workflows
                 cb.isTrue(entry.get("isPublished")),
                 // ensure we deal with null values and then do like queries on those non-null values
                 cb.or(cb.and(cb.isNotNull(entry.get(nameName)), cb.like(entry.get(nameName), "%" + filter + "%")), //
@@ -195,7 +198,7 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
                     cb.and(cb.isNotNull(entry.get(repoName)), cb.like(entry.get(repoName), "%" + filter + "%")), //
                     cb.and(cb.isNotNull(entry.get(orgName)), cb.like(entry.get(orgName), "%" + filter + "%")))));
         } else {
-            query.where(cb.isTrue(entry.get("isPublished")));
+            predicates.add(cb.isTrue(entry.get("isPublished")));
         }
         if (!Strings.isNullOrEmpty(sortCol)) {
             // sorting by stars is a special case since it needs a join
@@ -208,11 +211,14 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
             } else {
                 Path<Object> sortPath = entry.get(sortCol);
                 if (!Strings.isNullOrEmpty(sortOrder) && "desc".equalsIgnoreCase(sortOrder)) {
-                    query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id"))).where(sortPath.isNotNull());
+                    query.orderBy(cb.desc(sortPath), cb.desc(entry.get("id")));
+                    predicates.add(sortPath.isNotNull());
                 } else {
-                    query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id"))).where(sortPath.isNotNull());
+                    query.orderBy(cb.asc(sortPath), cb.desc(entry.get("id")));
+                    predicates.add(sortPath.isNotNull());
                 }
             }
         }
+        query.where(predicates.toArray(new Predicate[]{}));
     }
 }
