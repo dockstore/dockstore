@@ -59,8 +59,8 @@ steps:
 
 s:author:
   - class: s:Person
-    s:email: Morgan.Taschuk@oicr.on.ca
-    s:name: Morgan Taschuk
+    s:email: Muhammad.Lee@oicr.on.ca
+    s:name: Muhammad Lee
 ```
 This results in the workflow's Info Tab being populated like:
 
