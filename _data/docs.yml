@@ -20,6 +20,8 @@
     - publisher-tutorials/best-practices
     - publisher-tutorials/checker-workflows
     - publisher-tutorials/checker-workflow-trs
+    - publisher-tutorials/best-practices
+    - publisher-tutorials/wdl-best-practices
     - publisher-tutorials/for-developers
     - publisher-tutorials/advanced-features
     - publisher-tutorials/aws-batch
