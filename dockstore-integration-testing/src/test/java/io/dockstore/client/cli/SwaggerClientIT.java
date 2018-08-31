@@ -606,6 +606,62 @@ public class SwaggerClientIT extends BaseIT {
     }
 
     /**
+     * Try to star/unstar an unpublished tool
+     *
+     * @throws ApiException
+     */
+    @Test
+    public void testStarringUnpublishedTool() throws ApiException {
+        ApiClient apiClient = getWebClient();
+        ContainersApi containersApi = new ContainersApi(apiClient);
+        StarRequest request = SwaggerUtility.createStarRequest(true);
+        try {
+            containersApi.starEntry(1L, request);
+            Assert.fail("Should've encountered problems for trying to star an unpublished tool");
+        } catch (ApiException e) {
+            Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("Forbidden"));
+            Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
+        try {
+            containersApi.unstarEntry(1L);
+            Assert.fail("Should've encountered problems for trying to unstar an unpublished tool");
+        } catch (ApiException e) {
+            Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("cannot unstar"));
+            Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+    }
+
+    /**
+     * Try to star/unstar an unpublished workflow
+     *
+     * @throws ApiException
+     */
+    @Test
+    public void testStarringUnpublishedWorkflow() throws ApiException {
+        ApiClient apiClient = getWebClient();
+        WorkflowsApi workflowsApi = new WorkflowsApi(apiClient);
+        ApiClient adminApiClient = getAdminWebClient();
+        WorkflowsApi adminWorkflowsApi = new WorkflowsApi(adminApiClient);
+        StarRequest request = SwaggerUtility.createStarRequest(true);
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(false);
+        adminWorkflowsApi.publish(11l, publishRequest);
+        try {
+            workflowsApi.starEntry(11l, request);
+            Assert.fail("Should've encountered problems for trying to star an unpublished workflow");
+        } catch (ApiException e) {
+            Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("Forbidden"));
+            Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_FORBIDDEN, e.getCode());
+        }
+        try {
+            workflowsApi.unstarEntry(11l);
+            Assert.fail("Should've encountered problems for trying to unstar an unpublished workflow");
+        } catch (ApiException e) {
+            Assert.assertTrue("Should've gotten a forbidden message", e.getMessage().contains("cannot unstar"));
+            Assert.assertEquals("Should've gotten a status message", HttpStatus.SC_BAD_REQUEST, e.getCode());
+        }
+    }
+
+    /**
      * This tests if a tool can be starred twice.
      * This test will pass if this action cannot be performed.
      *
