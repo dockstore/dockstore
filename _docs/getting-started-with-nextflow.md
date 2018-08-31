@@ -18,7 +18,7 @@ This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-d
 
 **Note:** that because there is no concept of Nextflow as a tool, we will register BAMStats as a workflow. To learn about what a workflow is, see [Getting Started With Dockstore Workflows](/docs/publisher-tutorials/workflows/). Once you are done that page then come back here.
 
-Nextflow is a bit different from CWL and WDL. Instead of having only descriptor file, it is composed of two different files. A config file, `nextflow.config`, and a descriptor file, `main.nf`.
+Nextflow is a bit different from CWL and WDL. Instead of having one type of descriptor file, dockstore uses two different kinds of files: A config file, `nextflow.config` and a descriptor file, often, `main.nf`.
 
 ### Configuration File
 The `nextflow.config` file is used to store configuration information, such as Docker image and memory required to run. Below is the config file for our BAMStats workflow. The config file groups together similar information and settings within scopes, such as manifest and docker.
@@ -42,7 +42,7 @@ docker {
 }
 ```
 
-The manifest scope includes high level information about the tool. In this case we have a description of the tool and the author name. Note that we use the author and description fields to generate metadata on Dockstore.
+The manifest scope includes high level information about the tool. In this case we have a description of the tool and the author name. Note that we use the author and description fields to populate metadata on Dockstore.
 ```
 manifest {
     description = 'Generate some stats on a BAM file'
@@ -176,10 +176,10 @@ The logs for the tool run will be visible in the .nextflow.log file in the curre
 Nextflow does not have the concept of a test parameter file. Instead you either pass parameters on the command line when you run it, or you can specify parameters in the `nextflow.config` or `main.nf`.
 
 ## Releasing on GitHub
-See this [link](/docs/prereqs/getting-started-with-cwl/#releasing-on-github).
+See [releasing on github](/docs/prereqs/getting-started-with-cwl/#releasing-on-github).
 
 ## Building on Quay.io
-See this [link](/docs/prereqs/getting-started-with-cwl/#building-on-quayio).
+See [building on quay.io](/docs/prereqs/getting-started-with-cwl/#building-on-quayio).
 
 ## Next Steps
 
