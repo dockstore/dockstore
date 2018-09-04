@@ -666,6 +666,11 @@ public class WorkflowIT extends BaseIT {
         final Long userId = usersApi.getUser().getId();
         usersApi.refreshWorkflows(userId);
         assertTrue("should remain with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, null, null).isEmpty());
+        // ensure that sorting or filtering don't expose unpublished workflows
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, null, "descriptorType", "asc").isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, "hello", null, null).isEmpty());
+        assertTrue("should start with nothing published ", workflowApi.allPublishedWorkflows(null, null, "hello", "descriptorType", "asc").isEmpty());
+
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
         final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
