@@ -325,6 +325,8 @@ You can also share a specific version of a tool by appending `:version` to the e
 
 [https://www.dockstore.org/containers/quay.io/briandoconnor/dockstore-tool-bamstats:1.25-11](https://www.dockstore.org/containers/quay.io/briandoconnor/dockstore-tool-bamstats:1.25-11)
 
+**For FireCloud Users** : You have the ability to share hosted workflows through Dockstore. This allows for using FireCloud permissions to 
+
 ## Find Other Tools
 
 You can find tools on the Dockstore website or also through the `dockstore tool search` command line option.

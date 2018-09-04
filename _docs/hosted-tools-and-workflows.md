@@ -9,10 +9,10 @@ This tutorial is a continuation of <a href="/docs/publisher-tutorials/workflows/
 # Hosted Tools and Workflows
 ## Tutorial Goals
 * Compare Hosted Workflows and Remote Workflows
-* Register a Hosted Tool and Workflow on Dockstore
+* Register a Hosted CWL Workflow on Dockstore
 
 ## Introduction to Hosted Tools and Workflows
-A hosted tool or workflow is simply an entry where instead of files being stored in a Git repository they are stored within Dockstore. It is useful if you don't use GitHub, or if you want to take advantage of our sharing features to share your work with a limited audience.
+A hosted tool or workflow is simply an entry where instead of files being stored in a Git repository they are stored within Dockstore. It is useful if you don't use GitHub, or if you want to take advantage of our sharing features to share your work with a limited audience. For this tutorial we will only look at hosted workflows. The process is the same with hosted tools, the only difference is that hosted tools also have Dockerfiles, and do not yet support sharing.
 
 **Note:** For hosted tools we do not store the Docker image in our own registry.
 
@@ -112,6 +112,8 @@ outputs:
 ```
 
 Now press `Save as New Version` and we will have successfully added a version!
+
+Any time you edit the files and save your changes, a new version will be added. The version number is auto incremented by 1 each time. Like regular workflows, you can also hide specific versions from appearing to the public. You can also delete versions, though we recommend simply hiding them to preserve history. Deleting should be limited to simple things like typos or missing comments.
 
 ## Next Steps
 

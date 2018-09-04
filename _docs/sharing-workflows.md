@@ -1,5 +1,6 @@
 ---
 title: Sharing Workflows
+permalink: /docs/publisher-tutorials/sharing-workflows/
 ---
 
 > For Dockstore 1.5.0+

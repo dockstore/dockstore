@@ -123,13 +123,12 @@ dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUU
 - To disable notifications, simply remove the webhook URL from the Dockstore config file
 - If the UUID is generated, the generated UUID will be displayed in beginning of the launch stdout
 
-## Next Steps
-
 While launching tools and workflows locally is useful for testing, this approach is not useful for processing a large amount of data in a production environment. The next step is to take our Docker images, described by CWL/WDL and run them in an environment that supports those descriptors. For now, we can suggest taking a look at the environments that currently support and are validated with CWL at [https://ci.commonwl.org/](https://ci.commonwl.org/) and for WDL, [Cromwell](https://github.com/broadinstitute/cromwell).
 
 For developers, you may also wish to look at general commercial solutions such as [Google dsub](https://github.com/googlegenomics/task-submission-tools) and [AWS Batch](https://aws.amazon.com/batch/).
 
-We recommend looking at the [Best Practices](/docs/publisher-tutorials/best-practices-toc/) before creating your first real tool/workflow.
+## Next Steps
+We also recommend looking at the [Best Practices](/docs/publisher-tutorials/best-practices-toc/) before creating your first real tool/workflow.
 
 ## See Also
 * [AWS Batch](/docs/publisher-tutorials/aws-batch/)
