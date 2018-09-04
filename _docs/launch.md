@@ -3,7 +3,7 @@ title: Launch
 permalink: /docs/user-tutorials/launch/
 ---
 <div class="alert alert-info">
-This tutorial is a continuation of <a href="/docs/publisher-tutorials/hosted-tools-and-workflows/">Hosted Tools and Workflows</a>. Please complete the tutorial prior to doing this one.
+This tutorial is a continuation of <a href="/docs/publisher-tutorials/hosted-tools-and-workflows/">Hosted Tools and Workflows</a>. Please complete the tutorial prior to doing this one, unless you were directly linked to this page.
 </div>
 
 # Launching Tools and Workflows
