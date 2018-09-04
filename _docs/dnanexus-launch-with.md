@@ -23,8 +23,8 @@ You will need to pick a folder to export it into. You can either select a folder
 Then hit the "Submit" button and continue from within the DNAnexus interface to configure and run your workflow.
 
 ## Limitations
-0. While we support launching of WDL workflows, tools as listed in Dockstore are currently not supported.
-0. Only the WDL language is supported.
+1. While we support launching of WDL workflows, tools as listed in Dockstore are currently not supported.
+1. Only the WDL language is supported.
 
 ## See Also
 
