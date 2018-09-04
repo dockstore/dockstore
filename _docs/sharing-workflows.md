@@ -7,10 +7,10 @@ title: Sharing Workflows
 #Intro
 
 In Dockstore 1.5, a limited sharing functionality has been introduced. With sharing,
-you no longer have to choose to make a workflow either completely private or public.
+you no longer have to choose to make a workflow either completely private or completely public.
 You can share workflows with specific accounts, giving those other users either owner,
 write, or read permissions. This allows you to collborate with a smaller set of users
-without making the workflow public.
+without making the workflow public to everyone.
 
 ## Requirements
 
@@ -31,7 +31,7 @@ can also correspond to a user group.
 
 ## Permissions
 
-When sharing a workflow, you can share specify one of 3 permissions for each email
+When sharing a workflow, you can specify one of 3 permissions for each email
 you share with:
 
 * Owner -- the other user can also share the workflow, as well as modify and read it.
