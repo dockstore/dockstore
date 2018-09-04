@@ -93,7 +93,7 @@ Additionally:
 See [Docker for Mac](https://docs.docker.com/engine/installation/mac/)
 
 Note:
-Docker behaves a bit differently on a [Mac](https://docs.docker.com/docker-for-mac/osxfs/#/namespaces) than on a typical ubuntu machine. By default the only shared volumes are /Users, /Volumes, /tmp, and /private. Note that /var is not a shared directory (and can't be set as one). `cwltool` uses your TMPDIR (the env variable) to setup volumes with docker, which on a Mac can default to a subdirectory of /var. In order to get `cwltool` working on your Mac, you need to set your TMPDIR to be under one of the shared volumes in Docker for Mac. You can do this by doing something similar to the following:
+Docker behaves a bit differently on a [Mac](https://docs.docker.com/docker-for-mac/osxfs/#/namespaces) than on a typical Ubuntu machine. By default the only shared volumes are /Users, /Volumes, /tmp, and /private. Note that /var is not a shared directory (and can't be set as one). `cwltool` uses your TMPDIR (the env variable) to setup volumes with docker, which on a Mac can default to a subdirectory of /var. In order to get `cwltool` working on your Mac, you need to set your TMPDIR to be under one of the shared volumes in Docker for Mac. You can do this by doing something similar to the following:
 
 ```
 export TMPDIR=/tmp/docker_tmp

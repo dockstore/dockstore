@@ -119,7 +119,7 @@ You can test all the launchers by cloning the dockstore-tool-md5sum repository: 
 ## WDL Launcher Configuration
 
 By default, WDL tools/workflows will automatically be ran with [cromwell](https://github.com/broadinstitute/cromwell) 30.2.
-Additionally, you can override the cromwell version in the config file using:
+Additionally, you can override the cromwell version in your `~/.dockstore/config` using:
 ```
 cromwell-version = 34
 ```
