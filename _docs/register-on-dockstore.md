@@ -16,25 +16,24 @@ Before you can publish your new tool, you need to create a Dockstore account and
 
 *Only available in 1.5.0*
 
-You can also login with your Google Account. This is required to use the workflow sharing feature for FireCloud workflows.
+You can also login with your Google Account. This is required to use the workflow sharing feature for users coming from Firecloud
 
 ## Dockstore usernames
 
-Your username will be visible in any public tool or workflow that you have. It is also what is used to share FireCloud workflows.
+Your username will be visible in any public tool or workflow that you have. 
 
 If you register with GitHub, we will default to your GitHub username. As of 1.5.0, if you register with Google, we will default to the email associated with your Google account.
 
 ### Changing your username
 *Only available in 1.5.0*
 
-You can change your username in the onboarding wizard during setup, or anytime on the accounts page at the Dockstore Account Controls tab.
+You can change your username in the onboarding wizard during setup or from the accounts page at the Dockstore Account Controls tab.
 
 Currently you can only change your username when the following conditions are true:
 * You do not have any published tools or workflows
-* You do not have anything shared with you through FireCloud
+* You do not have anything shared by you to other users through the permissions tab for workflows
 
-For Google users, your username will include an @ symbol, however @ symbols are not allowed in Dockstore usernames. We recommend you change your username to something that isn't an email.
-That way it won't be picked up by any spambots.
+For Google users, your initial username will include an @ symbol. We recommend you change your username to something that is not an email to avoid unwanted email.
 
 ## Linking With External Services
 
@@ -57,7 +56,7 @@ If you registered with Google, you will also need to link your GitHub account to
 
 ![Refresh tools](/assets/images/docs/linking2.png) -->
 
-Below, GitHub, Google, and Quay.io accounts have been linked, it is necessary for at least the GitHub account be linked in order to perform regular account activities.
+Below, GitHub, Google, and Quay.io accounts have been linked, it is necessary for at least the GitHub account or the Google account be linked in order to perform regular account activities.
 
 ![Link accounts completed](/assets/images/docs/linking3.png)
 

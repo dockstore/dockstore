@@ -14,11 +14,11 @@ This tutorial is a continuation of <a href="/docs/publisher-tutorials/register-o
 
 ## Register Your Tool in Dockstore
 
-Now that you have your `Dockerfile`, `Dockstore.cwl` and/or `Dockstore.wdl` in GitHub, have setup Quay.io to automatically build your Docker image, and have linked your accounts to Dockstore, it is time to register your tool. This tutorial will assume you are using CWL and/or WDL. Currently Nextflow is not supported for Tools on Dockstore.
+Now that you have your `Dockerfile`, `Dockstore.cwl` and/or `Dockstore.wdl` in GitHub, have setup Quay.io to automatically build your Docker image, and have linked your accounts to Dockstore, it is time to register your tool. This tutorial will assume you are using CWL and/or WDL. Currently, Nextflow is not supported for tools on Dockstore.
 
 ### Quick Registration via the Web UI
 
-In the authenticated Web UI, navigate to 'My Tools' to begin managing Docker images imported through your linked account(s). These pages will allow you to quickly register tools that follow a particularly simple format (look below to manual registration for more complex formats). For quick registration, we look through your Quay.io images and see if any are set up as [automated builds](https://docs.quay.io/guides/building.html). Using those to track back to your GitHub, Bitbucket, or GitLab accounts, we list all pairs of Docker images with git repositories that contain a `Dockstore.cwl` and/or `Dockstore.wdl` and a `Dockerfile`. When we discover both of these, we create an unpublished entry in the interface below.
+In the authenticated Web UI, navigate to 'My Tools' to begin managing Docker images imported through your linked account(s). These pages will allow you to quickly register tools that follow a particularly simple format (look below to manual registration for more complex formats). For quick registration, we look through your Quay.io images and see if any are set up as [automated builds](https://docs.quay.io/guides/building.html). Using those to track back to your GitHub, Bitbucket, or GitLab accounts, we list all pairs of Docker images with git repositories that you have access to on those services. When we discover both of these, we create an unpublished entry in the interface below.
 
 ![My Tools](/assets/images/docs/register_ui.png)
 
@@ -28,7 +28,7 @@ We also look for `/test.cwl.json` and `/test.wdl.json` in the git repositories o
 
 A tool is not visible on the public 'Tools' listing unless it is published. To publish a tool, press the 'Publish' button in the top-right corner.
 
-For the tutorial, generally, you should hit the "Refresh All" button to make sure Dockstore has examined your latest repositories on Quay.  Do this especially if you created a new repository like we did here.
+For the tutorial, generally, you should hit the "Refresh All" button to make sure Dockstore has examined your latest repositories on Quay.  This is how Dockstore picks up new repositories like we did here. (After the tutorial, you can refresh tools individually or by organization to speed things up)
 
 Now select the `collaboratory/dockstore-tool-bamstats` repository and click "Publish".  The tool is now listed on Dockstore!
 
@@ -52,7 +52,7 @@ Second, hit the plus button on the bottom right and select 'Use CWL, WDL or Next
 
 ![Add alternate tool](/assets/images/docs/alternate2.png)
 
-After clicking on "Add Tool" you should now see a new "Fully-Automated" tool that shared a GitHub and quay.io repo with an existing tool. Note that the description and launch-with commands should reflect the new tool and the ID will have an additional part (up from three) identifying the new alternate tool.
+After clicking on "Add Tool" you should now see a new "Fully-Automated" tool that shared a GitHub and Quay.io repo with an existing tool. Note that the description and launch-with commands should reflect the new tool and the ID will have an additional part (up from three) identifying the new alternate tool.
 
 ![Newly created alternate tool](/assets/images/docs/alternate3.png)
 
@@ -69,7 +69,7 @@ Select 'Use CWL, WDL or Nextflow from GitHub, BitBucket, etc' and click next.
 
 The Source Code Repository and Image Registry fields must be filled out, they are in the format `namespace/name` (the two paths may differ). The Dockerfile Path,  CWL/WDL Descriptor Paths, and CWL/WDL Test Parameter Paths are relative to the root of the Source Code Repository (and must begin with '/'), these will be the default locations to find their corresponding files, unless specified otherwise in the tags. The toolname is an optional 'suffix' appended to the Dockstore path, it allows for two repositories to share the same Git and Image Registry paths; the combination of Docker image registry path and toolname uniquely distinguishes tools in Dockstore.
 
-If you want to register a private Docker image and manage access, please click the "private" checkbox. You will also be asked for a tool maintainer email. This is the email of the person responsible for giving users access to your tool on external sites. If you do not provide a tool maintainer email, we will use the email found in the tool's CWL descriptor instead.
+If you want to register a private Docker image and manage access, please click the "private" checkbox. You will also be asked for a tool maintainer email. This is the email of the person responsible for giving users access to your tool on external sites. If you do not provide a tool maintainer email, we will use the email found in the tool's CWL descriptor instead if provided.
 
 Upon successful submission and registration of the tool, a resynchronization call will be made to fetch all available data from the given sources. If the image registry is Quay.io, existing version tags will be prepopulated for the Dockstore record.
 
@@ -269,7 +269,7 @@ Create by using the "Refresh All" button.  This will scan through your Quay.io r
 
 **Benefits**:
 
-This build mode automatically adds versions to your tool with Quay tags and Git reference using the Quay.io build trigger.
+This build mode automatically adds versions to your tool with Quay tags and their Git references by determining which tags on git were responsible for triggering builds on Quay.
 
 **Limitations**:
 
@@ -324,6 +324,8 @@ This will link to the default version if set, and if not then the most recent ve
 You can also share a specific version of a tool by appending `:version` to the end of the tool path. Again, using the previous example we can link to version 1.25-11:
 
 [https://www.dockstore.org/containers/quay.io/briandoconnor/dockstore-tool-bamstats:1.25-11](https://www.dockstore.org/containers/quay.io/briandoconnor/dockstore-tool-bamstats:1.25-11)
+
+**For FireCloud Users** : You have the ability to share hosted workflows through Dockstore. This allows for using FireCloud permissions to 
 
 ## Find Other Tools
 
