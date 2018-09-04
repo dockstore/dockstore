@@ -44,4 +44,5 @@ and disks).
 
 * [AWS Batch](/docs/publisher-tutorials/aws-batch/)
 * [Azure Batch](/docs/publisher-tutorials/azure-batch/)
+* [DNAnexus Launch With](/docs/user-tutorials/dnanexus-launch-with/)
 * [DNAstack Launch With](/docs/user-tutorials/dnastack-launch-with/)
