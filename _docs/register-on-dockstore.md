@@ -27,7 +27,7 @@ If you register with GitHub, we will default to your GitHub username. As of 1.5.
 ### Changing your username
 *Only available in 1.5.0*
 
-You can change your username in the onboarding wizard during setup from the accounts page at the Dockstore Account Controls tab.
+You can change your username in the onboarding wizard during setup or from the accounts page at the Dockstore Account Controls tab.
 
 Currently you can only change your username when the following conditions are true:
 * You do not have any published tools or workflows
@@ -56,7 +56,7 @@ If you registered with Google, you will also need to link your GitHub account to
 
 ![Refresh tools](/assets/images/docs/linking2.png) -->
 
-Below, GitHub, Google, and Quay.io accounts have been linked, it is necessary for at least the GitHub account be linked in order to perform regular account activities.
+Below, GitHub, Google, and Quay.io accounts have been linked, it is necessary for at least the GitHub account or the Google account be linked in order to perform regular account activities.
 
 ![Link accounts completed](/assets/images/docs/linking3.png)
 

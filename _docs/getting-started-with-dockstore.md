@@ -52,7 +52,7 @@ Second, hit the plus button on the bottom right and select 'Use CWL, WDL or Next
 
 ![Add alternate tool](/assets/images/docs/alternate2.png)
 
-After clicking on "Add Tool" you should now see a new "Fully-Automated" tool that shared a GitHub and quay.io repo with an existing tool. Note that the description and launch-with commands should reflect the new tool and the ID will have an additional part (up from three) identifying the new alternate tool.
+After clicking on "Add Tool" you should now see a new "Fully-Automated" tool that shared a GitHub and Quay.io repo with an existing tool. Note that the description and launch-with commands should reflect the new tool and the ID will have an additional part (up from three) identifying the new alternate tool.
 
 ![Newly created alternate tool](/assets/images/docs/alternate3.png)
 

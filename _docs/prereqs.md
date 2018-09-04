@@ -11,3 +11,6 @@ via a series of tutorials which goes through the whole process of:
 * Describing the tool with a descriptor file
 * Creating a Dockstore account
 * Registering the tool on Dockstore
+
+# BAMStats
+The tool we will be using throughout this tutorial is [BAMStats](http://bamstats.sourceforge.net/). It is a tool for summarising Next Generation Sequencing alignments. It accepts a BAM file and produces a ZIP file containing an HTML report on the alignment.

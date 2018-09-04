@@ -129,6 +129,8 @@ While launching tools and workflows locally is useful for testing, this approach
 
 For developers, you may also wish to look at general commercial solutions such as [Google dsub](https://github.com/googlegenomics/task-submission-tools) and [AWS Batch](https://aws.amazon.com/batch/).
 
+We recommend looking at the [Best Practices](/docs/publisher-tutorials/best-practices-toc/) before creating your first real tool/workflow.
+
 ## See Also
 * [AWS Batch](/docs/publisher-tutorials/aws-batch/)
 * [Azure Batch](/docs/publisher-tutorials/azure-batch/)

@@ -187,7 +187,7 @@ So what's going on here?  What's the Dockstore CLI doing?  It can best be summed
 
 ![Lifecycle](/assets/images/docs/dockstore_lifecycle.png)
 
-The command line first provisions input files.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs pointing to remote files.  After provisioning the docker image is pulled and ran via the `Cromwell` command line. This uses the `Dockerfile.wdl` and parameterization JSON file (`test.wdl.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.
+The command line first provisions input files.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs pointing to remote files.  After provisioning the docker image is pulled and ran via the `Cromwell` command line. This uses the `Dockstore.wdl` and parameterization JSON file (`test.wdl.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.
 
 **Tip:** you can use `--debug` to get much more information during this run, including the actual call to Cromwell (which can be super helpful in debugging):
 

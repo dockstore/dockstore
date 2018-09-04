@@ -51,7 +51,7 @@ dct:creator:
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/collaboratory/dockstore-tool-bamstats:1.25-6_1.1"
+    dockerPull: "quay.io/collaboratory/dockstore-tool-bamstats:1.25-6"
 
 hints:
   - class: ResourceRequirement
@@ -86,7 +86,7 @@ outputs:
 baseCommand: ["bash", "/usr/local/bin/bamstats"]
 ```
 
-You can see this tool takes two inputs, a parameter to control memory usage and a BAM file (binary sequence alignment file).  It produces one output, a zip file, that contains various HTML reports that BamStats creates.
+You can see this tool takes two inputs, a parameter to control memory usage and a BAM file (binary sequence alignment file).  It produces one output, a zip file, that contains various HTML reports that BAMStats creates.
 
 The CWL is actually recognized and parsed by Dockstore (when we register this later). By default it recognizes `Dockstore.cwl` but you can customize this if you need to.  One of the most important items below is the [CWL version](http://www.commonwl.org/v1.0/CommandLineTool.html#CWLVersion), you should label your CWL with the version you are using so CWL tools that cannot run this version can error out appropriately. Our tools have been tested with v1.0.
 
@@ -116,7 +116,7 @@ You can register for an [ORCID](http://orcid.org/) (a digital identifer for rese
 ```
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/collaboratory/dockstore-tool-bamstats:1.25-6_1.1"
+    dockerPull: "quay.io/collaboratory/dockstore-tool-bamstats:1.25-6"
 ```
 
 This section links the Docker image used to this CWL.  Notice it's exactly the same as the `-t` you used when building your image.
@@ -283,7 +283,7 @@ We are able to register the above input parameterization of the tool into Dockst
 
 At this point, we've successfully created our tool in Docker, tested it, written a CWL that describes how to run it, and tested running this via the Dockstore command line.  All of this work has been done locally, so if we encounter problems along the way its fast to perform debug cycles, fixing problems as we go.  At this point, we're confident that the tool is ready to share with others and bug free.  It's time to release `1.25-6_1.1`
 
-Releasing will tag your GitHub repository with a version tag so you always can get back to this particular release.  I'm going to use the tag `1.25-6_1.1` which you can see referenced in my Docker image tag and also my CWL file. Note that if you're following the tutorial using a forked version of the bamstats repo, your organization name should be different. GitHub makes it very easy to release:
+Releasing will tag your GitHub repository with a version tag so you always can get back to this particular release.  I'm going to use the tag `1.25-6_1.1` which I'll need to update in my Docker image tag and also my CWL file. Note that if you're following the tutorial using a forked version of the bamstats repo, your organization name should be different. GitHub makes it very easy to release:
 
 ![Release](/assets/images/docs/release.png)
 
