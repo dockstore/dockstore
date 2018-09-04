@@ -2,11 +2,11 @@
 title: Getting Started With CWL
 permalink: /docs/prereqs/getting-started-with-cwl/
 ---
-# Getting Started with CWL
 <div class="alert alert-info">
 This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-docker/">Getting Started With Docker</a>. Please complete that tutorial prior to doing this one.
 </div>
 
+# Getting Started with CWL
 ## Tutorial Goals
 * Learn about the [Common Workflow Language (CWL)](https://www.commonwl.org/)
 * Create a basic CWL Tool which uses a Docker image
@@ -88,7 +88,7 @@ baseCommand: ["bash", "/usr/local/bin/bamstats"]
 
 You can see this tool takes two inputs, a parameter to control memory usage and a BAM file (binary sequence alignment file).  It produces one output, a zip file, that contains various HTML reports that BamStats creates.
 
-There's a lot going on here.  Let's break it down.  The CWL is actually recognized and parsed by Dockstore (when we register this later). By default it recognizes `Dockstore.cwl` but you can customize this if you need to.  One of the most important items below is the [CWL version](http://www.commonwl.org/v1.0/CommandLineTool.html#CWLVersion), you should label your CWL with the version you are using so CWL tools that cannot run this version can error out appropriately. Our tools have been tested with v1.0.
+The CWL is actually recognized and parsed by Dockstore (when we register this later). By default it recognizes `Dockstore.cwl` but you can customize this if you need to.  One of the most important items below is the [CWL version](http://www.commonwl.org/v1.0/CommandLineTool.html#CWLVersion), you should label your CWL with the version you are using so CWL tools that cannot run this version can error out appropriately. Our tools have been tested with v1.0.
 
 ```
 class: CommandLineTool
@@ -99,10 +99,6 @@ doc: |
         ![build_status](https://quay.io/repository/collaboratory/dockstore-tool-bamstats/status)
         A Docker container for the BAMStats command. See the [BAMStats](http://bamstats.sourceforge.net/) website for more information.
 ```
-
-These items are recommended and the doc (description) is actually parsed and displayed in the Dockstore page. Here's an example:
-
-![Entry](/assets/images/docs/entry.png)
 
 In the code above you can see how to have an extended doc (description) which is quite useful.
 

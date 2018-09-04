@@ -17,7 +17,7 @@ This tutorial walks through the process of registering and sharing more complex 
 
 ## Comparison of Tools and Workflows Across Descriptor Languages
 
-When Dockstore was first created, CWL was the only descriptor language we supported. It had a very clear distinction between a Tool and a Workflow. Once we started adding new descriptor languages like WDL and Nextflow, we had to define our own definitions of Tools and Workflows for those languages. Some people might wonder why we have these distinctions, but we think they are important.
+When Dockstore was created, CWL was the first descriptor language we supported. It had a very clear distinction between a Tool and a Workflow. Descriptor languages like WDL and Nextflow are less clear about this distinction so we briefly describe our working definitions below: 
 
 | Language               | Tool          | Workflow   |
 | ---------------------  | ------------- | ---------- | 
@@ -34,13 +34,11 @@ Dockstore provides a few simple tools to share workflows, similar to how Docksto
 
 The steps to accomplish this task, at a high level, are:
 
-0. create a new repository on GitHub, Bitbucket or GitLab
-0. describe your workflow as either a [CWL workflow](http://www.commonwl.org/user_guide/) or a [WDL workflow](https://github.com/openwdl/wdl/blob/develop/SPEC.md#workflow-definition)
-0. test your workflow using an environment that supports full CWL or WDL workflows
-0. use the release process on GitHub, Bitbucket or GitLab to make distinct release tags, we like the  [HubFlow](https://datasift.github.io/gitflow/) process in our group for managing releases in git
-0. create an entry on Dockstore and then publish it
-
-An extremely simple example is available [here](https://dockstore.org/workflows/denis-yuen/dockstore-whalesay) and we will be working on more and better examples in the coming months.
+0. Create a new repository on GitHub, Bitbucket or GitLab
+0. Describe your workflow as either a [CWL](http://www.commonwl.org/user_guide/), [WDL](https://github.com/openwdl/wdl/blob/develop/SPEC.md#workflow-definition) or a [Nextflow](https://www.nextflow.io/) workflow
+0. Test your workflow using an environment that supports full CWL, WDL or Nextflow workflows
+0. Use the release process on GitHub, Bitbucket or GitLab to make distinct release tags, we like the  [HubFlow](https://datasift.github.io/gitflow/) process in our group for managing releases in git
+0. Create an entry on Dockstore and then publish it
 
 ## Create Workflow Stubs from GitHub, Bitbucket, and GitLab
 
@@ -104,4 +102,4 @@ You can find tools on the Dockstore website or also through the `dockstore workf
 
 ## Next Steps
 
-Learn about [Hosted Tools and Workflows](/docs/publisher-tutorials/hosted-tools-and-workflows/).
+You may not want to store your files directly with a service like GitHub. Perhaps you want your descriptor files to not be public. The solution is to use [Hosted Tools and Workflows](/docs/publisher-tutorials/hosted-tools-and-workflows/).
