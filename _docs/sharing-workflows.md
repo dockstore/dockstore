@@ -4,9 +4,9 @@ title: Sharing Workflows
 
 > For Dockstore 1.5.0+
 
-#Intro
+# Intro
 
-In Dockstore 1.5, a limited sharing functionality has been introduced. With sharing,
+In Dockstore 1.5.0, a limited sharing functionality has been introduced. With sharing,
 you no longer have to choose to make a workflow either completely private or public.
 You can share workflows with specific accounts, giving those other users either owner,
 write, or read permissions. This allows you to collborate with a smaller set of users
@@ -24,14 +24,14 @@ your Dockstore account.
 registered with FireCloud.
 * The sharing feature is only enabled for Dockstore-hosted workflows. It is not enabled
 for tools, nor is it enabled for workflows whose source code lives on external version
-control system such as GitHub, BitBucket, etc.
+control system such as GitHub, Bitbucket, etc.
 
 The account/email you are sharing with does not have to correspond to a single user. It
 can also correspond to a user group.
 
 ## Permissions
 
-When sharing a workflow, you can share specify one of 3 permissions for each email
+When sharing a workflow, you can specify one of 3 permissions for each email
 you share with:
 
 * Owner -- the other user can also share the workflow, as well as modify and read it.
