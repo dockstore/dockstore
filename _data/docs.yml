@@ -20,6 +20,7 @@
     - publisher-tutorials/checker-workflows
     - publisher-tutorials/checker-workflow-trs
     - publisher-tutorials/sharing-workflows
+    - publisher-tutorials/guid-alias
     - publisher-tutorials/for-developers
     - publisher-tutorials/advanced-features
     - publisher-tutorials/aws-batch
