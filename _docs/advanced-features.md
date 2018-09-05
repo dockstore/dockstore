@@ -8,7 +8,7 @@ permalink: /docs/publisher-tutorials/advanced-features/
 
 As a convenience, the dockstore command-line can perform file provisioning for inputs and outputs.
 
-File provisioning for some protocols like HTTP and FTP is built in while other protocols are handled by plugins as documented [here](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent).
+File provisioning for some protocols like HTTP and FTP is built-in while other protocols are handled by plugins as documented [here](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent).
 
 To illustrate, for this [tool](https://dockstore.org/containers/quay.io/collaboratory/dockstore-tool-bamstats) we provide a couple of parameter files that can be used to parameterize a run of bamstats.
 
@@ -27,7 +27,7 @@ In the following JSON file, this file indicates for a CWL run that the input fil
 }
 ```
 
-The Dockstore command-line allows you to specify that the input file can be at a HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](http://docs.icgc.org/cloud/guide/#cloud-guide), or a [DOS URI](https://github.com/ga4gh/data-object-service-schemas/issues/49) in place of that path. For example the following indicates that the input file will be downloaded under HTTP.
+The Dockstore command-line allows you to specify that the input file can be at an HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](http://docs.icgc.org/cloud/guide/#cloud-guide), or a [DOS URI](https://github.com/ga4gh/data-object-service-schemas/issues/49) in place of that path. For example the following indicates that the input file will be downloaded under HTTP.
 
 ```
 {
@@ -101,7 +101,7 @@ By default, Dockstore will attempt to download files up to three times. Control 
 
 ## Running CWL-runner with extra tags
 
-When running a CWL tool, you may want to add additional parameters/flags to the cwl-runner command. You can do this by updating your dockstore config file (`~/.dockstore/config`).
+When running a CWL tool, you may want to add additional parameters/flags to the `cwl-runner` command. You can do this by updating your dockstore config file (`~/.dockstore/config`).
 
 As an example, adding the following line to your config file will stop cwl-runner from cleaning up (the Docker container and the temp directory as mounted on the host) and make it run in debug mode.
 
@@ -111,19 +111,8 @@ cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir
 
 ## Alternative CWL Launchers:
 
-By default, the dockstore CLI launches tools/workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
-- [Rabix Bunny](https://github.com/rabix/bunny) v1.0.2
+By default, the dockstore CLI launches CWL tools/workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
 - [cwl-runner](http://www.commonwl.org/v1.0/CommandLineTool.html#Executing_CWL_documents_as_scripts)
-
-For bunny, activate it by adding the following to your `~/.dockstore/config`:
-```
-cwlrunner: bunny
-```
-This will download rabix into `~/.dockstore/libraries/` when launching tools/workflows. This has not been thoroughly tested, but we have had some success running tools and workflows using this alternative.
-Additionally, you can override the bunny version in the config file using:
-```
-bunny-version = 1.0.4-4
-```
 
 If your workflow platform provides the cwl-runner alias as the platform's default CWL implementation, you can activate it by adding the following to your `~/.dockstore/config`:
 ```
@@ -137,15 +126,14 @@ Furthermore, even though it's the default, you can also explicitly use cwltool b
 
 Keep in mind that there are a few differences in how locked-down the Docker execution environments are between any two alternatives, so a workflow that succeeds in one may not necessarily succeed in the other.
 
-You can test all the launchers by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git`
-Then test with cwl-runner, cwltool, and bunny using `dockstore tool launch --local-entry Dockstore.cwl --json test.json` after the above configurations have been made.
+You can test all the launchers by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git` and then test with cwl-runner and cwltool using `dockstore tool launch --local-entry Dockstore.cwl --json test.json` after the above configurations have been made.
 
 ## WDL Launcher Configuration
 
-By default, WDL tools/workflows will automatically be ran with [cromwell](https://github.com/broadinstitute/cromwell) 29.
-Additionally, you can override the cromwell version in the config file using:
+By default, WDL tools/workflows will automatically be ran with [cromwell](https://github.com/broadinstitute/cromwell) 30.2.
+Additionally, you can override the cromwell version in your `~/.dockstore/config` using:
 ```
-cromwell-version = 30.2
+cromwell-version = 34
 ```
 
-You can test cromwell by git cloning git@github.com:briandoconnor/dockstore-tool-md5sum.git and using `dockstore tool launch --local-entry Dockstore.wdl --json test.wdl.json`
+You can test cromwell by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git` and then test using `dockstore tool launch --local-entry Dockstore.wdl --json test.wdl.json`
