@@ -882,6 +882,7 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
         checkNotHosted(tool);
+        checkUserCanUpdate(user, tool);
         Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (!firstTag.isPresent()) {
@@ -915,7 +916,7 @@ public class DockerRepoResource
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
         checkNotHosted(tool);
-
+        checkUserCanUpdate(user, tool);
         Optional<Tag> firstTag = tool.getTags().stream().filter((Tag v) -> v.getName().equals(tagName)).findFirst();
 
         if (!firstTag.isPresent()) {
