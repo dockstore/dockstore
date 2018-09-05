@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
  */
 public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     protected static javax.ws.rs.client.Client client;
     final String basePath = String.format("http://localhost:%d/" + getApiVersion(), SUPPORT.getLocalPort());
 

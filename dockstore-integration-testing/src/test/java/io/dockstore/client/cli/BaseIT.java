@@ -46,14 +46,14 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
  */
 @Category(ConfidentialTest.class)
 public class BaseIT {
-    public final String USER_2_USERNAME = "DockstoreTestUser2";
+    public static final String USER_2_USERNAME = "DockstoreTestUser2";
     static final String OTHER_USERNAME = "OtherUser";
-    public final String ADMIN_USERNAME = "admin@admin.com";
+    protected static final String ADMIN_USERNAME = "admin@admin.com";
     final String USER_1_USERNAME = "DockstoreTestUser";
     final String CURATOR_USERNAME = "curator@curator.com";
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {

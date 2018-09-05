@@ -55,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 public class RefreshByOrgIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
 
     @AfterClass
     public static void afterClass(){

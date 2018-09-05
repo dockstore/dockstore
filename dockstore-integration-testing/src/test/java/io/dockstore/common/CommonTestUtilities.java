@@ -47,10 +47,13 @@ public final class CommonTestUtilities {
 
     // Travis is slow, need to wait up to 1 min for webservice to return
     public static final int WAIT_TIME = 60000;
+
+
+    public static final String PUBLIC_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
     /**
      * confidential testing config, includes keys
      */
-    public static final String CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
+    public static final String CONFIDENTIAL_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstoreTest.yml");
     static final String DUMMY_TOKEN_1 = "08932ab0c9ae39a880905666902f8659633ae0232e94ba9f3d2094cb928397e7";
 
     private CommonTestUtilities() {
@@ -65,8 +68,8 @@ public final class CommonTestUtilities {
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0");
+        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0");
     }
 
     /**
@@ -82,13 +85,13 @@ public final class CommonTestUtilities {
         } else {
             application= support.getApplication();
         }
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIG_PATH);
-        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.0.generated");
-        application.run("db", "migrate", CONFIG_PATH, "--include", "1.3.1.consistency");
-        application.run("db", "migrate", CONFIG_PATH, "--include", "test");
-        application.run("db", "migrate", CONFIG_PATH, "--include", "1.4.0");
-        application.run("db", "migrate", CONFIG_PATH, "--include", "1.5.0");
-        application.run("db", "migrate", CONFIG_PATH, "--include", "test_1.5.0");
+        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.1.consistency");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "test");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.4.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.5.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "test_1.5.0");
 
     }
 
@@ -99,7 +102,7 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
-        cleanStatePrivate1(support, CONFIG_PATH);
+        cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
         // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
         // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
@@ -138,7 +141,7 @@ public final class CommonTestUtilities {
      */
     public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
-        cleanStatePrivate2(support, CONFIG_PATH, isNewApplication);
+        cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
         // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
@@ -175,7 +178,7 @@ public final class CommonTestUtilities {
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating samepaths migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "migrate", CONFIG_PATH, "--include", "samepaths");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "samepaths");
     }
 
 
@@ -188,7 +191,7 @@ public final class CommonTestUtilities {
     public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating testworkflow migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "migrate", CONFIG_PATH, "--include", "testworkflow");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "testworkflow");
     }
 
     /**

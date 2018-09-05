@@ -22,6 +22,7 @@ import java.util.Set;
 import javax.ws.rs.Path;
 
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -55,8 +56,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     private final ToolDAO toolDAO;
     private final TagDAO tagDAO;
 
-    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
-        super(sessionFactory, permissionsInterface);
+    public HostedToolResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
+        super(sessionFactory, permissionsInterface, limitConfig);
         this.tagDAO = new TagDAO(sessionFactory);
         this.toolDAO = new ToolDAO(sessionFactory);
     }

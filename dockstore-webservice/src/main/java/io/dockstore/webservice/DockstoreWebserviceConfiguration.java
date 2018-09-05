@@ -50,6 +50,9 @@ public class DockstoreWebserviceConfiguration extends Configuration {
     @Valid
     private SamConfiguration samConfiguration = new SamConfiguration();
 
+    @Valid
+    private LimitConfig limitConfig = new LimitConfig();
+
     @NotEmpty
     private String template;
 
@@ -366,6 +369,15 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         this.externalGoogleClientIdPrefixes = externalGoogleClientIdPrefixes;
     }
 
+    @JsonProperty
+    public LimitConfig getLimitConfig() {
+        return limitConfig;
+    }
+
+    public void setLimitConfig(LimitConfig limitConfig) {
+        this.limitConfig = limitConfig;
+    }
+
     /**
      * This config defines values that define the webservice from the outside world.
      * Most notably, for swagger. But also to configure generated RSS paths and TRS paths
@@ -455,6 +467,26 @@ public class DockstoreWebserviceConfiguration extends Configuration {
         public void setBasepath(String basepath) {
             this.basepath = basepath;
         }
+    }
 
+    public static class LimitConfig {
+        private Integer workflowLimit;
+        private Integer workflowVersionLimit;
+
+        public Integer getWorkflowLimit() {
+            return workflowLimit;
+        }
+
+        public void setWorkflowLimit(int workflowLimit) {
+            this.workflowLimit = workflowLimit;
+        }
+
+        public Integer getWorkflowVersionLimit() {
+            return workflowVersionLimit;
+        }
+
+        public void setWorkflowVersionLimit(int workflowVersionLimit) {
+            this.workflowVersionLimit = workflowVersionLimit;
+        }
     }
 }

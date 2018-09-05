@@ -163,6 +163,10 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return list(namedQuery("io.dockstore.webservice.core." + typeOfT.getSimpleName() + ".findAllPublished"));
     }
 
+    public long countAllHosted(long userid) {
+        return ((BigInteger)namedQuery("Entry.hostedWorkflowCount").setParameter("userid", userid).getSingleResult()).longValueExact();
+    }
+
     public long countAllPublished(Optional<String> filter) {
         if (!filter.isPresent()) {
             return countAllPublished();

@@ -27,11 +27,14 @@ authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 server:
   applicationConnectors:
   - type: http 
-    port: 8000
+    port: 8080
   adminConnectors:
   - type: http
     port: 8001
 
+limitConfig:
+  workflowLimit: 10
+  workflowVersionLimit: 10
 
 database:
   # the name of your JDBC driver
