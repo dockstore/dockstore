@@ -79,7 +79,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private final UserDAO userDAO;
     private final PermissionsInterface permissionsInterface;
     private final FileFormatDAO fileFormatDAO;
-    private final DockstoreWebserviceConfiguration.LimitConfig limitConfig;
+    private final int calculatedEntryLimit;
+    private final int calculatedEntryVersionLimit;
 
     AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
@@ -87,7 +88,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         this.elasticManager = new ElasticManager();
         this.userDAO = new UserDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
-        this.limitConfig = limitConfig;
+        this.calculatedEntryLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowLimit(), Integer.MAX_VALUE);
+        this.calculatedEntryVersionLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowVersionLimit(), Integer.MAX_VALUE);
     }
 
     /**
@@ -115,10 +117,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace) {
 
         // check if the user has hit a limit yet
-        int calculatedLimit = MoreObjects.firstNonNull(this.limitConfig.getWorkflowLimit(), Integer.MAX_VALUE);
         final long currentCount = getEntryDAO().countAllHosted(user.getId());
-        if (currentCount >= calculatedLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + calculatedLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        if (currentCount >= calculatedEntryLimit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + calculatedEntryLimit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         descriptorType = checkType(descriptorType);
@@ -172,10 +173,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkHosted(entry);
 
         // check if the user has hit a limit yet
-        int calculatedLimit = MoreObjects.firstNonNull(this.limitConfig.getWorkflowVersionLimit(), Integer.MAX_VALUE);
         final long currentCount = entry.getVersions().size();
-        if (currentCount >= calculatedLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        if (currentCount >= calculatedEntryVersionLimit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         U version = getVersion(entry);
