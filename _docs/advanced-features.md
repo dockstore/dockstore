@@ -1,8 +1,8 @@
 ---
-title: Advanced Features
+title: Advanced CLI Features
 permalink: /docs/publisher-tutorials/advanced-features/
 ---
-# Advanced Features
+# Advanced CLI Features
 
 ## File Provisioning
 
