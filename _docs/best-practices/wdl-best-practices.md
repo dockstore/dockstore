@@ -94,3 +94,7 @@ Cromwell stdout:
 ...
 
 ```
+
+## Next Steps
+
+{% include_relative authorship-metadata-outro.md %}

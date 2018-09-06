@@ -257,7 +257,7 @@ Optional parameters:
 
 ## Additional Information on Build Modes
 
-#### [Fully-Automated](#Fully-Automated)
+### Fully-Automated
 
 **How to create it**:
 
@@ -282,7 +282,7 @@ This build mode automatically adds versions to your tool with Quay tags and thei
 
 Recommended when you are using a Quay.io registry, want a quick and easy way to register the tool, and want to avoid manually adding new versions to the tool.  Generally recommended for most tools.
 
-#### [Manual](#Manual)
+### Manual
 
 **How to create it**:
 

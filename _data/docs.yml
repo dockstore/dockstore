@@ -23,6 +23,7 @@
     - publisher-tutorials/guid-alias
     - publisher-tutorials/for-developers
     - publisher-tutorials/advanced-features
+    - publisher-tutorials/batch-services
     - publisher-tutorials/aws-batch
     - publisher-tutorials/azure-batch
 

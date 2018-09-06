@@ -8,3 +8,4 @@ Below is a collection of best practices for the different descriptor languages t
 
 * [CWL Best Practices](/docs/publisher-tutorials/best-practices/)
 * [WDL Best Practices](/docs/publisher-tutorials/wdl-best-practices/)
+* [Nextflow Best Practices](/docs/publisher-tutorials/nfl-best-practices/)

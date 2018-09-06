@@ -12,7 +12,7 @@ This tutorial is a continuation of <a href="/docs/publisher-tutorials/workflows/
 * Register a Hosted CWL Workflow on Dockstore
 
 ## Introduction to Hosted Tools and Workflows
-A hosted tool or workflow is simply an entry where instead of files being stored in a Git repository they are stored within Dockstore. It is useful if you don't use GitHub, or if you want to take advantage of our sharing features to share your work with a limited audience. For this tutorial we will only look at hosted workflows. The process is the same with hosted tools, the only difference is that hosted tools also have Dockerfiles, and do not yet support sharing.
+A hosted tool or workflow is simply an entry where instead of files being stored in a Git repository they are stored within Dockstore. It is useful if you don't use GitHub, or if you want to take advantage of our sharing features to share your work with a limited audience. For this tutorial we will only look at hosted workflows. The process is the same with hosted tools, the only difference is that hosted tools also have Dockerfiles, and do not yet support sharing via permissions.
 
 **Note:** For hosted tools we do not store the Docker image in our own registry.
 

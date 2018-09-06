@@ -176,10 +176,12 @@ The logs for the tool run will be visible in the .nextflow.log file in the curre
 Nextflow does not have the concept of a test parameter file. Instead you either pass parameters on the command line when you run it, or you can specify parameters in the `nextflow.config` or `main.nf`.
 
 ## Releasing on GitHub
-See [releasing on github](/docs/prereqs/getting-started-with-cwl/#releasing-on-github).
+
+{% include_relative releasing-on-github.md %}
 
 ## Building on Quay.io
-See [building on quay.io](/docs/prereqs/getting-started-with-cwl/#building-on-quayio).
+
+{% include_relative building-on-quayio.md %}
 
 ## Next Steps
 

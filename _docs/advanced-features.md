@@ -137,3 +137,37 @@ cromwell-version = 34
 ```
 
 You can test cromwell by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git` and then test using `dockstore tool launch --local-entry Dockstore.wdl --json test.wdl.json`
+
+## Notifications
+The Dockstore CLI has the ability to provide notifications via an HTTP post to a user-defined endpoint for the following steps:
+- The beginning of input files provisioning
+- The beginning of tool/workflow execution
+- The beginning of output files provisioning
+- Final launch completion
+
+Additionally, it will also provide notifications when any of these steps have failed.
+
+### Usage
+- Define a webhook URL in the Dockstore config file with the "notifications" property like:
+```
+token: iamafakedockstoretoken
+server-url: https://dockstore.org:8443
+notifications: https://hooks.slack.com/services/aaa/bbb/ccc
+```
+- UUID can be generated or user-defined uuid in the dockstore launch command like:
+```bash
+dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUUID
+```
+- An HTTP post with a JSON payload will be sent to the url defined earlier that looks like:
+```json
+{
+  "text": "someTextBasedOnMilestoneAndStatus",
+  "username": "your linux username",
+  "platform": "Dockstore CLI 1.4",
+  "uuid": "someUserDefinedOrGeneratedUUID"
+}
+```
+
+### Notes
+- To disable notifications, simply remove the webhook URL from the Dockstore config file
+- If the UUID is generated, the generated UUID will be displayed in beginning of the launch stdout

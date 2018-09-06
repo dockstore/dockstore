@@ -16,7 +16,7 @@ This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-d
 
 ## Describe Your Tool in WDL
 
-Besides CWL, you can also describe tools via the [WDL language](https://github.com/openwdl/wdl). WDL does not directly have the concept of a Tool built in to the language like CWL. Instead, we define a tool as a one task WDL workflow, where the task has an associated Docker image.
+Besides CWL, you can also describe tools via the [WDL language](https://software.broadinstitute.org/wdl/documentation/). WDL does not directly have the concept of a Tool built in to the language like CWL. Instead, we define a tool as a one task WDL workflow, where the task has an associated Docker image.
 
 We provide a hello world example as follows:
 
@@ -198,13 +198,16 @@ java -jar /home/aduncan/.dockstore/libraries/cromwell-30.2.jar run /home/aduncan
 **Tip:** the `dockstore` CLI automatically create a `datastore` directory in the current working directory where you execute the command and uses it for inputs/outputs.  It can get quite large depending on the tool/inputs/outputs being used.  Plan accordingly e.g. execute the dockstore CLI in a directory located on a partition with sufficient storage.
 
 ## Adding a Test Parameter File
-See [adding a test parameter file](/docs/prereqs/getting-started-with-cwl/#adding-a-test-parameter-file).
+
+{% include_relative adding-a-test-parameter-file.md %}
 
 ## Releasing on GitHub
-See [releasing on github](/docs/prereqs/getting-started-with-cwl/#releasing-on-github).
+
+{% include_relative releasing-on-github.md %}
 
 ## Building on Quay.io
-See [building on quay.io](/docs/prereqs/getting-started-with-cwl/#building-on-quayio).
+
+{% include_relative building-on-quayio.md %}
 
 ## Next Steps
 

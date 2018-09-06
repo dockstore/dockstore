@@ -3,7 +3,7 @@ title: Dockstore Account
 permalink: /docs/publisher-tutorials/register-on-dockstore/
 ---
 <div class="alert alert-info">
-This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-cwl/">Getting Started With CWL</a>, <a href="/docs/prereqs/getting-started-with-wdl/">Getting Started With WDL</a>, and <a href="/docs/prereqs/getting-started-with-nextflow/">Getting Started With Nextflow</a>. Please complete the relevant tutorial prior to doing this one.
+This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-cwl/">Getting Started With CWL</a>, <a href="/docs/prereqs/getting-started-with-wdl/">Getting Started With WDL</a>, and <a href="/docs/prereqs/getting-started-with-nextflow/">Getting Started With Nextflow</a>. Please complete one or more of those tutorials that is relevant to you prior to doing this one.
 </div>
 
 # Registering on Dockstore
