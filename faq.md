@@ -150,6 +150,9 @@ For tools registered on Quay.io and workflows registered with GitHub, Dockstore 
 For tools registered on Docker Hub, GitLab or private registries, this feature currently does not exist because these registries do not allow the retrieval of organization information.
 Likewise, workflows registered with other source code repositories lack this feature.
 
+Finally, for participants of the [limited sharing beta](/docs/publisher-tutorials/sharing-workflows/), you can enter the email addresses of the users you wish to share with to give them permissions to your workflow. This is only available for hosted workflows and users with Google accounts linked to FireCloud.
+
+
 ## Any last tips on using Dockstore?
 
 * the Dockstore CLI uses `./datastore` in the working directory for temp files so if you're processing large files make sure this partition hosting the current directory is large.
