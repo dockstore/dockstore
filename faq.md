@@ -152,6 +152,10 @@ Likewise, workflows registered with other source code repositories lack this fea
 
 Finally, for participants of the [limited sharing beta](/docs/publisher-tutorials/sharing-workflows/), you can enter the email addresses of the users you wish to share with to give them permissions to your workflow. This is only available for hosted workflows and users with Google accounts linked to FireCloud.
 
+## Why are my workflows from an organization I belong to not visible?
+Organizations have the ability to restrict access to the API for third party applications. GitHub provides a [tutorial](https://help.github.com/articles/enabling-oauth-app-access-restrictions-for-your-organization/) on how to add these restrictions to your organizations.
+
+In order for Dockstore to gain access to organizations of this type, you will need to grant access to the Dockstore application. Dockstore will only be reading information on workflows in your organization and who has access to them in order to mirror these restrictions on Dockstore itself. GitHub provides a [tutorial](https://help.github.com/articles/approving-oauth-apps-for-your-organization/) for approving third party apps access to your organization.
 
 ## Any last tips on using Dockstore?
 
