@@ -16,6 +16,7 @@
 
 package io.dockstore.client.cli;
 
+import java.util.Collections;
 import java.util.List;
 
 import io.dockstore.client.cli.nested.ToolClient;
@@ -26,6 +27,11 @@ import io.dockstore.common.SlowTest;
 import io.dockstore.common.SourceControl;
 import io.dockstore.common.ToolTest;
 import io.dropwizard.testing.ResourceHelpers;
+import io.swagger.client.ApiClient;
+import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.UsersApi;
+import io.swagger.client.model.DockstoreTool;
+import io.swagger.model.DescriptorType;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Assert;
@@ -39,6 +45,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -1149,7 +1156,7 @@ public class BasicIT extends BaseIT {
             "--script" });
         final long count5 = testingPostgres
             .runSelectStatement("select count(*) from sourcefile where type='CWL_TEST_JSON'", new ScalarHandler<>());
-        assertTrue("there should be two sourcefiles that are test parameter files, there are " + count5, count5 == 2);
+        assertEquals("there should be two sourcefiles that are test parameter files, there are " + count5, 2, count5);
 
         // refreshing again with the default paths set should not create extra redundant test parameter files
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "update_tool", "--entry",
@@ -1164,6 +1171,56 @@ public class BasicIT extends BaseIT {
         for(Long testJsonCount : testJsonCounts) {
             assertTrue("there should be at most two test json for each version", testJsonCount <= 2);
         }
+    }
+
+    @Test
+    public void testTestParameterOtherUsers(){
+        final ApiClient correctWebClient = getWebClient(BaseIT.USER_1_USERNAME);
+        final ApiClient otherWebClient = getWebClient(BaseIT.OTHER_USERNAME);
+        final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
+
+        ContainersApi containersApi = new ContainersApi(correctWebClient);
+        final DockstoreTool containerByToolPath = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json");
+        containersApi.refresh(containerByToolPath.getId());
+
+        // Check that no WDL or CWL test files
+        final long count = testingPostgres
+            .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+        Assert.assertEquals("there should be no sourcefiles that are test parameter files, there are " + count, 0, count);
+
+
+        containersApi.addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(), "", "master");
+
+        boolean shouldFail = false;
+        try {
+            final ContainersApi containersApi1 = new ContainersApi(otherWebClient);
+            containersApi1.addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"), DescriptorType.CWL.toString(), "", "master");
+        } catch (Exception e) {
+            shouldFail = true;
+        }
+        assertTrue(shouldFail);
+
+        containersApi.addTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"), DescriptorType.CWL.toString(), "", "master");
+
+        final long count3 = testingPostgres
+            .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+        Assert.assertEquals("there should be one sourcefile that is a test parameter file, there are " + count3, 2, count3);
+
+        // start testing deletion
+        shouldFail = false;
+        try {
+            final ContainersApi containersApi1 = new ContainersApi(otherWebClient);
+            containersApi1.deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"), DescriptorType.CWL.toString(), "master");
+        } catch (Exception e) {
+            shouldFail = true;
+        }
+        assertTrue(shouldFail);
+        containersApi.deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test.json"), DescriptorType.CWL.toString(), "master");
+        containersApi.deleteTestParameterFiles(containerByToolPath.getId(), Collections.singletonList("/test2.cwl.json"), DescriptorType.CWL.toString(), "master");
+
+        final long count4 = testingPostgres
+            .runSelectStatement("select count(*) from sourcefile where type like '%_TEST_JSON'", new ScalarHandler<>());
+        Assert.assertEquals("there should be one sourcefile that is a test parameter file, there are " + count4, 0, count4);
     }
 
     /**
@@ -1419,7 +1476,7 @@ public class BasicIT extends BaseIT {
 
         // Check that tool is published and has correct values
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
-        assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
+        assertEquals("one tool should be private, published and from seven bridges, there are " + count, 1, count);
 
         // Update tool to public (shouldn't work)
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
@@ -1442,7 +1499,7 @@ public class BasicIT extends BaseIT {
 
         // Check that tool is published and has correct values
         final long count = testingPostgres.runSelectStatement("select count(*) from tool where ispublished='true' and privateaccess='true' and registry='test-images.sbgenomics.com' and namespace = 'notarealnamespace' and name = 'notarealname'", new ScalarHandler<>());
-        assertTrue("one tool should be private, published and from seven bridges, there are " + count, count == 1);
+        assertEquals("one tool should be private, published and from seven bridges, there are " + count, 1, count);
 
         // Manual publish incorrect path
         systemExit.expectSystemExitWithStatus(Client.CLIENT_ERROR);
