@@ -36,6 +36,7 @@
     - user-tutorials/launch
     - user-tutorials/dnastack-launch-with
     - user-tutorials/firecloud-launch-with
+    - user-tutorials/dnanexus-launch-with
 
 - title: Extras
   link: extras

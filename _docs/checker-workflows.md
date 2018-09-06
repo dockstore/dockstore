@@ -27,7 +27,8 @@ The entry that a checker workflow is testing will be referred to as an original 
 For this tutorial we will be registering a checker workflow to test an original tool that calculates the MD5sum of a file.
 
 The relevant tools and workflows can be found in the following Git repository:
-https://github.com/dockstore-testing/md5sum-checker
+<!-- warning, a bare link will look like it creates a hyperlink in the githbu editor, but is compiled to plain text by Jekyll --> 
+[https://github.com/dockstore-testing/md5sum-checker](https://github.com/dockstore-testing/md5sum-checker)
 
 #### Quick overview of structure
 Like regular workflows, a checker workflow can describe an example input from an input parameter file. The checker workflow can either use the input parameter file for the original entry, or it can define its own. The second case is useful when the validation tool/workflow has some extra parameters not required by the original entry.

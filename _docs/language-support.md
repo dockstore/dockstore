@@ -12,6 +12,9 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 
 {% include language-support.html %}
 
+<sup>[0] Available in both classic and <a href="https://view.commonwl.org/">CWL Viewer</a> modes 
+</sup>
+
 <sup>[1] Does not support file-path based imports. See [FireCloud Limitations](/docs/user-tutorials/firecloud-launch-with/#limitations) for limitations.
 </sup>
 
@@ -19,5 +22,3 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 </sup>
 
 <sup> [3] The small number of verified Dockstore WDL tools/workflows were tested successfully.  More verification/testing likely needed.</sup>
-
-<!-- &ast; Nextflow has preliminary support for workflow registration -->

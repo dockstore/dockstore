@@ -1,5 +1,5 @@
 ---
-title: Dockstore Account
+title: Register on Dockstore
 permalink: /docs/publisher-tutorials/register-on-dockstore/
 ---
 <div class="alert alert-info">
