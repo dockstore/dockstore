@@ -10,6 +10,8 @@ permalink: /docs/publisher-tutorials/wdl-best-practices/
 
 {% include_relative authorship-metadata-intro.md %}
 
+This example includes author, email, and description metadata:
+
 *wdl/bamqc.wdl*
 ```
 workflow BamQC {

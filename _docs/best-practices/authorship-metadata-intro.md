@@ -7,5 +7,3 @@ Additionally, metadata is displayed in the tool/workflow's "Info" tab.  The high
 ![info-tab-metadata](/assets/images/docs/best_practices/info-tab-metadata.png)
 
 For all developers, we highly recommend the following minimal metadata for your tools and workflows.  
-
-This example includes author, email, and description metadata:

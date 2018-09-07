@@ -8,6 +8,8 @@ permalink: /docs/publisher-tutorials/best-practices/
 
 {% include_relative authorship-metadata-intro.md %}
 
+This example includes author, email, and description metadata:
+
 *workflow.cwl*
 ```
 #!/usr/bin/env cwl-runner
