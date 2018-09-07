@@ -54,12 +54,30 @@ $ dockstore tool launch --entry quay.io/collaboratory/dockstore-tool-bamstats:1.
 This information is also provided in the "Launch With" section of every tool.
 
 ### Launch Workflows
-
+#### Launching CWL and WDL Workflows
 A parallel set of commands is available for workflows. `convert`, `wdl`, `cwl`, and `launch` are all available under the `dockstore workflow` mode.
 
 While launching tools and workflows locally is useful for testing, this approach is not useful for processing a large amount of data in a production environment. The next step is to take our Docker images, described by CWL/WDL and run them in an environment that supports those descriptors. For now, we can suggest taking a look at the environments that currently support and are validated with CWL at [https://ci.commonwl.org/](https://ci.commonwl.org/) and for WDL, [Cromwell](https://github.com/broadinstitute/cromwell).
 
 For developers, you may also wish to look at our brief summary at [batch services](/docs/publisher-tutorials/batch-services) and commercial solutions such as [Google dsub](https://github.com/googlegenomics/task-submission-tools) and [AWS Batch](https://aws.amazon.com/batch/).
+
+#### Launching Nextflow Workflows
+Currently the Dockstore CLI does not support integration with the Nextflow CLI. However, the Nextflow CLI offers many of the same benefits as the Dockstore CLI.
+
+All non-hosted workflows in Dockstore are associated with a Git repository from GitHub, BitBucket, or GitLab. With the Nextflow CLI we can launch a Dockstore workflow by using this Git repository information through [pipeline sharing](https://www.nextflow.io/docs/latest/sharing.html#pipeline-sharing).
+
+Say we have the workflow `organization/my-workflow`. To launch, we would run the following commands based on the code repository that the workflow is stored on. See the link above for more advanced usage.
+
+```
+# Run workflow from GitHub (--hub github is optional)
+nextflow run organization/my-workflow --hub github
+
+# Run workflow from BitBucket
+nextflow run organization/my-workflow --hub bitbucket
+
+# Run workflow from GitLab
+nextflow run organization/my-workflow --hub gitlab
+```
 
 ## Next Steps
 
