@@ -68,7 +68,7 @@ import static org.junit.Assert.assertTrue;
 public class CRUDClientIT extends BaseIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();

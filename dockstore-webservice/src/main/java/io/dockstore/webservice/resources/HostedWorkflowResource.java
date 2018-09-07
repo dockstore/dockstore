@@ -26,6 +26,7 @@ import javax.ws.rs.Path;
 
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
@@ -62,8 +63,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     private final PermissionsInterface permissionsInterface;
     private Map<String, String> descriptorTypeToDefaultDescriptorPath;
 
-    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
-        super(sessionFactory, permissionsInterface);
+    public HostedWorkflowResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
+        super(sessionFactory, permissionsInterface, limitConfig);
         this.workflowVersionDAO = new WorkflowVersionDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;

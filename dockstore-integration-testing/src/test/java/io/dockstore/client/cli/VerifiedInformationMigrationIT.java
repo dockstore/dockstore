@@ -30,7 +30,7 @@ import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 public class VerifiedInformationMigrationIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIG_PATH);
+            DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
     @Rule
@@ -54,9 +54,9 @@ public class VerifiedInformationMigrationIT {
     public void toolVerifiedInformationMigrationTest() {
         Application<DockstoreWebserviceConfiguration> application = SUPPORT.getApplication();
         try {
-            application.run("db", "drop-all", "--confirm-delete-everything", CommonTestUtilities.CONFIG_PATH);
+            application.run("db", "drop-all", "--confirm-delete-everything", CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
             List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0");
-            CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIG_PATH);
+            CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
         } catch (Exception e) {
             Assert.fail("Could not run migrations up to 1.4.0");
         }
@@ -68,7 +68,7 @@ public class VerifiedInformationMigrationIT {
         // Run full 1.5.0 migration
         try {
             List<String> migrationList = Arrays.asList("1.5.0");
-            CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIG_PATH);
+            CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
         } catch (Exception e) {
             Assert.fail("Could not run 1.5.0 migration");
         }
@@ -83,9 +83,9 @@ public class VerifiedInformationMigrationIT {
     public void workflowVerifiedInformationMigrationTest() {
         Application<DockstoreWebserviceConfiguration> application = SUPPORT.getApplication();
         try {
-            application.run("db", "drop-all", "--confirm-delete-everything", CommonTestUtilities.CONFIG_PATH);
+            application.run("db", "drop-all", "--confirm-delete-everything", CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
             List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "1.4.0", "testworkflow");
-            CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIG_PATH);
+            CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
         } catch (Exception e) {
             Assert.fail("Could not run migrations up to 1.4.0");
         }
@@ -100,7 +100,7 @@ public class VerifiedInformationMigrationIT {
         // Run full 1.5.0 migration
         try {
             List<String> migrationList = Arrays.asList("1.5.0");
-            CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIG_PATH);
+            CommonTestUtilities.runMigration(migrationList, application, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
         } catch (Exception e) {
             Assert.fail("Could not run 1.5.0 migration");
         }

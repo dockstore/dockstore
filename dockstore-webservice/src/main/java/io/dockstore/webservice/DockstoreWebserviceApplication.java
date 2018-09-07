@@ -247,8 +247,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         environment.jersey().register(new UserResource(getHibernate().getSessionFactory(), workflowResource, dockerRepoResource, cachingAuthenticator, authorizer));
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
-        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer));
-        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer));
+        environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
+        environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
 
 

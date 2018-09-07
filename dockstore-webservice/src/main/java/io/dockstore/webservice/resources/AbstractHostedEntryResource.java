@@ -30,8 +30,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.base.MoreObjects;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -77,13 +79,17 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private final UserDAO userDAO;
     private final PermissionsInterface permissionsInterface;
     private final FileFormatDAO fileFormatDAO;
+    private final int calculatedEntryLimit;
+    private final int calculatedEntryVersionLimit;
 
-    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface) {
+    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
         this.elasticManager = new ElasticManager();
         this.userDAO = new UserDAO(sessionFactory);
         this.permissionsInterface = permissionsInterface;
+        this.calculatedEntryLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowLimit(), Integer.MAX_VALUE);
+        this.calculatedEntryVersionLimit = MoreObjects.firstNonNull(limitConfig.getWorkflowVersionLimit(), Integer.MAX_VALUE);
     }
 
     /**
@@ -109,6 +115,13 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "name", required = true) @QueryParam("name") String name,
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
         @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace) {
+
+        // check if the user has hit a limit yet
+        final long currentCount = getEntryDAO().countAllHosted(user.getId());
+        if (currentCount >= calculatedEntryLimit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + calculatedEntryLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        }
+
         descriptorType = checkType(descriptorType);
         T entry = getEntry(user, registry, name, descriptorType, namespace);
         checkForDuplicatePath(entry);
@@ -158,6 +171,13 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkEntry(entry);
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
+
+        // check if the user has hit a limit yet
+        final long currentCount = entry.getVersions().size();
+        if (currentCount >= calculatedEntryVersionLimit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        }
+
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
         boolean isValidVersion = checkValidVersion(versionSourceFiles, entry);
