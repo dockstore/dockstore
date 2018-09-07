@@ -22,3 +22,5 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 </sup>
 
 <sup> [3] The small number of verified Dockstore WDL tools/workflows were tested successfully.  More verification/testing likely needed.</sup>
+
+<sup> [4] The official Nextflow CLI is not yet connected to Dockstore. However, the Nextflow CLI does have file provisioning directly baked in.</sup>
