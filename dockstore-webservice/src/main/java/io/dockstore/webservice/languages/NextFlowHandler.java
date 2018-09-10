@@ -15,17 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
+import groovy.lang.MissingPropertyException;
 import groovy.util.ConfigObject;
 import groovy.util.ConfigSlurper;
 import groovyjarjarantlr.RecognitionException;
@@ -41,6 +31,17 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+
 /**
  * This class will eventually handle support for NextFlow
  */
@@ -51,10 +52,10 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         ConfigObject parse = getConfigObject(content);
         ConfigObject manifest = (ConfigObject)parse.get("manifest");
-        if (manifest.containsKey("description")) {
+        if (manifest != null && manifest.containsKey("description")) {
             entry.setDescription((String)manifest.get("description"));
         }
-        if (manifest.containsKey("author")) {
+        if (manifest != null && manifest.containsKey("author")) {
             entry.setAuthor((String)manifest.get("author"));
         }
 
@@ -106,8 +107,13 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         ConfigSlurper slurper = new ConfigSlurper();
         //TODO: replace with NextFlow parser when licensing issues are dealt with
         // this sucks, but we need to ignore includeConfig lines
-        String cleanedContent = content.replaceAll("(?m)^[ \t]*includeConfig.*", "");
-        return slurper.parse(cleanedContent);
+        String cleanedContent = content.replaceAll("(?i)(?m)^[ \t]*includeConfig.*", "");
+        try {
+            return slurper.parse(cleanedContent);
+        } catch (MissingPropertyException e) {
+            LOG.error("could not parse nextflow config due to " + e.getMessage());
+            return new ConfigObject();
+        }
     }
 
     /**
