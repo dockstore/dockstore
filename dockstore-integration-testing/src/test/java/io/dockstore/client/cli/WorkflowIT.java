@@ -186,8 +186,8 @@ public class WorkflowIT extends BaseIT {
         assertEquals("should find 4 versions with files for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
                 .filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count(), 4,
             refreshBitbucket.getWorkflowVersions().stream().filter(workflowVersion -> !workflowVersion.getSourceFiles().isEmpty()).count());
-        assertEquals("should find 4 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
-                .filter(WorkflowVersion::isValid).count(), 4,
+        assertEquals("should find 0 valid versions for bitbucket workflow, found : " + refreshBitbucket.getWorkflowVersions().stream()
+                .filter(WorkflowVersion::isValid).count(), 0,
             refreshBitbucket.getWorkflowVersions().stream().filter(WorkflowVersion::isValid).count());
 
         // should not be able to get content normally
@@ -196,24 +196,24 @@ public class WorkflowIT extends BaseIT {
         boolean exceptionThrown = false;
         try {
             anonymousGa4Ghv2Api
-                .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
+                .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "master");
         } catch (ApiException e) {
             exceptionThrown = true;
         }
         assertTrue(exceptionThrown);
         FileWrapper adminToolDescriptor = adminGa4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
         assertTrue("could not get content via optional auth", adminToolDescriptor != null && !adminToolDescriptor.getContent().isEmpty());
 
-        workflowApi.publish(workflowByPathBitbucket.getId(), new PublishRequest(){
+        workflowApi.publish(refreshGithub.getId(), new PublishRequest(){
             public Boolean isPublish() { return true;}
         });
         // check on URLs for workflows via ga4gh calls
         FileWrapper toolDescriptor = adminGa4Ghv2Api
-            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master");
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL");
         String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
         Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
-        checkForRelativeFile(adminGa4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, "master", "grep.cwl");
+        checkForRelativeFile(adminGa4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, "testCWL", "Dockstore.cwl");
 
 
         // check on commit ids for github
