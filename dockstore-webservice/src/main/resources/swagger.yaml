@@ -1227,8 +1227,8 @@ paths:
     post:
       tags:
       - "hosted"
-      summary: "Create a hosted tool"
-      description: "Create a hosted tool"
+      summary: "Create a hosted tool."
+      description: ""
       operationId: "createHostedTool"
       produces:
       - "application/json"
@@ -1264,8 +1264,8 @@ paths:
     delete:
       tags:
       - "hosted"
-      summary: "Delete a revision of a hosted tool"
-      description: "Delete a revision of a hosted tool"
+      summary: "Delete a revision of a hosted tool."
+      description: ""
       operationId: "deleteHostedToolVersion"
       produces:
       - "application/json"
@@ -1291,9 +1291,8 @@ paths:
     patch:
       tags:
       - "hosted"
-      summary: "Non-idempotent operation for creating new revisions of hosted tools"
-      description: "Non-idempotent operation for creating new revisions of hosted\
-        \ tools"
+      summary: "Non-idempotent operation for creating new revisions of hosted tools."
+      description: ""
       operationId: "editHostedTool"
       produces:
       - "application/json"
@@ -3358,8 +3357,8 @@ paths:
     post:
       tags:
       - "hosted"
-      summary: "Create a hosted workflow"
-      description: "Create a hosted workflow"
+      summary: "Create a hosted workflow."
+      description: ""
       operationId: "createHostedWorkflow"
       produces:
       - "application/json"
@@ -3396,7 +3395,7 @@ paths:
       tags:
       - "hosted"
       summary: "Delete a revision of a hosted workflow"
-      description: "Delete a revision of a hosted workflow"
+      description: ""
       operationId: "deleteHostedWorkflowVersion"
       produces:
       - "application/json"
@@ -3423,8 +3422,7 @@ paths:
       tags:
       - "hosted"
       summary: "Non-idempotent operation for creating new revisions of hosted workflows"
-      description: "Non-idempotent operation for creating new revisions of hosted\
-        \ workflows"
+      description: ""
       operationId: "editHostedWorkflow"
       produces:
       - "application/json"

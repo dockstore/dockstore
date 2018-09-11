@@ -1487,8 +1487,8 @@ paths:
     post:
       tags:
         - hosted
-      summary: Create a hosted tool
-      description: Create a hosted tool
+      summary: Create a hosted tool.
+      description: ''
       operationId: createHostedTool
       parameters:
         - name: registry
@@ -1528,8 +1528,8 @@ paths:
     delete:
       tags:
         - hosted
-      summary: Delete a revision of a hosted tool
-      description: Delete a revision of a hosted tool
+      summary: Delete a revision of a hosted tool.
+      description: ''
       operationId: deleteHostedToolVersion
       parameters:
         - name: entryId
@@ -1557,8 +1557,8 @@ paths:
     patch:
       tags:
         - hosted
-      summary: Non-idempotent operation for creating new revisions of hosted tools
-      description: Non-idempotent operation for creating new revisions of hosted tools
+      summary: Non-idempotent operation for creating new revisions of hosted tools.
+      description: ''
       operationId: editHostedTool
       parameters:
         - name: entryId
@@ -3683,8 +3683,8 @@ paths:
     post:
       tags:
         - hosted
-      summary: Create a hosted workflow
-      description: Create a hosted workflow
+      summary: Create a hosted workflow.
+      description: ''
       operationId: createHostedWorkflow
       parameters:
         - name: registry
@@ -3725,7 +3725,7 @@ paths:
       tags:
         - hosted
       summary: Delete a revision of a hosted workflow
-      description: Delete a revision of a hosted workflow
+      description: ''
       operationId: deleteHostedWorkflowVersion
       parameters:
         - name: entryId
@@ -3754,7 +3754,7 @@ paths:
       tags:
         - hosted
       summary: Non-idempotent operation for creating new revisions of hosted workflows
-      description: Non-idempotent operation for creating new revisions of hosted workflows
+      description: ''
       operationId: editHostedWorkflow
       parameters:
         - name: entryId

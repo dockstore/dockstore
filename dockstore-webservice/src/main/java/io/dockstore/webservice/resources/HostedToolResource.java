@@ -73,8 +73,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted tool", response = Tool.class)
+    @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace) {
         return super.createHosted(user, registry, name, descriptorType, namespace);
     }
@@ -93,8 +93,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    @ApiOperation(nickname = "editHostedTool", value = "Non-idempotent operation for creating new revisions of hosted tools", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted tools", response = Tool.class)
+    @ApiOperation(nickname = "editHostedTool", value = "Non-idempotent operation for creating new revisions of hosted tools.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
     }
@@ -130,8 +130,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    @ApiOperation(nickname = "deleteHostedToolVersion", value = "Delete a revision of a hosted tool", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Delete a revision of a hosted tool", response = Tool.class)
+    @ApiOperation(nickname = "deleteHostedToolVersion", value = "Delete a revision of a hosted tool.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
     public Tool deleteHostedVersion(User user, Long entryId, String version) {
         Tool tool = super.deleteHostedVersion(user, entryId, version);
         elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
