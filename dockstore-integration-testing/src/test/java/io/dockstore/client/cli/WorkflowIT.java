@@ -688,7 +688,7 @@ public class WorkflowIT extends BaseIT {
         assertNotNull("did not get published workflow", publishedWorkflowByPath);
 
         // publish everything so pagination testing makes more sense (going to unfortunately use rate limit)
-        Lists.newArrayList("github.com/DockstoreTestUser2/hello-dockstore-workflow", "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "bitbucket.org/dockstore_testuser2/dockstore-workflow", "github.com/DockstoreTestUser2/parameter_test_workflow").forEach(path -> {
+        Lists.newArrayList("github.com/DockstoreTestUser2/hello-dockstore-workflow", "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "github.com/DockstoreTestUser2/parameter_test_workflow").forEach(path -> {
             Workflow workflow = workflowApi.getWorkflowByPath(path);
             workflowApi.refresh(workflow.getId());
             workflowApi.publish(workflow.getId(), publishRequest);
@@ -750,19 +750,20 @@ public class WorkflowIT extends BaseIT {
         workflowApi.refresh(githubWorkflow.getId());
         workflowApi.publish(githubWorkflow.getId(), publishRequest);
 
-        // Publish bitbucket workflow
-        workflowApi.refresh(bitbucketWorkflow.getId());
-        workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
-
         // Assert some things
-        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 2,
+        assertEquals("should have two published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 1,
             workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertEquals("Two workflows are in full mode", 2, count3);
+        assertEquals("Two workflows are in full mode", 1, count3);
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
-        assertEquals("There should be 5 valid version tags, there are " + count4, 6, count4);
+        assertEquals("There should be 2 valid version tags, there are " + count4, 2, count4);
+
+        workflowApi.refresh(bitbucketWorkflow.getId());
+        thrown.expect(ApiException.class);
+        // Publish bitbucket workflow, will fail now since the workflow test case is actually invalid now
+        workflowApi.publish(bitbucketWorkflow.getId(), publishRequest);
     }
 
     @Test
