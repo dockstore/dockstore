@@ -157,6 +157,16 @@ Organizations have the ability to restrict access to the API for third party app
 
 In order for Dockstore to gain access to organizations of this type, you will need to grant access to the Dockstore application. Dockstore will only be reading information on workflows in your organization and who has access to them in order to mirror these restrictions on Dockstore itself. GitHub provides a [tutorial](https://help.github.com/articles/approving-oauth-apps-for-your-organization/) for approving third party apps access to your organization.
 
+## What are some Dockstore login/register intricacies?
+1. Each GitHub or Google account can be linked with one Dockstore account.  Which means the following is not possible:
+    - Trying to link a GitHub account that is already linked to another Dockstore account
+    - Trying to register a new Dockstore account using a GitHub account that is already linked to another Dockstore account
+    - Trying to link a Google account that was linked to another Dockstore account at any point in time
+    - Trying to register a new Dockstore account using a Google account that was linked to another Dockstore account at any point in time
+1. Both a GitHub and a Google account can be linked to the same Dockstore account. Afterwards, "Login with Google" and "Login with GitHub" can both work to log into the same Dockstore account.
+1. Logging in with a GitHub account that is not linked to any existing Dockstore account requires registration.
+1. Logging in with a Google account that is not linked to any existing Dockstore account at any point in time requires registration.
+
 ## Any last tips on using Dockstore?
 
 * the Dockstore CLI uses `./datastore` in the working directory for temp files so if you're processing large files make sure this partition hosting the current directory is large.
