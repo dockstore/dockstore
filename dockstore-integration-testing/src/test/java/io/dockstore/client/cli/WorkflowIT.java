@@ -755,7 +755,7 @@ public class WorkflowIT extends BaseIT {
             workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from workflow where mode = '" + Workflow.ModeEnum.FULL + "'", new ScalarHandler<>());
-        assertEquals("Two workflows are in full mode", 1, count3);
+        assertEquals("One workflow is in full mode", 1, count3);
         final long count4 = testingPostgres
                 .runSelectStatement("select count(*) from workflowversion where valid = 't'", new ScalarHandler<>());
         assertEquals("There should be 2 valid version tags, there are " + count4, 2, count4);
