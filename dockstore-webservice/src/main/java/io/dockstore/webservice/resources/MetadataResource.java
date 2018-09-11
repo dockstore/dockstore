@@ -94,7 +94,7 @@ public class MetadataResource {
     @Timed
     @UnitOfWork
     @Path("sitemap")
-    @ApiOperation(value = "List all workflow and tool paths.", notes = "NO authentication")
+    @ApiOperation(value = "List all published workflow and tool paths.", notes = "NO authentication")
     public String sitemap() {
         //TODO needs to be more efficient via JPA query
         List<Tool> tools = toolDAO.findAllPublished();
@@ -126,7 +126,7 @@ public class MetadataResource {
     @UnitOfWork
     @Path("rss")
     @Produces(MediaType.TEXT_XML)
-    @ApiOperation(value = "List all tools and workflows in creation order", notes = "NO authentication")
+    @ApiOperation(value = "List all published tools and workflows in creation order.", notes = "NO authentication")
     public String rssFeed() {
 
         final int limit = 50;
@@ -194,7 +194,7 @@ public class MetadataResource {
     @GET
     @Produces({ "text/plain", "application/json" })
     @Path("/runner_dependencies")
-    @ApiOperation(value = "Returns the file containing runner dependencies", response = String.class)
+    @ApiOperation(value = "Returns the file containing runner dependencies.", response = String.class)
     public Response getRunnerDependencies(
             @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("2") @QueryParam("python_version") String pythonVersion,
@@ -222,7 +222,7 @@ public class MetadataResource {
     @UnitOfWork
     @Path("/sourceControlList")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "Does not need authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
+    @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "NO authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
     public List<SourceControl.SourceControlBean> getSourceControlList() {
         List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
         Arrays.asList(SourceControl.values()).forEach(sourceControl -> sourceControlList.add(new SourceControl.SourceControlBean(sourceControl)));
@@ -234,7 +234,7 @@ public class MetadataResource {
     @UnitOfWork
     @Path("/dockerRegistryList")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "Does not need authentication", response = Registry.RegistryBean.class, responseContainer = "List")
+    @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
         List<Registry.RegistryBean> registryList = new ArrayList<>();
         Arrays.asList(Registry.values()).forEach(registry -> registryList.add(new Registry.RegistryBean(registry)));
@@ -246,7 +246,7 @@ public class MetadataResource {
     @UnitOfWork
     @Path("/descriptorLanguageList")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "Does not need authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
+    @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "NO authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
     public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
         Arrays.asList(DescriptorLanguage.values()).forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
@@ -258,7 +258,7 @@ public class MetadataResource {
     @UnitOfWork
     @Path("/okHttpCachePerformance")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Get measures of cache performance.", notes = "Does not need authentication", response = Map.class, responseContainer = "List")
+    @ApiOperation(value = "Get measures of cache performance.", notes = "NO authentication", response = Map.class, responseContainer = "List")
     public Map<String, String> getCachePerformance() {
         return extractCacheStatistics();
     }

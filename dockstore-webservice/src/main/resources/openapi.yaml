@@ -1286,7 +1286,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: 'Add a new bitbucket.org token, used by quay.io redirect'
+      summary: 'Add a new bitbucket.org token, used by quay.io redirect.'
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -1313,7 +1313,7 @@ paths:
         - tokens
       summary: >-
         Allow satellizer to post a new GitHub token to dockstore, used by login,
-        can create new users
+        can create new users.
       description: A post method is required by saetillizer to send the GitHub token
       operationId: addToken
       responses:
@@ -1331,7 +1331,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: 'Add a new github.com token, used by accounts page'
+      summary: 'Add a new github.com token, used by accounts page.'
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -1356,7 +1356,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: Add a new gitlab.com token
+      summary: Add a new gitlab.com token.
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -1381,7 +1381,7 @@ paths:
     post:
       tags:
         - tokens
-      summary: Allow satellizer to post a new Google token to dockstore
+      summary: Allow satellizer to post a new Google token to Dockstore.
       description: A post method is required by satellizer to send the Google token
       operationId: addGoogleToken
       responses:
@@ -1399,7 +1399,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: Add a new quay IO token
+      summary: Add a new quay IO token.
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -1424,8 +1424,8 @@ paths:
     get:
       tags:
         - tokens
-      summary: Get a specific token by id
-      description: Get a specific token by id
+      summary: Get a specific token by id.
+      description: ''
       operationId: listToken
       parameters:
         - name: tokenId
@@ -1451,7 +1451,7 @@ paths:
     delete:
       tags:
         - tokens
-      summary: Deletes a token
+      summary: Delete a token.
       description: ''
       operationId: deleteToken
       parameters:
@@ -2785,7 +2785,7 @@ paths:
       tags:
         - metadata
       summary: Get the list of descriptor languages supported on Dockstore.
-      description: Does not need authentication
+      description: NO authentication
       operationId: getDescriptorLanguages
       responses:
         '200':
@@ -2801,7 +2801,7 @@ paths:
       tags:
         - metadata
       summary: Get the list of docker registries supported on Dockstore.
-      description: Does not need authentication
+      description: NO authentication
       operationId: getDockerRegistries
       responses:
         '200':
@@ -2817,7 +2817,7 @@ paths:
       tags:
         - metadata
       summary: Get measures of cache performance.
-      description: Does not need authentication
+      description: NO authentication
       operationId: getCachePerformance
       responses:
         '200':
@@ -2834,7 +2834,7 @@ paths:
     get:
       tags:
         - metadata
-      summary: List all tools and workflows in creation order
+      summary: List all published tools and workflows in creation order.
       description: NO authentication
       operationId: rssFeed
       responses:
@@ -2848,7 +2848,7 @@ paths:
     get:
       tags:
         - metadata
-      summary: Returns the file containing runner dependencies
+      summary: Returns the file containing runner dependencies.
       description: ''
       operationId: getRunnerDependencies
       parameters:
@@ -2898,7 +2898,7 @@ paths:
     get:
       tags:
         - metadata
-      summary: List all workflow and tool paths.
+      summary: List all published workflow and tool paths.
       description: NO authentication
       operationId: sitemap
       responses:
@@ -2916,7 +2916,7 @@ paths:
       tags:
         - metadata
       summary: Get the list of source controls supported on Dockstore.
-      description: Does not need authentication
+      description: NO authentication
       operationId: getSourceControlList
       responses:
         '200':
