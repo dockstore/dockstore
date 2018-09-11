@@ -971,7 +971,7 @@ public class WorkflowResource
     @ApiOperation(value = "List the versions for a published workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
-        Workflow repository = workflowDAO.findById(workflowId);
+        Workflow repository = workflowDAO.findPublishedById(workflowId);
         checkEntry(repository);
 
         checkCanRead(user, repository);
