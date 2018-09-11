@@ -96,18 +96,20 @@ public class SamPermissionsImpl implements PermissionsInterface {
         try {
             final String encodedPath = encodedWorkflowResource(workflow, resourcesApi.getApiClient());
 
-            final List<AccessPolicyResponseEntry> policyList = ensureResourceExists(workflow, requester, resourcesApi,
-                    encodedPath).stream().filter(entry -> entry.getPolicy().getMemberEmails().contains(permission.getEmail()))
+            final List<AccessPolicyResponseEntry> resourcePolicies = ensureResourceExists(workflow, requester, resourcesApi,
+                    encodedPath);
+            final List<AccessPolicyResponseEntry> policiesNewUserBelongsTo = resourcePolicies
+                    .stream().filter(entry -> entry.getPolicy().getMemberEmails().contains(permission.getEmail()))
                     .collect(Collectors.toList());
             final String samPolicyName = permissionSamMap.get(permission.getRole());
-            ensurePolicyExists(policyList, samPolicyName, encodedPath, resourcesApi);
+            ensurePolicyExists(resourcePolicies, samPolicyName, encodedPath, resourcesApi);
             // If the email does not already belong to the policy, add it.
-            if (!policyList.stream().anyMatch(entry -> entry.getPolicyName().equals(samPolicyName))) {
+            if (!policiesNewUserBelongsTo.stream().anyMatch(entry -> entry.getPolicyName().equals(samPolicyName))) {
                 resourcesApi.addUserToPolicy(SamConstants.RESOURCE_TYPE, encodedPath, samPolicyName,
                         permission.getEmail());
             }
             // If the email belongs to other policies, remove it from them so that the one we are setting is the only applicable one.
-            for (AccessPolicyResponseEntry entry : policyList) {
+            for (AccessPolicyResponseEntry entry : policiesNewUserBelongsTo) {
                 if (!entry.getPolicyName().equals(samPolicyName)) {
                     resourcesApi.removeUserFromPolicy(SamConstants.RESOURCE_TYPE, encodedPath, entry.getPolicyName(), permission.getEmail());
                 }
@@ -127,7 +129,10 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     private void ensurePolicyExists(List<AccessPolicyResponseEntry> policyList, String policyName, String resourceId, ResourcesApi resourcesApi)
             throws ApiException {
-        if (policyList.stream().noneMatch(policy -> policyName.equals(policy.getPolicyName()))) {
+        // Owner policy is always created when creating a resource. Add an additional safeguard to avoid creating a second owner policy,
+        // which leads to #1805
+        if (!SamConstants.OWNER_POLICY.equals(policyName)
+                && policyList.stream().noneMatch(policy -> policyName.equals(policy.getPolicyName()))) {
             addPolicy(resourcesApi, resourceId, policyName);
         }
     }
@@ -138,11 +143,15 @@ public class SamPermissionsImpl implements PermissionsInterface {
         } catch (ApiException e) {
             if (e.getCode() == HttpStatus.SC_NOT_FOUND) {
                 initializePermission(workflow, requester);
+                try {
+                    return resourcesApi.listResourcePolicies(SamConstants.RESOURCE_TYPE, encodedPath);
+                } catch (ApiException e1) {
+                    throw new CustomWebApplicationException("Error listing permissions", e1.getCode());
+                }
             } else {
                 throw new CustomWebApplicationException("Error listing permissions", e.getCode());
             }
         }
-        return Collections.emptyList();
     }
 
     @Override
