@@ -137,7 +137,8 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public boolean isValidWorkflow(String content) {
-        return content.contains("class: Workflow");
+        Yaml yaml = new Yaml();
+        return content.contains("class: Workflow") && this.isValidCwl(content, yaml);
     }
 
     @Override
@@ -609,10 +610,14 @@ public class CWLHandler implements LanguageHandlerInterface {
     private boolean isValidCwl(String content, Yaml yaml) {
         try {
             Map<String, Object> mapping = yaml.loadAs(content, Map.class);
-            String cwlVersion = mapping.get("cwlVersion").toString();
+            final Object cwlVersion = mapping.get("cwlVersion");
 
             if (cwlVersion != null) {
-                return "v1.0".equals(cwlVersion);
+                final boolean equals = cwlVersion.toString().startsWith("v1");
+                if (!equals) {
+                    LOG.error("detected invalid version: " + cwlVersion.toString());
+                }
+                return equals;
             }
         } catch (ClassCastException e) {
             return false;

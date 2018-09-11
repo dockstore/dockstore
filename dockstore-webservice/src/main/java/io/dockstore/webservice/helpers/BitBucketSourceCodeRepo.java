@@ -185,18 +185,10 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
         if (!Strings.isNullOrEmpty(content)) {
             file = new SourceFile();
             // Grab content from found file
-
-            // Is workflow descriptor valid?
-            boolean validWorkflow = true;
-            if (LanguageHandlerFactory.isWorkflow(type)) {
-                validWorkflow = LanguageHandlerFactory.getInterface(type).isValidWorkflow(content);
-            }
-
-            if (validWorkflow) {
-                file.setType(type);
-                file.setContent(content);
-                file.setPath(path);
-            }
+            // do not censor invalid versions to match github expected behaviour
+            file.setType(type);
+            file.setContent(content);
+            file.setPath(path);
         }
         return file;
     }
@@ -308,9 +300,9 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     // TODO: No exceptions are caught here in the event of a failed call
                     SourceFile sourceFile = getSourceFile(calculatedPath, repositoryId, branchName, identifiedType);
 
-                    // Non-null sourcefile means that the sourcefile is valid
+                    // validity is checked just for the root description
                     if (sourceFile != null) {
-                        version.setValid(true);
+                        version.setValid(LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent()));
                     }
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited

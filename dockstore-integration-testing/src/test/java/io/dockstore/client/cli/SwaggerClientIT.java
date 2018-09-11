@@ -913,7 +913,7 @@ public class SwaggerClientIT extends BaseIT {
 
     private SourceFile createCwlWorkflow() {
         SourceFile fileCWL = new SourceFile();
-        fileCWL.setContent("class: Workflow"); // Need this for CWLHandler:isValidWorkflow
+        fileCWL.setContent("class: Workflow\ncwlVersion: v1.0"); // Need this for CWLHandler:isValidWorkflow
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
         return fileCWL;
