@@ -1368,7 +1368,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published tool by the specific tool path"
+      summary: "Get a published tool by the specific tool path."
       description: "Requires full path (including tool name if applicable)."
       operationId: "getPublishedContainerByToolPath"
       produces:
@@ -1512,7 +1512,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Get a published container."
+      summary: "Get a published tool."
       description: "NO authentication"
       operationId: "getPublishedContainer"
       produces:
@@ -1949,7 +1949,7 @@ paths:
     get:
       tags:
       - "containers"
-      summary: "Returns list of users who starred a tool"
+      summary: "Returns list of users who starred a tool."
       description: ""
       operationId: "getStarredUsers"
       produces:
@@ -2631,7 +2631,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Check if user with some username exists"
+      summary: "Check if user with some username exists."
       description: ""
       operationId: "checkUserExists"
       produces:
@@ -2653,7 +2653,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all groups"
+      summary: "List all groups."
       description: "This is not tied into PermissionsInterface but could be"
       operationId: "allGroups"
       produces:
@@ -2671,7 +2671,7 @@ paths:
     post:
       tags:
       - "users"
-      summary: "Create user group"
+      summary: "Create user group."
       description: ""
       operationId: "createGroup"
       produces:
@@ -2692,7 +2692,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List a group"
+      summary: "List a group."
       description: "This is not tied into PermissionsInterface but could be"
       operationId: "getGroup"
       produces:
@@ -2715,7 +2715,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get users that belongs to a group"
+      summary: "Get users that belongs to a group."
       description: "This is not tied into PermissionsInterface but could be"
       operationId: "getUsersFromGroup"
       produces:
@@ -2740,7 +2740,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred tools"
+      summary: "Get the logged-in user's starred tools."
       description: ""
       operationId: "getStarredTools"
       produces:
@@ -2759,7 +2759,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user's starred workflows"
+      summary: "Get the logged-in user's starred workflows."
       description: ""
       operationId: "getStarredWorkflows"
       produces:
@@ -2778,8 +2778,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Update metadata of all users"
-      description: "Update all users metadata. Admin only."
+      summary: "Update metadata of all users."
+      description: "Admin only."
       operationId: "updateUserMetadata"
       produces:
       - "application/json"
@@ -2797,7 +2797,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get the logged-in user"
+      summary: "Get the logged-in user."
       description: ""
       operationId: "getUser"
       produces:
@@ -2813,7 +2813,7 @@ paths:
     delete:
       tags:
       - "users"
-      summary: "Delete user if possible"
+      summary: "Delete user if possible."
       description: ""
       operationId: "selfDestruct"
       produces:
@@ -2830,7 +2830,7 @@ paths:
     post:
       tags:
       - "users"
-      summary: "Change username if possible"
+      summary: "Change username if possible."
       description: ""
       operationId: "changeUsername"
       produces:
@@ -2852,7 +2852,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get additional information on the logged-in user"
+      summary: "Get additional information about the logged-in user."
       description: ""
       operationId: "getExtendedUserData"
       produces:
@@ -2869,8 +2869,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Update metadata for logged in user"
-      description: "Update metadata for logged in user."
+      summary: "Update metadata for logged in user."
+      description: ""
       operationId: "updateLoggedInUserMetadata"
       produces:
       - "application/json"
@@ -2894,7 +2894,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get user"
+      summary: "Get a user by username."
       description: ""
       operationId: "listUser"
       produces:
@@ -2916,7 +2916,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get user with id"
+      summary: "Get user by id."
       description: ""
       operationId: "getUser"
       produces:
@@ -2939,9 +2939,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List repos owned by the logged-in user"
-      description: "Lists all registered and unregistered containers owned by the\
-        \ user"
+      summary: "List all tools owned by the logged-in user."
+      description: ""
       operationId: "userContainers"
       produces:
       - "application/json"
@@ -2965,8 +2964,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all published containers from a user"
-      description: "Get user's published containers only"
+      summary: "List all published tools from a user."
+      description: ""
       operationId: "userPublishedContainers"
       produces:
       - "application/json"
@@ -2990,8 +2989,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh repos owned by the logged-in user"
-      description: "Updates some metadata"
+      summary: "Refresh all tools owned by the logged-in user."
+      description: ""
       operationId: "refresh"
       produces:
       - "application/json"
@@ -3015,8 +3014,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh repos owned by the logged-in user with specified organization"
-      description: "Refresh all tools in an organization"
+      summary: "Refresh all tools owned by the logged-in user with specified organization."
+      description: ""
       operationId: "refreshToolsByOrganization"
       produces:
       - "application/json"
@@ -3045,7 +3044,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get groups that the user belongs to"
+      summary: "Get groups that the user belongs to."
       description: "This is not tied into PermissionsInterface but could be"
       operationId: "getGroupsFromUser"
       produces:
@@ -3069,7 +3068,7 @@ paths:
     put:
       tags:
       - "users"
-      summary: "Add a group to a user"
+      summary: "Add a group to a user."
       description: "This is not tied into PermissionsInterface but could be"
       operationId: "addGroupToUser"
       produces:
@@ -3098,7 +3097,7 @@ paths:
     delete:
       tags:
       - "users"
-      summary: "Remove a user from a group"
+      summary: "Remove a user from a group."
       description: "This is not tied into PermissionsInterface but could be"
       operationId: "removeUserFromGroup"
       produces:
@@ -3129,7 +3128,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get tokens with user id"
+      summary: "Get tokens with user id."
       description: ""
       operationId: "getUserTokens"
       produces:
@@ -3154,7 +3153,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get Dockstore tokens with user id"
+      summary: "Get Dockstore tokens with user id."
       description: ""
       operationId: "getDockstoreUserTokens"
       produces:
@@ -3179,7 +3178,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get Github tokens with user id"
+      summary: "Get Github tokens with user id."
       description: ""
       operationId: "getGithubUserTokens"
       produces:
@@ -3204,7 +3203,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get Gitlab tokens with user id"
+      summary: "Get Gitlab tokens with user id."
       description: ""
       operationId: "getGitlabUserTokens"
       produces:
@@ -3229,7 +3228,7 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Get Quay tokens with user id"
+      summary: "Get Quay tokens with user id."
       description: ""
       operationId: "getQuayUserTokens"
       produces:
@@ -3254,8 +3253,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List workflows owned by the logged-in user"
-      description: "Lists all registered and unregistered workflows owned by the user"
+      summary: "List all workflows owned by the logged-in user."
+      description: ""
       operationId: "userWorkflows"
       produces:
       - "application/json"
@@ -3279,8 +3278,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "List all published workflows from a user"
-      description: "Get user's published workflows only"
+      summary: "List all published workflows from a user."
+      description: ""
       operationId: "userPublishedWorkflows"
       produces:
       - "application/json"
@@ -3304,8 +3303,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh workflows owned by the logged-in user"
-      description: "Updates some metadata"
+      summary: "Refresh all workflows owned by the logged-in user."
+      description: ""
       operationId: "refreshWorkflows"
       produces:
       - "application/json"
@@ -3329,8 +3328,8 @@ paths:
     get:
       tags:
       - "users"
-      summary: "Refresh workflows owned by the logged-in user with specified organization"
-      description: "Refresh all workflows in an organization"
+      summary: "Refresh all workflows owned by the logged-in user with specified organization."
+      description: ""
       operationId: "refreshWorkflowsByOrganization"
       produces:
       - "application/json"

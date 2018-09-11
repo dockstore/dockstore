@@ -421,7 +421,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/published/{containerId}")
-    @ApiOperation(value = "Get a published container.", notes = "NO authentication", response = Tool.class)
+    @ApiOperation(value = "Get a published tool.", notes = "NO authentication", response = Tool.class)
     public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findPublishedById(containerId);
         checkEntry(tool);
@@ -682,7 +682,7 @@ public class DockerRepoResource
     @Timed
     @UnitOfWork
     @Path("/path/tool/{repository}/published")
-    @ApiOperation(value = "Get a published tool by the specific tool path", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
+    @ApiOperation(value = "Get a published tool by the specific tool path.", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         try {
@@ -969,7 +969,7 @@ public class DockerRepoResource
     @Path("/{containerId}/starredUsers")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Returns list of users who starred a tool", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Returns list of users who starred a tool.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsers(
         @ApiParam(value = "Tool to grab starred users for.", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findById(containerId);
