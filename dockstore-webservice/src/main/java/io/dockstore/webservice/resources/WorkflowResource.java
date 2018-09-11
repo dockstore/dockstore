@@ -881,8 +881,7 @@ public class WorkflowResource
         if (workflow.getMode() != WorkflowMode.HOSTED) {
             throw new CustomWebApplicationException("Setting permissions is only allowed on hosted workflows.", HttpStatus.SC_BAD_REQUEST);
         }
-        this.permissionsInterface.setPermission(user, workflow, permission);
-        return this.permissionsInterface.getPermissionsForWorkflow(user, workflow);
+        return this.permissionsInterface.setPermission(user, workflow, permission);
     }
 
     @DELETE
