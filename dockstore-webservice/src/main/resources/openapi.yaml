@@ -1583,7 +1583,7 @@ paths:
     get:
       tags:
         - containers
-      summary: List all published containers belonging to the specified namespace
+      summary: List all published tools belonging to the specified namespace.
       description: NO authentication
       operationId: getPublishedContainersByNamespace
       parameters:
@@ -1607,7 +1607,7 @@ paths:
       tags:
         - containers
       summary: Get a tool by the specific tool path
-      description: Lists info of tool. Enter full path (include quay.io in path).
+      description: Requires full path (including tool name if applicable).
       operationId: getContainerByToolPath
       parameters:
         - name: repository
@@ -1630,7 +1630,7 @@ paths:
       tags:
         - containers
       summary: Get a published tool by the specific tool path
-      description: Lists info of tool. Enter full path (include quay.io in path).
+      description: Requires full path (including tool name if applicable).
       operationId: getPublishedContainerByToolPath
       parameters:
         - name: repository
@@ -1677,8 +1677,8 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a list of tools by path
-      description: Lists info of tool. Enter full path (include quay.io in path).
+      summary: Get a list of tools by path.
+      description: Does not require tool name.
       operationId: getContainerByPath
       parameters:
         - name: repository
@@ -1702,7 +1702,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a list of published tools by path
+      summary: Get a list of published tools by path.
       description: NO authentication
       operationId: getPublishedContainerByPath
       parameters:
@@ -1723,7 +1723,7 @@ paths:
     get:
       tags:
         - containers
-      summary: List all published containers.
+      summary: List all published tools.
       description: NO authentication
       operationId: allPublishedContainers
       parameters:
@@ -1784,7 +1784,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a published container
+      summary: Get a published container.
       description: NO authentication
       operationId: getPublishedContainer
       parameters:
@@ -1806,8 +1806,8 @@ paths:
     post:
       tags:
         - containers
-      summary: 'Register an image manually, along with tags'
-      description: Register an image manually.
+      summary: 'Register a tool manually, along with tags.'
+      description: ''
       operationId: registerManual
       responses:
         '200':
@@ -1829,7 +1829,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a published container's schema by ID
+      summary: Get a published tool's schema by ID.
       description: NO authentication
       operationId: getPublishedContainerSchema
       parameters:
@@ -1855,7 +1855,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a registered repo
+      summary: Retrieve a tool.
       description: >-
         This is one of the few endpoints that returns the user object with
         populated properties (minus the userProfiles property)
@@ -1881,7 +1881,10 @@ paths:
       tags:
         - containers
       summary: Update the tool with the given tool.
-      description: ''
+      description: >-
+        Updates default descriptor paths, default Docker paths, default test
+        parameter paths, git url, and default version. Also updates tool
+        maintainer email, and private access for manual tools.
       operationId: updateContainer
       parameters:
         - name: containerId
@@ -1905,7 +1908,7 @@ paths:
     delete:
       tags:
         - containers
-      summary: Delete a tool
+      summary: Delete a tool.
       description: ''
       operationId: deleteContainer
       parameters:
@@ -1925,7 +1928,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.cwl file on Github.
+      summary: Get the primary CWL descriptor file on Github.
       description: >-
         Does not require authentication for published tools, authentication can
         be provided for restricted tools
@@ -1956,7 +1959,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.cwl file on Github.
+      summary: Get the corresponding CWL descriptor file on Github.
       description: >-
         Does not require authentication for published tools, authentication can
         be provided for restricted tools
@@ -2023,7 +2026,7 @@ paths:
     put:
       tags:
         - containers
-      summary: Update the labels linked to a container.
+      summary: Update the labels linked to a tool.
       description: >-
         Labels are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
@@ -2057,10 +2060,8 @@ paths:
     post:
       tags:
         - containers
-      summary: Publish or unpublish a container
-      description: >-
-        publish a container (public or private). Assumes that user is using
-        quay.io and github.
+      summary: Publish or unpublish a tool.
+      description: ''
       operationId: publish
       parameters:
         - name: containerId
@@ -2085,7 +2086,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Refresh one particular repo
+      summary: Refresh one particular tool.
       description: ''
       operationId: refresh
       parameters:
@@ -2208,7 +2209,7 @@ paths:
     put:
       tags:
         - containers
-      summary: Stars a tool.
+      summary: Star a tool.
       description: ''
       operationId: starEntry
       parameters:
@@ -2230,7 +2231,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Returns list of users who starred the given tool
+      summary: Returns list of users who starred a tool
       description: ''
       operationId: getStarredUsers
       parameters:
@@ -2398,7 +2399,7 @@ paths:
     put:
       tags:
         - containers
-      summary: Add test parameter files for a given tag.
+      summary: Add test parameter files to a tag.
       description: ''
       operationId: addTestParameterFiles
       parameters:
@@ -2449,7 +2450,7 @@ paths:
     delete:
       tags:
         - containers
-      summary: Delete test parameter files for a given tag.
+      summary: Delete test parameter files to a tag.
       description: ''
       operationId: deleteTestParameterFiles
       parameters:
@@ -2499,7 +2500,7 @@ paths:
     delete:
       tags:
         - containers
-      summary: Unstars a tool.
+      summary: Unstar a tool.
       description: ''
       operationId: unstarEntry
       parameters:
@@ -2519,10 +2520,10 @@ paths:
     put:
       tags:
         - containers
-      summary: Change the workflow paths
+      summary: Change the tool paths.
       description: >-
-        Tag correspond to each row of the versions table listing all information
-        for a docker repo tag
+        Resets the descriptor paths and dockerfile path of all versions to match
+        the default paths.
       operationId: updateTagContainerPath
       parameters:
         - name: containerId
@@ -2547,7 +2548,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get users of a container
+      summary: Get users of a tool.
       description: ''
       operationId: getUsers
       parameters:
@@ -2573,8 +2574,8 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the sources that verified a particular tool.
-      description: Does not need authentication
+      summary: Get the sources that verified a tool.
+      description: NO authentication
       operationId: verifiedSources
       parameters:
         - name: containerId
@@ -2630,7 +2631,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.wdl file on Github.
+      summary: Get the primary WDL descriptor file on Github.
       description: >-
         Does not require authentication for published tools, authentication can
         be provided for restricted tools
@@ -2661,7 +2662,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.wdl file on Github.
+      summary: Get the corresponding WDL descriptor file on Github.
       description: >-
         Does not require authentication for published tools, authentication can
         be provided for restricted tools
