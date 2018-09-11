@@ -1388,9 +1388,8 @@ paths:
     get:
       tags:
       - "containertags"
-      summary: "Get tags  for a container by id"
-      description: "Lists tags for a container. Enter full path (include quay.io in\
-        \ path)."
+      summary: "Get tags for a tool by id."
+      description: ""
       operationId: "getTagsByPath"
       produces:
       - "application/json"
@@ -1832,7 +1831,7 @@ paths:
     post:
       tags:
       - "containertags"
-      summary: "Request a DOI for this version of a tool"
+      summary: "Request a DOI for this version of a tool."
       description: ""
       operationId: "requestDOIForToolTag"
       produces:
@@ -1973,9 +1972,8 @@ paths:
     post:
       tags:
       - "containertags"
-      summary: "Add new tags linked to a container"
-      description: "Tag correspond to each row of the versions table listing all information\
-        \ for a docker repo tag"
+      summary: "Add new tags linked to a tool."
+      description: ""
       operationId: "addTags"
       produces:
       - "application/json"
@@ -2006,9 +2004,8 @@ paths:
     put:
       tags:
       - "containertags"
-      summary: "Update the tags linked to a container"
-      description: "Tag correspond to each row of the versions table listing all information\
-        \ for a docker repo tag"
+      summary: "Update the tags linked to a tool."
+      description: ""
       operationId: "updateTags"
       produces:
       - "application/json"
@@ -2040,9 +2037,8 @@ paths:
     delete:
       tags:
       - "containertags"
-      summary: "Delete tag linked to a container"
-      description: "Tag correspond to each row of the versions table listing all information\
-        \ for a docker repo tag"
+      summary: "Delete tag linked to a tool."
+      description: ""
       operationId: "deleteTags"
       produces:
       - "application/json"
