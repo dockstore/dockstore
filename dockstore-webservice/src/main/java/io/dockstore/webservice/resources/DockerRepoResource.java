@@ -560,17 +560,17 @@ public class DockerRepoResource
     public Tool publish(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool id to publish", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "PublishRequest to refresh the list of repos for a user", required = true) PublishRequest request) {
-        Tool c = toolDAO.findById(containerId);
-        checkEntry(c);
+        Tool tool = toolDAO.findById(containerId);
+        checkEntry(tool);
 
-        checkUser(user, c);
+        checkUser(user, tool);
 
-        Workflow checker = c.getCheckerWorkflow();
+        Workflow checker = tool.getCheckerWorkflow();
 
         if (request.getPublish()) {
             boolean validTag = false;
 
-            Set<Tag> tags = c.getTags();
+            Set<Tag> tags = tool.getTags();
             for (Tag tag : tags) {
                 if (tag.isValid()) {
                     validTag = true;
@@ -578,17 +578,17 @@ public class DockerRepoResource
                 }
             }
 
-            if (c.isPrivateAccess()) {
+            if (tool.isPrivateAccess()) {
                 // Check that either tool maintainer email or author email is not null
-                if (Strings.isNullOrEmpty(c.getToolMaintainerEmail()) && Strings.isNullOrEmpty(c.getEmail())) {
+                if (Strings.isNullOrEmpty(tool.getToolMaintainerEmail()) && Strings.isNullOrEmpty(tool.getEmail())) {
                     throw new CustomWebApplicationException(
                         "Either a tool email or tool maintainer email is required to publish private tools.", HttpStatus.SC_BAD_REQUEST);
                 }
             }
 
             // Can publish a tool IF it has at least one valid tag (or is manual) and a git url
-            if (validTag && (!c.getGitUrl().isEmpty()) || Objects.equals(c.getMode(), ToolMode.HOSTED)) {
-                c.setIsPublished(true);
+            if (validTag && (!tool.getGitUrl().isEmpty()) || Objects.equals(tool.getMode(), ToolMode.HOSTED)) {
+                tool.setIsPublished(true);
                 if (checker != null) {
                     checker.setIsPublished(true);
                 }
@@ -596,20 +596,20 @@ public class DockerRepoResource
                 throw new CustomWebApplicationException("Repository does not meet requirements to publish.", HttpStatus.SC_BAD_REQUEST);
             }
         } else {
-            c.setIsPublished(false);
+            tool.setIsPublished(false);
             if (checker != null) {
                 checker.setIsPublished(false);
             }
         }
 
-        long id = toolDAO.create(c);
-        c = toolDAO.findById(id);
+        long id = toolDAO.create(tool);
+        tool = toolDAO.findById(id);
         if (request.getPublish()) {
-            elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
+            elasticManager.handleIndexUpdate(tool, ElasticMode.UPDATE);
         } else {
-            elasticManager.handleIndexUpdate(c, ElasticMode.DELETE);
+            elasticManager.handleIndexUpdate(tool, ElasticMode.DELETE);
         }
-        return c;
+        return tool;
     }
 
     @GET

@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.5.0-rc.0-SNAPSHOT"
+  version: "1.5.0-rc.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3459,7 +3459,7 @@ paths:
     post:
       tags:
       - "workflows"
-      summary: "Manually register a workflow"
+      summary: "Manually register a workflow."
       description: "Manually register workflow (public or private)."
       operationId: "manualRegister"
       produces:
@@ -3506,7 +3506,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "List all published workflows belonging to the specified namespace"
+      summary: "List all published workflows of an organization."
       description: "NO authentication"
       operationId: "getPublishedWorkflowsByOrganization"
       produces:
@@ -3528,8 +3528,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get an entry by path"
-      description: "Gets an entry from the path. Enter full path."
+      summary: "Get an entry by path."
+      description: "Requires full path (including entry name if applicable)."
       operationId: "getEntryByPath"
       produces:
       - "application/json"
@@ -3550,8 +3550,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get an entry by path"
-      description: "Gets a published entry from the path. Enter full path."
+      summary: "Get a published entry by path."
+      description: "Requires full path (including entry name if applicable)."
       operationId: "getPublishedEntryByPath"
       produces:
       - "application/json"
@@ -3570,8 +3570,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a workflow by path"
-      description: "Lists info of workflow. Enter full path."
+      summary: "Get a workflow by path."
+      description: "Requires full path (including workflow name if applicable)."
       operationId: "getWorkflowByPath"
       produces:
       - "application/json"
@@ -3592,7 +3592,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Gets all actions a user can perform on a workflow"
+      summary: "Gets all actions a user can perform on a workflow."
       description: ""
       operationId: "getWorkflowActions"
       produces:
@@ -3621,9 +3621,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get all permissions for a workflow"
-      description: "Lists all permissions for a workflow. The user must be the workflow\
-        \ owner."
+      summary: "Get all permissions for a workflow."
+      description: "The user must be the workflow owner."
       operationId: "getWorkflowPermissions"
       produces:
       - "application/json"
@@ -3645,9 +3644,8 @@ paths:
     delete:
       tags:
       - "workflows"
-      summary: "Remove the specified user role for a workflow"
-      description: "Removes a role from a workflow. The user must be the workflow\
-        \ owner."
+      summary: "Remove the specified user role for a workflow."
+      description: "The user must be the workflow owner."
       operationId: "removeWorkflowRole"
       produces:
       - "application/json"
@@ -3683,9 +3681,9 @@ paths:
     patch:
       tags:
       - "workflows"
-      summary: "Set the specified permission for a user on a workflow"
-      description: "Adds a permission for a workflow. The user must be the workflow\
-        \ owner. Currently only supported on hosted workflows."
+      summary: "Set the specified permission for a user on a workflow."
+      description: "The user must be the workflow owner. Currently only supported\
+        \ on hosted workflows."
       operationId: "addWorkflowPermission"
       produces:
       - "application/json"
@@ -3715,7 +3713,7 @@ paths:
       tags:
       - "workflows"
       summary: "Get a published workflow by path"
-      description: "Lists info of workflow. Enter full path."
+      description: "Does not require workflow name."
       operationId: "getPublishedWorkflowByPath"
       produces:
       - "application/json"
@@ -3734,8 +3732,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a list of workflows by path"
-      description: "Lists info of workflow. Enter full path."
+      summary: "Get a list of workflows by path."
+      description: "Does not require workflow name."
       operationId: "getAllWorkflowByPath"
       produces:
       - "application/json"
@@ -3812,8 +3810,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a published workflow"
-      description: "NO authentication"
+      summary: "Get a published workflow."
+      description: "Hidden versions will not be visible. NO authentication"
       operationId: "getPublishedWorkflow"
       produces:
       - "application/json"
@@ -3833,8 +3831,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "All workflows shared with user"
-      description: "List all workflows shared with user"
+      summary: "Retrieve all workflows shared with user."
+      description: ""
       operationId: "sharedWorkflows"
       produces:
       - "application/json"
@@ -3852,7 +3850,7 @@ paths:
     post:
       tags:
       - "workflows"
-      summary: "Register a checker workflow and associates it with the given tool/workflow"
+      summary: "Register a checker workflow and associates it with the given tool/workflow."
       description: ""
       operationId: "registerCheckerWorkflow"
       produces:
@@ -3895,7 +3893,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a registered workflow"
+      summary: "Retrieve a workflow"
       description: "This is one of the few endpoints that returns the user object\
         \ with populated properties (minus the userProfiles property)"
       operationId: "getWorkflow"
@@ -3919,7 +3917,8 @@ paths:
       tags:
       - "workflows"
       summary: "Update the workflow with the given workflow."
-      description: ""
+      description: "Updates descriptor type (if stub), default workflow path, default\
+        \ file path, and default version"
       operationId: "updateWorkflow"
       produces:
       - "application/json"
@@ -3947,7 +3946,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.cwl file on Github."
+      summary: "Get the primary CWL descriptor file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "cwl"
@@ -3975,7 +3974,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.cwl file on Github."
+      summary: "Get the corresponding CWL descriptor file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "secondaryCwlPath"
@@ -4007,7 +4006,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the DAG for a given workflow version"
+      summary: "Get the DAG for a given workflow version."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getWorkflowDag"
@@ -4037,7 +4036,7 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Update the default version of the given workflow."
+      summary: "Update the default version of a workflow."
       description: ""
       operationId: "updateWorkflowDefaultVersion"
       produces:
@@ -4102,7 +4101,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding nextflow.config file on Github."
+      summary: "Get the nextflow.config file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "nextflow"
@@ -4162,7 +4161,7 @@ paths:
     post:
       tags:
       - "workflows"
-      summary: "Publish or unpublish a workflow"
+      summary: "Publish or unpublish a workflow."
       description: "Publish/publish a workflow (public or private)."
       operationId: "publish"
       produces:
@@ -4191,8 +4190,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Refresh one particular workflow. Always do a full refresh when targeted"
-      description: ""
+      summary: "Refresh one particular workflow."
+      description: "Full refresh"
       operationId: "refresh"
       produces:
       - "application/json"
@@ -4214,7 +4213,7 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Request a DOI for this version of a workflow"
+      summary: "Request a DOI for this version of a workflow."
       description: ""
       operationId: "requestDOIForWorkflowVersion"
       produces:
@@ -4245,9 +4244,9 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Change the workflow paths"
-      description: "Workflow version correspond to each row of the versions table\
-        \ listing all information for a workflow"
+      summary: "Reset the workflow paths."
+      description: "Resets the workflow paths of all versions to match the default\
+        \ workflow path."
       operationId: "updateWorkflowPath"
       produces:
       - "application/json"
@@ -4388,7 +4387,7 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Stars a workflow."
+      summary: "Star a workflow."
       description: ""
       operationId: "starEntry"
       produces:
@@ -4415,7 +4414,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Returns list of users who starred the given Workflow"
+      summary: "Returns list of users who starred the given workflow."
       description: ""
       operationId: "getStarredUsers"
       produces:
@@ -4549,7 +4548,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the Tools for a given workflow version"
+      summary: "Get the Tools for a given workflow version."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "getTableToolContent"
@@ -4579,7 +4578,7 @@ paths:
     delete:
       tags:
       - "workflows"
-      summary: "Unstars a workflow."
+      summary: "Unstar a workflow."
       description: ""
       operationId: "unstarEntry"
       produces:
@@ -4600,7 +4599,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get users of a workflow"
+      summary: "Get users of a workflow."
       description: ""
       operationId: "getUsers"
       produces:
@@ -4625,8 +4624,8 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get a semicolon delimited list of verified sources"
-      description: "Does not need authentication"
+      summary: "Get a semicolon delimited list of verified sources."
+      description: "NO authentication"
       operationId: "verifiedSources"
       produces:
       - "application/json"
@@ -4683,7 +4682,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.wdl file on Github."
+      summary: "Get the primary WDL descriptor file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "wdl"
@@ -4711,7 +4710,7 @@ paths:
     get:
       tags:
       - "workflows"
-      summary: "Get the corresponding Dockstore.wdl file on Github."
+      summary: "Get the corresponding WDL descriptor file on Github."
       description: "Does not require authentication for published workflows, authentication\
         \ can be provided for restricted workflows"
       operationId: "secondaryWdlPath"
@@ -4743,9 +4742,8 @@ paths:
     put:
       tags:
       - "workflows"
-      summary: "Update the workflow versions linked to a workflow"
-      description: "Workflow version correspond to each row of the versions table\
-        \ listing all information for a workflow"
+      summary: "Update the workflow versions linked to a workflow."
+      description: "Updates workflow path, reference, and hidden attributes."
       operationId: "updateWorkflowVersion"
       produces:
       - "application/json"
