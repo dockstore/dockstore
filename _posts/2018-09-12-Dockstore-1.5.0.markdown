@@ -1,0 +1,54 @@
+---
+layout: post
+title:  "Dockstore 1.5.0"
+date:   2018-09-12 09:00:00 -0400
+categories: dockstore update
+---
+We've just released the next major version of Dockstore!
+
+
+## Highlighted new features include 
+
+* initial support for [Nextflow workflows](https://www.nextflow.io/)
+  * starts with support for registering, searching, indexing Nextflow workflow authors+descriptions, and visualizing Nextflow workflows with a rough and ready DAG, and display of Docker images used by a Nextflow workflow
+  * full details on support [language-by-language](https://docs.dockstore.org/docs/user-tutorials/language-support/) 
+* initial support for [hosted workflows](https://docs.dockstore.org/docs/publisher-tutorials/hosted-tools-and-workflows/) with CWL and WDL  
+  * allows users to create and edit a limited number (and versions of) of workflows directly on the dockstore.org site for quick prototyping and iteration 
+  * hosted workflows also support all the regular features that you're used to for regular workflows
+  * download zip bundles of your hosted (actually, all) workflows to ensure that you can always get back your workflows
+* limited beta of [permissions](https://docs.dockstore.org/docs/publisher-tutorials/sharing-workflows/) based sharing
+  * this will eventually allow all users to share workflows with a limited number of other Dockstore users
+  * initially, this feature will be limited to users (or rather Google accounts) that are known to the [Firecloud](https://software.broadinstitute.org/firecloud/) ecosystem, but we hope to roll this out to all users over the coming months
+* login with Google and associate your account allowing you to login with either GitHub or Google
+  * limited ability to change your username before performing major work on Dockstore
+* a file provisioning client [plugin](https://github.com/dockstore/data-object-service-plugin) that supports the nascent GA4GH [DOS](https://github.com/ga4gh/data-object-service-schemas) service
+  * this allows local development and launching of CWL and WDL workflows to download input files referenced by DOS
+* Launch-with support for [DNANexus](https://docs.dockstore.org/docs/user-tutorials/dnanexus-launch-with/)
+* language support updates
+  * updates for WDL support from wdl4s_2.11 to wdl4s-wom_2.11 and Cromwell from 29 to 30.2
+  * updates for cwltool support from  1.0.20170828135420 to 1.0.20180403145700 
+  * to elaborate, [verified](https://docs.dockstore.org/faq/#what-is-a-verified-tool-or-workflow) workflows have been run in-house succesfully with these versions
+* updates to use the Bitbucket 2.0 API and the Gitlab V4 API
+* a large number of UI improvements and usability improvements including, but not limited to 
+  * a much improved experience on mobile devices
+  * display of commit ids and dates for the files we're bringing in and whether they came from a tag or branch
+  * CWL, WDL, Nextflow syntax highlighting thanks to the official grammars provided by these languages to GitHub 
+  * [experimental](https://github.com/Sage-Bionetworks/workflow-interop/blob/develop/docs/Verification.md#verifying-a-test-parameter-file) display of extended verification information separated by platforms and contributed by curators
+* we've also added a privacy policy and are working on a terms of service 
+
+* for those eager for inside baseball, we updated from Angular 4 to 6 including updates to the version of Typescript we're using for the UI, much of the UI has been updated to use Angular Material, and we've refreshed many of our Java dependencies
+
+See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/milestone/18)
+
+## Breaking changes 
+
+### Major
+
+* beta support for the GA4GH tool registry schema service moves from [2.0.0-beta.1](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.1) to [2.0.0-beta.2](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/2.0.0-beta.2) 
+  * among other improvements, this simplifies the fields for containerfile, descriptors, and test json with further details on the breaking changes in particular [here](https://github.com/ga4gh/tool-registry-service-schemas/pull/48)
+* old iterations of the Dockstore CLI that were previously able to launch unpublished entries of your own creation will no longer be able to without an update
+  * published entries should be unaffected
+
+### Minor
+* the recommended default root of our API is now https://dockstore.org/api/ rather than https://dockstore.org:8443/ 
+  * for examnple, https://dockstore.org:8443/swagger.json is deprecated in favour of https://dockstore.org/api/swagger.json 
