@@ -27,6 +27,7 @@ The entry that a checker workflow is testing will be referred to as an original 
 For this tutorial we will be registering a checker workflow to test an original tool that calculates the MD5sum of a file.
 
 The relevant tools and workflows can be found in the following Git repository:
+<!-- warning, a bare link will look like it creates a hyperlink in the githbu editor, but is compiled to plain text by Jekyll --> 
 [https://github.com/dockstore-testing/md5sum-checker](https://github.com/dockstore-testing/md5sum-checker)
 
 #### Quick overview of structure
@@ -69,7 +70,7 @@ We also recommend producing the following two output files containing the stdout
 For existing dockstore commands (tools and workflows), entry refers to the path of a specific tool or workflow. For checker workflows, entry refers to the path of the original entry. It does not refer to the checker workflow's path.
 
 ## Adding a checker workflow
-Currently, you can add checker workflows to existing tools and workflows.
+Currently, you can add checker workflows to existing tools and workflows through the UI and CLI
 
 ### From the UI
 Lets add a checker workflow for the tool described by [/md5sum/md5sum-tool.cwl](https://github.com/dockstore-testing/md5sum-checker/blob/master/md5sum/md5sum-tool.cwl) in the git repository. I already have the tool properly setup on Dockstore. For this tutorial it is assumed that you are familiar with the process for setting up tools and workflows on Dockstore.
@@ -81,11 +82,11 @@ The first step is to find the tool under the my tools page. In the info tab ther
 When registering a checker workflow, you need the following fields:
 * Default checker workflow path (path to main descriptor of the checker workflow)
 * Default test parameter file (if not given will copy over from original entry)
-* Descriptor type (cwl or wdl)
+* Descriptor type (CWL or WDL) when original entry is a tool
 
 ![Checker Workflow Register](/assets/images/docs/checker-workflow-register.png)
 
-Once a checker workflow has been added, you can view it by going to the info tab of the original entry. Where there used to be an add button, there is now the view and delete buttons. View will take you to your checker workflow page, and delete will remove the associated checker workflow (will not delete it from the database).
+Once a checker workflow has been added, you can view it by going to the info tab of the original entry. Where there used to be an add button, there is now the view button. View will take you back to your checker workflow page.
 
 ### From the CLI
 Run the command `dockstore checker --help` to see all available checker workflow commands.
@@ -97,7 +98,7 @@ Using our example checker workflow, we would run the following:
 
 This will add the checker workflow defined by [/checker-workflow-wrapping-tool.cwl](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-workflow-wrapping-tool.cwl) to the entry `quay.io/agduncan94/my-md5sum`.
 
-The descriptor type will default to 'cwl' if none is provided.
+The descriptor type will default to 'CWL' if none is provided.
 The default input parameter path will default to the default input parameter path of the original entry.
 
 ## Updating a checker workflow

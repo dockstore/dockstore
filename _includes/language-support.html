@@ -19,72 +19,102 @@
             <th>Feature</th>
             <th>CWL</th>
             <th>WDL</th>
+            <th>Nextflow</th>
         </tr>
     </thead>
 
     <body>
         <tr>
-            <th>GUI</th>
+            <th>Dockstore site</th>
+            <th></th>
             <th></th>
             <th></th>
         </tr>
         <tr>
-            <td>Tool registration</td>
+            <td><a href="/docs/publisher-tutorials/getting-started-with-dockstore/">Tool registration</a></td>
+            <td class="success">Yes</td>
+            <td class="success">Yes</td>
+            <td class="warning">No</td>
+        </tr>
+        <tr>
+            <td><a href="/docs/publisher-tutorials/workflows/">Workflow registration</a></td>
+            <td class="success">Yes</td>
             <td class="success">Yes</td>
             <td class="success">Yes</td>
         </tr>
         <tr>
-            <td>Workflow registration</td>
+            <td><a href="/docs/publisher-tutorials/hosted-tools-and-workflows/">Hosted Workflows</a></td>
             <td class="success">Yes</td>
             <td class="success">Yes</td>
+            <td class="warning">Coming soon!</td>
         </tr>
         <tr>
             <td>DAG Display</td>
-            <td class="success">Yes (cwl version=>1.0)</td>
-            <td class="danger">No</td>
+            <td class="success">Yes (cwl version=>1.0)
+                <sup>[0]</sup>
+            </td>
+            <td class="success">Yes</td>
+            <td class="success">Limited support</td>
         </tr>
         <tr>
             <td>Tool Tab Display</td>
             <td class="success">Yes (cwl version=>1.0)</td>
-            <td class="danger">No</td>
+            <td class="success">Yes</td>
+            <td class="success">Yes</td>
         </tr>
         <tr>
             <td>Launch-with Platforms</td>
-            <td class="danger">N/A</td>
+            <td class="warning">Not yet!</td>
             <td class="success">
-                FireCloud (workflows only)<sup>[1]</sup>
+                <a href="/docs/user-tutorials/firecloud-launch-with/">FireCloud</a> (workflows only)<sup>[1]</sup>
                 <br>
-                DNAStack (workflows only)<sup>[2]</sup></td>
+                <a href="/docs/user-tutorials/dnastack-launch-with/">DNAStack</a> (workflows only)<sup>[2]</sup>
+                <br>
+                <a href="/docs/user-tutorials/dnanexus-launch-with/">DNAnexus</a> (workflows only)
+            </td>
+            <td class="warning">Not yet!</td>
         </tr>
         <tr>
-            <td>Metadata Extraction</td>
-            <td class="success">Yes</td>
-            <td class="success">Yes</td>
+            <td>Metadata Display</td>
+            <td class="success"><a href="/docs/publisher-tutorials/best-practices/#authorship-metadata">Yes</a></td>
+            <td class="success"><a href="/docs/publisher-tutorials/wdl-best-practices/#authorship-metadata">Yes</a></td>
+            <td class="success"><a href="/docs/publisher-tutorials/nfl-best-practices/#authorship-metadata">Yes</a></td>
         </tr>
         <tr>
-            <th>CLI</th>
+            <th>Dockstore CLI</th>
             <th></th>
             <th></th>
+            <th></th>
         </tr>
         <tr>
-            <td>Local workflow engines</td>
+            <td><a href="/docs/user-tutorials/launch/#dockstore-cli">Local workflow engines</a></td>
             <td class="success">cwltool
             </td>
             <td class="success">Cromwell
                 <sup>[3]</sup>
             </td>
+            <td class="success">Nextflow
+                <sup>[4]</sup>
+            </td>
         </tr>
         <tr>
-            <td>File Provisioning In</td>
+            <td><a href="/docs/publisher-tutorials/advanced-features/#file-provisioning">File Provisioning</a> In</td>
             <td class="success">Local File System
                 <br>HTTP
                 <br>FTP
                 <br>S3 via plugins
+                <br><a href="https://github.com/ga4gh/data-object-service-schemas">Data Object Service</a>
             </td>
             <td class="success">Local File System
                 <br>HTTP
                 <br>FTP
                 <br>S3 via plugins
+                <br><a href="https://github.com/ga4gh/data-object-service-schemas">Data Object Service</a>
+            </td>
+            <td class="success">Local File System
+                <br><a href="https://www.nextflow.io/docs/latest/script.html#http-ftp-files">HTTP</a>
+                <br><a href="https://www.nextflow.io/docs/latest/script.html#http-ftp-files">FTP</a>
+                <br><a href="https://www.nextflow.io/docs/latest/amazons3.html#">S3</a>
             </td>
         </tr>
         <tr>
@@ -95,6 +125,8 @@
                 <a href="https://github.com/dockstore/s3cmd-plugin">s3cmd</a>
                 <br>
                 <a href="https://github.com/dockstore/icgc-get-plugin">icgc-get</a>
+                <br>
+                <a href="https://github.com/dockstore/data-object-service-plugin">Data Object Service</a>
             </td>
             <td class="success">
                 <a href="https://github.com/dockstore/s3-plugin">s3</a>
@@ -102,7 +134,10 @@
                 <a href="https://github.com/dockstore/s3cmd-plugin">s3cmd</a>
                 <br>
                 <a href="https://github.com/dockstore/icgc-get-plugin">icgc-get</a>
+                <br>
+                <a href="https://github.com/dockstore/data-object-service-plugin">Data Object Service</a>
             </td>
+            <td class="warning">No</td>
         </tr>
         <tr>
             <td>File Provisioning Out</td>
@@ -113,11 +148,15 @@
             </td>
             <td class="warning">Local File System
             </td>
+            <td class="success">Local File System
+                <br><a href="https://www.nextflow.io/docs/latest/process.html#storedir">S3</a>
+            </td>
         </tr>
         <tr>
-            <td>Notifications</td>
+            <td><a href="/docs/publisher-tutorials/advanced-features/#notifications">Notifications</a></td>
             <td class="success">Yes</td>
             <td class="success">Yes</td>
+            <td class="warning">No</td>
         </tr>
     </body>
 </table>

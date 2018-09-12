@@ -1,16 +1,82 @@
 ---
-title: Best Practices
+title: CWL Best Practices
 permalink: /docs/publisher-tutorials/best-practices/
 ---
-# Best Practices
+{% include_relative best-practices-intro.md %}
 
-Here, we document some best practices for creating CWL tools as we understand them. Our intention is that this document will evolve as CWL evolves so feel free to provide suggestions and/or improvements.
+## Authorship Metadata
 
-## Recommended CWL Fields
+{% include_relative authorship-metadata-intro.md %}
+
+This example includes author, email, and description metadata:
+
+*workflow.cwl*
+```
+#!/usr/bin/env cwl-runner
+
+cwlVersion: v1.0
+class: Workflow
+doc: |
+    Implementing bamqc over and over again to get an idea of how easy or hard it is for a beginner to implement a basic workflow in different workflow systems.
+inputs:
+  bamfile:
+    type: File
+  bedfile:
+    type: File
+  bamqc_pl:
+    type: File
+  flagstat2json:
+    type: File
+
+outputs:
+  bamqc_json:
+    type: File
+    outputSource: bamqc/outjson
+  flagstatjson:
+    type: File
+    outputSource: flagstat_json/flagstat_json
+
+steps:
+  flagstat:
+    run: flagstat.cwl
+    in:
+      bamfile: bamfile
+    out: [flagstat_file]
+
+  flagstat_json:
+    run: flagstat2json.cwl
+    in:
+      flagstat_file: flagstat/flagstat_file
+      flagstat2json: flagstat2json
+    out: [flagstat_json]
+
+  bamqc:
+    run: bamqc.cwl
+    in:
+      bamfile: bamfile
+      bedfile: bedfile
+      bamqc_pl: bamqc_pl
+      xtra_json: flagstat_json/flagstat_json
+    out: [ outjson ]
+
+s:author:
+  - class: s:Person
+    s:email: Muhammad.Lee@oicr.on.ca
+    s:name: Muhammad Lee
+```
+This results in the workflow's Info Tab being populated like:
+
+![cwl-info-tab-metadata](/assets/images/docs/best_practices/cwl-info-tab-metadata.png)
+
+
+## Input/Output Fields
 
 Tools and workflows can take *File* types as input and produce them as output. We recommend indicating the format for *File* types. This helps document for others how to use your tool while allowing you to do some simple type-checking when creating parameter files.
 
-For file formats, we recommend referencing existing ontologies (like EDAM in our example), reference a local ontology for your institution, or do not add a file format initially for quick development before sharing your tool with others.
+For file formats, we recommend one of the following before sharing your tool with others:
+- reference existing ontologies (like EDAM in our example)
+- reference a local ontology for your institution
+- not add a file format initially for quick development
 
 Note that as a value-add `cwltool` can do some basic reasoning based on file formats and warn you if there seem to be some obvious mismatches.
 
@@ -52,13 +118,7 @@ $schemas:
 - http://dublincore.org/2012/06/14/dcterms.rdf
 - http://xmlns.com/foaf/spec/20140114.rdf
 ```
-
-### Sample Parameter Files
-
-Below is an example of a parameter file for the example above. We encourage
-checking in working examples of parameter files for your tool. This allows
-others to quickly work with your tool, starting from a "known good"
-parameterization.
+{% include_relative sample-parameter-files-intro.md %}
 
 *sample.json*
 ```
@@ -75,7 +135,7 @@ parameterization.
 }
 ```
 
-Now invoke `dockstore` with the tool wrapper and the input object on the command line:
+Now invoke `dockstore` with the tool wrapper and the input object on the command line and ensure that it succeeds:
 
 ```
 $ dockstore tool launch --local-entry  metadata_example.cwl --json sample.json
@@ -115,110 +175,9 @@ $ dockstore tool launch --local-entry  metadata_example.cwl --json sample.json
   ...
 ```
 
-## Metadata and Authorship
+## Extended Metadata
 
-For all developers, we recommend the following minimal metadata for your tool and workflows.
-This example includes metadata allowing others to cite your tool.
-
-*metadata_example2.cwl*
-```
-#!/usr/bin/env cwl-runner
-
-class: CommandLineTool
-id: Example tool
-label: Example tool
-cwlVersion: v1.0
-doc: |
-    An example tool demonstrating metadata. Note that this is an example and the metadata is not necessarily consistent.  
-
-requirements:
-  - class: ShellCommandRequirement
-
-inputs:
-  bam_input:
-    type: File
-    doc: The BAM file used as input
-    format: http://edamontology.org/format_2572
-    inputBinding:
-      position: 1
-
-stdout: output.txt
-
-outputs:
-  report:
-    type: File
-    format: http://edamontology.org/format_1964
-    outputBinding:
-      glob: "*.txt"
-    doc: A text file that contains a line count
-
-baseCommand: ["wc", "-l"]
-
-$namespaces:
-  s: https://schema.org/
-
-$schemas:
-- http://dublincore.org/2012/06/14/dcterms.rdf
-- http://xmlns.com/foaf/spec/20140114.rdf
-- https://schema.org/docs/schema_org_rdfa.html
-
-s:author:
-  - class: s:Person
-    s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@not-oicr.on.ca
-    s:name: Denis Yuen
-
-s:contributor:
-  - class: s:Person
-    s:id: http://orcid.org/0000-0002-7681-6415
-    s:email: briandoconnor@not-ucsc.org
-    s:name: Brian O'Connor
-  - class: s:Person
-    s:id: https://orcid.org/0000-0002-6130-1021
-    s:email: dyuen@not-oicr.on.ca
-    s:name: Denis Yuen
-
-
-s:citation: https://figshare.com/articles/Common_Workflow_Language_draft_3/3115156/2
-s:codeRepository: https://github.com/common-workflow-language/common-workflow-language
-s:dateCreated: "2016-12-13"
-s:license: https://www.apache.org/licenses/LICENSE-2.0
-```
-
-For WDL descriptors, see the [WDL documentation](https://software.broadinstitute.org/wdl/documentation/spec#metadata-section) for how to define metadata.  
-
-Additionally, this following example includes author, email, and description metadata:
-```
-task runtime_meta {
-  String memory_mb
-  String sample_id
-  String param
-
-  command {
-    java -Xmx${memory_mb}M -jar task.jar -id ${sample_id} -param ${param} -out ${sample_id}.out
-  }
-  output {
-    File results = "${sample_id}.out"
-  }
-  runtime {
-    docker: "broadinstitute/baseimg"
-  }
-  parameter_meta {
-    memory_mb: "Amount of memory to allocate to the JVM"
-    param: "Some arbitrary parameter"
-    sample_id: "The ID of the sample in format foo_bar_baz"
-  }
-  meta {
-    author: "Denis Yuen"
-    email: "dyuen@not-oicr.on.ca"
-    description: "An example tool demonstrating metadata. Note that this is an example and the metadata is not necessarily consistent."
-  }
-}
-```
-
-### Extended Example
-
-For those that are highly motivated, it is also possible to annotate your tool with a much larger amount of metadata. This example includes EDAM ontology tags as keywords (allowing the grouping of related tools), hints at hardware requirements in order to use the tool, and a few more metadata fields.
+For those that are highly motivated, it is also possible to annotate your tool with a much larger amount of metadata. In this complete example, we include authorship, file formats, hints at hardware requirements in order to use the tool, and a few more metadata fields demonstrating the use of JSON-LD. 
 
 *metadata_example3.cwl*
 ```
@@ -290,3 +249,7 @@ s:license: https://www.apache.org/licenses/LICENSE-2.0
 s:keywords: http://edamontology.org/topic_0091 , http://edamontology.org/topic_0622
 s:programmingLanguage: C
 ```
+
+## Next Steps
+
+{% include_relative authorship-metadata-outro.md %}

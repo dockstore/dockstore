@@ -2,26 +2,32 @@
 title: Getting Started With Docker
 permalink: /docs/prereqs/getting-started-with-docker/
 ---
+<div class="alert alert-info">
+This is the first part of a tutorial series where you will create a tool called BAMStats and publish it onto Dockstore.
+</div>
+
 # Getting Started with Docker
+## Tutorial Goals
+* Learn about Docker
+* Create a Docker image for a real tool
+* Create a tag locally
+* Test Docker image locally
 
-## Create Your Tool
+## Introduction to Docker
 
-Docker is a fantastic tool for creating light-weight containers to run your tools.  What this means is it gives you a fast VM-like environment for Linux where you can automatically install dependencies, make configurations, and setup your tool exactly the way you want, as you would on a "normal" Linux host.  You can then quickly and easily share these Docker images with the world using registries like Quay.io (indexed by Dockstore), Docker Hub, and GitLab.  The full details on how to make new Docker images is beyond the scope of this site. Here we will go through a simple representative example. The end-product is a Dockerfile for your tool stored in a supported Git repository.  The steps, at a high level, are:
+Docker is a fantastic tool for creating light-weight containers to run your tools.  What this means is it gives you a fast VM-like environment for Linux where you can automatically install dependencies, make configurations, and setup your tool exactly the way you want, as you would on a "normal" Linux host.  You can then quickly and easily share these Docker images with the world using registries like Quay.io (indexed by Dockstore), Docker Hub, and GitLab.
 
-0. create a new repository on GitHub, Bitbucket, or GitLab
-0. create a `Dockerfile` in that repository that describes how to create a Docker image
-0. use the Docker tools to build and test your Docker image
-0. use the release process on GitHub, Bitbucket, or GitLab to make distinct release tags
-0. setup Quay.io (or Docker Hub or GitLab) to automatically build your Docker image
+Here we will go through a simple representative example. The end-product is a Dockerfile for a BAMStats tool stored in a supported Git repository.
 
+## Create a new repository
 See the [dockstore-tool-bamstats](https://github.com/CancerCollaboratory/dockstore-tool-bamstats) repository on GitHub which we created as an example. This is linked to the Quay.io repository at [dockstore-tool-bamstats](https://quay.io/repository/collaboratory/dockstore-tool-bamstats).
 
 For the rest of this tutorial, you may wish to work in your own repository with your own tool or "fork" the repository above into your own GitHub account.
 
-With a repository established in GitHub, the next step is to create the Docker image with BAMStats correctly installed.  You need to create a `Dockerfile`. this contains the instructions necessary for creating a Docker image that contains all the dependencies of BAMStats along with the executable itself.
+With a repository established in GitHub, the next step is to create the Docker image with BAMStats correctly installed.
 
 ## Creating a Dockerfile
-
+We will create the Docker image with BAMStats installed along with all of its dependencies. To do this we must create a `Dockerfile`.
 Here's my sample [Dockerfile](https://github.com/CancerCollaboratory/dockstore-tool-bamstats/blob/develop/Dockerfile):
 
 
@@ -103,7 +109,7 @@ An important thing to note, this `Dockerfile` just really scratches the surface.
 
 Read more on the development process at [https://docs.docker.com](https://docs.docker.com/). For information on building your Docker image on Quay.io we recommend their [tutorial](https://quay.io/tutorial/).
 
-## Building Docker Images
+### Building Docker Images
 
 Now that you've created the `Dockerfile` the next step is to build the image.
 The docker command line is used for this:
@@ -112,11 +118,9 @@ The docker command line is used for this:
 $> docker build -t quay.io/collaboratory/dockstore-tool-bamstats:1.25-3 .
 ```
 
-The `.` is the path to the location of the Dockerfile, which is in the same directory here. The `-t` parameter is the "tag" that this Docker image will be called locally when it's cached on your host.  A few things to point out, the `quay.io` part of the tag typically denotes that this was built on Quay.io (which we will see in the next section).  I'm manually specifying this tag so it will match the Quay.io-built version.  This allows me to build and test locally then, eventually, switch over to the quay.io-built version.  The next part of the tag, `collaboratory/dockstore-tool-bamstats`, denotes the name of the tool which is derived from the organization and repository name on Quay.io.  Finally `1.25-3` denotes a version string, typically you want to sync that with releases on GitHub. In this case I'm working on release `1.25-3` so this is on a release branch.  However the most recent release via GitHub is the previous version `1.25-2`.  The ramifications of this will come up in the Quay.io section below.
+The `.` is the path to the location of the Dockerfile, which is in the same directory here. The `-t` parameter is the "tag" that this Docker image will be called locally when it's cached on your host.  A few things to point out, the `quay.io` part of the tag typically denotes that this was built on Quay.io (which we will see in a later section).  I'm manually specifying this tag so it will match the Quay.io-built version.  This allows me to build and test locally then, eventually, switch over to the quay.io-built version.  The next part of the tag, `collaboratory/dockstore-tool-bamstats`, denotes the name of the tool which is derived from the organization and repository name on Quay.io.  Finally `1.25-3` denotes a version string, typically you want to sync that with releases on GitHub.
 
-![Release in Github](/assets/images/docs/previous_release.png)
-
-Really, you could use whatever you want for the tag but, practically, you want this to match what Quay.io will use, aka your next release, so that's what I'm doing here. The tool should build normally and should exit without errors.  You should see something like:
+The tool should build normally and should exit without errors.  You should see something like:
 
 ```
 Successfully built 01a7ccf55063
@@ -133,13 +137,14 @@ Great! This looks fine!
 
 ## Testing the Docker Image Locally
 
-OK, so you've built the image.  Now what?
+OK, so you've built the image and created a tag.  Now what?
 
 The next step will be to test the tool directly via Docker to ensure that your `Dockerfile` is valid and correctly installed the tool.  If you were developing a new tool there might be multiple rounds of `docker build`, followed by testing with `docker run` before you get your Dockerfile right.  Here I'm executing the Docker image, launching it as a container (make sure you launch on a host with at least 8GB of RAM and dozens of GB of disk space!):
 
 ```
-$> docker run -it -v `pwd`:/home/ubuntu quay.io/collaboratory/dockstore-tool-bamstats:1.25-3 /bin/bash
+$> docker run -it -v `pwd`:/home/ubuntu --user `echo $UID`:1000 quay.io/collaboratory/dockstore-tool-bamstats:1.25-3 /bin/bash
 ```
+**Note:** This command expects your UID to be 1000. If it is not, you need to add `--user <your-id>:1000`.
 
 You'll be dropped into a bash shell which works just like the Linux environments you normally work in.  I'll come back to what `-v` is doing in a bit. The goal now is to exercise the tool and make sure it works as you expect.  BAMStats is a very simple tool and generates some reports and statistics for a BAM file.  Let's run it on some test data from the 1000 Genomes project:
 
@@ -176,16 +181,16 @@ You can now unzip and examine the `bamstats_report.zip` file on your computer to
 Rather than interactively working with the image, you could also run your Docker image from the command-line.
 
 ```
-wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12878/alignment/NA12878.chrom20.ILLUMINA.bwa.CEU.low_coverage.20121211.bam
-docker run -w="/home/ubuntu" -it -v `pwd`:/home/ubuntu quay.io/collaboratory/dockstore-tool-bamstats:1.25-3 bamstats 4 NA12878.chrom20.ILLUMINA.bwa.CEU.low_coverage.20121211.bam
+$> wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12878/alignment/NA12878.chrom20.ILLUMINA.bwa.CEU.low_coverage.20121211.bam
+$> docker run -w="/home/ubuntu" -it -v `pwd`:/home/ubuntu --user `echo $UID`:1000 quay.io/collaboratory/dockstore-tool-bamstats:1.25-3 bamstats 4 NA12878.chrom20.ILLUMINA.bwa.CEU.low_coverage.20121211.bam
 ```
 
 In the next section, we will also demonstrate how this command-line including the input file can be parameterized and constructed via CWL.
 
-## You Could Stop Here!
-
-At this point you have a working Docker image.  You could use the `docker push` command to send that to Quay.io or Docker Hub and share with others.  However, what you lose is a standardized way to describe how to run your tool.  That's what the CWL descriptor and Dockstore provide.  We think it's valuable and there's an increasing number of tools designed to work with CWL so there are benefits to not just stopping here.
-
 ## Next Steps
+**You could stop here!** However, what you lose is a standardized way to describe how to run your tool.  That's what descriptor languages and Dockstore provide.  We think it's valuable and there's an increasing number of tools and workflows designed to work with various descriptor languages so there are benefits to not just stopping here.
 
-Follow the [next tutorial](/docs/prereqs/getting-started-with-cwl/) to describe your tool with CWL.
+There are three descriptor languages available on Dockstore. Follow the links to get an introduction.
+* [CWL](/docs/prereqs/getting-started-with-cwl/)
+* [WDL](/docs/prereqs/getting-started-with-wdl/)
+* [Nextflow](/docs/prereqs/getting-started-with-nextflow/)

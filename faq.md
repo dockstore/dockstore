@@ -11,15 +11,15 @@ permalink: /faq/
 The Dockstore CLI has utilities to generate JSON parameter files from entries on Dockstore (`dockstore tool convert`).
 
 When launching tools, the Dockstore CLI makes it easy to specify entries from Dockstore.
-We can also provision input and output files from and to HTTP, ftp, and S3. We also have preliminary support for [Synapse](https://www.synapse.org/) and the [ICGC Storage client](http://docs.icgc.org/cloud/guide/#storage-client-usage), please see [file provisioning plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) get more information on these two file transfer sources.
+We can also provision input and output files using HTTP, FTP, and S3. We also have preliminary support for [Synapse](https://www.synapse.org/) and the [ICGC Storage client](http://docs.icgc.org/cloud/guide/#storage-client-usage). Please see [file provisioning plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) for more information on these two file transfer sources.
 
 ## What environment do you test tools in?
 
-Typically, we test running tools in Ubuntu Linux 14.04 LTS and 16.04 LTS on VMs in [OpenStack](https://www.openstack.org/) with 8 vCPUs and 96 GB of RAM and above. If you are only listing and editing tools, we have achieved success with much lower system requirements. However, launching tools will have higher system requirements dependent on the specific tool. Consult a tool's README or CWL description when in doubt.
+Typically, we test running tools in Ubuntu Linux 16.04 LTS on VMs in [OpenStack](https://www.openstack.org/) with 8 vCPUs and 96 GB of RAM and above. We've also begun testing on Ubuntu 18.04 LTS and so far it's been successful. If you are only listing and editing tools, we have achieved success with much lower system requirements. However, launching tools will have higher system requirements dependent on the specific tool. Consult a tool's README or CWL/WDL description when in doubt.
 
 ## There are too many versions of my tool, how do I delete some?
 
-Versions of your tool for most tools are harvested from the list of Tags for an image on quay.io, [as an example](https://quay.io/repository/pancancer/pcawg-bwa-mem-workflow?tab=tags). If you have the right permissions, you can delete some and then refresh a tool on Dockstore to clean-up.
+Versions of your tool for most tools are harvested from the list of Tags for an image on Quay.io, [as an example](https://quay.io/repository/pancancer/pcawg-bwa-mem-workflow?tab=tags). If you have the right permissions, you can delete some and then refresh a tool on Dockstore to clean-up.
 
 ## How do I cite Dockstore?
 
@@ -60,7 +60,7 @@ Resolved '/media/dyuen/Data/large_volume/Dockstore.cwl' to 'file:///media/dyuen/
     /usr/local/bin/bamstats \
     4 \
     /var/lib/cwl/stgc2b37b55-005a-43e5-a824-6caf6656d9c2/rna.SRR948778.bam
-<the rest of the output is snipped>
+...
 ```
 
 
@@ -68,7 +68,7 @@ Also be aware that some tools will use space from your root filesystem. For exam
 
 ## Do you have tips on creating Dockerfiles?
 
-* make sure you [set up Docker command](https://docs.docker.com/engine/installation/linux/ubuntulinux/#/create-a-docker-group) on your system so you do not need sudo
+* make sure you [manage Docker as a non-root user](https://docs.docker.com/install/linux/linux-postinstall/) on your system so you do not need sudo for the `docker` command
 * do not call Docker-inside-Docker (it's possible but causes Docker client/server issues, it is also not compatible with CWL)
 * do not depend on changes to `hostname` or `/etc/hosts`, Docker will interfere with this
 * try to keep your Docker images small
@@ -86,14 +86,14 @@ Additionally:
 * you need to "collect" output from your tools/workflows inside docker and drop them into the current working directory in order for CWL to "find" them and pull them back outside of the container
 * related to this, it's often times easiest to write a simple wrapper script that maps the command line arguments specified by CWL to however your tool expects to be parameterized. This script can handle moving output to the current working directory and renaming if need be
 * genomics workflows work with large data files, this can have a few ramifications:
-    * do not "package" large data reference files in your Docker image.  Instead, treat them as "inputs" so they can be stagged outside and mounted into the running container
+    * do not "package" large data reference files in your Docker image.  Instead, treat them as "inputs" so they can be staged outside and mounted into the running container
     * the `$TMPDIR` variable can be used as a scratch space inside your container.  Make sure your host running Docker has sufficient scratch space for processing your genomics data.
 
 ## How do I use the Dockstore CLI on a Mac?
-Use [Docker for Mac](https://docs.docker.com/engine/installation/mac/)
+See [Docker for Mac](https://docs.docker.com/engine/installation/mac/)
 
 Note:
-Docker behaves a bit differently on a [mac](https://docs.docker.com/docker-for-mac/osxfs/#/namespaces) than on a typical ubuntu machine. By default the only shared volumes are /Users, /Volumes, /tmp, and /private. Note that /var is not a shared directory (and can't be set as one). CWLtool uses your TMPDIR (the env variable) to setup volumes with docker, which on a Mac can default to a subdirectory of /var. In order to get CWLtool working on your mac, you need to set your TMPDIR to be under one of the shared volumes in Docker for Mac. You can do this by doing something similar to the following:
+Docker behaves a bit differently on a [Mac](https://docs.docker.com/docker-for-mac/osxfs/#/namespaces) than on a typical Ubuntu machine. By default the only shared volumes are /Users, /Volumes, /tmp, and /private. Note that /var is not a shared directory (and can't be set as one). `cwltool` uses your TMPDIR (the env variable) to setup volumes with docker, which on a Mac can default to a subdirectory of /var. In order to get `cwltool` working on your Mac, you need to set your TMPDIR to be under one of the shared volumes in Docker for Mac. You can do this by doing something similar to the following:
 
 ```
 export TMPDIR=/tmp/docker_tmp
@@ -116,37 +116,51 @@ We also strive to use this to highlight tools that share a common set of recomme
 * the Dockerfile should be helpful in reconstructing how a tool was built from source
 * tools and/or their reference data should be publically available
 
-This is going to be a moving quality target as tools improve, but you have a tool that you wish to be verified, please send us a heads-up via our GitHub issues or Gitter!
+This is going to be a moving quality target as tools improve, but if you have a tool that you wish to be verified, please send us a heads-up via our GitHub issues or Gitter!
 
 ## What is a default version of a tool or workflow?
 
-Every tool/workflow is recommended to have a default version set by its author.  It indicates to the users which version of the tool/workflow they should use.
+Every tool/workflow is recommended to have a default version set by its author. It indicates to the end users which version of the tool/workflow they should use.
 For tools, the default version is uniquely identified by the tag from the Docker image repository.  For workflows, the default version is identified by the Git Reference (which could be a Git tag or a Git branch).  The default version can be set in the 'Versions' tab of a tool/workflow via radio buttons.
 
 Setting the default version affects a number of elements including (but not limited to):
+
 1. It determines what is displayed in the 'Description' section of the 'Info' Tab
-2. It determines what is displayed in the 'Launch With' section of the 'Info' Tab
-3. It is the version of the tool/workflow that is launched by default when users launch a tool/workflow from the Dockstore CLI.  
-   For example, if version 1.0 is set as the default version of the 'quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig' tool,<br />  
-   `$ dockstore tool launch --entry quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig:1.0 --json Dockstore.json`<br />
-   would be equivalent to  <br />
-   `$ dockstore tool launch --entry quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig --json Dockstore.json`  
+1. It is the first version other end users see when no version is specified. For example https://dockstore.org/containers/quay.io/pancancer/pcawg-bwa-mem-workflow is redirected to https://dockstore.org/containers/quay.io/pancancer/pcawg-bwa-mem-workflow:develop?tab=info 
+1. It is the version of the tool/workflow that is launched by default when users launch a tool/workflow from the Dockstore CLI.  
+   For example, if version 1.0 is set as the default version of the quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig tool,
 
-4. In the files tab, the default version's files would be displayed first.
-5. The docker pull command reflects the default version
+   `$ dockstore tool launch --entry quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig:1.0 --json Dockstore.json`
+
+   would be equivalent to
+
+   `$ dockstore tool launch --entry quay.io/cancercollaboratory/dockstore-tool-bedgraph-bigwig --json Dockstore.json` 
+1. The docker pull command in the tools search reflects the default version
 
 
-## How to run Dockstore with Python 3?
+## How can I use the Dockstore CLI with Python 3?
 
-There are currently issues with avro, cwltool, and Python 3.  See [cwltool](https://github.com/common-workflow-language/cwltool/issues/524) for more info.  To work around this issue, instead of installing avro, install avro-cwl.  Therefore, the pip3 requirements.txt file should end up looking like [this](https://dockstore.org:8443/metadata/runner_dependencies?client_version=1.5.0&python_version=3&runner=cwltool&output=text)
+There are currently issues with avro, cwltool, and Python 3.  See [cwltool](https://github.com/common-workflow-language/cwltool/issues/524) for more info.  To work around this issue, instead of installing avro, install avro-cwl.  Therefore, the pip3 requirements.txt file should end up looking like [this](https://dockstore.org/api/metadata/runner_dependencies?client_version=1.5.0&python_version=3&runner=cwltool&output=text)
 
 Note that installing the "avro" pip package afterwards will overwrite the "avro-cwl" pip package and will result in cwltool not working again.
 
 ## How do I add other users as maintainers of a tool?
-For tools registered on Quay.io and workflows registered with GitHub, Dockstore automatically allows users from the same Quay.io organization to manage tools together (users will need to refresh). 
+For tools registered on Quay.io and workflows registered with GitHub, Dockstore automatically allows users from the same Quay.io organization or GitHub organization to manage tools/workflows together (users will need to "Refresh Organization" or "Refresh All"). 
 
 For tools registered on Docker Hub, GitLab or private registries, this feature currently does not exist because these registries do not allow the retrieval of organization information.
 Likewise, workflows registered with other source code repositories lack this feature.
+
+Finally, for participants of the [limited sharing beta](/docs/publisher-tutorials/sharing-workflows/), you can enter the email addresses of the users you wish to share with to give them permissions to your workflow. This is only available for hosted workflows and users with Google accounts linked to FireCloud.
+
+## Why are my workflows from an organization I belong to not visible?
+Organizations have the ability to restrict access to the API for third party applications. GitHub provides a [tutorial](https://help.github.com/articles/enabling-oauth-app-access-restrictions-for-your-organization/) on how to add these restrictions to your organizations.
+
+In order for Dockstore to gain access to organizations of this type, you will need to grant access to the Dockstore application. Dockstore will only be reading information on workflows in your organization and who has access to them in order to mirror these restrictions on Dockstore itself. GitHub provides a [tutorial](https://help.github.com/articles/approving-oauth-apps-for-your-organization/) for approving third party apps access to your organization.
+
+## What is the difference between logging in with GitHub or logging in with Google?
+The intent here is that you should be able to login with either login method and still conveniently get into the same Dockstore account. With login via Google, if you are a FireCloud user you will also have access to [sharing functionality](/docs/publisher-tutorials/sharing-workflows/).
+
+Note that for simplicity, each of your GitHub or Google accounts can only be associated with one account at a time. You will need to link with a different account for each login method or delete your account if you want to assign them to a new Dockstore account. 
 
 ## Any last tips on using Dockstore?
 

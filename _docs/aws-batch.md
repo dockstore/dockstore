@@ -27,3 +27,9 @@ Additionally, keep in mind that if you have a knowledge of CWL and/or do not nee
     2. For more realistic jobs, you can try the [PCAWG project](http://icgc.org/working-pancancer-data-aws) BWA and Delly workflows which would use the commands `/test.sh quay.io/pancancer/pcawg-bwa-mem-workflow:2.6.8_1.2 https://raw.githubusercontent.com/dockstore/batch_wrapper/master/aws/bwa.s3.json
 ` (approximately seven hours) and `/test.sh quay.io/pancancer/pcawg_delly_workflow:2.0.1-cwl1.0 https://raw.githubusercontent.com/dockstore/batch_wrapper/master/aws/delly.local.json` (approximately six hours) respectively. In the first case, modify the S3 bucket for your environment, in the second case the results will be saved to the local VM's `/tmp` directory and will vanish after the VM is terminated.
 1. Submit your job, wait for the results to show up in your S3 bucket, and celebrate. You've run jobs on AWS Batch! ![Job definition](/assets/images/docs/aws-batch-hurray.png)
+
+## See Also
+
+* [Azure Batch](/docs/publisher-tutorials/azure-batch/)
+* [DNAstack Launch With](/docs/user-tutorials/dnastack-launch-with/)
+* [FireCloud Launch With](/docs/user-tutorials/firecloud-launch-with/)

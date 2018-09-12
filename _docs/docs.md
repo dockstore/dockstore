@@ -5,9 +5,9 @@ permalink: /docs/
 
 # About the Dockstore
 
-The Dockstore concept is simple, provide a place where users can share tools encapsulated in Docker and described with the [Common Workflow Language](http://common-workflow-language.github.io/) (CWL), an emerging standard used by the [GA4GH](https://genomicsandhealth.org/) [Cloud Work Stream](http://ga4gh.cloud/). This enables scientists, for example, to share analytical tools in a way that makes them machine readable and runnable in a variety of environments.  While the Dockstore is focused on serving researchers in the biosciences the combination of Docker + CWL can be used by anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.
+The Dockstore concept is simple, provide a place where users can share tools encapsulated in Docker and described with the [Common Workflow Language](http://common-workflow-language.github.io/) (CWL) or [Workflow Description Language](http://www.openwdl.org/) (WDL), workflow languages used by members of and APIS created by the [GA4GH](https://genomicsandhealth.org/) [Cloud Work Stream](http://ga4gh.cloud/). This enables scientists, for example, to share analytical tools in a way that makes them machine readable and runnable in a variety of environments.  While the Dockstore is focused on serving researchers in the biosciences the combination of Docker + CWL/WDL can be used by anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.
 
-Dockstore also attempts to work with new and alternative languages/standards such as [WDL](http://www.openwdl.org/) and [Nextflow](https://www.nextflow.io/) as popular competitors to CWL. We also work on the [GA4GH Tool Registry](https://github.com/ga4gh/tool-registry-schemas) standard as a way of sharing data with workflow platforms and partners. We are also working with the task execution, workflow execution, and data transfer standards developing at the GA4GH.
+Dockstore also attempts to work with new and alternative languages/standards such as [Nextflow](https://www.nextflow.io/) as popular challengers to CWL and WDL. We also work on the [GA4GH Tool Registry](https://github.com/ga4gh/tool-registry-schemas) standard as a way of sharing data with workflow platforms and partners. We are also working with the task execution, workflow execution, and data transfer standards developing at the GA4GH.
 
 ## Built with Docker and Git ##
 
@@ -15,7 +15,7 @@ Docker repositories, like [Docker Hub](https://hub.docker.com/),  [Quay.io](http
 
 ![Overview](/assets/images/docs/Ways_to_get_into_Dockstore.png)
 
-## Best Practices
+## Strategies
 
 You can register your tools and workflows on Dockstore in three broad ways as depicted above. 
 
@@ -25,13 +25,13 @@ B) Dockstore can retrieve your workflow descriptors from GitHub and other source
 
 > For Dockstore 1.5.0+
 
-C) You will be able to use our new hosted workflows approach to store tools and workflows directly on dockstore.org to quickly get started, prototype your ideas, and share workflows with a limited audience.
+C) You will be able to use our new hosted workflows service to store tools and workflows directly on dockstore.org to quickly get started, prototype your ideas, and share workflows with a limited audience.
 
 In all three cases, you will have an opportunity to clean-up and configure your work before publishing to the rest of the world to see. 
 
 You can mix and match in a number of these approaches. For example, you can go beyond our simple tutorials and automated approach to manually register tools that point at locations like Docker Hub, Seven Bridges, and Amazon ECR. You can substitute WDL and Nextflow for the descriptor language for workflows. You might even be able to mix and match descriptor languages eventually!
 
-Over time, we find "skinny" Docker images, those with single tools installed in them, are more helpful for extending and building new workflows with.  That being said, "fat" Docker containers, which include multiple tools and even full workflows with frameworks like [SeqWare](http://seqware.io) or [Galaxy](https://galaxyproject.org/), can have their place as well.  Projects like the ICGC [PanCancer Analysis of Whole Genomes](https://dcc.icgc.org/pcawg) (PCAWG) made use of "fat" Docker containers that had complex workflows that fully encapsulated alignment and variant calling.  The self-contained nature of these Docker containers allowed for mobility between a wide variety of environments and greatly simplified the setup of these pipelines across a wide variety of HPC and cloud environments. Either approach works for the Dockstore so long as you can describe the tool or workflow inside the Docker container as a CWL-defined tool (which you can for most things).
+Over time, we find "skinny" Docker images, those with single tools installed in them, are more helpful for extending and building new workflows with.  That being said, "fat" Docker containers, which include multiple tools and even full workflows with frameworks like [SeqWare](http://seqware.io) or [Galaxy](https://galaxyproject.org/), can have their place as well.  Projects like the ICGC [PanCancer Analysis of Whole Genomes](https://dcc.icgc.org/pcawg) (PCAWG) made use of "fat" Docker containers that had complex workflows that fully encapsulated alignment and variant calling.  The self-contained nature of these Docker containers allowed for mobility between a wide variety of environments and greatly simplified the setup of these pipelines across a wide variety of HPC and cloud environments. Either approach works for the Dockstore so long as you can describe the tool or workflow inside the Docker container as a CWL/WDL-defined tool (which you can for most things).
 
 ## Promoting Standards
 

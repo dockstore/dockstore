@@ -1,0 +1,13 @@
+<div>
+    {% for section in site.data.docs %}
+        {% if section.link == 'publisher-tutorials' %}
+        <ul>
+            {% for item in section.docs %}
+                {% assign document_url = item | prepend:"/docs/" | append:"/" %}
+                {% assign document = site.docs | where:"url", document_url | first %}
+                <li><a href="{{ document.url }}">{{ document.title }}</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    {% endfor %}
+</div>
