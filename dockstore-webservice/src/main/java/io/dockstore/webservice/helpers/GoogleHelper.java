@@ -2,6 +2,7 @@ package io.dockstore.webservice.helpers;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.text.MessageFormat;
 import java.util.Map;
 import java.util.Optional;
 
@@ -155,7 +156,8 @@ public final class GoogleHelper {
             return Optional.ofNullable(tokenInfo);
         } catch (RuntimeException | GeneralSecurityException | IOException e) {
             // If token is invalid, Google client throws exception. See https://github.com/google/google-api-java-client/issues/970
-            LOG.info("Error getting token info", e);
+            LOG.info(MessageFormat.format("Error getting token info: {0}", e.getMessage()));
+            LOG.debug("Error getting token info", e);
             return Optional.empty();
         }
     }
