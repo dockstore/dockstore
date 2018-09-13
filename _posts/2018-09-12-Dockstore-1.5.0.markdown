@@ -23,7 +23,7 @@ We've just released the next major version of Dockstore!
   * limited ability to change your username before performing major work on Dockstore
 * a file provisioning client [plugin](https://github.com/dockstore/data-object-service-plugin) that supports the nascent GA4GH [DOS](https://github.com/ga4gh/data-object-service-schemas) service
   * this allows local development and launching of CWL and WDL workflows to download input files referenced by DOS
-* Launch-with support for [DNAnexus](https://docs.dockstore.org/docs/user-tutorials/dnanexus-launch-with/)
+* Launch-with support for launching WDL workflows via [DNAnexus](https://docs.dockstore.org/docs/user-tutorials/dnanexus-launch-with/)
 * language support updates
   * updates for WDL support from wdl4s_2.11 to wdl4s-wom_2.11 and Cromwell from 29 to 30.2
   * updates for cwltool support from  1.0.20170828135420 to 1.0.20180403145700 
