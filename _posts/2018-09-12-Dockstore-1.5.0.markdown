@@ -13,7 +13,7 @@ We've just released the next major version of Dockstore!
   * starts with support for registering, searching, indexing Nextflow workflow authors+descriptions, and visualizing Nextflow workflows with a rough and ready DAG, and display of Docker images used by a Nextflow workflow
   * full details on support [language-by-language](https://docs.dockstore.org/docs/user-tutorials/language-support/) 
 * initial support for [hosted workflows](https://docs.dockstore.org/docs/publisher-tutorials/hosted-tools-and-workflows/) with CWL and WDL  
-  * allows users to create and edit a limited number (and versions of) of workflows directly on the dockstore.org site for quick prototyping and iteration 
+  * allows users to create and edit a limited number of workflows (and versions of workflows) directly on the dockstore.org site for quick prototyping and iteration 
   * hosted workflows also support all the regular features that you're used to for regular workflows
   * download zip bundles of your hosted (actually, all) workflows to ensure that you can always get back your workflows
 * limited beta of [permissions](https://docs.dockstore.org/docs/publisher-tutorials/sharing-workflows/) based sharing
@@ -23,12 +23,12 @@ We've just released the next major version of Dockstore!
   * limited ability to change your username before performing major work on Dockstore
 * a file provisioning client [plugin](https://github.com/dockstore/data-object-service-plugin) that supports the nascent GA4GH [DOS](https://github.com/ga4gh/data-object-service-schemas) service
   * this allows local development and launching of CWL and WDL workflows to download input files referenced by DOS
-* Launch-with support for [DNANexus](https://docs.dockstore.org/docs/user-tutorials/dnanexus-launch-with/)
+* Launch-with support for [DNAnexus](https://docs.dockstore.org/docs/user-tutorials/dnanexus-launch-with/)
 * language support updates
   * updates for WDL support from wdl4s_2.11 to wdl4s-wom_2.11 and Cromwell from 29 to 30.2
   * updates for cwltool support from  1.0.20170828135420 to 1.0.20180403145700 
   * to elaborate, [verified](https://docs.dockstore.org/faq/#what-is-a-verified-tool-or-workflow) workflows have been run in-house succesfully with these versions
-* updates to use the Bitbucket 2.0 API and the Gitlab V4 API
+* updates to use the Bitbucket 2.0 API and the GitLab V4 API
 * a large number of UI improvements and usability improvements including, but not limited to 
   * a much improved experience on mobile devices
   * display of commit ids and dates for the files we're bringing in and whether they came from a tag or branch
