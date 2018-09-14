@@ -100,19 +100,6 @@ class Bridge(basePath : String) {
     inputList
   }
 
-  def getImportFiles(file: JFile): util.ArrayList[String] = {
-    val lines = scala.io.Source.fromFile(file).mkString
-    val importList = new util.ArrayList[String]()
-
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
-
-    ns.imports foreach { imported =>
-      importList.add(imported.uri)
-    }
-
-    importList
-  }
-
   def getImportMap(file: JFile): util.LinkedHashMap[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
     val importMap = new util.LinkedHashMap[String, String]()
