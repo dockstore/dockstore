@@ -172,9 +172,7 @@ public class LauncherCWL {
         CWLRunnerFactory.setConfig(config);
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
-        // TODO: may be reactivated if we find a different way to read CWL into Java
-        // String cwlRunner = CWLRunnerFactory.getCWLRunner();
-        CWL cwlUtil = new CWL(false, config);
+        CWL cwlUtil = new CWL();
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
         Object cwlObject;
         try {

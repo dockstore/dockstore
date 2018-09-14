@@ -22,13 +22,14 @@ import java.util.List;
 import com.google.common.base.Joiner;
 import io.dockstore.client.cli.ArgumentUtility;
 import io.dockstore.client.cli.Client;
+import io.dockstore.common.Utilities;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class ToilWrapper implements CWLRunnerInterface {
     @Override
     public void checkForCWLDependencies() {
         final String[] s1 = { "toil-cwl-runner", "--version" };
-        final ImmutablePair<String, String> pair1 = io.cwl.avro.Utilities
+        final ImmutablePair<String, String> pair1 = Utilities
                 .executeCommand(Joiner.on(" ").join(Arrays.asList(s1)), false, com.google.common.base.Optional.absent(),
                         com.google.common.base.Optional.absent());
         final String toilVersion = pair1.getValue().trim();

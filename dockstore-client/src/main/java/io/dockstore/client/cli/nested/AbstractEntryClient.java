@@ -110,9 +110,7 @@ public abstract class AbstractEntryClient<T> {
     }
 
     public CWL getCwlUtil() {
-        // TODO: may be reactivated if we find a different way to read CWL into Java
-        // String cwlrunner = CWLRunnerFactory.getCWLRunner();
-        return new CWL(false, Utilities.parseConfig(getConfigFile()));
+        return new CWL();
     }
 
     public abstract String getConfigFile();
@@ -628,7 +626,7 @@ public abstract class AbstractEntryClient<T> {
     private boolean validateCWL(String cwlFilePath) {
         final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
         try {
-            io.cwl.avro.Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  com.google.common.base.Optional.absent(),  com.google.common.base.Optional.absent());
+            Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  com.google.common.base.Optional.absent(),  com.google.common.base.Optional.absent());
             return true;
         } catch (RuntimeException e) {
             // when invalid, executeCommand will throw a RuntimeException

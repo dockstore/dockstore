@@ -25,6 +25,7 @@ import javax.ws.rs.ProcessingException;
 import com.google.common.base.Joiner;
 import io.dockstore.client.cli.ArgumentUtility;
 import io.dockstore.client.cli.Client;
+import io.dockstore.common.Utilities;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
@@ -37,13 +38,13 @@ public class CWLToolWrapper implements CWLRunnerInterface {
     @Override
     public void checkForCWLDependencies() {
         final String[] s1 = { "cwltool", "--version" };
-        final ImmutablePair<String, String> pair1 = io.cwl.avro.Utilities
+        final ImmutablePair<String, String> pair1 = Utilities
                 .executeCommand(Joiner.on(" ").join(Arrays.asList(s1)), false, com.google.common.base.Optional.absent(),
                         com.google.common.base.Optional.absent());
         final String cwlToolVersion = pair1.getKey().split(" ")[1].trim();
 
         final String[] s2 = { "schema-salad-tool", "--version", "schema" };
-        final ImmutablePair<String, String> pair2 = io.cwl.avro.Utilities
+        final ImmutablePair<String, String> pair2 = Utilities
                 .executeCommand(Joiner.on(" ").join(Arrays.asList(s2)), false, com.google.common.base.Optional.absent(),
                         com.google.common.base.Optional.absent());
         // schema salad new version changes to a different format, looks like the last value still works
