@@ -93,7 +93,14 @@ public final class Utilities {
         return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), null);
     }
 
-    public static ImmutablePair<String, String> executeCommand(String command, boolean dumpOutput,  Optional<OutputStream> stdoutStream, Optional<OutputStream> stderrStream) {
+    /**
+     * {@code workdir} defaults to null
+     *
+     * @see #executeCommand(String, boolean, Optional, Optional, File)
+     * @return the stdout and stderr
+     */
+    public static ImmutablePair<String, String> executeCommand(final String command, final boolean dumpOutput,
+        final Optional<OutputStream> stdoutStream, final Optional<OutputStream> stderrStream) {
         return executeCommand(command, dumpOutput, stdoutStream, stderrStream, null);
     }
 
@@ -101,6 +108,10 @@ public final class Utilities {
      * Execute a command and return stdout and stderr
      *
      * @param command the command to execute
+     * @param dumpOutput should the command output be dumped into our logging framework
+     * @param stderrStream use a custom stderr
+     * @param stdoutStream use a custom stdout
+     * @param workingDir directory to execute command if wanted
      * @return the stdout and stderr
      */
     private static ImmutablePair<String, String> executeCommand(String command, final boolean dumpOutput,

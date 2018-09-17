@@ -25,6 +25,9 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 /**
  * @author gluu
@@ -51,6 +54,12 @@ public class WorkflowInDirectoryTestIT {
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
 
     /**
      * This tests if the workflow could be ran with the client in a much different directory than the descriptor (not in the same directory as the descriptor)

@@ -101,7 +101,6 @@ public interface LanguageHandlerInterface {
         Map<String, String> stepToType, Map<String, Triple<String, String, String>> nodeDockerInfo) {
         List<Map<String, Map<String, String>>> nodes = new ArrayList<>();
         List<Map<String, Map<String, String>>> edges = new ArrayList<>();
-
         // Iterate over steps, make nodes and edges
         for (Pair<String, String> node : nodePairs) {
             String stepId = node.getLeft();

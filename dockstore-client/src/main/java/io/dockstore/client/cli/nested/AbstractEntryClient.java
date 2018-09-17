@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import io.dockstore.client.cli.CheckerClient;
 import io.dockstore.client.cli.Client;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.LanguageType;
-import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.CWLClient;
 import io.github.collaboratory.nextflow.NextFlowClient;
 import io.github.collaboratory.wdl.WDLClient;
@@ -51,6 +49,7 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.python.core.PyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -619,17 +618,18 @@ public abstract class AbstractEntryClient<T> {
 
     /**
      * this function will validate CWL file
-     * using this command: cwltool --non-strict --validate <file_path>
+     * using the equivalent of this command: cwltool --non-strict --validate <file_path>
      *
      * @param cwlFilePath a path to the cwl file to be validated
      */
     private boolean validateCWL(String cwlFilePath) {
-        final String[] s = { "cwltool", "--non-strict", "--validate", cwlFilePath };
         try {
-            Utilities.executeCommand(Joiner.on(" ").join(Arrays.asList(s)), false,  com.google.common.base.Optional.absent(),  com.google.common.base.Optional.absent());
+            CWL cwl = new CWL();
+            cwl.parseCWL(cwlFilePath);
             return true;
         } catch (RuntimeException e) {
             // when invalid, executeCommand will throw a RuntimeException
+            LOG.error(((PyException)e).value.toString());
             return false;
         } catch (Exception e) {
             throw new RuntimeException("An unexpected exception unrelated to validation has occurred");
