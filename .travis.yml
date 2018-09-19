@@ -1,9 +1,3 @@
-notifications:
-  slack:
-    on_success: never
-    on_failure: always
-    rooms:
-    - oicr:S9k4EowgQv9AnbCfEZHSzCsg
 sudo: required
 services:
 - docker
@@ -26,14 +20,35 @@ env:
 
 jobs:
   include:
-    - stage: unit-tests 
+    - stage: unit-tests
+      jdk: oraclejdk8
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE
+    - stage: unit-tests
+      jdk: openjdk10
+      before_install:
+        # see https://www.deps.co/guides/travis-ci-latest-java/
+        - rm "${JAVA_HOME}/lib/security/cacerts"
+        - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
+      env:
+      - TESTING_PROFILE=unit-tests
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE
 
     # no point in running integration tests if we don't pass unit tests
-    - stage: integration-tests 
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true 
+    # run a few tests with oraclejdk8 for backwards compat
+    - stage: integration-tests
+      jdk:
+      - oraclejdk8
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true
+    - stage: integration-tests
+      jdk: openjdk10
+      before_install:
+        # see https://www.deps.co/guides/travis-ci-latest-java/
+        - rm "${JAVA_HOME}/lib/security/cacerts"
+        - ln -s /etc/ssl/certs/java/cacerts "${JAVA_HOME}/lib/security/cacerts"
+      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true
+
     - stage: integration-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
       env:
@@ -109,4 +124,9 @@ after_success:
   - bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
   
 notifications:
+  slack:
+    on_success: never
+    on_failure: always
+    rooms:
+    - oicr:S9k4EowgQv9AnbCfEZHSzCsg
   webhooks: https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN
