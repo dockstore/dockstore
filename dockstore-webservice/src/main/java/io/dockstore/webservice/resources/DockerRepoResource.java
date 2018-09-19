@@ -377,7 +377,7 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/{containerId}/updateTagPaths")
     @ApiOperation(value = "Change the tool paths.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Resets the descriptor paths and dockerfile path of all versions to match the default paths.", response = Tool.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Resets the descriptor paths and dockerfile path of all versions to match the default paths from the tool object passed.", response = Tool.class)
     public Tool updateTagContainerPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to modify.", required = true) @PathParam("containerId") Long containerId,
         @ApiParam(value = "Tool with updated information", required = true) Tool tool) {

@@ -615,7 +615,7 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
     @ApiOperation(value = "Reset the workflow paths.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Resets the workflow paths of all versions to match the default workflow path.", response = Workflow.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Resets the workflow paths of all versions to match the default workflow path from the workflow object passed.", response = Workflow.class)
     public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
