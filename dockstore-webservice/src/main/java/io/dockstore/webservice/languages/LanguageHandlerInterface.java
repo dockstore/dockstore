@@ -64,6 +64,20 @@ public interface LanguageHandlerInterface {
     boolean isValidWorkflow(String content);
 
     /**
+     * Returns true if valid workflow, will throw an error if invalid Workflow
+     * @param sourcefiles
+     * @param primaryDescriptorFilePath
+     */
+    boolean isValidWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+
+    /**
+     * Returns true if valid tool, will throw an error if invalid Tool
+     * @param sourcefiles
+     * @param primaryDescriptorFilePath
+     */
+    boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+
+    /**
      * Look at the content of a descriptor and update its imports
      *
      * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name`

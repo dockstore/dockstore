@@ -179,11 +179,10 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Workflow entry) {
         SourceFile.FileType identifiedType = entry.getFileType();
         String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
-        for (SourceFile sourceFile : sourceFiles) {
-            if (Objects.equals(sourceFile.getPath(), mainDescriptorPath)) {
-                return LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent());
-            }
-        }
-        return false;
+
+        Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
+
+        return mainDescriptor.isPresent() && LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(mainDescriptor.get().getContent())
+                 && LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflowSet(sourceFiles, mainDescriptorPath);
     }
 }

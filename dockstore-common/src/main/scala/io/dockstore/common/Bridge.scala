@@ -22,10 +22,9 @@ import java.util
 import io.github.collaboratory.wdl.BridgeHelper
 import spray.json._
 import wdl4s.parser.WdlParser
-import wdl4s.wdl.WdlNamespace
+import wdl4s.wdl.{WdlNamespace, WdlNamespaceWithWorkflow, WdlNamespaceWithoutWorkflow, WdlTask, WorkflowSource}
 import wdl4s.wdl.types.{WdlArrayType, WdlFileType}
 import wdl4s.wdl.values.WdlValue
-import wdl4s.wdl.{WdlNamespaceWithWorkflow, WorkflowSource}
 
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
@@ -83,6 +82,60 @@ class Bridge(basePath : String) {
       case Failure(t) =>
         println(t.getMessage)
         null
+    }
+  }
+
+  @throws(classOf[WdlParser.SyntaxError])
+  @throws(classOf[NullPointerException])
+  def isValidWorkflow(file: JFile) = {
+      val lines = scala.io.Source.fromFile(file).mkString
+      WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
+  }
+
+  @throws(classOf[WdlParser.SyntaxError])
+  @throws(classOf[NullPointerException])
+  def isValidTool(file: JFile) = {
+    val lines = scala.io.Source.fromFile(file).mkString
+    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
+    var taskCount = 0
+    var onlyTask : WdlTask = WdlTask.empty
+
+    // Should only call one task
+    ns.workflow.calls foreach { call =>
+      if (ns.findTask(call.callable.fullyQualifiedName).nonEmpty) {
+        ns.findTask(call.callable.fullyQualifiedName) foreach { task =>
+          taskCount += 1
+          onlyTask = task
+        }
+      } else {
+        ns.namespaces.foreach { namespace =>
+          if (namespace.findTask(call.unqualifiedName).nonEmpty) {
+            namespace.findTask(call.unqualifiedName).foreach  { task =>
+              taskCount += 1
+              onlyTask = task
+            }
+          } else if (namespace.findTask(call.callable.fullyQualifiedName).nonEmpty) {
+            namespace.findTask(call.callable.fullyQualifiedName).foreach  { task =>
+              taskCount += 1
+              onlyTask = task
+            }
+          } else if (namespace.findTask(call.callable.unqualifiedName).nonEmpty) {
+            namespace.findTask(call.callable.unqualifiedName).foreach  { task =>
+              taskCount += 1
+              onlyTask = task
+            }
+          }
+        }
+      }
+    }
+    if (taskCount > 1) {
+      throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
+    }
+
+    // Should have a docker associated in runtime
+    val dockerAttributes = onlyTask.runtimeAttributes.attrs.get("docker")
+    if (!dockerAttributes.isDefined) {
+      throw new WdlParser.SyntaxError("'" + onlyTask.fullyQualifiedName + "' requires an associated docker container to make this a valid tool.")
     }
   }
 

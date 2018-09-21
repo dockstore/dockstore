@@ -398,4 +398,14 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         }
         return map;
     }
+
+    @Override
+    public boolean isValidWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        return true;
+    }
+
+    @Override
+    public boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        return true;
+    }
 }

@@ -643,4 +643,14 @@ public class CWLHandler implements LanguageHandlerInterface {
 
         return filteredArray;
     }
+
+    @Override
+    public boolean isValidWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        return true;
+    }
+
+    @Override
+    public boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        return true;
+    }
 }

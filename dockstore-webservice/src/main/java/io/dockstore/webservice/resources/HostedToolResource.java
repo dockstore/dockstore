@@ -141,7 +141,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Tool entry) {
         boolean isValidCWL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.cwl"));
-        boolean isValidWDL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.wdl"));
+        boolean isValidWDL = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).isValidToolSet(sourceFiles, "/Dockstore.wdl");
+
         boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
         return (isValidCWL || isValidWDL) && hasDockerfile;
     }
