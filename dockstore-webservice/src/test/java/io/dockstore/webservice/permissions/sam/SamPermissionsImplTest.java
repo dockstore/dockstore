@@ -533,6 +533,17 @@ public class SamPermissionsImplTest {
         }
     }
 
+    @Test
+    public void testAddingOwnerDoesNotCreateSecondOwnerPolicy() throws ApiException { //https://github.com/ga4gh/dockstore/issues/1805
+        when(fooWorkflow.getUsers()).thenReturn(new HashSet<>(Arrays.asList(userMock)));
+        final String resourceId = SamConstants.ENCODED_WORKFLOW_PREFIX + FOO_WORKFLOW_NAME;
+        ResourceAndAccessPolicy owner = resourceAndAccessPolicyHelper(resourceId, SamConstants.OWNER_POLICY);
+        when(resourcesApiMock.listResourcesAndPolicies(SamConstants.RESOURCE_TYPE))
+                .thenReturn(Arrays.asList(owner));
+        samPermissionsImpl.setPermission(userMock, fooWorkflow, new Permission("johndoe@example.com", Role.OWNER));
+        verify(resourcesApiMock, times(0)).overwritePolicy(eq(SamConstants.RESOURCE_TYPE), anyString(), eq(SamConstants.OWNER_POLICY), any());
+    }
+
     private void setupInitializePermissionsMocks(String encodedPath) {
         try {
             doNothing().when(resourcesApiMock).createResourceWithDefaults(anyString(), anyString());

@@ -20,12 +20,14 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import groovy.lang.MissingPropertyException;
 import groovy.util.ConfigObject;
 import groovy.util.ConfigSlurper;
 import groovyjarjarantlr.RecognitionException;
@@ -51,10 +53,10 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         ConfigObject parse = getConfigObject(content);
         ConfigObject manifest = (ConfigObject)parse.get("manifest");
-        if (manifest.containsKey("description")) {
+        if (manifest != null && manifest.containsKey("description")) {
             entry.setDescription((String)manifest.get("description"));
         }
-        if (manifest.containsKey("author")) {
+        if (manifest != null && manifest.containsKey("author")) {
             entry.setAuthor((String)manifest.get("author"));
         }
 
@@ -106,8 +108,17 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         ConfigSlurper slurper = new ConfigSlurper();
         //TODO: replace with NextFlow parser when licensing issues are dealt with
         // this sucks, but we need to ignore includeConfig lines
-        String cleanedContent = content.replaceAll("(?m)^[ \t]*includeConfig.*", "");
-        return slurper.parse(cleanedContent);
+        String cleanedContent = content.replaceAll("(?i)(?m)^[ \t]*includeConfig.*", "");
+        try {
+            return slurper.parse(cleanedContent);
+        } catch (MissingPropertyException e) {
+            LOG.error("could not parse nextflow config due to " + e.getMessage());
+            return new ConfigObject();
+        }
+    }
+
+    private GroovySourceAST getFirstAstWithKeyword(GroovySourceAST ast, String keyword, boolean compareChild) {
+        return getFirstAstWithKeyword(ast, keyword, compareChild, new HashSet<>());
     }
 
     /**
@@ -117,10 +128,15 @@ public class NextFlowHandler implements LanguageHandlerInterface {
      * @param compareChild If true will check first child for keyword, if false will check current node
      * @return AST with some keyword as text
      */
-    private GroovySourceAST getFirstAstWithKeyword(GroovySourceAST ast, String keyword, boolean compareChild) {
+    private GroovySourceAST getFirstAstWithKeyword(GroovySourceAST ast, String keyword, boolean compareChild, Set<GroovySourceAST> seen) {
         if (ast == null) {
             return null;
         }
+
+        if (seen.contains(ast)) {
+            return null;
+        }
+        seen.add(ast);
 
         if (compareChild) {
             if (ast.getFirstChild() != null && Objects.equals(ast.getFirstChild().getText(), keyword)) {
@@ -137,14 +153,14 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
         for (int i = 0; i < numChildren; i++) {
             GroovySourceAST groovySourceAST = ast.childAt(i);
-            subtree = getFirstAstWithKeyword(groovySourceAST, keyword, compareChild);
+            subtree = getFirstAstWithKeyword(groovySourceAST, keyword, compareChild, seen);
             if (subtree != null) {
                 break;
             }
         }
 
         if (subtree == null && ast.getNextSibling() != null) {
-            subtree = getFirstAstWithKeyword((GroovySourceAST)ast.getNextSibling(), keyword, compareChild);
+            subtree = getFirstAstWithKeyword((GroovySourceAST)ast.getNextSibling(), keyword, compareChild, seen);
         }
         return subtree;
     }
@@ -188,14 +204,23 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         return inputs;
     }
 
+    private List<GroovySourceAST> getSubtreesOfKeyword(GroovySourceAST ast, String keyword) {
+        return getSubtreesOfKeyword(ast, keyword, new HashSet<>());
+    }
+
     /**
      * Gets a list of all subtrees with text keyword
      * @param ast Some AST
      * @param keyword A keyword of an existing node in an AST
      * @return List of AST with some keyword
      */
-    private List<GroovySourceAST> getSubtreesOfKeyword(GroovySourceAST ast, String keyword) {
+    private List<GroovySourceAST> getSubtreesOfKeyword(GroovySourceAST ast, String keyword, Set<GroovySourceAST> seen) {
+
         List<GroovySourceAST> subtrees = new ArrayList<>();
+        if (seen.contains(ast)) {
+            return subtrees;
+        }
+        seen.add(ast);
 
         if (ast == null) {
             return null;
@@ -210,11 +235,11 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
         for (int i = 0; i < numChildren; i++) {
             GroovySourceAST childAST = ast.childAt(i);
-            subtrees.addAll(getSubtreesOfKeyword(childAST, keyword));
+            subtrees.addAll(getSubtreesOfKeyword(childAST, keyword, seen));
         }
 
         if (ast.getNextSibling() != null) {
-            subtrees.addAll(getSubtreesOfKeyword((GroovySourceAST)ast.getNextSibling(), keyword));
+            subtrees.addAll(getSubtreesOfKeyword((GroovySourceAST)ast.getNextSibling(), keyword, seen));
         }
 
         return subtrees;
@@ -265,7 +290,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         ConfigObject manifest = (ConfigObject)parse.get("manifest");
         String mainScriptPath = "main.nf";
         if (manifest != null && manifest.containsKey("mainScript")) {
-            mainScriptPath = (String)manifest.get("mainScript");
+            mainScriptPath = manifest.get("mainScript").toString();
         }
         mainDescriptor = secondaryDescContent.get(mainScriptPath);
 
@@ -273,7 +298,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         ConfigObject params = (ConfigObject)parse.get("params");
         String defaultContainer = null;
         if (params != null && params.containsKey("container")) {
-            defaultContainer = (String)params.get("container");
+            defaultContainer = params.get("container").toString();
         }
 
         Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);
