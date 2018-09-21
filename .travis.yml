@@ -13,8 +13,7 @@ cache:
   - $HOME/apache-maven-3.5.4
 
 language: java
-jdk:
-- openjdk10
+jdk: openjdk10
 
 env:
   - TESTING_PROFILE=integration-tests
@@ -35,8 +34,7 @@ jobs:
     # no point in running integration tests if we don't pass unit tests
     # run a few tests with oraclejdk8 for backwards compat
     - stage: integration-tests
-      jdk:
-      - oraclejdk8
+      jdk: oraclejdk8
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true
     - stage: integration-tests
       jdk: openjdk10
