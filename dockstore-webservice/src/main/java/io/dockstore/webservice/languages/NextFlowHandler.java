@@ -401,11 +401,16 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     @Override
     public boolean isValidWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return true;
+        Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+        String content = null;
+        if (mainDescriptor.isPresent()) {
+            content = mainDescriptor.get().getContent();
+        }
+        return content.contains("manifest");
     }
 
     @Override
     public boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return true;
+        return false;
     }
 }
