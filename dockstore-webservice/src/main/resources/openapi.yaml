@@ -4,7 +4,7 @@ info:
     This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.5.0-rc.2-SNAPSHOT
+  version: 1.6.0-alpha.0-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -1286,7 +1286,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: 'Add a new bitbucket.org token, used by quay.io redirect'
+      summary: 'Add a new bitbucket.org token, used by quay.io redirect.'
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -1313,7 +1313,7 @@ paths:
         - tokens
       summary: >-
         Allow satellizer to post a new GitHub token to dockstore, used by login,
-        can create new users
+        can create new users.
       description: A post method is required by saetillizer to send the GitHub token
       operationId: addToken
       responses:
@@ -1331,7 +1331,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: 'Add a new github.com token, used by accounts page'
+      summary: 'Add a new github.com token, used by accounts page.'
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -1356,7 +1356,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: Add a new gitlab.com token
+      summary: Add a new gitlab.com token.
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -1381,7 +1381,7 @@ paths:
     post:
       tags:
         - tokens
-      summary: Allow satellizer to post a new Google token to dockstore
+      summary: Allow satellizer to post a new Google token to Dockstore.
       description: A post method is required by satellizer to send the Google token
       operationId: addGoogleToken
       responses:
@@ -1399,7 +1399,7 @@ paths:
     get:
       tags:
         - tokens
-      summary: Add a new quay IO token
+      summary: Add a new quay IO token.
       description: >-
         This is used as part of the OAuth 2 web flow. Once a user has approved
         permissions for CollaboratoryTheir browser will load the redirect URI
@@ -1424,8 +1424,8 @@ paths:
     get:
       tags:
         - tokens
-      summary: Get a specific token by id
-      description: Get a specific token by id
+      summary: Get a specific token by id.
+      description: ''
       operationId: listToken
       parameters:
         - name: tokenId
@@ -1451,7 +1451,7 @@ paths:
     delete:
       tags:
         - tokens
-      summary: Deletes a token
+      summary: Delete a token.
       description: ''
       operationId: deleteToken
       parameters:
@@ -1487,8 +1487,8 @@ paths:
     post:
       tags:
         - hosted
-      summary: Create a hosted tool
-      description: Create a hosted tool
+      summary: Create a hosted tool.
+      description: ''
       operationId: createHostedTool
       parameters:
         - name: registry
@@ -1528,8 +1528,8 @@ paths:
     delete:
       tags:
         - hosted
-      summary: Delete a revision of a hosted tool
-      description: Delete a revision of a hosted tool
+      summary: Delete a revision of a hosted tool.
+      description: ''
       operationId: deleteHostedToolVersion
       parameters:
         - name: entryId
@@ -1557,8 +1557,8 @@ paths:
     patch:
       tags:
         - hosted
-      summary: Non-idempotent operation for creating new revisions of hosted tools
-      description: Non-idempotent operation for creating new revisions of hosted tools
+      summary: Non-idempotent operation for creating new revisions of hosted tools.
+      description: ''
       operationId: editHostedTool
       parameters:
         - name: entryId
@@ -1583,7 +1583,7 @@ paths:
     get:
       tags:
         - containers
-      summary: List all published containers belonging to the specified namespace
+      summary: List all published tools belonging to the specified namespace.
       description: NO authentication
       operationId: getPublishedContainersByNamespace
       parameters:
@@ -1607,7 +1607,7 @@ paths:
       tags:
         - containers
       summary: Get a tool by the specific tool path
-      description: Lists info of tool. Enter full path (include quay.io in path).
+      description: Requires full path (including tool name if applicable).
       operationId: getContainerByToolPath
       parameters:
         - name: repository
@@ -1629,8 +1629,8 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a published tool by the specific tool path
-      description: Lists info of tool. Enter full path (include quay.io in path).
+      summary: Get a published tool by the specific tool path.
+      description: Requires full path (including tool name if applicable).
       operationId: getPublishedContainerByToolPath
       parameters:
         - name: repository
@@ -1650,8 +1650,8 @@ paths:
     get:
       tags:
         - containertags
-      summary: Get tags  for a container by id
-      description: Lists tags for a container. Enter full path (include quay.io in path).
+      summary: Get tags for a tool by id.
+      description: ''
       operationId: getTagsByPath
       parameters:
         - name: containerId
@@ -1677,8 +1677,8 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a list of tools by path
-      description: Lists info of tool. Enter full path (include quay.io in path).
+      summary: Get a list of tools by path.
+      description: Does not require tool name.
       operationId: getContainerByPath
       parameters:
         - name: repository
@@ -1702,7 +1702,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a list of published tools by path
+      summary: Get a list of published tools by path.
       description: NO authentication
       operationId: getPublishedContainerByPath
       parameters:
@@ -1723,7 +1723,7 @@ paths:
     get:
       tags:
         - containers
-      summary: List all published containers.
+      summary: List all published tools.
       description: NO authentication
       operationId: allPublishedContainers
       parameters:
@@ -1784,7 +1784,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a published container
+      summary: Get a published tool.
       description: NO authentication
       operationId: getPublishedContainer
       parameters:
@@ -1806,8 +1806,8 @@ paths:
     post:
       tags:
         - containers
-      summary: 'Register an image manually, along with tags'
-      description: Register an image manually.
+      summary: 'Register a tool manually, along with tags.'
+      description: ''
       operationId: registerManual
       responses:
         '200':
@@ -1829,7 +1829,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a published container's schema by ID
+      summary: Get a published tool's schema by ID.
       description: NO authentication
       operationId: getPublishedContainerSchema
       parameters:
@@ -1855,7 +1855,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get a registered repo
+      summary: Retrieve a tool.
       description: >-
         This is one of the few endpoints that returns the user object with
         populated properties (minus the userProfiles property)
@@ -1881,7 +1881,10 @@ paths:
       tags:
         - containers
       summary: Update the tool with the given tool.
-      description: ''
+      description: >-
+        Updates default descriptor paths, default Docker paths, default test
+        parameter paths, git url, and default version. Also updates tool
+        maintainer email, and private access for manual tools.
       operationId: updateContainer
       parameters:
         - name: containerId
@@ -1905,7 +1908,7 @@ paths:
     delete:
       tags:
         - containers
-      summary: Delete a tool
+      summary: Delete a tool.
       description: ''
       operationId: deleteContainer
       parameters:
@@ -1925,7 +1928,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.cwl file on Github.
+      summary: Get the primary CWL descriptor file on Github.
       description: >-
         Does not require authentication for published tools, authentication can
         be provided for restricted tools
@@ -1956,7 +1959,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.cwl file on Github.
+      summary: Get the corresponding CWL descriptor file on Github.
       description: >-
         Does not require authentication for published tools, authentication can
         be provided for restricted tools
@@ -2023,7 +2026,7 @@ paths:
     put:
       tags:
         - containers
-      summary: Update the labels linked to a container.
+      summary: Update the labels linked to a tool.
       description: >-
         Labels are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
@@ -2057,10 +2060,8 @@ paths:
     post:
       tags:
         - containers
-      summary: Publish or unpublish a container
-      description: >-
-        publish a container (public or private). Assumes that user is using
-        quay.io and github.
+      summary: Publish or unpublish a tool.
+      description: ''
       operationId: publish
       parameters:
         - name: containerId
@@ -2085,7 +2086,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Refresh one particular repo
+      summary: Refresh one particular tool.
       description: ''
       operationId: refresh
       parameters:
@@ -2109,7 +2110,7 @@ paths:
     post:
       tags:
         - containertags
-      summary: Request a DOI for this version of a tool
+      summary: Request a DOI for this version of a tool.
       description: ''
       operationId: requestDOIForToolTag
       parameters:
@@ -2208,7 +2209,7 @@ paths:
     put:
       tags:
         - containers
-      summary: Stars a tool.
+      summary: Star a tool.
       description: ''
       operationId: starEntry
       parameters:
@@ -2230,7 +2231,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Returns list of users who starred the given tool
+      summary: Returns list of users who starred a tool.
       description: ''
       operationId: getStarredUsers
       parameters:
@@ -2254,10 +2255,8 @@ paths:
     post:
       tags:
         - containertags
-      summary: Add new tags linked to a container
-      description: >-
-        Tag correspond to each row of the versions table listing all information
-        for a docker repo tag
+      summary: Add new tags linked to a tool.
+      description: ''
       operationId: addTags
       parameters:
         - name: containerId
@@ -2290,10 +2289,8 @@ paths:
     put:
       tags:
         - containertags
-      summary: Update the tags linked to a container
-      description: >-
-        Tag correspond to each row of the versions table listing all information
-        for a docker repo tag
+      summary: Update the tags linked to a tool.
+      description: ''
       operationId: updateTags
       parameters:
         - name: containerId
@@ -2327,10 +2324,8 @@ paths:
     delete:
       tags:
         - containertags
-      summary: Delete tag linked to a container
-      description: >-
-        Tag correspond to each row of the versions table listing all information
-        for a docker repo tag
+      summary: Delete tag linked to a tool.
+      description: ''
       operationId: deleteTags
       parameters:
         - name: containerId
@@ -2398,7 +2393,7 @@ paths:
     put:
       tags:
         - containers
-      summary: Add test parameter files for a given tag.
+      summary: Add test parameter files to a tag.
       description: ''
       operationId: addTestParameterFiles
       parameters:
@@ -2449,7 +2444,7 @@ paths:
     delete:
       tags:
         - containers
-      summary: Delete test parameter files for a given tag.
+      summary: Delete test parameter files to a tag.
       description: ''
       operationId: deleteTestParameterFiles
       parameters:
@@ -2499,7 +2494,7 @@ paths:
     delete:
       tags:
         - containers
-      summary: Unstars a tool.
+      summary: Unstar a tool.
       description: ''
       operationId: unstarEntry
       parameters:
@@ -2519,10 +2514,10 @@ paths:
     put:
       tags:
         - containers
-      summary: Change the workflow paths
+      summary: Change the tool paths.
       description: >-
-        Tag correspond to each row of the versions table listing all information
-        for a docker repo tag
+        Resets the descriptor paths and dockerfile path of all versions to match
+        the default paths from the tool object passed.
       operationId: updateTagContainerPath
       parameters:
         - name: containerId
@@ -2547,7 +2542,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get users of a container
+      summary: Get users of a tool.
       description: ''
       operationId: getUsers
       parameters:
@@ -2573,8 +2568,8 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the sources that verified a particular tool.
-      description: Does not need authentication
+      summary: Get the sources that verified a tool.
+      description: NO authentication
       operationId: verifiedSources
       parameters:
         - name: containerId
@@ -2630,7 +2625,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.wdl file on Github.
+      summary: Get the primary WDL descriptor file on Github.
       description: >-
         Does not require authentication for published tools, authentication can
         be provided for restricted tools
@@ -2661,7 +2656,7 @@ paths:
     get:
       tags:
         - containers
-      summary: Get the corresponding Dockstore.wdl file on Github.
+      summary: Get the corresponding WDL descriptor file on Github.
       description: >-
         Does not require authentication for published tools, authentication can
         be provided for restricted tools
@@ -2790,7 +2785,7 @@ paths:
       tags:
         - metadata
       summary: Get the list of descriptor languages supported on Dockstore.
-      description: Does not need authentication
+      description: NO authentication
       operationId: getDescriptorLanguages
       responses:
         '200':
@@ -2806,7 +2801,7 @@ paths:
       tags:
         - metadata
       summary: Get the list of docker registries supported on Dockstore.
-      description: Does not need authentication
+      description: NO authentication
       operationId: getDockerRegistries
       responses:
         '200':
@@ -2822,7 +2817,7 @@ paths:
       tags:
         - metadata
       summary: Get measures of cache performance.
-      description: Does not need authentication
+      description: NO authentication
       operationId: getCachePerformance
       responses:
         '200':
@@ -2839,7 +2834,7 @@ paths:
     get:
       tags:
         - metadata
-      summary: List all tools and workflows in creation order
+      summary: List all published tools and workflows in creation order.
       description: NO authentication
       operationId: rssFeed
       responses:
@@ -2853,7 +2848,7 @@ paths:
     get:
       tags:
         - metadata
-      summary: Returns the file containing runner dependencies
+      summary: Returns the file containing runner dependencies.
       description: ''
       operationId: getRunnerDependencies
       parameters:
@@ -2903,7 +2898,7 @@ paths:
     get:
       tags:
         - metadata
-      summary: List all workflow and tool paths.
+      summary: List all published workflow and tool paths.
       description: NO authentication
       operationId: sitemap
       responses:
@@ -2921,7 +2916,7 @@ paths:
       tags:
         - metadata
       summary: Get the list of source controls supported on Dockstore.
-      description: Does not need authentication
+      description: NO authentication
       operationId: getSourceControlList
       responses:
         '200':
@@ -2936,7 +2931,7 @@ paths:
     get:
       tags:
         - users
-      summary: Check if user with some username exists
+      summary: Check if user with some username exists.
       description: ''
       operationId: checkUserExists
       parameters:
@@ -2959,7 +2954,7 @@ paths:
     get:
       tags:
         - users
-      summary: List all groups
+      summary: List all groups.
       description: This is not tied into PermissionsInterface but could be
       operationId: allGroups
       responses:
@@ -2976,7 +2971,7 @@ paths:
     post:
       tags:
         - users
-      summary: Create user group
+      summary: Create user group.
       description: ''
       operationId: createGroup
       parameters:
@@ -2998,7 +2993,7 @@ paths:
     get:
       tags:
         - users
-      summary: List a group
+      summary: List a group.
       description: This is not tied into PermissionsInterface but could be
       operationId: getGroup
       parameters:
@@ -3022,7 +3017,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get users that belongs to a group
+      summary: Get users that belongs to a group.
       description: This is not tied into PermissionsInterface but could be
       operationId: getUsersFromGroup
       parameters:
@@ -3048,7 +3043,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get the logged-in user's starred tools
+      summary: Get the logged-in user's starred tools.
       description: ''
       operationId: getStarredTools
       responses:
@@ -3066,7 +3061,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get the logged-in user's starred workflows
+      summary: Get the logged-in user's starred workflows.
       description: ''
       operationId: getStarredWorkflows
       responses:
@@ -3084,8 +3079,8 @@ paths:
     get:
       tags:
         - users
-      summary: Update metadata of all users
-      description: Update all users metadata. Admin only.
+      summary: Update metadata of all users.
+      description: Admin only.
       operationId: updateUserMetadata
       responses:
         '200':
@@ -3102,7 +3097,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get the logged-in user
+      summary: Get the logged-in user.
       description: ''
       operationId: getUser
       responses:
@@ -3117,7 +3112,7 @@ paths:
     delete:
       tags:
         - users
-      summary: Delete user if possible
+      summary: Delete user if possible.
       description: ''
       operationId: selfDestruct
       responses:
@@ -3133,7 +3128,7 @@ paths:
     post:
       tags:
         - users
-      summary: Change username if possible
+      summary: Change username if possible.
       description: ''
       operationId: changeUsername
       parameters:
@@ -3156,7 +3151,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get additional information on the logged-in user
+      summary: Get additional information about the logged-in user.
       description: ''
       operationId: getExtendedUserData
       responses:
@@ -3172,8 +3167,8 @@ paths:
     get:
       tags:
         - users
-      summary: Update metadata for logged in user
-      description: Update metadata for logged in user.
+      summary: Update metadata for logged in user.
+      description: ''
       operationId: updateLoggedInUserMetadata
       parameters:
         - name: source
@@ -3198,7 +3193,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get user
+      summary: Get a user by username.
       description: ''
       operationId: listUser
       parameters:
@@ -3221,7 +3216,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get user with id
+      summary: Get user by id.
       description: ''
       operationId: getUser
       parameters:
@@ -3245,8 +3240,8 @@ paths:
     get:
       tags:
         - users
-      summary: List repos owned by the logged-in user
-      description: Lists all registered and unregistered containers owned by the user
+      summary: List all tools owned by the logged-in user.
+      description: ''
       operationId: userContainers
       parameters:
         - name: userId
@@ -3271,8 +3266,8 @@ paths:
     get:
       tags:
         - users
-      summary: List all published containers from a user
-      description: Get user's published containers only
+      summary: List all published tools from a user.
+      description: ''
       operationId: userPublishedContainers
       parameters:
         - name: userId
@@ -3297,8 +3292,8 @@ paths:
     get:
       tags:
         - users
-      summary: Refresh repos owned by the logged-in user
-      description: Updates some metadata
+      summary: Refresh all tools owned by the logged-in user.
+      description: ''
       operationId: refresh
       parameters:
         - name: userId
@@ -3323,8 +3318,10 @@ paths:
     get:
       tags:
         - users
-      summary: Refresh repos owned by the logged-in user with specified organization
-      description: Refresh all tools in an organization
+      summary: >-
+        Refresh all tools owned by the logged-in user with specified
+        organization.
+      description: ''
       operationId: refreshToolsByOrganization
       parameters:
         - name: userId
@@ -3355,7 +3352,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get groups that the user belongs to
+      summary: Get groups that the user belongs to.
       description: This is not tied into PermissionsInterface but could be
       operationId: getGroupsFromUser
       parameters:
@@ -3380,7 +3377,7 @@ paths:
     put:
       tags:
         - users
-      summary: Add a group to a user
+      summary: Add a group to a user.
       description: This is not tied into PermissionsInterface but could be
       operationId: addGroupToUser
       parameters:
@@ -3411,7 +3408,7 @@ paths:
     delete:
       tags:
         - users
-      summary: Remove a user from a group
+      summary: Remove a user from a group.
       description: This is not tied into PermissionsInterface but could be
       operationId: removeUserFromGroup
       parameters:
@@ -3444,7 +3441,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get tokens with user id
+      summary: Get tokens with user id.
       description: ''
       operationId: getUserTokens
       parameters:
@@ -3470,7 +3467,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get Dockstore tokens with user id
+      summary: Get Dockstore tokens with user id.
       description: ''
       operationId: getDockstoreUserTokens
       parameters:
@@ -3496,7 +3493,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get Github tokens with user id
+      summary: Get Github tokens with user id.
       description: ''
       operationId: getGithubUserTokens
       parameters:
@@ -3522,7 +3519,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get Gitlab tokens with user id
+      summary: Get Gitlab tokens with user id.
       description: ''
       operationId: getGitlabUserTokens
       parameters:
@@ -3548,7 +3545,7 @@ paths:
     get:
       tags:
         - users
-      summary: Get Quay tokens with user id
+      summary: Get Quay tokens with user id.
       description: ''
       operationId: getQuayUserTokens
       parameters:
@@ -3574,8 +3571,8 @@ paths:
     get:
       tags:
         - users
-      summary: List workflows owned by the logged-in user
-      description: Lists all registered and unregistered workflows owned by the user
+      summary: List all workflows owned by the logged-in user.
+      description: ''
       operationId: userWorkflows
       parameters:
         - name: userId
@@ -3600,8 +3597,8 @@ paths:
     get:
       tags:
         - users
-      summary: List all published workflows from a user
-      description: Get user's published workflows only
+      summary: List all published workflows from a user.
+      description: ''
       operationId: userPublishedWorkflows
       parameters:
         - name: userId
@@ -3626,8 +3623,8 @@ paths:
     get:
       tags:
         - users
-      summary: Refresh workflows owned by the logged-in user
-      description: Updates some metadata
+      summary: Refresh all workflows owned by the logged-in user.
+      description: ''
       operationId: refreshWorkflows
       parameters:
         - name: userId
@@ -3653,9 +3650,9 @@ paths:
       tags:
         - users
       summary: >-
-        Refresh workflows owned by the logged-in user with specified
-        organization
-      description: Refresh all workflows in an organization
+        Refresh all workflows owned by the logged-in user with specified
+        organization.
+      description: ''
       operationId: refreshWorkflowsByOrganization
       parameters:
         - name: userId
@@ -3686,8 +3683,8 @@ paths:
     post:
       tags:
         - hosted
-      summary: Create a hosted workflow
-      description: Create a hosted workflow
+      summary: Create a hosted workflow.
+      description: ''
       operationId: createHostedWorkflow
       parameters:
         - name: registry
@@ -3728,7 +3725,7 @@ paths:
       tags:
         - hosted
       summary: Delete a revision of a hosted workflow
-      description: Delete a revision of a hosted workflow
+      description: ''
       operationId: deleteHostedWorkflowVersion
       parameters:
         - name: entryId
@@ -3757,7 +3754,7 @@ paths:
       tags:
         - hosted
       summary: Non-idempotent operation for creating new revisions of hosted workflows
-      description: Non-idempotent operation for creating new revisions of hosted workflows
+      description: ''
       operationId: editHostedWorkflow
       parameters:
         - name: entryId
@@ -3782,7 +3779,7 @@ paths:
     post:
       tags:
         - workflows
-      summary: Manually register a workflow
+      summary: Manually register a workflow.
       description: Manually register workflow (public or private).
       operationId: manualRegister
       parameters:
@@ -3835,7 +3832,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: List all published workflows belonging to the specified namespace
+      summary: List all published workflows of an organization.
       description: NO authentication
       operationId: getPublishedWorkflowsByOrganization
       parameters:
@@ -3858,8 +3855,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get an entry by path
-      description: Gets an entry from the path. Enter full path.
+      summary: Get an entry by path.
+      description: Requires full path (including entry name if applicable).
       operationId: getEntryByPath
       parameters:
         - name: repository
@@ -3881,8 +3878,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get an entry by path
-      description: Gets a published entry from the path. Enter full path.
+      summary: Get a published entry by path.
+      description: Requires full path (including entry name if applicable).
       operationId: getPublishedEntryByPath
       parameters:
         - name: repository
@@ -3902,8 +3899,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get a workflow by path
-      description: Lists info of workflow. Enter full path.
+      summary: Get a workflow by path.
+      description: Requires full path (including workflow name if applicable).
       operationId: getWorkflowByPath
       parameters:
         - name: repository
@@ -3925,7 +3922,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Gets all actions a user can perform on a workflow
+      summary: Gets all actions a user can perform on a workflow.
       description: ''
       operationId: getWorkflowActions
       parameters:
@@ -3955,10 +3952,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get all permissions for a workflow
-      description: >-
-        Lists all permissions for a workflow. The user must be the workflow
-        owner.
+      summary: Get all permissions for a workflow.
+      description: The user must be the workflow owner.
       operationId: getWorkflowPermissions
       parameters:
         - name: repository
@@ -3981,8 +3976,8 @@ paths:
     delete:
       tags:
         - workflows
-      summary: Remove the specified user role for a workflow
-      description: Removes a role from a workflow. The user must be the workflow owner.
+      summary: Remove the specified user role for a workflow.
+      description: The user must be the workflow owner.
       operationId: removeWorkflowRole
       parameters:
         - name: repository
@@ -4021,10 +4016,10 @@ paths:
     patch:
       tags:
         - workflows
-      summary: Set the specified permission for a user on a workflow
+      summary: Set the specified permission for a user on a workflow.
       description: >-
-        Adds a permission for a workflow. The user must be the workflow owner.
-        Currently only supported on hosted workflows.
+        The user must be the workflow owner. Currently only supported on hosted
+        workflows.
       operationId: addWorkflowPermission
       parameters:
         - name: repository
@@ -4056,7 +4051,7 @@ paths:
       tags:
         - workflows
       summary: Get a published workflow by path
-      description: Lists info of workflow. Enter full path.
+      description: Does not require workflow name.
       operationId: getPublishedWorkflowByPath
       parameters:
         - name: repository
@@ -4076,8 +4071,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get a list of workflows by path
-      description: Lists info of workflow. Enter full path.
+      summary: Get a list of workflows by path.
+      description: Does not require workflow name.
       operationId: getAllWorkflowByPath
       parameters:
         - name: repository
@@ -4162,8 +4157,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get a published workflow
-      description: NO authentication
+      summary: Get a published workflow.
+      description: Hidden versions will not be visible. NO authentication
       operationId: getPublishedWorkflow
       parameters:
         - name: workflowId
@@ -4184,8 +4179,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: All workflows shared with user
-      description: List all workflows shared with user
+      summary: Retrieve all workflows shared with user.
+      description: ''
       operationId: sharedWorkflows
       responses:
         '200':
@@ -4204,7 +4199,7 @@ paths:
         - workflows
       summary: >-
         Register a checker workflow and associates it with the given
-        tool/workflow
+        tool/workflow.
       description: ''
       operationId: registerCheckerWorkflow
       parameters:
@@ -4253,7 +4248,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get a registered workflow
+      summary: Retrieve a workflow
       description: >-
         This is one of the few endpoints that returns the user object with
         populated properties (minus the userProfiles property)
@@ -4279,7 +4274,9 @@ paths:
       tags:
         - workflows
       summary: Update the workflow with the given workflow.
-      description: ''
+      description: >-
+        Updates descriptor type (if stub), default workflow path, default file
+        path, and default version
       operationId: updateWorkflow
       parameters:
         - name: workflowId
@@ -4304,7 +4301,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get the corresponding Dockstore.cwl file on Github.
+      summary: Get the primary CWL descriptor file on Github.
       description: >-
         Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
@@ -4335,7 +4332,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get the corresponding Dockstore.cwl file on Github.
+      summary: Get the corresponding CWL descriptor file on Github.
       description: >-
         Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
@@ -4371,7 +4368,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get the DAG for a given workflow version
+      summary: Get the DAG for a given workflow version.
       description: >-
         Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
@@ -4404,7 +4401,7 @@ paths:
     put:
       tags:
         - workflows
-      summary: Update the default version of the given workflow.
+      summary: Update the default version of a workflow.
       description: ''
       operationId: updateWorkflowDefaultVersion
       parameters:
@@ -4469,7 +4466,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get the corresponding nextflow.config file on Github.
+      summary: Get the nextflow.config file on Github.
       description: >-
         Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
@@ -4536,7 +4533,7 @@ paths:
     post:
       tags:
         - workflows
-      summary: Publish or unpublish a workflow
+      summary: Publish or unpublish a workflow.
       description: Publish/publish a workflow (public or private).
       operationId: publish
       parameters:
@@ -4562,8 +4559,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: Refresh one particular workflow. Always do a full refresh when targeted
-      description: ''
+      summary: Refresh one particular workflow.
+      description: Full refresh
       operationId: refresh
       parameters:
         - name: workflowId
@@ -4586,7 +4583,7 @@ paths:
     put:
       tags:
         - workflows
-      summary: Request a DOI for this version of a workflow
+      summary: Request a DOI for this version of a workflow.
       description: ''
       operationId: requestDOIForWorkflowVersion
       parameters:
@@ -4619,10 +4616,10 @@ paths:
     put:
       tags:
         - workflows
-      summary: Change the workflow paths
+      summary: Reset the workflow paths.
       description: >-
-        Workflow version correspond to each row of the versions table listing
-        all information for a workflow
+        Resets the workflow paths of all versions to match the default workflow
+        path from the workflow object passed.
       operationId: updateWorkflowPath
       parameters:
         - name: workflowId
@@ -4770,7 +4767,7 @@ paths:
     put:
       tags:
         - workflows
-      summary: Stars a workflow.
+      summary: Star a workflow.
       description: ''
       operationId: starEntry
       parameters:
@@ -4792,7 +4789,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Returns list of users who starred the given Workflow
+      summary: Returns list of users who starred the given workflow.
       description: ''
       operationId: getStarredUsers
       parameters:
@@ -4931,7 +4928,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get the Tools for a given workflow version
+      summary: Get the Tools for a given workflow version.
       description: >-
         Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
@@ -4964,7 +4961,7 @@ paths:
     delete:
       tags:
         - workflows
-      summary: Unstars a workflow.
+      summary: Unstar a workflow.
       description: ''
       operationId: unstarEntry
       parameters:
@@ -4984,7 +4981,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get users of a workflow
+      summary: Get users of a workflow.
       description: ''
       operationId: getUsers
       parameters:
@@ -5010,8 +5007,8 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get a semicolon delimited list of verified sources
-      description: Does not need authentication
+      summary: Get a semicolon delimited list of verified sources.
+      description: NO authentication
       operationId: verifiedSources
       parameters:
         - name: workflowId
@@ -5067,7 +5064,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get the corresponding Dockstore.wdl file on Github.
+      summary: Get the primary WDL descriptor file on Github.
       description: >-
         Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
@@ -5098,7 +5095,7 @@ paths:
     get:
       tags:
         - workflows
-      summary: Get the corresponding Dockstore.wdl file on Github.
+      summary: Get the corresponding WDL descriptor file on Github.
       description: >-
         Does not require authentication for published workflows, authentication
         can be provided for restricted workflows
@@ -5134,10 +5131,8 @@ paths:
     put:
       tags:
         - workflows
-      summary: Update the workflow versions linked to a workflow
-      description: >-
-        Workflow version correspond to each row of the versions table listing
-        all information for a workflow
+      summary: Update the workflow versions linked to a workflow.
+      description: 'Updates workflow path, reference, and hidden attributes.'
       operationId: updateWorkflowVersion
       parameters:
         - name: workflowId
@@ -5312,10 +5307,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -5331,6 +5322,10 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -5511,10 +5506,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -5530,6 +5521,10 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6357,10 +6352,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6376,6 +6367,10 @@ components:
           uniqueItems: true
           items:
             $ref: '#/components/schemas/FileFormat'
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
