@@ -38,7 +38,7 @@
         <junit-version>4.12</junit-version>
         <logback.version>1.2.3</logback.version>
         <aws.version>1.11.313</aws.version>
-        <powermock.version>1.7.4</powermock.version>
+        <powermock.version>2.0.0-beta.5</powermock.version>
         <postgresql.version>42.1.4</postgresql.version>
         <mockito.version>2.22.0</mockito.version>
         <cwlavro.version>2.0.4</cwlavro.version>
@@ -431,6 +431,12 @@
             </dependency>
             <dependency>
                 <groupId>org.powermock</groupId>
+                <artifactId>powermock-api-support</artifactId>
+                <version>${powermock.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-easymock</artifactId>
                 <version>${powermock.version}</version>
                 <scope>test</scope>
@@ -438,7 +444,8 @@
             <dependency>
                 <groupId>org.powermock</groupId>
                 <artifactId>powermock-api-mockito-common</artifactId>
-                <version>${powermock.version}</version>
+                <!-- <version>${powermock.version}</version> seems to have gone out of sync with 2.0.0 -->
+                <version>1.7.4</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -452,6 +459,18 @@
                         <artifactId>objenesis</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.8.21</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.8.21</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>

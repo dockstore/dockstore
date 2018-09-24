@@ -57,6 +57,7 @@ jobs:
         - TESTING_PROFILE=toil-integration-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
     - stage: integration-tests
+      jdk: oraclejdk8
       env:
         - TESTING_PROFILE=regression-integration-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
