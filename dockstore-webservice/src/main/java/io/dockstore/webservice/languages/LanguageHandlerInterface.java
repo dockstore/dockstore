@@ -21,12 +21,15 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -37,8 +40,11 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
@@ -101,6 +107,26 @@ public interface LanguageHandlerInterface {
      * @return either a DAG or some form of a list of tools for a workflow
      */
     String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
+
+    default boolean checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
+        for (SourceFile sourcefile : sourcefiles) {
+            if (Objects.equals(sourcefile.getType(), fileType)) {
+                Yaml yaml = new Yaml();
+                try {
+                    yaml.load(sourcefile.getContent());
+                } catch (YAMLException e) {
+                    throw new CustomWebApplicationException("'" + sourcefile.getPath() + "' validation failed - " + e.getMessage(), HttpStatus.SC_NOT_ACCEPTABLE);
+                }
+            }
+        }
+        return true;
+    }
+
+    default Set<SourceFile> filterSourcefiles(Set<SourceFile> sourcefiles, List<SourceFile.FileType> fileTypes) {
+        return sourcefiles.stream()
+                .filter(sourcefile -> fileTypes.contains(sourcefile.getType()))
+                .collect(Collectors.toSet());
+    }
 
     /**
      * This method will setup the nodes (nodePairs) and edges (stepToDependencies) into Cytoscape compatible JSON

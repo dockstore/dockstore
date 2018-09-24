@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -183,14 +184,6 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public boolean isValidWorkflow(String content) {
-        // TODO: this code looks like it was broken at some point, needs investigation
-        //        final NamespaceWithWorkflow nameSpaceWithWorkflow = NamespaceWithWorkflow.load(content);
-        //        if (nameSpaceWithWorkflow != null) {
-        //            return true;
-        //        }
-        //
-        //        return false;
-        // For now as long as a file exists, it is a valid WDL
         return true;
     }
 
@@ -205,45 +198,61 @@ public class WDLHandler implements LanguageHandlerInterface {
         File tempMainDescriptor = null;
         String mainDescriptor = null;
 
-        try {
-            for (SourceFile sourceFile : sourcefiles) {
-                if (Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
-                    mainDescriptor = sourceFile.getContent();
-                    if (mainDescriptor == null || mainDescriptor.isEmpty()) {
-                        throw new WdlParser.SyntaxError("The primary descriptor '" + sourceFile.getPath() + "' has no content. Please make it a valid WDL document if you want to save.");
-                    }
-                }
-            }
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(
+                Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL, SourceFile.FileType.WDL_TEST_JSON));
 
-            Map<String, String> secondaryDescContent = new HashMap<>();
-            for (SourceFile sourceFile : sourcefiles) {
-                if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
-                    if (sourceFile.getContent() != null) {
-                        if (sourceFile.getContent().isEmpty()) {
-                            throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
+        sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
+
+        if (sourcefiles.size() > 0) {
+            try {
+                for (SourceFile sourceFile : sourcefiles) {
+                    if (Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
+                        mainDescriptor = sourceFile.getContent();
+                        if (mainDescriptor == null || mainDescriptor.isEmpty()) {
+                            throw new WdlParser.SyntaxError("The primary descriptor '" + sourceFile.getPath() + "' has no content. Please make it a valid WDL document if you want to save.");
                         }
-                        secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
                     }
                 }
-            }
-            tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
-            Bridge bridge = new Bridge(tempMainDescriptor.getParent());
-            bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
-            Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
-            if (Objects.equals(type, "tool")) {
-                bridge.isValidTool(tempMainDescriptor);
-            } else {
-                bridge.isValidWorkflow(tempMainDescriptor);
-            }
 
-        } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_NOT_ACCEPTABLE);
-        } catch (NullPointerException e) {
-            throw new CustomWebApplicationException("At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.", HttpStatus.SC_NOT_ACCEPTABLE);
-        } catch (IOException e) {
-            throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        } finally {
-            FileUtils.deleteQuietly(tempMainDescriptor);
+                Map<String, String> secondaryDescContent = new HashMap<>();
+                for (SourceFile sourceFile : sourcefiles) {
+                    if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
+                        if (sourceFile.getContent() != null) {
+                            if (sourceFile.getContent().isEmpty()) {
+                                if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
+                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
+                                } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
+                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
+                                } else {
+                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
+                                }
+                            }
+                            secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
+                        }
+                    }
+                }
+                tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
+                Bridge bridge = new Bridge(tempMainDescriptor.getParent());
+                bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
+                Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
+                if (Objects.equals(type, "tool")) {
+                    bridge.isValidTool(tempMainDescriptor);
+                } else {
+                    bridge.isValidWorkflow(tempMainDescriptor);
+                }
+
+                checkValidJsonAndYamlFiles(sourcefiles, SourceFile.FileType.WDL_TEST_JSON);
+            } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
+                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_NOT_ACCEPTABLE);
+            } catch (NullPointerException e) {
+                throw new CustomWebApplicationException(
+                        "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.",
+                        HttpStatus.SC_NOT_ACCEPTABLE);
+            } catch (IOException e) {
+                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } finally {
+                FileUtils.deleteQuietly(tempMainDescriptor);
+            }
         }
         return true;
     }
