@@ -122,6 +122,12 @@ public interface LanguageHandlerInterface {
         return true;
     }
 
+    /**
+     * Removes any sourcefiles of some file types from a set
+     * @param sourcefiles
+     * @param fileTypes
+     * @return Filtered sourcefile set
+     */
     default Set<SourceFile> filterSourcefiles(Set<SourceFile> sourcefiles, List<SourceFile.FileType> fileTypes) {
         return sourcefiles.stream()
                 .filter(sourcefile -> fileTypes.contains(sourcefile.getType()))

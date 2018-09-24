@@ -182,7 +182,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
-        return mainDescriptor.isPresent() && LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(mainDescriptor.get().getContent())
-                 && LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflowSet(sourceFiles, mainDescriptorPath);
+        return mainDescriptor.isPresent() && LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflowSet(sourceFiles, mainDescriptorPath);
     }
 }

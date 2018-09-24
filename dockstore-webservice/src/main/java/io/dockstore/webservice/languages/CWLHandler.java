@@ -645,6 +645,13 @@ public class CWLHandler implements LanguageHandlerInterface {
         return filteredArray;
     }
 
+    /**
+     * Determines if the CWL entry is valid
+     * @param sourcefiles
+     * @param primaryDescriptorFilePath
+     * @param entryType
+     * @return true if the entry is valid, false otherwise
+     */
     public boolean isValidEntry(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String entryType) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(
                 Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL, SourceFile.FileType.CWL_TEST_JSON));
@@ -654,8 +661,8 @@ public class CWLHandler implements LanguageHandlerInterface {
         if (mainDescriptor.isPresent()) {
             Yaml yaml = new Yaml();
             String content = mainDescriptor.get().getContent();
-            return (Objects.equals(entryType, "workflow") ? content.contains("class: Workflow") : true && this.isValidCwl(content, yaml)
-                    && checkValidJsonAndYamlFiles(sourcefiles, SourceFile.FileType.CWL_TEST_JSON));
+            return (!Objects.equals(entryType, "workflow") || content.contains("class: Workflow")) && this.isValidCwl(content, yaml)
+                    && checkValidJsonAndYamlFiles(sourcefiles, SourceFile.FileType.CWL_TEST_JSON);
         } else {
             return false;
         }
