@@ -428,14 +428,16 @@ public abstract class AbstractImageRegistry {
         boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> Objects.equals(file.getPath(), tag.getWdlPath()));
 
         if (hasCwl || hasWdl) {
-            Pair<Boolean, String> validCwl = isValidTool(tag, SourceFile.FileType.DOCKSTORE_CWL);
-            Pair<Boolean, String> validWdl = isValidTool(tag, SourceFile.FileType.DOCKSTORE_WDL);
+            Pair<Boolean, String> validCwl = isValidTool(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
+            Pair<Boolean, String> validWdl = isValidTool(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
 
+            tag.setCwlValidationMessage(null);
+            tag.setWdlValidationMessage(null);
             if (hasCwl) {
-                tag.setValidationMessage(validCwl.getValue());
+                tag.setCwlValidationMessage(validCwl.getValue());
             }
             if (hasWdl) {
-                tag.setValidationMessage(validWdl.getValue());
+                tag.setWdlValidationMessage(validWdl.getValue());
             }
             // Private tools don't require a dockerfile
             if (tool.isPrivateAccess()) {
@@ -453,12 +455,12 @@ public abstract class AbstractImageRegistry {
      * @param fileType
      * @return true if valid, false otherwise with validation message
      */
-    private Pair<Boolean, String> isValidTool(Tag tag, SourceFile.FileType fileType) {
+    private Pair<Boolean, String> isValidTool(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
         boolean isValid = false;
         String validationMessage = null;
         try {
             isValid = LanguageHandlerFactory.getInterface(fileType)
-                    .isValidToolSet(tag.getSourceFiles(), tag.getCwlPath());
+                    .isValidToolSet(tag.getSourceFiles(), primaryDescriptorPath);
         } catch (CustomWebApplicationException ex) {
             validationMessage = ex.getErrorMessage();
         }

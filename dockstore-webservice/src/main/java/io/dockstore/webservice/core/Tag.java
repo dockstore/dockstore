@@ -73,6 +73,14 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
     @ApiModelProperty(value = "Implementation specific, indicates whether this is an automated build on quay.io", position = 17)
     private boolean automated;
 
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "Error message for CWL file validation.", position = 22)
+    private String cwlValidationMessage;
+
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "Error message for WDL file validation.", position = 23)
+    private String wdlValidationMessage;
+
     public Tag() {
         super();
     }
@@ -110,6 +118,8 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
         automated = tag.automated;
         imageId = tag.imageId;
         size = tag.size;
+        cwlValidationMessage = tag.cwlValidationMessage;
+        wdlValidationMessage = tag.wdlValidationMessage;
     }
 
     public void clone(Tag tag) {
@@ -129,6 +139,23 @@ public class Tag extends Version<Tag> implements Comparable<Tag> {
 
         dockerfilePath = tag.dockerfilePath;
     }
+
+    public String getCwlValidationMessage() {
+        return cwlValidationMessage;
+    }
+
+    public void setCwlValidationMessage(String cwlValidationMessage) {
+        this.cwlValidationMessage = cwlValidationMessage;
+    }
+
+    public String getWdlValidationMessage() {
+        return wdlValidationMessage;
+    }
+
+    public void setWdlValidationMessage(String wdlValidationMessage) {
+        this.wdlValidationMessage = wdlValidationMessage;
+    }
+
 
     @JsonProperty
     @ApiModelProperty(position = 19)

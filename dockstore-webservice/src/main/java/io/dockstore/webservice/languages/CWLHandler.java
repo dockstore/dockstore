@@ -666,7 +666,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     throw new CustomWebApplicationException("Requires class: Workflow.", HttpStatus.SC_NOT_ACCEPTABLE);
                 }
             } else {
-                if(!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
+                if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
                     throw new CustomWebApplicationException("Requires class: CommandLineTool or ExpressionTool.", HttpStatus.SC_NOT_ACCEPTABLE);
                 }
             }

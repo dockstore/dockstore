@@ -25,7 +25,7 @@ import javax.ws.rs.core.Response;
  */
 public class CustomWebApplicationException extends WebApplicationException {
 
-    public String errorMessage;
+    public final String errorMessage;
     public CustomWebApplicationException(String message, int status) {
         super(Response.status(status).entity(message).type(MediaType.TEXT_PLAIN).build());
         this.errorMessage = message;
@@ -33,9 +33,5 @@ public class CustomWebApplicationException extends WebApplicationException {
 
     public String getErrorMessage() {
         return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
     }
 }

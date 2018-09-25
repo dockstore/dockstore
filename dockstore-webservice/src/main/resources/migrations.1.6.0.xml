@@ -21,7 +21,8 @@
 
     <changeSet author="aduncan" id="createVersionValidationMessage">
         <addColumn tableName="tag">
-            <column name="validationmessage" type="TEXT"/>
+            <column name="cwlvalidationmessage" type="TEXT"/>
+            <column name="wdlvalidationmessage" type="TEXT"/>
         </addColumn>
         <addColumn tableName="workflowversion">
             <column name="validationmessage" type="TEXT"/>

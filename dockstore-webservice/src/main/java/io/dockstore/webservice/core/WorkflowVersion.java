@@ -44,6 +44,10 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     @ApiModelProperty(value = "Path for the workflow", position = 12)
     private String workflowPath;
 
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "Error message for file validation.", position = 22)
+    private String validationMessage;
+
     public WorkflowVersion() {
         super();
     }
@@ -63,6 +67,7 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
 
     public void update(WorkflowVersion workflowVersion) {
         super.update(workflowVersion);
+        validationMessage = workflowVersion.getValidationMessage();
         super.setReference(workflowVersion.getReference());
         workflowPath = workflowVersion.getWorkflowPath();
     }
@@ -70,6 +75,14 @@ public class WorkflowVersion extends Version<WorkflowVersion> implements Compara
     public void clone(WorkflowVersion tag) {
         super.clone(tag);
         super.setReference(tag.getReference());
+    }
+
+    public String getValidationMessage() {
+        return validationMessage;
+    }
+
+    public void setValidationMessage(String validationMessage) {
+        this.validationMessage = validationMessage;
     }
 
     @JsonProperty

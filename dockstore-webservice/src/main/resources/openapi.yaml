@@ -5937,9 +5937,12 @@ components:
           description: >-
             This is the commit id for the source control that the files belong
             to
-        validationMessage:
+        cwlValidationMessage:
           type: string
-          description: Error message for file validation.
+          description: Error message for CWL file validation.
+        wdlValidationMessage:
+          type: string
+          description: Error message for WDL file validation.
       description: This describes one tag associated with a container.
     Token:
       type: object
