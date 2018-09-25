@@ -251,7 +251,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         if (versions.size() > 0) {
             // get the last one and modify files accordingly
-            Comparator<Version> comp = Comparator.comparingInt(p -> Integer.valueOf(p.getName()));
+            Comparator<Version> comp = Comparator.comparingInt(p -> Integer.parseInt(p.getName()));
             // there should always be a max with size() > 0
             U versionWithTheLargestName = versions.stream().max(comp).orElseThrow(RuntimeException::new);
             tag.setName(String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
