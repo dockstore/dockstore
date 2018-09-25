@@ -979,11 +979,15 @@ public abstract class AbstractEntryClient<T> {
     }
 
     private void launchWdl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
-        final String json = reqVal(args, "--json");
+        final String yamlRun = optVal(args, "--yaml", null);
+        String jsonRun = optVal(args, "--json", null);
+        if (!(yamlRun != null ^ jsonRun != null)) {
+            errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
+        }
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
         final String uuid = optVal(args, "--uuid", null);
         WDLClient client = new WDLClient(this);
-        client.launch(entry, isLocalEntry, null, json, null, wdlOutputTarget, uuid);
+        client.launch(entry, isLocalEntry, yamlRun, jsonRun, null, wdlOutputTarget, uuid);
     }
 
     private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
