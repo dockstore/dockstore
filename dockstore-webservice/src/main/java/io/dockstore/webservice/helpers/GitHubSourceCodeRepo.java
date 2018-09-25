@@ -337,15 +337,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Get contents of descriptor file and store
                 String decodedContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
                 if (decodedContent != null) {
-                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(decodedContent);
-                    // if we have a valid workflow document
                     SourceFile file = new SourceFile();
                     file.setContent(decodedContent);
                     file.setPath(calculatedPath);
                     file.setType(identifiedType);
-                    version.setValid(validWorkflow);
                     version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
+                    version.setValidationMessage(null);
 
+                    try {
+                        version.setValid(LanguageHandlerFactory.getInterface(identifiedType)
+                                .isValidWorkflowSet(version.getSourceFiles(), calculatedPath));
+                    } catch (CustomWebApplicationException ex) {
+                        String message = ex.getErrorMessage();
+                        version.setValidationMessage(message);
+                    }
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?

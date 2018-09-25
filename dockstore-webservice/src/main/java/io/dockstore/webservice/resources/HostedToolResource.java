@@ -143,6 +143,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         boolean isValidCWL = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).isValidToolSet(sourceFiles, "/Dockstore.cwl");
         boolean isValidWDL = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).isValidToolSet(sourceFiles, "/Dockstore.wdl");
 
+        // TODO: Dockerfile validation
         boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
         return (isValidCWL || isValidWDL) && hasDockerfile;
     }

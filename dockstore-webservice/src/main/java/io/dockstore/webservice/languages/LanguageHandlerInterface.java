@@ -60,15 +60,7 @@ public interface LanguageHandlerInterface {
      * @return the updated entry
      */
     Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles);
-
-    /**
-     * Confirms whether the content of a descriptor contains a valid workflow
-     *
-     * @param content the content of a descriptor
-     * @return true iff the workflow looks like a valid workflow
-     */
-    boolean isValidWorkflow(String content);
-
+    
     /**
      * Returns true if valid workflow, will throw an error if invalid Workflow
      * @param sourcefiles

@@ -5937,6 +5937,9 @@ components:
           description: >-
             This is the commit id for the source control that the files belong
             to
+        validationMessage:
+          type: string
+          description: Error message for file validation.
       description: This describes one tag associated with a container.
     Token:
       type: object
@@ -6592,4 +6595,7 @@ components:
           description: >-
             This is the commit id for the source control that the files belong
             to
+        validationMessage:
+          type: string
+          description: Error message for file validation.
       description: This describes one workflow version associated with a workflow.

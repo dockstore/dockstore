@@ -5507,6 +5507,10 @@ definitions:
         position: 22
         description: "This is the commit id for the source control that the files\
           \ belong to"
+      validationMessage:
+        type: "string"
+        position: 22
+        description: "Error message for file validation."
     description: "This describes one tag associated with a container."
   Token:
     type: "object"
@@ -6168,6 +6172,10 @@ definitions:
         position: 22
         description: "This is the commit id for the source control that the files\
           \ belong to"
+      validationMessage:
+        type: "string"
+        position: 22
+        description: "Error message for file validation."
     description: "This describes one workflow version associated with a workflow."
 externalDocs:
   description: "Dockstore documentation"

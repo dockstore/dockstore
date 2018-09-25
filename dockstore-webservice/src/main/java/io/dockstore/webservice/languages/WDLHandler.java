@@ -182,11 +182,6 @@ public class WDLHandler implements LanguageHandlerInterface {
         return null;
     }
 
-    @Override
-    public boolean isValidWorkflow(String content) {
-        return true;
-    }
-
     /**
      * Helper function that checks if a WDL descriptor is a valid tool or workflow
      * @param sourcefiles
@@ -216,19 +211,18 @@ public class WDLHandler implements LanguageHandlerInterface {
 
                 Map<String, String> secondaryDescContent = new HashMap<>();
                 for (SourceFile sourceFile : sourcefiles) {
-                    if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
-                        if (sourceFile.getContent() != null) {
-                            if (sourceFile.getContent().isEmpty()) {
-                                if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
-                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
-                                } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
-                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
-                                } else {
-                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
-                                }
+                    if (sourceFile.getContent() != null) {
+                        String val = sourceFile.getContent().trim().replaceAll("\n", "");
+                        if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
+                            if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
+                                throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
+                            } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
+                                throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
+                            } else {
+                                throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
                             }
-                            secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
                         }
+                        secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
                     }
                 }
                 tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());

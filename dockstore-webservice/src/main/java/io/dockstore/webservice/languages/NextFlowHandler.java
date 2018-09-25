@@ -64,11 +64,6 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public boolean isValidWorkflow(String content) {
-        return content.contains("manifest");
-    }
-
-    @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface) {
         ConfigObject parse = getConfigObject(content);

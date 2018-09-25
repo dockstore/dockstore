@@ -137,12 +137,6 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public boolean isValidWorkflow(String content) {
-        Yaml yaml = new Yaml();
-        return content.contains("class: Workflow") && this.isValidCwl(content, yaml);
-    }
-
-    @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
         return processImports(repositoryId, "", content, version, sourceCodeRepoInterface);
     }
@@ -608,6 +602,12 @@ public class CWLHandler implements LanguageHandlerInterface {
         return false;
     }
 
+    /**
+     * Checks that the CWL file is the correct version
+     * @param content
+     * @param yaml
+     * @return true if file is valid CWL version, false otherwise
+     */
     private boolean isValidCwl(String content, Yaml yaml) {
         try {
             Map<String, Object> mapping = yaml.loadAs(content, Map.class);

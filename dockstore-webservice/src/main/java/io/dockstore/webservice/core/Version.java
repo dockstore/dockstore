@@ -155,6 +155,10 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OrderBy("id")
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
+    @Column(columnDefinition = "TEXT")
+    @ApiModelProperty(value = "Error message for file validation.", position = 22)
+    private String validationMessage;
+
     public Version() {
         sourceFiles = new TreeSet<>();
         doiStatus = DOIStatus.NOT_REQUESTED;
@@ -193,6 +197,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void update(T version) {
         valid = version.isValid();
+        validationMessage = version.getValidationMessage();
         lastModified = version.getLastModified();
         name = version.getName();
         referenceType = version.getReferenceType();
@@ -342,6 +347,14 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void setDbUpdateDate(Timestamp dbUpdateDate) {
         this.dbUpdateDate = dbUpdateDate;
+    }
+
+    public String getValidationMessage() {
+        return validationMessage;
+    }
+
+    public void setValidationMessage(String validationMessage) {
+        this.validationMessage = validationMessage;
     }
 
     public enum DOIStatus { NOT_REQUESTED, REQUESTED, CREATED }

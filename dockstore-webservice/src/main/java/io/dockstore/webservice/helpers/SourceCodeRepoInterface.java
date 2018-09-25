@@ -353,6 +353,7 @@ public abstract class SourceCodeRepoInterface {
         version.setName(branch);
         version.setReference(branch);
         version.setValid(false);
+        version.setValidationMessage(null);
 
         // Determine workflow version from previous
         String calculatedPath;
