@@ -247,6 +247,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             } finally {
                 FileUtils.deleteQuietly(tempMainDescriptor);
             }
+        } else {
+            return false;
         }
         return true;
     }

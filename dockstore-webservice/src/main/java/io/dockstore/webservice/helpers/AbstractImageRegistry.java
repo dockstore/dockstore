@@ -32,6 +32,7 @@ import javax.validation.constraints.NotNull;
 
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -44,6 +45,8 @@ import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import javafx.util.Pair;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -420,17 +423,46 @@ public abstract class AbstractImageRegistry {
         }
 
         // need to go through all files for the booleans
-        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKERFILE);
-        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
-        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
+        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(file -> Objects.equals(file.getPath(), tag.getDockerfilePath()));
+        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> Objects.equals(file.getPath(), tag.getCwlPath()));
+        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> Objects.equals(file.getPath(), tag.getWdlPath()));
 
+        if (hasCwl || hasWdl) {
+            Pair<Boolean, String> validCwl = isValidTool(tag, SourceFile.FileType.DOCKSTORE_CWL);
+            Pair<Boolean, String> validWdl = isValidTool(tag, SourceFile.FileType.DOCKSTORE_WDL);
 
-        // Private tools don't require a dockerfile
-        if (tool.isPrivateAccess()) {
-            tag.setValid((hasCwl || hasWdl));
-        } else {
-            tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            if (hasCwl) {
+                tag.setValidationMessage(validCwl.getValue());
+            }
+            if (hasWdl) {
+                tag.setValidationMessage(validWdl.getValue());
+            }
+            // Private tools don't require a dockerfile
+            if (tool.isPrivateAccess()) {
+                tag.setValid((validCwl.getKey() || validWdl.getKey()));
+                // Need to support multiple validation for each type
+            } else {
+                tag.setValid((validCwl.getKey() || validWdl.getKey()) && hasDockerfile);
+            }
         }
+    }
+
+    /**
+     * Determines if a tag is valid given the fileType (ex. CWL vs WDL)
+     * @param tag
+     * @param fileType
+     * @return true if valid, false otherwise with validation message
+     */
+    private Pair<Boolean, String> isValidTool(Tag tag, SourceFile.FileType fileType) {
+        boolean isValid = false;
+        String validationMessage = null;
+        try {
+            isValid = LanguageHandlerFactory.getInterface(fileType)
+                    .isValidToolSet(tag.getSourceFiles(), tag.getCwlPath());
+        } catch (CustomWebApplicationException ex) {
+            validationMessage = ex.getErrorMessage();
+        }
+        return new Pair<>(isValid, validationMessage);
     }
 
     /**

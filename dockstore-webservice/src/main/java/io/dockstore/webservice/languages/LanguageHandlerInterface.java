@@ -60,7 +60,7 @@ public interface LanguageHandlerInterface {
      * @return the updated entry
      */
     Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles);
-    
+
     /**
      * Returns true if valid workflow, will throw an error if invalid Workflow
      * @param sourcefiles

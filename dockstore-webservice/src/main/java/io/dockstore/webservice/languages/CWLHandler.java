@@ -650,7 +650,7 @@ public class CWLHandler implements LanguageHandlerInterface {
      * @param sourcefiles
      * @param primaryDescriptorFilePath
      * @param entryType
-     * @return true if the entry is valid, false otherwise
+     * @return true if the entry is valid, throws error otherwise
      */
     public boolean isValidEntry(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String entryType) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(
@@ -661,10 +661,22 @@ public class CWLHandler implements LanguageHandlerInterface {
         if (mainDescriptor.isPresent()) {
             Yaml yaml = new Yaml();
             String content = mainDescriptor.get().getContent();
-            return (!Objects.equals(entryType, "workflow") || content.contains("class: Workflow")) && this.isValidCwl(content, yaml)
-                    && checkValidJsonAndYamlFiles(sourcefiles, SourceFile.FileType.CWL_TEST_JSON);
+            if (Objects.equals(entryType, "workflow")) {
+                if (!content.contains("class: Workflow")) {
+                    throw new CustomWebApplicationException("Requires class: Workflow.", HttpStatus.SC_NOT_ACCEPTABLE);
+                }
+            } else {
+                if(!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
+                    throw new CustomWebApplicationException("Requires class: CommandLineTool or ExpressionTool.", HttpStatus.SC_NOT_ACCEPTABLE);
+                }
+            }
+            if (!this.isValidCwl(content, yaml)) {
+                throw new CustomWebApplicationException("Invalid CWL version.", HttpStatus.SC_NOT_ACCEPTABLE);
+            }
+            checkValidJsonAndYamlFiles(sourcefiles, SourceFile.FileType.CWL_TEST_JSON);
+            return true;
         } else {
-            return false;
+            throw new CustomWebApplicationException("Missing primary descriptor.", HttpStatus.SC_NOT_ACCEPTABLE);
         }
     }
 
