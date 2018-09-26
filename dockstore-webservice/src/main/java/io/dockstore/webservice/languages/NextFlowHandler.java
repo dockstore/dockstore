@@ -39,6 +39,8 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -407,5 +409,17 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     @Override
     public boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         return false;
+    }
+
+    @Override
+    public Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        // Filter so only descriptor files?
+        return new MutablePair<>(true, "empty message");
+    }
+
+    @Override
+    public Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        // Filter so only descriptor files?
+        return new MutablePair<>(true, "empty message");
     }
 }

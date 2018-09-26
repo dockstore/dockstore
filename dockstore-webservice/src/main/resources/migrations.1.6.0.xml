@@ -29,4 +29,36 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="aduncan (generated)" id="1537982702952-1">
+        <createTable tableName="version_versionvalidation">
+            <column name="versionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_versionvalidation_pkey"/>
+            </column>
+            <column name="versionvalidationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_versionvalidation_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1537982702952-2">
+        <createTable tableName="versionvalidation">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="versionvalidation_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="message" type="TEXT"/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="valid" type="BOOLEAN"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1537982702952-3">
+        <addUniqueConstraint columnNames="versionvalidationid" constraintName="uk_1vljugb1gn7ji34c7hj86lito" tableName="version_versionvalidation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1537982702952-4">
+        <addUniqueConstraint columnNames="sourcecontrol, organization, repository, workflowname" constraintName="ukf7t1is17055ui265oq4vh3y3q" tableName="workflow"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1537982702952-5">
+        <addForeignKeyConstraint baseColumnNames="versionvalidationid" baseTableName="version_versionvalidation" constraintName="fk99oeofctecbuetaje96dx1g2q" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="versionvalidation"/>
+    </changeSet>
+
 </databaseChangeLog>

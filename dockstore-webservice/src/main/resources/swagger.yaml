@@ -5397,6 +5397,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/VersionValidation"
       last_modified:
         type: "string"
         format: "date-time"
@@ -5887,6 +5893,8 @@ definitions:
       verifiedSource:
         type: "string"
         readOnly: true
+  VersionValidation:
+    type: "object"
   Workflow:
     type: "object"
     required:
@@ -6088,6 +6096,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/VersionValidation"
       workingDirectory:
         type: "string"
       last_modified:

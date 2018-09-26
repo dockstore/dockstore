@@ -5842,6 +5842,12 @@ components:
             - BRANCH
             - NOT_APPLICABLE
             - UNSET
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/VersionValidation'
         last_modified:
           type: string
           format: date-time
@@ -6332,6 +6338,8 @@ components:
         verifiedSource:
           type: string
           readOnly: true
+    VersionValidation:
+      type: object
     Workflow:
       type: object
       required:
@@ -6520,6 +6528,12 @@ components:
             - BRANCH
             - NOT_APPLICABLE
             - UNSET
+        validations:
+          type: array
+          description: Cached validations for each version.
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/VersionValidation'
         workingDirectory:
           type: string
         last_modified:

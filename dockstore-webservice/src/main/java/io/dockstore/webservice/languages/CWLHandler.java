@@ -689,4 +689,51 @@ public class CWLHandler implements LanguageHandlerInterface {
     public boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         return isValidEntry(sourcefiles, primaryDescriptorFilePath, "tool");
     }
+
+    @Override
+    public Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        Boolean isValid = true;
+        String validationMessage = null;
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
+        Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+
+        if (mainDescriptor.isPresent()) {
+            Yaml yaml = new Yaml();
+            String content = mainDescriptor.get().getContent();
+            if (!content.contains("class: Workflow")) {
+                isValid = false;
+                validationMessage = "Requires class: Workflow.";
+            }
+            if (!this.isValidCwl(content, yaml)) {
+                isValid = false;
+                validationMessage = "Invalid CWL version.";
+            }
+        } else {
+           validationMessage = "Primary descriptor is not present.";
+           isValid = false;
+        }
+        return new MutablePair<>(isValid, validationMessage);
+    }
+
+    @Override
+    public Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
+        Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+
+        if (mainDescriptor.isPresent()) {
+            Yaml yaml = new Yaml();
+            String content = mainDescriptor.get().getContent();
+            if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
+                return new MutablePair<>(false, "Requires class: CommandLineTool or ExpressionTool.");
+            }
+            if (!this.isValidCwl(content, yaml)) {
+                return new MutablePair<>(false, "Invalid CWL version.");
+            }
+        } else {
+            return new MutablePair<>(false, "Primary descriptor is not present.");
+        }
+        return new MutablePair<>(true, null);
+    }
 }

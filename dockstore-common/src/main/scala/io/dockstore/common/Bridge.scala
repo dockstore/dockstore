@@ -85,6 +85,13 @@ class Bridge(basePath : String) {
     }
   }
 
+  /**
+    * Will throw an error if the file is an invalid workflow
+    * @param file
+    * @throws wdl4s.parser.WdlParser.SyntaxError
+    * @throws java.lang.NullPointerException
+    * @return
+    */
   @throws(classOf[WdlParser.SyntaxError])
   @throws(classOf[NullPointerException])
   def isValidWorkflow(file: JFile) = {
@@ -92,6 +99,12 @@ class Bridge(basePath : String) {
       WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
   }
 
+  /**
+    * Will throw an error if the file is an invalid tool
+    * @param file
+    * @throws wdl4s.parser.WdlParser.SyntaxError
+    * @throws java.lang.NullPointerException
+    */
   @throws(classOf[WdlParser.SyntaxError])
   @throws(classOf[NullPointerException])
   def isValidTool(file: JFile) = {

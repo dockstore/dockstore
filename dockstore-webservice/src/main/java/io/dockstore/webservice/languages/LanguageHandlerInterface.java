@@ -75,6 +75,20 @@ public interface LanguageHandlerInterface {
      */
     boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
+    Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+
+    Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+
+    default Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        // Filter so only test params
+        return new MutablePair<>(true, "empty message");
+    }
+
+    default Pair<Boolean, String> validateDockerfile(Set<SourceFile> sourceFiles) {
+        // filter so only dockerfile
+        return new MutablePair<>(true, "empty message");
+    }
+
     /**
      * Look at the content of a descriptor and update its imports
      *

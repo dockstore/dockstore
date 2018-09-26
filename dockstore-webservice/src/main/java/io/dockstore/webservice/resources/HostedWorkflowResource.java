@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 
 import javax.ws.rs.Path;
 
@@ -31,6 +32,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.VersionValidation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -44,6 +46,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -176,12 +179,39 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Workflow entry) {
+    protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
         String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
-
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
-        return mainDescriptor.isPresent() && LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflowSet(sourceFiles, mainDescriptorPath);
+        if (mainDescriptor.isPresent()) {
+            Pair<Boolean, String> validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet.getKey(), validDescriptorSet.getValue());
+            version.addVersionValidation(descriptorValidation);
+        } else {
+            Pair<Boolean, String> noPrimaryDescriptor = new MutablePair<>(false, "Missing the primary descriptor.");
+            VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor.getKey(), noPrimaryDescriptor.getValue());
+            version.addVersionValidation(noPrimaryDescriptorValidation);
+        }
+
+        Pair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+        VersionValidation testParameterValidation = new VersionValidation(identifiedType, validTestParameterSet.getKey(), validTestParameterSet.getValue());
+        version.addVersionValidation(testParameterValidation);
+
+        return version;
+    }
+
+    @Override
+    protected boolean isValidVersion(WorkflowVersion version) {
+        SortedSet<VersionValidation> versionValidations = version.getValidations();
+        boolean isValid = true;
+        for (VersionValidation versionValidation : versionValidations) {
+            if (!versionValidation.isValid()) {
+                isValid = false;
+                break;
+            }
+        }
+        return isValid;
     }
 }

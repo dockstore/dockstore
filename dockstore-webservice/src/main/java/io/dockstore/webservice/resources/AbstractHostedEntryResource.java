@@ -180,10 +180,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
-        boolean isValidVersion = checkValidVersion(versionSourceFiles, entry);
+
+        version = versionValidation(version, entry);
+
+        boolean isValidVersion = isValidVersion(version);
         if (!isValidVersion) {
             throw new CustomWebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
         }
+
         version.setValid(true);
         version.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, version);
@@ -197,9 +201,17 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return newTool;
     }
 
+    protected abstract boolean isValidVersion(U version);
+
     protected abstract void populateMetadata(Set<SourceFile> sourceFiles, T entry, U version);
 
-    protected abstract boolean checkValidVersion(Set<SourceFile> sourceFiles, T entry);
+    /**
+     * Will update the version with validation information
+     * @param version Version to validate
+     * @param entry Entry for the version
+     * @return Version with updated validation information
+     */
+    protected abstract U versionValidation(U version, T entry);
 
     private void checkHosted(T entry) {
         if (entry instanceof Tool) {
