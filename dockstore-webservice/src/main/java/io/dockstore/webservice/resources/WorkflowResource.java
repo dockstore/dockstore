@@ -1165,12 +1165,6 @@ public class WorkflowResource
 
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
 
-        if (!workflowVersion.isValid()) {
-            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Add new test parameter files
@@ -1206,13 +1200,6 @@ public class WorkflowResource
         }
 
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
-
-        if (!workflowVersion.isValid()) {
-            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.");
-            throw new CustomWebApplicationException(
-                "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.",
-                HttpStatus.SC_BAD_REQUEST);
-        }
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
