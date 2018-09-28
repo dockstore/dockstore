@@ -294,11 +294,16 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         }
         mainDescriptor = secondaryDescContent.get(mainScriptPath);
 
-        // Get default container
+        // Get default container (process.container takes precedence over params.container)
         ConfigObject params = (ConfigObject)parse.get("params");
         String defaultContainer = null;
         if (params != null && params.containsKey("container")) {
             defaultContainer = params.get("container").toString();
+        }
+
+        ConfigObject process = (ConfigObject)parse.get("process");
+        if (process != null && process.containsKey("container")) {
+            defaultContainer = process.get("container").toString();
         }
 
         Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);

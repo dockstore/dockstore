@@ -542,6 +542,15 @@ public class WorkflowIT extends BaseIT {
         assertTrue("should find 2 files for each version for now: " + refreshGithub.getWorkflowVersions().stream()
                 .filter(workflowVersion -> workflowVersion.getSourceFiles().size() != 2).count(),
             refreshGithub.getWorkflowVersions().stream().noneMatch(workflowVersion -> workflowVersion.getSourceFiles().size() != 2));
+
+        // check that container is properly parsed
+        Optional<WorkflowVersion> nextflow = refreshGithub.getWorkflowVersions().stream().filter(workflow -> workflow.getName().equals("master"))
+                .findFirst();
+        String workflowDag = workflowApi.getWorkflowDag(refreshGithub.getId(), nextflow.get().getId());
+        ArrayList<String> dagList = Lists.newArrayList(workflowDag);
+
+        Assert.assertTrue("Should use nextflow/rnatoy and not ubuntu:latest",
+                dagList.get(0).contains("\"docker\":\"nextflow/rnatoy@sha256:9ac0345b5851b2b20913cb4e6d469df77cf1232bafcadf8fd929535614a85c75\""));
     }
 
     @Test
