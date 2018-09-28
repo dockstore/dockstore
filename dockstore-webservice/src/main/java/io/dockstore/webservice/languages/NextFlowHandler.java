@@ -39,8 +39,6 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -397,29 +395,29 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public boolean isValidWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public javafx.util.Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
         String content = null;
         if (mainDescriptor.isPresent()) {
             content = mainDescriptor.get().getContent();
+            if (content.contains("manifest")) {
+                return new javafx.util.Pair<>(true, null);
+            } else {
+                return new javafx.util.Pair<>(false, "Descriptor file " + primaryDescriptorFilePath + " is missing the manifest section.");
+            }
         }
-        return content.contains("manifest");
+        return new javafx.util.Pair<>(false, "Descriptor file " + primaryDescriptorFilePath + " not found.");
     }
 
     @Override
-    public boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return false;
+    public javafx.util.Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        // Throw exception instead?
+        return new javafx.util.Pair<>(false, "Nextflow does not support tools.");
     }
 
     @Override
-    public Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        // Filter so only descriptor files?
-        return new MutablePair<>(true, "empty message");
-    }
-
-    @Override
-    public Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        // Filter so only descriptor files?
-        return new MutablePair<>(true, "empty message");
+    public javafx.util.Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        // Throw exception instead?
+        return new javafx.util.Pair<>(false, "Nextflow does not support test parameter files.");
     }
 }

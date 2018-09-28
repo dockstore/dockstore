@@ -5943,12 +5943,6 @@ components:
           description: >-
             This is the commit id for the source control that the files belong
             to
-        cwlValidationMessage:
-          type: string
-          description: Error message for CWL file validation.
-        wdlValidationMessage:
-          type: string
-          description: Error message for WDL file validation.
       description: This describes one tag associated with a container.
     Token:
       type: object
@@ -6340,6 +6334,34 @@ components:
           readOnly: true
     VersionValidation:
       type: object
+      required:
+        - id
+        - message
+        - type
+        - valid
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the source file in this web service
+        type:
+          type: string
+          description: Enumerates the type of file
+          enum:
+            - DOCKSTORE_CWL
+            - DOCKSTORE_WDL
+            - DOCKERFILE
+            - CWL_TEST_JSON
+            - WDL_TEST_JSON
+            - NEXTFLOW
+            - NEXTFLOW_CONFIG
+            - NEXTFLOW_TEST_PARAMS
+        valid:
+          type: boolean
+          description: Is the file type valid
+        message:
+          type: string
+          description: Validation message
     Workflow:
       type: object
       required:
@@ -6612,7 +6634,4 @@ components:
           description: >-
             This is the commit id for the source control that the files belong
             to
-        validationMessage:
-          type: string
-          description: Error message for file validation.
       description: This describes one workflow version associated with a workflow.

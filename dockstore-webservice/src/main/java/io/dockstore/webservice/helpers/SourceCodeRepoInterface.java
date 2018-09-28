@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -39,6 +40,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.VersionValidation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -194,14 +196,14 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Create branches and associated source files
-        setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
+        workflow = setupWorkflowVersions(repositoryId, workflow, existingWorkflow, existingDefaults);
         // setting last modified date can be done uniformly
         Optional<Date> max = workflow.getWorkflowVersions().stream().map(Version::getLastModified).max(Comparator.naturalOrder());
         // TODO: this conversion is lossy
-        max.ifPresent(date -> {
+        if (max.isPresent()) {
             long time = max.get().getTime();
             workflow.setLastModified(new Date(Math.max(time, 0L)));
-        });
+        }
 
         // update each workflow with reference types
         Set<WorkflowVersion> versions = workflow.getVersions();
@@ -353,7 +355,6 @@ public abstract class SourceCodeRepoInterface {
         version.setName(branch);
         version.setReference(branch);
         version.setValid(false);
-        version.setValidationMessage(null);
 
         // Determine workflow version from previous
         String calculatedPath;
@@ -529,4 +530,44 @@ public abstract class SourceCodeRepoInterface {
      * @param version
      */
     abstract String getCommitID(String repositoryId, Version version);
+
+    WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
+        SourceFile.FileType identifiedType = entry.getFileType();
+        Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects
+                .equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
+
+        if (mainDescriptor.isPresent()) {
+            javafx.util.Pair<Boolean, String> validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet.getKey(), validDescriptorSet.getValue());
+            version.addVersionValidation(descriptorValidation);
+        } else {
+            javafx.util.Pair<Boolean, String> noPrimaryDescriptor = new javafx.util.Pair<>(false, "Missing the primary descriptor.");
+            VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor.getKey(), noPrimaryDescriptor.getValue());
+            version.addVersionValidation(noPrimaryDescriptorValidation);
+        }
+
+        SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+        if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
+            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+        }
+
+        javafx.util.Pair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+        VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet.getKey(), validTestParameterSet.getValue());
+        version.addVersionValidation(testParameterValidation);
+
+        return version;
+    }
+
+    boolean isValidVersion(WorkflowVersion version) {
+        SortedSet<VersionValidation> versionValidations = version.getValidations();
+        boolean isValid = true;
+        for (VersionValidation versionValidation : versionValidations) {
+            if (!versionValidation.isValid()) {
+                isValid = false;
+                break;
+            }
+        }
+        return isValid;
+    }
 }

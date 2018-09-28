@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -38,13 +37,12 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
+import javafx.util.Pair;
 
 /**
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
@@ -61,32 +59,19 @@ public interface LanguageHandlerInterface {
      */
     Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles);
 
-    /**
-     * Returns true if valid workflow, will throw an error if invalid Workflow
-     * @param sourcefiles
-     * @param primaryDescriptorFilePath
-     */
-    boolean isValidWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
-
-    /**
-     * Returns true if valid tool, will throw an error if invalid Tool
-     * @param sourcefiles
-     * @param primaryDescriptorFilePath
-     */
-    boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
-
     Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
     Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
-    default Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        // Filter so only test params
-        return new MutablePair<>(true, "empty message");
-    }
+    Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles);
 
     default Pair<Boolean, String> validateDockerfile(Set<SourceFile> sourceFiles) {
-        // filter so only dockerfile
-        return new MutablePair<>(true, "empty message");
+        boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
+        String validationMessage = null;
+        if (!hasDockerfile) {
+            validationMessage = "Missing Dockerfile.";
+        }
+        return new Pair<>(hasDockerfile, validationMessage);
     }
 
     /**
@@ -114,18 +99,28 @@ public interface LanguageHandlerInterface {
      */
     String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
 
-    default boolean checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
+    /**
+     * Checks that the test parameter files are valid JSON or YAML
+     * Note: If even one is invalid, return invalid. Also merges all validation messages into one.
+     * @param sourcefiles
+     * @param fileType
+     * @return Pair of isValid and validationMessage
+     */
+    default Pair<Boolean, String> checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
+        List<String> validationMessages = new ArrayList<>();
+        Boolean isValid = true;
         for (SourceFile sourcefile : sourcefiles) {
             if (Objects.equals(sourcefile.getType(), fileType)) {
                 Yaml yaml = new Yaml();
                 try {
                     yaml.load(sourcefile.getContent());
                 } catch (YAMLException e) {
-                    throw new CustomWebApplicationException("'" + sourcefile.getPath() + "' validation failed - " + e.getMessage(), HttpStatus.SC_NOT_ACCEPTABLE);
+                    validationMessages.add("'" + sourcefile.getPath() + "' validation failed - " + e.getMessage());
+                    isValid = false;
                 }
             }
         }
-        return true;
+        return new Pair<>(isValid, validationMessages.size() > 0 ? validationMessages.toString() : null);
     }
 
     /**
@@ -149,13 +144,13 @@ public interface LanguageHandlerInterface {
      * @param nodeDockerInfo     also looks like a list of node ids mapped to a triple describing where it came from and some docker information?
      * @return Cytoscape compatible JSON with nodes and edges
      */
-    default String setupJSONDAG(List<Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
+    default String setupJSONDAG(List<org.apache.commons.lang3.tuple.Pair<String, String>> nodePairs, Map<String, ToolInfo> stepToDependencies,
         Map<String, String> stepToType, Map<String, Triple<String, String, String>> nodeDockerInfo) {
         List<Map<String, Map<String, String>>> nodes = new ArrayList<>();
         List<Map<String, Map<String, String>>> edges = new ArrayList<>();
 
         // Iterate over steps, make nodes and edges
-        for (Pair<String, String> node : nodePairs) {
+        for (org.apache.commons.lang3.tuple.Pair<String, String> node : nodePairs) {
             String stepId = node.getLeft();
             String dockerUrl = null;
             if (nodeDockerInfo.get(stepId) != null) {
@@ -329,7 +324,7 @@ public interface LanguageHandlerInterface {
         final String toolType, Map<String, ToolInfo> toolInfoMap, Map<String, String> namespaceToPath) {
 
         // Initialize data structures for DAG
-        List<Pair<String, String>> nodePairs = new ArrayList<>();
+        List<org.apache.commons.lang3.tuple.Pair<String, String>> nodePairs = new ArrayList<>();
         Map<String, String> callToType = new HashMap<>();
 
         // Initialize data structures for Tool table
@@ -361,7 +356,7 @@ public interface LanguageHandlerInterface {
         }
 
         // Determine start node edges
-        for (Pair<String, String> node : nodePairs) {
+        for (org.apache.commons.lang3.tuple.Pair<String, String> node : nodePairs) {
             ToolInfo toolInfo = toolInfoMap.get(node.getLeft());
             if (toolInfo.toolDependencyList.size() == 0) {
                 toolInfo.toolDependencyList.add("UniqueBeginKey");

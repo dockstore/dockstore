@@ -645,53 +645,8 @@ public class CWLHandler implements LanguageHandlerInterface {
         return filteredArray;
     }
 
-    /**
-     * Determines if the CWL entry is valid
-     * @param sourcefiles
-     * @param primaryDescriptorFilePath
-     * @param entryType
-     * @return true if the entry is valid, throws error otherwise
-     */
-    public boolean isValidEntry(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String entryType) {
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(
-                Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL, SourceFile.FileType.CWL_TEST_JSON));
-        sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
-        Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
-
-        if (mainDescriptor.isPresent()) {
-            Yaml yaml = new Yaml();
-            String content = mainDescriptor.get().getContent();
-            if (Objects.equals(entryType, "workflow")) {
-                if (!content.contains("class: Workflow")) {
-                    throw new CustomWebApplicationException("Requires class: Workflow.", HttpStatus.SC_NOT_ACCEPTABLE);
-                }
-            } else {
-                if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
-                    throw new CustomWebApplicationException("Requires class: CommandLineTool or ExpressionTool.", HttpStatus.SC_NOT_ACCEPTABLE);
-                }
-            }
-            if (!this.isValidCwl(content, yaml)) {
-                throw new CustomWebApplicationException("Invalid CWL version.", HttpStatus.SC_NOT_ACCEPTABLE);
-            }
-            checkValidJsonAndYamlFiles(sourcefiles, SourceFile.FileType.CWL_TEST_JSON);
-            return true;
-        } else {
-            throw new CustomWebApplicationException("Missing primary descriptor.", HttpStatus.SC_NOT_ACCEPTABLE);
-        }
-    }
-
     @Override
-    public boolean isValidWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return isValidEntry(sourcefiles, primaryDescriptorFilePath, "workflow");
-    }
-
-    @Override
-    public boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return isValidEntry(sourcefiles, primaryDescriptorFilePath, "tool");
-    }
-
-    @Override
-    public Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public javafx.util.Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         Boolean isValid = true;
         String validationMessage = null;
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
@@ -710,14 +665,14 @@ public class CWLHandler implements LanguageHandlerInterface {
                 validationMessage = "Invalid CWL version.";
             }
         } else {
-           validationMessage = "Primary descriptor is not present.";
-           isValid = false;
+            validationMessage = "Primary descriptor is not present.";
+            isValid = false;
         }
-        return new MutablePair<>(isValid, validationMessage);
+        return new javafx.util.Pair<>(isValid, validationMessage);
     }
 
     @Override
-    public Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public javafx.util.Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
         sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
@@ -726,14 +681,19 @@ public class CWLHandler implements LanguageHandlerInterface {
             Yaml yaml = new Yaml();
             String content = mainDescriptor.get().getContent();
             if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
-                return new MutablePair<>(false, "Requires class: CommandLineTool or ExpressionTool.");
+                return new javafx.util.Pair<>(false, "Requires class: CommandLineTool or ExpressionTool.");
             }
             if (!this.isValidCwl(content, yaml)) {
-                return new MutablePair<>(false, "Invalid CWL version.");
+                return new javafx.util.Pair<>(false, "Invalid CWL version.");
             }
         } else {
-            return new MutablePair<>(false, "Primary descriptor is not present.");
+            return new javafx.util.Pair<>(false, "Primary descriptor is not present.");
         }
-        return new MutablePair<>(true, null);
+        return new javafx.util.Pair<>(true, null);
+    }
+
+    @Override
+    public javafx.util.Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.CWL_TEST_JSON);
     }
 }

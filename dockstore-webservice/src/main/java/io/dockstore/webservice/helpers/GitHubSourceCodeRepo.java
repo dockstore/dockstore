@@ -29,7 +29,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
 import org.apache.commons.io.FilenameUtils;
@@ -342,15 +341,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     file.setPath(calculatedPath);
                     file.setType(identifiedType);
                     version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
-                    version.setValidationMessage(null);
-
-                    try {
-                        version.setValid(LanguageHandlerFactory.getInterface(identifiedType)
-                                .isValidWorkflowSet(version.getSourceFiles(), calculatedPath));
-                    } catch (CustomWebApplicationException ex) {
-                        String message = ex.getErrorMessage();
-                        version.setValidationMessage(message);
-                    }
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
@@ -384,6 +374,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
             }
 
+            version = versionValidation(version, workflow, calculatedPath);
+            version.setValid(isValidVersion(version));
 
             workflow.addWorkflowVersion(version);
         }

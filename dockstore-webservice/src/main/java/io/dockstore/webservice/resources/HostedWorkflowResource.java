@@ -45,8 +45,8 @@ import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import javafx.util.Pair;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -190,13 +190,18 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet.getKey(), validDescriptorSet.getValue());
             version.addVersionValidation(descriptorValidation);
         } else {
-            Pair<Boolean, String> noPrimaryDescriptor = new MutablePair<>(false, "Missing the primary descriptor.");
+            Pair<Boolean, String> noPrimaryDescriptor = new Pair<>(false, "Missing the primary descriptor.");
             VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor.getKey(), noPrimaryDescriptor.getValue());
             version.addVersionValidation(noPrimaryDescriptorValidation);
         }
 
+        SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+        if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
+            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+        }
+
         Pair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-        VersionValidation testParameterValidation = new VersionValidation(identifiedType, validTestParameterSet.getKey(), validTestParameterSet.getValue());
+        VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet.getKey(), validTestParameterSet.getValue());
         version.addVersionValidation(testParameterValidation);
 
         return version;

@@ -42,11 +42,10 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import javafx.util.Pair;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -184,20 +183,11 @@ public class WDLHandler implements LanguageHandlerInterface {
         return null;
     }
 
-    /**
-     * Helper function that checks if a WDL descriptor is a valid tool or workflow
-     * @param sourcefiles
-     * @param primaryDescriptorFilePath
-     * @param type
-     * @return true if valid entry
-     */
-    public boolean isValidEntry(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
+    public javafx.util.Pair<Boolean, String> validateEntrySet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
         File tempMainDescriptor = null;
         String mainDescriptor = null;
 
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(
-                Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL, SourceFile.FileType.WDL_TEST_JSON));
-
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL));
         sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
 
         if (sourcefiles.size() > 0) {
@@ -206,7 +196,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     if (Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
                         mainDescriptor = sourceFile.getContent();
                         if (mainDescriptor == null || mainDescriptor.trim().replaceAll("\n", "").isEmpty()) {
-                            throw new WdlParser.SyntaxError("The primary descriptor '" + sourceFile.getPath() + "' has no content. Please make it a valid WDL document if you want to save.");
+                            return new javafx.util.Pair<>(false, "The primary descriptor '" + sourceFile.getPath() + "' has no content. Please make it a valid WDL document if you want to save.");
                         }
                     }
                 }
@@ -217,11 +207,11 @@ public class WDLHandler implements LanguageHandlerInterface {
                         if (sourceFile.getContent() != null) {
                             if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
                                 if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
-                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
+                                    return new javafx.util.Pair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
                                 } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
-                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
+                                    return new javafx.util.Pair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
                                 } else {
-                                    throw new WdlParser.SyntaxError("File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
+                                    return new javafx.util.Pair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
                                 }
                             }
                             secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
@@ -237,93 +227,34 @@ public class WDLHandler implements LanguageHandlerInterface {
                 } else {
                     bridge.isValidWorkflow(tempMainDescriptor);
                 }
-
-                checkValidJsonAndYamlFiles(sourcefiles, SourceFile.FileType.WDL_TEST_JSON);
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_NOT_ACCEPTABLE);
+                return new javafx.util.Pair<>(false, e.getMessage());
             } catch (NullPointerException e) {
-                throw new CustomWebApplicationException(
-                        "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.",
-                        HttpStatus.SC_NOT_ACCEPTABLE);
+                return new javafx.util.Pair<>(false, "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.");
             } catch (IOException e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
                 FileUtils.deleteQuietly(tempMainDescriptor);
             }
         } else {
-            return false;
+            return new javafx.util.Pair<>(false, "Primary descriptor is not present.");
         }
-        return true;
+        return new javafx.util.Pair<>(true, null);
     }
 
     @Override
-    public boolean isValidToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return isValidEntry(sourcefiles, primaryDescriptorFilePath, "tool");
+    public javafx.util.Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "workflow");
     }
 
     @Override
-    public boolean isValidWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        return isValidEntry(sourcefiles, primaryDescriptorFilePath, "workflow");
+    public javafx.util.Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "tool");
     }
 
     @Override
-    public Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        File tempMainDescriptor = null;
-        String mainDescriptor = null;
-
-        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL));
-        sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
-
-        if (sourcefiles.size() > 0) {
-            try {
-                for (SourceFile sourceFile : sourcefiles) {
-                    if (Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
-                        mainDescriptor = sourceFile.getContent();
-                        if (mainDescriptor == null || mainDescriptor.trim().replaceAll("\n", "").isEmpty()) {
-                            return new MutablePair<>(false,"The primary descriptor '" + sourceFile.getPath() + "' has no content. Please make it a valid WDL document if you want to save.");
-                        }
-                    }
-                }
-
-                Map<String, String> secondaryDescContent = new HashMap<>();
-                for (SourceFile sourceFile : sourcefiles) {
-                    if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
-                        if (sourceFile.getContent() != null) {
-                            if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
-                                if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
-                                    return new MutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
-                                } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
-                                    return new MutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
-                                } else {
-                                    return new MutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
-                                }
-                            }
-                            secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
-                        }
-                    }
-                }
-                tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());
-                Bridge bridge = new Bridge(tempMainDescriptor.getParent());
-                bridge.setSecondaryFiles((HashMap<String, String>)secondaryDescContent);
-                Files.asCharSink(tempMainDescriptor, StandardCharsets.UTF_8).write(mainDescriptor);
-                bridge.isValidWorkflow(tempMainDescriptor);
-            } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-                return new MutablePair<>(false, e.getMessage());
-            } catch (NullPointerException e) {
-                return new MutablePair<>(false, "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.");
-            } catch (IOException e) {
-                throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
-            } finally {
-                FileUtils.deleteQuietly(tempMainDescriptor);
-            }
-        }
-        return new MutablePair<>(true,null);
-    }
-
-    @Override
-    public Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        // Filter so only descriptor files?
-        return new MutablePair<>(true, "empty message");
+    public Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.WDL_TEST_JSON);
     }
 
     @Override

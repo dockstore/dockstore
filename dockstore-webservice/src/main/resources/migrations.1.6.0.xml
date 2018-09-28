@@ -19,16 +19,6 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
                    context="1.6.0">
 
-    <changeSet author="aduncan" id="createVersionValidationMessage">
-        <addColumn tableName="tag">
-            <column name="cwlvalidationmessage" type="TEXT"/>
-            <column name="wdlvalidationmessage" type="TEXT"/>
-        </addColumn>
-        <addColumn tableName="workflowversion">
-            <column name="validationmessage" type="TEXT"/>
-        </addColumn>
-    </changeSet>
-
     <changeSet author="aduncan (generated)" id="1537982702952-1">
         <createTable tableName="version_versionvalidation">
             <column name="versionid" type="BIGINT">
@@ -53,9 +43,6 @@
     </changeSet>
     <changeSet author="aduncan (generated)" id="1537982702952-3">
         <addUniqueConstraint columnNames="versionvalidationid" constraintName="uk_1vljugb1gn7ji34c7hj86lito" tableName="version_versionvalidation"/>
-    </changeSet>
-    <changeSet author="aduncan (generated)" id="1537982702952-4">
-        <addUniqueConstraint columnNames="sourcecontrol, organization, repository, workflowname" constraintName="ukf7t1is17055ui265oq4vh3y3q" tableName="workflow"/>
     </changeSet>
     <changeSet author="aduncan (generated)" id="1537982702952-5">
         <addForeignKeyConstraint baseColumnNames="versionvalidationid" baseTableName="version_versionvalidation" constraintName="fk99oeofctecbuetaje96dx1g2q" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="versionvalidation"/>

@@ -24,7 +24,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -32,7 +34,6 @@ import javax.validation.constraints.NotNull;
 
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
-import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -40,6 +41,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.VersionValidation;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -345,6 +347,7 @@ public abstract class AbstractImageRegistry {
             for (Tag t : toDelete) {
                 LOG.info(tool.getToolPath() + " : DELETING tag: {}", t.getName());
                 t.getSourceFiles().clear();
+                t.getValidations().clear();
                 // tagDAO.delete(t);
                 tool.getTags().remove(t);
             }
@@ -422,49 +425,66 @@ public abstract class AbstractImageRegistry {
             tag.addSourceFile(file);
         }
 
-        // need to go through all files for the booleans
-        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(file -> Objects.equals(file.getPath(), tag.getDockerfilePath()));
-        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> Objects.equals(file.getPath(), tag.getCwlPath()));
-        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> Objects.equals(file.getPath(), tag.getWdlPath()));
+        // Remove all existing validations
+        tag.getValidations().clear();
 
-        if (hasCwl || hasWdl) {
-            Pair<Boolean, String> validCwl = isValidTool(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
-            Pair<Boolean, String> validWdl = isValidTool(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
-
-            tag.setCwlValidationMessage(null);
-            tag.setWdlValidationMessage(null);
-            if (hasCwl) {
-                tag.setCwlValidationMessage(validCwl.getValue());
-            }
-            if (hasWdl) {
-                tag.setWdlValidationMessage(validWdl.getValue());
-            }
-            // Private tools don't require a dockerfile
-            if (tool.isPrivateAccess()) {
-                tag.setValid((validCwl.getKey() || validWdl.getKey()));
-                // Need to support multiple validation for each type
-            } else {
-                tag.setValid((validCwl.getKey() || validWdl.getKey()) && hasDockerfile);
-            }
+        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
+        Pair<Boolean, String> validDockerfile;
+        // Private tools don't require a dockerfile
+        if (hasDockerfile || tool.isPrivateAccess()) {
+            validDockerfile = new Pair<>(true, null);
+        } else {
+            validDockerfile = new Pair<>(false, "Missing a Dockerfile.");
         }
+        VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile.getKey(), validDockerfile.getValue());
+        tag.addVersionValidation(dockerfileValidation);
+
+        tag = validateTag(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
+        tag = validateTag(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
+
+        boolean isValidVersion = isValidVersion(tag);
+        tag.setValid(isValidVersion);
+    }
+
+    private boolean isValidVersion(Tag tag) {
+        SortedSet<VersionValidation> versionValidations = tag.getValidations();
+        boolean validDockerfile = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKERFILE);
+        boolean validCwl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_CWL);
+        boolean validWdl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_WDL);
+        boolean validCwlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.CWL_TEST_JSON);
+        boolean validWdlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.WDL_TEST_JSON);
+
+        return validDockerfile && ((validCwl && validCwlTestParameters) || (validWdl && validWdlTestParameters));
+    }
+
+    private boolean isVersionTypeValidated(SortedSet<VersionValidation> versionValidations, SourceFile.FileType fileType) {
+        Optional<VersionValidation> foundFile = versionValidations
+                .stream()
+                .filter(versionValidation -> Objects.equals(versionValidation.getType(), fileType))
+                .findFirst();
+
+        return foundFile.isPresent() && foundFile.get().isValid();
     }
 
     /**
-     * Determines if a tag is valid given the fileType (ex. CWL vs WDL)
+     * Validates the given tag files of the given filetype
      * @param tag
      * @param fileType
-     * @return true if valid, false otherwise with validation message
+     * @param primaryDescriptorPath
+     * @return
      */
-    private Pair<Boolean, String> isValidTool(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
-        boolean isValid = false;
-        String validationMessage = null;
-        try {
-            isValid = LanguageHandlerFactory.getInterface(fileType)
-                    .isValidToolSet(tag.getSourceFiles(), primaryDescriptorPath);
-        } catch (CustomWebApplicationException ex) {
-            validationMessage = ex.getErrorMessage();
-        }
-        return new Pair<>(isValid, validationMessage);
+    private Tag validateTag(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
+        Pair<Boolean, String> isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
+                .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
+        VersionValidation descriptorValidation = new VersionValidation(fileType, isValidDescriptor.getKey(), isValidDescriptor.getValue());
+        tag.addVersionValidation(descriptorValidation);
+
+        Pair<Boolean, String> isValidTestParameter = LanguageHandlerFactory.getInterface(fileType)
+                .validateTestParameterSet(tag.getSourceFiles());
+        VersionValidation testParameterValidation = new VersionValidation(fileType, isValidTestParameter.getKey(), isValidTestParameter.getValue());
+        tag.addVersionValidation(testParameterValidation);
+
+        return tag;
     }
 
     /**

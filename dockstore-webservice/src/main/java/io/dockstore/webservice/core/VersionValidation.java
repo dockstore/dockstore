@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -45,12 +46,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 @SuppressWarnings("checkstyle:magicnumber")
 public class VersionValidation implements Comparable<VersionValidation> {
 
-    public VersionValidation(SourceFile.FileType fileType, boolean valid, String message) {
-        this.type = fileType;
-        this.valid = valid;
-        this.message = message;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ApiModelProperty(value = "Implementation specific ID for the source file in this web service", required = true, position = 0)
@@ -76,6 +71,26 @@ public class VersionValidation implements Comparable<VersionValidation> {
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
+
+    public VersionValidation() {
+
+    }
+
+    public VersionValidation(SourceFile.FileType fileType, boolean valid, String message) {
+        this.type = fileType;
+        this.valid = valid;
+        this.message = message;
+    }
+
+    public VersionValidation(VersionValidation versionValidation) {
+        this.type = versionValidation.getType();
+        this.valid = versionValidation.isValid();
+        this.message = versionValidation.getMessage();
+    }
+
+    public long getId() {
+        return id;
+    }
 
     @JsonIgnore
     public Timestamp getDbCreateDate() {
@@ -116,9 +131,19 @@ public class VersionValidation implements Comparable<VersionValidation> {
         valid = versionValidation.valid;
         message = versionValidation.message;
     }
-    @Override
 
+    @Override
     public int compareTo(VersionValidation that) {
         return ComparisonChain.start().compare(this.type, that.type).result();
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return Objects.equals(((VersionValidation)obj).getType(), getType());
     }
 }

@@ -41,8 +41,8 @@ import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import javafx.util.Pair;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -146,13 +146,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     protected Tag versionValidation(Tag version, Tool entry) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
 
-        boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
-        Pair<Boolean, String> validDockerfile;
-        if (hasDockerfile) {
-            validDockerfile = new MutablePair<>(true, null);
-        } else {
-            validDockerfile = new MutablePair<>(false, "Missing a Dockerfile.");
-        }
+        Pair<Boolean, String> validDockerfile = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateDockerfile(sourceFiles);
         VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile.getKey(), validDockerfile.getValue());
         version.addVersionValidation(dockerfileValidation);
 
@@ -161,7 +155,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         version.addVersionValidation(cwlValidation);
 
         Pair<Boolean, String> validCWLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateTestParameterSet(sourceFiles);
-        VersionValidation cwlTestParameterValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_CWL, validCWLTestParameterSet.getKey(), validCWLTestParameterSet.getValue());
+        VersionValidation cwlTestParameterValidation = new VersionValidation(SourceFile.FileType.CWL_TEST_JSON, validCWLTestParameterSet.getKey(), validCWLTestParameterSet.getValue());
         version.addVersionValidation(cwlTestParameterValidation);
 
         Pair<Boolean, String> validWDLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateToolSet(sourceFiles, "/Dockstore.wdl");
@@ -169,26 +163,33 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         version.addVersionValidation(wdlValidation);
 
         Pair<Boolean, String> validWDLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateTestParameterSet(sourceFiles);
-        VersionValidation wdlTestParameterValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_WDL, validWDLTestParameterSet.getKey(), validWDLTestParameterSet.getValue());
+        VersionValidation wdlTestParameterValidation = new VersionValidation(SourceFile.FileType.WDL_TEST_JSON, validWDLTestParameterSet.getKey(), validWDLTestParameterSet.getValue());
         version.addVersionValidation(wdlTestParameterValidation);
 
         return version;
     }
 
     @Override
-    protected boolean isValidVersion(Tag version) {
-        SortedSet<VersionValidation> versionValidations = version.getValidations();
-        boolean validDockerfile = versionValidations.stream().anyMatch(versionValidation ->
-                Objects.equals(versionValidation.getType(), SourceFile.FileType.DOCKERFILE));
-        boolean validCwl = versionValidations.stream().anyMatch(versionValidation ->
-                Objects.equals(versionValidation.getType(), SourceFile.FileType.DOCKSTORE_CWL));
-        boolean validWdl = versionValidations.stream().anyMatch(versionValidation ->
-                Objects.equals(versionValidation.getType(), SourceFile.FileType.DOCKSTORE_WDL));
-        boolean validCwlTestParameters = versionValidations.stream().anyMatch(versionValidation ->
-                Objects.equals(versionValidation.getType(), SourceFile.FileType.CWL_TEST_JSON));
-        boolean validWdlTestParameters = versionValidations.stream().anyMatch(versionValidation ->
-                Objects.equals(versionValidation.getType(), SourceFile.FileType.WDL_TEST_JSON));
+    protected boolean isValidVersion(Tag tag) {
+        SortedSet<VersionValidation> versionValidations = tag.getValidations();
+        boolean validDockerfile = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKERFILE);
+        boolean validCwl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_CWL);
+        boolean validWdl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_WDL);
+        boolean validCwlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.CWL_TEST_JSON);
+        boolean validWdlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.WDL_TEST_JSON);
 
-        return validDockerfile && ((validCwl && validCwlTestParameters) || (validWdl && validWdlTestParameters));
+        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
+        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
+
+        return validDockerfile && ((hasCwl && validCwl && validCwlTestParameters) || (hasWdl && validWdl && validWdlTestParameters));
+    }
+
+    protected boolean isVersionTypeValidated(SortedSet<VersionValidation> versionValidations, SourceFile.FileType fileType) {
+        Optional<VersionValidation> foundFile = versionValidations
+                .stream()
+                .filter(versionValidation -> Objects.equals(versionValidation.getType(), fileType))
+                .findFirst();
+
+        return foundFile.isPresent() && foundFile.get().isValid();
     }
 }

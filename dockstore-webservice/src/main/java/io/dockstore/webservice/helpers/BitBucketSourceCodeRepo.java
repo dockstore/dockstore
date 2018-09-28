@@ -37,7 +37,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.swagger.bitbucket.client.ApiClient;
 import io.swagger.bitbucket.client.ApiException;
 import io.swagger.bitbucket.client.Configuration;
@@ -305,14 +304,8 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                     workflow.addWorkflowVersion(
                         combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
 
-                    try {
-                        version.setValid(LanguageHandlerFactory.getInterface(identifiedType)
-                                .isValidWorkflowSet(version.getSourceFiles(), calculatedPath));
-                        version.setValidationMessage(null);
-                    } catch (CustomWebApplicationException ex) {
-                        String message = ex.getErrorMessage();
-                        version.setValidationMessage(message);
-                    }
+                    version = versionValidation(version, workflow, calculatedPath);
+                    version.setValid(isValidVersion(version));
                 });
 
                 if (paginatedRefs.getNext() != null) {

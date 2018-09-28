@@ -439,6 +439,9 @@ public class WorkflowResource
                     workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
                 }
             }
+
+            // Update the validations
+            workflowVersionFromDB.upsertVersionValidations(version.getValidations());
         }
     }
 
