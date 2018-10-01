@@ -159,6 +159,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @JoinTable(name = "version_versionvalidation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "versionvalidationid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached validations for each version.")
     @OrderBy("type")
+    @Cascade(org.hibernate.annotations.CascadeType.DETACH)
     private final SortedSet<VersionValidation> validations;
 
     public Version() {
@@ -248,11 +249,6 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void addVersionValidation(VersionValidation versionValidation) {
         validations.add(versionValidation);
-    }
-
-    public void upsertVersionValidations(SortedSet<VersionValidation> versionValidations) {
-        getValidations().clear();
-//        getValidations().addAll(versionValidations);
     }
 
     @JsonProperty

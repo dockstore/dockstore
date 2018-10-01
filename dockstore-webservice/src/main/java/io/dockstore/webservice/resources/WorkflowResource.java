@@ -383,6 +383,8 @@ public class WorkflowResource
     }
 
     /**
+     * Updates the existing workflow in the database with new information from newWorkflow, including new, updated, and removed
+     * workflow verions.
      * @param workflow    workflow to be updated
      * @param newWorkflow workflow to grab new content from
      */
@@ -441,7 +443,8 @@ public class WorkflowResource
             }
 
             // Update the validations
-            workflowVersionFromDB.upsertVersionValidations(version.getValidations());
+            workflowVersionFromDB.getValidations().clear();
+            workflowVersionFromDB.getValidations().addAll(version.getValidations());
         }
     }
 
