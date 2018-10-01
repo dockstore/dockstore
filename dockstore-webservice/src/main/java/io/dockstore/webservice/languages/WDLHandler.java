@@ -308,16 +308,4 @@ public class WDLHandler implements LanguageHandlerInterface {
         }));
         return toolInfoMap;
     }
-
-    /**
-     * Odd un-used method that seems like it could be useful
-     *
-     * @param workflowFile
-     * @return
-     */
-    List<String> getWdlImports(File workflowFile) {
-        Bridge bridge = new Bridge(workflowFile.getParent());
-        return bridge.getImportFiles(workflowFile);
-    }
-
 }

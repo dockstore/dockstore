@@ -150,7 +150,6 @@ public class CromwellIT {
                         + "workflow three_step {\n" + "  call ps\n" + "  call cgrep {\n" + "    input: in_file=ps.procs\n" + "  }\n"
                         + "  call wc {\n" + "    input: in_file=ps.procs\n" + "  }\n" + "}\n");
         bridge.setSecondaryFiles(secondaryFiles);
-        bridge.getImportFiles(sourceFile);
     }
 
     /**

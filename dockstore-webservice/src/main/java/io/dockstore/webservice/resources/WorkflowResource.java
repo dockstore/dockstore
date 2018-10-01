@@ -340,7 +340,7 @@ public class WorkflowResource
     @Path("/{workflowId}/refresh")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Refresh one particular workflow. Always do a full refresh when targeted", authorizations = {
+    @ApiOperation(value = "Refresh one particular workflow.", notes = "Full refresh", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow refresh(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
@@ -446,7 +446,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}")
-    @ApiOperation(value = "Get a registered workflow", authorizations = {
+    @ApiOperation(value = "Retrieve a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
@@ -477,7 +477,8 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/{workflowId}")
     @ApiOperation(value = "Update the workflow with the given workflow.", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class,
+            notes = "Updates descriptor type (if stub), default workflow path, default file path, and default version")
     public Workflow updateWorkflow(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
@@ -506,7 +507,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/defaultVersion")
-    @ApiOperation(value = "Update the default version of the given workflow.", authorizations = {
+    @ApiOperation(value = "Update the default version of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, nickname = "updateWorkflowDefaultVersion")
     public Workflow updateDefaultVersion(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
@@ -580,7 +581,7 @@ public class WorkflowResource
     @UnitOfWork
     @Beta
     @Path("/{workflowId}/requestDOI/{workflowVersionId}")
-    @ApiOperation(value = "Request a DOI for this version of a workflow", authorizations = {
+    @ApiOperation(value = "Request a DOI for this version of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> requestDOIForWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
@@ -613,8 +614,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/resetVersionPaths")
-    @ApiOperation(value = "Change the workflow paths", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = Workflow.class)
+    @ApiOperation(value = "Reset the workflow paths.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Resets the workflow paths of all versions to match the default workflow path from the workflow object passed.", response = Workflow.class)
     public Workflow updateWorkflowPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "Workflow with updated information", required = true) Workflow workflow) {
@@ -641,7 +642,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/users")
-    @ApiOperation(value = "Get users of a workflow", authorizations = {
+    @ApiOperation(value = "Get users of a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "List")
     public List<User> getUsers(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
@@ -657,7 +658,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/published/{workflowId}")
-    @ApiOperation(value = "Get a published workflow", notes = "NO authentication", response = Workflow.class)
+    @ApiOperation(value = "Get a published workflow.", notes = "Hidden versions will not be visible. NO authentication", response = Workflow.class)
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
@@ -668,7 +669,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/organization/{organization}/published")
-    @ApiOperation(value = "List all published workflows belonging to the specified namespace", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "List all published workflows of an organization.", notes = "NO authentication", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getPublishedWorkflowsByOrganization(
         @ApiParam(value = "organization", required = true) @PathParam("organization") String organization) {
         List<Workflow> workflows = workflowDAO.findPublishedByOrganization(organization);
@@ -680,7 +681,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/publish")
-    @ApiOperation(value = "Publish or unpublish a workflow", authorizations = {
+    @ApiOperation(value = "Publish or unpublish a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Publish/publish a workflow (public or private).", response = Workflow.class)
     public Workflow publish(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow id to publish/unpublish", required = true) @PathParam("workflowId") Long workflowId,
@@ -755,8 +756,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("shared")
-    @ApiOperation(value = "All workflows shared with user", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "List all workflows shared with user", tags = {
+    @ApiOperation(value = "Retrieve all workflows shared with user.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, tags = {
         "workflows" }, response = SharedWorkflows.class, responseContainer = "List")
     public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
         return this.permissionsInterface.workflowsSharedWithUser(user).entrySet().stream().map(e -> {
@@ -777,8 +778,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}")
-    @ApiOperation(value = "Get a workflow by path", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
+    @ApiOperation(value = "Get a workflow by path.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
 
@@ -844,8 +845,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
-    @ApiOperation(value = "Get all permissions for a workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists all permissions for a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    @ApiOperation(value = "Get all permissions for a workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> getWorkflowPermissions(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, false);
@@ -857,7 +858,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/actions")
-    @ApiOperation(value = "Gets all actions a user can perform on a workflow", authorizations = {
+    @ApiOperation(value = "Gets all actions a user can perform on a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Role.Action.class, responseContainer = "List")
     public List<Role.Action> getWorkflowActions(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
@@ -870,8 +871,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
-    @ApiOperation(value = "Set the specified permission for a user on a workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Adds a permission for a workflow. The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
+    @ApiOperation(value = "Set the specified permission for a user on a workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner. Currently only supported on hosted workflows.", response = Permission.class, responseContainer = "List")
     public List<Permission> addWorkflowPermission(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user permission", required = true) Permission permission) {
@@ -888,8 +889,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/permissions")
-    @ApiOperation(value = "Remove the specified user role for a workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Removes a role from a workflow. The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
+    @ApiOperation(value = "Remove the specified user role for a workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "The user must be the workflow owner.", response = Permission.class, responseContainer = "List")
     public List<Permission> removeWorkflowRole(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path,
         @ApiParam(value = "user email", required = true) @QueryParam("email") String email,
@@ -904,8 +905,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/entry/{repository}")
-    @ApiOperation(value = "Get an entry by path", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Gets an entry from the path. Enter full path.", response = Entry.class)
+    @ApiOperation(value = "Get an entry by path.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including entry name if applicable).", response = Entry.class)
     public Entry getEntryByPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, false);
@@ -925,7 +926,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/entry/{repository}/published")
-    @ApiOperation(value = "Get an entry by path", notes = "Gets a published entry from the path. Enter full path.", response = Entry.class)
+    @ApiOperation(value = "Get a published entry by path.", notes = "Requires full path (including entry name if applicable).", response = Entry.class)
     public Entry getPublishedEntryByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         MutablePair<String, Entry> entryPair = toolDAO.findEntryByPath(path, true);
 
@@ -941,8 +942,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/{repository}")
-    @ApiOperation(value = "Get a list of workflows by path", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Lists info of workflow. Enter full path.", response = Workflow.class, responseContainer = "List")
+    @ApiOperation(value = "Get a list of workflows by path.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Does not require workflow name.", response = Workflow.class, responseContainer = "List")
     public List<Workflow> getAllWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         List<Workflow> workflows = workflowDAO.findAllByPath(path, false);
@@ -955,7 +956,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/path/workflow/{repository}/published")
-    @ApiOperation(value = "Get a published workflow by path", notes = "Lists info of workflow. Enter full path.", response = Workflow.class)
+    @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, true);
         checkEntry(workflow);
@@ -967,14 +968,11 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/versions")
-    @ApiOperation(value = "List the versions for a published workflow", authorizations = {
+    @ApiOperation(value = "List the versions for a published workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = WorkflowVersion.class, responseContainer = "List", hidden = true)
     public List<WorkflowVersion> tags(@ApiParam(hidden = true) @Auth User user, @QueryParam("workflowId") long workflowId) {
-        Workflow repository = workflowDAO.findById(workflowId);
+        Workflow repository = workflowDAO.findPublishedById(workflowId);
         checkEntry(repository);
-
-        checkCanRead(user, repository);
-
         return new ArrayList<>(repository.getVersions());
     }
 
@@ -982,8 +980,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/verifiedSources")
-    @ApiOperation(value = "Get a semicolon delimited list of verified sources", tags = {
-        "workflows" }, notes = "Does not need authentication", response = String.class)
+    @ApiOperation(value = "Get a semicolon delimited list of verified sources.", tags = {
+        "workflows" }, notes = "NO authentication", response = String.class)
     public String verifiedSources(@ApiParam(value = "Workflow id", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
@@ -1007,7 +1005,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/cwl")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+    @ApiOperation(value = "Get the primary CWL descriptor file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile cwl(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1019,7 +1017,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/wdl")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+    @ApiOperation(value = "Get the primary WDL descriptor file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile wdl(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1031,7 +1029,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/nextflow")
-    @ApiOperation(value = "Get the corresponding nextflow.config file on Github.", tags = {
+    @ApiOperation(value = "Get the nextflow.config file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile nextflow(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1043,7 +1041,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/cwl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding Dockstore.cwl file on Github.", tags = {
+    @ApiOperation(value = "Get the corresponding CWL descriptor file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryCwlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1056,7 +1054,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/wdl/{relative-path}")
-    @ApiOperation(value = "Get the corresponding Dockstore.wdl file on Github.", tags = {
+    @ApiOperation(value = "Get the corresponding WDL descriptor file on Github.", tags = {
         "workflows" }, notes = OPTIONAL_AUTH_MESSAGE, response = SourceFile.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public SourceFile secondaryWdlPath(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -1229,7 +1227,7 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/manualRegister")
     @SuppressWarnings("checkstyle:ParameterNumber")
-    @ApiOperation(value = "Manually register a workflow", authorizations = {
+    @ApiOperation(value = "Manually register a workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Manually register workflow (public or private).", response = Workflow.class)
     public Workflow manualRegister(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow registry", required = true) @QueryParam("workflowRegistry") String workflowRegistry,
@@ -1325,8 +1323,8 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/workflowVersions")
-    @ApiOperation(value = "Update the workflow versions linked to a workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Workflow version correspond to each row of the versions table listing all information for a workflow", response = WorkflowVersion.class, responseContainer = "List")
+    @ApiOperation(value = "Update the workflow versions linked to a workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Updates workflow path, reference, and hidden attributes.", response = WorkflowVersion.class, responseContainer = "List")
     public Set<WorkflowVersion> updateWorkflowVersion(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to modify.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "List of modified workflow versions", required = true) List<WorkflowVersion> workflowVersions) {
@@ -1364,7 +1362,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/dag/{workflowVersionId}")
-    @ApiOperation(value = "Get the DAG for a given workflow version", response = String.class, notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
+    @ApiOperation(value = "Get the DAG for a given workflow version.", response = String.class, notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public String getWorkflowDag(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
@@ -1397,7 +1395,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/tools/{workflowVersionId}")
-    @ApiOperation(value = "Get the Tools for a given workflow version", notes = OPTIONAL_AUTH_MESSAGE, response = String.class, authorizations = {
+    @ApiOperation(value = "Get the Tools for a given workflow version.", notes = OPTIONAL_AUTH_MESSAGE, response = String.class, authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public String getTableToolContent(@ApiParam(hidden = true) @Auth Optional<User> user,
         @ApiParam(value = "workflowId", required = true) @PathParam("workflowId") Long workflowId,
@@ -1483,7 +1481,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/star")
-    @ApiOperation(value = "Stars a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "Star a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void starEntry(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool to star.", required = true) @PathParam("workflowId") Long workflowId,
         @ApiParam(value = "StarRequest to star a repo for a user", required = true) StarRequest request) {
@@ -1497,7 +1495,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{workflowId}/unstar")
-    @ApiOperation(value = "Unstars a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    @ApiOperation(value = "Unstar a workflow.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
     public void unstarEntry(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Workflow to unstar.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -1509,7 +1507,7 @@ public class WorkflowResource
     @Path("/{workflowId}/starredUsers")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Returns list of users who starred the given Workflow", response = User.class, responseContainer = "List")
+    @ApiOperation(value = "Returns list of users who starred the given workflow.", response = User.class, responseContainer = "List")
     public Set<User> getStarredUsers(
         @ApiParam(value = "Workflow to grab starred users for.", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findById(workflowId);
@@ -1522,7 +1520,7 @@ public class WorkflowResource
     @Timed
     @UnitOfWork
     @Path("/{entryId}/registerCheckerWorkflow/{descriptorType}")
-    @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow", authorizations = {
+    @ApiOperation(value = "Register a checker workflow and associates it with the given tool/workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Entry.class)
     @SuppressWarnings("checkstyle:MagicNumber")
     public Entry registerCheckerWorkflow(@ApiParam(hidden = true) @Auth User user,
