@@ -620,7 +620,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 }
                 return equals;
             }
-        } catch (ClassCastException e) {
+        } catch (ClassCastException | YAMLException e) {
             return false;
         }
         return false;
@@ -657,7 +657,10 @@ public class CWLHandler implements LanguageHandlerInterface {
         if (mainDescriptor.isPresent()) {
             Yaml yaml = new Yaml();
             String content = mainDescriptor.get().getContent();
-            if (!content.contains("class: Workflow")) {
+            if (content == null || content.isEmpty()) {
+                isValid = false;
+                validationMessage = "Primary descriptor is empty.";
+            } else if (!content.contains("class: Workflow")) {
                 isValid = false;
                 validationMessage = "Requires class: Workflow.";
             } else if (!this.isValidCwl(content, yaml)) {
@@ -665,7 +668,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 validationMessage = "Invalid CWL version.";
             }
         } else {
-            validationMessage = "Primary descriptor is not present.";
+            validationMessage = "Primary CWL descriptor is not present.";
             isValid = false;
         }
         return new javafx.util.Pair<>(isValid, validationMessage);
@@ -683,17 +686,19 @@ public class CWLHandler implements LanguageHandlerInterface {
         if (mainDescriptor.isPresent()) {
             Yaml yaml = new Yaml();
             String content = mainDescriptor.get().getContent();
-            if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
+            if (content == null || content.isEmpty()) {
+                isValid = false;
+                validationMessage = "Primary CWL descriptor is empty.";
+            } else if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
                 isValid = false;
                 validationMessage = "Requires class: CommandLineTool or ExpressionTool.";
-            }
-            if (!this.isValidCwl(content, yaml)) {
+            } else if (!this.isValidCwl(content, yaml)) {
                 isValid = false;
                 validationMessage = "Invalid CWL version.";
             }
         } else {
             isValid = false;
-            validationMessage = "Primary descriptor is not present.";
+            validationMessage = "Primary CWL descriptor is not present.";
         }
         return new javafx.util.Pair<>(isValid, validationMessage);
     }

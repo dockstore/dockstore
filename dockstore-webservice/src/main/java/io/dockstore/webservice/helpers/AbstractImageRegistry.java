@@ -446,6 +446,12 @@ public abstract class AbstractImageRegistry {
         tag.setValid(isValidVersion);
     }
 
+    /**
+     * Checks if the given tag is valid.
+     * TODO: Duplicate in HostedToolResource.java
+     * @param tag Tag to check validation
+     * @return True if valid tag, false otherwise
+     */
     private boolean isValidVersion(Tag tag) {
         SortedSet<VersionValidation> versionValidations = tag.getValidations();
         boolean validDockerfile = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKERFILE);
@@ -454,9 +460,18 @@ public abstract class AbstractImageRegistry {
         boolean validCwlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.CWL_TEST_JSON);
         boolean validWdlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.WDL_TEST_JSON);
 
-        return validDockerfile && ((validCwl && validCwlTestParameters) || (validWdl && validWdlTestParameters));
+        boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
+        boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
+
+        return validDockerfile && ((hasCwl && validCwl && validCwlTestParameters) || (hasWdl && validWdl && validWdlTestParameters));
     }
 
+    /**
+     * Finds the first occurrence of a specific sourcefile type in a set of validations and returns whether or not it is valid
+     * @param versionValidations Set of version validations
+     * @param fileType File Type to look for
+     * @return True if exists and valid, false otherwise
+     */
     private boolean isVersionTypeValidated(SortedSet<VersionValidation> versionValidations, SourceFile.FileType fileType) {
         Optional<VersionValidation> foundFile = versionValidations
                 .stream()
@@ -468,10 +483,10 @@ public abstract class AbstractImageRegistry {
 
     /**
      * Validates the given tag files of the given filetype
-     * @param tag
-     * @param fileType
-     * @param primaryDescriptorPath
-     * @return
+     * @param tag Tag to validate
+     * @param fileType Descriptor type to validate
+     * @param primaryDescriptorPath Path to the primary descriptor
+     * @return Validated tag
      */
     private Tag validateTag(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
         Pair<Boolean, String> isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)

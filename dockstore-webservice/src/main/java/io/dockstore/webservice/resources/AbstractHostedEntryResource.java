@@ -186,12 +186,10 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         boolean isValidVersion = isValidVersion(version);
         if (!isValidVersion) {
+            String fallbackMessage = "Your edited files are invalid. No new version was created. Please check your syntax and try again.";
             String validationMessages = createValidationMessages(version);
-            if (validationMessages != null && !validationMessages.isEmpty()) {
-                throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
-            } else {
-                throw new CustomWebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
-            }
+            validationMessages = (validationMessages != null && !validationMessages.isEmpty()) ? validationMessages : fallbackMessage;
+            throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
         }
 
         version.setValid(true); // Hosted entry versions must be valid to save
@@ -207,11 +205,19 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return newTool;
     }
 
+    /**
+     * Prints out all of the invalid validations
+     * Used for returning error messages on attempting to save
+     * @param version version of interest
+     * @return String containing all invalid validation messages
+     */
     protected String createValidationMessages(U version) {
         StringBuilder result = new StringBuilder();
+        int count = 1;
         for (VersionValidation versionValidation : version.getValidations()) {
-            if (versionValidation.getMessage() != null) {
-                result.append(versionValidation.getMessage());
+            if (!versionValidation.isValid() && versionValidation.getMessage() != null) {
+                result.append(count + ") " + versionValidation.getMessage());
+                count++;
             }
         }
 

@@ -199,6 +199,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
                         return new javafx.util.Pair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' has no content. Please make it a valid WDL document if you want to save.");
                     }
+                    mainDescriptor = primaryDescriptor.get().getContent();
                 } else {
                     return new Pair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' could not be found.");
                 }
@@ -239,7 +240,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 FileUtils.deleteQuietly(tempMainDescriptor);
             }
         } else {
-            return new javafx.util.Pair<>(false, "Primary descriptor is not present.");
+            return new javafx.util.Pair<>(false, "Primary WDL descriptor is not present.");
         }
         return new javafx.util.Pair<>(true, null);
     }
