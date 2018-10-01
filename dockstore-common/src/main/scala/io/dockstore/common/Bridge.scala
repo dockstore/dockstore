@@ -90,7 +90,6 @@ class Bridge(basePath : String) {
     * @param file
     * @throws wdl4s.parser.WdlParser.SyntaxError
     * @throws java.lang.NullPointerException
-    * @return
     */
   @throws(classOf[WdlParser.SyntaxError])
   @throws(classOf[NullPointerException])
