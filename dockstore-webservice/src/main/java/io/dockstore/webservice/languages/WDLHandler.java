@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -192,13 +193,14 @@ public class WDLHandler implements LanguageHandlerInterface {
 
         if (sourcefiles.size() > 0) {
             try {
-                for (SourceFile sourceFile : sourcefiles) {
-                    if (Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
-                        mainDescriptor = sourceFile.getContent();
-                        if (mainDescriptor == null || mainDescriptor.trim().replaceAll("\n", "").isEmpty()) {
-                            return new javafx.util.Pair<>(false, "The primary descriptor '" + sourceFile.getPath() + "' has no content. Please make it a valid WDL document if you want to save.");
-                        }
+                Optional<SourceFile> primaryDescriptor = sourcefiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
+
+                if (primaryDescriptor.isPresent()) {
+                    if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
+                        return new javafx.util.Pair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' has no content. Please make it a valid WDL document if you want to save.");
                     }
+                } else {
+                    return new Pair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' could not be found.");
                 }
 
                 Map<String, String> secondaryDescContent = new HashMap<>();
@@ -231,7 +233,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 return new javafx.util.Pair<>(false, e.getMessage());
             } catch (NullPointerException e) {
                 return new javafx.util.Pair<>(false, "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.");
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
                 FileUtils.deleteQuietly(tempMainDescriptor);

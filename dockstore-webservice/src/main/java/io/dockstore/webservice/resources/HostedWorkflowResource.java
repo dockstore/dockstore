@@ -185,21 +185,22 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
+        // Validate descriptor set
+        Pair<Boolean, String> validDescriptorSet;
+        VersionValidation descriptorValidation;
         if (mainDescriptor.isPresent()) {
-            Pair<Boolean, String> validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
-            VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet.getKey(), validDescriptorSet.getValue());
-            version.addVersionValidation(descriptorValidation);
+            validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
         } else {
-            Pair<Boolean, String> noPrimaryDescriptor = new Pair<>(false, "Missing the primary descriptor.");
-            VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor.getKey(), noPrimaryDescriptor.getValue());
-            version.addVersionValidation(noPrimaryDescriptorValidation);
+            validDescriptorSet = new Pair<>(false, "Missing the primary descriptor.");
         }
+        descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet.getKey(), validDescriptorSet.getValue());
+        version.addVersionValidation(descriptorValidation);
 
+        // Validate test parameter set
         SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
         if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
             testParameterType = SourceFile.FileType.WDL_TEST_JSON;
         }
-
         Pair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
         VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet.getKey(), validTestParameterSet.getValue());
         version.addVersionValidation(testParameterValidation);
@@ -207,6 +208,11 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         return version;
     }
 
+    /**
+     * A workflow version is valid if it has a valid descriptor set and all valid test parameter files
+     * @param version Workflow Version to validate
+     * @return Updated workflow version
+     */
     @Override
     protected boolean isValidVersion(WorkflowVersion version) {
         SortedSet<VersionValidation> versionValidations = version.getValidations();

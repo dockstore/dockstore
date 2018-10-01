@@ -397,7 +397,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     @Override
     public javafx.util.Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
-        String content = null;
+        String content;
         if (mainDescriptor.isPresent()) {
             content = mainDescriptor.get().getContent();
             if (content.contains("manifest")) {

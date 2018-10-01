@@ -146,7 +146,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     protected Tag versionValidation(Tag version, Tool entry) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
 
-        Pair<Boolean, String> validDockerfile = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateDockerfile(sourceFiles);
+        Pair<Boolean, String> validDockerfile = validateDockerfile(sourceFiles);
         VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile.getKey(), validDockerfile.getValue());
         version.addVersionValidation(dockerfileValidation);
 
@@ -169,6 +169,25 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         return version;
     }
 
+    /**
+     * Validates dockerfile (currently just ensurse that it exists)
+     * @param sourceFiles List of sourcefiles for a version
+     * @return Pair including if dockerfile is valid, along with error message if it is not
+     */
+    protected Pair<Boolean, String> validateDockerfile(Set<SourceFile> sourceFiles) {
+        boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
+        String validationMessage = null;
+        if (!hasDockerfile) {
+            validationMessage = "Missing Dockerfile.";
+        }
+        return new Pair<>(hasDockerfile, validationMessage);
+    }
+
+    /**
+     * A tag is valid if it has a valid Dockerfile, at least one valid descriptor set, and a matching set of valid test parameter files.
+     * @param tag Tag to validate
+     * @return Updated tag
+     */
     @Override
     protected boolean isValidVersion(Tag tag) {
         SortedSet<VersionValidation> versionValidations = tag.getValidations();
@@ -184,6 +203,12 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         return validDockerfile && ((hasCwl && validCwl && validCwlTestParameters) || (hasWdl && validWdl && validWdlTestParameters));
     }
 
+    /**
+     * A helper function which finds the first sourcefile of a given type and returns whether or not it is valid
+     * @param versionValidations Set of version validations
+     * @param fileType FileType to look for
+     * @return True if sourcefile exists and is valid, false otherwise
+     */
     protected boolean isVersionTypeValidated(SortedSet<VersionValidation> versionValidations, SourceFile.FileType fileType) {
         Optional<VersionValidation> foundFile = versionValidations
                 .stream()

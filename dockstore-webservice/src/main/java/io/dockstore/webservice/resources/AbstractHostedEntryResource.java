@@ -40,6 +40,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.VersionValidation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.ElasticManager;
@@ -185,10 +186,15 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         boolean isValidVersion = isValidVersion(version);
         if (!isValidVersion) {
-            throw new CustomWebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
+            String validationMessages = createValidationMessages(version);
+            if (validationMessages != null && !validationMessages.isEmpty()) {
+                throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
+            } else {
+                throw new CustomWebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
+            }
         }
 
-        version.setValid(true);
+        version.setValid(true); // Hosted entry versions must be valid to save
         version.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, version);
         long l = getVersionDAO().create(version);
@@ -201,12 +207,29 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return newTool;
     }
 
+    protected String createValidationMessages(U version) {
+        StringBuilder result = new StringBuilder();
+        for (VersionValidation versionValidation : version.getValidations()) {
+            if (versionValidation.getMessage() != null) {
+                result.append(versionValidation.getMessage());
+            }
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * Checks if the given version is valid (different for tools and workflows.
+     * @param version
+     * @return True if valid version, false otherwise
+     */
     protected abstract boolean isValidVersion(U version);
 
     protected abstract void populateMetadata(Set<SourceFile> sourceFiles, T entry, U version);
 
     /**
      * Will update the version with validation information
+     * Note: There is one validation entry for each sourcefile type. This is true for test parameter files too.
      * @param version Version to validate
      * @param entry Entry for the version
      * @return Version with updated validation information

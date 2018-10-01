@@ -59,20 +59,28 @@ public interface LanguageHandlerInterface {
      */
     Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles);
 
+    /**
+     * Validates a workflow set for the workflow described by with primaryDescriptorFilePath
+     * @param sourcefiles Set of sourcefiles
+     * @param primaryDescriptorFilePath Primary descriptor path
+     * @return Is a valid workflow set, error message
+     */
     Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
+    /**
+     * Validates a tool set for the workflow described by with primaryDescriptorFilePath
+     * @param sourcefiles Set of sourcefiles
+     * @param primaryDescriptorFilePath Primary descriptor path
+     * @return Is a valid tool set, error message
+     */
     Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
+    /**
+     * Validates a test parameter set
+     * @param sourceFiles Set of sourcefiles
+     * @return Are all test parameter files valid, collection of error messages
+     */
     Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles);
-
-    default Pair<Boolean, String> validateDockerfile(Set<SourceFile> sourceFiles) {
-        boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
-        String validationMessage = null;
-        if (!hasDockerfile) {
-            validationMessage = "Missing Dockerfile.";
-        }
-        return new Pair<>(hasDockerfile, validationMessage);
-    }
 
     /**
      * Look at the content of a descriptor and update its imports
@@ -102,8 +110,8 @@ public interface LanguageHandlerInterface {
     /**
      * Checks that the test parameter files are valid JSON or YAML
      * Note: If even one is invalid, return invalid. Also merges all validation messages into one.
-     * @param sourcefiles
-     * @param fileType
+     * @param sourcefiles Set of sourcefiles
+     * @param fileType Test parameter file type
      * @return Pair of isValid and validationMessage
      */
     default Pair<Boolean, String> checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
