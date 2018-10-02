@@ -494,9 +494,13 @@ public abstract class AbstractImageRegistry {
         VersionValidation descriptorValidation = new VersionValidation(fileType, isValidDescriptor.getKey(), isValidDescriptor.getValue());
         tag.addVersionValidation(descriptorValidation);
 
+        SourceFile.FileType testParamType = SourceFile.FileType.CWL_TEST_JSON;
+        if (Objects.equals(fileType, SourceFile.FileType.DOCKSTORE_WDL)) {
+            testParamType = SourceFile.FileType.WDL_TEST_JSON;
+        }
         Pair<Boolean, String> isValidTestParameter = LanguageHandlerFactory.getInterface(fileType)
                 .validateTestParameterSet(tag.getSourceFiles());
-        VersionValidation testParameterValidation = new VersionValidation(fileType, isValidTestParameter.getKey(), isValidTestParameter.getValue());
+        VersionValidation testParameterValidation = new VersionValidation(testParamType, isValidTestParameter.getKey(), isValidTestParameter.getValue());
         tag.addVersionValidation(testParameterValidation);
 
         return tag;

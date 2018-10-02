@@ -412,12 +412,12 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     @Override
     public javafx.util.Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         // Throw exception instead?
-        return new javafx.util.Pair<>(false, "Nextflow does not support tools.");
+        return new javafx.util.Pair<>(true, "Nextflow does not support tools.");
     }
 
     @Override
     public javafx.util.Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
         // Throw exception instead?
-        return new javafx.util.Pair<>(false, "Nextflow does not support test parameter files.");
+        return new javafx.util.Pair<>(true, "Nextflow does not support test parameter files.");
     }
 }
