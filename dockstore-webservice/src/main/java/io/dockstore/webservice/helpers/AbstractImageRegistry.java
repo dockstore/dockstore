@@ -436,8 +436,8 @@ public abstract class AbstractImageRegistry {
         VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile.getKey(), validDockerfile.getValue());
         tag.addVersionValidation(dockerfileValidation);
 
-        tag = validateTag(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
-        tag = validateTag(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
+        tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
+        tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
 
         boolean isValidVersion = isValidVersion(tag);
         tag.setValid(isValidVersion);
@@ -485,7 +485,7 @@ public abstract class AbstractImageRegistry {
      * @param primaryDescriptorPath Path to the primary descriptor
      * @return Validated tag
      */
-    private Tag validateTag(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
+    private Tag validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
         Pair<Boolean, String> isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
                 .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
         VersionValidation descriptorValidation = new VersionValidation(fileType, isValidDescriptor.getKey(), isValidDescriptor.getValue());
