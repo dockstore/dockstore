@@ -67,6 +67,7 @@ import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.VersionValidation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -443,8 +444,10 @@ public class WorkflowResource
             }
 
             // Update the validations
-            workflowVersionFromDB.getValidations().clear();
             workflowVersionFromDB.getValidations().addAll(version.getValidations());
+            for (VersionValidation versionValidation : version.getValidations()) {
+                workflowVersionFromDB.addVersionValidation(versionValidation);
+            }
         }
     }
 

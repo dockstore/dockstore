@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -248,7 +249,13 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     }
 
     public void addVersionValidation(VersionValidation versionValidation) {
-        validations.add(versionValidation);
+        Optional<VersionValidation> matchingValidation = getValidations().stream().filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
+        if (matchingValidation.isPresent()) {
+            matchingValidation.get().setMessage(versionValidation.getMessage());
+            matchingValidation.get().setType(versionValidation.getType());
+        } else {
+            validations.add(versionValidation);
+        }
     }
 
     @JsonProperty
