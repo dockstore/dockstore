@@ -428,7 +428,7 @@ public abstract class AbstractImageRegistry {
         // Remove all existing validations
         tag.getValidations().clear();
 
-        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
+        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
         Pair<Boolean, String> validDockerfile;
         // Private tools don't require a dockerfile
         if (hasDockerfile || tool.isPrivateAccess()) {
