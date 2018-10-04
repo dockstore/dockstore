@@ -32,6 +32,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import javafx.util.Pair;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -86,6 +87,12 @@ public class VersionValidation implements Comparable<VersionValidation> {
         this.type = versionValidation.getType();
         this.valid = versionValidation.isValid();
         this.message = versionValidation.getMessage();
+    }
+
+    public VersionValidation(SourceFile.FileType fileType, Pair<Boolean, String> validMessagePair) {
+        this.type = fileType;
+        this.valid = validMessagePair.getKey();
+        this.message = validMessagePair.getValue();
     }
 
     public long getId() {

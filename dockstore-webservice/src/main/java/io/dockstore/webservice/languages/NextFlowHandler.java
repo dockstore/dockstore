@@ -403,21 +403,21 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             if (content.contains("manifest")) {
                 return new javafx.util.Pair<>(true, null);
             } else {
-                return new javafx.util.Pair<>(false, "Descriptor file " + primaryDescriptorFilePath + " is missing the manifest section.");
+                return new javafx.util.Pair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.");
             }
         }
-        return new javafx.util.Pair<>(false, "Descriptor file " + primaryDescriptorFilePath + " not found.");
+        return new javafx.util.Pair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' not found.");
     }
 
     @Override
     public javafx.util.Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        // Throw exception instead?
+        // Todo: Throw exception instead?
         return new javafx.util.Pair<>(true, "Nextflow does not support tools.");
     }
 
     @Override
     public javafx.util.Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
-        // Throw exception instead?
+        // Todo: Throw exception instead?
         return new javafx.util.Pair<>(true, "Nextflow does not support test parameter files.");
     }
 }

@@ -375,7 +375,6 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             }
 
             version = versionValidation(version, workflow, calculatedPath);
-            version.setValid(isValidVersion(version));
 
             workflow.addWorkflowVersion(version);
         }

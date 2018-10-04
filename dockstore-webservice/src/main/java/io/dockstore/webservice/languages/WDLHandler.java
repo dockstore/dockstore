@@ -184,6 +184,13 @@ public class WDLHandler implements LanguageHandlerInterface {
         return null;
     }
 
+    /**
+     * A common helper method for validating tool and workflow sets
+     * @param sourcefiles Set of sourcefiles to validate
+     * @param primaryDescriptorFilePath Path of primary descriptor
+     * @param type workflow or tool
+     * @return
+     */
     public javafx.util.Pair<Boolean, String> validateEntrySet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
         File tempMainDescriptor = null;
         String mainDescriptor = null;

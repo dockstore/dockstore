@@ -225,8 +225,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     }
 
     /**
-     * Checks if the given version is valid (different for tools and workflows.
-     * @param version
+     * Checks if the given version is valid based on existing version validations
+     * @param version Version to validate
      * @return True if valid version, false otherwise
      */
     protected abstract boolean isValidVersion(U version);

@@ -531,6 +531,13 @@ public abstract class SourceCodeRepoInterface {
      */
     abstract String getCommitID(String repositoryId, Version version);
 
+    /**
+     * Returns a workflow version with validation information updated
+     * @param version Version to validate
+     * @param entry Entry containing version to validate
+     * @param mainDescriptorPath Descriptor path to validate
+     * @return Workflow version with validation information
+     */
     WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
@@ -539,12 +546,12 @@ public abstract class SourceCodeRepoInterface {
 
         if (mainDescriptor.isPresent()) {
             javafx.util.Pair<Boolean, String> validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
-            VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet.getKey(), validDescriptorSet.getValue());
-            version.addVersionValidation(descriptorValidation);
+            VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet);
+            version.addOrUpdateVersionValidation(descriptorValidation);
         } else {
             javafx.util.Pair<Boolean, String> noPrimaryDescriptor = new javafx.util.Pair<>(false, "Missing the primary descriptor.");
-            VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor.getKey(), noPrimaryDescriptor.getValue());
-            version.addVersionValidation(noPrimaryDescriptorValidation);
+            VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor);
+            version.addOrUpdateVersionValidation(noPrimaryDescriptorValidation);
         }
 
         SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
@@ -553,12 +560,19 @@ public abstract class SourceCodeRepoInterface {
         }
 
         javafx.util.Pair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-        VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet.getKey(), validTestParameterSet.getValue());
-        version.addVersionValidation(testParameterValidation);
+        VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet);
+        version.addOrUpdateVersionValidation(testParameterValidation);
+
+        version.setValid(isValidVersion(version));
 
         return version;
     }
 
+    /**
+     * Checks if the given workflow version is valid based on existing validations
+     * @param version Version to check validation
+     * @return True if valid workflow version, false otherwise
+     */
     boolean isValidVersion(WorkflowVersion version) {
         SortedSet<VersionValidation> versionValidations = version.getValidations();
         boolean isValid = true;

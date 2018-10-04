@@ -248,7 +248,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         return validations;
     }
 
-    public void addVersionValidation(VersionValidation versionValidation) {
+    public void addOrUpdateVersionValidation(VersionValidation versionValidation) {
         Optional<VersionValidation> matchingValidation = getValidations().stream().filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
         if (matchingValidation.isPresent()) {
             matchingValidation.get().setMessage(versionValidation.getMessage());

@@ -193,8 +193,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         } else {
             validDescriptorSet = new Pair<>(false, "Missing the primary descriptor.");
         }
-        descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet.getKey(), validDescriptorSet.getValue());
-        version.addVersionValidation(descriptorValidation);
+        descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet);
+        version.addOrUpdateVersionValidation(descriptorValidation);
 
         // Validate test parameter set
         SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
@@ -202,8 +202,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             testParameterType = SourceFile.FileType.WDL_TEST_JSON;
         }
         Pair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-        VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet.getKey(), validTestParameterSet.getValue());
-        version.addVersionValidation(testParameterValidation);
+        VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet);
+        version.addOrUpdateVersionValidation(testParameterValidation);
 
         return version;
     }

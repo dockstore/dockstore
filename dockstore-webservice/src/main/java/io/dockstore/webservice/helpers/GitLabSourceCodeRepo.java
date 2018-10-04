@@ -167,7 +167,6 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
         version = combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults);
 
         version = versionValidation(version, workflow, calculatedPath);
-        version.setValid(isValidVersion(version));
 
         workflow.addWorkflowVersion(version);
     }

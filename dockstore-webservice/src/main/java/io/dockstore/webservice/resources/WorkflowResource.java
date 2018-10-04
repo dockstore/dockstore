@@ -444,9 +444,8 @@ public class WorkflowResource
             }
 
             // Update the validations
-            workflowVersionFromDB.getValidations().addAll(version.getValidations());
             for (VersionValidation versionValidation : version.getValidations()) {
-                workflowVersionFromDB.addVersionValidation(versionValidation);
+                workflowVersionFromDB.addOrUpdateVersionValidation(versionValidation);
             }
         }
     }

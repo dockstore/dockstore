@@ -305,7 +305,6 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
                         combineVersionAndSourcefile(repositoryId, sourceFile, workflow, identifiedType, version, existingDefaults));
 
                     version = versionValidation(version, workflow, calculatedPath);
-                    version.setValid(isValidVersion(version));
                 });
 
                 if (paginatedRefs.getNext() != null) {

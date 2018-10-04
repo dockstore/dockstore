@@ -425,17 +425,8 @@ public abstract class AbstractImageRegistry {
             tag.addSourceFile(file);
         }
 
-        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
-        Pair<Boolean, String> validDockerfile;
-        // Private tools don't require a dockerfile
-        if (hasDockerfile || tool.isPrivateAccess()) {
-            validDockerfile = new Pair<>(true, null);
-        } else {
-            validDockerfile = new Pair<>(false, "Missing a Dockerfile.");
-        }
-        VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile.getKey(), validDockerfile.getValue());
-        tag.addVersionValidation(dockerfileValidation);
-
+        // Update the tag with validation information
+        tag = validateTagDockerfile(tag, tool.isPrivateAccess());
         tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
         tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
 
@@ -444,7 +435,7 @@ public abstract class AbstractImageRegistry {
     }
 
     /**
-     * Checks if the given tag is valid.
+     * Checks if the given tag is valid given its version validations.
      * TODO: Duplicate in HostedToolResource.java
      * @param tag Tag to check validation
      * @return True if valid tag, false otherwise
@@ -479,6 +470,26 @@ public abstract class AbstractImageRegistry {
     }
 
     /**
+     * Adds a version validation for a tag and its Dockerfile
+     * @param tag Tag to validate
+     * @param isPrivateAccess Is the tool private access
+     * @return Tag with updated version validation for Dockerfile
+     */
+    private Tag validateTagDockerfile(Tag tag, boolean isPrivateAccess) {
+        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
+        Pair<Boolean, String> validDockerfile;
+        // Private tools don't require a dockerfile
+        if (hasDockerfile || isPrivateAccess) {
+            validDockerfile = new Pair<>(true, null);
+        } else {
+            validDockerfile = new Pair<>(false, "Missing a Dockerfile.");
+        }
+        VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile);
+        tag.addOrUpdateVersionValidation(dockerfileValidation);
+        return tag;
+    }
+
+    /**
      * Validates the given tag files of the given filetype
      * @param tag Tag to validate
      * @param fileType Descriptor type to validate
@@ -488,17 +499,15 @@ public abstract class AbstractImageRegistry {
     private Tag validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
         Pair<Boolean, String> isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
                 .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
-        VersionValidation descriptorValidation = new VersionValidation(fileType, isValidDescriptor.getKey(), isValidDescriptor.getValue());
-        tag.addVersionValidation(descriptorValidation);
+        VersionValidation descriptorValidation = new VersionValidation(fileType, isValidDescriptor);
+        tag.addOrUpdateVersionValidation(descriptorValidation);
 
-        SourceFile.FileType testParamType = SourceFile.FileType.CWL_TEST_JSON;
-        if (Objects.equals(fileType, SourceFile.FileType.DOCKSTORE_WDL)) {
-            testParamType = SourceFile.FileType.WDL_TEST_JSON;
-        }
+        SourceFile.FileType testParamType = Objects.equals(fileType, SourceFile.FileType.DOCKSTORE_WDL) ? SourceFile.FileType.WDL_TEST_JSON : SourceFile.FileType.CWL_TEST_JSON;
+
         Pair<Boolean, String> isValidTestParameter = LanguageHandlerFactory.getInterface(fileType)
                 .validateTestParameterSet(tag.getSourceFiles());
-        VersionValidation testParameterValidation = new VersionValidation(testParamType, isValidTestParameter.getKey(), isValidTestParameter.getValue());
-        tag.addVersionValidation(testParameterValidation);
+        VersionValidation testParameterValidation = new VersionValidation(testParamType, isValidTestParameter);
+        tag.addOrUpdateVersionValidation(testParameterValidation);
 
         return tag;
     }

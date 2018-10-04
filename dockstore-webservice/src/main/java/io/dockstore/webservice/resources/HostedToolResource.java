@@ -147,24 +147,24 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         Set<SourceFile> sourceFiles = version.getSourceFiles();
 
         Pair<Boolean, String> validDockerfile = validateDockerfile(sourceFiles);
-        VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile.getKey(), validDockerfile.getValue());
-        version.addVersionValidation(dockerfileValidation);
+        VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile);
+        version.addOrUpdateVersionValidation(dockerfileValidation);
 
         Pair<Boolean, String> validCWLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateToolSet(sourceFiles, "/Dockstore.cwl");
-        VersionValidation cwlValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_CWL, validCWLDescriptorSet.getKey(), validCWLDescriptorSet.getValue());
-        version.addVersionValidation(cwlValidation);
+        VersionValidation cwlValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_CWL, validCWLDescriptorSet);
+        version.addOrUpdateVersionValidation(cwlValidation);
 
         Pair<Boolean, String> validCWLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateTestParameterSet(sourceFiles);
-        VersionValidation cwlTestParameterValidation = new VersionValidation(SourceFile.FileType.CWL_TEST_JSON, validCWLTestParameterSet.getKey(), validCWLTestParameterSet.getValue());
-        version.addVersionValidation(cwlTestParameterValidation);
+        VersionValidation cwlTestParameterValidation = new VersionValidation(SourceFile.FileType.CWL_TEST_JSON, validCWLTestParameterSet);
+        version.addOrUpdateVersionValidation(cwlTestParameterValidation);
 
         Pair<Boolean, String> validWDLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateToolSet(sourceFiles, "/Dockstore.wdl");
-        VersionValidation wdlValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_WDL, validWDLDescriptorSet.getKey(), validWDLDescriptorSet.getValue());
-        version.addVersionValidation(wdlValidation);
+        VersionValidation wdlValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_WDL, validWDLDescriptorSet);
+        version.addOrUpdateVersionValidation(wdlValidation);
 
         Pair<Boolean, String> validWDLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateTestParameterSet(sourceFiles);
-        VersionValidation wdlTestParameterValidation = new VersionValidation(SourceFile.FileType.WDL_TEST_JSON, validWDLTestParameterSet.getKey(), validWDLTestParameterSet.getValue());
-        version.addVersionValidation(wdlTestParameterValidation);
+        VersionValidation wdlTestParameterValidation = new VersionValidation(SourceFile.FileType.WDL_TEST_JSON, validWDLTestParameterSet);
+        version.addOrUpdateVersionValidation(wdlTestParameterValidation);
 
         return version;
     }
