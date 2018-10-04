@@ -132,6 +132,10 @@ public class ValidationIT extends BaseIT {
         return false;
     }
 
+    /**
+     * Tests that we properly validate WDL workflows
+     * Requires GitHub Repo DockstoreTestUser2/TestEntryValidation, master branch
+     */
     @Test
     public void testWdlWorkflow() {
         // Setup webservice and get workflows api
@@ -194,6 +198,10 @@ public class ValidationIT extends BaseIT {
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
     }
 
+    /**
+     * Tests that we properly validate CWL workflows
+     * Requires GitHub Repo DockstoreTestUser2/TestEntryValidation, master branch
+     */
     @Test
     public void testCwlWorkflow() {
         // Setup webservice and get workflows api
@@ -251,6 +259,7 @@ public class ValidationIT extends BaseIT {
 
     /**
      * This tests that validation works as expected on tools for CWL and WDL
+     * Requires GitHub Repo DockstoreTestUser2/TestEntryValidation, master branch
      */
     @Test
     public void testTool() {
