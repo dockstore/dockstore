@@ -47,6 +47,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -545,11 +546,11 @@ public abstract class SourceCodeRepoInterface {
                 .equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         if (mainDescriptor.isPresent()) {
-            javafx.util.Pair<Boolean, String> validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            MutablePair<Boolean, String> validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
             VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet);
             version.addOrUpdateVersionValidation(descriptorValidation);
         } else {
-            javafx.util.Pair<Boolean, String> noPrimaryDescriptor = new javafx.util.Pair<>(false, "Missing the primary descriptor.");
+            MutablePair<Boolean, String> noPrimaryDescriptor = new MutablePair<>(false, "Missing the primary descriptor.");
             VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor);
             version.addOrUpdateVersionValidation(noPrimaryDescriptorValidation);
         }
@@ -559,7 +560,7 @@ public abstract class SourceCodeRepoInterface {
             testParameterType = SourceFile.FileType.WDL_TEST_JSON;
         }
 
-        javafx.util.Pair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+        MutablePair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
         VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet);
         version.addOrUpdateVersionValidation(testParameterValidation);
 

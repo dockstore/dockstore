@@ -39,6 +39,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -395,29 +396,29 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public javafx.util.Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public MutablePair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
         String content;
         if (mainDescriptor.isPresent()) {
             content = mainDescriptor.get().getContent();
             if (content.contains("manifest")) {
-                return new javafx.util.Pair<>(true, null);
+                return new MutablePair<>(true, null);
             } else {
-                return new javafx.util.Pair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.");
+                return new MutablePair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.");
             }
         }
-        return new javafx.util.Pair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' not found.");
+        return new MutablePair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' not found.");
     }
 
     @Override
-    public javafx.util.Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public MutablePair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         // Todo: Throw exception instead?
-        return new javafx.util.Pair<>(true, "Nextflow does not support tools.");
+        return new MutablePair<>(true, "Nextflow does not support tools.");
     }
 
     @Override
-    public javafx.util.Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+    public MutablePair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
         // Todo: Throw exception instead?
-        return new javafx.util.Pair<>(true, "Nextflow does not support test parameter files.");
+        return new MutablePair<>(true, "Nextflow does not support test parameter files.");
     }
 }

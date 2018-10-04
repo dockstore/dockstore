@@ -49,6 +49,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import javafx.util.Pair;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -477,12 +478,12 @@ public abstract class AbstractImageRegistry {
      */
     private Tag validateTagDockerfile(Tag tag, boolean isPrivateAccess) {
         boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
-        Pair<Boolean, String> validDockerfile;
+        MutablePair<Boolean, String> validDockerfile;
         // Private tools don't require a dockerfile
         if (hasDockerfile || isPrivateAccess) {
-            validDockerfile = new Pair<>(true, null);
+            validDockerfile = new MutablePair<>(true, null);
         } else {
-            validDockerfile = new Pair<>(false, "Missing a Dockerfile.");
+            validDockerfile = new MutablePair<>(false, "Missing a Dockerfile.");
         }
         VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile);
         tag.addOrUpdateVersionValidation(dockerfileValidation);
@@ -497,14 +498,14 @@ public abstract class AbstractImageRegistry {
      * @return Validated tag
      */
     private Tag validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
-        Pair<Boolean, String> isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
+        MutablePair<Boolean, String> isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
                 .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
         VersionValidation descriptorValidation = new VersionValidation(fileType, isValidDescriptor);
         tag.addOrUpdateVersionValidation(descriptorValidation);
 
         SourceFile.FileType testParamType = Objects.equals(fileType, SourceFile.FileType.DOCKSTORE_WDL) ? SourceFile.FileType.WDL_TEST_JSON : SourceFile.FileType.CWL_TEST_JSON;
 
-        Pair<Boolean, String> isValidTestParameter = LanguageHandlerFactory.getInterface(fileType)
+        MutablePair<Boolean, String> isValidTestParameter = LanguageHandlerFactory.getInterface(fileType)
                 .validateTestParameterSet(tag.getSourceFiles());
         VersionValidation testParameterValidation = new VersionValidation(testParamType, isValidTestParameter);
         tag.addOrUpdateVersionValidation(testParameterValidation);

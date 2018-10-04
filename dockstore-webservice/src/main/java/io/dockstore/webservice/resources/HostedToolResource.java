@@ -146,23 +146,23 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     protected Tag versionValidation(Tag version, Tool entry) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
 
-        Pair<Boolean, String> validDockerfile = validateDockerfile(sourceFiles);
+        MutablePair<Boolean, String> validDockerfile = validateDockerfile(sourceFiles);
         VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile);
         version.addOrUpdateVersionValidation(dockerfileValidation);
 
-        Pair<Boolean, String> validCWLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateToolSet(sourceFiles, "/Dockstore.cwl");
+        MutablePair<Boolean, String> validCWLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateToolSet(sourceFiles, "/Dockstore.cwl");
         VersionValidation cwlValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_CWL, validCWLDescriptorSet);
         version.addOrUpdateVersionValidation(cwlValidation);
 
-        Pair<Boolean, String> validCWLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateTestParameterSet(sourceFiles);
+        MutablePair<Boolean, String> validCWLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateTestParameterSet(sourceFiles);
         VersionValidation cwlTestParameterValidation = new VersionValidation(SourceFile.FileType.CWL_TEST_JSON, validCWLTestParameterSet);
         version.addOrUpdateVersionValidation(cwlTestParameterValidation);
 
-        Pair<Boolean, String> validWDLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateToolSet(sourceFiles, "/Dockstore.wdl");
+        MutablePair<Boolean, String> validWDLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateToolSet(sourceFiles, "/Dockstore.wdl");
         VersionValidation wdlValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_WDL, validWDLDescriptorSet);
         version.addOrUpdateVersionValidation(wdlValidation);
 
-        Pair<Boolean, String> validWDLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateTestParameterSet(sourceFiles);
+        MutablePair<Boolean, String> validWDLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateTestParameterSet(sourceFiles);
         VersionValidation wdlTestParameterValidation = new VersionValidation(SourceFile.FileType.WDL_TEST_JSON, validWDLTestParameterSet);
         version.addOrUpdateVersionValidation(wdlTestParameterValidation);
 
@@ -174,13 +174,13 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
      * @param sourceFiles List of sourcefiles for a version
      * @return Pair including if dockerfile is valid, along with error message if it is not
      */
-    protected Pair<Boolean, String> validateDockerfile(Set<SourceFile> sourceFiles) {
+    protected MutablePair<Boolean, String> validateDockerfile(Set<SourceFile> sourceFiles) {
         boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
         String validationMessage = null;
         if (!hasDockerfile) {
             validationMessage = "Missing Dockerfile.";
         }
-        return new Pair<>(hasDockerfile, validationMessage);
+        return new MutablePair<>(hasDockerfile, validationMessage);
     }
 
     /**

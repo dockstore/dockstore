@@ -646,7 +646,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public javafx.util.Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public MutablePair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
         sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
@@ -671,11 +671,11 @@ public class CWLHandler implements LanguageHandlerInterface {
             validationMessage = "Primary CWL descriptor is not present.";
             isValid = false;
         }
-        return new javafx.util.Pair<>(isValid, validationMessage);
+        return new MutablePair<>(isValid, validationMessage);
     }
 
     @Override
-    public javafx.util.Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public MutablePair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
         sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
@@ -700,11 +700,11 @@ public class CWLHandler implements LanguageHandlerInterface {
             isValid = false;
             validationMessage = "Primary CWL descriptor is not present.";
         }
-        return new javafx.util.Pair<>(isValid, validationMessage);
+        return new MutablePair<>(isValid, validationMessage);
     }
 
     @Override
-    public javafx.util.Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+    public MutablePair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.CWL_TEST_JSON);
     }
 }

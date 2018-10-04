@@ -186,12 +186,12 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
-        Pair<Boolean, String> validDescriptorSet;
+        MutablePair<Boolean, String> validDescriptorSet;
         VersionValidation descriptorValidation;
         if (mainDescriptor.isPresent()) {
             validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
         } else {
-            validDescriptorSet = new Pair<>(false, "Missing the primary descriptor.");
+            validDescriptorSet = new MutablePair<>(false, "Missing the primary descriptor.");
         }
         descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet);
         version.addOrUpdateVersionValidation(descriptorValidation);
@@ -201,7 +201,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
             testParameterType = SourceFile.FileType.WDL_TEST_JSON;
         }
-        Pair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+        MutablePair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
         VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet);
         version.addOrUpdateVersionValidation(testParameterValidation);
 

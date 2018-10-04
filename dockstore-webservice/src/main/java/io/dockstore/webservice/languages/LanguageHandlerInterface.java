@@ -65,7 +65,7 @@ public interface LanguageHandlerInterface {
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid workflow set, error message
      */
-    Pair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+    MutablePair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
     /**
      * Validates a tool set for the workflow described by with primaryDescriptorFilePath
@@ -73,14 +73,14 @@ public interface LanguageHandlerInterface {
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid tool set, error message
      */
-    Pair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+    MutablePair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
     /**
      * Validates a test parameter set
      * @param sourceFiles Set of sourcefiles
      * @return Are all test parameter files valid, collection of error messages
      */
-    Pair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles);
+    MutablePair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles);
 
     /**
      * Look at the content of a descriptor and update its imports
@@ -114,7 +114,7 @@ public interface LanguageHandlerInterface {
      * @param fileType Test parameter file type
      * @return Pair of isValid and validationMessage
      */
-    default Pair<Boolean, String> checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
+    default MutablePair<Boolean, String> checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
         List<String> validationMessages = new ArrayList<>();
         Boolean isValid = true;
         for (SourceFile sourcefile : sourcefiles) {
@@ -128,7 +128,7 @@ public interface LanguageHandlerInterface {
                 }
             }
         }
-        return new Pair<>(isValid, validationMessages.size() > 0 ? validationMessages.toString() : null);
+        return new MutablePair<>(isValid, validationMessages.size() > 0 ? validationMessages.toString() : null);
     }
 
     /**
