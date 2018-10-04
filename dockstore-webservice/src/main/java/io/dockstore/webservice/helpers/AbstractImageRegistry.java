@@ -48,7 +48,6 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
-import javafx.util.Pair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
