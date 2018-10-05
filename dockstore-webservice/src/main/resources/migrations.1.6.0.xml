@@ -19,7 +19,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
                    context="1.6.0">
 
-    <changeSet author="aduncan (generated)" id="1537982702952-1">
+    <changeSet author="aduncan (generated)" id="AddVersionValidationJoinTable">
         <createTable tableName="version_versionvalidation">
             <column name="versionid" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="version_versionvalidation_pkey"/>
@@ -29,7 +29,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="1537982702952-2">
+    <changeSet author="aduncan (generated)" id="AddVersionValidationTable">
         <createTable tableName="versionvalidation">
             <column autoIncrement="true" name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" primaryKeyName="versionvalidation_pkey"/>
@@ -41,11 +41,11 @@
             <column name="valid" type="BOOLEAN"/>
         </createTable>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="1537982702952-3">
-        <addUniqueConstraint columnNames="versionvalidationid" constraintName="uk_1vljugb1gn7ji34c7hj86lito" tableName="version_versionvalidation"/>
+    <changeSet author="aduncan (generated)" id="AddJoinVersionValidationConstraint">
+        <addUniqueConstraint columnNames="versionvalidationid" constraintName="uk_versionvalidationid" tableName="version_versionvalidation"/>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="1537982702952-5">
-        <addForeignKeyConstraint baseColumnNames="versionvalidationid" baseTableName="version_versionvalidation" constraintName="fk99oeofctecbuetaje96dx1g2q" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="versionvalidation"/>
+    <changeSet author="aduncan (generated)" id="AddVersionValidationIdConstraint">
+        <addForeignKeyConstraint baseColumnNames="versionvalidationid" baseTableName="version_versionvalidation" constraintName="fkversionvalidationid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="versionvalidation"/>
     </changeSet>
 
 </databaseChangeLog>
