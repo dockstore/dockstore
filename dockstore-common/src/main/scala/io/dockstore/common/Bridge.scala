@@ -26,6 +26,7 @@ import wdl4s.wdl.{WdlNamespace, WdlNamespaceWithWorkflow, WdlTask, WorkflowSourc
 import wdl4s.wdl.types.{WdlArrayType, WdlFileType}
 import wdl4s.wdl.values.WdlValue
 
+import scala.collection.mutable.ListBuffer
 import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
 
@@ -112,34 +113,12 @@ class Bridge(basePath : String) {
     var taskCount = 0
     var onlyTask : WdlTask = WdlTask.empty
 
-    // Should only call one task
-    ns.workflow.calls foreach { call =>
-      if (ns.findTask(call.callable.fullyQualifiedName).nonEmpty) {
-        ns.findTask(call.callable.fullyQualifiedName) foreach { task =>
-          taskCount += 1
-          onlyTask = task
-        }
-      } else {
-        ns.namespaces.foreach { namespace =>
-          if (namespace.findTask(call.unqualifiedName).nonEmpty) {
-            namespace.findTask(call.unqualifiedName).foreach  { task =>
-              taskCount += 1
-              onlyTask = task
-            }
-          } else if (namespace.findTask(call.callable.fullyQualifiedName).nonEmpty) {
-            namespace.findTask(call.callable.fullyQualifiedName).foreach  { task =>
-              taskCount += 1
-              onlyTask = task
-            }
-          } else if (namespace.findTask(call.callable.unqualifiedName).nonEmpty) {
-            namespace.findTask(call.callable.unqualifiedName).foreach  { task =>
-              taskCount += 1
-              onlyTask = task
-            }
-          }
-        }
-      }
-    }
+    val allTasks = findTasks(ns)
+
+    allTasks.toList.foreach(task => {
+      taskCount += 1
+      onlyTask = task
+    })
     if (taskCount > 1) {
       throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
     }
@@ -208,28 +187,39 @@ class Bridge(basePath : String) {
     val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
     val tasks = new util.LinkedHashMap[String, String]()
 
+    val allTasks = findTasks(ns)
+
+    allTasks.toList.foreach(task => {
+      val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
+      tasks.put("dockstore_" + task.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+    })
+    tasks
+  }
+
+  def findTasks(ns: WdlNamespaceWithWorkflow): ListBuffer[WdlTask] = {
+    var tasks = new ListBuffer[WdlTask]()
     ns.workflow.calls foreach { call =>
-      if (ns.findTask(call.callable.fullyQualifiedName).nonEmpty) {
-        ns.findTask(call.callable.fullyQualifiedName) foreach { task =>
-          val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-          tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+      val taskInNamespace = ns.findTask(call.callable.fullyQualifiedName)
+      if (taskInNamespace.nonEmpty) {
+        taskInNamespace foreach { task =>
+          tasks += task
         }
       } else {
         ns.namespaces.foreach { namespace =>
-          if (namespace.findTask(call.unqualifiedName).nonEmpty) {
-            namespace.findTask(call.unqualifiedName).foreach  { task =>
-              val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-              tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+          val taskOne = namespace.findTask(call.unqualifiedName)
+          val taskTwo = namespace.findTask(call.callable.fullyQualifiedName)
+          val taskThree = namespace.findTask(call.callable.unqualifiedName);
+          if (taskOne.nonEmpty) {
+            taskOne.foreach  { task =>
+              tasks += task
             }
-          } else if (namespace.findTask(call.callable.fullyQualifiedName).nonEmpty) {
-            namespace.findTask(call.callable.fullyQualifiedName).foreach  { task =>
-              val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-              tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+          } else if (taskTwo.nonEmpty) {
+            taskTwo.foreach  { task =>
+              tasks += task
             }
-          } else if (namespace.findTask(call.callable.unqualifiedName).nonEmpty) {
-            namespace.findTask(call.callable.unqualifiedName).foreach  { task =>
-              val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-              tasks.put("dockstore_" + call.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+          } else if (taskThree.nonEmpty) {
+            taskThree.foreach  { task =>
+              tasks += task
             }
           }
         }
