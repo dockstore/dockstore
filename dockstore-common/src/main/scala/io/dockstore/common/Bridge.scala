@@ -22,7 +22,7 @@ import java.util
 import io.github.collaboratory.wdl.BridgeHelper
 import spray.json._
 import wdl4s.parser.WdlParser
-import wdl4s.wdl.{WdlNamespace, WdlNamespaceWithWorkflow, WdlTask, WorkflowSource}
+import wdl4s.wdl.{WdlCall, WdlNamespace, WdlNamespaceWithWorkflow, WdlTask, WorkflowSource}
 import wdl4s.wdl.types.{WdlArrayType, WdlFileType}
 import wdl4s.wdl.values.WdlValue
 
@@ -113,12 +113,12 @@ class Bridge(basePath : String) {
     var taskCount = 0
     var onlyTask : WdlTask = WdlTask.empty
 
-    val allTasks = findTasks(ns)
-
-    allTasks.toList.foreach(task => {
+    val allTasks = findCallToTasks(ns)
+    allTasks.foreach(taskTuple => {
       taskCount += 1
-      onlyTask = task
+      onlyTask = taskTuple._2
     })
+
     if (taskCount > 1) {
       throw new WdlParser.SyntaxError("A WDL tool can only have one task.")
     }
@@ -187,22 +187,27 @@ class Bridge(basePath : String) {
     val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
     val tasks = new util.LinkedHashMap[String, String]()
 
-    val allTasks = findTasks(ns)
-
-    allTasks.toList.foreach(task => {
-      val dockerAttributes = task.runtimeAttributes.attrs.get("docker")
-      tasks.put("dockstore_" + task.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+    val allTasks = findCallToTasks(ns)
+    allTasks.foreach(taskTuple => {
+      val dockerAttributes = taskTuple._2.runtimeAttributes.attrs.get("docker")
+      tasks.put("dockstore_" + taskTuple._1.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
     })
     tasks
   }
 
-  def findTasks(ns: WdlNamespaceWithWorkflow): ListBuffer[WdlTask] = {
-    var tasks = new ListBuffer[WdlTask]()
+  /**
+    * Looks at all the calls of a workflow from a given namespace and returns a list of tuples, where the
+    * tuple includes the call name and the corresponding task
+    * @param ns Wdl Namespace with workflow
+    * @return List of tuples per task
+    */
+  def findCallToTasks(ns: WdlNamespaceWithWorkflow): (ListBuffer[(WdlCall, WdlTask)]) = {
+    var tasks = new ListBuffer[(WdlCall, WdlTask)]()
     ns.workflow.calls foreach { call =>
       val taskInNamespace = ns.findTask(call.callable.fullyQualifiedName)
       if (taskInNamespace.nonEmpty) {
         taskInNamespace foreach { task =>
-          tasks += task
+          tasks += ((call, task))
         }
       } else {
         ns.namespaces.foreach { namespace =>
@@ -211,15 +216,15 @@ class Bridge(basePath : String) {
           val taskThree = namespace.findTask(call.callable.unqualifiedName);
           if (taskOne.nonEmpty) {
             taskOne.foreach  { task =>
-              tasks += task
+              tasks. += ((call, task))
             }
           } else if (taskTwo.nonEmpty) {
             taskTwo.foreach  { task =>
-              tasks += task
+              tasks += ((call, task))
             }
           } else if (taskThree.nonEmpty) {
             taskThree.foreach  { task =>
-              tasks += task
+              tasks += ((call, task))
             }
           }
         }
