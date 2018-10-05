@@ -44,6 +44,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
@@ -646,7 +647,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public MutablePair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
         sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
@@ -671,11 +672,11 @@ public class CWLHandler implements LanguageHandlerInterface {
             validationMessage = "Primary CWL descriptor is not present.";
             isValid = false;
         }
-        return new MutablePair<>(isValid, validationMessage);
+        return new ImmutablePair<>(isValid, validationMessage);
     }
 
     @Override
-    public MutablePair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public ImmutablePair validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
         sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
@@ -700,11 +701,11 @@ public class CWLHandler implements LanguageHandlerInterface {
             isValid = false;
             validationMessage = "Primary CWL descriptor is not present.";
         }
-        return new MutablePair<>(isValid, validationMessage);
+        return new ImmutablePair(isValid, validationMessage);
     }
 
     @Override
-    public MutablePair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+    public ImmutablePair validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.CWL_TEST_JSON);
     }
 }

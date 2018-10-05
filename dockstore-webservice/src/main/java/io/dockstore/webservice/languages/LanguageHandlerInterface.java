@@ -35,6 +35,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -42,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
-import javafx.util.Pair;
 
 /**
  * This interface will be the future home of all methods that will need to be added to support a new workflow language
@@ -65,7 +65,7 @@ public interface LanguageHandlerInterface {
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid workflow set, error message
      */
-    MutablePair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+    ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
     /**
      * Validates a tool set for the workflow described by with primaryDescriptorFilePath
@@ -73,14 +73,14 @@ public interface LanguageHandlerInterface {
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid tool set, error message
      */
-    MutablePair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+    ImmutablePair validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
     /**
      * Validates a test parameter set
      * @param sourceFiles Set of sourcefiles
      * @return Are all test parameter files valid, collection of error messages
      */
-    MutablePair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles);
+    ImmutablePair validateTestParameterSet(Set<SourceFile> sourceFiles);
 
     /**
      * Look at the content of a descriptor and update its imports
@@ -114,7 +114,7 @@ public interface LanguageHandlerInterface {
      * @param fileType Test parameter file type
      * @return Pair of isValid and validationMessage
      */
-    default MutablePair<Boolean, String> checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
+    default ImmutablePair checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
         List<String> validationMessages = new ArrayList<>();
         Boolean isValid = true;
         for (SourceFile sourcefile : sourcefiles) {
@@ -128,7 +128,7 @@ public interface LanguageHandlerInterface {
                 }
             }
         }
-        return new MutablePair<>(isValid, validationMessages.size() > 0 ? validationMessages.toString() : null);
+        return new ImmutablePair(isValid, validationMessages.size() > 0 ? validationMessages.toString() : null);
     }
 
     /**

@@ -39,7 +39,7 @@ import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -396,29 +396,29 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public MutablePair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
         String content;
         if (mainDescriptor.isPresent()) {
             content = mainDescriptor.get().getContent();
             if (content.contains("manifest")) {
-                return new MutablePair<>(true, null);
+                return new ImmutablePair(true, null);
             } else {
-                return new MutablePair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.");
+                return new ImmutablePair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.");
             }
         }
-        return new MutablePair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' not found.");
+        return new ImmutablePair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' not found.");
     }
 
     @Override
-    public MutablePair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public ImmutablePair validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         // Todo: Throw exception instead?
-        return new MutablePair<>(true, "Nextflow does not support tools.");
+        return new ImmutablePair<>(true, "Nextflow does not support tools.");
     }
 
     @Override
-    public MutablePair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+    public ImmutablePair validateTestParameterSet(Set<SourceFile> sourceFiles) {
         // Todo: Throw exception instead?
-        return new MutablePair<>(true, "Nextflow does not support test parameter files.");
+        return new ImmutablePair<>(true, "Nextflow does not support test parameter files.");
     }
 }

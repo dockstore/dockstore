@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import javax.validation.constraints.NotNull;
@@ -47,7 +46,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -546,11 +545,11 @@ public abstract class SourceCodeRepoInterface {
                 .equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         if (mainDescriptor.isPresent()) {
-            MutablePair<Boolean, String> validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            ImmutablePair validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
             VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet);
             version.addOrUpdateVersionValidation(descriptorValidation);
         } else {
-            MutablePair<Boolean, String> noPrimaryDescriptor = new MutablePair<>(false, "Missing the primary descriptor.");
+            ImmutablePair noPrimaryDescriptor = new ImmutablePair(false, "Missing the primary descriptor.");
             VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor);
             version.addOrUpdateVersionValidation(noPrimaryDescriptorValidation);
         }
@@ -560,7 +559,7 @@ public abstract class SourceCodeRepoInterface {
             testParameterType = SourceFile.FileType.WDL_TEST_JSON;
         }
 
-        MutablePair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+        ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
         VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet);
         version.addOrUpdateVersionValidation(testParameterValidation);
 
@@ -575,14 +574,6 @@ public abstract class SourceCodeRepoInterface {
      * @return True if valid workflow version, false otherwise
      */
     boolean isValidVersion(WorkflowVersion version) {
-        SortedSet<VersionValidation> versionValidations = version.getValidations();
-        boolean isValid = true;
-        for (VersionValidation versionValidation : versionValidations) {
-            if (!versionValidation.isValid()) {
-                isValid = false;
-                break;
-            }
-        }
-        return isValid;
+        return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
     }
 }

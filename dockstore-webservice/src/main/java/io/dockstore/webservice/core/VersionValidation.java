@@ -32,7 +32,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -58,7 +58,7 @@ public class VersionValidation implements Comparable<VersionValidation> {
 
     @Column
     @ApiModelProperty(value = "Is the file type valid", required = true, position = 2)
-    private boolean valid = false;
+    private Boolean valid = false;
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "Validation message", required = true, position = 3)
@@ -89,7 +89,7 @@ public class VersionValidation implements Comparable<VersionValidation> {
         this.message = versionValidation.getMessage();
     }
 
-    public VersionValidation(SourceFile.FileType fileType, MutablePair<Boolean, String> validMessagePair) {
+    public VersionValidation(SourceFile.FileType fileType, ImmutablePair<Boolean, String> validMessagePair) {
         this.type = fileType;
         this.valid = validMessagePair.getKey();
         this.message = validMessagePair.getValue();
@@ -109,11 +109,11 @@ public class VersionValidation implements Comparable<VersionValidation> {
         return dbUpdateDate;
     }
 
-    public boolean isValid() {
+    public Boolean isValid() {
         return valid;
     }
 
-    public void setValid(boolean valid) {
+    public void setValid(Boolean valid) {
         this.valid = valid;
     }
 

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
 
 import javax.ws.rs.Path;
 
@@ -45,6 +44,7 @@ import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -185,12 +185,12 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
-        MutablePair<Boolean, String> validDescriptorSet;
+        ImmutablePair validDescriptorSet;
         VersionValidation descriptorValidation;
         if (mainDescriptor.isPresent()) {
             validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
         } else {
-            validDescriptorSet = new MutablePair<>(false, "Missing the primary descriptor.");
+            validDescriptorSet = new ImmutablePair(false, "Missing the primary descriptor.");
         }
         descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet);
         version.addOrUpdateVersionValidation(descriptorValidation);
@@ -200,7 +200,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
             testParameterType = SourceFile.FileType.WDL_TEST_JSON;
         }
-        MutablePair<Boolean, String> validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+        ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
         VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet);
         version.addOrUpdateVersionValidation(testParameterValidation);
 
@@ -214,14 +214,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
      */
     @Override
     protected boolean isValidVersion(WorkflowVersion version) {
-        SortedSet<VersionValidation> versionValidations = version.getValidations();
-        boolean isValid = true;
-        for (VersionValidation versionValidation : versionValidations) {
-            if (!versionValidation.isValid()) {
-                isValid = false;
-                break;
-            }
-        }
-        return isValid;
+        return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
     }
 }

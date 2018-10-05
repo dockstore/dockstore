@@ -46,7 +46,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -191,7 +191,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @param type workflow or tool
      * @return
      */
-    public MutablePair<Boolean, String> validateEntrySet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
+    public ImmutablePair validateEntrySet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
         File tempMainDescriptor = null;
         String mainDescriptor = null;
 
@@ -204,11 +204,11 @@ public class WDLHandler implements LanguageHandlerInterface {
 
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
-                        return new MutablePair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' has no content. Please make it a valid WDL document if you want to save.");
+                        return new ImmutablePair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' has no content. Please make it a valid WDL document if you want to save.");
                     }
                     mainDescriptor = primaryDescriptor.get().getContent();
                 } else {
-                    return new MutablePair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' could not be found.");
+                    return new ImmutablePair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' could not be found.");
                 }
 
                 Map<String, String> secondaryDescContent = new HashMap<>();
@@ -217,11 +217,11 @@ public class WDLHandler implements LanguageHandlerInterface {
                         if (sourceFile.getContent() != null) {
                             if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
                                 if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
-                                    return new MutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
+                                    return new ImmutablePair(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
                                 } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
-                                    return new MutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
+                                    return new ImmutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
                                 } else {
-                                    return new MutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
+                                    return new ImmutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
                                 }
                             }
                             secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
@@ -238,32 +238,32 @@ public class WDLHandler implements LanguageHandlerInterface {
                     bridge.isValidWorkflow(tempMainDescriptor);
                 }
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-                return new MutablePair<>(false, e.getMessage());
+                return new ImmutablePair<>(false, e.getMessage());
             } catch (NullPointerException e) {
-                return new MutablePair<>(false, "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.");
+                return new ImmutablePair<>(false, "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.");
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
                 FileUtils.deleteQuietly(tempMainDescriptor);
             }
         } else {
-            return new MutablePair<>(false, "Primary WDL descriptor is not present.");
+            return new ImmutablePair<>(false, "Primary WDL descriptor is not present.");
         }
-        return new MutablePair<>(true, null);
+        return new ImmutablePair<>(true, null);
     }
 
     @Override
-    public MutablePair<Boolean, String> validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "workflow");
     }
 
     @Override
-    public MutablePair<Boolean, String> validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public ImmutablePair validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "tool");
     }
 
     @Override
-    public MutablePair<Boolean, String> validateTestParameterSet(Set<SourceFile> sourceFiles) {
+    public ImmutablePair validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.WDL_TEST_JSON);
     }
 
