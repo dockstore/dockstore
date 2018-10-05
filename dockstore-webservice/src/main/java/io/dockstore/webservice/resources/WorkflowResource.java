@@ -464,6 +464,7 @@ public class WorkflowResource
 
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
+        workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         return workflow;
     }
 

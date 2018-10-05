@@ -276,13 +276,16 @@ public class DockerRepoResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
-        Tool c = toolDAO.findById(containerId);
-        checkEntry(c);
-        checkUser(user, c);
+        Tool tool = toolDAO.findById(containerId);
+        checkEntry(tool);
+        checkUser(user, tool);
 
         // This somehow forces users to get loaded, c.getUsers() does not work.  c.getUsers().size works too.
-        Hibernate.initialize(c.getUsers());
-        return c;
+        Hibernate.initialize(tool.getUsers());
+
+        tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+
+        return tool;
     }
 
     @PUT
