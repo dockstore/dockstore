@@ -81,6 +81,9 @@ public class FileProvisioning {
     private List<ProvisionInterface> plugins = new ArrayList<>();
     private List<PreProvisionInterface> preProvisionPlugins = new ArrayList<>();
 
+    private Map<String, ProvisionInterface> pluginsMap = new HashMap<>();
+    private Map<String, PreProvisionInterface> preProvisionMap = new HashMap<>();
+
     private INIConfiguration config;
 
     /**
@@ -96,20 +99,28 @@ public class FileProvisioning {
             this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
             this.preProvisionPlugins = pluginManager.getExtensions(PreProvisionInterface.class);
 
+            // Map of ProvisionInterface & PreProvisionInterface plugins
+            this.pluginsMap = this.plugins
+                    .stream()
+                    .collect(Collectors.toMap(plugin -> plugin.getClass().getName().split("\\$")[0], plugin -> plugin));
+            this.preProvisionMap = this.preProvisionPlugins
+                    .stream()
+                    .collect(Collectors.toMap(plugin -> plugin.getClass().getName().split("\\$")[0], plugin -> plugin));
+
             List<PluginWrapper> pluginWrappers = pluginManager.getPlugins();
             for (PluginWrapper pluginWrapper : pluginWrappers) {
                 SubnodeConfiguration section = config.getSection(pluginWrapper.getPluginId());
                 Map<String, String> sectionConfig = new HashMap<>();
                 Iterator<String> keys = section.getKeys();
                 keys.forEachRemaining(key -> sectionConfig.put(key, section.getString(key)));
-                // this is ugly, but we need to pass configuration into the plugins
-                // TODO: speed this up using a map of plugins
-                for (ProvisionInterface extension : plugins) {
-                    String extensionName = extension.getClass().getName();
-                    String pluginClass = pluginWrapper.getDescriptor().getPluginClass();
-                    if (extensionName.startsWith(pluginClass)) {
-                        extension.setConfiguration(sectionConfig);
-                    }
+
+                String pluginClass = pluginWrapper.getDescriptor().getPluginClass();
+                // Pass sectionConfig to each plugin
+                if (pluginsMap.containsKey(pluginClass)) {
+                    pluginsMap.get(pluginClass).setConfiguration(sectionConfig);
+                }
+                if (preProvisionMap.containsKey(pluginClass)) {
+                    preProvisionMap.get(pluginClass).setConfiguration(sectionConfig);
                 }
             }
         } catch (UnexpectedCharacterException e) {
