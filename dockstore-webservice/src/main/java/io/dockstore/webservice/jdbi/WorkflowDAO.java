@@ -16,12 +16,19 @@
 
 package io.dockstore.webservice.jdbi;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.dockstore.webservice.core.SourceControlConverter;
 import io.dockstore.webservice.core.Workflow;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+
+import javax.persistence.EntityManager;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 
 /**
  * @author dyuen
@@ -127,6 +134,61 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
         return uniqueResult(query);
     }
 
+    public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {
+        List<Predicate> predicates = new ArrayList<>();
+        SourceControlConverter converter = new SourceControlConverter();
+        Predicate predicate;
+
+        // Create dynamic query using a CriteriaBuilder instance for all paths in the given list of strings
+        CriteriaBuilder cb = currentSession().getCriteriaBuilder();
+        CriteriaQuery<Workflow> q = cb.createQuery(Workflow.class);
+        Root<Workflow> entry = q.from(Workflow.class);
+
+        for (String path : paths) {
+            String[] splitPath = Workflow.splitPath(path);
+
+            if (splitPath == null) {
+                continue;
+            }
+
+            String sourcecontrol = splitPath[registryIndex];
+            String organization = splitPath[orgIndex];
+            String repository = splitPath[repoIndex];
+            String workflowname = splitPath[entryNameIndex];
+
+            if (splitPath[entryNameIndex] == null) {
+                if (findPublished) {
+                    predicate = cb.and(
+                            cb.isNull(entry.get("workflowName")),
+                            cb.isTrue(entry.get("isPublished"))
+                    );
+                } else {
+                    predicate = cb.isNull(entry.get("workflowName"));
+                }
+            } else {
+                if (findPublished) {
+                    predicate = cb.and(
+                            cb.equal(entry.get("workflowName"), workflowname),
+                            cb.isTrue(entry.get("isPublished"))
+                    );
+                } else {
+                    predicate = cb.equal(entry.get("workflowName"), workflowname);
+                }
+            }
+
+            predicates.add(cb.and(
+                    cb.equal(entry.get("sourceControl"), converter.convertToEntityAttribute(sourcecontrol)),
+                    cb.equal(entry.get("organization"), organization),
+                    cb.equal(entry.get("repository"), repository),
+                    predicate)
+            );
+        }
+        // Perform disjunctive OR over all predicates in the array
+        q.where(cb.or(predicates.toArray(new Predicate[]{})));
+
+        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
+        return entityManager.createQuery(q).getResultList();
+    }
 
     public List<Workflow> findByGitUrl(String giturl) {
         return list(namedQuery("io.dockstore.webservice.core.Workflow.findByGitUrl")
