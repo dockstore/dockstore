@@ -292,7 +292,9 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
         api.createHostedTool("awesomeToolCwl", LanguageType.CWL.toString(), "quay.io", "coolNamespace", null);
+        api.createHostedTool("awesomeToolCwl", LanguageType.CWL.toString(), "quay.io", "coolNamespace", "anotherName");
         api.createHostedTool("awesomeToolWdl", LanguageType.WDL.toString(), "quay.io", "coolNamespace", null);
+        api.createHostedTool("awesomeToolWdl", LanguageType.WDL.toString(), "quay.io", "coolNamespace", "anotherName");
         thrown.expect(ApiException.class);
         api.createHostedTool("awesomeToolCwll", "cwll", "quay.io", "coolNamespace", null);
     }
@@ -410,7 +412,10 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
         api.createHostedWorkflow("awesomeToolCwl", LanguageType.CWL.toString(), null, null, null);
+        api.createHostedWorkflow("awesomeToolCwl", LanguageType.CWL.toString(), null, null, "randomName");
+
         api.createHostedWorkflow("awesomeToolWdl", LanguageType.WDL.toString(), null, null, null);
+        api.createHostedWorkflow("awesomeToolWdl", LanguageType.WDL.toString(), null, null, "randomName");
         thrown.expect(ApiException.class);
         api.createHostedWorkflow("awesomeToolCwll", "cwll", null, null, null);
     }
