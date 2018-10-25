@@ -114,7 +114,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "For tools, the Docker registry") @QueryParam("registry") String registry,
         @ApiParam(value = "name", required = true) @QueryParam("name") String name,
         @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
-        @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace) {
+        @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace,
+            @ApiParam(value = "Optional entry name") @QueryParam("entryName") String entryName) {
 
         // check if the user has hit a limit yet
         final long currentCount = getEntryDAO().countAllHosted(user.getId());
@@ -123,7 +124,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         descriptorType = checkType(descriptorType);
-        T entry = getEntry(user, registry, name, descriptorType, namespace);
+        T entry = getEntry(user, registry, name, descriptorType, namespace, entryName);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
@@ -142,7 +143,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @param namespace
      * @return
      */
-    protected abstract T getEntry(User user, String registry, String name, String descriptorType, String namespace);
+    protected abstract T getEntry(User user, String registry, String name, String descriptorType, String namespace, String entryName);
 
     @Override
     public void checkUserCanUpdate(User user, Entry entry) {

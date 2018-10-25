@@ -798,18 +798,18 @@ public class SwaggerClientIT extends BaseIT {
     private void registerHostedWorkflow(String s) {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
+        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s, null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
+        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s, null);
     }
 
     @Test
     public void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org");
+        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org", null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org");
+        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org", null);
     }
 
     /**
@@ -833,7 +833,7 @@ public class SwaggerClientIT extends BaseIT {
         final User user2 = users2Api.getUser();
 
         // Create a hosted workflow
-        final Workflow hostedWorkflow = user1HostedApi.createHostedWorkflow("hosted1", "cwl", null, null);
+        final Workflow hostedWorkflow = user1HostedApi.createHostedWorkflow("hosted1", "cwl", null, null, null);
         final String fullWorkflowPath = hostedWorkflow.getFullWorkflowPath();
 
         // User 2 should have no workflows shared with

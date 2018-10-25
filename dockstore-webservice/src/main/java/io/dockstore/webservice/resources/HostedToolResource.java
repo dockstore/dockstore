@@ -75,12 +75,12 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace) {
-        return super.createHosted(user, registry, name, descriptorType, namespace);
+    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+        return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 
     @Override
-    protected Tool getEntry(User user, String registry, String name, String descriptorType, String namespace) {
+    protected Tool getEntry(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
         Tool tool = new Tool();
         tool.setRegistry(registry);
         tool.setNamespace(namespace);
@@ -88,6 +88,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         tool.setMode(ToolMode.HOSTED);
         tool.setLastUpdated(new Date());
         tool.setLastModified(new Date());
+        tool.setToolname(entryName);
         tool.getUsers().add(user);
         return tool;
     }

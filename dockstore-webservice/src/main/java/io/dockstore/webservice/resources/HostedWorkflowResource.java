@@ -90,8 +90,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Override
     @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace) {
-        return super.createHosted(user, registry, name, descriptorType, namespace);
+    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+        return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected Workflow getEntry(User user, String registry, String name, String descriptorType, String namespace) {
+    protected Workflow getEntry(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
         Workflow workflow = new Workflow();
         workflow.setMode(WorkflowMode.HOSTED);
         // TODO: We set the organization to the username of the user creating it. However, for gmail accounts this is an
@@ -139,6 +139,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setDescriptorType(descriptorType);
         workflow.setLastUpdated(new Date());
         workflow.setLastModified(new Date());
+        workflow.setWorkflowName(entryName);
         workflow.setDefaultWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(descriptorType.toLowerCase()));
         workflow.getUsers().add(user);
         return workflow;
