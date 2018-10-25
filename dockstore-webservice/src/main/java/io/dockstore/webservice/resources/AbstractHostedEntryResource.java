@@ -31,7 +31,6 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
-import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -111,10 +110,10 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Timed
     @UnitOfWork
     public T createHosted(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "For tools, the Docker registry") @QueryParam("registry") String registry,
-        @ApiParam(value = "name", required = true) @QueryParam("name") String name,
-        @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
-        @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace,
+        @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
+        @ApiParam(value = "The repository name.", required = true) @QueryParam("name") String name,
+        @ApiParam(value = "The descriptor type (Workflows only)", required = true) @QueryParam("descriptorType") String descriptorType,
+        @ApiParam(value = "The Docker namespace (Tools only") @QueryParam("namespace") String namespace,
             @ApiParam(value = "Optional entry name") @QueryParam("entryName") String entryName) {
 
         // check if the user has hit a limit yet
@@ -123,6 +122,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + calculatedEntryLimit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
+        // Only check type for workflows
         descriptorType = checkType(descriptorType);
         T entry = getEntry(user, registry, name, descriptorType, namespace, entryName);
         checkForDuplicatePath(entry);
@@ -214,14 +214,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
     }
 
-    private String checkType(String descriptorType) {
-        if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
-                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
-                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
-            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
-        }
-        return descriptorType.toLowerCase();
-    }
+    abstract String checkType(String descriptorType);
 
     /**
      * Create new version of a workflow or tag of a tool

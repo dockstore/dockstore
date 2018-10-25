@@ -146,4 +146,10 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
         return (isValidCWL || isValidWDL) && hasDockerfile;
     }
+
+    @Override
+    String checkType(String descriptorType) {
+        // Descriptor type does not matter for tools
+        return descriptorType;
+    }
 }

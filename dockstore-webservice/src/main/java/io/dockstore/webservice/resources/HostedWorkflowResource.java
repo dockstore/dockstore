@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.ws.rs.Path;
 
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -186,5 +187,15 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             }
         }
         return false;
+    }
+
+    @Override
+    String checkType(String descriptorType) {
+        if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
+                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
+                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
+            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
+        }
+        return descriptorType.toLowerCase();
     }
 }
