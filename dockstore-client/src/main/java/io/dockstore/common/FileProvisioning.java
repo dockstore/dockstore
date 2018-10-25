@@ -102,10 +102,10 @@ public class FileProvisioning {
             // Map of ProvisionInterface & PreProvisionInterface plugins
             this.pluginsMap = this.plugins
                     .stream()
-                    .collect(Collectors.toMap(plugin -> plugin.getClass().getName().split("\\$")[0], plugin -> plugin));
+                    .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
             this.preProvisionMap = this.preProvisionPlugins
                     .stream()
-                    .collect(Collectors.toMap(plugin -> plugin.getClass().getName().split("\\$")[0], plugin -> plugin));
+                    .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
 
             List<PluginWrapper> pluginWrappers = pluginManager.getPlugins();
             for (PluginWrapper pluginWrapper : pluginWrappers) {
@@ -145,6 +145,10 @@ public class FileProvisioning {
     private static boolean isCacheOn(INIConfiguration config) {
         final String useCache = config.getString("use-cache", "false");
         return "true".equalsIgnoreCase(useCache) || "use".equalsIgnoreCase(useCache) || "T".equalsIgnoreCase(useCache);
+    }
+
+    static String findPluginName(String classObj) {
+        return classObj.split("\\$")[0];
     }
 
     public static void main(String[] args) {
