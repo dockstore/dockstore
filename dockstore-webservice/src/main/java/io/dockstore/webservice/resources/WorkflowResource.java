@@ -760,18 +760,22 @@ public class WorkflowResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, tags = {
         "workflows" }, response = SharedWorkflows.class, responseContainer = "List")
     public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
+        final List<String> paths =
+            this.permissionsInterface.workflowsSharedWithUser(user).values()
+                .stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        // Fetch workflows in batch
+        List<Workflow> workflowList = workflowDAO.findByPaths(paths, false);
+
         return this.permissionsInterface.workflowsSharedWithUser(user).entrySet().stream().map(e -> {
-            final List<Workflow> workflows = e.getValue().stream().map(path -> {
-                // TODO: Fetch workflows in bulk rather than 1 by 1.
-                final Workflow workflow = workflowDAO.findByPath(path, false);
-                // If user is the owner of the workflow, don't include it as shared with
-                if (workflow != null && !workflow.getUsers().contains(user)) {
-                    return workflow;
-                }
-                return null;
-            }).filter(Objects::nonNull).collect(Collectors.toList());
+            // Create a SharedWorkFlow map for each Role and the list of workflows that belong to it
+            final List<Workflow> workflows = workflowList.stream()
+                .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()))
+                .collect(Collectors.toList());
             return new SharedWorkflows(e.getKey(), workflows);
-        }).filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0).collect(Collectors.toList());
+        }).collect(Collectors.toList());
     }
 
     @GET
