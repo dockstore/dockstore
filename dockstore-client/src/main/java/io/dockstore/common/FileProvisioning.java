@@ -81,9 +81,6 @@ public class FileProvisioning {
     private List<ProvisionInterface> plugins = new ArrayList<>();
     private List<PreProvisionInterface> preProvisionPlugins = new ArrayList<>();
 
-    private Map<String, ProvisionInterface> pluginsMap = new HashMap<>();
-    private Map<String, PreProvisionInterface> preProvisionMap = new HashMap<>();
-
     private INIConfiguration config;
 
     /**
@@ -100,12 +97,13 @@ public class FileProvisioning {
             this.preProvisionPlugins = pluginManager.getExtensions(PreProvisionInterface.class);
 
             // Map of ProvisionInterface & PreProvisionInterface plugins
-            this.pluginsMap = this.plugins
-                    .stream()
-                    .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
-            this.preProvisionMap = this.preProvisionPlugins
-                    .stream()
-                    .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
+            Map<String, ProvisionInterface> pluginsMap = this.plugins
+                .stream()
+                .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
+
+            Map<String, PreProvisionInterface> preProvisionMap = this.preProvisionPlugins
+                .stream()
+                .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
 
             List<PluginWrapper> pluginWrappers = pluginManager.getPlugins();
             for (PluginWrapper pluginWrapper : pluginWrappers) {
@@ -147,7 +145,12 @@ public class FileProvisioning {
         return "true".equalsIgnoreCase(useCache) || "use".equalsIgnoreCase(useCache) || "T".equalsIgnoreCase(useCache);
     }
 
-    static String findPluginName(String classObj) {
+    /*
+     * Retrieves plugin name given object class name.
+     * Splits outer plugin class name (which extends Plugin abstract class) and inner class name (which extends
+     * ProvisionInterface or PreProvisionInterface), then returns outer plugin name
+    */
+    public static String findPluginName(String classObj) {
         return classObj.split("\\$")[0];
     }
 

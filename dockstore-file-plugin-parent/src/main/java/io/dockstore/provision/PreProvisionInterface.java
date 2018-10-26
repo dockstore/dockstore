@@ -53,6 +53,6 @@ public interface PreProvisionInterface extends ExtensionPoint {
      *
      */
     default void setConfiguration(Map<String, String> config) {
-
+        // No default implementation necessary
     };
 }
