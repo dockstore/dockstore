@@ -113,7 +113,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         @ApiParam(value = "The Docker registry (Tools only)") @QueryParam("registry") String registry,
         @ApiParam(value = "The repository name.", required = true) @QueryParam("name") String name,
         @ApiParam(value = "The descriptor type (Workflows only)", required = true) @QueryParam("descriptorType") String descriptorType,
-        @ApiParam(value = "The Docker namespace (Tools only") @QueryParam("namespace") String namespace,
+        @ApiParam(value = "The Docker namespace (Tools only)") @QueryParam("namespace") String namespace,
             @ApiParam(value = "Optional entry name") @QueryParam("entryName") String entryName) {
 
         // check if the user has hit a limit yet

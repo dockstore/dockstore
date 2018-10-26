@@ -1511,7 +1511,7 @@ paths:
             type: string
         - name: namespace
           in: query
-          description: The Docker namespace (Tools only
+          description: The Docker namespace (Tools only)
           required: false
           schema:
             type: string
@@ -3713,7 +3713,7 @@ paths:
             type: string
         - name: namespace
           in: query
-          description: The Docker namespace (Tools only
+          description: The Docker namespace (Tools only)
           required: false
           schema:
             type: string
