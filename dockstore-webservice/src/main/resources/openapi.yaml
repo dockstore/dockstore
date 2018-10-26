@@ -1499,14 +1499,14 @@ paths:
             type: string
         - name: name
           in: query
-          description: The repository name.
+          description: The repository name
           required: true
           schema:
             type: string
         - name: descriptorType
           in: query
           description: The descriptor type (Workflows only)
-          required: true
+          required: false
           schema:
             type: string
         - name: namespace
@@ -3701,14 +3701,14 @@ paths:
             type: string
         - name: name
           in: query
-          description: The repository name.
+          description: The repository name
           required: true
           schema:
             type: string
         - name: descriptorType
           in: query
           description: The descriptor type (Workflows only)
-          required: true
+          required: false
           schema:
             type: string
         - name: namespace

@@ -1240,13 +1240,13 @@ paths:
         type: "string"
       - name: "name"
         in: "query"
-        description: "The repository name."
+        description: "The repository name"
         required: true
         type: "string"
       - name: "descriptorType"
         in: "query"
         description: "The descriptor type (Workflows only)"
-        required: true
+        required: false
         type: "string"
       - name: "namespace"
         in: "query"
@@ -3375,13 +3375,13 @@ paths:
         type: "string"
       - name: "name"
         in: "query"
-        description: "The repository name."
+        description: "The repository name"
         required: true
         type: "string"
       - name: "descriptorType"
         in: "query"
         description: "The descriptor type (Workflows only)"
-        required: true
+        required: false
         type: "string"
       - name: "namespace"
         in: "query"
