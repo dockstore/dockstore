@@ -123,8 +123,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         // Only check type for workflows
-        descriptorType = checkType(descriptorType);
-        T entry = getEntry(user, registry, name, descriptorType, namespace, entryName);
+        String convertedDescriptorType = checkType(descriptorType);
+        T entry = getEntry(user, registry, name, convertedDescriptorType, namespace, entryName);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
@@ -214,7 +214,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
     }
 
-    abstract String checkType(String descriptorType);
+    protected abstract String checkType(String descriptorType);
 
     /**
      * Create new version of a workflow or tag of a tool

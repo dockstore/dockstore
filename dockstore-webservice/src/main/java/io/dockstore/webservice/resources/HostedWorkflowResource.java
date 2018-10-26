@@ -190,7 +190,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    String checkType(String descriptorType) {
+    protected String checkType(String descriptorType) {
         if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
                 && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
                 && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {

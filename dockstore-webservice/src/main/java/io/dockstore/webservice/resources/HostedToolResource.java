@@ -148,7 +148,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    String checkType(String descriptorType) {
+    protected String checkType(String descriptorType) {
         // Descriptor type does not matter for tools
         return descriptorType;
     }
