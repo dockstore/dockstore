@@ -295,7 +295,8 @@ public class CRUDClientIT extends BaseIT {
         api.createHostedTool("awesomeToolCwl", LanguageType.CWL.toString(), "quay.io", "coolNamespace", "anotherName");
         api.createHostedTool("awesomeToolWdl", LanguageType.WDL.toString(), "quay.io", "coolNamespace", null);
         api.createHostedTool("awesomeToolWdl", LanguageType.WDL.toString(), "quay.io", "coolNamespace", "anotherName");
-        thrown.expect(ApiException.class);
+
+        // Invalid descriptor type does not matter for tools
         api.createHostedTool("awesomeToolCwll", "cwll", "quay.io", "coolNamespace", null);
     }
 
