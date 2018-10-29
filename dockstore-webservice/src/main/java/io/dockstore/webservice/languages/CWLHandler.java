@@ -459,7 +459,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(fileType);
         sourceFile.setContent(fileResponse);
-        sourceFile.setPath(constructedPath);
+        sourceFile.setPath(mapValue);
         imports.put(constructedPath, sourceFile);
     }
 

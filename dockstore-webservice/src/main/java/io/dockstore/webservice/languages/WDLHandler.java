@@ -232,10 +232,10 @@ public class WDLHandler implements LanguageHandlerInterface {
                     continue;
                 }
                 importFile.setContent(fileResponse);
-                importFile.setPath(constructedPath);
+                importFile.setPath(importPath);
                 importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
                 imports.put(importFile.getPath(), importFile);
-                imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, importFile.getPath()));
+                imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, constructedPath));
             }
         }
         return imports;
