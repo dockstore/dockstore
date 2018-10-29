@@ -70,10 +70,11 @@ public interface LanguageHandlerInterface {
      * @param content                 content of the primary descriptor
      * @param version                 version of the files to get
      * @param sourceCodeRepoInterface used too retrieve imports
+     * @param filepath                used to help find relative imports
      * @return map of file paths to SourceFile objects
      */
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface);
+        SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
 
     /**
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation

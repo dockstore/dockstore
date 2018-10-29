@@ -18,6 +18,7 @@ package io.dockstore.webservice.languages;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -195,12 +196,13 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface) {
-        return processImports(repositoryId, content, version, sourceCodeRepoInterface, new HashMap<>());
+        SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
+        String parentPath = Paths.get(filepath).getParent().toString();
+        return processImports(repositoryId, content, version, sourceCodeRepoInterface, new HashMap<>(), parentPath);
     }
 
     private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports) {
+        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String workingDirectoryForFile) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
 
         // Use matcher to get imports
@@ -222,16 +224,18 @@ public class WDLHandler implements LanguageHandlerInterface {
             if (!imports.containsKey(importPath)) {
                 SourceFile importFile = new SourceFile();
 
-                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, importPath);
+                String constructedPath = Paths.get(workingDirectoryForFile).resolve(importPath).normalize().toString();
+
+                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, constructedPath);
                 if (fileResponse == null) {
-                    SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
+                    SourceCodeRepoInterface.LOG.error("Could not read: " + constructedPath);
                     continue;
                 }
                 importFile.setContent(fileResponse);
-                importFile.setPath(importPath);
+                importFile.setPath(constructedPath);
                 importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
                 imports.put(importFile.getPath(), importFile);
-                imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports));
+                imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, importFile.getPath()));
             }
         }
         return imports;

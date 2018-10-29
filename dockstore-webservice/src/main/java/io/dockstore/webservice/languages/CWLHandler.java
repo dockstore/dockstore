@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -142,8 +143,9 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
-        return processImports(repositoryId, "", content, version, sourceCodeRepoInterface);
+    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
+        String parentPath = Paths.get(filepath).getParent().toString();
+        return processImports(repositoryId, parentPath, content, version, sourceCodeRepoInterface);
     }
 
     private Map<String, SourceFile> processImports(String repositoryId, String workingDirectoryForFile, String content, Version version,
@@ -448,7 +450,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     private void handleImport(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, String mapValue, SourceCodeRepoInterface sourceCodeRepoInterface) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_CWL;
         // create a new source file
-        String constructedPath = workingDirectoryForFile + mapValue;
+        String constructedPath = Paths.get(workingDirectoryForFile).resolve(mapValue).normalize().toString();
         final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, constructedPath);
         if (fileResponse == null) {
             LOG.error("Could not read: " + mapValue);

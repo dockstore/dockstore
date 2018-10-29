@@ -391,7 +391,7 @@ public abstract class SourceCodeRepoInterface {
 
         if (sourceFile != null && sourceFile.getContent() != null) {
             final Map<String, SourceFile> stringSourceFileMap = this
-                .resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version);
+                .resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version, sourceFile.getPath());
             sourceFileSet.addAll(stringSourceFileMap.values());
         }
 
@@ -481,9 +481,9 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    Map<String, SourceFile> resolveImports(String repositoryId, String content, SourceFile.FileType fileType, Version version) {
+    Map<String, SourceFile> resolveImports(String repositoryId, String content, SourceFile.FileType fileType, Version version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
-        return languageInterface.processImports(repositoryId, content, version, this);
+        return languageInterface.processImports(repositoryId, content, version, this, filepath);
     }
 
     /**

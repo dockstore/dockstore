@@ -70,7 +70,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface) {
+        SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
         ConfigObject parse = getConfigObject(content);
         Map<String, SourceFile> imports = new HashMap<>();
 

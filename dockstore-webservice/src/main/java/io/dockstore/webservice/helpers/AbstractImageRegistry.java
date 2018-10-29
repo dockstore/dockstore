@@ -462,11 +462,11 @@ public abstract class AbstractImageRegistry {
                     } else if (f == SourceFile.FileType.DOCKSTORE_CWL) {
                         dockstoreFile.setPath(tag.getCwlPath());
                         // see if there are imported files and resolve them
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getCwlPath());
                         files.addAll(importedFiles.values());
                     } else if (f == SourceFile.FileType.DOCKSTORE_WDL) {
                         dockstoreFile.setPath(tag.getWdlPath());
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getWdlPath());
                         files.addAll(importedFiles.values());
                     } else {
                         //TODO add nextflow work here
