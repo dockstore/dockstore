@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.ExpressionTool;
@@ -144,8 +146,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
-        String parentPath = Paths.get(filepath).getParent().toString();
-        return processImports(repositoryId, parentPath, content, version, sourceCodeRepoInterface);
+        return processImports(repositoryId, filepath, content, version, sourceCodeRepoInterface);
     }
 
     private Map<String, SourceFile> processImports(String repositoryId, String workingDirectoryForFile, String content, Version version,
@@ -252,15 +253,23 @@ public class CWLHandler implements LanguageHandlerInterface {
                 defaultDockerPath = getRequirementOrHint(workflow.getRequirements(), workflow.getHints(), defaultDockerPath);
 
                 // Store workflow steps in json and then read it into map <String, WorkflowStep>
-                String stepJson = gson.toJson(workflow.getSteps());
+                Object steps = workflow.getSteps();
+                String stepJson = gson.toJson(steps);
+                Map<String, WorkflowStep> workflowStepMap;
+                if (steps instanceof ArrayList) {
+                    ArrayList<WorkflowStep> workflowStepList = gson.fromJson(stepJson, new TypeToken<ArrayList<WorkflowStep>>() {
+                    }.getType());
+                    workflowStepMap = new LinkedTreeMap<>();
+                    workflowStepList.forEach(workflowStep -> workflowStepMap.put(workflowStep.getId().toString(), workflowStep));
+                } else {
+                    workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {
+                    }.getType());
+                }
 
                 if (stepJson == null) {
                     LOG.error("Could not find any steps for the workflow.");
                     return null;
                 }
-
-                Map<String, WorkflowStep> workflowStepMap = gson.fromJson(stepJson, new TypeToken<Map<String, WorkflowStep>>() {
-                }.getType());
 
                 if (workflowStepMap == null) {
                     LOG.error("Error deserializing workflow steps");
@@ -332,6 +341,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
                     // Check secondary file for docker pull
                     if (secondaryFile != null) {
+                        secondaryFile = Paths.get(mainDescName).getParent().resolve(secondaryFile).normalize().toString();
                         stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, secondaryDescContent.get(secondaryFile), gson,
                             yaml);
                         if (isExpressionTool(secondaryDescContent.get(secondaryFile), yaml)) {
@@ -387,7 +397,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     return getJSONTableToolContent(nodeDockerInfo);
                 }
             } catch (JsonParseException ex) {
-                LOG.error("The JSON file provided is invalid.");
+                LOG.error("The JSON file provided is invalid.", ex);
                 return null;
             }
         } else {
@@ -450,16 +460,20 @@ public class CWLHandler implements LanguageHandlerInterface {
     private void handleImport(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, String mapValue, SourceCodeRepoInterface sourceCodeRepoInterface) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_CWL;
         // create a new source file
-        String constructedPath = Paths.get(workingDirectoryForFile).resolve(mapValue).normalize().toString();
+        Path workDir = Paths.get(workingDirectoryForFile);
+        if (!Objects.equals(workingDirectoryForFile, workDir.getRoot().toString())) {
+            workDir = workDir.getParent();
+        }
+        String constructedPath = workDir.resolve(mapValue).normalize().toString();
         final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, constructedPath);
         if (fileResponse == null) {
-            LOG.error("Could not read: " + mapValue);
+            LOG.error("Could not read: " + constructedPath);
             return;
         }
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(fileType);
         sourceFile.setContent(fileResponse);
-        sourceFile.setPath(mapValue);
+        sourceFile.setPath(constructedPath);
         imports.put(constructedPath, sourceFile);
     }
 
