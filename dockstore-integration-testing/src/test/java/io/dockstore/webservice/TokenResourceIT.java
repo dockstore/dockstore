@@ -104,8 +104,16 @@ public class TokenResourceIT extends BaseIT {
     private TokenDAO tokenDAO;
     private UserDAO userDAO;
     private long initialTokenCount;
-    private final String satellizerJSON = "{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n";
-    private final String satellizerJSONForRegistration = "{\"code\": \"fakeCode\", \"register\": true, \"redirectUri\": \"fakeRedirectUri\"}";
+    private final String satellizerJSON = "{\n" + "  \"authorizationData\": {\n" + "    \"response_type\": \"code\",\n"
+            + "    \"client_id\": \"fakeClilentId\",\n" + "    \"redirect_uri\": \"fakeRedirectUri\",\n" + "    \"state\": \"fakeState\",\n"
+            + "    \"scope\": \"fakeScope\",\n" + "    \"display\": \"popup\"\n" + "  },\n" + "  \"oauthData\": {\n"
+            + "    \"state\": \"fakeState\",\n" + "    \"code\": \"fakeCode\",\n" + "    \"scope\": \"fakeScope\"\n" + "  },\n"
+            + "  \"userData\": {\n" + "    \n" + "  }\n" + "}";
+    private final String satellizerJSONForRegistration = "{\n" + "  \"authorizationData\": {\n" + "    \"response_type\": \"code\",\n"
+            + "    \"client_id\": \"fakeCode\",\n" + "    \"redirect_uri\": \"fakeRedirectUri\",\n" + "    \"state\": \"fakeState\",\n"
+            + "    \"scope\": \"fakeScope\",\n" + "    \"display\": \"popup\"\n" + "  },\n" + "  \"oauthData\": {\n"
+            + "    \"state\": \"fakeState\",\n" + "    \"code\": \"fakeCode\",\n" + "    \"scope\": \"fakeScope\"\n" + "  },\n"
+            + "  \"userData\": {\n" + "    \"register\": true\n" + "  }\n" + "}";
     private final static String GOOGLE_ACCOUNT_USERNAME1 = "potato@gmail.com";
     private final static String GOOGLE_ACCOUNT_USERNAME2 = "beef@gmail.com";
     private final static String CUSTOM_USERNAME1 = "tuber";
