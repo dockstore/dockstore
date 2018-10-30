@@ -760,8 +760,10 @@ public class WorkflowResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, tags = {
         "workflows" }, response = SharedWorkflows.class, responseContainer = "List")
     public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
+        final Map<Role, List<String>> workflowsSharedWithUser  = this.permissionsInterface.workflowsSharedWithUser(user);
+
         final List<String> paths =
-            this.permissionsInterface.workflowsSharedWithUser(user).values()
+            workflowsSharedWithUser.values()
                 .stream()
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -769,13 +771,14 @@ public class WorkflowResource
         // Fetch workflows in batch
         List<Workflow> workflowList = workflowDAO.findByPaths(paths, false);
 
-        return this.permissionsInterface.workflowsSharedWithUser(user).entrySet().stream().map(e -> {
+        return workflowsSharedWithUser.entrySet().stream().map(e -> {
             // Create a SharedWorkFlow map for each Role and the list of workflows that belong to it
             final List<Workflow> workflows = workflowList.stream()
-                .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()))
+                    // Filter only the workflows that belong to the current Role and where the user is not the owner
+                .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()) && !workflow.getUsers().contains(user))
                 .collect(Collectors.toList());
             return new SharedWorkflows(e.getKey(), workflows);
-        }).collect(Collectors.toList());
+        }).filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0).collect(Collectors.toList());
     }
 
     @GET

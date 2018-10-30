@@ -34,6 +34,10 @@ import javax.persistence.criteria.Root;
  * @author dyuen
  */
 public class WorkflowDAO extends EntryDAO<Workflow> {
+
+    private static final String WORKFLOW_NAME = "workflowName";
+    private static final String IS_PUBLISHED = "isPublished";
+
     public WorkflowDAO(SessionFactory factory) {
         super(factory);
     }
@@ -159,20 +163,20 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             if (splitPath[entryNameIndex] == null) {
                 if (findPublished) {
                     predicate = cb.and(
-                            cb.isNull(entry.get("workflowName")),
-                            cb.isTrue(entry.get("isPublished"))
+                            cb.isNull(entry.get(WORKFLOW_NAME)),
+                            cb.isTrue(entry.get(IS_PUBLISHED))
                     );
                 } else {
-                    predicate = cb.isNull(entry.get("workflowName"));
+                    predicate = cb.isNull(entry.get(WORKFLOW_NAME));
                 }
             } else {
                 if (findPublished) {
                     predicate = cb.and(
-                            cb.equal(entry.get("workflowName"), workflowname),
-                            cb.isTrue(entry.get("isPublished"))
+                            cb.equal(entry.get(WORKFLOW_NAME), workflowname),
+                            cb.isTrue(entry.get(IS_PUBLISHED))
                     );
                 } else {
-                    predicate = cb.equal(entry.get("workflowName"), workflowname);
+                    predicate = cb.equal(entry.get(WORKFLOW_NAME), workflowname);
                 }
             }
 
