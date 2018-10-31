@@ -774,7 +774,7 @@ public class WorkflowResource
         return workflowsSharedWithUser.entrySet().stream().map(e -> {
             // Create a SharedWorkFlow map for each Role and the list of workflows that belong to it
             final List<Workflow> workflows = workflowList.stream()
-                    // Filter only the workflows that belong to the current Role and where the user is not the owner
+                // Filter only the workflows that belong to the current Role and where the user is not the owner
                 .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()) && !workflow.getUsers().contains(user))
                 .collect(Collectors.toList());
             return new SharedWorkflows(e.getKey(), workflows);
