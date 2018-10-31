@@ -32,4 +32,13 @@ public class FileProvisionTest {
         assertEquals(FileProvisioning.findSupportedTargetPath(Arrays.asList(s3Mock, httpMock),
                 Arrays.asList("gcs://something")), Optional.empty());
     }
+
+    @Test
+    public void testFindPluginName() {
+        String s3Class = "io.dockstore.provision.S3Plugin$S3Provision";
+        String dosClass = "io.dockstore.provision.DOSPlugin$DOSPreProvision";
+
+        assertEquals("io.dockstore.provision.S3Plugin", FileProvisioning.findPluginName(s3Class));
+        assertEquals("io.dockstore.provision.DOSPlugin", FileProvisioning.findPluginName(dosClass));
+    }
 }
