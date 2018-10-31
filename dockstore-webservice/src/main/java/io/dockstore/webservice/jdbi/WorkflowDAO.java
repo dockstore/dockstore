@@ -141,7 +141,6 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
     public List<Workflow> findByPaths(List<String> paths, boolean findPublished) {
         List<Predicate> predicates = new ArrayList<>();
         SourceControlConverter converter = new SourceControlConverter();
-        Predicate predicate;
 
         // Create dynamic query using a CriteriaBuilder instance for all paths in the given list of strings
         CriteriaBuilder cb = currentSession().getCriteriaBuilder();
@@ -160,6 +159,7 @@ public class WorkflowDAO extends EntryDAO<Workflow> {
             String repository = splitPath[repoIndex];
             String workflowname = splitPath[entryNameIndex];
 
+            Predicate predicate;
             if (splitPath[entryNameIndex] == null) {
                 if (findPublished) {
                     predicate = cb.and(
