@@ -56,7 +56,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
     @Override
-    public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
         try {

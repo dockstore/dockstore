@@ -293,7 +293,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Parse file content and update
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        entry = anInterface.parseWorkflowContent(entry, firstFileContent, sourceFiles);
+        entry = anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles);
         return entry;
     }
 

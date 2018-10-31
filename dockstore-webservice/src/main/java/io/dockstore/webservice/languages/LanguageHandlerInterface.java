@@ -49,11 +49,12 @@ public interface LanguageHandlerInterface {
     /**
      * Parses the content of the primary descriptor to get author, email, and description
      *
-     * @param entry   an entry to be updated
-     * @param content a cwl document
+     * @param entry    an entry to be updated
+     * @param filepath path to file
+     * @param content  a cwl document
      * @return the updated entry
      */
-    Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles);
+    Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles);
 
     /**
      * Confirms whether the content of a descriptor contains a valid workflow

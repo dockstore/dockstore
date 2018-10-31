@@ -49,7 +49,7 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 public class NextFlowHandler implements LanguageHandlerInterface {
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         ConfigObject parse = getConfigObject(content);
         ConfigObject manifest = (ConfigObject)parse.get("manifest");

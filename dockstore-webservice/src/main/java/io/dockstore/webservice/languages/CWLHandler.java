@@ -64,7 +64,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(CWLHandler.class);
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // parse the collab.cwl file to get important metadata
         if (content != null && !content.isEmpty()) {
             try {
@@ -80,7 +80,14 @@ public class CWLHandler implements LanguageHandlerInterface {
                         Map docMap = (Map)doc;
                         if (docMap.containsKey("$include")) {
                             String enclosingFile = (String)docMap.get("$include");
-                            Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFile))
+                            // convert enclosing file to abs path
+                            Path workDir = Paths.get(filepath);
+                            if (!Objects.equals(filepath, workDir.getRoot().toString())) {
+                                workDir = workDir.getParent();
+                            }
+                            String enclosingFileAbsolute = workDir.resolve(enclosingFile).normalize().toString();
+
+                            Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFileAbsolute))
                                 .findFirst();
                             if (first.isPresent()) {
                                 description = first.get().getContent();
