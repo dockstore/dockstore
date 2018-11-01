@@ -81,14 +81,14 @@ public interface LanguageHandlerInterface {
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation
      * of a workflow
      *
-     * @param mainDescName         the name of the main descriptor
+     * @param mainDescriptorPath   the path of the main descriptor
      * @param mainDescriptor       the content of the main descriptor
      * @param secondaryDescContent the content of the secondary descriptors in a map, looks like file paths -> content
      * @param type                 tools or DAG
      * @param dao                  used to retrieve information on tools
      * @return either a DAG or some form of a list of tools for a workflow
      */
-    String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
+    String getContent(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
 
     /**
      * This method will setup the nodes (nodePairs) and edges (stepToDependencies) into Cytoscape compatible JSON

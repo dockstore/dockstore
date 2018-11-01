@@ -80,14 +80,8 @@ public class CWLHandler implements LanguageHandlerInterface {
                         Map docMap = (Map)doc;
                         if (docMap.containsKey("$include")) {
                             String enclosingFile = (String)docMap.get("$include");
-                            // convert enclosing file to abs path
-                            Path workDir = Paths.get(filepath);
-                            if (!Objects.equals(filepath, workDir.getRoot().toString())) {
-                                workDir = workDir.getParent();
-                            }
-                            String enclosingFileAbsolute = workDir.resolve(enclosingFile).normalize().toString();
 
-                            Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFileAbsolute))
+                            Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFile))
                                 .findFirst();
                             if (first.isPresent()) {
                                 description = first.get().getContent();
@@ -169,8 +163,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
         Map<String, SourceFile> recursiveImports = new HashMap<>();
         for (SourceFile file : imports.values()) {
-            String workingDirectory = FilenameUtils.getFullPath(file.getPath());
-            final Map<String, SourceFile> sourceFiles = processImports(repositoryId, workingDirectory, file.getContent(), version, sourceCodeRepoInterface);
+            final Map<String, SourceFile> sourceFiles = processImports(repositoryId, workingDirectoryForFile, file.getContent(), version, sourceCodeRepoInterface);
             recursiveImports.putAll(sourceFiles);
         }
         recursiveImports.putAll(imports);
@@ -221,7 +214,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
     @Override
     @SuppressWarnings("checkstyle:methodlength")
-    public String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, LanguageHandlerInterface.Type type,
+    public String getContent(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, LanguageHandlerInterface.Type type,
         ToolDAO dao) {
         Yaml yaml = new Yaml();
         if (isValidCwl(mainDescriptor, yaml)) {
@@ -348,7 +341,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
                     // Check secondary file for docker pull
                     if (secondaryFile != null) {
-                        secondaryFile = Paths.get(mainDescName).getParent().resolve(secondaryFile).normalize().toString();
+                        secondaryFile = convertImportPathToAbsolutePath(mainDescriptorPath, secondaryFile);
                         stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, secondaryDescContent.get(secondaryFile), gson,
                             yaml);
                         if (isExpressionTool(secondaryDescContent.get(secondaryFile), yaml)) {
@@ -374,7 +367,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                     if (secondaryFile != null) {
                         nodeDockerInfo.put(workflowStepId, new MutableTriple<>(secondaryFile, stepDockerRequirement, dockerUrl));
                     } else {
-                        nodeDockerInfo.put(workflowStepId, new MutableTriple<>(mainDescName, stepDockerRequirement, dockerUrl));
+                        nodeDockerInfo.put(workflowStepId, new MutableTriple<>(mainDescriptorPath, stepDockerRequirement, dockerUrl));
                     }
 
                 }
@@ -467,11 +460,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     private void handleImport(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, String mapValue, SourceCodeRepoInterface sourceCodeRepoInterface) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_CWL;
         // create a new source file
-        Path workDir = Paths.get(workingDirectoryForFile);
-        if (!Objects.equals(workingDirectoryForFile, workDir.getRoot().toString())) {
-            workDir = workDir.getParent();
-        }
-        String constructedPath = workDir.resolve(mapValue).normalize().toString();
+        String constructedPath = convertImportPathToAbsolutePath(workingDirectoryForFile, mapValue);
         final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, constructedPath);
         if (fileResponse == null) {
             LOG.error("Could not read: " + constructedPath);
@@ -480,7 +469,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(fileType);
         sourceFile.setContent(fileResponse);
-        sourceFile.setPath(constructedPath);
+        sourceFile.setPath(mapValue);
         imports.put(constructedPath, sourceFile);
     }
 
@@ -665,5 +654,24 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
 
         return filteredArray;
+    }
+
+    /**
+     * Resolves a relative path based on an absolute parent path
+     * @param parentPath Absolute path to parent file
+     * @param importPath Relative path the parent file
+     * @return
+     */
+    private String convertImportPathToAbsolutePath(String parentPath, String importPath) {
+        if (importPath.startsWith("/")) {
+            return importPath;
+        }
+
+        Path workingDirectory = Paths.get(parentPath);
+        if (!Objects.equals(parentPath, workingDirectory.getRoot().toString())) {
+            workingDirectory = workingDirectory.getParent();
+        }
+
+        return workingDirectory.resolve(importPath).normalize().toString();
     }
 }
