@@ -760,16 +760,23 @@ public class WorkflowResource
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, tags = {
         "workflows" }, response = SharedWorkflows.class, responseContainer = "List")
     public List<SharedWorkflows> sharedWorkflows(@ApiParam(hidden = true) @Auth User user) {
-        return this.permissionsInterface.workflowsSharedWithUser(user).entrySet().stream().map(e -> {
-            final List<Workflow> workflows = e.getValue().stream().map(path -> {
-                // TODO: Fetch workflows in bulk rather than 1 by 1.
-                final Workflow workflow = workflowDAO.findByPath(path, false);
-                // If user is the owner of the workflow, don't include it as shared with
-                if (workflow != null && !workflow.getUsers().contains(user)) {
-                    return workflow;
-                }
-                return null;
-            }).filter(Objects::nonNull).collect(Collectors.toList());
+        final Map<Role, List<String>> workflowsSharedWithUser  = this.permissionsInterface.workflowsSharedWithUser(user);
+
+        final List<String> paths =
+            workflowsSharedWithUser.values()
+                .stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        // Fetch workflows in batch
+        List<Workflow> workflowList = workflowDAO.findByPaths(paths, false);
+
+        return workflowsSharedWithUser.entrySet().stream().map(e -> {
+            // Create a SharedWorkFlow map for each Role and the list of workflows that belong to it
+            final List<Workflow> workflows = workflowList.stream()
+                // Filter only the workflows that belong to the current Role and where the user is not the owner
+                .filter(workflow -> e.getValue().contains(workflow.getWorkflowPath()) && !workflow.getUsers().contains(user))
+                .collect(Collectors.toList());
             return new SharedWorkflows(e.getKey(), workflows);
         }).filter(sharedWorkflow -> sharedWorkflow.getWorkflows().size() > 0).collect(Collectors.toList());
     }
