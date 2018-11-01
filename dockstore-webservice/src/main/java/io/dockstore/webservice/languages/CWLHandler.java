@@ -338,7 +338,6 @@ public class CWLHandler implements LanguageHandlerInterface {
 
                     // Check secondary file for docker pull
                     if (secondaryFile != null) {
-                        secondaryFile = convertImportPathToAbsolutePath(mainDescriptorPath, secondaryFile);
                         stepDockerRequirement = parseSecondaryFile(stepDockerRequirement, secondaryDescContent.get(secondaryFile), gson,
                             yaml);
                         if (isExpressionTool(secondaryDescContent.get(secondaryFile), yaml)) {
