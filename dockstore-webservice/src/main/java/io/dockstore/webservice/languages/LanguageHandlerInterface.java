@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -260,6 +261,20 @@ public interface LanguageHandlerInterface {
         }
 
         return url;
+    }
+
+    /**
+     * Resolves a relative path based on an absolute parent path
+     * @param parentPath Absolute path to parent file
+     * @param importPath Relative path the parent file
+     * @return Absolute version of relative path
+     */
+    default String convertImportPathToAbsolutePath(String parentPath, String importPath) {
+        if (importPath.startsWith("/")) {
+            return importPath;
+        }
+
+        return Paths.get(parentPath).getParent().resolve(importPath).normalize().toString();
     }
 
     /**

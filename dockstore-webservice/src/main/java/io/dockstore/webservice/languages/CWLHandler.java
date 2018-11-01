@@ -15,8 +15,6 @@
  */
 package io.dockstore.webservice.languages;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,7 +43,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
@@ -654,24 +651,5 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
 
         return filteredArray;
-    }
-
-    /**
-     * Resolves a relative path based on an absolute parent path
-     * @param parentPath Absolute path to parent file
-     * @param importPath Relative path the parent file
-     * @return
-     */
-    private String convertImportPathToAbsolutePath(String parentPath, String importPath) {
-        if (importPath.startsWith("/")) {
-            return importPath;
-        }
-
-        Path workingDirectory = Paths.get(parentPath);
-        if (!Objects.equals(parentPath, workingDirectory.getRoot().toString())) {
-            workingDirectory = workingDirectory.getParent();
-        }
-
-        return workingDirectory.resolve(importPath).normalize().toString();
     }
 }
