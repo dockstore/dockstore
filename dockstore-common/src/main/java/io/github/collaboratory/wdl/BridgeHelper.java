@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
  */
 public class BridgeHelper {
     private static final Logger LOG = LoggerFactory.getLogger(BridgeHelper.class);
-    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     /**
      * This resolves a URL into file content
