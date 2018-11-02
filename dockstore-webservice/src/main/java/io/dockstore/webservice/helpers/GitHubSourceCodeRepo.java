@@ -247,7 +247,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             github.getMyOrganizations();
         } catch (IOException e) {
             throw new CustomWebApplicationException(
-                "Please recreate your GitHub token, we probably need an upgraded token to list your organizations", HttpStatus.SC_BAD_REQUEST);
+                "Please recreate your GitHub token by unlinking and then relinking your GitHub account through the Accounts page. "
+                        + "We need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
         }
         return true;
     }
