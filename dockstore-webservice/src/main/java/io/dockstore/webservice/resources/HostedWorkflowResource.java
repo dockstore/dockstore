@@ -191,11 +191,11 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     @Override
     protected String checkType(String descriptorType) {
-        if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
-                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
-                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
-            throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
+        for (DescriptorLanguage descriptorLanguage : DescriptorLanguage.values()) {
+            if (Objects.equals(descriptorLanguage.toString().toLowerCase(), descriptorType.toLowerCase())) {
+                return descriptorType.toLowerCase();
+            }
         }
-        return descriptorType.toLowerCase();
+        throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
     }
 }
