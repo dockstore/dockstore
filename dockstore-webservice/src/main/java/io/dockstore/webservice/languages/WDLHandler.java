@@ -197,8 +197,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
-        String parentPath = Paths.get(filepath).getParent().toString();
-        return processImports(repositoryId, content, version, sourceCodeRepoInterface, new HashMap<>(), parentPath);
+        return processImports(repositoryId, content, version, sourceCodeRepoInterface, new HashMap<>(), filepath);
     }
 
     private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
