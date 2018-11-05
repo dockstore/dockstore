@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -75,8 +77,8 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace) {
-        return super.createHosted(user, registry, name, descriptorType, namespace);
+    public Response createHosted(User user, String registry, String name, String descriptorType, String namespace, UriInfo uriInfo) {
+        return super.createHosted(user, registry, name, descriptorType, namespace, uriInfo);
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.net.URI;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +28,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
@@ -82,7 +86,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private final int calculatedEntryLimit;
     private final int calculatedEntryVersionLimit;
 
-    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface, DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
+    AbstractHostedEntryResource(SessionFactory sessionFactory, PermissionsInterface permissionsInterface,
+            DockstoreWebserviceConfiguration.LimitConfig limitConfig) {
         this.fileFormatDAO = new FileFormatDAO(sessionFactory);
         this.fileDAO = new FileDAO(sessionFactory);
         this.elasticManager = new ElasticManager();
@@ -110,16 +115,18 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Path("/hostedEntry")
     @Timed
     @UnitOfWork
-    public T createHosted(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "For tools, the Docker registry") @QueryParam("registry") String registry,
-        @ApiParam(value = "name", required = true) @QueryParam("name") String name,
-        @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
-        @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace) {
+    public Response createHosted(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "For tools, the Docker registry") @QueryParam("registry") String registry,
+            @ApiParam(value = "name", required = true) @QueryParam("name") String name,
+            @ApiParam(value = "Descriptor type", required = true) @QueryParam("descriptorType") String descriptorType,
+            @ApiParam(value = "For tools, the Docker namespace") @QueryParam("namespace") String namespace, @Context UriInfo uriInfo) {
 
         // check if the user has hit a limit yet
         final long currentCount = getEntryDAO().countAllHosted(user.getId());
         if (currentCount >= calculatedEntryLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + calculatedEntryLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+            throw new CustomWebApplicationException(
+                    "You have " + currentCount + " workflows which is at the current limit of " + calculatedEntryLimit,
+                    HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         descriptorType = checkType(descriptorType);
@@ -128,13 +135,16 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
         elasticManager.handleIndexUpdate(byId, ElasticMode.UPDATE);
-        return byId;
+
+        URI requestURI = uriInfo.getRequestUri();
+        return Response.created(requestURI).entity(byId).build();
     }
 
     protected abstract void checkForDuplicatePath(T entry);
 
     /**
      * TODO: ugly, too many strings lead to an easy mix-up of order.
+     *
      * @param user
      * @param registry
      * @param name
@@ -165,8 +175,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Timed
     @UnitOfWork
     public T editHosted(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
+            @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
+            @ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
         checkUserCanUpdate(user, entry);
@@ -175,14 +185,18 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         // check if the user has hit a limit yet
         final long currentCount = entry.getVersions().size();
         if (currentCount >= calculatedEntryVersionLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+            throw new CustomWebApplicationException(
+                    "You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit,
+                    HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
         boolean isValidVersion = checkValidVersion(versionSourceFiles, entry);
         if (!isValidVersion) {
-            throw new CustomWebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(
+                    "Your edited files are invalid. No new version was created. Please check your syntax and try again.",
+                    HttpStatus.SC_BAD_REQUEST);
         }
         version.setValid(true);
         version.setVersionEditor(user);
@@ -214,9 +228,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     }
 
     private String checkType(String descriptorType) {
-        if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING)
-                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING)
-                && !Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
+        if (!Objects.equals(descriptorType.toLowerCase(), DescriptorLanguage.CWL_STRING) && !Objects
+                .equals(descriptorType.toLowerCase(), DescriptorLanguage.WDL_STRING) && !Objects
+                .equals(descriptorType.toLowerCase(), DescriptorLanguage.NFL_STRING)) {
             throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
         }
         return descriptorType.toLowerCase();
@@ -224,6 +238,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
     /**
      * Create new version of a workflow or tag of a tool
+     *
      * @param entry the parent for the new version
      * @return the new version
      */
@@ -234,8 +249,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     @Timed
     @UnitOfWork
     public T deleteHostedVersion(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
-        @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
+            @ApiParam(value = "Entry to modify.", required = true) @PathParam("entryId") Long entryId,
+            @ApiParam(value = "version", required = true) @QueryParam("version") String version) {
         T entry = getEntryDAO().findById(entryId);
         checkEntry(entry);
         checkUserCanUpdate(user, entry);
