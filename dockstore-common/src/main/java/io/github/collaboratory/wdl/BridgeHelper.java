@@ -16,11 +16,8 @@
 
 package io.github.collaboratory.wdl;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +25,7 @@ import java.util.Map;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
+import com.google.common.io.Resources;
 import org.apache.commons.validator.routines.UrlValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +43,7 @@ public class BridgeHelper {
      * @return content of file
      */
     public String resolveUrl(String importUrl) {
-        StringBuilder content = new StringBuilder();
+        String content = "";
 
         // Check if valid URL
         UrlValidator urlValidator = new UrlValidator();
@@ -55,14 +53,7 @@ public class BridgeHelper {
                     .startsWith("https://gitlab.com")) {
                 // Grab file located at URL
                 try {
-                    try (InputStream inputStream = new URL(importUrl).openStream()) {
-                        InputStreamReader inputStreamReader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-                        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                        String line;
-                        while ((line = bufferedReader.readLine()) != null) {
-                            content.append(line);
-                        }
-                    }
+                    content = Resources.toString(new URL(importUrl), StandardCharsets.UTF_8);
                 } catch (MalformedURLException ex) {
                     LOG.debug("Invalid URL: " + importUrl);
                 } catch (IOException ex) {
@@ -74,7 +65,7 @@ public class BridgeHelper {
         } else {
             LOG.debug("Invalid URL: " + importUrl);
         }
-        return content.toString();
+        return content;
     }
 
     /**
