@@ -77,7 +77,6 @@ public class CWLHandler implements LanguageHandlerInterface {
                         Map docMap = (Map)doc;
                         if (docMap.containsKey("$include")) {
                             String enclosingFile = (String)docMap.get("$include");
-
                             Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(enclosingFile))
                                 .findFirst();
                             if (first.isPresent()) {
@@ -420,10 +419,13 @@ public class CWLHandler implements LanguageHandlerInterface {
         Set<String> importKeywords = Sets.newHashSet("$import", "$include", "$mixin", "import", "include", "mixin");
         for (Map.Entry<String, ?> e : map.entrySet()) {
             final Object mapValue = e.getValue();
+            String absoluteImportPath;
+
             if (importKeywords.contains(e.getKey().toLowerCase())) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
-                    handleImport(repositoryId, workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface);
+                    absoluteImportPath = convertImportPathToAbsolutePath(workingDirectoryForFile, (String)mapValue);
+                    handleImport(repositoryId, workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
                 // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
@@ -431,7 +433,8 @@ public class CWLHandler implements LanguageHandlerInterface {
                 //  run: {import: revtool.cwl}
                 //  run: revtool.cwl
                 if (mapValue instanceof String) {
-                    handleImport(repositoryId, workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface);
+                    absoluteImportPath = convertImportPathToAbsolutePath(workingDirectoryForFile, (String)mapValue);
+                    handleImport(repositoryId, workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 } else if (mapValue instanceof Map) {
                     // this handles the case where an import is used
                     handleMap(repositoryId, workingDirectoryForFile, version, imports, (Map)mapValue, sourceCodeRepoInterface);
@@ -453,20 +456,19 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
     }
 
-    private void handleImport(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, String mapValue, SourceCodeRepoInterface sourceCodeRepoInterface) {
+    private void handleImport(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_CWL;
         // create a new source file
-        String constructedPath = convertImportPathToAbsolutePath(workingDirectoryForFile, mapValue);
-        final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, constructedPath);
+        final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
         if (fileResponse == null) {
-            LOG.error("Could not read: " + constructedPath);
+            LOG.error("Could not read: " + absoluteImportPath);
             return;
         }
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(fileType);
         sourceFile.setContent(fileResponse);
-        sourceFile.setPath(mapValue);
-        imports.put(constructedPath, sourceFile);
+        sourceFile.setPath(givenImportPath);
+        imports.put(absoluteImportPath, sourceFile);
     }
 
     /**
