@@ -96,20 +96,29 @@ public class FileProvisioning {
             this.plugins = pluginManager.getExtensions(ProvisionInterface.class);
             this.preProvisionPlugins = pluginManager.getExtensions(PreProvisionInterface.class);
 
+            // Map of ProvisionInterface & PreProvisionInterface plugins
+            Map<String, ProvisionInterface> pluginsMap = this.plugins
+                .stream()
+                .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
+
+            Map<String, PreProvisionInterface> preProvisionMap = this.preProvisionPlugins
+                .stream()
+                .collect(Collectors.toMap(plugin -> findPluginName(plugin.getClass().getName()), plugin -> plugin));
+
             List<PluginWrapper> pluginWrappers = pluginManager.getPlugins();
             for (PluginWrapper pluginWrapper : pluginWrappers) {
                 SubnodeConfiguration section = config.getSection(pluginWrapper.getPluginId());
                 Map<String, String> sectionConfig = new HashMap<>();
                 Iterator<String> keys = section.getKeys();
                 keys.forEachRemaining(key -> sectionConfig.put(key, section.getString(key)));
-                // this is ugly, but we need to pass configuration into the plugins
-                // TODO: speed this up using a map of plugins
-                for (ProvisionInterface extension : plugins) {
-                    String extensionName = extension.getClass().getName();
-                    String pluginClass = pluginWrapper.getDescriptor().getPluginClass();
-                    if (extensionName.startsWith(pluginClass)) {
-                        extension.setConfiguration(sectionConfig);
-                    }
+
+                String pluginClass = pluginWrapper.getDescriptor().getPluginClass();
+                // Pass sectionConfig to each plugin
+                if (pluginsMap.containsKey(pluginClass)) {
+                    pluginsMap.get(pluginClass).setConfiguration(sectionConfig);
+                }
+                if (preProvisionMap.containsKey(pluginClass)) {
+                    preProvisionMap.get(pluginClass).setConfiguration(sectionConfig);
                 }
             }
         } catch (UnexpectedCharacterException e) {
@@ -134,6 +143,15 @@ public class FileProvisioning {
     private static boolean isCacheOn(INIConfiguration config) {
         final String useCache = config.getString("use-cache", "false");
         return "true".equalsIgnoreCase(useCache) || "use".equalsIgnoreCase(useCache) || "T".equalsIgnoreCase(useCache);
+    }
+
+    /*
+     * Retrieves plugin name given object class name.
+     * Splits outer plugin class name (which extends Plugin abstract class) and inner class name (which extends
+     * ProvisionInterface or PreProvisionInterface), then returns outer plugin name
+    */
+    public static String findPluginName(String classObj) {
+        return classObj.split("\\$")[0];
     }
 
     public static void main(String[] args) {
