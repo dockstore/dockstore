@@ -145,7 +145,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         URI uriEntity = null;
         try {
             uriEntity = new URI(uriStr);
-            LOG.debug("URI " + uriEntity.toString() + " for hosted workflow or tool is OK");
         } catch (URISyntaxException e) {
             LOG.error("URI for hosted workflow or tool is malformed");
         }
