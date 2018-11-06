@@ -149,6 +149,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             LOG.error("URI for hosted workflow or tool is malformed");
         }
 
+        // If uriEntity is null the Response created call will still work
         return Response.created(uriEntity).entity(byId).build();
     }
 
