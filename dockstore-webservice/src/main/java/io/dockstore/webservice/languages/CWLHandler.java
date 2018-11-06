@@ -142,26 +142,22 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
-        return processImports(repositoryId, filepath, content, version, sourceCodeRepoInterface);
-    }
-
-    private Map<String, SourceFile> processImports(String repositoryId, String workingDirectoryForFile, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface) {
+    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, String currentFilePath) {
         Map<String, SourceFile> imports = new HashMap<>();
         Yaml yaml = new Yaml();
         try {
-            Map<String, ?> map = yaml.loadAs(content, Map.class);
-            handleMap(repositoryId, workingDirectoryForFile, version, imports, map, sourceCodeRepoInterface);
+            Map<String, ?> fileContentMap = yaml.loadAs(content, Map.class);
+            handleMap(repositoryId, currentFilePath, version, imports, fileContentMap, sourceCodeRepoInterface);
         } catch (YAMLException e) {
             SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");
         }
 
         Map<String, SourceFile> recursiveImports = new HashMap<>();
-        for (SourceFile file : imports.values()) {
-            final Map<String, SourceFile> sourceFiles = processImports(repositoryId, workingDirectoryForFile, file.getContent(), version, sourceCodeRepoInterface);
+        for (Map.Entry<String, SourceFile> importFile : imports.entrySet()) {
+            final Map<String, SourceFile> sourceFiles = processImports(repositoryId, importFile.getValue().getContent(), version, sourceCodeRepoInterface, importFile.getKey());
             recursiveImports.putAll(sourceFiles);
         }
+
         recursiveImports.putAll(imports);
         return recursiveImports;
     }
@@ -414,18 +410,28 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
     }
 
-    private void handleMap(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, Map<String, ?> map,
+    /**
+     * Iterates over a map of CWL file content looking for imports. When import is found. will grab the imported file from Git
+     * and prepare it for import finding.
+     * @param repositoryId              identifies the git repository that we wish to use, normally something like 'organization/repo_name`
+     * @param parentFilePath            absolute path to the parent file which references the imported file
+     * @param version                   version of the files to get
+     * @param imports                   mapping of filenames to imports
+     * @param fileContentMap            CWL file mapping
+     * @param sourceCodeRepoInterface   used too retrieve imports
+     */
+    private void handleMap(String repositoryId, String parentFilePath, Version version, Map<String, SourceFile> imports, Map<String, ?> fileContentMap,
         SourceCodeRepoInterface sourceCodeRepoInterface) {
         Set<String> importKeywords = Sets.newHashSet("$import", "$include", "$mixin", "import", "include", "mixin");
-        for (Map.Entry<String, ?> e : map.entrySet()) {
+        for (Map.Entry<String, ?> e : fileContentMap.entrySet()) {
             final Object mapValue = e.getValue();
             String absoluteImportPath;
 
             if (importKeywords.contains(e.getKey().toLowerCase())) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
-                    absoluteImportPath = convertImportPathToAbsolutePath(workingDirectoryForFile, (String)mapValue);
-                    handleImport(repositoryId, workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
+                    absoluteImportPath = convertImportPathToAbsolutePath(parentFilePath, (String)mapValue);
+                    handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
                 // for workflows, bare files may be referenced. See https://github.com/ga4gh/dockstore/issues/208
@@ -433,30 +439,48 @@ public class CWLHandler implements LanguageHandlerInterface {
                 //  run: {import: revtool.cwl}
                 //  run: revtool.cwl
                 if (mapValue instanceof String) {
-                    absoluteImportPath = convertImportPathToAbsolutePath(workingDirectoryForFile, (String)mapValue);
-                    handleImport(repositoryId, workingDirectoryForFile, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
+                    absoluteImportPath = convertImportPathToAbsolutePath(parentFilePath, (String)mapValue);
+                    handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 } else if (mapValue instanceof Map) {
                     // this handles the case where an import is used
-                    handleMap(repositoryId, workingDirectoryForFile, version, imports, (Map)mapValue, sourceCodeRepoInterface);
+                    handleMap(repositoryId, parentFilePath, version, imports, (Map)mapValue, sourceCodeRepoInterface);
                 }
             } else {
-                handleMapValue(repositoryId, workingDirectoryForFile, version, imports, mapValue, sourceCodeRepoInterface);
+                handleMapValue(repositoryId, parentFilePath, version, imports, mapValue, sourceCodeRepoInterface);
             }
         }
     }
 
-    private void handleMapValue(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports,
+    /**
+     * Iterate over object and pass any mappings to check for imports.
+     * @param repositoryId              identifies the git repository that we wish to use, normally something like 'organization/repo_name`
+     * @param parentFilePath            absolute path to the parent file which references the imported file
+     * @param version                   version of the files to get
+     * @param imports                   mapping of filenames to imports
+     * @param mapValue                  CWL file object
+     * @param sourceCodeRepoInterface   used too retrieve imports
+     */
+    private void handleMapValue(String repositoryId, String parentFilePath, Version version, Map<String, SourceFile> imports,
         Object mapValue, SourceCodeRepoInterface sourceCodeRepoInterface) {
         if (mapValue instanceof Map) {
-            handleMap(repositoryId, workingDirectoryForFile, version, imports, (Map)mapValue, sourceCodeRepoInterface);
+            handleMap(repositoryId, parentFilePath, version, imports, (Map)mapValue, sourceCodeRepoInterface);
         } else if (mapValue instanceof List) {
             for (Object listMember : (List)mapValue) {
-                handleMapValue(repositoryId, workingDirectoryForFile, version, imports, listMember, sourceCodeRepoInterface);
+                handleMapValue(repositoryId, parentFilePath, version, imports, listMember, sourceCodeRepoInterface);
             }
         }
     }
 
-    private void handleImport(String repositoryId, String workingDirectoryForFile, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath) {
+    /**
+     * Grabs a import file from Git based on its absolute path and add to imports mapping
+     * @param repositoryId              identifies the git repository that we wish to use, normally something like 'organization/repo_name`
+     * @param version                   version of the files to get
+     * @param imports                   mapping of filenames to imports
+     * @param givenImportPath           import path from CWL file
+     * @param sourceCodeRepoInterface   used too retrieve imports
+     * @param absoluteImportPath        absolute path of import in git repository
+     */
+    private void handleImport(String repositoryId, Version version, Map<String, SourceFile> imports, String givenImportPath, SourceCodeRepoInterface sourceCodeRepoInterface, String absoluteImportPath) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_CWL;
         // create a new source file
         final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);

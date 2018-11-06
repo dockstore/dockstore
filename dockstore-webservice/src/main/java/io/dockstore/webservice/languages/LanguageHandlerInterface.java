@@ -68,13 +68,13 @@ public interface LanguageHandlerInterface {
     boolean isValidWorkflow(String content);
 
     /**
-     * Look at the content of a descriptor and update its imports
+     * Parse a descriptor file and return a recursive mapping of its imports
      *
      * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param content                 content of the primary descriptor
      * @param version                 version of the files to get
      * @param sourceCodeRepoInterface used too retrieve imports
-     * @param filepath                used to help find relative imports
+     * @param filepath                used to help find relative imports, must be absolute
      * @return map of file paths to SourceFile objects
      */
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
