@@ -15,7 +15,10 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.io.File;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -137,7 +140,27 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         elasticManager.handleIndexUpdate(byId, ElasticMode.UPDATE);
 
         URI requestURI = uriInfo.getRequestUri();
-        return Response.created(requestURI).entity(byId).build();
+        String uriScheme = requestURI.getScheme();
+        String uriAuthority = requestURI.getAuthority();
+        String uriHost = requestURI.getHost();
+        String uriAuth = null;
+        int uriPort = requestURI.getPort();
+        String uriStrPath = requestURI.getPath();
+        java.nio.file.Path uriPathPrefix = Paths.get(uriStrPath);
+        java.nio.file.Path uriEntryPath = uriPathPrefix.subpath(0,1);
+        String uriStrEntryPath = File.separator + uriEntryPath.toString() + File.separator + Long.toString(l);
+        String uriQuery = null;
+        String uriFragment = null;
+
+        URI uriEntity = null;
+        try {
+            uriEntity = new URI(uriScheme, uriAuth, uriHost, uriPort, uriStrEntryPath, uriQuery, uriFragment);
+            System.out.println("URI " + uriEntity.toString() + " is OK");
+        } catch (URISyntaxException e) {
+            System.out.println("URI for hosted workflow or tool is malformed");
+        }
+
+        return Response.created(uriEntity).entity(byId).build();
     }
 
     protected abstract void checkForDuplicatePath(T entry);
