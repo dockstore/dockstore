@@ -238,6 +238,7 @@ public class GitLabSourceCodeRepo extends SourceCodeRepoInterface {
                 file.setType(type);
                 file.setContent(new String(Base64.getDecoder().decode(repositoryFile.getContent()), StandardCharsets.UTF_8));
                 file.setPath(path);
+                file.setAbsolutePath(path);
                 return file;
             }
         } catch (IOException e) {

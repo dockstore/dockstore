@@ -231,6 +231,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 importFile.setContent(fileResponse);
                 importFile.setPath(importPath);
                 importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(importFile.getPath(), importFile);
                 imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
             }

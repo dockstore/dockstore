@@ -263,7 +263,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         Workflow workflow = workflowApi
-            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
+            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/checker-workflow-wrapping-workflow.cwl",
                 "test", "cwl", null);
         assertEquals("There should be one user of the workflow after manually registering it.", 1, workflow.getUsers().size());
         Workflow refresh = workflowApi.refresh(workflow.getId());
@@ -481,7 +481,7 @@ public class WorkflowIT extends BaseIT {
         Workflow refresh = workflowApi.refresh(workflow.getId());
         Assert.assertTrue("workflow is already published for some reason", !refresh.isIsPublished());
 
-        workflowApi.registerCheckerWorkflow("checker-workflow-wrapping-workflow.cwl", workflow.getId(), "cwl", "checker-input-cwl.json");
+        workflowApi.registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", workflow.getId(), "cwl", "checker-input-cwl.json");
 
         workflowApi.refresh(workflow.getId());
 
@@ -812,15 +812,18 @@ public class WorkflowIT extends BaseIT {
         // make a couple garbage edits
         SourceFile source = new SourceFile();
         source.setPath("/Dockstore.cwl");
+        source.setAbsolutePath("/Dockstore.cwl");
         source.setContent("cwlVersion: v1.0\nclass: Workflow");
         source.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         SourceFile source1 = new SourceFile();
         source1.setPath("sorttool.cwl");
         source1.setContent("foo");
+        source1.setAbsolutePath("/sorttool.cwl");
         source1.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         SourceFile source2 = new SourceFile();
         source2.setPath("revtool.cwl");
         source2.setContent("foo");
+        source2.setAbsolutePath("/revtool.cwl");
         source2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(source, source1, source2));
 

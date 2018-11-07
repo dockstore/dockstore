@@ -5784,6 +5784,7 @@ components:
     SourceFile:
       type: object
       required:
+        - absolutePath
         - path
         - type
       properties:
@@ -5815,7 +5816,10 @@ components:
           description: Cache for the contents of the target file
         path:
           type: string
-          description: Path to source file in git repo
+          description: Path to sourcefile relative to its parent
+        absolutePath:
+          type: string
+          description: Absolute path of sourcefile in git repo
     StarRequest:
       type: object
       properties:

@@ -105,6 +105,7 @@ public abstract class SourceCodeRepoInterface {
             }
             dockstoreFile.setContent(fileResponse);
             dockstoreFile.setPath(path);
+            dockstoreFile.setAbsolutePath(path);
             return Optional.of(dockstoreFile);
         }
         return Optional.empty();
