@@ -277,6 +277,22 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
 
     }
 
+    private String getCodeFromSatellizerObject(JsonObject satellizerObject) {
+        JsonObject oauthData = satellizerObject.get("oauthData").getAsJsonObject();
+        return oauthData.get("code").getAsString();
+    }
+
+    private String getRedirectURIFromSatellizerObject(JsonObject satellizerObject) {
+        JsonObject authorizationData = satellizerObject.get("authorizationData").getAsJsonObject();
+        return authorizationData.get("redirect_uri").getAsString();
+    }
+
+    private boolean getRegisterFromSatellizerObject(JsonObject satellizerObject) {
+        JsonObject userData = satellizerObject.get("userData").getAsJsonObject();
+        return userData.has("register") && userData.get("register").getAsBoolean();
+    }
+
+
     /**
      * Adds a Google token to the existing user if user is authenticated already.
      * Otherwise, below table indicates what happens when the "Login with Google" button in the UI2 is clicked
@@ -309,9 +325,9 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
-        final String code = satellizerObject.get("code").getAsString();
-        final String redirectUri = satellizerObject.get("redirectUri").getAsString();
-        final boolean registerUser = satellizerObject.has("register") && satellizerObject.get("register").getAsBoolean();
+        final String code = getCodeFromSatellizerObject(satellizerObject);
+        final String redirectUri = getRedirectURIFromSatellizerObject(satellizerObject);
+        final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
         TokenResponse tokenResponse = GoogleHelper.getTokenResponse(googleClientID, googleClientSecret, code, redirectUri);
         String accessToken = tokenResponse.getAccessToken();
         String refreshToken = tokenResponse.getRefreshToken();
@@ -400,8 +416,8 @@ public class TokenResource implements AuthenticatedResourceInterface, SourceCont
         Gson gson = new Gson();
         JsonElement element = gson.fromJson(satellizerJson, JsonElement.class);
         JsonObject satellizerObject = element.getAsJsonObject();
-        final String code = satellizerObject.get("code").getAsString();
-        final boolean registerUser = satellizerObject.has("register") && satellizerObject.get("register").getAsBoolean();
+        final String code = getCodeFromSatellizerObject(satellizerObject);
+        final boolean registerUser = getRegisterFromSatellizerObject(satellizerObject);
         return handleGitHubUser(null, code, registerUser);
     }
     @GET

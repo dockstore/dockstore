@@ -62,6 +62,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import static io.dropwizard.testing.FixtureHelpers.fixture;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.anyString;
 import static org.easymock.EasyMock.expect;
@@ -104,8 +105,8 @@ public class TokenResourceIT extends BaseIT {
     private TokenDAO tokenDAO;
     private UserDAO userDAO;
     private long initialTokenCount;
-    private final String satellizerJSON = "{\n" + "  \"code\": \"fakeCode\",\n" + "  \"redirectUri\": \"fakeRedirectUri\"\n" + "}\n";
-    private final String satellizerJSONForRegistration = "{\"code\": \"fakeCode\", \"register\": true, \"redirectUri\": \"fakeRedirectUri\"}";
+    private final String satellizerJSON = fixture("fixtures/satellizerLogin.json");
+    private final String satellizerJSONForRegistration = fixture("fixtures/satellizerRegister.json");;
     private final static String GOOGLE_ACCOUNT_USERNAME1 = "potato@gmail.com";
     private final static String GOOGLE_ACCOUNT_USERNAME2 = "beef@gmail.com";
     private final static String CUSTOM_USERNAME1 = "tuber";
