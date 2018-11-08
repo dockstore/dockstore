@@ -127,7 +127,7 @@ public class User implements Principal, Comparable<User> {
     @JsonIgnore
     private final SortedSet<Entry> entries;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "starred", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Entries in the dockstore that this user starred", position = 10)
     @OrderBy("id")
