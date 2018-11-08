@@ -41,7 +41,7 @@
         <powermock.version>2.0.0-beta.5</powermock.version>
         <postgresql.version>42.1.4</postgresql.version>
         <mockito.version>2.22.0</mockito.version>
-        <cwlavro.version>2.0.4</cwlavro.version>
+        <cwlavro.version>2.0.4.2</cwlavro.version>
         <okhttp.version>3.9.0</okhttp.version>
         <slf4j.version>1.7.25</slf4j.version>
         <swagger-ui.version>3.17.0</swagger-ui.version>
@@ -762,6 +762,12 @@
                 <groupId>com.sun.xml.bind</groupId>
                 <artifactId>jaxb-impl</artifactId>
                 <version>2.2.8</version>
+            </dependency>
+            <!-- CVE-2018-1000180 -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.60</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
