@@ -100,6 +100,7 @@ public class WorkflowIT extends BaseIT {
     public static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
     private static final String DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW = SourceControl.BITBUCKET.toString() + "/dockstore_testuser2/dockstore-workflow";
     private static final String DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore-whalesay-imports";
+    private static final String DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/gdc-dnaseq-cwl";
     // workflow with external library in lib directory
     private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
     // workflow that uses containers
@@ -1217,5 +1218,35 @@ public class WorkflowIT extends BaseIT {
         // remove a few aliases
         entry = genericApi.updateAliases(workflow.getId(), "foobar, test workflow", "");
         Assert.assertTrue("entry is missing expected aliases", entry.getAliases().containsKey("foobar") && entry.getAliases().containsKey("test workflow") && entry.getAliases().size() == 2);
+    }
+
+    /**
+     * This tests that the absolute path is properly set for CWL workflow sourcefiles for the primary descriptor and any imported files
+     */
+    @Test
+    public void testAbsolutePathForImportedFilesCWL() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl", "/workflows/dnaseq/transform.cwl.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW);
+        final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
+
+        Assert.assertEquals("should have 1 version", 1, workflow.getWorkflowVersions().size());
+        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().get(0);
+        List<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        Optional<SourceFile> primarySourceFile = sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), "/workflows/dnaseq/transform.cwl") && Objects.equals(sourceFile.getAbsolutePath(), "/workflows/dnaseq/transform.cwl")).findFirst();
+        if (!primarySourceFile.isPresent()) {
+            Assert.fail("Does not properly set the absolute path of the primary descriptor.");
+        }
+
+        Optional<SourceFile> importedSourceFileOne = sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), "../../tools/bam_readgroup_to_json.cwl") && Objects.equals(sourceFile.getAbsolutePath(), "/tools/bam_readgroup_to_json.cwl")).findFirst();
+        if (!importedSourceFileOne.isPresent()) {
+            Assert.fail("Does not properly set the absolute path of the imported file.");
+        }
+
+        Optional<SourceFile> importedSourceFileTwo = sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), "integrity.cwl") && Objects.equals(sourceFile.getAbsolutePath(), "/workflows/dnaseq/integrity.cwl")).findFirst();
+        if (!importedSourceFileTwo.isPresent()) {
+            Assert.fail("Does not properly set the absolute path of the imported file.");
+        }
     }
 }
