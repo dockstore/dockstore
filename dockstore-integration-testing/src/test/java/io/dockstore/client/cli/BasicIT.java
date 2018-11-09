@@ -71,6 +71,16 @@ public class BasicIT extends BaseIT {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
     }
 
+    /**
+     * Test the "dockstore tool publish" command
+     */
+    @Test
+    public void testPublishList() {
+        Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file.txt"), "tool", "publish", "--script" });
+        Assert.assertTrue("Should have contained the unpublished tool belonging to the user", systemOutRule.getLog().contains("quay.io/dockstoretestuser/noautobuild"));
+        Assert.assertFalse("Should not have contained the unpublished tool belonging to another user", systemOutRule.getLog().contains("quay.io/test_org/test1"));
+    }
+
         /*
          General-ish tests
          */
