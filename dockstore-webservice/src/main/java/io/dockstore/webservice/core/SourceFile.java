@@ -167,7 +167,11 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Override
     public int compareTo(@NotNull SourceFile that) {
-        return ComparisonChain.start().compare(this.path, that.path).compare(this.absolutePath, that.absolutePath).result();
+        if (this.absolutePath == null || that.absolutePath == null) {
+            return ComparisonChain.start().compare(this.path, that.path).result();
+        } else {
+            return ComparisonChain.start().compare(this.absolutePath, that.absolutePath).result();
+        }
     }
 
     @Override
