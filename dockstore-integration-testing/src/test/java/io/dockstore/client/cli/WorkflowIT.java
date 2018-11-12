@@ -1231,9 +1231,13 @@ public class WorkflowIT extends BaseIT {
         final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW);
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
 
-        Assert.assertEquals("should have 1 version", 1, workflow.getWorkflowVersions().size());
-        WorkflowVersion workflowVersion = workflow.getWorkflowVersions().get(0);
-        List<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
+        Assert.assertEquals("should have 2 version", 2, workflow.getWorkflowVersions().size());
+        Optional<WorkflowVersion> workflowVersion = workflow.getWorkflowVersions().stream().filter(version -> Objects.equals(version.getName(), "test")).findFirst();
+        if (!workflowVersion.isPresent()) {
+            Assert.fail("Missing the test release");
+        }
+
+        List<SourceFile> sourceFiles = workflowVersion.get().getSourceFiles();
         Optional<SourceFile> primarySourceFile = sourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), "/workflows/dnaseq/transform.cwl") && Objects.equals(sourceFile.getAbsolutePath(), "/workflows/dnaseq/transform.cwl")).findFirst();
         if (!primarySourceFile.isPresent()) {
             Assert.fail("Does not properly set the absolute path of the primary descriptor.");

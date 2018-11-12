@@ -200,7 +200,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     }
 
     private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String workingDirectoryForFile) {
+        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String currentFilePath) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
 
         // Use matcher to get imports
@@ -221,7 +221,7 @@ public class WDLHandler implements LanguageHandlerInterface {
         for (String importPath : currentFileImports) {
             if (!imports.containsKey(importPath)) {
                 SourceFile importFile = new SourceFile();
-                String absoluteImportPath = convertImportPathToAbsolutePath(workingDirectoryForFile, importPath);
+                String absoluteImportPath = convertImportPathToAbsolutePath(currentFilePath, importPath);
 
                 final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
                 if (fileResponse == null) {

@@ -80,8 +80,11 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         if (manifest != null && manifest.containsKey("mainScript")) {
             mainScriptPath = (String)manifest.get("mainScript");
         }
-        Optional<SourceFile> sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
+        String mainScriptAbsolutePath = convertImportPathToAbsolutePath(filepath, mainScriptPath);
+
+        Optional<SourceFile> sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptAbsolutePath);
         if (sourceFile.isPresent()) {
+            sourceFile.get().setPath(mainScriptPath);
             imports.put(mainScriptPath, sourceFile.get());
         }
         // source files in /lib seem to be automatically added to the script classpath

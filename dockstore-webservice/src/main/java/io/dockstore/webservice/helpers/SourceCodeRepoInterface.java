@@ -482,7 +482,7 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    Map<String, SourceFile> resolveImports(String repositoryId, String content, SourceFile.FileType fileType, Version version, String filepath) {
+    public Map<String, SourceFile> resolveImports(String repositoryId, String content, SourceFile.FileType fileType, Version version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
         return languageInterface.processImports(repositoryId, content, version, this, filepath);
     }

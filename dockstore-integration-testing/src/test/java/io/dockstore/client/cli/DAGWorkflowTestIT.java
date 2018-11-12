@@ -260,7 +260,7 @@ public class DAGWorkflowTestIT extends BaseIT {
 
     /**
      * This tests the NCI-GDC DNASeq workflow. This workflow has a huge dag and about 30+ files. It also has secondary, tertiary, etc imports.\
-     * This also tests that absolute paths are correctly used for improted files.
+     * This also tests that absolute paths are correctly used for imported files.
      * @throws ApiException
      */
     @Test
@@ -271,7 +271,7 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Return: DAG with 110 nodes
 
         final List<String> strings = getJSON("DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "cwl",
-                "master");
+                "test");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
@@ -291,10 +291,29 @@ public class DAGWorkflowTestIT extends BaseIT {
         // Return: DAG with 5 nodes
 
         final List<String> strings = getJSON("DockstoreTestUser2/cwl-gene-prioritization", "/gp_workflow.cwl", "cwl",
-                "master");
+                "test");
         int countNode = countNodeInJSON(strings);
 
         Assert.assertTrue("JSON should not be blank", strings.size() > 0);
         Assert.assertEquals("JSON should have 5 nodes", countNode, 5);
+    }
+
+    /**
+     * This tests that a WDL workflow with complex imports is properly imported (also tests absolute paths)
+     * @throws ApiException
+     */
+    @Test
+    public void testComplexImportWdlWorkflow() throws ApiException {
+        // Input: /parent/parent.wdl
+        // Repo: ComplexImportsWdl
+        // Branch: master
+        // Return: DAG with 7 nodes
+
+        final List<String> strings = getJSON("DockstoreTestUser2/ComplexImportsWdl", "/parent/parent.wdl", "wdl",
+                "test");
+        int countNode = countNodeInJSON(strings);
+
+        Assert.assertTrue("JSON should not be blank", strings.size() > 0);
+        Assert.assertEquals("JSON should have 7 nodes", countNode, 7);
     }
 }
