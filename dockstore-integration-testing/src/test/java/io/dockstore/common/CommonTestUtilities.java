@@ -49,6 +49,7 @@ public final class CommonTestUtilities {
     public static final int WAIT_TIME = 60000;
 
 
+    public static final String PUBLIC_CONFIG_PATH_WITH_API = ResourceHelpers.resourceFilePath("dockstoreAPI.yml");
     public static final String PUBLIC_CONFIG_PATH = ResourceHelpers.resourceFilePath("dockstore.yml");
     /**
      * confidential testing config, includes keys

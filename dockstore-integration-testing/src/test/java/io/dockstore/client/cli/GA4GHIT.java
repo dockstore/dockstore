@@ -20,6 +20,7 @@ import java.util.Iterator;
 import javax.ws.rs.core.Response;
 
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.TestUtility;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
@@ -30,8 +31,6 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -52,9 +51,10 @@ import static org.junit.Assert.assertEquals;
  */
 public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH_WITH_API);
     protected static javax.ws.rs.client.Client client;
-    final String basePath = String.format("http://localhost:%d/" + getApiVersion(), SUPPORT.getLocalPort());
+    final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
+    final String baseURL = String.format("http://localhost:%d" + basePath + getApiVersion(), SUPPORT.getLocalPort());
 
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
@@ -151,21 +151,21 @@ public abstract class GA4GHIT {
     @Test
     public void relativePathEndpointToolTestParameterFilePLAIN() {
         Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
         Response response2 = client
-            .target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Ftest.potato.json").request()
+            .target(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2Ftest.potato.json").request()
             .get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
         Response response3 = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Fnested%2Ftest.wdl.json");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Fnested%2Ftest.wdl.json");
         String responseObject3 = response3.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("nestedPotato", responseObject3);
         Response response4 = client
-            .target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request()
+            .target(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request()
             .get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response4.getStatus());
     }
@@ -187,7 +187,7 @@ public abstract class GA4GHIT {
     @Test
     public void relativePathEndpointToolContainerfile() {
         Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2FDockerfile");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor/%2FDockerfile");
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("potato", responseObject);
@@ -205,17 +205,17 @@ public abstract class GA4GHIT {
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
         // Check responses
-        Response response = checkedResponse(basePath
+        Response response = checkedResponse(baseURL
             + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
         Response response2 = client
-            .target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request()
+            .target(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_WDL/descriptor/%2Ftest.potato.json").request()
             .get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
         Response response3 = checkedResponse(
-            basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Ftest.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor/%2Ftest.cwl.json");
         String responseObject3 = response3.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3);
@@ -250,7 +250,8 @@ public abstract class GA4GHIT {
     protected abstract void assertVersion(String toolVersion);
 
     Response checkedResponse(String path) {
-        Response response = client.target(path).request().get();
+        String nginxRewrittenPath = TestUtility.mimicNginxRewrite(path, basePath);
+        Response response = client.target(nginxRewrittenPath).request().get();
         response.bufferEntity();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         String stringResponse = response.readEntity(String.class);
@@ -279,7 +280,8 @@ public abstract class GA4GHIT {
      */
     @Test
     public void testInvalidToolId() {
-        Response response = client.target(basePath + "tools/potato").request().get();
+        String nginxRewrittenPath = TestUtility.mimicNginxRewrite(baseURL + "tools/potato", basePath);
+        Response response = client.target(nginxRewrittenPath).request().get();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
         Error error = response.readEntity(Error.class);
         Assert.assertTrue(error.getMessage().contains("Tool ID should"));
@@ -301,6 +303,7 @@ public abstract class GA4GHIT {
     }
 
     private void checkURL(String url) {
+        url = TestUtility.mimicNginxRewrite(url, basePath);
         if (url.startsWith("https://raw.githubusercontent.com")) {
             // Ignore GitHub urls because they're fake
             return;
