@@ -15,6 +15,8 @@
  */
 package io.dockstore.client.cli;
 
+import java.util.Iterator;
+
 import javax.ws.rs.core.Response;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -25,6 +27,11 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.model.Error;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -244,7 +251,25 @@ public abstract class GA4GHIT {
 
     Response checkedResponse(String path) {
         Response response = client.target(path).request().get();
+        response.bufferEntity();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
+        String stringResponse = response.readEntity(String.class);
+            Object thing = new JSONTokener(stringResponse).nextValue();
+            if (thing instanceof JSONObject) {
+                parseForURLs(new JSONObject(stringResponse));
+            } else {
+                if (thing instanceof JSONArray) {
+                    JSONArray jsonArray = new JSONArray(stringResponse);
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        JSONObject object = jsonArray.getJSONObject(i);
+                        parseForURLs(object);
+                    }
+                } else {
+                    if (!(thing instanceof String)) {
+                        Assert.fail("Unknown type: " + thing.toString());
+                    }
+                }
+            }
         return response;
     }
 
@@ -259,5 +284,28 @@ public abstract class GA4GHIT {
         Error error = response.readEntity(Error.class);
         Assert.assertTrue(error.getMessage().contains("Tool ID should"));
         assertThat(error.getCode()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
+    }
+
+    private void parseForURLs(JSONObject jObject) {
+        Iterator<String> keys = jObject.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (jObject.get(key) instanceof JSONObject) {
+                parseForURLs((JSONObject)jObject.get(key));
+            }
+            if (key.equals("url")) {
+                checkURL((jObject.get(key)).toString());
+                System.out.println(jObject.get(key).toString());
+            }
+        }
+    }
+
+    private void checkURL(String url) {
+        if (url.startsWith("https://raw.githubusercontent.com")) {
+            // Ignore GitHub urls because they're fake
+            return;
+        }
+        Response response = client.target(url).request().get();
+        assertEquals("Not ok response: " + url, response.getStatus(), HttpStatus.SC_OK);
     }
 }
