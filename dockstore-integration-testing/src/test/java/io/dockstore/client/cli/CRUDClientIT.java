@@ -413,10 +413,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
         api.createHostedWorkflow("awesomeToolCwl", null, LanguageType.CWL.toString(), null, null);
-        api.createHostedWorkflow("awesomeToolCwl", null, LanguageType.CWL.toString(), null, "randomName");
-
         api.createHostedWorkflow("awesomeToolWdl", null, LanguageType.WDL.toString(), null, null);
-        api.createHostedWorkflow("awesomeToolWdl", null, LanguageType.WDL.toString(), null, "randomName");
         thrown.expect(ApiException.class);
         api.createHostedWorkflow("awesomeToolCwll", null, "cwll", null, null);
     }

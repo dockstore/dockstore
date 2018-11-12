@@ -1517,7 +1517,7 @@ paths:
             type: string
         - name: entryName
           in: query
-          description: Optional entry name
+          description: Optional entry name (Tools only)
           required: false
           schema:
             type: string
@@ -3719,7 +3719,7 @@ paths:
             type: string
         - name: entryName
           in: query
-          description: Optional entry name
+          description: Optional entry name (Tools only)
           required: false
           schema:
             type: string
