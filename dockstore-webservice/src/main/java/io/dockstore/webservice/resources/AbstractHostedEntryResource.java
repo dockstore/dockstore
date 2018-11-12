@@ -214,6 +214,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
     }
 
+    /**
+     * Check that the descriptor type is a valid type. For tools this simply returns the descriptor type given, since a tool has many types.
+     * @param descriptorType
+     * @return Verified type
+     */
     protected abstract String checkType(String descriptorType);
 
     /**
