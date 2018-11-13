@@ -31,6 +31,8 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -123,8 +125,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         }
 
         // Only check type for workflows
-        String convertedDescriptorType = checkType(descriptorType);
-        T entry = getEntry(user, registry, name, convertedDescriptorType, namespace, entryName);
+        DescriptorLanguage convertedDescriptorType = checkType(descriptorType);
+        Registry convertedRegistry = checkRegistry(registry);
+        T entry = getEntry(user, convertedRegistry, name, convertedDescriptorType, namespace, entryName);
         checkForDuplicatePath(entry);
         long l = getEntryDAO().create(entry);
         T byId = getEntryDAO().findById(l);
@@ -136,14 +139,15 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
     /**
      * TODO: ugly, too many strings lead to an easy mix-up of order.
-     * @param user
-     * @param registry
-     * @param name
-     * @param descriptorType
-     * @param namespace
-     * @return
+     * @param user User object
+     * @param registry Registry of tool (Tools only)
+     * @param name Repository name
+     * @param descriptorType Type of descriptor (Workflows only)
+     * @param namespace Namespace of tool (Tools only)
+     * @param entryName Optional entry name
+     * @return Newly created entry
      */
-    protected abstract T getEntry(User user, String registry, String name, String descriptorType, String namespace, String entryName);
+    protected abstract T getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName);
 
     @Override
     public void checkUserCanUpdate(User user, Entry entry) {
@@ -215,11 +219,18 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     }
 
     /**
-     * Check that the descriptor type is a valid type. For tools this simply returns the descriptor type given, since a tool has many types.
+     * Check that the descriptor type is a valid type and return the descriptor type object. Not required for tools, since a tool has many types.
      * @param descriptorType
      * @return Verified type
      */
-    protected abstract String checkType(String descriptorType);
+    protected abstract DescriptorLanguage checkType(String descriptorType);
+
+    /**
+     * Check that the registry is a valid registry and return the registry object
+     * @param registry
+     * @return
+     */
+    protected abstract Registry checkRegistry(String registry);
 
     /**
      * Create new version of a workflow or tag of a tool

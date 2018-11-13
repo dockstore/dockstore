@@ -27,7 +27,9 @@ import java.util.Optional;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.LanguageType;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -86,7 +88,7 @@ public class CRUDClientIT extends BaseIT {
     public void testToolCreation(){
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
@@ -112,7 +114,7 @@ public class CRUDClientIT extends BaseIT {
     @SuppressWarnings("OptionalGetWithoutIsPresent")
     public void testToolEditing() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace", null);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         SourceFile descriptorFile = new SourceFile();
         descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -174,7 +176,7 @@ public class CRUDClientIT extends BaseIT {
     public void testWorkflowCreation(){
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
-        Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", null, "cwl", null, null);
+        Workflow hostedTool = api.createHostedWorkflow("awesomeWorkflow", null, DescriptorLanguage.CWL_STRING, null, null);
         assertNotNull("workflow was not created properly", hostedTool);
         // createHostedWorkflow() endpoint is safe to have user profiles because that profile is your own
         assertEquals(1, hostedTool.getUsers().size());
@@ -199,7 +201,7 @@ public class CRUDClientIT extends BaseIT {
     @Test
     public void testWorkflowEditing() throws IOException {
         HostedApi api = new HostedApi(getWebClient(ADMIN_USERNAME));
-        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, "cwl", null, null);
+        Workflow hostedWorkflow = api.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL_STRING, null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -291,13 +293,13 @@ public class CRUDClientIT extends BaseIT {
     public void testToolCreationInvalidDescriptorType(){
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
-        api.createHostedTool("awesomeToolCwl", LanguageType.CWL.toString(), "quay.io", "coolNamespace", null);
-        api.createHostedTool("awesomeToolCwl", LanguageType.CWL.toString(), "quay.io", "coolNamespace", "anotherName");
-        api.createHostedTool("awesomeToolWdl", LanguageType.WDL.toString(), "quay.io", "coolNamespace", null);
-        api.createHostedTool("awesomeToolWdl", LanguageType.WDL.toString(), "quay.io", "coolNamespace", "anotherName");
+        api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        api.createHostedTool("awesomeToolCwl", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", "anotherName");
+        api.createHostedTool("awesomeToolWdl", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.WDL_STRING, "coolNamespace", null);
+        api.createHostedTool("awesomeToolWdl", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.WDL_STRING, "coolNamespace", "anotherName");
 
         // Invalid descriptor type does not matter for tools
-        api.createHostedTool("awesomeToolCwll", "cwll", "quay.io", "coolNamespace", null);
+        api.createHostedTool("awesomeToolCwll", Registry.QUAY_IO.toString().toLowerCase(), "cwll", "coolNamespace", null);
     }
 
     /**
@@ -308,7 +310,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", LanguageType.CWL.toString(), "quay.io", "coolNamespace", null);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         thrown.expect(ApiException.class);
         DockstoreTool refreshedTool = containersApi.refresh(hostedTool.getId());
         assertTrue("There should be at least one user of the workflow", refreshedTool.getUsers().size() > 0);
@@ -323,7 +325,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", LanguageType.CWL.toString(), "quay.io", "coolNamespace", null);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         DockstoreTool newTool = new DockstoreTool();
         thrown.expect(ApiException.class);
         containersApi.updateContainer(hostedTool.getId(), newTool);
@@ -339,7 +341,7 @@ public class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
 
         // Add a tool with a version
-        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", LanguageType.CWL.toString(), "quay.io", "coolNamespace", null);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         SourceFile descriptorFile = new SourceFile();
         descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -366,7 +368,7 @@ public class CRUDClientIT extends BaseIT {
         HostedApi hostedApi = new HostedApi(webClient);
 
         // Add a workflow with a version
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, LanguageType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("awesomeTool", null, DescriptorLanguage.CWL_STRING, null, null);
         SourceFile file = new SourceFile();
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -387,7 +389,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", LanguageType.CWL.toString(), "quay.io", "coolNamespace", null);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         thrown.expect(ApiException.class);
         containersApi.addTestParameterFiles(hostedTool.getId(), new ArrayList<>(), LanguageType.CWL.toString(), "", "1");
     }
@@ -400,7 +402,7 @@ public class CRUDClientIT extends BaseIT {
         ApiClient webClient = getWebClient(ADMIN_USERNAME);
         ContainersApi containersApi = new ContainersApi(webClient);
         HostedApi hostedApi = new HostedApi(webClient);
-        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", LanguageType.CWL.toString(), "quay.io", "coolNamespace", null);
+        DockstoreTool hostedTool = hostedApi.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         thrown.expect(ApiException.class);
         containersApi.deleteTestParameterFiles(hostedTool.getId(), new ArrayList<>(), LanguageType.CWL.toString(), "1");
     }

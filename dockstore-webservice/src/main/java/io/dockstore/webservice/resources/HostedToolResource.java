@@ -21,6 +21,8 @@ import java.util.Set;
 
 import javax.ws.rs.Path;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -80,9 +82,9 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    protected Tool getEntry(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+    protected Tool getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Tool tool = new Tool();
-        tool.setRegistry(registry);
+        tool.setRegistry(registry.toString());
         tool.setNamespace(namespace);
         tool.setName(name);
         tool.setMode(ToolMode.HOSTED);
@@ -148,8 +150,18 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    protected String checkType(String descriptorType) {
+    protected DescriptorLanguage checkType(String descriptorType) {
         // Descriptor type does not matter for tools
-        return descriptorType;
+        return null;
+    }
+
+    @Override
+    protected Registry checkRegistry(String registry) {
+        for (Registry registryObject : Registry.values()) {
+            if (Objects.equals(registry.toLowerCase(), registryObject.toString())) {
+                return registryObject;
+            }
+        }
+        throw new CustomWebApplicationException(registry + " is not a valid registry type", HttpStatus.SC_BAD_REQUEST);
     }
 }

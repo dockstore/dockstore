@@ -35,6 +35,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -807,9 +808,9 @@ public class SwaggerClientIT extends BaseIT {
     public void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org", null);
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org", null);
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
     }
 
     /**
