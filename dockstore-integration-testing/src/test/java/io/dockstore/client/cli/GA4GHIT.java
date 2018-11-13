@@ -15,10 +15,15 @@
  */
 package io.dockstore.client.cli;
 
-import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.core.Response;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.TestUtility;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
@@ -28,9 +33,6 @@ import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.model.Error;
 import org.apache.http.HttpStatus;
 import org.glassfish.jersey.client.ClientProperties;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -255,22 +257,9 @@ public abstract class GA4GHIT {
         response.bufferEntity();
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         String stringResponse = response.readEntity(String.class);
-            Object thing = new JSONTokener(stringResponse).nextValue();
-            if (thing instanceof JSONObject) {
-                parseForURLs(new JSONObject(stringResponse));
-            } else {
-                if (thing instanceof JSONArray) {
-                    JSONArray jsonArray = new JSONArray(stringResponse);
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        JSONObject object = jsonArray.getJSONObject(i);
-                        parseForURLs(object);
-                    }
-                } else {
-                    if (!(thing instanceof String)) {
-                        Assert.fail("Unknown type: " + thing.toString());
-                    }
-                }
-            }
+        JsonParser parser = new JsonParser();
+        JsonElement jsonElement = parser.parse(stringResponse);
+        parseJSONElementForURLs(jsonElement);
         return response;
     }
 
@@ -288,20 +277,37 @@ public abstract class GA4GHIT {
         assertThat(error.getCode()).isEqualTo(HttpStatus.SC_BAD_REQUEST);
     }
 
-    private void parseForURLs(JSONObject jObject) {
-        Iterator<String> keys = jObject.keys();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            if (jObject.get(key) instanceof JSONObject) {
-                parseForURLs((JSONObject)jObject.get(key));
+    /**
+     * Checks the JsonElement for URLs
+     * @param jsonElement   The JsonElement to check
+     */
+    private void parseJSONElementForURLs(JsonElement jsonElement) {
+        if (jsonElement.isJsonObject()) {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            Set<Map.Entry<String, JsonElement>> keys = jsonObject.entrySet();
+            for (Map.Entry<String, JsonElement> jsonElementEntry: keys) {
+                if (jsonElementEntry.getKey().equals("url")) {
+                    checkURL(jsonElementEntry.getValue().getAsString());
+                } else {
+                    parseJSONElementForURLs(jsonElementEntry.getValue());
+                }
             }
-            if (key.equals("url")) {
-                checkURL((jObject.get(key)).toString());
-                System.out.println(jObject.get(key).toString());
+        } else {
+            if (jsonElement.isJsonArray()) {
+                JsonArray jsonArray = jsonElement.getAsJsonArray();
+                jsonArray.forEach(jsonArrayElement -> parseJSONElementForURLs(jsonArrayElement));
+            } else {
+                if (!jsonElement.isJsonPrimitive()) {
+                    Assert.fail("Unknown type: " + jsonElement.toString());
+                }
             }
         }
     }
 
+    /**
+     * Checks if the URL has an OK response status
+     * @param url   The URL to check
+     */
     private void checkURL(String url) {
         url = TestUtility.mimicNginxRewrite(url, basePath);
         if (url.startsWith("https://raw.githubusercontent.com")) {
