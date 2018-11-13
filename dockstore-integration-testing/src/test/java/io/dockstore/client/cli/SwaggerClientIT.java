@@ -35,6 +35,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -798,18 +799,18 @@ public class SwaggerClientIT extends BaseIT {
     private void registerHostedWorkflow(String s) {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
+        userHostedApi.createHostedWorkflow("hosted1", s, "cwl", s, null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
+        userHostedApi.createHostedWorkflow("hosted1", s, "cwl", s, null);
     }
 
     @Test
     public void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org");
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org");
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
     }
 
     /**
@@ -837,8 +838,8 @@ public class SwaggerClientIT extends BaseIT {
         SharedWorkflows secondShared;
 
         // Create two hosted workflows
-        final Workflow hostedWorkflow1 = user1HostedApi.createHostedWorkflow("hosted1", "cwl", null, null);
-        final Workflow hostedWorkflow2 = user1HostedApi.createHostedWorkflow("hosted2", "wdl", null, null);
+        final Workflow hostedWorkflow1 = user1HostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
+        final Workflow hostedWorkflow2 = user1HostedApi.createHostedWorkflow("hosted2", null, "wdl", null, null);
 
         final String fullWorkflowPath1 = hostedWorkflow1.getFullWorkflowPath();
         final String fullWorkflowPath2 = hostedWorkflow2.getFullWorkflowPath();

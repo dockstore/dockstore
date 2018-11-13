@@ -1493,25 +1493,31 @@ paths:
       parameters:
         - name: registry
           in: query
-          description: 'For tools, the Docker registry'
+          description: The Docker registry (Tools only)
           required: false
           schema:
             type: string
         - name: name
           in: query
-          description: name
+          description: The repository name
           required: true
           schema:
             type: string
         - name: descriptorType
           in: query
-          description: Descriptor type
-          required: true
+          description: The descriptor type (Workflows only)
+          required: false
           schema:
             type: string
         - name: namespace
           in: query
-          description: 'For tools, the Docker namespace'
+          description: The Docker namespace (Tools only)
+          required: false
+          schema:
+            type: string
+        - name: entryName
+          in: query
+          description: Optional entry name (Tools only)
           required: false
           schema:
             type: string
@@ -3689,25 +3695,31 @@ paths:
       parameters:
         - name: registry
           in: query
-          description: 'For tools, the Docker registry'
+          description: The Docker registry (Tools only)
           required: false
           schema:
             type: string
         - name: name
           in: query
-          description: name
+          description: The repository name
           required: true
           schema:
             type: string
         - name: descriptorType
           in: query
-          description: Descriptor type
-          required: true
+          description: The descriptor type (Workflows only)
+          required: false
           schema:
             type: string
         - name: namespace
           in: query
-          description: 'For tools, the Docker namespace'
+          description: The Docker namespace (Tools only)
+          required: false
+          schema:
+            type: string
+        - name: entryName
+          in: query
+          description: Optional entry name (Tools only)
           required: false
           schema:
             type: string

@@ -21,6 +21,8 @@ import java.util.Set;
 
 import javax.ws.rs.Path;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
@@ -75,19 +77,20 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     @Override
     @ApiOperation(nickname = "createHostedTool", value = "Create a hosted tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class)
-    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace) {
-        return super.createHosted(user, registry, name, descriptorType, namespace);
+    public Tool createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+        return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 
     @Override
-    protected Tool getEntry(User user, String registry, String name, String descriptorType, String namespace) {
+    protected Tool getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Tool tool = new Tool();
-        tool.setRegistry(registry);
+        tool.setRegistry(registry.toString());
         tool.setNamespace(namespace);
         tool.setName(name);
         tool.setMode(ToolMode.HOSTED);
         tool.setLastUpdated(new Date());
         tool.setLastModified(new Date());
+        tool.setToolname(entryName);
         tool.getUsers().add(user);
         return tool;
     }
@@ -144,5 +147,21 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         boolean isValidWDL = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockstore.wdl"));
         boolean hasDockerfile = sourceFiles.stream().anyMatch(sf -> Objects.equals(sf.getPath(), "/Dockerfile"));
         return (isValidCWL || isValidWDL) && hasDockerfile;
+    }
+
+    @Override
+    protected DescriptorLanguage checkType(String descriptorType) {
+        // Descriptor type does not matter for tools
+        return null;
+    }
+
+    @Override
+    protected Registry checkRegistry(String registry) {
+        for (Registry registryObject : Registry.values()) {
+            if (Objects.equals(registry.toLowerCase(), registryObject.toString())) {
+                return registryObject;
+            }
+        }
+        throw new CustomWebApplicationException(registry + " is not a valid registry type", HttpStatus.SC_BAD_REQUEST);
     }
 }

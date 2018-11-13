@@ -23,6 +23,8 @@ import java.nio.charset.StandardCharsets;
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -106,7 +108,7 @@ public class LimitedCRUDClientIT {
     public void testToolCreation(){
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         assertNotNull("tool was not created properly", hostedTool);
         // createHostedTool() endpoint is safe to have user profiles because that profile is your own
         assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
@@ -129,18 +131,18 @@ public class LimitedCRUDClientIT {
 
         // test repeated workflow creation up to limit
         for(int i = 1; i <= 9; i++) {
-            api.createHostedTool("awesomeTool" + i, "cwl", "quay.io", "coolNamespace");
+            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         }
 
         thrown.expect(ApiException.class);
-        api.createHostedTool("awesomeTool" + 10, "cwl", "quay.io", "coolNamespace");
+        api.createHostedTool("awesomeTool" + 10, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
     }
 
     @Test
     public void testToolVersionCreation() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
-        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", "cwl", "quay.io", "coolNamespace");
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
 
         SourceFile descriptorFile = new SourceFile();
         descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
