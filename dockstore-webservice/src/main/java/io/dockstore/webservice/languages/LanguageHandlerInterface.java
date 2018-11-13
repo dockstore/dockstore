@@ -268,18 +268,20 @@ public interface LanguageHandlerInterface {
     /**
      * Resolves a relative path based on an absolute parent path
      * @param parentPath Absolute path to parent file
-     * @param importPath Relative path the parent file
+     * @param relativePath Relative path the parent file
      * @return Absolute version of relative path
      */
-    default String convertImportPathToAbsolutePath(String parentPath, String importPath) {
-        if (importPath.startsWith("/")) {
-            return importPath;
+    default String convertRelativePathToAbsolutePath(String parentPath, String relativePath) {
+        if (relativePath.startsWith("/")) {
+            return relativePath;
         }
 
         Path workDir = Paths.get(parentPath);
+
+        // If the workDir is the root, leave it. If it is not the root, set workDir to the parent of parentPath
         workDir = !Objects.equals(parentPath, workDir.getRoot().toString()) ? workDir.getParent() : workDir;
 
-        return workDir.resolve(importPath).normalize().toString();
+        return workDir.resolve(relativePath).normalize().toString();
     }
 
     /**

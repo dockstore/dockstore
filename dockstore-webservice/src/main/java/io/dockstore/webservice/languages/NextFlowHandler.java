@@ -80,7 +80,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         if (manifest != null && manifest.containsKey("mainScript")) {
             mainScriptPath = (String)manifest.get("mainScript");
         }
-        String mainScriptAbsolutePath = convertImportPathToAbsolutePath(filepath, mainScriptPath);
+        String mainScriptAbsolutePath = convertRelativePathToAbsolutePath(filepath, mainScriptPath);
 
         Optional<SourceFile> sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptAbsolutePath);
         if (sourceFile.isPresent()) {

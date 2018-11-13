@@ -430,7 +430,7 @@ public class CWLHandler implements LanguageHandlerInterface {
             if (importKeywords.contains(e.getKey().toLowerCase())) {
                 // handle imports and includes
                 if (mapValue instanceof String) {
-                    absoluteImportPath = convertImportPathToAbsolutePath(parentFilePath, (String)mapValue);
+                    absoluteImportPath = convertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
                     handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 }
             } else if (e.getKey().equalsIgnoreCase("run")) {
@@ -439,7 +439,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 //  run: {import: revtool.cwl}
                 //  run: revtool.cwl
                 if (mapValue instanceof String) {
-                    absoluteImportPath = convertImportPathToAbsolutePath(parentFilePath, (String)mapValue);
+                    absoluteImportPath = convertRelativePathToAbsolutePath(parentFilePath, (String)mapValue);
                     handleImport(repositoryId, version, imports, (String)mapValue, sourceCodeRepoInterface, absoluteImportPath);
                 } else if (mapValue instanceof Map) {
                     // this handles the case where an import is used

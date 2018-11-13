@@ -7,6 +7,9 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
+# bash expand_confidential_bundle.sh /path/to/zip/archive folder_name
+# ex. bash expand_confidential_bundle.sh /home/aduncan/Downloads/add_curator.zip add_curator
+
 zipArchive=$1
 zipFolder=$2
 
