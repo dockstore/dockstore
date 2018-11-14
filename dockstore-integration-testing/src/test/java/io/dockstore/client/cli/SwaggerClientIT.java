@@ -35,6 +35,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -798,18 +799,18 @@ public class SwaggerClientIT extends BaseIT {
     private void registerHostedWorkflow(String s) {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
+        userHostedApi.createHostedWorkflow("hosted1", s, "cwl", s, null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedWorkflow("hosted1", "cwl", s, s);
+        userHostedApi.createHostedWorkflow("hosted1", s, "cwl", s, null);
     }
 
     @Test
     public void testDuplicateHostedToolCreation() {
         final ApiClient userWebClient = getWebClient(true, true);
         final HostedApi userHostedApi = new HostedApi(userWebClient);
-        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org");
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
         thrown.expect(ApiException.class);
-        userHostedApi.createHostedTool("hosted1", "cwl", "quay.io", "dockstore.org");
+        userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
     }
 
     /**
@@ -832,67 +833,96 @@ public class SwaggerClientIT extends BaseIT {
         final UsersApi users2Api = new UsersApi(user2WebClient);
         final User user2 = users2Api.getUser();
 
-        // Create a hosted workflow
-        final Workflow hostedWorkflow = user1HostedApi.createHostedWorkflow("hosted1", "cwl", null, null);
-        final String fullWorkflowPath = hostedWorkflow.getFullWorkflowPath();
+        List<SharedWorkflows> sharedWorkflows;
+        SharedWorkflows firstShared;
+        SharedWorkflows secondShared;
+
+        // Create two hosted workflows
+        final Workflow hostedWorkflow1 = user1HostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
+        final Workflow hostedWorkflow2 = user1HostedApi.createHostedWorkflow("hosted2", null, "wdl", null, null);
+
+        final String fullWorkflowPath1 = hostedWorkflow1.getFullWorkflowPath();
+        final String fullWorkflowPath2 = hostedWorkflow2.getFullWorkflowPath();
 
         // User 2 should have no workflows shared with
         Assert.assertEquals(user2WorkflowsApi.sharedWorkflows().size(), 0);
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1);
             Assert.fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             Assert.assertEquals(403, e.getCode());
         }
 
         // User 1 shares workflow with user 2 as a reader
-        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.READER);
+        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.READER);
 
         // User 2 should now have 1 workflow shared with
-        final List<SharedWorkflows> sharedWorkflows = user2WorkflowsApi.sharedWorkflows();
+        sharedWorkflows = user2WorkflowsApi.sharedWorkflows();
         Assert.assertEquals(1, sharedWorkflows.size());
-        final SharedWorkflows firstShared = sharedWorkflows.get(0);
+
+        firstShared = sharedWorkflows.get(0);
         Assert.assertEquals(SharedWorkflows.RoleEnum.READER, firstShared.getRole());
-        Assert.assertEquals(fullWorkflowPath, firstShared.getWorkflows().get(0).getFullWorkflowPath());
+        Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath);
-        user2WorkflowsApi.getWorkflow(hostedWorkflow.getId());
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1);
+        user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId());
 
         // But User 2 cannot edit the hosted workflow
         try {
-            user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Collections.emptyList());
+            user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.emptyList());
             Assert.fail("User 2 can unexpectedly edit a readonly workflow");
         } catch (ApiException ex) {
             Assert.assertEquals(403, ex.getCode());
         }
 
         // Now give write permission to user 2
-        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.WRITER);
+        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.WRITER);
         // Edit should now work!
-        final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow.getId(), Collections.singletonList(createCwlWorkflow()));
+        final Workflow workflow = user2HostedApi.editHostedWorkflow(hostedWorkflow1.getId(), Collections.singletonList(createCwlWorkflow()));
 
         // Deleting the version should not fail
-        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
+        user2HostedApi.deleteHostedWorkflowVersion(hostedWorkflow1.getId(), workflow.getWorkflowVersions().get(0).getId().toString());
 
         // Publishing the workflow should fail
         final PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         try {
-            user2WorkflowsApi.publish(hostedWorkflow.getId(), publishRequest);
+            user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
             Assert.fail("User 2 can unexpectedly publish a read/write workflow");
         } catch (ApiException ex) {
             Assert.assertEquals(403, ex.getCode());
         }
 
         // Give Owner permission to user 2
-        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath, Permission.RoleEnum.OWNER);
+        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath1, Permission.RoleEnum.OWNER);
 
         // Should be able to publish
-        user2WorkflowsApi.publish(hostedWorkflow.getId(), publishRequest);
+        user2WorkflowsApi.publish(hostedWorkflow1.getId(), publishRequest);
+        checkAnonymousUser(anonWorkflowsApi, hostedWorkflow1);
 
-        checkAnonymousUser(anonWorkflowsApi, hostedWorkflow);
+        // Next, User 1 shares a second workflow with user 2 as a reader only
+        shareWorkflow(user1WorkflowsApi, user2.getUsername(), fullWorkflowPath2, Permission.RoleEnum.READER);
+        sharedWorkflows = user2WorkflowsApi.sharedWorkflows();
+
+        // User 2 should now have one workflow shared from user 1 and one from user 3
+        Assert.assertEquals(2, sharedWorkflows.size());
+
+        firstShared = sharedWorkflows
+                        .stream()
+                        .filter(shared -> shared.getRole() == SharedWorkflows.RoleEnum.OWNER)
+                        .findFirst().orElse(null);
+        secondShared = sharedWorkflows
+                        .stream()
+                        .filter(shared -> shared.getRole() == SharedWorkflows.RoleEnum.READER)
+                        .findFirst().orElse(null);
+
+        Assert.assertEquals(SharedWorkflows.RoleEnum.OWNER, firstShared.getRole());
+        Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
+
+        Assert.assertEquals(SharedWorkflows.RoleEnum.READER, secondShared.getRole());
+        Assert.assertEquals(fullWorkflowPath2, secondShared.getWorkflows().get(0).getFullWorkflowPath());
     }
 
     private void shareWorkflow(WorkflowsApi workflowsApi, String user, String path, Permission.RoleEnum role) {

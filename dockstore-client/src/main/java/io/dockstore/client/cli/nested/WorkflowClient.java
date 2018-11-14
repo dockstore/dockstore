@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.GenericType;
 
@@ -722,7 +723,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             if (user == null) {
                 errorMessage("User not found", Client.CLIENT_ERROR);
             }
-            List<Workflow> workflows = usersApi.userWorkflows(user.getId());
+            List<Workflow> workflows = usersApi.userWorkflows(user.getId()).stream().filter(workflow ->
+                workflow.getMode() != Workflow.ModeEnum.STUB).collect(Collectors.toList());
 
             out("YOUR AVAILABLE WORKFLOWS");
             printLineBreak();

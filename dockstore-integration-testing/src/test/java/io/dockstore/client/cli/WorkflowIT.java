@@ -771,32 +771,32 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         HostedApi hostedApi = new HostedApi(webClient);
         thrown.expect(ApiException.class);
-        hostedApi.createHostedWorkflow("name", "garbage type", null, null);
+        hostedApi.createHostedWorkflow("name", null, "garbage type", null, null);
     }
 
     @Test
     public void testDuplicateHostedWorkflowCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         HostedApi hostedApi = new HostedApi(webClient);
-        hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+        hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
         thrown.expectMessage("already exists");
-        hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+        hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(),  null, null);
     }
 
     @Test
     public void testDuplicateHostedToolCreation() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         HostedApi hostedApi = new HostedApi(webClient);
-        hostedApi.createHostedTool("name", DescriptorType.CWL.toString(), Registry.DOCKER_HUB.toString(), "namespace");
+        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.toString(), DescriptorType.CWL.toString(), "namespace", null);
         thrown.expectMessage("already exists");
-        hostedApi.createHostedTool("name", DescriptorType.CWL.toString(), Registry.DOCKER_HUB.toString(), "namespace");
+        hostedApi.createHostedTool("name", Registry.DOCKER_HUB.toString(), DescriptorType.CWL.toString(), "namespace", null);
     }
 
     @Test
     public void testHostedWorkflowMetadataAndLaunch() throws IOException {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         HostedApi hostedApi = new HostedApi(webClient);
-        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", DescriptorType.CWL.toString(), null, null);
+        Workflow hostedWorkflow = hostedApi.createHostedWorkflow("name", null, DescriptorType.CWL.toString(), null, null);
         assertNotNull(hostedWorkflow.getLastModifiedDate());
         assertNotNull(hostedWorkflow.getLastUpdated());
 

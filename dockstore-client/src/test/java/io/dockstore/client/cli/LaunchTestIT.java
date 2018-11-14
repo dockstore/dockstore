@@ -40,6 +40,9 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
@@ -62,6 +65,13 @@ public class LaunchTestIT {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) {
+            System.out.println("Starting test: " + description.getMethodName());
+        }
+    };
 
     @Test
     public void wdlCorrect() {
@@ -108,22 +118,31 @@ public class LaunchTestIT {
 
     @Test
     public void wdlWorkflowCorrectFlags() {
+        wdlEntryCorrectFlags("workflow");
+    }
+
+    @Test
+    public void wdlToolCorrectFlags() {
+        wdlEntryCorrectFlags("tool");
+    }
+
+    private void wdlEntryCorrectFlags(String entryType) {
         File yamlTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.yaml"));
         File jsonTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.json"));
 
-        ArrayList<String> yamlFileWithJSONFlag = getLaunchWorkflowStringList();
+        ArrayList<String> yamlFileWithJSONFlag = getLaunchStringList(entryType);
         yamlFileWithJSONFlag.add("--json");
         yamlFileWithJSONFlag.add(yamlTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> yamlFileWithYAMLFlag = getLaunchWorkflowStringList();
+        ArrayList<String> yamlFileWithYAMLFlag = getLaunchStringList(entryType);
         yamlFileWithYAMLFlag.add("--yaml");
         yamlFileWithYAMLFlag.add(yamlTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> jsonFileWithJSONFlag = getLaunchWorkflowStringList();
+        ArrayList<String> jsonFileWithJSONFlag = getLaunchStringList(entryType);
         jsonFileWithJSONFlag.add("--json");
         jsonFileWithJSONFlag.add(jsonTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> jsonFileWithYAMLFlag = getLaunchWorkflowStringList();
+        ArrayList<String> jsonFileWithYAMLFlag = getLaunchStringList(entryType);
         jsonFileWithYAMLFlag.add("--yaml");
         jsonFileWithYAMLFlag.add(jsonTestParameterFile.getAbsolutePath());
 
@@ -133,13 +152,21 @@ public class LaunchTestIT {
         Client.main(jsonFileWithYAMLFlag.toArray(new String[0]));
     }
 
-
     @Test
     public void yamlAndJsonWorkflowCorrect() {
+        yamlAndJsonEntryCorrect("workflow");
+    }
+
+    @Test
+    public void yamlAndJsonToolCorrect() {
+        yamlAndJsonEntryCorrect("tool");
+    }
+
+    private void yamlAndJsonEntryCorrect(String entryType) {
         File yamlTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.yaml"));
         File jsonTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.json"));
 
-        ArrayList<String> args = getLaunchWorkflowStringList();
+        ArrayList<String> args = getLaunchStringList(entryType);
         args.add("--yaml");
         args.add(yamlTestParameterFile.getAbsolutePath());
         args.add("--json");
@@ -149,12 +176,12 @@ public class LaunchTestIT {
         Client.main(args.toArray(new String[0]));
     }
 
-    private ArrayList<String> getLaunchWorkflowStringList() {
+    private ArrayList<String> getLaunchStringList(String entryType) {
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
             return new ArrayList<String>() {{
                 add("--config");
                 add(ResourceHelpers.resourceFilePath("config"));
-                add("workflow");
+                add(entryType);
                 add("launch");
                 add("--local-entry");
                 add(descriptorFile.getAbsolutePath());
