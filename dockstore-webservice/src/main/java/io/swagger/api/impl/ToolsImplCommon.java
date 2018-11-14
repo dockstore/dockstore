@@ -222,14 +222,15 @@ public final class ToolsImplCommon {
      * Get baseURL from DockstoreWebServiceConfiguration
      *
      * @param config The DockstoreWebServiceConfiguration
-     * @return The baseURL for GA4GH tools endpoint
+     * @return The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
      * @throws URISyntaxException When URI building goes wrong
      */
     private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
         int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
         // basePath should be "/" or "/api/"
         String basePath = MoreObjects.firstNonNull(config.getExternalConfig().getBasePath(), "/");
-        // Example without the replace: "/api/" + "/api/ga4gh/v2" + "/tools/"
+        // Example without the replace: "/api/" + "/api/ga4gh/v2" + "/tools/" = "/api//api/ga4gh/v2/tools"
+        // Example with the replace: "/api/api/ga4gh/v2/tools"
         String baseURI = basePath + DockstoreWebserviceApplication.GA4GH_API_PATH.replaceFirst("/", "") + "/tools/";
         URI uri = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port, baseURI, null, null);
         return uri.toString();
