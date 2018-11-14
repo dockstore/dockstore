@@ -5337,6 +5337,7 @@ definitions:
   SourceFile:
     type: "object"
     required:
+    - "absolutePath"
     - "path"
     - "type"
     properties:
@@ -5370,7 +5371,11 @@ definitions:
       path:
         type: "string"
         position: 3
-        description: "Path to source file in git repo"
+        description: "Path to sourcefile relative to its parent"
+      absolutePath:
+        type: "string"
+        position: 4
+        description: "Absolute path of sourcefile in git repo"
   StarRequest:
     type: "object"
     properties:

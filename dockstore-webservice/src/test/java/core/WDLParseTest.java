@@ -39,7 +39,7 @@ public class WDLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example0.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().contains("Chip Stewart"));
         assertTrue("incorrect email", entry.getEmail().contains("stewart@broadinstitute.org"));
     }
@@ -49,7 +49,7 @@ public class WDLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example1.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
         assertTrue("incorrect email", entry.getEmail().isEmpty());
     }
@@ -59,7 +59,7 @@ public class WDLParseTest {
         String filePath = ResourceHelpers.resourceFilePath("metadata_example2.wdl");
         LanguageHandlerInterface sInterface = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL);
         Entry entry = sInterface
-            .parseWorkflowContent(new Tool(), FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
+            .parseWorkflowContent(new Tool(), filePath, FileUtils.readFileToString(new File(filePath), StandardCharsets.UTF_8), new HashSet<>());
         assertTrue("incorrect author", entry.getAuthor().split(",").length >= 2);
         assertEquals("incorrect email", "This is a cool workflow", entry.getDescription());
     }
