@@ -29,6 +29,7 @@ import io.dockstore.common.TestUtility;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.client.JerseyClientBuilder;
+import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.swagger.model.Error;
 import org.apache.http.HttpStatus;
@@ -53,7 +54,7 @@ import static org.junit.Assert.assertEquals;
  */
 public abstract class GA4GHIT {
     protected static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH_WITH_API);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH, ConfigOverride.config("database.properties.hibernate.hbm2ddl.auto", "validate"));
     protected static javax.ws.rs.client.Client client;
     final String basePath = SUPPORT.getConfiguration().getExternalConfig().getBasePath();
     final String baseURL = String.format("http://localhost:%d" + basePath + getApiVersion(), SUPPORT.getLocalPort());
