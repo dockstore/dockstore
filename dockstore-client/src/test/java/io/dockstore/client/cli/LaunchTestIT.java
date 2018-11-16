@@ -23,9 +23,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
@@ -114,6 +116,58 @@ public class LaunchTestIT {
         Client client = new Client();
         // do not use a cache
         runWorkflow(cwlFile, args, api, usersApi, client, false);
+    }
+
+    @Test
+    public void wdlMetadataNoopPluginTest() {
+        //Test when content and extension are wdl  --> no need descriptor
+        File helloWDL = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
+        File helloJSON = new File(ResourceHelpers.resourceFilePath("hello.metadata.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--json");
+            add(helloJSON.getAbsolutePath());
+            add("--wdl-output-target");
+            add("noop://nowhere.test");
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+        workflowClient.checkEntryFile(helloWDL.getAbsolutePath(), args, null);
+
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog().contains("Cromwell exit code: 0"));
+        assertTrue("output should include a noop plugin run with metadata", systemOutRule.getLog().contains("really cool metadata"));
+    }
+
+    @Test
+    public void cwlMetadataNoopPluginTest() {
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("collab-cwl-noop-job.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
+
+        PluginClient.handleCommand(Lists.newArrayList("download"), Utilities.parseConfig(client.getConfigFile()));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+        workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
+
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
+        assertTrue("output should include a noop plugin run with metadata", systemOutRule.getLog().contains("really cool metadata"));
     }
 
     @Test
