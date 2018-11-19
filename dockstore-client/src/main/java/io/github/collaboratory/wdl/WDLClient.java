@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -241,6 +242,10 @@ public class WDLClient implements LanguageClientInterface {
                         FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
                         new1.setUrl(wdlOutputTarget + "/" + outFile);
                         new1.setLocalPath(resultFile.getAbsolutePath());
+                        if (inputJson.containsKey(outFile + ".metadata")) {
+                            byte[] metadatas = Base64.getDecoder().decode((String)inputJson.get(outFile + ".metadata"));
+                            new1.setMetadata(new String(metadatas, StandardCharsets.UTF_8));
+                        }
                         System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
                         outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
                     }
