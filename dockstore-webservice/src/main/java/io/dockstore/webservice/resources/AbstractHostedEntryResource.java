@@ -269,6 +269,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             versionWithTheLargestName.getSourceFiles().forEach(v -> {
                 SourceFile newfile = new SourceFile();
                 newfile.setPath(v.getPath());
+                newfile.setAbsolutePath(v.getAbsolutePath());
                 newfile.setContent(v.getContent());
                 newfile.setType(v.getType());
                 map.put(newfile.getPath(), newfile);
