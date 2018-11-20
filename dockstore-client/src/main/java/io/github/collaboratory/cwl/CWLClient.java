@@ -18,12 +18,10 @@ package io.github.collaboratory.cwl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -31,27 +29,22 @@ import java.util.regex.Pattern;
 
 import com.google.common.io.Files;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import io.cwl.avro.CWL;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.FileProvisioning;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
@@ -60,150 +53,56 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
-import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
-import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * Grouping code for launching CWL tools and workflows
  */
-public class CWLClient implements LanguageClientInterface {
-
-    private final AbstractEntryClient abstractEntryClient;
+public class CWLClient extends CromwellLauncher implements LanguageClientInterface {
 
     public CWLClient(AbstractEntryClient abstractEntryClient) {
-        this.abstractEntryClient = abstractEntryClient;
+        super(abstractEntryClient);
     }
 
-    /**
-     * @param entry        either a dockstore.cwl or a local file
-     * @param isLocalEntry is the descriptor a local file
-     * @param yamlRun      runtime descriptor, one of these is required
-     * @param jsonRun      runtime descriptor, one of these is required
-     * @param csvRuns      runtime descriptor, one of these is required
-     * @param uuid         uuid that was optional specified for notifications
-     * @throws IOException
-     * @throws ApiException
-     */
     @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget,
-        String uuid) throws IOException, ApiException {
-        String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlRun, jsonRun, csvRuns);
-        if (!SCRIPT.get()) {
-            abstractEntryClient.getClient().checkForCWLDependencies();
+    public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String csvRuns, String wdlOutputTarget,
+            String uuid) throws IOException, ApiException {
+
+        // Check for required values
+        boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)) && csvRuns == null);
+        if (!hasRequiredFlags) {
+            errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
         }
 
-        File tempDir = Files.createTempDir();
-        File tempCWL;
-        if (!isLocalEntry) {
-            try {
-                tempCWL = abstractEntryClient.downloadTargetEntry(entry, ToolDescriptor.TypeEnum.CWL, true, tempDir);
-            } catch (ApiException e) {
-                if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
-                    exceptionMessage(e, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
-                        ENTRY_NOT_FOUND);
-                } else {
-                    exceptionMessage(e, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
-                        ENTRY_NOT_FOUND);
-                }
-                throw new RuntimeException(e);
+        String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlParameterFile, jsonParameterFile, csvRuns);
+
+        // Setup temp directory and download files
+        Pair<File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        File primaryDescriptor = descriptorAndZip.getLeft();
+        File zipFile = descriptorAndZip.getRight();
+
+        // Update parameter file
+        jsonParameterFile = convertYamlToJson(yamlParameterFile, jsonParameterFile);
+
+        if (jsonParameterFile != null) {
+            // translate JSON to absolute path
+            if (Paths.get(jsonParameterFile).toFile().exists()) {
+                jsonParameterFile = Paths.get(jsonParameterFile).toFile().getAbsolutePath();
             }
-        } else {
-            tempCWL = new File(entry);
-        }
-        jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
-        try {
-            final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
-            if (jsonRun != null) {
-                // translate jsonRun to absolute path
-                if (Paths.get(jsonRun).toFile().exists()) {
-                    jsonRun = Paths.get(jsonRun).toFile().getAbsolutePath();
-                }
+            // Download parameter file if remote
+            String jsonTempRun = File.createTempFile("parameter", "json").getAbsolutePath();
+            FileProvisioning.retryWrapper(null, jsonParameterFile, Paths.get(jsonTempRun), 1, true, 1);
+            jsonParameterFile = jsonTempRun;
 
-                // download jsonRun if remote
-                JsonParser parser = new JsonParser();
-                String jsonTempRun = File.createTempFile("parameter", "json").getAbsolutePath();
-                FileProvisioning.retryWrapper(null, jsonRun, Paths.get(jsonTempRun), 1, true, 1);
-                jsonRun = jsonTempRun;
-
-                // if the root document is an array, this indicates multiple runs
-                final JsonElement parsed = parser.parse(new InputStreamReader(new FileInputStream(jsonRun), StandardCharsets.UTF_8));
-                if (parsed.isJsonArray()) {
-                    final JsonArray asJsonArray = parsed.getAsJsonArray();
-                    for (JsonElement element : asJsonArray) {
-                        final String finalString = gson.toJson(element);
-                        final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
-                        FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(),
-                            tempJson.getAbsolutePath(), null, null, originalTestParameterFilePath, uuid);
-                        if (abstractEntryClient instanceof WorkflowClient) {
-                            cwlLauncher.run(Workflow.class);
-                        } else {
-                            cwlLauncher.run(CommandLineTool.class);
-                        }
-                    }
-                } else {
-                    final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(), jsonRun,
-                        null, null, originalTestParameterFilePath, uuid);
-                    if (abstractEntryClient instanceof WorkflowClient) {
-                        cwlLauncher.run(Workflow.class);
-                    } else {
-                        cwlLauncher.run(CommandLineTool.class);
-                    }
-                }
-            } else if (csvRuns != null) {
-                final File csvData = new File(csvRuns);
-                try (CSVParser parser = CSVParser.parse(csvData, StandardCharsets.UTF_8,
-                    CSVFormat.DEFAULT.withDelimiter('\t').withEscape('\\').withQuoteMode(QuoteMode.NONE))) {
-                    // grab header
-                    final Iterator<CSVRecord> iterator = parser.iterator();
-                    final CSVRecord headers = iterator.next();
-                    // ignore row with type information
-                    iterator.next();
-                    // process rows
-                    while (iterator.hasNext()) {
-                        final CSVRecord csvRecord = iterator.next();
-                        final File tempJson = File.createTempFile("temp", ".json", Files.createTempDir());
-                        StringBuilder buffer = new StringBuilder();
-                        buffer.append("{");
-                        for (int i = 0; i < csvRecord.size(); i++) {
-                            buffer.append("\"").append(headers.get(i)).append("\"");
-                            buffer.append(":");
-                            // if the type is an array, just pass it through
-                            buffer.append(csvRecord.get(i));
-
-                            if (i < csvRecord.size() - 1) {
-                                buffer.append(",");
-                            }
-                        }
-                        buffer.append("}");
-                        // prettify it
-                        JsonParser prettyParser = new JsonParser();
-                        JsonObject json = prettyParser.parse(buffer.toString()).getAsJsonObject();
-                        final String finalString = gson.toJson(json);
-
-                        // write it out
-                        FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
-
-                        // final String stringMapAsString = gson.toJson(stringMap);
-                        // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(),
-                            tempJson.getAbsolutePath(), null, null, originalTestParameterFilePath, uuid);
-                        if (abstractEntryClient instanceof WorkflowClient) {
-                            cwlLauncher.run(Workflow.class);
-                        } else {
-                            cwlLauncher.run(CommandLineTool.class);
-                        }
-                    }
-                }
+            final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), primaryDescriptor.getAbsolutePath(), jsonParameterFile,
+                    null, null, originalTestParameterFilePath, uuid);
+            if (abstractEntryClient instanceof WorkflowClient) {
+                cwlLauncher.run(Workflow.class, zipFile);
             } else {
-                errorMessage("Missing required parameters, one of  --json or --tsv is required", CLIENT_ERROR);
+                cwlLauncher.run(CommandLineTool.class, zipFile);
             }
-        } catch (CWL.GsonBuildException ex) {
-            exceptionMessage(ex, "There was an error creating the CWL GSON instance.", API_ERROR);
-        } catch (JsonParseException ex) {
-            exceptionMessage(ex, "The JSON file provided is invalid.", API_ERROR);
         }
+
         return 0;
     }
 

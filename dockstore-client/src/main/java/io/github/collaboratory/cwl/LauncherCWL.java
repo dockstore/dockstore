@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +39,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -81,6 +85,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  */
 public class LauncherCWL {
 
+    private static final String DEFAULT_CROMWELL_VERSION = "36";
     private static final Logger LOG = LoggerFactory.getLogger(LauncherCWL.class);
 
     private static final String WORKING_DIRECTORY = "working-directory";
@@ -164,7 +169,43 @@ public class LauncherCWL {
         }
     }
 
-    public void run(Class cwlClassTarget) {
+    private File getCromwellTargetFile() {
+        // initialize cromwell location from ~/.dockstore/config
+        String cromwellVersion = config.getString("cromwell-version", DEFAULT_CROMWELL_VERSION);
+        String cromwellLocation =
+                "https://github.com/broadinstitute/cromwell/releases/download/" + cromwellVersion + "/cromwell-" + cromwellVersion + ".jar";
+        if (!Objects.equals(DEFAULT_CROMWELL_VERSION, cromwellVersion)) {
+            System.out.println("Running with Cromwell " + cromwellVersion + " , Dockstore tests with " + DEFAULT_CROMWELL_VERSION);
+        }
+
+        // grab the cromwell jar if needed
+        String libraryLocation =
+                System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
+        URL cromwellURL;
+        String cromwellFileName;
+        try {
+            cromwellURL = new URL(cromwellLocation);
+            cromwellFileName = new File(cromwellURL.toURI().getPath()).getName();
+        } catch (MalformedURLException | URISyntaxException e) {
+            throw new RuntimeException("Could not create cromwell location", e);
+        }
+        String cromwellTarget = libraryLocation + cromwellFileName;
+        File cromwellTargetFile = new File(cromwellTarget);
+        if (!cromwellTargetFile.exists()) {
+            try {
+                FileUtils.copyURLToFile(cromwellURL, cromwellTargetFile);
+            } catch (IOException e) {
+                throw new RuntimeException("Could not download cromwell location", e);
+            }
+        }
+        return cromwellTargetFile;
+    }
+
+    public void run(Class cwlCallTarget) {
+        run(cwlCallTarget, null);
+    }
+
+    public void run(Class cwlClassTarget, File zipFile) {
         // now read in the INI file
         config = Utilities.parseConfig(configFilePath);
 
@@ -172,8 +213,126 @@ public class LauncherCWL {
         CWLRunnerFactory.setConfig(config);
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
+
+        // Load CWL from JSON to object
+        CWL cwlUtil = new CWL(false, config);
+        final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
+        Object cwlObject;
+        try {
+            cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
+            if (cwlObject == null) {
+                LOG.info("CWL Workflow was null");
+                return;
+            }
+        } catch (JsonParseException ex) {
+            LOG.error("The JSON file provided is invalid.");
+            return;
+        }
+
+        // Load parameter file into map
+        Map<String, Object> inputsAndOutputsJson = loadJob(runtimeDescriptorPath);
+
+        if (inputsAndOutputsJson == null) {
+            LOG.info("Cannot load job object.");
+            return;
+        }
+
+        // setup directories
+        globalWorkingDir = setupDirectories();
+
+        Map<String, FileProvisioning.FileInfo> inputsId2dockerMountMap;
+        Map<String, List<FileProvisioning.FileInfo>> outputMap;
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
+        String newJsonPath;
+        System.out.println("Provisioning your input files to your local machine");
+        try {
+            if (cwlObject instanceof Workflow) {
+                Workflow workflow = (Workflow)cwlObject;
+                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
+                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
+
+                // pull input files
+                inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
+
+                // prep outputs, just creates output dir and records what the local output path will be
+                outputMap = prepUploadsWorkflow(workflow, inputsAndOutputsJson);
+
+            } else if (cwlObject instanceof CommandLineTool) {
+                CommandLineTool commandLineTool = (CommandLineTool)cwlObject;
+                // pull input files
+                inputsId2dockerMountMap = pullFiles(commandLineTool, inputsAndOutputsJson);
+
+                // prep outputs, just creates output dir and records what the local output path will be
+                outputMap = prepUploadsTool(commandLineTool, inputsAndOutputsJson);
+            } else {
+                throw new UnsupportedOperationException("CWL target type not supported yet");
+            }
+            // create updated JSON inputs document
+            newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
+
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
+            throw e;
+        }
+        notificationsClient.sendMessage(NotificationsClient.RUN, true);
+
+        final List<String> wdlRun;
+        File localPrimaryDescriptorFile = new File(imageDescriptorPath);
+        if (zipFile == null) {
+            wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
+        } else {
+            wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", zipFile.getAbsolutePath());
+        }
+        File cromwellTargetFile = getCromwellTargetFile();
+        final String[] s = { "java", "-jar", cromwellTargetFile.getAbsolutePath(), "run" };
+        List<String> arguments = new ArrayList<>();
+        arguments.addAll(Arrays.asList(s));
+        arguments.addAll(wdlRun);
+
+        int exitCode = 0;
+        String stdout;
+        String stderr;
+        try {
+            final String join = Joiner.on(" ").join(arguments);
+            System.out.println(join);
+            final ImmutablePair<String, String> execute = Utilities.executeCommand(join, zipFile.getParentFile());
+            stdout = execute.getLeft();
+            stderr = execute.getRight();
+        } catch (RuntimeException e) {
+            LOG.error("Problem running cromwell: ", e);
+            notificationsClient.sendMessage(NotificationsClient.RUN, false);
+            throw new RuntimeException("Could not run Cromwell", e);
+        } finally {
+            System.out.println("Cromwell exit code: " + exitCode);
+        }
+
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
+        // Parse cromwell output for file provisioning
+        try {
+            LauncherCWL.outputIntegrationOutput(zipFile.getParentFile().getAbsolutePath(), ImmutablePair.of(stdout, stderr), stdout,
+                    stderr, "Cromwell");
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
+            throw e;
+        }
+
+        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
+        System.out.println("Workflow has completed.");
+    }
+
+    public void oldRun(Class cwlClassTarget) {
+        // now read in the INI file
+        config = Utilities.parseConfig(configFilePath);
+
+        // parse the CWL tool definition without validation
+        CWLRunnerFactory.setConfig(config);
+        String notificationsWebHookURL = config.getString("notifications", "");
+        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
+
         // TODO: may be reactivated if we find a different way to read CWL into Java
         // String cwlRunner = CWLRunnerFactory.getCWLRunner();
+
+        // Load CWL from JSON to object
         CWL cwlUtil = new CWL(false, config);
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
         Object cwlObject;

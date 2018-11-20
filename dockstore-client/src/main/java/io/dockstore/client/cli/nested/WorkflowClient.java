@@ -17,7 +17,10 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -27,6 +30,8 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.ws.rs.core.GenericType;
 
@@ -367,12 +372,36 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
                 }, workflowsApi.getApiClient());
             workflowsApi.getApiClient().setDebugging(Client.DEBUG.get());
-            File zipFile = new File(zipFilename(workflow));
+            File zipFile = new File(directory, zipFilename(workflow));
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
                 SwaggerUtility.unzipFile(zipFile, directory);
+                return new File(directory, first.get().getWorkflowPath());
+            } else {
+                ZipFile zipDir = new ZipFile(zipFile);
+                String primaryDescriptorLocation = first.get().getWorkflowPath();
+
+                // Change the path to be relative to zip directory
+                if (primaryDescriptorLocation.startsWith("/")) {
+                    primaryDescriptorLocation = primaryDescriptorLocation.substring(1);
+                }
+
+                ZipEntry primaryDescriptorInZip = zipDir.getEntry(primaryDescriptorLocation);
+                if (primaryDescriptorInZip == null) {
+                    throw new RuntimeException("Could not find primary descriptor with path '" + primaryDescriptorLocation + "' in zip file");
+                }
+                InputStream inputStream = zipDir.getInputStream(primaryDescriptorInZip);
+                byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
+
+                File primaryDescriptorFile = new File(directory, first.get().getWorkflowPath());
+                OutputStream outputStream = new FileOutputStream(primaryDescriptorFile);
+                outputStream.write(buffer);
+                inputStream.close();
+                outputStream.close();
+
+                return primaryDescriptorFile;
             }
-            return new File(directory, first.get().getWorkflowPath());
         } else {
             throw new RuntimeException("version not found");
         }

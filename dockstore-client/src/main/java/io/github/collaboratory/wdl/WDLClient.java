@@ -18,9 +18,6 @@ package io.github.collaboratory.wdl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -29,7 +26,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.Bridge;
@@ -66,49 +63,13 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 /**
  * Grouping code for launching WDL tools and workflows
  */
-public class WDLClient implements LanguageClientInterface {
+public class WDLClient extends CromwellLauncher implements LanguageClientInterface {
 
-    private static final String DEFAULT_CROMWELL_VERSION = "30.2";
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
 
 
-    private final AbstractEntryClient abstractEntryClient;
-
     public WDLClient(AbstractEntryClient abstractEntryClient) {
-        this.abstractEntryClient = abstractEntryClient;
-    }
-
-    private File getCromwellTargetFile() {
-        // initialize cromwell location from ~/.dockstore/config
-        INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
-        String cromwellVersion = config.getString("cromwell-version", DEFAULT_CROMWELL_VERSION);
-        String cromwellLocation =
-            "https://github.com/broadinstitute/cromwell/releases/download/" + cromwellVersion + "/cromwell-" + cromwellVersion + ".jar";
-        if (!Objects.equals(DEFAULT_CROMWELL_VERSION, cromwellVersion)) {
-            System.out.println("Running with Cromwell " + cromwellVersion + " , Dockstore tests with " + DEFAULT_CROMWELL_VERSION);
-        }
-
-        // grab the cromwell jar if needed
-        String libraryLocation =
-            System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
-        URL cromwellURL;
-        String cromwellFileName;
-        try {
-            cromwellURL = new URL(cromwellLocation);
-            cromwellFileName = new File(cromwellURL.toURI().getPath()).getName();
-        } catch (MalformedURLException | URISyntaxException e) {
-            throw new RuntimeException("Could not create cromwell location", e);
-        }
-        String cromwellTarget = libraryLocation + cromwellFileName;
-        File cromwellTargetFile = new File(cromwellTarget);
-        if (!cromwellTargetFile.exists()) {
-            try {
-                FileUtils.copyURLToFile(cromwellURL, cromwellTargetFile);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not download cromwell location", e);
-            }
-        }
-        return cromwellTargetFile;
+        super(abstractEntryClient);
     }
 
     /**
