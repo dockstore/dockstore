@@ -5,9 +5,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import com.google.common.io.Files;
+import com.google.gson.Gson;
 import io.dockstore.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
@@ -80,7 +83,7 @@ public abstract class CromwellLauncher {
      */
     public Pair<File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type, boolean isLocalEntry, String entry) {
         File workingDir = Files.createTempDir();
-        out("Created temporary working directory at '" + workingDir.getAbsolutePath() +"'");
+        out("Created temporary working directory at '" + workingDir.getAbsolutePath() + "'");
         File primaryDescriptor;
         File zipFile;
         if (!isLocalEntry) {
@@ -111,5 +114,24 @@ public abstract class CromwellLauncher {
         }
 
         return new MutablePair<>(primaryDescriptor, zipFile);
+    }
+
+    /**
+     * Retrieves the output object from the Cromwell stdout
+     * @param stdout Output from Cromwell Run
+     * @param gson Gson object
+     * @return Object for Cromwell output
+     */
+    public Map<String, String> parseOutputObjectFromCromwellStdout(String stdout, Gson gson) {
+        String outputPrefix = "Final Outputs:";
+        int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
+        int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
+        String bracketContents = stdout.substring(startIndex, endIndex).trim();
+
+        if (bracketContents.isEmpty()) {
+            throw new RuntimeException("No cromwell output");
+        }
+
+        return gson.fromJson(bracketContents, HashMap.class);
     }
 }

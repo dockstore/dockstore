@@ -182,16 +182,9 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
                 // capture the output and provision it
                 if (wdlOutputTarget != null) {
                     // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
-                    String outputPrefix = "Final Outputs:";
-                    int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
-                    int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
-                    String bracketContents = stdout.substring(startIndex, endIndex).trim();
-                    if (bracketContents.isEmpty()) {
-                        throw new RuntimeException("No cromwell output");
-                    }
-
                     // grab values from output JSON
-                    Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
+                    Map<String, String> outputJson = parseOutputObjectFromCromwellStdout(stdout, gson);
+
                     System.out.println("Provisioning your output files to their final destinations");
                     final List<String> outputFiles = bridge.getOutputFiles(localPrimaryDescriptorFile);
                     FileProvisioning fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());

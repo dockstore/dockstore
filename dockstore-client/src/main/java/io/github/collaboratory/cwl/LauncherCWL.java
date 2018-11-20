@@ -147,25 +147,26 @@ public class LauncherCWL {
     }
 
     /**
+     * Prints and stores the stdout and stderr to files
      * @param workingDir where to save stderr and stdout
      * @param execute    a pair holding the unformatted stderr and stderr
      * @param stdout     formatted stdout for outpuit
      * @param stderr     formatted stderr for output
-     * @param cwltool    help text explaining name of integration
+     * @param executor    help text explaining name of integration
      */
     public static void outputIntegrationOutput(String workingDir, ImmutablePair<String, String> execute, String stdout, String stderr,
-            String cwltool) {
-        System.out.println(cwltool + " stdout:\n" + stdout);
-        System.out.println(cwltool + " stderr:\n" + stderr);
+            String executor) {
+        System.out.println(executor + " stdout:\n" + stdout);
+        System.out.println(executor + " stderr:\n" + stderr);
         try {
-            final Path path = Paths.get(workingDir + File.separator + cwltool + ".stdout.txt");
+            final Path path = Paths.get(workingDir + File.separator + executor + ".stdout.txt");
             FileUtils.writeStringToFile(path.toFile(), execute.getLeft(), StandardCharsets.UTF_8, false);
-            System.out.println("Saving copy of " + cwltool + " stdout to: " + path.toAbsolutePath().toString());
-            final Path txt2 = Paths.get(workingDir + File.separator + cwltool + ".stderr.txt");
+            System.out.println("Saving copy of " + executor + " stdout to: " + path.toAbsolutePath().toString());
+            final Path txt2 = Paths.get(workingDir + File.separator + executor + ".stderr.txt");
             FileUtils.writeStringToFile(txt2.toFile(), execute.getRight(), StandardCharsets.UTF_8, false);
-            System.out.println("Saving copy of " + cwltool + " stderr to: " + txt2.toAbsolutePath().toString());
+            System.out.println("Saving copy of " + executor + " stderr to: " + txt2.toAbsolutePath().toString());
         } catch (IOException e) {
-            throw new RuntimeException("unable to save " + cwltool + " output", e);
+            throw new RuntimeException("unable to save " + executor + " output", e);
         }
     }
 
@@ -206,10 +207,10 @@ public class LauncherCWL {
     }
 
     public void run(Class cwlClassTarget, File zipFile) {
-        // now read in the INI file
+        // Read INI file
         config = Utilities.parseConfig(configFilePath);
 
-        // parse the CWL tool definition without validation
+        // Parse the CWL tool definition without validation
         CWLRunnerFactory.setConfig(config);
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
@@ -237,9 +238,10 @@ public class LauncherCWL {
             return;
         }
 
-        // setup directories
+        // Setup directories (is this needed)
         globalWorkingDir = setupDirectories();
 
+        // Provision input files
         Map<String, FileProvisioning.FileInfo> inputsId2dockerMountMap;
         Map<String, List<FileProvisioning.FileInfo>> outputMap;
         notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
@@ -274,21 +276,23 @@ public class LauncherCWL {
             notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
             throw e;
         }
-        notificationsClient.sendMessage(NotificationsClient.RUN, true);
 
-        final List<String> wdlRun;
+        // Create command to run Cromwell
+        notificationsClient.sendMessage(NotificationsClient.RUN, true);
+        final List<String> runCommand;
         File localPrimaryDescriptorFile = new File(imageDescriptorPath);
         if (zipFile == null) {
-            wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
+            runCommand = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
         } else {
-            wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", zipFile.getAbsolutePath());
+            runCommand = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", zipFile.getAbsolutePath());
         }
         File cromwellTargetFile = getCromwellTargetFile();
         final String[] s = { "java", "-jar", cromwellTargetFile.getAbsolutePath(), "run" };
         List<String> arguments = new ArrayList<>();
         arguments.addAll(Arrays.asList(s));
-        arguments.addAll(wdlRun);
+        arguments.addAll(runCommand);
 
+        // Execute cromwell command using the temp working dir as the working directory for Cromwell
         int exitCode = 0;
         String stdout;
         String stderr;
@@ -306,11 +310,29 @@ public class LauncherCWL {
             System.out.println("Cromwell exit code: " + exitCode);
         }
 
+        // Provision the output
         notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
-        // Parse cromwell output for file provisioning
         try {
+            // Display output information
             LauncherCWL.outputIntegrationOutput(zipFile.getParentFile().getAbsolutePath(), ImmutablePair.of(stdout, stderr), stdout,
                     stderr, "Cromwell");
+
+            // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)
+            String outputPrefix = "Succeeded";
+            int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
+            int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
+            String bracketContents = stdout.substring(startIndex, endIndex).trim();
+            if (bracketContents.isEmpty()) {
+                throw new RuntimeException("No cromwell output");
+            }
+            Map<String, Object> outputJson = new Gson().fromJson(bracketContents, HashMap.class);
+
+            // Create a list of pairs of output ID and FileInfo objects used for uploading files
+            List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, (Map<String, Object>)outputJson.get("outputs"));
+
+            // Provision files
+            this.fileProvisioning.uploadFiles(outputList);
+
         } catch (Exception e) {
             notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
             throw e;
@@ -318,107 +340,6 @@ public class LauncherCWL {
 
         notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
         System.out.println("Workflow has completed.");
-    }
-
-    public void oldRun(Class cwlClassTarget) {
-        // now read in the INI file
-        config = Utilities.parseConfig(configFilePath);
-
-        // parse the CWL tool definition without validation
-        CWLRunnerFactory.setConfig(config);
-        String notificationsWebHookURL = config.getString("notifications", "");
-        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, notificationsUUID);
-
-        // TODO: may be reactivated if we find a different way to read CWL into Java
-        // String cwlRunner = CWLRunnerFactory.getCWLRunner();
-
-        // Load CWL from JSON to object
-        CWL cwlUtil = new CWL(false, config);
-        final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
-        Object cwlObject;
-        try {
-            cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
-
-        } catch (JsonParseException ex) {
-            LOG.error("The JSON file provided is invalid.");
-            return;
-        }
-
-        if (cwlObject == null) {
-            LOG.info("CWL Workflow was null");
-            return;
-        }
-
-        // this is the job parameterization, just a JSON, defines the inputs/outputs in terms or real URLs that are provisioned by the launcher
-        Map<String, Object> inputsAndOutputsJson = loadJob(runtimeDescriptorPath);
-
-        if (inputsAndOutputsJson == null) {
-            LOG.info("Cannot load job object.");
-            return;
-        }
-
-        // setup directories
-        globalWorkingDir = setupDirectories();
-
-        Map<String, FileProvisioning.FileInfo> inputsId2dockerMountMap;
-        Map<String, List<FileProvisioning.FileInfo>> outputMap;
-        notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
-        Map<String, Object> outputObj;
-        String newJsonPath;
-        System.out.println("Provisioning your input files to your local machine");
-        try {
-            if (cwlObject instanceof Workflow) {
-                Workflow workflow = (Workflow)cwlObject;
-                SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
-                secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
-
-                // pull input files
-                inputsId2dockerMountMap = pullFiles(workflow, inputsAndOutputsJson);
-
-                // prep outputs, just creates output dir and records what the local output path will be
-                outputMap = prepUploadsWorkflow(workflow, inputsAndOutputsJson);
-
-            } else if (cwlObject instanceof CommandLineTool) {
-                CommandLineTool commandLineTool = (CommandLineTool)cwlObject;
-                // pull input files
-                inputsId2dockerMountMap = pullFiles(commandLineTool, inputsAndOutputsJson);
-
-                // prep outputs, just creates output dir and records what the local output path will be
-                outputMap = prepUploadsTool(commandLineTool, inputsAndOutputsJson);
-            } else {
-                throw new UnsupportedOperationException("CWL target type not supported yet");
-            }
-            // create updated JSON inputs document
-            newJsonPath = createUpdatedInputsAndOutputsJson(inputsId2dockerMountMap, outputMap, inputsAndOutputsJson);
-
-            // run command
-        } catch (Exception e) {
-            notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
-            throw e;
-        }
-        notificationsClient.sendMessage(NotificationsClient.RUN, true);
-        try {
-            System.out.println("Calling out to a cwl-runner to run your " + (cwlObject instanceof Workflow ? "workflow" : "tool"));
-            outputObj = runCWLCommand(imageDescriptorPath, newJsonPath, globalWorkingDir + "/outputs/",
-                    globalWorkingDir + "/working/", globalWorkingDir + "/tmp/", stdoutStream, stderrStream);
-            System.out.println();
-        } catch (Exception e) {
-            notificationsClient.sendMessage(NotificationsClient.RUN, false);
-            throw e;
-        }
-        notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
-        // push output files
-        try {
-            if (outputMap.size() > 0) {
-                System.out.println("Provisioning your output files to their final destinations");
-                List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, outputObj);
-                this.fileProvisioning.uploadFiles(outputList);
-            }
-        } catch (Exception e) {
-            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
-            throw e;
-        }
-        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
     }
 
     /**
@@ -860,7 +781,7 @@ public class LauncherCWL {
         List<ImmutablePair<String, FileProvisioning.FileInfo>> outputSet = new ArrayList<>();
 
         if (fileMapDataStructure == null) {
-            System.out.println("Skipping: #" + key + " was null from cwl-runner");
+            System.out.println("Skipping: #" + key + " was null from Cromwell");
             return outputSet;
         }
 
@@ -870,7 +791,7 @@ public class LauncherCWL {
             cwlOutputPath = (String)fileMapDataStructure.get("location");
         }
         if (cwlOutputPath == null) {
-            System.out.println("Skipping: #" + key + " was null from cwl-runner");
+            System.out.println("Skipping: #" + key + " was null from Cromwell");
             return outputSet;
         }
         Path path = Paths.get(cwlOutputPath);
