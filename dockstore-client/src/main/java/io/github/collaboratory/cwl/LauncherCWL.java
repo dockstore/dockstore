@@ -327,8 +327,15 @@ public class LauncherCWL {
             }
             Map<String, Object> outputJson = new Gson().fromJson(bracketContents, HashMap.class);
 
+            // Find the name of the workflow that is used as a suffix for workflow output IDs
+            startIndex = stdout.indexOf("Pre-Processing ");
+            endIndex = stdout.indexOf("\n", startIndex);
+            String temporaryWorkflowPath = stdout.substring(startIndex, endIndex).trim();
+            String[] splitPath = temporaryWorkflowPath.split("/");
+            String workflowName = splitPath[splitPath.length - 1];
+
             // Create a list of pairs of output ID and FileInfo objects used for uploading files
-            List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, (Map<String, Object>)outputJson.get("outputs"));
+            List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, (Map<String, Object>)outputJson.get("outputs"), workflowName);
 
             // Provision files
             this.fileProvisioning.uploadFiles(outputList);
@@ -712,14 +719,14 @@ public class LauncherCWL {
      * @param outputObject provides information on the output files from cwltool
      */
     List<ImmutablePair<String, FileProvisioning.FileInfo>> registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap,
-            Map<String, Object> outputObject) {
+            Map<String, Object> outputObject, String workflowName) {
 
         LOG.info("UPLOADING FILES...");
         List<ImmutablePair<String, FileProvisioning.FileInfo>> outputSet = new ArrayList<>();
 
         for (Entry<String, List<FileProvisioning.FileInfo>> entry : fileMap.entrySet()) {
             List<FileProvisioning.FileInfo> files = entry.getValue();
-            String key = entry.getKey();
+            String key = workflowName + "." + entry.getKey();
 
             if ((outputObject.get(key) instanceof List)) {
                 List<Map<String, Object>> cwltoolOutput = (List)outputObject.get(key);
