@@ -49,7 +49,7 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 public class NextFlowHandler implements LanguageHandlerInterface {
 
     @Override
-    public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         ConfigObject parse = getConfigObject(content);
         ConfigObject manifest = (ConfigObject)parse.get("manifest");
@@ -70,7 +70,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface) {
+        SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
         ConfigObject parse = getConfigObject(content);
         Map<String, SourceFile> imports = new HashMap<>();
 
@@ -80,8 +80,11 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         if (manifest != null && manifest.containsKey("mainScript")) {
             mainScriptPath = (String)manifest.get("mainScript");
         }
-        Optional<SourceFile> sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptPath);
+        String mainScriptAbsolutePath = convertRelativePathToAbsolutePath(filepath, mainScriptPath);
+
+        Optional<SourceFile> sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptAbsolutePath);
         if (sourceFile.isPresent()) {
+            sourceFile.get().setPath(mainScriptPath);
             imports.put(mainScriptPath, sourceFile.get());
         }
         // source files in /lib seem to be automatically added to the script classpath
@@ -294,11 +297,16 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         }
         mainDescriptor = secondaryDescContent.get(mainScriptPath);
 
-        // Get default container
+        // Get default container (process.container takes precedence over params.container)
         ConfigObject params = (ConfigObject)parse.get("params");
         String defaultContainer = null;
         if (params != null && params.containsKey("container")) {
             defaultContainer = params.get("container").toString();
+        }
+
+        ConfigObject process = (ConfigObject)parse.get("process");
+        if (process != null && process.containsKey("container")) {
+            defaultContainer = process.get("container").toString();
         }
 
         Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);

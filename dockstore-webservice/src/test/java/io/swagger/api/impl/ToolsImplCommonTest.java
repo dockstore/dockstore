@@ -60,6 +60,7 @@ public class ToolsImplCommonTest {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
         sourceFile.setPath("/Dockstore.wdl");
+        sourceFile.setAbsolutePath("/Dockstore.wdl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
         FileWrapper actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile);
@@ -74,6 +75,7 @@ public class ToolsImplCommonTest {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.FileType.DOCKSTORE_CWL);
         sourceFile.setPath("/Dockstore.cwl");
+        sourceFile.setAbsolutePath("/Dockstore.cwl");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
         FileWrapper actualToolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor("",sourceFile);
@@ -123,11 +125,13 @@ public class ToolsImplCommonTest {
         sourceFile.setType(SourceFile.FileType.DOCKERFILE);
         sourceFile.setContent("TEST DOCKERFILE");
         sourceFile.setPath("/Dockerfile");
+        sourceFile.setAbsolutePath("/Dockerfile");
         SourceFile sourceFile2 = new SourceFile();
         sourceFile2.setId(1);
         sourceFile2.setType(SourceFile.FileType.DOCKSTORE_CWL);
         sourceFile2.setContent("TEST CWL");
         sourceFile2.setPath("/Dockstore.cwl");
+        sourceFile2.setAbsolutePath("/Dockstore.cwl");
         tag.addSourceFile(sourceFile);
         tag.addSourceFile(sourceFile2);
         tool.addTag(tag);
@@ -212,6 +216,7 @@ public class ToolsImplCommonTest {
         actualSourceFile1.setType(SourceFile.FileType.DOCKSTORE_WDL);
         actualSourceFile1.setContent(PLACEHOLDER_CONTENT);
         actualSourceFile1.setPath("/pcawg-cgp-somatic-workflow.wdl");
+        actualSourceFile1.setAbsolutePath("/pcawg-cgp-somatic-workflow.wdl");
         WorkflowVersion actualWorkflowVersion1 = new WorkflowVersion();
         actualWorkflowVersion1.setWorkflowPath("/pcawg-cgp-somatic-workflow.wdl");
         actualWorkflowVersion1.setLastModified(null);
@@ -342,6 +347,7 @@ public class ToolsImplCommonTest {
         SourceFile sourceFile = new SourceFile();
         sourceFile.setType(SourceFile.FileType.CWL_TEST_JSON);
         sourceFile.setPath("/test.cwl.json");
+        sourceFile.setAbsolutePath("/test.cwl.json");
         sourceFile.setContent(PLACEHOLDER_CONTENT);
         sourceFile.setId(9001);
         FileWrapper actualToolTests = ToolsImplCommon.sourceFileToToolTests("", sourceFile);

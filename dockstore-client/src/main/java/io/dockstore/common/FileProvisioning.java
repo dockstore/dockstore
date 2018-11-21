@@ -78,8 +78,8 @@ public class FileProvisioning {
     private final int threads;
     private final boolean cache;
 
-    private List<ProvisionInterface> plugins = new ArrayList<>();
-    private List<PreProvisionInterface> preProvisionPlugins = new ArrayList<>();
+    private List<ProvisionInterface> plugins;
+    private List<PreProvisionInterface> preProvisionPlugins;
 
     private INIConfiguration config;
 
@@ -423,7 +423,7 @@ public class FileProvisioning {
 
     private void handleUploadProvisionWithRetries(String targetPath, Path localPath, ProvisionInterface provision, String metadata) {
         int maxRetries = config.getInt(FILE_PROVISION_RETRIES, DEFAULT_RETRIES);
-        retryWrapper(provision, targetPath, localPath, maxRetries, false, threads);
+        retryWrapper(provision, targetPath, localPath, maxRetries, false, metadata, threads);
     }
 
     /**
