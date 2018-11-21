@@ -118,6 +118,7 @@ public abstract class CromwellLauncher {
 
     /**
      * Retrieves the output object from the Cromwell stdout
+     * TODO: There has to be a better way to do this!
      * @param stdout Output from Cromwell Run
      * @param gson Gson object
      * @return Object for Cromwell output

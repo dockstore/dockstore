@@ -66,13 +66,13 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String csvRuns, String wdlOutputTarget,
             String uuid) throws IOException, ApiException {
-
         // Check for required values
-        boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)) && csvRuns == null);
+        boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)));
         if (!hasRequiredFlags) {
             errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
         }
 
+        // Keep track of original parameter file given
         String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlParameterFile, jsonParameterFile, csvRuns);
 
         // Setup temp directory and download files
@@ -81,21 +81,24 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
         File zipFile = descriptorAndZip.getRight();
 
         // Update parameter file
-        jsonParameterFile = convertYamlToJson(yamlParameterFile, jsonParameterFile);
+        String parameterFile = convertYamlToJson(yamlParameterFile, jsonParameterFile);
 
-        if (jsonParameterFile != null) {
-            // translate JSON to absolute path
-            if (Paths.get(jsonParameterFile).toFile().exists()) {
-                jsonParameterFile = Paths.get(jsonParameterFile).toFile().getAbsolutePath();
+        if (parameterFile != null) {
+            // Translate JSON to absolute path
+            if (Paths.get(parameterFile).toFile().exists()) {
+                parameterFile = Paths.get(parameterFile).toFile().getAbsolutePath();
             }
 
             // Download parameter file if remote
             String jsonTempRun = File.createTempFile("parameter", "json").getAbsolutePath();
-            FileProvisioning.retryWrapper(null, jsonParameterFile, Paths.get(jsonTempRun), 1, true, 1);
-            jsonParameterFile = jsonTempRun;
+            FileProvisioning.retryWrapper(null, parameterFile, Paths.get(jsonTempRun), 1, true, 1);
+            parameterFile = jsonTempRun;
 
-            final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), primaryDescriptor.getAbsolutePath(), jsonParameterFile,
+            // Instantiate the CWL launcher used to run workflow
+            final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), primaryDescriptor.getAbsolutePath(), parameterFile,
                     null, null, originalTestParameterFilePath, uuid);
+
+            // Continue launch process
             if (abstractEntryClient instanceof WorkflowClient) {
                 cwlLauncher.run(Workflow.class, zipFile);
             } else {
