@@ -400,6 +400,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 inputStream.close();
                 outputStream.close();
 
+                SwaggerUtility.unzipFile(zipFile, directory);
+
                 return primaryDescriptorFile;
             }
         } else {

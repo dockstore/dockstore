@@ -55,7 +55,7 @@ public final class SwaggerUtility {
                 throw new RuntimeException(e);
             }
         });
-        FileUtils.deleteQuietly(zipFile);
+        //FileUtils.deleteQuietly(zipFile);
     }
 
     /**
