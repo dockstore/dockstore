@@ -220,6 +220,7 @@ public class LauncherCWL {
 
         // Load CWL from JSON to object
         CWL cwlUtil = new CWL(false, config);
+        // This won't work since I am using zip files, it is expecting files to be unzipped
         final String imageDescriptorContent = cwlUtil.parseCWL(imageDescriptorPath).getLeft();
         Object cwlObject;
         try {
@@ -680,40 +681,6 @@ public class LauncherCWL {
             throw new RuntimeException("unable to create datastore directories", e);
         }
         return globalWorkingDir;
-    }
-
-    private Map<String, Object> runCWLCommand(String cwlFile, String jsonSettings, String outputDir, String workingDir, String tmpDir,
-            OutputStream localStdoutStream, OutputStream localStderrStream) {
-        // Get extras from config file
-        List<String> extraFlags = (List)config.getList("cwltool-extra-parameters");
-
-        if (extraFlags.size() > 0) {
-            System.out.println("########### WARNING ###########");
-            System.out.println("You are using extra flags for your cwl runner which may not be supported. Use at your own risk.");
-        }
-
-        // Trim the input
-        extraFlags = extraFlags.stream().map(string -> string.split(",")).flatMap(Arrays::stream).map(this::trimAndPrintInput)
-                .collect(Collectors.toList());
-
-        // Create cwltool command
-        CWLRunnerInterface cwlRunner = CWLRunnerFactory.createCWLRunner();
-        List<String> command = cwlRunner.getExecutionCommand(outputDir, tmpDir, workingDir, cwlFile, jsonSettings);
-        command.addAll(1, extraFlags);
-
-        final String joined = Joiner.on(" ").join(command);
-        System.out.println("Executing: " + joined);
-        final ImmutablePair<String, String> execute = Utilities
-                .executeCommand(joined, MoreObjects.firstNonNull(localStdoutStream, System.out),
-                        MoreObjects.firstNonNull(localStderrStream, System.err));
-        // mutate stderr and stdout into format for output
-
-        String stdout = execute.getLeft().replaceAll("(?m)^", "\t");
-        String stderr = execute.getRight().replaceAll("(?m)^", "\t");
-
-        outputIntegrationOutput(outputDir, execute, stdout, stderr, FilenameUtils.getName(command.get(0)));
-        Map<String, Object> obj = yaml.load(execute.getLeft());
-        return obj;
     }
 
     /**

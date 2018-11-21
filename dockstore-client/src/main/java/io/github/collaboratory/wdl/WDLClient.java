@@ -48,6 +48,7 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,10 +82,10 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
      * @return an exit code for the run
      */
     @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid)
+    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid)
         throws ApiException {
 
-        boolean hasRequiredFlags = ((yamlRun != null || jsonRun != null) && ((yamlRun != null) != (jsonRun != null)) && csvRuns == null);
+        boolean hasRequiredFlags = ((yamlRun != null || jsonRun != null) && ((yamlRun != null) != (jsonRun != null)));
         if (!hasRequiredFlags) {
             errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
         }
@@ -94,17 +95,14 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
-        try {
-            final File tempLaunchDirectory = Files.createTempDir();
-            File localPrimaryDescriptorFile;
-            if (!isLocalEntry) {
-                // Grab WDL(s) from server and store in a temporary directory, maintaining directory structure
-                localPrimaryDescriptorFile = abstractEntryClient
-                    .downloadTargetEntry(entry, ToolDescriptor.TypeEnum.WDL, true, tempLaunchDirectory);
-            } else {
-                localPrimaryDescriptorFile = new File(entry);
-            }
 
+        // Setup temp directory and download files
+        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        File tempLaunchDirectory = descriptorAndZip.getLeft();
+        File localPrimaryDescriptorFile = descriptorAndZip.getMiddle();
+        File zipFile = descriptorAndZip.getRight();
+
+        try {
             // Get list of input files
             Bridge bridge = new Bridge(localPrimaryDescriptorFile.getParent());
             Map<String, String> wdlInputs = null;
@@ -137,7 +135,11 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
                 Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
                 // Make new json file
                 String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-                wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
+                if (zipFile == null) {
+                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
+                } else {
+                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", zipFile.getAbsolutePath());
+                }
             } catch (Exception e) {
                 notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
                 throw e;
@@ -177,8 +179,8 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
             }
             notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
             try {
-                LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"),
-                    stderr.replaceAll("\n", "\t"), "Cromwell");
+                LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout,
+                    stderr, "Cromwell");
                 // capture the output and provision it
                 if (wdlOutputTarget != null) {
                     // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST

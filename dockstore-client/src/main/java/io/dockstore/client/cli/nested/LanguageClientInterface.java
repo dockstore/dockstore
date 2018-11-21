@@ -51,11 +51,10 @@ public interface LanguageClientInterface {
      * @param isLocalEntry is the descriptor a local file
      * @param yamlRun      runtime descriptor, one of these is required
      * @param jsonRun      runtime descriptor, one of these is required
-     * @param csvRuns      runtime descriptor, one of these is required
      * @param wdlOutputTarget directory where to drop off output for wdl
      * @param uuid         uuid that was optional specified for notifications
      * @throws IOException
      * @throws ApiException
      */
-    long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid) throws IOException, ApiException;
+    long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid) throws IOException, ApiException;
 }

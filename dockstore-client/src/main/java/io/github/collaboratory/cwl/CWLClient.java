@@ -44,7 +44,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
@@ -64,7 +64,7 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
     }
 
     @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String csvRuns, String wdlOutputTarget,
+    public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String wdlOutputTarget,
             String uuid) throws IOException, ApiException {
         // Check for required values
         boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)));
@@ -73,11 +73,12 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
         }
 
         // Keep track of original parameter file given
-        String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlParameterFile, jsonParameterFile, csvRuns);
+        String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlParameterFile, jsonParameterFile);
 
         // Setup temp directory and download files
-        Pair<File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
-        File primaryDescriptor = descriptorAndZip.getLeft();
+        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        File workingDir = descriptorAndZip.getLeft();
+        File primaryDescriptor = descriptorAndZip.getMiddle();
         File zipFile = descriptorAndZip.getRight();
 
         // Update parameter file

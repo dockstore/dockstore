@@ -58,9 +58,9 @@ public class NextFlowClient implements LanguageClientInterface {
 
 
     @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid)
+    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid)
         throws ApiException {
-        assert (yamlRun == null && jsonRun != null && csvRuns == null);
+        assert (yamlRun == null && jsonRun != null);
 
         String notificationsWebHookURL = iniConfiguration.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);

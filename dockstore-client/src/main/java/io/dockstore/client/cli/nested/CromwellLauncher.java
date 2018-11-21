@@ -16,8 +16,8 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
@@ -81,8 +81,15 @@ public abstract class CromwellLauncher {
      * @param entry Either entry path on Dockstore or local path
      * @return Pair of downloaded primary descriptor and zip file
      */
-    public Pair<File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type, boolean isLocalEntry, String entry) {
-        File workingDir = Files.createTempDir();
+    public Triple<File, File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type, boolean isLocalEntry, String entry) {
+        File workingDir;
+        try {
+            workingDir = Files.createTempDir();
+        } catch (IllegalStateException ex) {
+            exceptionMessage(ex, "Could not create a temporary working directory.", IO_ERROR);
+            throw new RuntimeException(ex);
+        }
+
         out("Created temporary working directory at '" + workingDir.getAbsolutePath() + "'");
         File primaryDescriptor;
         File zipFile;
@@ -113,7 +120,7 @@ public abstract class CromwellLauncher {
             out("Using local file '" + entry + "' as primary descriptor");
         }
 
-        return new MutablePair<>(primaryDescriptor, zipFile);
+        return new MutableTriple<>(workingDir, primaryDescriptor, zipFile);
     }
 
     /**
