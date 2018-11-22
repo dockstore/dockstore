@@ -19,6 +19,8 @@ package io.dockstore.webservice.helpers;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -330,14 +332,27 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      */
     default void writeStreamAsZip(Set<SourceFile> sourceFiles, OutputStream outputStream, Path workingDirectory) {
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+            List<String> paths = new ArrayList<>();
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
                 Path resolve = workingDirectory.resolve(sourceFile.getAbsolutePath());
                 // remove quirk of working directory
                 String stripStart = StringUtils.stripStart(resolve.toFile().toString(), "./");
                 ZipEntry secondaryZipEntry = new ZipEntry(stripStart);
+
+                // Deal with folders
+                Path filePath = Paths.get(stripStart).normalize();
+                if (filePath.getNameCount() > 1) {
+                    String parentPath = filePath.getParent().toString() + "/";
+                    if (!paths.contains(parentPath)) {
+                        zipOutputStream.putNextEntry(new ZipEntry(parentPath));
+                        zipOutputStream.closeEntry();
+                        paths.add(parentPath);
+                    }
+                }
                 zipOutputStream.putNextEntry(secondaryZipEntry);
                 zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));
+                zipOutputStream.closeEntry();
             }
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
