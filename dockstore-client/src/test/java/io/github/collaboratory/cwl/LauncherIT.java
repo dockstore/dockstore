@@ -88,7 +88,7 @@ public abstract class LauncherIT {
         final LauncherCWL launcherCWL = new LauncherCWL(
                 new String[] { "--config", getConfigFile(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
                         jobFile.getAbsolutePath() });
-        launcherCWL.run(CommandLineTool.class);
+        launcherCWL.run(CommandLineTool.class, cwlFile.getParentFile(), cwlFile.getParentFile());
     }
 
     @Test
@@ -102,7 +102,7 @@ public abstract class LauncherIT {
         final LauncherCWL launcherCWL = new LauncherCWL(
             new String[] { "--config", getConfigFileWithExtraParameters(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
                 jobFile.getAbsolutePath() });
-        launcherCWL.run(CommandLineTool.class);
+        launcherCWL.run(CommandLineTool.class, cwlFile.getParentFile(), cwlFile.getParentFile());
     }
 
     @Test
@@ -117,7 +117,7 @@ public abstract class LauncherIT {
         }
         final LauncherCWL launcherCWL = new LauncherCWL(getConfigFile(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr, jobFile.getAbsolutePath(), null);
-        launcherCWL.run(CommandLineTool.class);
+        launcherCWL.run(CommandLineTool.class, cwlFile.getParentFile(), cwlFile.getParentFile());
 
         assertTrue(!stdout.toString().isEmpty());
     }
@@ -134,7 +134,7 @@ public abstract class LauncherIT {
         }
         final LauncherCWL launcherCWL = new LauncherCWL(getConfigFile(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
                 stdout, stderr, jobFile.getAbsolutePath(), null);
-        launcherCWL.run(Workflow.class);
+        launcherCWL.run(Workflow.class, cwlFile.getParentFile(), cwlFile.getParentFile());
 
         assertTrue(!stdout.toString().isEmpty());
     }

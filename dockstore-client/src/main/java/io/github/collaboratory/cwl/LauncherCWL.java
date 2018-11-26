@@ -200,15 +200,7 @@ public class LauncherCWL {
         return cromwellTargetFile;
     }
 
-    /**
-     * Runs the CWL tool/workflow with no imports set
-     * @param cwlCallTarget
-     */
-    public void run(Class cwlCallTarget) {
-        run(cwlCallTarget, null);
-    }
-
-    public void run(Class cwlClassTarget, File zipFile) {
+    public void run(Class cwlClassTarget, File zipFile, File workingDirectory) {
         // Setup notifications
         config = Utilities.parseConfig(configFilePath);
         CWLRunnerFactory.setConfig(config);
@@ -299,7 +291,7 @@ public class LauncherCWL {
         try {
             final String join = Joiner.on(" ").join(arguments);
             out(join);
-            final ImmutablePair<String, String> execute = Utilities.executeCommand(join, zipFile.getParentFile());
+            final ImmutablePair<String, String> execute = Utilities.executeCommand(join, workingDirectory);
             stdout = execute.getLeft();
             stderr = execute.getRight();
         } catch (RuntimeException e) {

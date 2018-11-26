@@ -101,9 +101,9 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
 
             // Continue launch process
             if (abstractEntryClient instanceof WorkflowClient) {
-                cwlLauncher.run(Workflow.class, zipFile);
+                cwlLauncher.run(Workflow.class, zipFile, workingDir);
             } else {
-                cwlLauncher.run(CommandLineTool.class, zipFile);
+                cwlLauncher.run(CommandLineTool.class, zipFile, workingDir);
             }
         }
 
