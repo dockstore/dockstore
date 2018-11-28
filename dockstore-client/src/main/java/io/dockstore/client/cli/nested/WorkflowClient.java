@@ -375,9 +375,10 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             File zipFile = new File(directory, zipFilename(workflow));
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
-                SwaggerUtility.unzipFile(zipFile, directory);
+                SwaggerUtility.unzipFile(zipFile, directory, false);
                 return new File(directory, first.get().getWorkflowPath());
             } else {
+                // TODO: This is not needed once Cromwell supports being given a directory for imports
                 ZipFile zipDir = new ZipFile(zipFile);
                 String primaryDescriptorLocation = first.get().getWorkflowPath();
 
@@ -386,6 +387,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     primaryDescriptorLocation = primaryDescriptorLocation.substring(1);
                 }
 
+                // Get the primary descriptor and store to disk
                 ZipEntry primaryDescriptorInZip = zipDir.getEntry(primaryDescriptorLocation);
                 if (primaryDescriptorInZip == null) {
                     throw new RuntimeException("Could not find primary descriptor with path '" + primaryDescriptorLocation + "' in zip file");
@@ -400,7 +402,8 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 inputStream.close();
                 outputStream.close();
 
-                SwaggerUtility.unzipFile(zipFile, directory);
+                // Unzip file but do not delete
+                SwaggerUtility.unzipFile(zipFile, directory, false);
 
                 return primaryDescriptorFile;
             }

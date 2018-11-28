@@ -1,6 +1,8 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -8,6 +10,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import com.google.common.io.Files;
 import com.google.gson.Gson;
@@ -116,11 +120,67 @@ public abstract class CromwellLauncher {
             }
         } else {
             primaryDescriptor = new File(entry);
-            zipFile = null;
+            // zip the directory
+            File parentDir = primaryDescriptor.getParentFile();
+            zipFile = zipDirectory(workingDir, parentDir);
             out("Using local file '" + entry + "' as primary descriptor");
         }
 
         return new MutableTriple<>(workingDir, primaryDescriptor, zipFile);
+    }
+
+    /**
+     * Zips the given directoryToZip and returns the zip file
+     * @param workingDir The working dir to place the zip file
+     * @param directoryToZip The directoryToZip to zip
+     * @return The zip file created
+     */
+    public File zipDirectory(File workingDir, File directoryToZip) {
+        String zipFilePath = workingDir.getAbsolutePath() + "/directory.zip";
+        try {
+            FileOutputStream fos = new FileOutputStream(zipFilePath);
+            ZipOutputStream zos = new ZipOutputStream(fos);
+            zipFile(directoryToZip, directoryToZip.getName(), zos);
+            zos.close();
+            fos.close();
+        } catch (IOException ex) {
+            exceptionMessage(ex, "There was a problem zipping the directoryToZip '" + directoryToZip.getPath() + "'", IO_ERROR);
+        }
+        return new File(zipFilePath);
+    }
+
+    /**
+     * A helper function for zipping directories
+     * @param fileToZip File being looked at (could be a directory)
+     * @param fileName Name of file being looked at
+     * @param zos Zip Output Stream
+     * @throws IOException
+     */
+    public void zipFile(File fileToZip, String fileName, ZipOutputStream zos) throws IOException {
+        if (fileToZip.isHidden()) {
+            return;
+        }
+        if (fileToZip.isDirectory()) {
+            if (fileName.endsWith("/")) {
+                zos.putNextEntry(new ZipEntry(fileName.endsWith("/") ? fileName : fileName + "/"));
+                zos.closeEntry();
+            }
+            File[] children = fileToZip.listFiles();
+            for (File childFile : children) {
+                zipFile(childFile, fileName + "/" + childFile.getName(), zos);
+            }
+            return;
+        }
+        FileInputStream fis = new FileInputStream(fileToZip);
+        ZipEntry zipEntry = new ZipEntry(fileName);
+        zos.putNextEntry(zipEntry);
+        final int byteLength = 1024;
+        byte[] bytes = new byte[byteLength];
+        int length;
+        while ((length = fis.read(bytes)) >= 0) {
+            zos.write(bytes, 0, length);
+        }
+        fis.close();
     }
 
     /**

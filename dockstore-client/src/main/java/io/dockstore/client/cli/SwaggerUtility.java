@@ -44,7 +44,7 @@ public final class SwaggerUtility {
                 new String[] { "BEARER" }, type);
     }
 
-    public static void unzipFile(File zipFile, File unzipDirectory) throws IOException {
+    public static void unzipFile(File zipFile, File unzipDirectory, boolean deleteZip) throws IOException {
         ZipFile zipFileActual = new ZipFile(zipFile);
         zipFileActual.stream().forEach((ZipEntry zipEntry) -> {
             if (!zipEntry.isDirectory()) {
@@ -58,7 +58,10 @@ public final class SwaggerUtility {
                 }
             }
         });
-        //FileUtils.deleteQuietly(zipFile);
+
+        if (deleteZip) {
+            FileUtils.deleteQuietly(zipFile);
+        }
     }
 
     /**
