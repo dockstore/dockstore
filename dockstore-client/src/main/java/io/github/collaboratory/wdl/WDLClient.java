@@ -136,11 +136,7 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
                 Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
                 // Make new json file
                 String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-                if (zipFile == null) {
-                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
-                } else {
-                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", zipFile.getAbsolutePath());
-                }
+                wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
             } catch (Exception e) {
                 notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
                 throw e;
