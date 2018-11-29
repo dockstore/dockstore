@@ -98,9 +98,9 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
 
         // Setup temp directory and download files
-        Pair<File, File> launchDirAndDescriptor = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
-        File tempLaunchDirectory = launchDirAndDescriptor.getLeft();
-        File localPrimaryDescriptorFile = launchDirAndDescriptor.getRight();
+        Pair<File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        File tempLaunchDirectory = descriptorAndZip.getLeft();
+        File localPrimaryDescriptorFile = descriptorAndZip.getRight();
 
         try {
             // Get list of input files

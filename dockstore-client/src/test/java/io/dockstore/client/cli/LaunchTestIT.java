@@ -466,7 +466,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 2, countMatches);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 1, countMatches);
         String filename = "test1";
         checkFileAndThenDeleteIt(filename);
         FileUtils.deleteDirectory(new File(filename));
@@ -631,7 +631,7 @@ public class LaunchTestIT {
         ToolClient toolClient = new ToolClient(api, null, usersApi, client, false);
         toolClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Succeeded"));
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
     }
 
     private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
@@ -646,7 +646,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Succeeded"));
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
     }
 
     @Test

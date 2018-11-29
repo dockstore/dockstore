@@ -165,7 +165,7 @@ public abstract class LauncherIT {
         fileMap.put("summary__multiqc", simulatedList);
         fileMap.put("variants__calls", simulatedList);
         fileMap.put("variants__gvcf", simulatedList);
-        launcherCWL.registerOutputFiles(fileMap, outputObject, "output");
+        launcherCWL.registerOutputFiles(fileMap, outputObject, "");
     }
 
     @Test

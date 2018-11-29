@@ -76,9 +76,9 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
         String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlParameterFile, jsonParameterFile);
 
         // Setup temp directory and download files
-        Pair<File, File> launchDirAndDescriptor = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
-        File workingDir = launchDirAndDescriptor.getLeft();
-        File primaryDescriptor = launchDirAndDescriptor.getRight();
+        Pair<File, File> workDirDescAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        File workingDir = workDirDescAndZip.getLeft();
+        File primaryDescriptor = workDirDescAndZip.getRight();
 
         // Update parameter file
         String parameterFile = convertYamlToJson(yamlParameterFile, jsonParameterFile);

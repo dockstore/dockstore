@@ -1,5 +1,5 @@
 {
-  "output.variants__calls": [
+  "variants__calls": [
     [
       {
         "checksum": "sha1$e94a18ed923bf26dbdacf91814b0811a23d1e5db",
@@ -75,7 +75,7 @@
       }
     ]
   ],
-  "output.summary__multiqc": [
+  "summary__multiqc": [
     {
       "checksum": "sha1$e01de8e6783721183c16982bad82a5ca1cfb787f",
       "basename": "multiqc_report.html",
@@ -167,10 +167,10 @@
       "size": 1136108
     }
   ],
-  "output.variants__gvcf": [
+  "variants__gvcf": [
     []
   ],
-  "output.align_bam": [
+  "align_bam": [
     {
       "checksum": "sha1$5403afdede460f627acaeac11f542d001c254dca",
       "basename": "NA12878-chr20-sort.bam",
@@ -190,7 +190,7 @@
       "size": 2938656653
     }
   ],
-  "output.validate__grading_summary": [
+  "validate__grading_summary": [
     {
       "checksum": "sha1$fa374d9e63531a4b1e3d43f9a16d3512b38b3b99",
       "basename": "grading-summary-NA12878-chr20.csv",

@@ -124,6 +124,63 @@ public abstract class CromwellLauncher {
     }
 
     /**
+     * Zips the given directoryToZip and returns the zip file
+     * @param workingDir The working dir to place the zip file
+     * @param directoryToZip The directoryToZip to zip
+     * @return The zip file created
+     */
+    public File zipDirectory(File workingDir, File directoryToZip) {
+        String zipFilePath = workingDir.getAbsolutePath() + "/directory.zip";
+        try {
+            FileOutputStream fos = new FileOutputStream(zipFilePath);
+            ZipOutputStream zos = new ZipOutputStream(fos);
+            zipFile(directoryToZip, directoryToZip.getName(), zos);
+            zos.close();
+            fos.close();
+        } catch (IOException ex) {
+            exceptionMessage(ex, "There was a problem zipping the directoryToZip '" + directoryToZip.getPath() + "'", IO_ERROR);
+        }
+        return new File(zipFilePath);
+    }
+
+    /**
+     * A helper function for zipping directories
+     * @param fileToZip File being looked at (could be a directory)
+     * @param fileName Name of file being looked at
+     * @param zos Zip Output Stream
+     * @throws IOException
+     */
+    public void zipFile(File fileToZip, String fileName, ZipOutputStream zos) throws IOException {
+        if (fileToZip.isHidden()) {
+            return;
+        }
+        if (fileToZip.isDirectory()) {
+            if (fileName.endsWith("/")) {
+                zos.putNextEntry(new ZipEntry(fileName.endsWith("/") ? fileName : fileName + "/"));
+                zos.closeEntry();
+            }
+            File[] children = fileToZip.listFiles();
+            for (File childFile : children) {
+                zipFile(childFile, fileName + "/" + childFile.getName(), zos);
+            }
+
+            zos.putNextEntry(new ZipEntry(fileName + "/"));
+            zos.closeEntry();
+            return;
+        }
+        FileInputStream fis = new FileInputStream(fileToZip);
+        ZipEntry zipEntry = new ZipEntry(fileName);
+        zos.putNextEntry(zipEntry);
+        final int byteLength = 1024;
+        byte[] bytes = new byte[byteLength];
+        int length;
+        while ((length = fis.read(bytes)) >= 0) {
+            zos.write(bytes, 0, length);
+        }
+        fis.close();
+    }
+
+    /**
      * Retrieves the output object from the Cromwell stdout
      * TODO: There has to be a better way to do this!
      * @param stdout Output from Cromwell Run
