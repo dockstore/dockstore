@@ -20,8 +20,8 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
@@ -85,7 +85,7 @@ public abstract class CromwellLauncher {
      * @param entry Either entry path on Dockstore or local path
      * @return Triple of working dir, primary descriptor and zip file
      */
-    public Pair<File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type, boolean isLocalEntry, String entry) {
+    public Triple<File, File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type, boolean isLocalEntry, String entry) {
         File workingDir;
         try {
             workingDir = Files.createTempDir();
@@ -96,11 +96,14 @@ public abstract class CromwellLauncher {
 
         out("Created temporary working directory at '" + workingDir.getAbsolutePath() + "'");
         File primaryDescriptor;
+        File zipFile;
         if (!isLocalEntry) {
             try {
                 primaryDescriptor = abstractEntryClient.downloadTargetEntry(entry, type, true, workingDir);
                 String[] parts = entry.split(":");
                 String path = parts[0];
+                String convertedName = path.replaceAll("/", "_") + ".zip";
+                zipFile = new File(workingDir, convertedName);
                 out("Successfully downloaded files for entry '" + path + "'");
             } catch (ApiException ex) {
                 if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
@@ -117,10 +120,13 @@ public abstract class CromwellLauncher {
             }
         } else {
             primaryDescriptor = new File(entry);
+            //File parentDir = primaryDescriptor.getParentFile();
+            //zipFile = zipDirectory(workingDir, parentDir);
+            zipFile = null;
             out("Using local file '" + entry + "' as primary descriptor");
         }
 
-        return new MutablePair<>(workingDir, primaryDescriptor);
+        return new MutableTriple<>(workingDir, primaryDescriptor, zipFile);
     }
 
     /**

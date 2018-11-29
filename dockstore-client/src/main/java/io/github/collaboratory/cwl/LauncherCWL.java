@@ -200,7 +200,7 @@ public class LauncherCWL {
         return cromwellTargetFile;
     }
 
-    public void run(Class cwlClassTarget, File workingDirectory) {
+    public void run(Class cwlClassTarget, File zipFile, File workingDirectory) {
         // Setup notifications
         config = Utilities.parseConfig(configFilePath);
         CWLRunnerFactory.setConfig(config);
@@ -302,7 +302,7 @@ public class LauncherCWL {
         notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
         try {
             // Display output information
-            LauncherCWL.outputIntegrationOutput(localPrimaryDescriptorFile.getParentFile().getAbsolutePath(), ImmutablePair.of(stdout, stderr), stdout,
+            LauncherCWL.outputIntegrationOutput(zipFile.getParentFile().getAbsolutePath(), ImmutablePair.of(stdout, stderr), stdout,
                     stderr, "Cromwell");
 
             // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)

@@ -17,7 +17,10 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -27,6 +30,8 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import javax.ws.rs.core.GenericType;
 
@@ -370,9 +375,38 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             File zipFile = new File(directory, zipFilename(workflow));
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
-                SwaggerUtility.unzipFile(zipFile, directory, true);
+                SwaggerUtility.unzipFile(zipFile, directory, false);
+                return new File(directory, first.get().getWorkflowPath());
+            } else {
+                // TODO: This is not needed once Cromwell supports being given a directory for imports
+                ZipFile zipDir = new ZipFile(zipFile);
+                String primaryDescriptorLocation = first.get().getWorkflowPath();
+
+                // Change the path to be relative to zip directory
+                if (primaryDescriptorLocation.startsWith("/")) {
+                    primaryDescriptorLocation = primaryDescriptorLocation.substring(1);
+                }
+
+                // Get the primary descriptor and store to disk
+                ZipEntry primaryDescriptorInZip = zipDir.getEntry(primaryDescriptorLocation);
+                if (primaryDescriptorInZip == null) {
+                    throw new RuntimeException("Could not find primary descriptor with path '" + primaryDescriptorLocation + "' in zip file");
+                }
+                InputStream inputStream = zipDir.getInputStream(primaryDescriptorInZip);
+                byte[] buffer = new byte[inputStream.available()];
+                inputStream.read(buffer);
+
+                File primaryDescriptorFile = new File(directory, first.get().getWorkflowPath());
+                OutputStream outputStream = new FileOutputStream(primaryDescriptorFile);
+                outputStream.write(buffer);
+                inputStream.close();
+                outputStream.close();
+
+                // Unzip file but do not delete
+                SwaggerUtility.unzipFile(zipFile, directory, false);
+
+                return primaryDescriptorFile;
             }
-            return new File(directory, first.get().getWorkflowPath());
         } else {
             throw new RuntimeException("version not found");
         }
