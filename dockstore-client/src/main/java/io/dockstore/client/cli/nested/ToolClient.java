@@ -17,10 +17,7 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -30,8 +27,6 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import javax.ws.rs.core.GenericType;
 
@@ -655,39 +650,10 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 File zipFile = new File(zipFilename(container));
                 FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
                 if (unzip) {
-                    SwaggerUtility.unzipFile(zipFile, directory, false);
-                    return new File(directory, type == ToolDescriptor.TypeEnum.CWL ? first.get().getCwlPath() : first.get().getWdlPath());
-                } else {
-                    // TODO: This is not needed once Cromwell supports being given a directory for imports
-                    String workflowPath = type == ToolDescriptor.TypeEnum.CWL ? first.get().getCwlPath() : first.get().getWdlPath();
-                    ZipFile zipDir = new ZipFile(zipFile);
-                    String primaryDescriptorLocation = workflowPath;
-
-                    // Change the path to be relative to zip directory
-                    if (primaryDescriptorLocation.startsWith("/")) {
-                        primaryDescriptorLocation = primaryDescriptorLocation.substring(1);
-                    }
-
-                    // Get the primary descriptor and store to disk
-                    ZipEntry primaryDescriptorInZip = zipDir.getEntry(primaryDescriptorLocation);
-                    if (primaryDescriptorInZip == null) {
-                        throw new RuntimeException("Could not find primary descriptor with path '" + primaryDescriptorLocation + "' in zip file");
-                    }
-                    InputStream inputStream = zipDir.getInputStream(primaryDescriptorInZip);
-                    byte[] buffer = new byte[inputStream.available()];
-                    inputStream.read(buffer);
-
-                    File primaryDescriptorFile = new File(directory, workflowPath);
-                    OutputStream outputStream = new FileOutputStream(primaryDescriptorFile);
-                    outputStream.write(buffer);
-                    inputStream.close();
-                    outputStream.close();
-
-                    // Unzip file but do not delete
-                    SwaggerUtility.unzipFile(zipFile, directory, false);
-
-                    return primaryDescriptorFile;
+                    SwaggerUtility.unzipFile(zipFile, directory, true);
                 }
+                return new File(directory, type == ToolDescriptor.TypeEnum.CWL ? first.get().getCwlPath() : first.get().getWdlPath());
+
             } catch (IOException e) {
                 throw new RuntimeException("could not write zip file to disk, out of space?");
             }

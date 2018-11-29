@@ -44,7 +44,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
@@ -76,10 +76,9 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
         String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlParameterFile, jsonParameterFile);
 
         // Setup temp directory and download files
-        Triple<File, File, File> workDirDescAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        Pair<File, File> workDirDescAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
         File workingDir = workDirDescAndZip.getLeft();
-        File primaryDescriptor = workDirDescAndZip.getMiddle();
-        File zipFile = workDirDescAndZip.getRight();
+        File primaryDescriptor = workDirDescAndZip.getRight();
 
         // Update parameter file
         String parameterFile = convertYamlToJson(yamlParameterFile, jsonParameterFile);
@@ -101,9 +100,9 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
 
             // Continue launch process
             if (abstractEntryClient instanceof WorkflowClient) {
-                cwlLauncher.run(Workflow.class, zipFile, workingDir);
+                cwlLauncher.run(Workflow.class, workingDir);
             } else {
-                cwlLauncher.run(CommandLineTool.class, zipFile, workingDir);
+                cwlLauncher.run(CommandLineTool.class, workingDir);
             }
         }
 

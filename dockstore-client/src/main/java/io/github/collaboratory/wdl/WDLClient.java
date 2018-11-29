@@ -49,7 +49,7 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,10 +98,9 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
 
         // Setup temp directory and download files
-        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        Pair<File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
         File tempLaunchDirectory = descriptorAndZip.getLeft();
-        File localPrimaryDescriptorFile = descriptorAndZip.getMiddle();
-        File zipFile = descriptorAndZip.getRight();
+        File localPrimaryDescriptorFile = descriptorAndZip.getRight();
 
         try {
             // Get list of input files
