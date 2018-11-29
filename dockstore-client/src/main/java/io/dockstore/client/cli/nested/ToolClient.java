@@ -653,7 +653,6 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                     SwaggerUtility.unzipFile(zipFile, directory, true);
                 }
                 return new File(directory, type == ToolDescriptor.TypeEnum.CWL ? first.get().getCwlPath() : first.get().getWdlPath());
-
             } catch (IOException e) {
                 throw new RuntimeException("could not write zip file to disk, out of space?");
             }

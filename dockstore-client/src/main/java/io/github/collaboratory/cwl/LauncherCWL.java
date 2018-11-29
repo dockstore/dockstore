@@ -775,12 +775,12 @@ public class LauncherCWL {
                 List<String> splitPathList = Lists.newArrayList(file.getUrl().split("/"));
 
                 if (!file.isDirectory()) {
-                    String mutatedSecondaryFile = mutateSecondaryFileName(splitPathList.get(splitPathList.size() - 1), (String)fileMapDataStructure.get("basename"), (String)secondaryFile.get("basename"));
+                    String mutatedSecondaryFile = mutateSecondaryFileName(splitPathList.get(splitPathList.size() - 1), getBasename(fileMapDataStructure.get("location").toString()), getBasename(secondaryFile.get("location").toString()));
                     // when the provision target is a specific file, trim that off
                     splitPathList.remove(splitPathList.size() - 1);
                     splitPathList.add(mutatedSecondaryFile);
                 } else {
-                    splitPathList.add((String)secondaryFile.get("basename"));
+                    splitPathList.add(getBasename(secondaryFile.get("location").toString()));
                 }
                 final String join = Joiner.on("/").join(splitPathList);
                 fileInfo.setUrl(join);
@@ -788,6 +788,10 @@ public class LauncherCWL {
             }
         }
         return outputSet;
+    }
+
+    public String getBasename(String path) {
+        return Paths.get(path).getFileName().toString();
     }
 
     /**
