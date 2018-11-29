@@ -273,7 +273,11 @@ public class LauncherCWL {
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
         final List<String> runCommand;
         File localPrimaryDescriptorFile = new File(imageDescriptorPath);
-        runCommand = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", provisionedParameterPath);
+        if (zipFile == null) {
+            runCommand = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", provisionedParameterPath);
+        } else {
+            runCommand = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", provisionedParameterPath, "--imports", zipFile.getAbsolutePath());
+        }
         File cromwellTargetFile = getCromwellTargetFile();
         final String[] s = { "java", "-jar", cromwellTargetFile.getAbsolutePath(), "run" };
         List<String> arguments = new ArrayList<>();

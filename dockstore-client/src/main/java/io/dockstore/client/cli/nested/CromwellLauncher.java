@@ -83,7 +83,7 @@ public abstract class CromwellLauncher {
      * @param type CWL or WDL
      * @param isLocalEntry Is the entry local
      * @param entry Either entry path on Dockstore or local path
-     * @return Triple of working dir, primary descriptor and zip file
+     * @return Pair of downloaded primary descriptor and zip file
      */
     public Triple<File, File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type, boolean isLocalEntry, String entry) {
         File workingDir;
@@ -99,7 +99,7 @@ public abstract class CromwellLauncher {
         File zipFile;
         if (!isLocalEntry) {
             try {
-                primaryDescriptor = abstractEntryClient.downloadTargetEntry(entry, type, true, workingDir);
+                primaryDescriptor = abstractEntryClient.downloadTargetEntry(entry, type, false, workingDir);
                 String[] parts = entry.split(":");
                 String path = parts[0];
                 String convertedName = path.replaceAll("/", "_") + ".zip";
@@ -120,9 +120,9 @@ public abstract class CromwellLauncher {
             }
         } else {
             primaryDescriptor = new File(entry);
-            //File parentDir = primaryDescriptor.getParentFile();
-            //zipFile = zipDirectory(workingDir, parentDir);
-            zipFile = null;
+            // zip the directory
+            File parentDir = primaryDescriptor.getParentFile();
+            zipFile = zipDirectory(workingDir, parentDir);
             out("Using local file '" + entry + "' as primary descriptor");
         }
 
@@ -169,9 +169,6 @@ public abstract class CromwellLauncher {
             for (File childFile : children) {
                 zipFile(childFile, fileName + "/" + childFile.getName(), zos);
             }
-
-            zos.putNextEntry(new ZipEntry(fileName + "/"));
-            zos.closeEntry();
             return;
         }
         FileInputStream fis = new FileInputStream(fileToZip);
