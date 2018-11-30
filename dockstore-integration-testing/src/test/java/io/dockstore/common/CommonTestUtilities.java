@@ -191,7 +191,9 @@ public final class CommonTestUtilities {
     public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating testworkflow migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "testworkflow");
+        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0");
+        runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 
     /**

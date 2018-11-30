@@ -15,12 +15,15 @@
  */
 package io.dockstore.webservice.languages;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,11 +52,12 @@ public interface LanguageHandlerInterface {
     /**
      * Parses the content of the primary descriptor to get author, email, and description
      *
-     * @param entry   an entry to be updated
-     * @param content a cwl document
+     * @param entry    an entry to be updated
+     * @param filepath path to file
+     * @param content  a cwl document
      * @return the updated entry
      */
-    Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles);
+    Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles);
 
     /**
      * Confirms whether the content of a descriptor contains a valid workflow
@@ -64,29 +68,30 @@ public interface LanguageHandlerInterface {
     boolean isValidWorkflow(String content);
 
     /**
-     * Look at the content of a descriptor and update its imports
+     * Parse a descriptor file and return a recursive mapping of its imports
      *
      * @param repositoryId            identifies the git repository that we wish to use, normally something like 'organization/repo_name`
      * @param content                 content of the primary descriptor
      * @param version                 version of the files to get
      * @param sourceCodeRepoInterface used too retrieve imports
+     * @param filepath                used to help find relative imports, must be absolute
      * @return map of file paths to SourceFile objects
      */
     Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface);
+        SourceCodeRepoInterface sourceCodeRepoInterface, String filepath);
 
     /**
      * Processes a descriptor and its associated secondary descriptors to either return the tools that a workflow has or a DAG representation
      * of a workflow
      *
-     * @param mainDescName         the name of the main descriptor
+     * @param mainDescriptorPath   the path of the main descriptor
      * @param mainDescriptor       the content of the main descriptor
      * @param secondaryDescContent the content of the secondary descriptors in a map, looks like file paths -> content
      * @param type                 tools or DAG
      * @param dao                  used to retrieve information on tools
      * @return either a DAG or some form of a list of tools for a workflow
      */
-    String getContent(String mainDescName, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
+    String getContent(String mainDescriptorPath, String mainDescriptor, Map<String, String> secondaryDescContent, Type type, ToolDAO dao);
 
     /**
      * This method will setup the nodes (nodePairs) and edges (stepToDependencies) into Cytoscape compatible JSON
@@ -258,6 +263,25 @@ public interface LanguageHandlerInterface {
         }
 
         return url;
+    }
+
+    /**
+     * Resolves a relative path based on an absolute parent path
+     * @param parentPath Absolute path to parent file
+     * @param relativePath Relative path the parent file
+     * @return Absolute version of relative path
+     */
+    default String convertRelativePathToAbsolutePath(String parentPath, String relativePath) {
+        if (relativePath.startsWith("/")) {
+            return relativePath;
+        }
+
+        Path workDir = Paths.get(parentPath);
+
+        // If the workDir is the root, leave it. If it is not the root, set workDir to the parent of parentPath
+        workDir = !Objects.equals(parentPath, workDir.getRoot().toString()) ? workDir.getParent() : workDir;
+
+        return workDir.resolve(relativePath).normalize().toString();
     }
 
     /**

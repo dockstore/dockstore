@@ -29,11 +29,11 @@ public class SortTest {
         // for the GUI, we should try to sort `/Dockstore.cwl` first before relative files
         SortedSet<SourceFile> files = new TreeSet<>();
 
-        createAndAddFile(files, "foo2.cwl");
-        createAndAddFile(files, "foo.cwl");
-        createAndAddFile(files, "/Dockstore.cwl");
-        createAndAddFile(files, "tool.cwl");
-        createAndAddFile(files, "extra.js");
+        createAndAddFile(files, "foo2.cwl", "/foo2.cwl");
+        createAndAddFile(files, "foo.cwl", "/foo.cwl");
+        createAndAddFile(files, "/Dockstore.cwl", "/Dockstore.cwl");
+        createAndAddFile(files, "tool.cwl", "/tool.cwl");
+        createAndAddFile(files, "extra.js", "/extra.js");
 
         Assert.assertEquals("/Dockstore.cwl", files.iterator().next().getPath());
     }
@@ -43,18 +43,19 @@ public class SortTest {
         // for the GUI, we should try to sort `/Dockstore.wdl` first before relative files
         SortedSet<SourceFile> files = new TreeSet<>();
 
-        createAndAddFile(files, "foo2.cwl");
-        createAndAddFile(files, "foo.cwl");
-        createAndAddFile(files, "/Dockstore.wdl");
-        createAndAddFile(files, "tool.cwl");
-        createAndAddFile(files, "extra.js");
+        createAndAddFile(files, "foo2.cwl", "/foo2.cwl");
+        createAndAddFile(files, "foo.cwl", "/foo.cwl");
+        createAndAddFile(files, "/Dockstore.wdl", "/Dockstore.wdl");
+        createAndAddFile(files, "tool.cwl", "/tool.cwl");
+        createAndAddFile(files, "extra.js", "/extra.js");
 
         Assert.assertEquals("/Dockstore.wdl", files.iterator().next().getPath());
     }
 
-    private void createAndAddFile(SortedSet<SourceFile> files, String path) {
+    private void createAndAddFile(SortedSet<SourceFile> files, String path, String absolutePath) {
         SourceFile file = new SourceFile();
         file.setPath(path);
+        file.setAbsolutePath(absolutePath);
         files.add(file);
     }
 }
