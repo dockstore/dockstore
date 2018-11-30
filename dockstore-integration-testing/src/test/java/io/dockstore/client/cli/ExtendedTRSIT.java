@@ -130,7 +130,7 @@ public class ExtendedTRSIT extends BaseIT {
             // assert some things about map structure
             Assert.assertTrue("verification information seems off",
                 stringObjectMap.containsKey(awesomePlatform) && stringObjectMap.containsKey(crummyPlatform) && stringObjectMap.get(awesomePlatform) instanceof Map && stringObjectMap.get(crummyPlatform) instanceof Map
-                    && ((Map)stringObjectMap.get(awesomePlatform)).size() == 2 && ((Map)stringObjectMap.get(awesomePlatform)).get("metadata").equals("metadata"));
+                    && ((Map)stringObjectMap.get(awesomePlatform)).size() == 3 && ((Map)stringObjectMap.get(awesomePlatform)).get("metadata").equals("metadata"));
 
             // verification on a sourcefile level should flow up to to version and entry level
             Ga4GhApi api = new Ga4GhApi(verifyingUser);
@@ -144,7 +144,7 @@ public class ExtendedTRSIT extends BaseIT {
             // refresh should not destroy verification data
             workflowApi.refresh(workflowByPathGithub.getId());
             Map<String, Object>  stringObjectMap = extendedGa4GhApi
-                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, "1.0.0", crummyPlatform, "new metadata",
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, crummyPlatform, "1.0.0", "new metadata",
                     true);
             Assert.assertEquals(2, stringObjectMap.size());
         }
@@ -153,9 +153,9 @@ public class ExtendedTRSIT extends BaseIT {
             ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(verifyingUser);
             // try to remove verification metadata
             extendedGa4GhApi
-                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, "1.0.0", awesomePlatform, "metadata", null);
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, awesomePlatform, "1.0.0", "metadata", null);
             Map<String, Object> stringObjectMap = extendedGa4GhApi
-                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, "1.0.0", crummyPlatform, "metadata", null);
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, crummyPlatform, "1.0.0", "metadata", null);
             Assert.assertEquals(0, stringObjectMap.size());
         }
     }
@@ -192,14 +192,14 @@ public class ExtendedTRSIT extends BaseIT {
         // try to add verification metadata
         Map<String, Object> stringObjectMap = extendedGa4GhApi
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", "quay.io/dockstoretestuser2/dockstore-cgpmap", "symbolic.v1",
-                "/examples/cgpmap/bamOut/bam_input.json", "1.0.0", "awesome platform", "metadata", true);
+                "/examples/cgpmap/bamOut/bam_input.json", "awesome platform", "1.0.0", "metadata", true);
         Assert.assertEquals(1, stringObjectMap.size());
 
         // see if refresh destroys verification metadata
         registeredTool = toolApi.refresh(registeredTool.getId());
         stringObjectMap = extendedGa4GhApi
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", "quay.io/dockstoretestuser2/dockstore-cgpmap", "symbolic.v1",
-                "/examples/cgpmap/bamOut/bam_input.json", "1.0.0", "crummy platform", "metadata", true);
+                "/examples/cgpmap/bamOut/bam_input.json", "crummy platform", "1.0.0","metadata", true);
         Assert.assertEquals(2, stringObjectMap.size());
     }
 }
