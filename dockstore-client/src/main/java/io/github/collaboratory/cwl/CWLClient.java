@@ -75,6 +75,7 @@ public class CWLClient implements LanguageClientInterface {
     }
 
     /**
+     *
      * @param entry        either a dockstore.cwl or a local file
      * @param isLocalEntry is the descriptor a local file
      * @param yamlRun      runtime descriptor, one of these is required
