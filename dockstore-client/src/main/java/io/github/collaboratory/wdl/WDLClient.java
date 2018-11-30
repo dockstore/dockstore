@@ -38,6 +38,7 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
+import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
@@ -136,7 +137,7 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
                 Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
                 // Make new json file
                 String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-                if (zipFile == null) {
+                if (zipFile == null || abstractEntryClient instanceof ToolClient) {
                     wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
                 } else {
                     wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", zipFile.getAbsolutePath());

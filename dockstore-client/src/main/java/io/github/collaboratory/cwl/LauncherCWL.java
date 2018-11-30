@@ -273,7 +273,7 @@ public class LauncherCWL {
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
         final List<String> runCommand;
         File localPrimaryDescriptorFile = new File(imageDescriptorPath);
-        if (zipFile == null) {
+        if (zipFile == null || cwlObject instanceof CommandLineTool) {
             runCommand = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", provisionedParameterPath);
         } else {
             runCommand = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", provisionedParameterPath, "--imports", zipFile.getAbsolutePath());
@@ -779,12 +779,12 @@ public class LauncherCWL {
                 List<String> splitPathList = Lists.newArrayList(file.getUrl().split("/"));
 
                 if (!file.isDirectory()) {
-                    String mutatedSecondaryFile = mutateSecondaryFileName(splitPathList.get(splitPathList.size() - 1), (String)fileMapDataStructure.get("basename"), (String)secondaryFile.get("basename"));
+                    String mutatedSecondaryFile = mutateSecondaryFileName(splitPathList.get(splitPathList.size() - 1), getBasename(fileMapDataStructure.get("location").toString()), getBasename(secondaryFile.get("location").toString()));
                     // when the provision target is a specific file, trim that off
                     splitPathList.remove(splitPathList.size() - 1);
                     splitPathList.add(mutatedSecondaryFile);
                 } else {
-                    splitPathList.add((String)secondaryFile.get("basename"));
+                    splitPathList.add(getBasename(secondaryFile.get("location").toString()));
                 }
                 final String join = Joiner.on("/").join(splitPathList);
                 fileInfo.setUrl(join);
@@ -792,6 +792,10 @@ public class LauncherCWL {
             }
         }
         return outputSet;
+    }
+
+    public String getBasename(String path) {
+        return Paths.get(path).getFileName().toString();
     }
 
     /**

@@ -87,19 +87,20 @@ public abstract class CromwellLauncher {
      */
     public Triple<File, File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type, boolean isLocalEntry, String entry) {
         File workingDir;
+
         try {
             workingDir = Files.createTempDir();
         } catch (IllegalStateException ex) {
             exceptionMessage(ex, "Could not create a temporary working directory.", IO_ERROR);
             throw new RuntimeException(ex);
         }
-
         out("Created temporary working directory at '" + workingDir.getAbsolutePath() + "'");
+
         File primaryDescriptor;
         File zipFile;
         if (!isLocalEntry) {
             try {
-                primaryDescriptor = abstractEntryClient.downloadTargetEntry(entry, type, false, workingDir);
+                primaryDescriptor = abstractEntryClient.downloadTargetEntry(entry, type, true, workingDir);
                 String[] parts = entry.split(":");
                 String path = parts[0];
                 String convertedName = path.replaceAll("/", "_") + ".zip";
@@ -120,9 +121,8 @@ public abstract class CromwellLauncher {
             }
         } else {
             primaryDescriptor = new File(entry);
-            // zip the directory
-            File parentDir = primaryDescriptor.getParentFile();
-            zipFile = zipDirectory(workingDir, parentDir);
+            File parentFile = primaryDescriptor.getParentFile();
+            zipFile = zipDirectory(workingDir, parentFile);
             out("Using local file '" + entry + "' as primary descriptor");
         }
 
@@ -140,7 +140,7 @@ public abstract class CromwellLauncher {
         try {
             FileOutputStream fos = new FileOutputStream(zipFilePath);
             ZipOutputStream zos = new ZipOutputStream(fos);
-            zipFile(directoryToZip, directoryToZip.getName(), zos);
+            zipFile(directoryToZip, "/", zos);
             zos.close();
             fos.close();
         } catch (IOException ex) {
@@ -162,12 +162,20 @@ public abstract class CromwellLauncher {
         }
         if (fileToZip.isDirectory()) {
             if (fileName.endsWith("/")) {
-                zos.putNextEntry(new ZipEntry(fileName.endsWith("/") ? fileName : fileName + "/"));
-                zos.closeEntry();
+                if (!Objects.equals(fileName, "/")) {
+                    zos.putNextEntry(new ZipEntry(fileName.endsWith("/") ? fileName : fileName + "/"));
+                    zos.closeEntry();
+                }
             }
             File[] children = fileToZip.listFiles();
             for (File childFile : children) {
-                zipFile(childFile, fileName + "/" + childFile.getName(), zos);
+                //if (childFile.getName().endsWith(".cwl") || childFile.getName().endsWith(".wdl") || childFile.getName().endsWith(".yml") || childFile.getName().endsWith(".yaml")) {
+                if (Objects.equals(fileName, "/")) {
+                    zipFile(childFile, childFile.getName(), zos);
+                } else {
+                    zipFile(childFile, fileName + "/" + childFile.getName(), zos);
+                }
+                //}
             }
             return;
         }

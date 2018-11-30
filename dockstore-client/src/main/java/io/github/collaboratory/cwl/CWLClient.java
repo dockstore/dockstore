@@ -53,6 +53,7 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
+import static io.dockstore.client.cli.Client.IO_ERROR;
 
 /**
  * Grouping code for launching CWL tools and workflows
@@ -84,27 +85,29 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
         // Update parameter file
         String parameterFile = convertYamlToJson(yamlParameterFile, jsonParameterFile);
 
-        if (parameterFile != null) {
-            // Translate JSON to absolute path
-            if (Paths.get(parameterFile).toFile().exists()) {
-                parameterFile = Paths.get(parameterFile).toFile().getAbsolutePath();
-            }
+        if (parameterFile == null) {
+            errorMessage("No parameter file found.", IO_ERROR);
+        }
 
-            // Download parameter file if remote
-            String jsonTempRun = File.createTempFile("parameter", "json").getAbsolutePath();
-            FileProvisioning.retryWrapper(null, parameterFile, Paths.get(jsonTempRun), 1, true, 1);
-            parameterFile = jsonTempRun;
+        // Translate JSON to absolute path
+        if (Paths.get(parameterFile).toFile().exists()) {
+            parameterFile = Paths.get(parameterFile).toFile().getAbsolutePath();
+        }
 
-            // Instantiate the CWL launcher used to run workflow
-            final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), primaryDescriptor.getAbsolutePath(), parameterFile,
-                    null, null, originalTestParameterFilePath, uuid);
+        // Download parameter file if remote
+        String jsonTempRun = File.createTempFile("parameter", "json").getAbsolutePath();
+        FileProvisioning.retryWrapper(null, parameterFile, Paths.get(jsonTempRun), 1, true, 1);
+        parameterFile = jsonTempRun;
 
-            // Continue launch process
-            if (abstractEntryClient instanceof WorkflowClient) {
-                cwlLauncher.run(Workflow.class, zipFile, workingDir);
-            } else {
-                cwlLauncher.run(CommandLineTool.class, zipFile, workingDir);
-            }
+        // Instantiate the CWL launcher used to run workflow
+        final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), primaryDescriptor.getAbsolutePath(), parameterFile,
+                null, null, originalTestParameterFilePath, uuid);
+
+        // Continue launch process
+        if (abstractEntryClient instanceof WorkflowClient) {
+            cwlLauncher.run(Workflow.class, zipFile, workingDir);
+        } else {
+            cwlLauncher.run(CommandLineTool.class, zipFile, workingDir);
         }
 
         return 0;

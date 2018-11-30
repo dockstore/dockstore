@@ -166,7 +166,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Succeeded"));
         assertTrue("output should include a noop plugin run with metadata", systemOutRule.getLog().contains("really cool metadata"));
     }
 
@@ -466,7 +466,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 1, countMatches);
+        assertEquals("output should include multiple provision out events, found " + countMatches, 2, countMatches);
         String filename = "test1";
         checkFileAndThenDeleteIt(filename);
         FileUtils.deleteDirectory(new File(filename));
@@ -631,7 +631,7 @@ public class LaunchTestIT {
         ToolClient toolClient = new ToolClient(api, null, usersApi, client, false);
         toolClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Succeeded"));
     }
 
     private void runTool(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client, boolean useCache) {
@@ -646,7 +646,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Succeeded"));
     }
 
     @Test
@@ -658,6 +658,7 @@ public class LaunchTestIT {
 
         ArrayList<String> args = new ArrayList<String>() {{
             add("--local-entry");
+            add(file.getAbsolutePath());
             add("--json");
             add(json.getAbsolutePath());
         }};
@@ -670,7 +671,7 @@ public class LaunchTestIT {
         WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
         workflowClient.checkEntryFile(file.getAbsolutePath(), args, null);
 
-        assertTrue("output should include a successful cromwell run", systemOutRule.getLog()
+        assertTrue("output should tell user to specify the descriptor", systemOutRule.getLog()
                 .contains("Entry file is ambiguous, please re-enter command with '--descriptor <descriptor>' at the end"));
     }
 
@@ -682,9 +683,8 @@ public class LaunchTestIT {
         File json = new File(ResourceHelpers.resourceFilePath("1st-workflow-job.json"));
 
         ArrayList<String> args = new ArrayList<String>() {{
-            add("--entry");
-            add("wrongExtcwl.wdl");
             add("--local-entry");
+            add(file.getAbsolutePath());
             add("--json");
             add(json.getAbsolutePath());
             add("--descriptor");
