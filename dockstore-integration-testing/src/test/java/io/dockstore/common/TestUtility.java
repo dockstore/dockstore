@@ -77,11 +77,7 @@ public final class TestUtility {
      * @return              The URL modified by nginx
      */
     public static String mimicNginxRewrite(String originalUrl, String basePath) {
-        if (basePath.equals("/api/")) {
-            return originalUrl.replaceFirst("/api/", "/");
-        } else {
-            return originalUrl;
-        }
+        return basePath.equals("/api/") ? originalUrl.replaceFirst("/api/", "/") : originalUrl;
     }
 
     /**
