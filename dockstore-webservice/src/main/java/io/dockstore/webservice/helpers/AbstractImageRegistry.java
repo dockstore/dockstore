@@ -459,14 +459,17 @@ public abstract class AbstractImageRegistry {
                     dockstoreFile.setContent(fileResponse);
                     if (f == SourceFile.FileType.DOCKERFILE) {
                         dockstoreFile.setPath(tag.getDockerfilePath());
+                        dockstoreFile.setAbsolutePath(tag.getDockerfilePath());
                     } else if (f == SourceFile.FileType.DOCKSTORE_CWL) {
                         dockstoreFile.setPath(tag.getCwlPath());
+                        dockstoreFile.setAbsolutePath(tag.getCwlPath());
                         // see if there are imported files and resolve them
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag);
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getCwlPath());
                         files.addAll(importedFiles.values());
                     } else if (f == SourceFile.FileType.DOCKSTORE_WDL) {
                         dockstoreFile.setPath(tag.getWdlPath());
-                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag);
+                        dockstoreFile.setAbsolutePath(tag.getWdlPath());
+                        Map<String, SourceFile> importedFiles = sourceCodeRepo.resolveImports(repositoryId, fileResponse, f, tag, tag.getWdlPath());
                         files.addAll(importedFiles.values());
                     } else {
                         //TODO add nextflow work here
@@ -488,6 +491,7 @@ public abstract class AbstractImageRegistry {
     private SourceFile createSourceFile(String path, SourceFile.FileType type) {
         SourceFile sourcefile = new SourceFile();
         sourcefile.setPath(path);
+        sourcefile.setAbsolutePath(path);
         sourcefile.setType(type);
         return sourcefile;
     }

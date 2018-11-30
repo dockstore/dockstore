@@ -4,7 +4,7 @@ info:
     This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.5.0-rc.2-SNAPSHOT
+  version: 1.5.2-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -5784,6 +5784,7 @@ components:
     SourceFile:
       type: object
       required:
+        - absolutePath
         - path
         - type
       properties:
@@ -5815,7 +5816,10 @@ components:
           description: Cache for the contents of the target file
         path:
           type: string
-          description: Path to source file in git repo
+          description: Path to sourcefile relative to its parent
+        absolutePath:
+          type: string
+          description: Absolute path of sourcefile in git repo
     StarRequest:
       type: object
       properties:

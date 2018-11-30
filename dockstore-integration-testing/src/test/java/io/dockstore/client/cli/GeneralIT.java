@@ -108,6 +108,7 @@ public class GeneralIT extends BaseIT {
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/dockstore.cwl");
+        fileCWL.setAbsolutePath("/dockstore.cwl");
         List<SourceFile> list = new ArrayList<>();
         list.add(fileCWL);
         tag.setSourceFiles(list);
@@ -115,6 +116,7 @@ public class GeneralIT extends BaseIT {
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
         fileDockerFile.setPath("/Dockerfile");
+        fileDockerFile.setAbsolutePath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
