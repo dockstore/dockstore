@@ -804,7 +804,6 @@ public class LauncherCWL {
                 LOG.info("ID: {}", cwlInputFileID);
                 // to be clear, these are secondary files as defined by CWL, not secondary descriptors
                 List<String> secondaryFiles = getSecondaryFileStrings(file);
-                // per
                 pairs.addAll(pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID, secondaryFiles));
             }
             fileProvisioning.provisionInputFiles(this.originalTestParameterFilePath, pairs);
