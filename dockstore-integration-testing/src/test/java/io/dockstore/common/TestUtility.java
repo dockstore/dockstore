@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import com.google.common.io.Files;
+import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.Application;
+import io.dropwizard.testing.DropwizardTestSupport;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -56,6 +59,19 @@ public final class TestUtility {
         }
 
         return tempFile.getAbsolutePath();
+    }
+
+    /**
+     * Drops the database and recreates from migrations, not including any test data, using new application
+     * @param support   reference to testing instance of the dockstore web service
+     * @param configPath    Dropwizard config file path
+     * @throws Exception
+     */
+    public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
+        LOG.info("Dropping and Recreating the database with no test data");
+        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
+        application.run("db", "drop-all", "--confirm-delete-everything", configPath);
+        application.run("db", "migrate", configPath, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0");
     }
 
     /**

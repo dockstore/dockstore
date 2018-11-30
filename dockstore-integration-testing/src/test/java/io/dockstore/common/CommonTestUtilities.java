@@ -66,10 +66,7 @@ public final class CommonTestUtilities {
      * @throws Exception
      */
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
-        LOG.info("Dropping and Recreating the database with no test data");
-        Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0");
+        TestUtility.dropAndRecreateNoTestData(support, CONFIDENTIAL_CONFIG_PATH);
     }
 
     /**
