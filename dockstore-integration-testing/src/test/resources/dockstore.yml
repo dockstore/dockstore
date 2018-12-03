@@ -17,7 +17,7 @@ googleClientSecret: <fill me in>
 googleRedirectURI: http://<fill me in>:8080/auth/tokens/google.com
 
 externalConfig: 
-  basePath: /
+  basePath: /api/
   hostname: localhost
   scheme: http
   port: 8080
