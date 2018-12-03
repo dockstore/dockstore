@@ -70,6 +70,17 @@ public final class TestUtility {
     }
 
     /**
+     * Currently in production, the basePath is "/api/" and Nginx removes first /api it finds and redirects it to "http://webservice:8080/$uri"
+     * This mimics the nginx functionality
+     * @param originalUrl   The original URL that the UI2 and the Swagger UI displays
+     * @param basePath      The basePath set in the Dropwizard configuration file
+     * @return              The URL modified by nginx
+     */
+    public static String mimicNginxRewrite(String originalUrl, String basePath) {
+        return basePath.equals("/api/") ? originalUrl.replaceFirst("/api/", "/") : originalUrl;
+    }
+
+    /**
      * Returns a path to a temporary configuration file with a valid notifications webhook URL
      * All slack webhook URLs are apparently valid.
      */
