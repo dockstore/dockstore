@@ -260,7 +260,8 @@ public final class ToolsImplCommon {
      */
     private static Tool setVerified(Tool tool, Set<? extends Version> versions) {
         tool.setVerified(versions.stream().anyMatch(Version::isVerified));
-        final List<String> collect = versions.stream().filter(Version::isVerified).map(Version::getVerifiedSource)
+        final List<String> collect = versions.stream().filter(Version::isVerified)
+            .map(e -> e.getVerifiedSource() != null ? e.getVerifiedSource() : "")
             .collect(Collectors.toList());
         Gson gson = new Gson();
         Collections.sort(collect);
