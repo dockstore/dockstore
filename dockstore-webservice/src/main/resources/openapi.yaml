@@ -45,6 +45,7 @@ tags:
     description: Created and modify hosted entries in the dockstore
   - name: metadata
     description: 'Information about Dockstore like RSS, sitemap, lists of dependencies, etc.'
+  - name: organisations
   - name: tokens
     description: 'List, modify, refresh, and delete tokens for external services'
   - name: users
@@ -2933,6 +2934,87 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
+  /organisations/all:
+    get:
+      tags:
+        - organisations
+      summary: List all organisations.
+      description: Admin only
+      operationId: getAllOrganisations
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+  /organisations/approved:
+    get:
+      tags:
+        - organisations
+      summary: List all available organisations.
+      description: NO Authentication
+      operationId: getPublishedOrganisations
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+  /organisations/create:
+    post:
+      tags:
+        - organisations
+      summary: Create an organisation
+      description: ''
+      operationId: createOrganisation
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        description: Organisation to register
+        required: true
+  '/organisations/{organisationId}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves an organisation by ID.
+      description: ''
+      operationId: getOrganisationById
+      parameters:
+        - name: id
+          in: path
+          description: Organisation ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
   '/users/checkUser/{username}':
     get:
       tags:
@@ -5719,6 +5801,42 @@ components:
         friendly-name:
           type: string
       description: Describes this registry to better allow for mirroring and indexing.
+    Organisation:
+      type: object
+      required:
+        - approved
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the organisation in this web service
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+          description: Short name of the organisation (ex. OICR)
+        description:
+          type: string
+          description: Description of the organisation
+        link:
+          type: string
+          description: Link to the organisation website
+        location:
+          type: string
+          description: Location of the organisation
+        email:
+          type: string
+          description: Contact email for the organisation
+        approved:
+          type: boolean
+          description: Is the organisation approved
+    OrganisationUser:
+      type: object
     Permission:
       type: object
       properties:
@@ -6289,6 +6407,7 @@ components:
       required:
         - curator
         - isAdmin
+        - organisations
         - setupComplete
       properties:
         id:
@@ -6320,6 +6439,12 @@ components:
         setupComplete:
           type: boolean
           description: Indicates whether this user has accepted their username
+        organisations:
+          type: array
+          description: Set of organisations the user bleongs to
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/OrganisationUser'
       description: End users for the dockstore
     VerificationInformation:
       type: object

@@ -16,8 +16,10 @@
 
 package io.dockstore.webservice.core;
 
+import java.io.Serializable;
 import java.security.Principal;
 import java.sql.Timestamp;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +45,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -75,7 +78,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleEmail", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.email = :email)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)") })
 @SuppressWarnings("checkstyle:magicnumber")
-public class User implements Principal, Comparable<User> {
+public class User implements Principal, Comparable<User>, Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
@@ -142,10 +145,23 @@ public class User implements Principal, Comparable<User> {
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
     private boolean setupComplete = false;
 
+    @Column
+    @ApiModelProperty(value = "Set of organisations the user bleongs to", required = true, position = 13)
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    private Set<OrganisationUser> organisations = new HashSet<>();
+
     public User() {
         groups = new TreeSet<>();
         entries = new TreeSet<>();
         starredEntries = new TreeSet<>();
+    }
+
+    public Set<OrganisationUser> getOrganisations() {
+        return organisations;
+    }
+
+    public void setOrganisations(Set<OrganisationUser> organisations) {
+        this.organisations = organisations;
     }
 
     /**
@@ -360,7 +376,7 @@ public class User implements Principal, Comparable<User> {
      * The order of the properties are important, the UI lists these properties in this order.
      */
     @Embeddable
-    public static class Profile {
+    public static class Profile implements Serializable {
         @Column(columnDefinition = "text")
         public String name;
         @Column(columnDefinition = "text")

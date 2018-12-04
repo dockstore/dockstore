@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.core;
 
+import java.io.Serializable;
 import java.sql.Timestamp;
 import java.util.Set;
 import java.util.SortedSet;
@@ -53,7 +54,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "usergroup")
 @NamedQueries(@NamedQuery(name = "io.dockstore.webservice.core.Group.findAll", query = "SELECT t FROM Group t"))
-public class Group  implements Comparable<Group> {
+public class Group  implements Comparable<Group>, Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)

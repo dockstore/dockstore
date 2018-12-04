@@ -69,7 +69,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0");
     }
 
     /**
@@ -92,6 +92,7 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.4.0");
         application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.5.0");
         application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "test_1.5.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.6.0");
 
     }
 
@@ -122,6 +123,7 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "1.4.0");
         application.run("db", "migrate", configPath, "--include", "1.5.0");
         application.run("db", "migrate", configPath, "--include", "test.confidential1_1.5.0");
+        application.run("db", "migrate", configPath, "--include", "1.6.0");
     }
 
     public static void runMigration(List<String> migrationList, Application<DockstoreWebserviceConfiguration> application, String configPath) {
@@ -167,6 +169,7 @@ public final class CommonTestUtilities {
         application.run("db", "migrate", configPath, "--include", "1.4.0");
         application.run("db", "migrate", configPath, "--include", "1.5.0");
         application.run("db", "migrate", configPath, "--include", "test.confidential2_1.5.0");
+        application.run("db", "migrate", configPath, "--include", "1.6.0");
     }
 
     /**
