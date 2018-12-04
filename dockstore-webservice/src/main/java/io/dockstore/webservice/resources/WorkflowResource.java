@@ -368,6 +368,7 @@ public class WorkflowResource
             }
         }
 
+        // new workflow is the workflow as found on github (source control)
         final Workflow newWorkflow = sourceCodeRepo
             .getWorkflow(workflow.getOrganization() + '/' + workflow.getRepository(), Optional.of(workflow));
         workflow.getUsers().add(user);
@@ -378,7 +379,8 @@ public class WorkflowResource
         if (!workflow.isIsChecker() && workflow.getCheckerWorkflow() != null) {
             refresh(user, workflow.getCheckerWorkflow().getId());
         }
-        elasticManager.handleIndexUpdate(newWorkflow, ElasticMode.UPDATE);
+        // workflow is the copy that is in our DB and merged with content from source control, so update index with that one
+        elasticManager.handleIndexUpdate(workflow, ElasticMode.UPDATE);
         return workflow;
     }
 
