@@ -5,6 +5,7 @@ import java.util.List;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -51,6 +52,19 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         elasticManager = new ElasticManager();
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @RolesAllowed("admin")
+    @Path("/approve/{organisationId}")
+    @ApiOperation(value = "Approves an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin only", response = Organisation.class)
+    public Organisation approveOrganisation(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        Organisation organisation = organisationDAO.findById(id);
+        organisation.setApproved(true);
+        return organisationDAO.findById(id);
+    }
+
     @GET
     @Timed
     @UnitOfWork
@@ -66,8 +80,12 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/{organisationId}")
     @ApiOperation(value = "Retrieves an organisation by ID.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation getOrganisationById(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Organisation ID", required = true) @PathParam("id") Long id) {
-        return organisationDAO.findById(id);
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        Organisation organisation = organisationDAO.findById(id);
+        if (organisation == null) {
+            throw new CustomWebApplicationException("Organisation not found", HttpStatus.SC_BAD_REQUEST);
+        }
+        return organisation;
     }
 
     @GET
@@ -87,7 +105,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Create an organisation", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation createOrganisation(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Organisation to register", required = true) Organisation organisation) {
+            @ApiParam(value = "Organisation to register.", required = true) Organisation organisation) {
 
         // Check if any other organisations exist with that name
         Organisation matchingOrg = organisationDAO.findByName(organisation.getName());
@@ -97,8 +115,10 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
+        // Save organisation
         long id = organisationDAO.create(organisation);
 
+        // Create Role for user creating the organisation
         OrganisationUser organisationUser = new OrganisationUser(user, organisationDAO.findById(id), OrganisationUser.Role.MAINTAINER);
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organisationUser);

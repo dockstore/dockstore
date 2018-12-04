@@ -29,7 +29,6 @@ public class OrganisationUser implements Serializable {
     @JoinColumn(name = "organisationId", insertable = false, updatable = false)
     private Organisation organisation;
 
-
     public enum Role {
         ADMIN, MAINTAINER, MEMBER
     }
@@ -37,6 +36,10 @@ public class OrganisationUser implements Serializable {
     @Enumerated(EnumType.STRING)
     @ApiModelProperty(value = "The role of the user in the organisation", required = true)
     private Role role;
+
+    public OrganisationUser() {
+
+    }
 
     public OrganisationUser(User user, Organisation organisation, Role role) {
         this.id = new OrganisationUserId(user.getId(), organisation.getId());
@@ -49,8 +52,40 @@ public class OrganisationUser implements Serializable {
         user.getOrganisations().add(this);
     }
 
+    public OrganisationUserId getId() {
+        return id;
+    }
+
+    public void setId(OrganisationUserId id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Organisation getOrganisation() {
+        return organisation;
+    }
+
+    public void setOrganisation(Organisation organisation) {
+        this.organisation = organisation;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
     @Embeddable
-    public class OrganisationUserId implements Serializable {
+    public static class OrganisationUserId implements Serializable {
         @Column(name = "userId")
         protected Long userId;
 
@@ -62,6 +97,22 @@ public class OrganisationUser implements Serializable {
 
         public OrganisationUserId(Long userId, Long organisationId) {
             this.userId = userId;
+            this.organisationId = organisationId;
+        }
+
+        public Long getUserId() {
+            return userId;
+        }
+
+        public void setUserId(Long userId) {
+            this.userId = userId;
+        }
+
+        public Long getOrganisationId() {
+            return organisationId;
+        }
+
+        public void setOrganisationId(Long organisationId) {
             this.organisationId = organisationId;
         }
 

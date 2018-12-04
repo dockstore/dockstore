@@ -2651,6 +2651,29 @@ paths:
               $ref: "#/definitions/Organisation"
       security:
       - BEARER: []
+  /organisations/approve/{organisationId}:
+    put:
+      tags:
+      - "organisations"
+      summary: "Approves an organisation."
+      description: "Admin only"
+      operationId: "approveOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
   /organisations/approved:
     get:
       tags:
@@ -2680,7 +2703,7 @@ paths:
       parameters:
       - in: "body"
         name: "body"
-        description: "Organisation to register"
+        description: "Organisation to register."
         required: true
         schema:
           $ref: "#/definitions/Organisation"
@@ -2701,9 +2724,9 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "id"
+      - name: "organisationId"
         in: "path"
-        description: "Organisation ID"
+        description: "Organisation ID."
         required: true
         type: "integer"
         format: "int64"
@@ -5391,8 +5414,6 @@ definitions:
         type: "boolean"
         position: 7
         description: "Is the organisation approved"
-  OrganisationUser:
-    type: "object"
   Permission:
     type: "object"
     properties:
@@ -5958,7 +5979,6 @@ definitions:
     required:
     - "curator"
     - "isAdmin"
-    - "organisations"
     - "setupComplete"
     properties:
       id:
@@ -5996,13 +6016,6 @@ definitions:
         type: "boolean"
         position: 12
         description: "Indicates whether this user has accepted their username"
-      organisations:
-        type: "array"
-        position: 13
-        description: "Set of organisations the user bleongs to"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/OrganisationUser"
     description: "End users for the dockstore"
   VerificationInformation:
     type: "object"

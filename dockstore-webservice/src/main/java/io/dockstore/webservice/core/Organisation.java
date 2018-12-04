@@ -64,7 +64,7 @@ public class Organisation implements Serializable {
 
     @Column
     @ApiModelProperty(value = "Is the organisation approved", required = true, position = 7)
-    private boolean approved;
+    private boolean approved = false;
 
     @Column
     @ApiModelProperty(value = "Set of users in the organisation", required = true, position = 8)
@@ -79,6 +79,10 @@ public class Organisation implements Serializable {
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
+
+    public Organisation() {
+
+    }
 
     public long getId() {
         return id;

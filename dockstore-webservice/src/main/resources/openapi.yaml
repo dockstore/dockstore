@@ -2952,6 +2952,30 @@ paths:
                   $ref: '#/components/schemas/Organisation'
       security:
         - BEARER: []
+  '/organisations/approve/{organisationId}':
+    put:
+      tags:
+        - organisations
+      summary: Approves an organisation.
+      description: Admin only
+      operationId: approveOrganisation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
   /organisations/approved:
     get:
       tags:
@@ -2989,7 +3013,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Organisation'
-        description: Organisation to register
+        description: Organisation to register.
         required: true
   '/organisations/{organisationId}':
     get:
@@ -2999,9 +3023,9 @@ paths:
       description: ''
       operationId: getOrganisationById
       parameters:
-        - name: id
+        - name: organisationId
           in: path
-          description: Organisation ID
+          description: Organisation ID.
           required: true
           schema:
             type: integer
@@ -5835,8 +5859,6 @@ components:
         approved:
           type: boolean
           description: Is the organisation approved
-    OrganisationUser:
-      type: object
     Permission:
       type: object
       properties:
@@ -6407,7 +6429,6 @@ components:
       required:
         - curator
         - isAdmin
-        - organisations
         - setupComplete
       properties:
         id:
@@ -6439,12 +6460,6 @@ components:
         setupComplete:
           type: boolean
           description: Indicates whether this user has accepted their username
-        organisations:
-          type: array
-          description: Set of organisations the user bleongs to
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/OrganisationUser'
       description: End users for the dockstore
     VerificationInformation:
       type: object

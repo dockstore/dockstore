@@ -146,14 +146,16 @@ public class User implements Principal, Comparable<User>, Serializable {
     private boolean setupComplete = false;
 
     @Column
-    @ApiModelProperty(value = "Set of organisations the user bleongs to", required = true, position = 13)
+    @ApiModelProperty(value = "Set of organisations the user belongs to", required = true, position = 13)
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
-    private Set<OrganisationUser> organisations = new HashSet<>();
+    @JsonIgnore
+    private Set<OrganisationUser> organisations;
 
     public User() {
         groups = new TreeSet<>();
         entries = new TreeSet<>();
         starredEntries = new TreeSet<>();
+        organisations = new HashSet<>();
     }
 
     public Set<OrganisationUser> getOrganisations() {
