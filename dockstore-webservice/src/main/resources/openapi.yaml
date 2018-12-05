@@ -2992,6 +2992,28 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organisation'
+  '/organisations/approved/{organisationId}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves an approved organisation by ID.
+      description: NO authentication
+      operationId: getApprovedOrganisationById
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
   /organisations/create:
     post:
       tags:
@@ -3009,12 +3031,33 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Organisation'
-        description: Organisation to register.
-        required: true
+        $ref: '#/components/requestBodies/Organisation'
+  '/organisations/update/{organisationId}':
+    post:
+      tags:
+        - organisations
+      summary: Update an organisation.
+      description: ''
+      operationId: updateOrganisation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/Organisation'
   '/organisations/{organisationId}':
     get:
       tags:
@@ -3023,6 +3066,117 @@ paths:
       description: ''
       operationId: getOrganisationById
       parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+  '/organisations/{organisationId}/user':
+    post:
+      tags:
+        - organisations
+      summary: Updates a user role in an organisation.
+      description: ''
+      operationId: updateUserRole
+      parameters:
+        - name: role
+          in: query
+          description: Role of user.
+          required: true
+          schema:
+            type: string
+            enum:
+              - ADMIN
+              - MAINTAINER
+              - MEMBER
+        - name: userId
+          in: query
+          description: User to add to org.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+    put:
+      tags:
+        - organisations
+      summary: Adds a user role to an organisation.
+      description: ''
+      operationId: addUserToOrg
+      parameters:
+        - name: role
+          in: query
+          description: Role of user.
+          required: true
+          schema:
+            type: string
+            enum:
+              - ADMIN
+              - MAINTAINER
+              - MEMBER
+        - name: userId
+          in: query
+          description: User to add to org.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - organisations
+      summary: Remove a user from an organisation.
+      description: ''
+      operationId: deleteUserRole
+      parameters:
+        - name: userId
+          in: query
+          description: User to add to org.
+          required: true
+          schema:
+            type: integer
+            format: int64
         - name: organisationId
           in: path
           description: Organisation ID.
@@ -5374,6 +5528,13 @@ components:
             $ref: '#/components/schemas/VerifyRequest'
       description: Object containing verification information.
       required: true
+    Organisation:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Organisation'
+      description: Organisation to register.
+      required: true
   securitySchemes:
     BEARER:
       type: apiKey
@@ -5843,7 +6004,7 @@ components:
           format: date-time
         name:
           type: string
-          description: Short name of the organisation (ex. OICR)
+          description: Name of the organisation (ex. OICR)
         description:
           type: string
           description: Description of the organisation

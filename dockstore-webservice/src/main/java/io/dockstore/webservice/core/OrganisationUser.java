@@ -37,6 +37,9 @@ public class OrganisationUser implements Serializable {
     @ApiModelProperty(value = "The role of the user in the organisation", required = true)
     private Role role;
 
+    @ApiModelProperty(value = "Has the user accepted their membership.", required = true)
+    private boolean accepted = false;
+
     public OrganisationUser() {
 
     }
@@ -47,6 +50,7 @@ public class OrganisationUser implements Serializable {
         this.user = user;
         this.organisation = organisation;
         this.role = role;
+        this.accepted = false;
 
         organisation.getUsers().add(this);
         user.getOrganisations().add(this);
@@ -82,6 +86,14 @@ public class OrganisationUser implements Serializable {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public boolean isAccepted() {
+        return accepted;
+    }
+
+    public void setAccepted(boolean accepted) {
+        this.accepted = accepted;
     }
 
     @Embeddable

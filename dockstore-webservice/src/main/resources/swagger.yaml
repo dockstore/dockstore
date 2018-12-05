@@ -2691,6 +2691,27 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Organisation"
+  /organisations/approved/{organisationId}:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an approved organisation by ID."
+      description: "NO authentication"
+      operationId: "getApprovedOrganisationById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
   /organisations/create:
     post:
       tags:
@@ -2714,6 +2735,35 @@ paths:
             $ref: "#/definitions/Organisation"
       security:
       - BEARER: []
+  /organisations/update/{organisationId}:
+    post:
+      tags:
+      - "organisations"
+      summary: "Update an organisation."
+      description: ""
+      operationId: "updateOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Organisation to register."
+        required: true
+        schema:
+          $ref: "#/definitions/Organisation"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
   /organisations/{organisationId}:
     get:
       tags:
@@ -2724,6 +2774,109 @@ paths:
       produces:
       - "application/json"
       parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/user:
+    post:
+      tags:
+      - "organisations"
+      summary: "Updates a user role in an organisation."
+      description: ""
+      operationId: "updateUserRole"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "role"
+        in: "query"
+        description: "Role of user."
+        required: true
+        type: "string"
+        enum:
+        - "ADMIN"
+        - "MAINTAINER"
+        - "MEMBER"
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organisations"
+      summary: "Adds a user role to an organisation."
+      description: ""
+      operationId: "addUserToOrg"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "role"
+        in: "query"
+        description: "Role of user."
+        required: true
+        type: "string"
+        enum:
+        - "ADMIN"
+        - "MAINTAINER"
+        - "MEMBER"
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "organisations"
+      summary: "Remove a user from an organisation."
+      description: ""
+      operationId: "deleteUserRole"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
       - name: "organisationId"
         in: "path"
         description: "Organisation ID."
@@ -5393,7 +5546,7 @@ definitions:
       name:
         type: "string"
         position: 1
-        description: "Short name of the organisation (ex. OICR)"
+        description: "Name of the organisation (ex. OICR)"
       description:
         type: "string"
         position: 3

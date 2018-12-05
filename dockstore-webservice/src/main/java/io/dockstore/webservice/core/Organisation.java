@@ -34,6 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllApproved", query = "SELECT org FROM Organisation org WHERE org.approved = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAll", query = "SELECT org FROM Organisation org"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByName", query = "SELECT org FROM Organisation org WHERE org.name = :name"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Organisation implements Serializable {
@@ -43,7 +44,7 @@ public class Organisation implements Serializable {
     private long id;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Short name of the organisation (ex. OICR)", required = true, position = 1)
+    @ApiModelProperty(value = "Name of the organisation (ex. OICR)", required = true, position = 1)
     private String name;
 
     @Column(columnDefinition = "TEXT")

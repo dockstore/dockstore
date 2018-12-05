@@ -46,4 +46,12 @@ public class OrganisationDAO extends AbstractDAO<Organisation> {
                 .setParameter("name", name);
         return uniqueResult(query);
     }
+
+    public Organisation findApprovedById(Long id) {
+        Query query =  namedQuery("io.dockstore.webservice.core.Organisation.findApprovedById")
+                .setParameter("id", id);
+        return uniqueResult(query);
+    }
+
+
 }
