@@ -22,5 +22,6 @@
         <addColumn tableName="sourcefile_verified">
             <column name="platformversion" type="text"/>
         </addColumn>
+        <addNotNullConstraint columnDataType="clob" columnName="platformversion" tableName="sourcefile_verified"/>
     </changeSet>
 </databaseChangeLog>
