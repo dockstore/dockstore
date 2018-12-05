@@ -56,26 +56,26 @@ jobs:
       script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
 
     # no point in running coverage if we don't pass integration tests
-    - stage: coverage 
-      if: branch IN (master, develop)
+    - stage: coverage
+      if: type IN (pull_request) OR branch IN (master, develop)
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
     - stage: coverage
-      if: branch IN (master, develop)
+      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=true
     - stage: coverage
-      if: branch IN (master, develop)
+      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=tool-integration-tests
     - stage: coverage
-      if: branch IN (master, develop)
+      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=workflow-integration-tests
     - stage: coverage
-      if: branch IN (master, develop)
+      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=other-integration-tests
