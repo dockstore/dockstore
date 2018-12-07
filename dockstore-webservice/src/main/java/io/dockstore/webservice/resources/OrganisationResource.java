@@ -49,6 +49,8 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 public class OrganisationResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(OrganisationResource.class);
 
+    private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organisations, authentication can be provided for unapproved organisations";
+
     private final OrganisationDAO organisationDAO;
     private final UserDAO userDAO;
     private final SessionFactory sessionFactory;
@@ -85,33 +87,30 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{organisationId}")
-    @ApiOperation(value = "Retrieves an organisation by ID.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
-    public Organisation getOrganisationById(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Retrieves an organisation by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
+    public Organisation getOrganisationById(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
-        boolean doesOrgExist = doesOrganisationExistToUser(id, user.getId());
-        if (!doesOrgExist) {
-            String msg = "Organisation not found";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        if (!user.isPresent()) {
+            // No user given, only show approved organisation
+            Organisation organisation = organisationDAO.findApprovedById(id);
+            if (organisation == null) {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+            return organisation;
+        } else {
+            // User is given, check if organisation is either approved or the user has access
+            boolean doesOrgExist = doesOrganisationExistToUser(id, user.get().getId());
+            if (!doesOrgExist) {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+
+            Organisation organisation = organisationDAO.findById(id);
+            return organisation;
         }
-
-        Organisation organisation = organisationDAO.findById(id);
-        return organisation;
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/approved/{organisationId}")
-    @ApiOperation(value = "Retrieves an approved organisation by ID.", notes = "NO authentication", response = Organisation.class)
-    public Organisation getApprovedOrganisationById(
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
-        Organisation organisation = organisationDAO.findApprovedById(id);
-        if (organisation == null) {
-            throw new CustomWebApplicationException("Organisation not found", HttpStatus.SC_BAD_REQUEST);
-        }
-
-        return organisation;
     }
 
     @GET
@@ -128,7 +127,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/create")
-    @ApiOperation(value = "Create an organisation", authorizations = {
+    @ApiOperation(value = "Create an organisation", notes = "Organisation requires approval by an admin before being made public.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation createOrganisation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation to register.", required = true) Organisation organisation) {
@@ -142,7 +141,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
 
         // Save organisation
-        organisation.setApproved(false);
+        organisation.setApproved(false); // should not be approved by default
         long id = organisationDAO.create(organisation);
 
         // Create Role for user creating the organisation
@@ -157,7 +156,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/update/{organisationId}")
-    @ApiOperation(value = "Update an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
+    @ApiOperation(value = "Update an organisation.", notes = "Currently only description, email, link and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation updateOrganisation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation to register.", required = true) Organisation organisation,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
@@ -181,6 +180,18 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         oldOrganisation.setLocation(organisation.getLocation());
 
         return organisationDAO.findById(id);
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/create")
+    @ApiOperation(value = "Delete an organisation", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
+    public void deleteOrganisation(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organisation to delete.", required = true) @PathParam("organisationId") Long organisationId) {
+        // TODO: What situations can an organisation be deleted?
+
     }
 
     @PUT
@@ -303,6 +314,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
     /**
      * Checks if the given user should know of the existence of the organisation
+     * For a user to see an organsation, either it must be approved or the user must have a role in the organisation
      * @param organisationId
      * @param userId
      * @return True if organisation exists, false otherwise
@@ -344,7 +356,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
         // Check that you are not applying action on yourself
         if (Objects.equals(user.getId(), userId)) {
-            String msg = "You do not have the rights in the given organisation with ID '" + organisationId + "' to add new users.";
+            String msg = "You cannot add yourself to an organisation.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
@@ -354,4 +366,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
         return new ImmutablePair<>(organisation, userToAdd);
     }
+
+    // Accept/reject organisation invite
+
 }

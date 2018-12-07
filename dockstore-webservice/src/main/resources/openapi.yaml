@@ -2992,34 +2992,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organisation'
-  '/organisations/approved/{organisationId}':
-    get:
-      tags:
-        - organisations
-      summary: Retrieves an approved organisation by ID.
-      description: NO authentication
-      operationId: getApprovedOrganisationById
-      parameters:
-        - name: organisationId
-          in: path
-          description: Organisation ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organisation'
   /organisations/create:
     post:
       tags:
         - organisations
       summary: Create an organisation
-      description: ''
+      description: Organisation requires approval by an admin before being made public.
       operationId: createOrganisation
       responses:
         '200':
@@ -3037,7 +3015,7 @@ paths:
       tags:
         - organisations
       summary: Update an organisation.
-      description: ''
+      description: 'Currently only description, email, link and location can be updated.'
       operationId: updateOrganisation
       parameters:
         - name: organisationId
@@ -3063,7 +3041,9 @@ paths:
       tags:
         - organisations
       summary: Retrieves an organisation by ID.
-      description: ''
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
       operationId: getOrganisationById
       parameters:
         - name: organisationId

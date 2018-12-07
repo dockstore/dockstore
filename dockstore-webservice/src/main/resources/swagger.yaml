@@ -2691,33 +2691,12 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Organisation"
-  /organisations/approved/{organisationId}:
-    get:
-      tags:
-      - "organisations"
-      summary: "Retrieves an approved organisation by ID."
-      description: "NO authentication"
-      operationId: "getApprovedOrganisationById"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "organisationId"
-        in: "path"
-        description: "Organisation ID."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Organisation"
   /organisations/create:
     post:
       tags:
       - "organisations"
       summary: "Create an organisation"
-      description: ""
+      description: "Organisation requires approval by an admin before being made public."
       operationId: "createOrganisation"
       produces:
       - "application/json"
@@ -2740,7 +2719,7 @@ paths:
       tags:
       - "organisations"
       summary: "Update an organisation."
-      description: ""
+      description: "Currently only description, email, link and location can be updated."
       operationId: "updateOrganisation"
       produces:
       - "application/json"
@@ -2769,7 +2748,8 @@ paths:
       tags:
       - "organisations"
       summary: "Retrieves an organisation by ID."
-      description: ""
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
       operationId: "getOrganisationById"
       produces:
       - "application/json"
