@@ -1053,7 +1053,7 @@ public abstract class AbstractEntryClient<T> {
                 return Stream.empty();
             };
             if (list.get().count() == 0) {
-                System.out.println("There are no files in the docker image directory");
+                System.out.println("There are no files in the docker image directory: " + directoryPath.toAbsolutePath());
                 return;
             } else {
                 System.out.println("Loading docker images...");
