@@ -61,7 +61,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         this.sessionFactory = sessionFactory;
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @RolesAllowed("admin")
@@ -101,7 +101,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             return organisation;
         } else {
             // User is given, check if organisation is either approved or the user has access
-            boolean doesOrgExist = doesOrganisationExistToUser(id, user.get().getId());
+            // Admins and curators should be able to see unapproved organisations
+            boolean doesOrgExist = doesOrganisationExistToUser(id, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
             if (!doesOrgExist) {
                 String msg = "Organisation not found";
                 LOG.info(msg);
@@ -123,7 +124,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         return organisationDAO.findAll();
     }
 
-    @POST
+    @PUT
     @Timed
     @UnitOfWork
     @Path("/create")
@@ -146,6 +147,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
         // Create Role for user creating the organisation
         OrganisationUser organisationUser = new OrganisationUser(user, organisationDAO.findById(id), OrganisationUser.Role.MAINTAINER);
+        organisationUser.setAccepted(true);
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organisationUser);
 
@@ -182,18 +184,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         return organisationDAO.findById(id);
     }
 
-    @DELETE
-    @Timed
-    @UnitOfWork
-    @Path("/create")
-    @ApiOperation(value = "Delete an organisation", authorizations = {
-            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
-    public void deleteOrganisation(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Organisation to delete.", required = true) @PathParam("organisationId") Long organisationId) {
-        // TODO: What situations can an organisation be deleted?
-
-    }
-
     @PUT
     @Timed
     @UnitOfWork
@@ -202,7 +192,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     public Organisation addUserToOrg(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @QueryParam("role") String role,
             @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
+            @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
 
         // Basic checks to ensure that action can be taken
         Pair<Organisation, User> organisationAndUserToAdd = commonUserOrg(organisationId, userId, user);
@@ -272,6 +263,52 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
 
         return organisationDAO.findById(organisationId);
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{organisationId}/invitation")
+    @ApiOperation(value = "Accept or reject an organisation invitation.", notes = "True accepts the invitation, false rejects the invitation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
+    public User acceptOrRejectInvitation(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
+            @ApiParam(value = "Accept or reject", required = true) @QueryParam("accept") boolean accept) {
+
+        // Check that the organisation exists
+        boolean doesOrgExist = doesOrganisationExistToUser(organisationId, user.getId());
+        if (!doesOrgExist) {
+            String msg = "Organisation not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Organisation organisation = organisationDAO.findById(organisationId);
+
+        // Check that the role exists
+        OrganisationUser organisationUser = getUserOrgRole(organisation, user.getId());
+        if (organisationUser == null) {
+            String msg = "The user with id '" + user.getId() + "' does not have a role in the organisation with id '" + organisation.getId() + "'.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check that the role is not already accepted
+        if (organisationUser.isAccepted()) {
+            String msg = "The user with id '" + user.getId() + "' has already accepted a role in the organisation with id '" + organisation.getId() + "'.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (accept) {
+            // Set to accepted if true
+            organisationUser.setAccepted(true);
+        } else {
+            // Delete role if false
+            Session currentSession = sessionFactory.getCurrentSession();
+            currentSession.delete(organisationUser);
+        }
+
+        return user;
     }
 
     /**
@@ -366,7 +403,5 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
         return new ImmutablePair<>(organisation, userToAdd);
     }
-
-    // Accept/reject organisation invite
 
 }
