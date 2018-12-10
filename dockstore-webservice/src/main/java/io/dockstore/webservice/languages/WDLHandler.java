@@ -18,6 +18,7 @@ package io.dockstore.webservice.languages;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,7 +70,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             WdlParser.Ast ast = (WdlParser.Ast)parser.parse(tokens).toAst();
 
             if (ast == null) {
-                LOG.info("Error with WDL file.");
+                LOG.error(MessageFormat.format("Unable to parse WDL file {0}", filepath));
+                clearMetadata(entry);
                 return entry;
             } else {
                 LOG.info("Repository has Dockstore.wdl");
@@ -112,10 +114,17 @@ public class WDLHandler implements LanguageHandlerInterface {
                 entry.setDescription(description[0]);
             }
         } catch (WdlParser.SyntaxError syntaxError) {
-            LOG.info("Invalid WDL file.");
+            LOG.error(MessageFormat.format("Unable to parse WDL file {0}", filepath), syntaxError);
+            clearMetadata(entry);
         }
 
         return entry;
+    }
+
+    private void clearMetadata(Entry entry) {
+        entry.setAuthor(null);
+        entry.setEmail(null);
+        entry.setDescription(null);
     }
 
     private String extractRuntimeAttributeFromAST(WdlParser.AstNode node, String key) {
