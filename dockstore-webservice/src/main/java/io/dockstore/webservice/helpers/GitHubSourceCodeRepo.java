@@ -247,7 +247,8 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
             github.getMyOrganizations();
         } catch (IOException e) {
             throw new CustomWebApplicationException(
-                "Please recreate your GitHub token, we probably need an upgraded token to list your organizations", HttpStatus.SC_BAD_REQUEST);
+                "Please recreate your GitHub token by unlinking and then relinking your GitHub account through the Accounts page. "
+                        + "We need an upgraded token to list your organizations.", HttpStatus.SC_BAD_REQUEST);
         }
         return true;
     }
@@ -342,6 +343,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     SourceFile file = new SourceFile();
                     file.setContent(decodedContent);
                     file.setPath(calculatedPath);
+                    file.setAbsolutePath(calculatedPath);
                     file.setType(identifiedType);
                     version.setValid(validWorkflow);
                     version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
@@ -364,6 +366,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             }
 
                             testJson.setPath(workflow.getDefaultTestParameterFilePath());
+                            testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
                             testJson.setContent(testJsonContent);
 
                             // Check if test parameter file has already been added

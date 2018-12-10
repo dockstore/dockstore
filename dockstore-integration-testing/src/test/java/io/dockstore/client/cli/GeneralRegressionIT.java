@@ -26,7 +26,6 @@ import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.Registry;
 import io.dockstore.common.RegressionTest;
 import io.dockstore.common.TestUtility;
-import io.dockstore.common.ToilCompatibleTest;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -117,6 +116,7 @@ public class GeneralRegressionIT extends BaseIT {
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
+        fileCWL.setAbsolutePath("/Dockstore.cwl");
         List<SourceFile> list = new ArrayList<>();
         list.add(fileCWL);
         tag.setSourceFiles(list);
@@ -124,6 +124,7 @@ public class GeneralRegressionIT extends BaseIT {
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
         fileDockerFile.setPath("/Dockerfile");
+        fileDockerFile.setAbsolutePath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
@@ -381,7 +382,6 @@ public class GeneralRegressionIT extends BaseIT {
     }
 
     @Test
-    @Category(ToilCompatibleTest.class)
     public void testCWL2JSONOld() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         runOldDockstoreClient(dockstore,
@@ -391,7 +391,6 @@ public class GeneralRegressionIT extends BaseIT {
     }
 
     @Test
-    @Category(ToilCompatibleTest.class)
     public void testCWL2YAMLOld() {
         File sourceFile = new File(ResourceHelpers.resourceFilePath("dockstore-tool-bamstats.cwl"));
         runOldDockstoreClient(dockstore,
@@ -424,7 +423,6 @@ public class GeneralRegressionIT extends BaseIT {
      * Tests that a developer can launch a CWL Tool locally, instead of getting files from Dockstore
      */
     @Test
-    @Category(ToilCompatibleTest.class)
     public void testLocalLaunchCWLOld() {
         runOldDockstoreClient(dockstore,
                 new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "tool", "launch", "--local-entry",

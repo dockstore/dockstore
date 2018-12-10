@@ -24,6 +24,8 @@ import java.util.Set;
 
 import javax.ws.rs.Path;
 
+import io.dockstore.common.DescriptorLanguage;
+import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
@@ -88,10 +90,10 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Create a hosted workflow", response = Workflow.class)
-    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace) {
-        return super.createHosted(user, registry, name, descriptorType, namespace);
+    @ApiOperation(nickname = "createHostedWorkflow", value = "Create a hosted workflow.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
+    public Workflow createHosted(User user, String registry, String name, String descriptorType, String namespace, String entryName) {
+        return super.createHosted(user, registry, name, descriptorType, namespace, entryName);
     }
 
     @Override
@@ -128,7 +130,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected Workflow getEntry(User user, String registry, String name, String descriptorType, String namespace) {
+    protected Workflow getEntry(User user, Registry registry, String name, DescriptorLanguage descriptorType, String namespace, String entryName) {
         Workflow workflow = new Workflow();
         workflow.setMode(WorkflowMode.HOSTED);
         // TODO: We set the organization to the username of the user creating it. However, for gmail accounts this is an
@@ -136,17 +138,19 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         workflow.setOrganization(user.getUsername());
         workflow.setRepository(name);
         workflow.setSourceControl(SourceControl.DOCKSTORE);
-        workflow.setDescriptorType(descriptorType);
+        workflow.setDescriptorType(descriptorType.toString().toLowerCase());
         workflow.setLastUpdated(new Date());
         workflow.setLastModified(new Date());
-        workflow.setDefaultWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(descriptorType.toLowerCase()));
+        // Uncomment if we add entry name to hosted workflows
+        // workflow.setWorkflowName(entryName);
+        workflow.setDefaultWorkflowPath(this.descriptorTypeToDefaultDescriptorPath.get(descriptorType.toString().toLowerCase()));
         workflow.getUsers().add(user);
         return workflow;
     }
     
     @Override
     @ApiOperation(nickname = "editHostedWorkflow", value = "Non-idempotent operation for creating new revisions of hosted workflows", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Non-idempotent operation for creating new revisions of hosted workflows", response = Workflow.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
     }
@@ -156,7 +160,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
         Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(version.getWorkflowPath())).findFirst();
         first.ifPresent(sourceFile -> LOG.info("refreshing metadata based on " + sourceFile.getPath() + " from " + version.getName()));
-        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(workflow, sourceFile.getContent(), sourceFiles));
+        first.ifPresent(sourceFile -> anInterface.parseWorkflowContent(workflow, sourceFile.getPath(), sourceFile.getContent(), sourceFiles));
     }
 
     @Override
@@ -170,7 +174,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
     @Override
     @ApiOperation(nickname = "deleteHostedWorkflowVersion", value = "Delete a revision of a hosted workflow", authorizations = {
-        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Delete a revision of a hosted workflow", response = Workflow.class)
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow deleteHostedVersion(User user, Long entryId, String version) {
         return super.deleteHostedVersion(user, entryId, version);
     }
@@ -185,5 +189,21 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             }
         }
         return false;
+    }
+
+    @Override
+    protected DescriptorLanguage checkType(String descriptorType) {
+        for (DescriptorLanguage descriptorLanguage : DescriptorLanguage.values()) {
+            if (Objects.equals(descriptorLanguage.toString().toLowerCase(), descriptorType.toLowerCase())) {
+                return descriptorLanguage;
+            }
+        }
+        throw new CustomWebApplicationException(descriptorType + " is not a valid descriptor type", HttpStatus.SC_BAD_REQUEST);
+    }
+
+    @Override
+    protected Registry checkRegistry(String registry) {
+        // Registry does not matter for workflows
+        return null;
     }
 }

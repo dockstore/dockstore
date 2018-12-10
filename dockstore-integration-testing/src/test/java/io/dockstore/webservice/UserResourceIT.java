@@ -91,7 +91,7 @@ public class UserResourceIT extends BaseIT {
 
         // Add hosted workflow, should use new username
         HostedApi userHostedApi = new HostedApi(client);
-        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", "cwl", null, null);
+        Workflow hostedWorkflow = userHostedApi.createHostedWorkflow("hosted1", null, "cwl", null, null);
         assertEquals("Hosted workflow should used foo as workflow org, has " + hostedWorkflow.getOrganization(), "foo", hostedWorkflow.getOrganization());
     }
 

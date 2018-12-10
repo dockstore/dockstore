@@ -23,9 +23,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Map;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
@@ -117,23 +119,84 @@ public class LaunchTestIT {
     }
 
     @Test
+    public void wdlMetadataNoopPluginTest() {
+        //Test when content and extension are wdl  --> no need descriptor
+        File helloWDL = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
+        File helloJSON = new File(ResourceHelpers.resourceFilePath("hello.metadata.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--json");
+            add(helloJSON.getAbsolutePath());
+            add("--wdl-output-target");
+            add("noop://nowhere.test");
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+        workflowClient.checkEntryFile(helloWDL.getAbsolutePath(), args, null);
+
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog().contains("Cromwell exit code: 0"));
+        assertTrue("output should include a noop plugin run with metadata", systemOutRule.getLog().contains("really cool metadata"));
+    }
+
+    @Test
+    public void cwlMetadataNoopPluginTest() {
+
+        File cwlFile = new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl"));
+        File cwlJSON = new File(ResourceHelpers.resourceFilePath("collab-cwl-noop-job.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--json");
+            add(cwlJSON.getAbsolutePath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config.withTestPlugin"));
+
+        PluginClient.handleCommand(Lists.newArrayList("download"), Utilities.parseConfig(client.getConfigFile()));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+        workflowClient.checkEntryFile(cwlFile.getAbsolutePath(), args, null);
+
+        assertTrue("output should include a successful cwltool run", systemOutRule.getLog().contains("Final process status is success"));
+        assertTrue("output should include a noop plugin run with metadata", systemOutRule.getLog().contains("really cool metadata"));
+    }
+
+    @Test
     public void wdlWorkflowCorrectFlags() {
+        wdlEntryCorrectFlags("workflow");
+    }
+
+    @Test
+    public void wdlToolCorrectFlags() {
+        wdlEntryCorrectFlags("tool");
+    }
+
+    private void wdlEntryCorrectFlags(String entryType) {
         File yamlTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.yaml"));
         File jsonTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.json"));
 
-        ArrayList<String> yamlFileWithJSONFlag = getLaunchWorkflowStringList();
+        ArrayList<String> yamlFileWithJSONFlag = getLaunchStringList(entryType);
         yamlFileWithJSONFlag.add("--json");
         yamlFileWithJSONFlag.add(yamlTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> yamlFileWithYAMLFlag = getLaunchWorkflowStringList();
+        ArrayList<String> yamlFileWithYAMLFlag = getLaunchStringList(entryType);
         yamlFileWithYAMLFlag.add("--yaml");
         yamlFileWithYAMLFlag.add(yamlTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> jsonFileWithJSONFlag = getLaunchWorkflowStringList();
+        ArrayList<String> jsonFileWithJSONFlag = getLaunchStringList(entryType);
         jsonFileWithJSONFlag.add("--json");
         jsonFileWithJSONFlag.add(jsonTestParameterFile.getAbsolutePath());
 
-        ArrayList<String> jsonFileWithYAMLFlag = getLaunchWorkflowStringList();
+        ArrayList<String> jsonFileWithYAMLFlag = getLaunchStringList(entryType);
         jsonFileWithYAMLFlag.add("--yaml");
         jsonFileWithYAMLFlag.add(jsonTestParameterFile.getAbsolutePath());
 
@@ -143,13 +206,21 @@ public class LaunchTestIT {
         Client.main(jsonFileWithYAMLFlag.toArray(new String[0]));
     }
 
-
     @Test
     public void yamlAndJsonWorkflowCorrect() {
+        yamlAndJsonEntryCorrect("workflow");
+    }
+
+    @Test
+    public void yamlAndJsonToolCorrect() {
+        yamlAndJsonEntryCorrect("tool");
+    }
+
+    private void yamlAndJsonEntryCorrect(String entryType) {
         File yamlTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.yaml"));
         File jsonTestParameterFile = new File(ResourceHelpers.resourceFilePath("hello.json"));
 
-        ArrayList<String> args = getLaunchWorkflowStringList();
+        ArrayList<String> args = getLaunchStringList(entryType);
         args.add("--yaml");
         args.add(yamlTestParameterFile.getAbsolutePath());
         args.add("--json");
@@ -159,12 +230,12 @@ public class LaunchTestIT {
         Client.main(args.toArray(new String[0]));
     }
 
-    private ArrayList<String> getLaunchWorkflowStringList() {
+    private ArrayList<String> getLaunchStringList(String entryType) {
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
             return new ArrayList<String>() {{
                 add("--config");
                 add(ResourceHelpers.resourceFilePath("config"));
-                add("workflow");
+                add(entryType);
                 add("launch");
                 add("--local-entry");
                 add(descriptorFile.getAbsolutePath());
