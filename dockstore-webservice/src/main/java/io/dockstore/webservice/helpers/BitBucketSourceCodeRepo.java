@@ -188,6 +188,7 @@ public class BitBucketSourceCodeRepo extends SourceCodeRepoInterface {
             file.setType(type);
             file.setContent(content);
             file.setPath(path);
+            file.setAbsolutePath(path);
         }
         return file;
     }

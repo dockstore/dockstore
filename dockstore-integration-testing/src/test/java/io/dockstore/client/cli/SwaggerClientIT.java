@@ -223,6 +223,7 @@ public class SwaggerClientIT extends BaseIT {
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
+        fileCWL.setAbsolutePath("/Dockstore.cwl");
         List<SourceFile> files = new ArrayList<>();
         files.add(fileCWL);
         tag.setSourceFiles(files);
@@ -230,16 +231,19 @@ public class SwaggerClientIT extends BaseIT {
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
         fileDockerFile.setPath("/Dockerfile");
+        fileDockerFile.setAbsolutePath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
         SourceFile testParameterFile = new SourceFile();
         testParameterFile.setContent("testparameterstuff");
         testParameterFile.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
         testParameterFile.setPath("/test1.json");
+        testParameterFile.setAbsolutePath("/test1.json");
         tag.getSourceFiles().add(testParameterFile);
         SourceFile testParameterFile2 = new SourceFile();
         testParameterFile2.setContent("moretestparameterstuff");
         testParameterFile2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
         testParameterFile2.setPath("/test2.json");
+        testParameterFile2.setAbsolutePath("/test2.json");
         tag.getSourceFiles().add(testParameterFile2);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
@@ -946,6 +950,7 @@ public class SwaggerClientIT extends BaseIT {
         fileCWL.setContent("class: Workflow\ncwlVersion: v1.0"); // Need this for CWLHandler:isValidWorkflow
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
+        fileCWL.setAbsolutePath("/Dockstore.cwl");
         return fileCWL;
     }
 

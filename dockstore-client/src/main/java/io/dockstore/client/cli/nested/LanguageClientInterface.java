@@ -33,9 +33,11 @@ public interface LanguageClientInterface {
     Boolean check(File content);
 
     /**
-     * Download secondary files for an entry
+     * Creates the json template for a tool or workflow.
+     * As a side-effect, downloads secondary files for an entry
      * @param entry the path to the downloaded primary file
-     * @param json return in json? retained from before refactoring, but this parameter seems pointless
+     * @param json return in json? retained from before refactoring, but this parameter seems pointless. Might be removeable without
+     *             csvRuns below
      * @return
      * @throws ApiException
      * @throws IOException
@@ -49,10 +51,15 @@ public interface LanguageClientInterface {
      *
      * @param entry        either a dockstore entry or a local file
      * @param isLocalEntry is the descriptor a local file
-     * @param yamlRun      runtime descriptor, one of these is required
-     * @param jsonRun      runtime descriptor, one of these is required
-     * @param csvRuns      runtime descriptor, one of these is required
-     * @param wdlOutputTarget directory where to drop off output for wdl
+     * @param yamlRun      runtime descriptor, one of these is required, takes first precedence
+     * @param jsonRun      runtime descriptor, one of these is required, takes second precedence
+     * @param csvRuns      runtime descriptor, one of these is required, can be simplified away
+     * @param wdlOutputTarget   directory where to drop off output for wdl
+     *                          To elaborate, in CWL, the JSON object can specify unique output locations for each file. i.e.
+     *                          we want the first output file to go to S3, the second file to go to Synapse, the third file
+     *                          to go to local filesystem, etc. In WDL, this is either not available or was not available at the time,
+     *                          instead we specify one specific directory (either remote or local) and dump all output there,
+     *                          re-creating the directory structure that Cromwell ends up with there
      * @param uuid         uuid that was optional specified for notifications
      * @throws IOException
      * @throws ApiException

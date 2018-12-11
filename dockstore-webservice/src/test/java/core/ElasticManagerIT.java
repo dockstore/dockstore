@@ -66,6 +66,7 @@ public class ElasticManagerIT {
         String cwlContent = Files.asCharSource(cwlFile, Charsets.UTF_8).read();
 
         file.setPath("dummypath");
+        file.setAbsolutePath("/dummypath");
         file.setContent(cwlContent);
         file.setType(DOCKSTORE_CWL);
         tag.addSourceFile(file);
