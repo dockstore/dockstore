@@ -9,7 +9,10 @@ import java.util.ArrayList;
 
 import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -20,6 +23,9 @@ import org.junit.rules.ExpectedException;
 import static org.junit.Assert.assertTrue;
 
 /**
+ * Tests CLI launching with image on filesystem instead of internet
+ * In general, ubuntu:0118999881999119725...3 is the file that exists only on filesystem and hopefully never on internet
+ * All tests will be trying to use that image
  * @author gluu
  * @since 1.6.0
  */
@@ -36,16 +42,39 @@ public class LaunchNoInternetTestIT {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private static final File DESCRIPTOR_FILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/nonexistent_image.cwl"));
-    private static final File JSON_FILE = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
+    public static String docker_images;
+    private static final File DESCRIPTOR_FILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/CWL/nonexistent_image.cwl"));
+    private static final File YAML_FILE = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
+    private static final String FAKE_IMAGE_NAME = "ubuntu:0118999881999119725...3";
 
     /**
-     * Test that launches a tool that only exists on the file system and not the internet
-     * If no docker-image directory is specified, launch should fail because no internet
+     * Downloading an image with bash (Nextflow needs it) and saving it on the filesystem as something weird that is unlikely to be on the internet
+     * to make sure that the Dockstore CLI only uses the image from the filesystem
+     *
+     * @throws IOException
+     */
+    @BeforeClass
+    public static void downloadCustomDockerImage() throws IOException {
+        Utilities.executeCommand("docker pull ubuntu:latest", System.out, System.err);
+        Utilities.executeCommand("docker tag ubuntu:latest " + FAKE_IMAGE_NAME, System.out, System.err);
+        docker_images = Files.createTempDirectory("docker_images").toAbsolutePath().toString();
+        Utilities.executeCommand("docker save -o " + docker_images + "/fakeImage " + FAKE_IMAGE_NAME, System.out, System.err);
+    }
+
+    @Before
+    public void clearImage() {
+        try {
+            Utilities.executeCommand("docker rmi " + FAKE_IMAGE_NAME);
+        } catch (Exception e) {
+            // Don't care that it failed, it probably just didn't have the image loaded before
+        }
+    }
+
+    /**
+     * When Docker image directory is not specified
      */
     @Test
-    public void launchImageFromFileNotSpecified() {
-        clearImage();
+    public void directoryNotSpecified() {
         checkFailed();
 
         ArrayList<String> args = new ArrayList<String>() {{
@@ -54,18 +83,18 @@ public class LaunchNoInternetTestIT {
             add("--local-entry");
             add(DESCRIPTOR_FILE.getAbsolutePath());
             add("--yaml");
-            add(JSON_FILE.getAbsolutePath());
+            add(YAML_FILE.getAbsolutePath());
+            add("--config");
+            add(ResourceHelpers.resourceFilePath("config"));
         }};
         Client.main(args.toArray(new String[0]));
     }
 
     /**
-     * Test that launches a tool that only exists on the file system and not the internet
-     * If the docker-image directory is doesn't exist, say that it doesn't exist and launch should fail because no internet
+     * Docker image directory specified but doesn't exist
      */
     @Test
-    public void launchImageFromFileNoSuchFile() {
-        clearImage();
+    public void directorySpecifiedDoesNotExist() {
         checkFailed();
         exit.checkAssertionAfterwards(()-> assertTrue(systemOutRule.getLog().contains("Directory not found:")));
 
@@ -81,7 +110,7 @@ public class LaunchNoInternetTestIT {
             add("--local-entry");
             add(DESCRIPTOR_FILE.getAbsolutePath());
             add("--yaml");
-            add(JSON_FILE.getAbsolutePath());
+            add(YAML_FILE.getAbsolutePath());
             add("--config");
             add(configPath.getAbsolutePath());
         }};
@@ -89,16 +118,14 @@ public class LaunchNoInternetTestIT {
     }
 
     /**
-     * Test that launches a tool that only exists on the file system and not the internet
-     * If the docker-image directory is actually a file, say it and launch should fail because no internet
+     * Docker image directory specified is actually a file
      */
     @Test
-    public void launchImageFromFileNotADirectory() {
-        clearImage();
+    public void directorySpecifiedButIsAFile() {
         checkFailed();
         exit.checkAssertionAfterwards(()-> assertTrue(systemOutRule.getLog().contains("Directory is a file:")));
 
-        String toWrite = "docker-images = src/test/resources/nonexistent_image/docker_images/fakeImage";
+        String toWrite = "docker-images = " + docker_images + "/fakeImage";
         File configPath = createTempFile(toWrite);
         if (configPath == null) {
             Assert.fail("Could create temp config file");
@@ -109,7 +136,7 @@ public class LaunchNoInternetTestIT {
             add("--local-entry");
             add(DESCRIPTOR_FILE.getAbsolutePath());
             add("--yaml");
-            add(JSON_FILE.getAbsolutePath());
+            add(YAML_FILE.getAbsolutePath());
             add("--config");
             add(configPath.getAbsolutePath());
         }};
@@ -117,12 +144,10 @@ public class LaunchNoInternetTestIT {
     }
 
     /**
-     * Test that launches a tool that only exists on the file system and not the internet
-     * If the docker-image directory is specified but there aren't any files, say it and launch should fail because no internet
+     * Docker image directory specified but has no files in there
      */
     @Test
-    public void launchImageFromFileNoImages() {
-        clearImage();
+    public void directorySpecifiedButNoImages() {
         checkFailed();
         exit.checkAssertionAfterwards(()-> assertTrue(systemOutRule.getLog().contains("There are no files in the docker image directory")));
 
@@ -141,7 +166,7 @@ public class LaunchNoInternetTestIT {
             add("--local-entry");
             add(DESCRIPTOR_FILE.getAbsolutePath());
             add("--yaml");
-            add(JSON_FILE.getAbsolutePath());
+            add(YAML_FILE.getAbsolutePath());
             add("--config");
             add(configPath.getAbsolutePath());
         }};
@@ -149,14 +174,12 @@ public class LaunchNoInternetTestIT {
     }
 
     /**
-     * Test that launches a tool that only exists on the file system and not the internet
-     * If the docker-image directory is specified and is correct, say that it doesn't exist and launch should fail because no internet
+     * Everything correctly configured with CWL tool
      */
     @Test
-    public void launchImageFromFileCorrect() {
-        clearImage();
-        File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/nonexistent_image.cwl"));
-        String toWrite = "docker-images = src/test/resources/nonexistent_image/docker_images";
+    public void correctCWL() {
+        File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/CWL/nonexistent_image.cwl"));
+        String toWrite = "docker-images = " + docker_images;
         File configPath = createTempFile(toWrite);
         if (configPath == null) {
             Assert.fail("Could create temp config file");
@@ -167,7 +190,7 @@ public class LaunchNoInternetTestIT {
             add("--local-entry");
             add(descriptorFile.getAbsolutePath());
             add("--yaml");
-            add(JSON_FILE.getAbsolutePath());
+            add(YAML_FILE.getAbsolutePath());
             add("--config");
             add(configPath.getAbsolutePath());
         }};
@@ -176,14 +199,56 @@ public class LaunchNoInternetTestIT {
     }
 
     /**
-     * Remove the image just in case Travis already has it from another test
+     * Everything correctly configured with NFL workflow
      */
-    private void clearImage() {
-        try {
-            Utilities.executeCommand("docker rmi busybox:0118999881999119725...3");
-        } catch (Exception e) {
-            // Don't care that it failed, it probably just didn't have the image loaded before
+    @Test
+    public void correctNFL() throws IOException {
+        copyNFLFiles();
+        File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/NFL/nextflow.config"));
+        File jsonFile = new File(ResourceHelpers.resourceFilePath("nextflow_rnatoy/test.json"));
+        String toWrite = "docker-images = " + docker_images;
+        File configPath = createTempFile(toWrite);
+        if (configPath == null) {
+            Assert.fail("Could create temp config file");
         }
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(descriptorFile.getAbsolutePath());
+            add("--json");
+            add(jsonFile.getAbsolutePath());
+            add("--config");
+            add(configPath.getAbsolutePath());
+        }};
+        Client.main(args.toArray(new String[0]));
+        Assert.assertTrue("Final process status was not success", systemOutRule.getLog().contains("Saving copy of NextFlow stdout to: "));
+    }
+
+    /**
+     * Everything correctly configured with WDL workflow
+     */
+    @Test
+    public void correctWDL() {
+        File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/WDL/nonexistent_image.wdl"));
+        File jsonFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/WDL/test.json"));
+        String toWrite = "docker-images = " + docker_images;
+        File configPath = createTempFile(toWrite);
+        if (configPath == null) {
+            Assert.fail("Could create temp config file");
+        }
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(descriptorFile.getAbsolutePath());
+            add("--json");
+            add(jsonFile.getAbsolutePath());
+            add("--config");
+            add(configPath.getAbsolutePath());
+        }};
+        Client.main(args.toArray(new String[0]));
+        Assert.assertTrue("Final process status was not success", systemOutRule.getLog().contains("Output files left in place"));
     }
 
     /**
@@ -223,6 +288,17 @@ public class LaunchNoInternetTestIT {
     private void checkFailed() {
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(() -> assertTrue(systemErrRule.getLog().contains(
-                "Error response from daemon: manifest for busybox:0118999881999119725...3 not found")));
+                "Error response from daemon: manifest for " + FAKE_IMAGE_NAME + " not found")));
+    }
+
+    /**
+     * Nextflow with Dockstore CLI requires main.nf to be at same directory of execution, copying file over
+     *
+     * @throws IOException
+     */
+    private void copyNFLFiles() throws IOException {
+        File userDir = new File(System.getProperty("user.dir"));
+        File testFileDirectory = new File("src/test/resources/nonexistent_image/NFL");
+        FileUtils.copyDirectory(testFileDirectory, userDir);
     }
 }
