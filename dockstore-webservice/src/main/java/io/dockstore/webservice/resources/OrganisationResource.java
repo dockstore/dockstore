@@ -150,8 +150,10 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         organisation.setApproved(false); // should not be approved by default
         long id = organisationDAO.create(organisation);
 
+        User foundUser = userDAO.findById(user.getId());
+
         // Create Role for user creating the organisation
-        OrganisationUser organisationUser = new OrganisationUser(user, organisationDAO.findById(id), OrganisationUser.Role.MAINTAINER);
+        OrganisationUser organisationUser = new OrganisationUser(foundUser, organisationDAO.findById(id), OrganisationUser.Role.MAINTAINER);
         organisationUser.setAccepted(true);
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organisationUser);
@@ -249,8 +251,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{organisationId}/user")
-    @ApiOperation(value = "Remove a user from an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
-    public Organisation deleteUserRole(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Remove a user from an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = void.class)
+    public void deleteUserRole(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
 
@@ -267,8 +269,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.delete(existingRole);
         }
-
-        return organisationDAO.findById(organisationId);
     }
 
     @POST

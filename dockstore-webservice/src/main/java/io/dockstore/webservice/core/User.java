@@ -147,7 +147,7 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     @Column
     @ApiModelProperty(value = "Set of organisations the user belongs to", required = true, position = 13)
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<OrganisationUser> organisations;
 
