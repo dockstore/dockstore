@@ -22,6 +22,7 @@ import javax.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.dockstore.common.CommonTestUtilities;
+import io.dockstore.common.TestUtility;
 import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.model.FileWrapper;
@@ -59,7 +60,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     @Override
     public void testMetadata() throws Exception {
-        Response response = checkedResponse(basePath + "metadata");
+        Response response = checkedResponse(baseURL + "metadata");
         Metadata responseObject = response.readEntity(Metadata.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("api_version");
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("friendly_name");
@@ -70,7 +71,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     @Override
     public void testTools() throws Exception {
-        Response response = checkedResponse(basePath + "tools");
+        Response response = checkedResponse(baseURL + "tools");
         List<Tool> responseObject = response.readEntity(new GenericType<List<Tool>>() {
         });
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
@@ -84,7 +85,7 @@ public class GA4GHV2IT extends GA4GHIT {
     }
 
     private void toolsIdTool() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6");
         Tool responseObject = response.readEntity(Tool.class);
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), true);
         // regression test for #1248
@@ -93,18 +94,18 @@ public class GA4GHV2IT extends GA4GHIT {
         assertTrue("imageName should never be null", responseObject.getVersions().size() > 0 && responseObject.getVersions().stream()
             .allMatch(version -> version.getImageName() != null));
         // search by id
-        response = checkedResponse(basePath + "tools?id=quay.io%2Ftest_org%2Ftest6");
+        response = checkedResponse(baseURL + "tools?id=quay.io%2Ftest_org%2Ftest6");
         List<Tool> responseList = response.readEntity(new GenericType<List<Tool>>() {
         });
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), true);
     }
 
     private void toolsIdWorkflow() throws Exception {
-        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FA%2Fl");
+        Response response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FA%2Fl");
         Tool responseObject = response.readEntity(Tool.class);
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseObject), false);
         // search by id
-        response = checkedResponse(basePath + "tools?id=%23workflow%2Fgithub.com%2FA%2Fl");
+        response = checkedResponse(baseURL + "tools?id=%23workflow%2Fgithub.com%2FA%2Fl");
         List<Tool> responseList = response.readEntity(new GenericType<List<Tool>>() {
         });
         assertTool(SUPPORT.getObjectMapper().writeValueAsString(responseList), false);
@@ -113,7 +114,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     @Override
     public void testToolsIdVersions() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions");
         List<ToolVersion> responseObject = response.readEntity(new GenericType<List<ToolVersion>>() {
         });
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
@@ -122,7 +123,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     @Override
     public void testToolClasses() throws Exception {
-        Response response = checkedResponse(basePath + "toolClasses");
+        Response response = checkedResponse(baseURL + "toolClasses");
         List<ToolClass> responseObject = response.readEntity(new GenericType<List<ToolClass>>() {
         });
         final String expected = SUPPORT.getObjectMapper().writeValueAsString(
@@ -134,14 +135,14 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     @Override
     public void testToolsIdVersionsVersionId() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName");
         ToolVersion responseObject = response.readEntity(ToolVersion.class);
         assertVersion(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
     }
 
     @Override
     public void testToolsIdVersionsVersionIdTypeDescriptor() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
@@ -150,7 +151,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Override
     protected void toolsIdVersionsVersionIdTypeDescriptorRelativePathNormal() throws Exception {
         Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2FDockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
@@ -158,7 +159,7 @@ public class GA4GHV2IT extends GA4GHIT {
 
     @Override
     protected void toolsIdVersionsVersionIdTypeDescriptorRelativePathMissingSlash() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/Dockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
@@ -167,7 +168,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Override
     protected void toolsIdVersionsVersionIdTypeDescriptorRelativePathExtraDot() throws Exception {
         Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/.%2FDockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
@@ -177,12 +178,12 @@ public class GA4GHV2IT extends GA4GHIT {
     @Override
     public void testRelativePathEndpointToolTestParameterFileJSON() {
         Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject.getContent());
         Response response2 = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Fnested%2Ftest.wdl.json");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Fnested%2Ftest.wdl.json");
         FileWrapper responseObject2 = response2.readEntity(FileWrapper.class);
         assertEquals(HttpStatus.SC_OK, response2.getStatus());
         assertEquals("nestedPotato", responseObject2.getContent());
@@ -196,15 +197,15 @@ public class GA4GHV2IT extends GA4GHIT {
 
         // Check responses
         Response response = checkedResponse(
-            basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Fnested%2Ftest.cwl.json");
         FileWrapper responseObject = response.readEntity(io.swagger.client.model.FileWrapper.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject.getContent());
         Response response2 = client
-            .target(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
+            .target(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/descriptor/%2Ftest.potato.json").request().get();
         assertEquals(HttpStatus.SC_NOT_FOUND, response2.getStatus());
         Response response3 = checkedResponse(
-            basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/CWL/descriptor/%2Ftest.cwl.json");
         io.swagger.client.model.FileWrapper responseObject3 = response3.readEntity(io.swagger.client.model.FileWrapper.class);
         assertEquals(HttpStatus.SC_OK, response3.getStatus());
         assertEquals("potato", responseObject3.getContent());
@@ -213,7 +214,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     @Override
     public void testToolsIdVersionsVersionIdTypeTests() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/tests");
         List<FileWrapper> responseObject = response.readEntity(new GenericType<List<FileWrapper>>() {
         });
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject).contains("test")).isTrue();
@@ -223,7 +224,7 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     @Override
     public void testToolsIdVersionsVersionIdTypeDockerfile() {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/containerfile");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/containerfile");
         // note to tester, this seems to intentionally be a list in v2 as opposed to v1
         List<FileWrapper> responseObject = response.readEntity(new GenericType<List<FileWrapper>>() {
         });
@@ -243,7 +244,7 @@ public class GA4GHV2IT extends GA4GHIT {
 
     @Test
     public void toolsIdVersionsVersionIdTypeDescriptorRelativePathNoEncode() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/descriptor//Dockstore.cwl");
         FileWrapper responseObject = response.readEntity(FileWrapper.class);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.SC_OK);
         assertDescriptor(SUPPORT.getObjectMapper().writeValueAsString(responseObject));
@@ -257,13 +258,13 @@ public class GA4GHV2IT extends GA4GHIT {
     @Test
     public void RelativePathEndpointToolTestParameterFileNoEncode() {
         Response response = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//nested/test.cwl.json");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//nested/test.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
 
         Response response2 = checkedResponse(
-            basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//test.cwl.json");
+            baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/PLAIN_CWL/descriptor//test.cwl.json");
         String responseObject2 = response2.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response2.getStatus());
         assertEquals("potato", responseObject2);
@@ -280,20 +281,20 @@ public class GA4GHV2IT extends GA4GHIT {
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
 
         // Check responses
-        Response response = checkedResponse(basePath
+        Response response = checkedResponse(baseURL
             + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//nested/test.cwl.json");
         String responseObject = response.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response.getStatus());
         assertEquals("nestedPotato", responseObject);
         Response response2 = checkedResponse(
-            basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//test.cwl.json");
+            baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/PLAIN_CWL/descriptor//test.cwl.json");
         String responseObject2 = response2.readEntity(String.class);
         assertEquals(HttpStatus.SC_OK, response2.getStatus());
         assertEquals("potato", responseObject2);
     }
 
     private void toolsIdVersionsVersionIdTypeFileCWL() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/files");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/CWL/files");
         List<ToolFile> responseObject = response.readEntity(new GenericType<List<ToolFile>>() {
         });
 
@@ -304,7 +305,7 @@ public class GA4GHV2IT extends GA4GHIT {
     }
 
     private void toolsIdVersionsVersionIdTypeFileWDL() throws Exception {
-        Response response = checkedResponse(basePath + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/files");
+        Response response = checkedResponse(baseURL + "tools/quay.io%2Ftest_org%2Ftest6/versions/fakeName/WDL/files");
         List<ToolFile> responseObject = response.readEntity(new GenericType<List<ToolFile>>() {
         });
         final String expected = SUPPORT.getObjectMapper()
@@ -342,16 +343,16 @@ public class GA4GHV2IT extends GA4GHIT {
         CommonTestUtilities.setupSamePathsTest(SUPPORT);
 
         // Check responses
-        Response response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
+        Response response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository");
         Tool responseObject = response.readEntity(Tool.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author1");
-        response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
+        response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository");
         responseObject = response.readEntity(Tool.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author2");
-        response = checkedResponse(basePath + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
+        response = checkedResponse(baseURL + "tools/%23workflow%2Fgithub.com%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(Tool.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author3");
-        response = checkedResponse(basePath + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
+        response = checkedResponse(baseURL + "tools/%23workflow%2Fbitbucket.org%2FfakeOrganization%2FfakeRepository%2FPotato");
         responseObject = response.readEntity(Tool.class);
         assertThat(SUPPORT.getObjectMapper().writeValueAsString(responseObject)).contains("author4");
     }
@@ -364,8 +365,8 @@ public class GA4GHV2IT extends GA4GHIT {
     public void cwlrunnerWorkflowRelativePathNotEncodedAdditionalFiles() throws Exception {
         CommonTestUtilities.setupTestWorkflow(SUPPORT);
         String command = "cwl-runner";
-        String descriptorPath =
-            basePath + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
+        String originalUrl = baseURL + "tools/%23workflow%2Fgithub.com%2Fgaryluu%2FtestWorkflow/versions/master/plain-CWL/descriptor//Dockstore.cwl";
+        String descriptorPath = TestUtility.mimicNginxRewrite(originalUrl, basePath);
         String testParameterFilePath = ResourceHelpers.resourceFilePath("testWorkflow.json");
         ImmutablePair<String, String> stringStringImmutablePair = Utilities
             .executeCommand(command + " " + descriptorPath + " " + testParameterFilePath, System.out, System.err);
