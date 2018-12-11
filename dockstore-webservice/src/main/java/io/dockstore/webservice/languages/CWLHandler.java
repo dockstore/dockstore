@@ -138,12 +138,8 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface) {
-        return processImports(repositoryId, "", content, version, sourceCodeRepoInterface);
-    }
-
-    private Map<String, SourceFile> processImports(String repositoryId, String workingDirectoryForFile, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface) {
+    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
 
         Map<String, SourceFile> imports = new HashMap<>();
         Yaml yaml = new Yaml();
