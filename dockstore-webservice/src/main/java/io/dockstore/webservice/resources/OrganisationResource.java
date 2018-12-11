@@ -64,12 +64,17 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @POST
     @Timed
     @UnitOfWork
-    @RolesAllowed("admin")
+    @RolesAllowed({ "curator", "admin" })
     @Path("/approve/{organisationId}")
-    @ApiOperation(value = "Approves an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin only", response = Organisation.class)
+    @ApiOperation(value = "Approves an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organisation.class)
     public Organisation approveOrganisation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
         Organisation organisation = organisationDAO.findById(id);
+        if (organisation == null) {
+            String msg = "Organisation not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
         organisation.setApproved(true);
         return organisationDAO.findById(id);
     }
@@ -79,7 +84,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @UnitOfWork
     @Path("/approved")
     @ApiOperation(value = "List all available organisations.", notes = "NO Authentication", responseContainer = "List", response = Organisation.class)
-    public List<Organisation> getPublishedOrganisations() {
+    public List<Organisation> getApprovedOrganisations() {
         return organisationDAO.findAllApproved();
     }
 
@@ -91,7 +96,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     public Organisation getOrganisationById(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
         if (!user.isPresent()) {
-            // No user given, only show approved organisation
+            // No user given, only show approved organisations
             Organisation organisation = organisationDAO.findApprovedById(id);
             if (organisation == null) {
                 String msg = "Organisation not found";
@@ -118,8 +123,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/all")
-    @RolesAllowed("admin")
-    @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin only", responseContainer = "List", response = Organisation.class)
+    @RolesAllowed({ "curator", "admin" })
+    @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
     public List<Organisation> getAllOrganisations() {
         return organisationDAO.findAll();
     }
@@ -188,8 +193,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{organisationId}/user")
-    @ApiOperation(value = "Adds a user role to an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
-    public Organisation addUserToOrg(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Adds a user role to an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
+    public OrganisationUser addUserToOrg(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @QueryParam("role") String role,
             @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
@@ -200,8 +205,9 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
         // Check for existing roles the user has
         OrganisationUser existingRole = getUserOrgRole(organisationAndUserToAdd.getLeft(), userId);
+        OrganisationUser organisationUser = null;
         if (existingRole == null) {
-            OrganisationUser organisationUser = new OrganisationUser(organisationAndUserToAdd.getRight(), organisationAndUserToAdd.getLeft(), OrganisationUser.Role.valueOf(role));
+            organisationUser = new OrganisationUser(organisationAndUserToAdd.getRight(), organisationAndUserToAdd.getLeft(), OrganisationUser.Role.valueOf(role));
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.persist(organisationUser);
         } else {
@@ -210,15 +216,15 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        return organisationDAO.findById(organisationId);
+        return organisationUser;
     }
 
     @POST
     @Timed
     @UnitOfWork
     @Path("/{organisationId}/user")
-    @ApiOperation(value = "Updates a user role in an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
-    public Organisation updateUserRole(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Updates a user role in an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
+    public OrganisationUser updateUserRole(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @QueryParam("role") String role,
             @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
@@ -236,7 +242,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             existingRole.setRole(OrganisationUser.Role.valueOf(role));
         }
 
-        return organisationDAO.findById(organisationId);
+        return existingRole;
     }
 
     @DELETE

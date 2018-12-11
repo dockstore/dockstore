@@ -2939,7 +2939,7 @@ paths:
       tags:
         - organisations
       summary: List all organisations.
-      description: Admin only
+      description: Admin/curator only
       operationId: getAllOrganisations
       responses:
         '200':
@@ -2957,7 +2957,7 @@ paths:
       tags:
         - organisations
       summary: Approves an organisation.
-      description: Admin only
+      description: Admin/curator only
       operationId: approveOrganisation
       parameters:
         - name: organisationId
@@ -2982,7 +2982,7 @@ paths:
         - organisations
       summary: List all available organisations.
       description: NO Authentication
-      operationId: getPublishedOrganisations
+      operationId: getApprovedOrganisations
       responses:
         '200':
           description: successful operation
@@ -3130,7 +3130,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
+                $ref: '#/components/schemas/OrganisationUser'
       security:
         - BEARER: []
     put:
@@ -3170,7 +3170,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
+                $ref: '#/components/schemas/OrganisationUser'
       security:
         - BEARER: []
       requestBody:
@@ -6032,6 +6032,37 @@ components:
         approved:
           type: boolean
           description: Is the organisation approved
+    OrganisationUser:
+      type: object
+      required:
+        - accepted
+        - role
+      properties:
+        id:
+          $ref: '#/components/schemas/OrganisationUserId'
+        user:
+          $ref: '#/components/schemas/User'
+        organisation:
+          $ref: '#/components/schemas/Organisation'
+        role:
+          type: string
+          description: The role of the user in the organisation
+          enum:
+            - ADMIN
+            - MAINTAINER
+            - MEMBER
+        accepted:
+          type: boolean
+          description: Has the user accepted their membership.
+    OrganisationUserId:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        organisationId:
+          type: integer
+          format: int64
     Permission:
       type: object
       properties:

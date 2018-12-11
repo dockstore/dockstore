@@ -2637,7 +2637,7 @@ paths:
       tags:
       - "organisations"
       summary: "List all organisations."
-      description: "Admin only"
+      description: "Admin/curator only"
       operationId: "getAllOrganisations"
       produces:
       - "application/json"
@@ -2656,7 +2656,7 @@ paths:
       tags:
       - "organisations"
       summary: "Approves an organisation."
-      description: "Admin only"
+      description: "Admin/curator only"
       operationId: "approveOrganisation"
       produces:
       - "application/json"
@@ -2680,7 +2680,7 @@ paths:
       - "organisations"
       summary: "List all available organisations."
       description: "NO Authentication"
-      operationId: "getPublishedOrganisations"
+      operationId: "getApprovedOrganisations"
       produces:
       - "application/json"
       parameters: []
@@ -2830,7 +2830,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Organisation"
+            $ref: "#/definitions/OrganisationUser"
       security:
       - BEARER: []
     put:
@@ -2874,7 +2874,7 @@ paths:
         200:
           description: "successful operation"
           schema:
-            $ref: "#/definitions/Organisation"
+            $ref: "#/definitions/OrganisationUser"
       security:
       - BEARER: []
     delete:
@@ -5582,6 +5582,37 @@ definitions:
         type: "boolean"
         position: 7
         description: "Is the organisation approved"
+  OrganisationUser:
+    type: "object"
+    required:
+    - "accepted"
+    - "role"
+    properties:
+      id:
+        $ref: "#/definitions/OrganisationUserId"
+      user:
+        $ref: "#/definitions/User"
+      organisation:
+        $ref: "#/definitions/Organisation"
+      role:
+        type: "string"
+        description: "The role of the user in the organisation"
+        enum:
+        - "ADMIN"
+        - "MAINTAINER"
+        - "MEMBER"
+      accepted:
+        type: "boolean"
+        description: "Has the user accepted their membership."
+  OrganisationUserId:
+    type: "object"
+    properties:
+      userId:
+        type: "integer"
+        format: "int64"
+      organisationId:
+        type: "integer"
+        format: "int64"
   Permission:
     type: "object"
     properties:

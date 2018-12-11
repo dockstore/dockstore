@@ -98,7 +98,7 @@ public class OrganisationIT extends BaseIT {
         assertTrue(!registeredOrganisation.isApproved());
 
         // Should not appear in approved list
-        List<Organisation> organisationList = organisationsApiUser2.getPublishedOrganisations();
+        List<Organisation> organisationList = organisationsApiUser2.getApprovedOrganisations();
         assertEquals("Should have no approved organisations." , organisationList.size(), 0);
 
         // User should be able to get by id
@@ -136,7 +136,7 @@ public class OrganisationIT extends BaseIT {
         organisationsApiAdmin.approveOrganisation(registeredOrganisation.getId());
 
         // Should now appear in approved list
-        organisationList = organisationsApiUser2.getPublishedOrganisations();
+        organisationList = organisationsApiUser2.getApprovedOrganisations();
         assertEquals("Should have one approved organisations." , organisationList.size(), 1);
 
         // User should be able to get by id
@@ -199,11 +199,11 @@ public class OrganisationIT extends BaseIT {
         // Setup postgres
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
-        // Setup user one
+        // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
         OrganisationsApi organisationsApiUser2 = new OrganisationsApi(webClientUser2);
 
-        // Setup user two
+        // Setup other user
         final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
         OrganisationsApi organisationsApiOtherUser = new OrganisationsApi(webClientOtherUser);
 
@@ -227,7 +227,7 @@ public class OrganisationIT extends BaseIT {
         // There should exist a role that is accepted
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from organisationuser where accepted = true and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
-        assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count2, 1, count2);
+        assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count2, 1, count2);
 
         // Other user should not be able to edit stuff
         String email = "another@email.com";
