@@ -180,7 +180,7 @@ public class LaunchNoInternetTestIT {
      */
     private void clearImage() {
         try {
-            Utilities.executeCommand("docker rmi alpine:0118999881999119725...3");
+            Utilities.executeCommand("docker rmi busybox:0118999881999119725...3");
         } catch (Exception e) {
             // Don't care that it failed, it probably just didn't have the image loaded before
         }
@@ -223,6 +223,6 @@ public class LaunchNoInternetTestIT {
     private void checkFailed() {
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(() -> assertTrue(systemErrRule.getLog().contains(
-                "Error response from daemon: manifest for alpine:0118999881999119725...3 not found")));
+                "Error response from daemon: manifest for busybox:0118999881999119725...3 not found")));
     }
 }

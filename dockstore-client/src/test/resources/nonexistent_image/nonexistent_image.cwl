@@ -2,7 +2,7 @@ cwlVersion: v1.0
 class: CommandLineTool
 requirements:
 - class: DockerRequirement
-  dockerPull: alpine:0118999881999119725...3
+  dockerPull: busybox:0118999881999119725...3
 - class: InlineJavascriptRequirement
 inputs:
   message:
