@@ -45,6 +45,7 @@ public class LaunchNoInternetTestIT {
     public static String docker_images;
     private static final File DESCRIPTOR_FILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/CWL/nonexistent_image.cwl"));
     private static final File YAML_FILE = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
+    private static final File DOCKERFILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/Dockerfile"));
     private static final String FAKE_IMAGE_NAME = "somefakedockstoreimage:0118999881999119725...3";
 
     /**
@@ -55,8 +56,7 @@ public class LaunchNoInternetTestIT {
      */
     @BeforeClass
     public static void downloadCustomDockerImage() throws IOException {
-        Utilities.executeCommand("docker pull ubuntu:latest", System.out, System.err);
-        Utilities.executeCommand("docker tag ubuntu:latest " + FAKE_IMAGE_NAME, System.out, System.err);
+        Utilities.executeCommand("docker build -f " + DOCKERFILE + " . -t " + FAKE_IMAGE_NAME, System.out, System.err);
         docker_images = Files.createTempDirectory("docker_images").toAbsolutePath().toString();
         Utilities.executeCommand("docker save -o " + docker_images + "/fakeImage " + FAKE_IMAGE_NAME, System.out, System.err);
     }
