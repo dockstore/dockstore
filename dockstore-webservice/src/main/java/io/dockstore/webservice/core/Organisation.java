@@ -15,6 +15,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.Pattern;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
@@ -45,7 +46,8 @@ public class Organisation implements Serializable {
     @ApiModelProperty(value = "Implementation specific ID for the organisation in this web service", position = 0)
     private long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true) // add length constraint 3?4?
+    @Pattern(regexp = "\\D+")
     @ApiModelProperty(value = "Name of the organisation (ex. OICR)", required = true, position = 1)
     private String name;
 

@@ -2996,7 +2996,7 @@ paths:
     put:
       tags:
         - organisations
-      summary: Create an organisation
+      summary: Create an organisation.
       description: Organisation requires approval by an admin before being made public.
       operationId: createOrganisation
       responses:
@@ -6041,6 +6041,7 @@ components:
         name:
           type: string
           description: Name of the organisation (ex. OICR)
+          pattern: \D+
         permalink:
           type: string
           description: Used in URL for permalink. Cannot be changed later

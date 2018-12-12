@@ -370,4 +370,29 @@ public class OrganisationIT extends BaseIT {
                 .runSelectStatement("select count(*) from organisationuser where organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be no roles for user 2 and org 1, there are " + count2, 0, count2);
     }
+
+    /**
+     * Tests that you cannot create an organisation where the name is all numbers.
+     * This is because we would like to use the same endpoint to grab an organisation by either name or DB id.
+     */
+    @Test
+    public void testCreateOrganisationWithNumbers() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganisationsApi organisationsApi = new OrganisationsApi(webClientUser2);
+
+        // Create org with name that is all numbers
+        Organisation organisation = stubOrgObject();
+        organisation.setName("1234");
+
+        boolean throwsError = false;
+        try {
+            organisationsApi.createOrganisation(organisation);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to create an organisation with a name of all numbers.");
+        }
+    }
 }

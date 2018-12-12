@@ -163,7 +163,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/create")
-    @ApiOperation(value = "Create an organisation", notes = "Organisation requires approval by an admin before being made public.", authorizations = {
+    @ApiOperation(value = "Create an organisation.", notes = "Organisation requires approval by an admin before being made public.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation createOrganisation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation to register.", required = true) Organisation organisation) {
@@ -187,8 +187,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         // Save organisation
         organisation.setApproved(false); // should not be approved by default
         long id = organisationDAO.create(organisation);
-
-        // catch error where duplicate permalink
 
         User foundUser = userDAO.findById(user.getId());
 
