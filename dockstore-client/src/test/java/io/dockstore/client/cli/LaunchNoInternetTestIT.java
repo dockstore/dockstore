@@ -26,23 +26,20 @@ import static org.junit.Assert.assertTrue;
  * Tests CLI launching with image on filesystem instead of internet
  * In general, ubuntu:0118999881999119725...3 is the file that exists only on filesystem and hopefully never on internet
  * All tests will be trying to use that image
+ *
  * @author gluu
  * @since 1.6.0
  */
 public class LaunchNoInternetTestIT {
+    public static String docker_images;
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
-
     @Rule
     public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
-
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
-
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-
-    public static String docker_images;
     private static final File DESCRIPTOR_FILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/CWL/nonexistent_image.cwl"));
     private static final File YAML_FILE = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
     private static final File DOCKERFILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/Dockerfile"));
@@ -94,9 +91,9 @@ public class LaunchNoInternetTestIT {
      * Docker image directory specified but doesn't exist
      */
     @Test
-    public void directorySpecifiedDoesNotExist() {
+    public void directorySpecifiedDoesNotExist() throws IOException {
         checkFailed();
-        exit.checkAssertionAfterwards(()-> assertTrue(systemOutRule.getLog().contains("Directory not found:")));
+        exit.checkAssertionAfterwards(() -> assertTrue(systemOutRule.getLog().contains("Directory not found:")));
 
         String toWrite = "docker-images = src/test/resources/nonexistent_image/docker_images/thisDirectoryShouldNotExist";
         File configPath = createTempFile(toWrite);
@@ -121,9 +118,9 @@ public class LaunchNoInternetTestIT {
      * Docker image directory specified is actually a file
      */
     @Test
-    public void directorySpecifiedButIsAFile() {
+    public void directorySpecifiedButIsAFile() throws IOException {
         checkFailed();
-        exit.checkAssertionAfterwards(()-> assertTrue(systemOutRule.getLog().contains("Directory is a file:")));
+        exit.checkAssertionAfterwards(() -> assertTrue(systemOutRule.getLog().contains("Directory is a file:")));
 
         String toWrite = "docker-images = " + docker_images + "/fakeImage";
         File configPath = createTempFile(toWrite);
@@ -147,9 +144,10 @@ public class LaunchNoInternetTestIT {
      * Docker image directory specified but has no files in there
      */
     @Test
-    public void directorySpecifiedButNoImages() {
+    public void directorySpecifiedButNoImages() throws IOException {
         checkFailed();
-        exit.checkAssertionAfterwards(()-> assertTrue(systemOutRule.getLog().contains("There are no files in the docker image directory")));
+        exit.checkAssertionAfterwards(
+                () -> assertTrue(systemOutRule.getLog().contains("There are no files in the docker image directory")));
 
         Path emptyTestDirectory = createEmptyTestDirectory();
         if (emptyTestDirectory == null) {
@@ -177,7 +175,7 @@ public class LaunchNoInternetTestIT {
      * Everything correctly configured with CWL tool
      */
     @Test
-    public void correctCWL() {
+    public void correctCWL() throws IOException {
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/CWL/nonexistent_image.cwl"));
         String toWrite = "docker-images = " + docker_images;
         File configPath = createTempFile(toWrite);
@@ -229,7 +227,7 @@ public class LaunchNoInternetTestIT {
      * Everything correctly configured with WDL workflow
      */
     @Test
-    public void correctWDL() {
+    public void correctWDL() throws IOException {
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/WDL/nonexistent_image.wdl"));
         File jsonFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/WDL/test.json"));
         String toWrite = "docker-images = " + docker_images;
@@ -254,13 +252,9 @@ public class LaunchNoInternetTestIT {
     /**
      * Create empty test directory because don't want to add empty directory to Git
      */
-    private Path createEmptyTestDirectory() {
-        try {
-            return Files.createTempDirectory("empty_docker_images");
-        } catch (IOException e) {
-            // Something has gone horribly wrong with the test
-        }
-        return null;
+    private Path createEmptyTestDirectory() throws IOException {
+        return Files.createTempDirectory("empty_docker_images");
+
     }
 
     /**
@@ -269,17 +263,12 @@ public class LaunchNoInternetTestIT {
      * @param contents Contents of the config file
      * @return The temp config file
      */
-    private File createTempFile(String contents) {
-        try {
-            File tmpFile = File.createTempFile("config", ".tmp");
-            FileWriter writer = new FileWriter(tmpFile);
+    private File createTempFile(String contents) throws IOException {
+        File tmpFile = File.createTempFile("config", ".tmp");
+        try (FileWriter writer = new FileWriter(tmpFile)) {
             writer.write(contents);
-            writer.close();
             return tmpFile;
-        } catch (IOException e) {
-            // Something has gone horribly wrong with the test
         }
-        return null;
     }
 
     /**
@@ -288,7 +277,8 @@ public class LaunchNoInternetTestIT {
     private void checkFailed() {
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(() -> assertTrue(systemErrRule.getLog().contains(
-                "Docker is required to run this tool: Command '['docker', 'pull', '" + FAKE_IMAGE_NAME + "']' returned non-zero exit status 1")));
+                "Docker is required to run this tool: Command '['docker', 'pull', '" + FAKE_IMAGE_NAME
+                        + "']' returned non-zero exit status 1")));
     }
 
     /**
