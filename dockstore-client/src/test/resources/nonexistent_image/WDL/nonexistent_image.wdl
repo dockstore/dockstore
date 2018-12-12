@@ -9,7 +9,7 @@ task hello {
   }
 
   runtime {
-    docker: "ubuntu:0118999881999119725...3"
+    docker: "somefakedockstoreimage:0118999881999119725...3"
   }
 }
 

@@ -45,7 +45,7 @@ public class LaunchNoInternetTestIT {
     public static String docker_images;
     private static final File DESCRIPTOR_FILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/CWL/nonexistent_image.cwl"));
     private static final File YAML_FILE = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
-    private static final String FAKE_IMAGE_NAME = "ubuntu:0118999881999119725...3";
+    private static final String FAKE_IMAGE_NAME = "somefakedockstoreimage:0118999881999119725...3";
 
     /**
      * Downloading an image with bash (Nextflow needs it) and saving it on the filesystem as something weird that is unlikely to be on the internet
@@ -288,7 +288,7 @@ public class LaunchNoInternetTestIT {
     private void checkFailed() {
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(() -> assertTrue(systemErrRule.getLog().contains(
-                "Error response from daemon: manifest for " + FAKE_IMAGE_NAME + " not found")));
+                "Docker is required to run this tool: Command '['docker', 'pull', '" + FAKE_IMAGE_NAME + "']' returned non-zero exit status 1")));
     }
 
     /**
