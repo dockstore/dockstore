@@ -1056,7 +1056,7 @@ public abstract class AbstractEntryClient<T> {
                 System.out.println("There are no files in the docker image directory: " + directoryPath.toAbsolutePath());
             } else {
                 System.out.println("Loading docker images...");
-                list.get().forEach(path -> Utilities.executeCommand("docker load -i " + path, System.out, System.err));
+                list.get().forEach(path -> Utilities.executeCommand("docker load -i \"" + path + "\"", System.out, System.err));
             }
         } else {
             LOG.info("No docker image directory specified in Dockstore config file");
