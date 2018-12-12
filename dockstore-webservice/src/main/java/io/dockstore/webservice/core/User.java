@@ -116,13 +116,6 @@ public class User implements Principal, Comparable<User>, Serializable {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Groups that this user belongs to", position = 8)
-    @JsonIgnore
-    @OrderBy("id")
-    private final SortedSet<Group> groups;
-
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
@@ -152,7 +145,6 @@ public class User implements Principal, Comparable<User>, Serializable {
     private Set<OrganisationUser> organisations;
 
     public User() {
-        groups = new TreeSet<>();
         entries = new TreeSet<>();
         starredEntries = new TreeSet<>();
         organisations = new HashSet<>();
@@ -264,18 +256,6 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void setIsAdmin(boolean isAdmin) {
         this.isAdmin = isAdmin;
-    }
-
-    public Set<Group> getGroups() {
-        return groups;
-    }
-
-    public void addGroup(Group group) {
-        groups.add(group);
-    }
-
-    public boolean removeGroup(Group group) {
-        return groups.remove(group);
     }
 
     public Set<Entry> getEntries() {

@@ -31,7 +31,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.google.common.base.MoreObjects;
 import io.dockstore.webservice.core.FileFormat;
-import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organisation;
 import io.dockstore.webservice.core.OrganisationUser;
@@ -121,7 +120,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private static Cache cache = null;
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Tool.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
+            Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
             WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {

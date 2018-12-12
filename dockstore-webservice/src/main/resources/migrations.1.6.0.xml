@@ -61,4 +61,17 @@
         <addForeignKeyConstraint baseColumnNames="userid" baseTableName="organisationuser" constraintName="userFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
 
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupFK1">
+        <dropForeignKeyConstraint baseTableName="endusergroup" constraintName="fkm0exig2r3dsxqafwaraf7rnr3"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupFK2">
+        <dropForeignKeyConstraint baseTableName="endusergroup" constraintName="fkrxn6hh2max4sk4ceehyv7mt2e"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupTable">
+        <dropTable tableName="endusergroup"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropUserGroupTable">
+        <dropTable tableName="usergroup"/>
+    </changeSet>
+
 </databaseChangeLog>
