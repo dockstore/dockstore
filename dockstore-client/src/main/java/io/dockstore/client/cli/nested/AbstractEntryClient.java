@@ -1042,19 +1042,18 @@ public abstract class AbstractEntryClient<T> {
                 try {
                     return java.nio.file.Files.list(directoryPath);
                 } catch (NotDirectoryException e) {
-                    System.out.println("Directory is a file: " + directoryPath.toAbsolutePath());
+                    System.out.println("The specified Docker image directory is a file: " + directoryPath.toAbsolutePath());
                 } catch (NoSuchFileException e) {
-                    System.out.println("Directory not found: " + directoryPath.toAbsolutePath());
+                    System.out.println("The specified Docker image directory not found: " + directoryPath.toAbsolutePath());
                 } catch (IOException e) {
-                    System.out.println("Something is wrong with the directory: " + directoryPath.toAbsolutePath());
-                    // Using print stack trace because can't seem to extract a useful error message otherwise
-                    e.printStackTrace();
+                    // Not able to find a situation in which this occurs
+                    System.out.println("Something is wrong with the specified Docker image directory: " + directoryPath.toAbsolutePath());
+                    System.out.println(e.toString());
                 }
                 return Stream.empty();
             };
             if (list.get().count() == 0) {
                 System.out.println("There are no files in the docker image directory: " + directoryPath.toAbsolutePath());
-                return;
             } else {
                 System.out.println("Loading docker images...");
                 list.get().forEach(path -> Utilities.executeCommand("docker load -i " + path, System.out, System.err));

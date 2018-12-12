@@ -31,7 +31,7 @@ import static org.junit.Assert.assertTrue;
  * @since 1.6.0
  */
 public class LaunchNoInternetTestIT {
-    public static String docker_images;
+    private static String DOCKER_IMAGE_DIRECTORY;
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
     @Rule
@@ -49,13 +49,13 @@ public class LaunchNoInternetTestIT {
      * Downloading an image with bash (Nextflow needs it) and saving it on the filesystem as something weird that is unlikely to be on the internet
      * to make sure that the Dockstore CLI only uses the image from the filesystem
      *
-     * @throws IOException
+     * @throws IOException  Something has gone terribly wrong with preparing the fake docker image
      */
     @BeforeClass
     public static void downloadCustomDockerImage() throws IOException {
         Utilities.executeCommand("docker build -f " + DOCKERFILE + " . -t " + FAKE_IMAGE_NAME, System.out, System.err);
-        docker_images = Files.createTempDirectory("docker_images").toAbsolutePath().toString();
-        Utilities.executeCommand("docker save -o " + docker_images + "/fakeImage " + FAKE_IMAGE_NAME, System.out, System.err);
+        DOCKER_IMAGE_DIRECTORY = Files.createTempDirectory("docker_images").toAbsolutePath().toString();
+        Utilities.executeCommand("docker save -o " + DOCKER_IMAGE_DIRECTORY + "/fakeImage " + FAKE_IMAGE_NAME, System.out, System.err);
     }
 
     @Before
@@ -93,7 +93,7 @@ public class LaunchNoInternetTestIT {
     @Test
     public void directorySpecifiedDoesNotExist() throws IOException {
         checkFailed();
-        exit.checkAssertionAfterwards(() -> assertTrue(systemOutRule.getLog().contains("Directory not found:")));
+        exit.checkAssertionAfterwards(() -> assertTrue(systemOutRule.getLog().contains("The specified Docker image directory not found:")));
 
         String toWrite = "docker-images = src/test/resources/nonexistent_image/docker_images/thisDirectoryShouldNotExist";
         File configPath = createTempFile(toWrite);
@@ -120,9 +120,9 @@ public class LaunchNoInternetTestIT {
     @Test
     public void directorySpecifiedButIsAFile() throws IOException {
         checkFailed();
-        exit.checkAssertionAfterwards(() -> assertTrue(systemOutRule.getLog().contains("Directory is a file:")));
+        exit.checkAssertionAfterwards(() -> assertTrue(systemOutRule.getLog().contains("The specified Docker image directory is a file:")));
 
-        String toWrite = "docker-images = " + docker_images + "/fakeImage";
+        String toWrite = "docker-images = " + DOCKER_IMAGE_DIRECTORY + "/fakeImage";
         File configPath = createTempFile(toWrite);
         if (configPath == null) {
             Assert.fail("Could create temp config file");
@@ -177,7 +177,7 @@ public class LaunchNoInternetTestIT {
     @Test
     public void correctCWL() throws IOException {
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/CWL/nonexistent_image.cwl"));
-        String toWrite = "docker-images = " + docker_images;
+        String toWrite = "docker-images = " + DOCKER_IMAGE_DIRECTORY;
         File configPath = createTempFile(toWrite);
         if (configPath == null) {
             Assert.fail("Could create temp config file");
@@ -204,7 +204,7 @@ public class LaunchNoInternetTestIT {
         copyNFLFiles();
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/NFL/nextflow.config"));
         File jsonFile = new File(ResourceHelpers.resourceFilePath("nextflow_rnatoy/test.json"));
-        String toWrite = "docker-images = " + docker_images;
+        String toWrite = "docker-images = " + DOCKER_IMAGE_DIRECTORY;
         File configPath = createTempFile(toWrite);
         if (configPath == null) {
             Assert.fail("Could create temp config file");
@@ -230,7 +230,7 @@ public class LaunchNoInternetTestIT {
     public void correctWDL() throws IOException {
         File descriptorFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/WDL/nonexistent_image.wdl"));
         File jsonFile = new File(ResourceHelpers.resourceFilePath("nonexistent_image/WDL/test.json"));
-        String toWrite = "docker-images = " + docker_images;
+        String toWrite = "docker-images = " + DOCKER_IMAGE_DIRECTORY;
         File configPath = createTempFile(toWrite);
         if (configPath == null) {
             Assert.fail("Could create temp config file");
@@ -284,7 +284,7 @@ public class LaunchNoInternetTestIT {
     /**
      * Nextflow with Dockstore CLI requires main.nf to be at same directory of execution, copying file over
      *
-     * @throws IOException
+     * @throws IOException  Something has gone terribly wrong with copying the Nextflow files
      */
     private void copyNFLFiles() throws IOException {
         File userDir = new File(System.getProperty("user.dir"));
