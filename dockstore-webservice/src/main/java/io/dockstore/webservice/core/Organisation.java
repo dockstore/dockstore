@@ -15,7 +15,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
@@ -30,12 +29,14 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel("Organisation")
 @Entity
-@Table(name = "organisation", uniqueConstraints = @UniqueConstraint(columnNames = { "name" }))
+@Table(name = "organisation")
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllApproved", query = "SELECT org FROM Organisation org WHERE org.approved = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAll", query = "SELECT org FROM Organisation org"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByName", query = "SELECT org FROM Organisation org WHERE org.name = :name"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id")
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByPermalink", query = "SELECT org FROM Organisation org WHERE org.permalink = :permalink"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedByPermalink", query = "SELECT org FROM Organisation org WHERE org.permalink = :permalink AND org.approved = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id AND org.approved = true")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Organisation implements Serializable {
@@ -44,9 +45,13 @@ public class Organisation implements Serializable {
     @ApiModelProperty(value = "Implementation specific ID for the organisation in this web service", position = 0)
     private long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     @ApiModelProperty(value = "Name of the organisation (ex. OICR)", required = true, position = 1)
     private String name;
+
+    @Column(nullable = false, unique = true)
+    @ApiModelProperty(value = "Used in URL for permalink. Cannot be changed later", required = true, position = 2)
+    private String permalink;
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "Description of the organisation", position = 3)
@@ -164,5 +169,13 @@ public class Organisation implements Serializable {
 
     public void setUsers(Set<OrganisationUser> users) {
         this.users = users;
+    }
+
+    public String getPermalink() {
+        return permalink;
+    }
+
+    public void setPermalink(String permalink) {
+        this.permalink = permalink;
     }
 }

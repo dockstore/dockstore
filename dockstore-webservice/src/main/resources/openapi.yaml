@@ -2934,6 +2934,22 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
+  /organisations:
+    get:
+      tags:
+        - organisations
+      summary: List all available organisations.
+      description: NO Authentication
+      operationId: getApprovedOrganisations
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
   /organisations/all:
     get:
       tags:
@@ -2976,22 +2992,6 @@ paths:
                 $ref: '#/components/schemas/Organisation'
       security:
         - BEARER: []
-  /organisations/approved:
-    get:
-      tags:
-        - organisations
-      summary: List all available organisations.
-      description: NO Authentication
-      operationId: getApprovedOrganisations
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organisation'
   /organisations/create:
     put:
       tags:
@@ -3010,12 +3010,39 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/Organisation'
+  '/organisations/permalink/{permalink}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves an organisation by permalink.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getOrganisationByPermalink
+      parameters:
+        - name: permalink
+          in: path
+          description: Organisation permalink.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
   '/organisations/update/{organisationId}':
     post:
       tags:
         - organisations
       summary: Update an organisation.
-      description: 'Currently only description, email, link and location can be updated.'
+      description: >-
+        Currently only name, description, email, link and location can be
+        updated.
       operationId: updateOrganisation
       parameters:
         - name: organisationId
@@ -5999,6 +6026,7 @@ components:
       required:
         - approved
         - name
+        - permalink
       properties:
         id:
           type: integer
@@ -6013,6 +6041,9 @@ components:
         name:
           type: string
           description: Name of the organisation (ex. OICR)
+        permalink:
+          type: string
+          description: Used in URL for permalink. Cannot be changed later
         description:
           type: string
           description: Description of the organisation
@@ -6044,12 +6075,17 @@ components:
           type: string
           description: The role of the user in the organisation
           enum:
-            - ADMIN
             - MAINTAINER
             - MEMBER
         accepted:
           type: boolean
           description: Has the user accepted their membership.
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
     OrganisationUserId:
       type: object
       properties:

@@ -61,6 +61,14 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         this.sessionFactory = sessionFactory;
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "List all available organisations.", notes = "NO Authentication", responseContainer = "List", response = Organisation.class)
+    public List<Organisation> getApprovedOrganisations() {
+        return organisationDAO.findAllApproved();
+    }
+
     @POST
     @Timed
     @UnitOfWork
@@ -77,14 +85,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
         organisation.setApproved(true);
         return organisationDAO.findById(id);
-    }
-
-    @GET
-    @Timed
-    @UnitOfWork
-    @ApiOperation(value = "List all available organisations.", notes = "NO Authentication", responseContainer = "List", response = Organisation.class)
-    public List<Organisation> getApprovedOrganisations() {
-        return organisationDAO.findAllApproved();
     }
 
     @GET
@@ -121,6 +121,37 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/permalink/{permalink}")
+    @ApiOperation(value = "Retrieves an organisation by permalink.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
+    public Organisation getOrganisationByPermalink(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organisation permalink.", required = true) @PathParam("permalink") String permalink) {
+        if (!user.isPresent()) {
+            // No user given, only show approved organisations
+            Organisation organisation = organisationDAO.findByPermalink(permalink, true);
+            if (organisation == null) {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+            return organisation;
+        } else {
+            // User is given, check if organisation is either approved or the user has access
+            // Admins and curators should be able to see unapproved organisations
+            boolean doesOrgExist = doesPermalinkOrganisationExistToUser(permalink, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+            if (!doesOrgExist) {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+
+            Organisation organisation = organisationDAO.findByPermalink(permalink, false);
+            return organisation;
+        }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/all")
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
@@ -145,9 +176,19 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
+        // Check if any other organisations exist with the permalink
+        matchingOrg = organisationDAO.findByPermalink(organisation.getPermalink(), false);
+        if (matchingOrg != null) {
+            String msg = "An organisation already exists with the permalink '" + organisation.getPermalink() + "'.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
         // Save organisation
         organisation.setApproved(false); // should not be approved by default
         long id = organisationDAO.create(organisation);
+
+        // catch error where duplicate permalink
 
         User foundUser = userDAO.findById(user.getId());
 
@@ -178,8 +219,13 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
         Organisation oldOrganisation = organisationDAO.findById(id);
 
-        // Ensure that the user is a maintainer of the organisation
-        checkUserOrgRole(oldOrganisation, user.getId(), OrganisationUser.Role.MAINTAINER);
+        // Ensure that the user is a member of the organisation
+        OrganisationUser organisationUser = getUserOrgRole(oldOrganisation, user.getId());
+        if (organisationUser == null) {
+            String msg = "You do not have permissions to update the organisation.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
 
         // Check if new name is valid
         if (!Objects.equals(oldOrganisation.getName(), organisation.getName())) {
@@ -370,7 +416,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
      * For a user to see an organsation, either it must be approved or the user must have a role in the organisation
      * @param organisationId
      * @param userId
-     * @return True if organisation exists, false otherwise
+     * @return True if organisation exists to user, false otherwise
      */
     private boolean doesOrganisationExistToUser(Long organisationId, Long userId) {
         Organisation organisation = organisationDAO.findById(organisationId);
@@ -379,6 +425,20 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
         OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
         return organisation.isApproved() || (organisationUser != null);
+    }
+
+    /**
+     * Checks if the given user should know of the existence of the organisation from its permalink.
+     * @param permalink
+     * @param userId
+     * @return True if organisation exists to user, false otherwise
+     */
+    private boolean doesPermalinkOrganisationExistToUser(String permalink, Long userId) {
+        Organisation organisation = organisationDAO.findByPermalink(permalink, false);
+        if (organisation == null) {
+            return false;
+        }
+        return doesOrganisationExistToUser(organisation.getId(), userId);
     }
 
     /**

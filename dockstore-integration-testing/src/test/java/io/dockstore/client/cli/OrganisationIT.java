@@ -51,11 +51,12 @@ public class OrganisationIT extends BaseIT {
     private Organisation stubOrgObject() {
         Organisation organisation = new Organisation();
         organisation.setName("testname");
+        organisation.setPermalink("testpermalink");
         organisation.setLocation("testlocation");
         organisation.setLink("testlink");
         organisation.setEmail("test@email.com");
         organisation.setDescription("This is the test description.");
-        return  organisation;
+        return organisation;
     }
 
     /**
@@ -105,12 +106,42 @@ public class OrganisationIT extends BaseIT {
         Organisation organisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
-        // Admin should be able to see
+        // Admin should be able to see by id
         organisation = organisationsApiAdmin.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
-        // Curator should be able to see
+        // Curator should be able to see by id
         organisation = organisationsApiCurator.getOrganisationById(registeredOrganisation.getId());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Other user should not be able to see by id
+        try {
+            organisation = organisationsApiUser1.getOrganisationById(registeredOrganisation.getId());
+        } catch (ApiException ex) {
+        } finally {
+            organisation = null;
+        }
+        assertTrue("Organisation should NOT be returned.", organisation == null);
+
+        // User should be able to get by permalink
+        organisation = organisationsApiUser2.getOrganisationByPermalink(registeredOrganisation.getPermalink());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Admin should be able to see by permalink
+        organisation = organisationsApiAdmin.getOrganisationByPermalink(registeredOrganisation.getPermalink());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Other user should not be able to get by permalink
+        try {
+            organisation = organisationsApiUser1.getOrganisationByPermalink(registeredOrganisation.getPermalink());
+        } catch (ApiException ex) {
+        } finally {
+            organisation = null;
+        }
+        assertTrue("Organisation should NOT be returned.", organisation == null);
+
+        // Curator should be able to see by permalink
+        organisation = organisationsApiCurator.getOrganisationByPermalink(registeredOrganisation.getPermalink());
         assertTrue("Organisation should be returned.", organisation != null);
 
         // Update the organisation
@@ -123,15 +154,6 @@ public class OrganisationIT extends BaseIT {
         organisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
         assertEquals("Organisation should be returned and have an updated email.", email, organisation.getEmail());
 
-        // Other user should not
-        try {
-            organisation = organisationsApiUser1.getOrganisationById(registeredOrganisation.getId());
-        } catch (ApiException ex) {
-        } finally {
-            organisation = null;
-        }
-        assertTrue("Organisation should NOT be returned.", organisation == null);
-
         // Admin approve it
         organisationsApiAdmin.approveOrganisation(registeredOrganisation.getId());
 
@@ -143,16 +165,32 @@ public class OrganisationIT extends BaseIT {
         organisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
-        // Other user should also be able to
+        // Other user should also be able to get by id
         organisation = organisationsApiUser1.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
-        // Admin should also be able to
+        // Admin should also be able to get by id
         organisation = organisationsApiAdmin.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
-        // Curator should be able to see
+        // Curator should be able to see by id
         organisation = organisationsApiCurator.getOrganisationById(registeredOrganisation.getId());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // User should be able to get by id
+        organisation = organisationsApiUser2.getOrganisationByPermalink(registeredOrganisation.getPermalink());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Other user should also be able to get by id
+        organisation = organisationsApiUser1.getOrganisationByPermalink(registeredOrganisation.getPermalink());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Admin should also be able to get by id
+        organisation = organisationsApiAdmin.getOrganisationByPermalink(registeredOrganisation.getPermalink());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Curator should be able to see by id
+        organisation = organisationsApiCurator.getOrganisationByPermalink(registeredOrganisation.getPermalink());
         assertTrue("Organisation should be returned.", organisation != null);
 
         // Update the organisation
@@ -166,7 +204,8 @@ public class OrganisationIT extends BaseIT {
     }
 
     /**
-     * Tests that you cannot create an organisation if another organisation already exists with the same name
+     * Tests that you cannot create an organisation if another organisation already exists with the same name/permalink.
+     * Also will test renaming of organisations.
      */
     @Test
     public void testCreateDuplicateOrganisation() {
@@ -182,16 +221,53 @@ public class OrganisationIT extends BaseIT {
         }
 
         if (!throwsError) {
-            fail("Was able to register an organisation with a duplicate toolname.");
+            fail("Was able to register an organisation with a duplicate organisation name.");
+        }
+
+        // Register another organisation
+        Organisation organisation = stubOrgObject();
+        organisation.setName("anotherorg");
+        organisation.setPermalink("anotherpermalink");
+
+        organisation = organisationsApi.createOrganisation(organisation);
+
+        // Try renaming organisation to testname, should fail
+        organisation.setName("testname");
+        try {
+            organisationsApi.updateOrganisation(organisation, organisation.getId());
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to update an organisation with a duplicate organisation name.");
+        }
+
+        // Try renaming to testname2, should work
+        organisation.setName("testname2");
+        organisation = organisationsApi.updateOrganisation(organisation, organisation.getId());
+
+        assertEquals("The organisation should have an updated name", "testname2", organisation.getName());
+
+        // Try creating another organisation with a duplicate permalink, should fail
+        organisation = stubOrgObject();
+        organisation.setName("anewname");
+        try {
+            organisationsApi.createOrganisation(organisation);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to create an organisation with a duplicate organisation permalink.");
         }
     }
 
     /**
      * Tests that an organisation maintainer can request a user to join.
      * The user can then join the organisation as a member.
-     * They cannot edit the organisation metadata.
-     * Change role to maintainer.
      * They can edit the organisation metadata.
+     * Change role to maintainer.
      * Then the user can be removed by the maintainer.
      */
     @Test
@@ -229,25 +305,15 @@ public class OrganisationIT extends BaseIT {
                 .runSelectStatement("select count(*) from organisationuser where accepted = true and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count2, 1, count2);
 
-        // Other user should not be able to edit stuff
+        // Should be able to update email of organisation
         String email = "another@email.com";
         Organisation newOrganisation = stubOrgObject();
         newOrganisation.setEmail(email);
-        try {
-            organisation = organisationsApiOtherUser.updateOrganisation(newOrganisation, orgId);
-        } catch (ApiException ex) {
-
-        } finally {
-            organisation = null;
-        }
-        assertTrue("Other user should not be able to update the organisation.", organisation == null);
-
-        // Change role to maintainer
-        organisationsApiUser2.updateUserRole(OrganisationUser.Role.MAINTAINER.toString(), userId, orgId);
-
-        // Should be able to update email of organisation
         organisation = organisationsApiOtherUser.updateOrganisation(newOrganisation, orgId);
         assertEquals("Organisation should be returned and have an updated email.", email, organisation.getEmail());
+
+        // Maintainer should be able to change the members role to maintainer
+        organisationsApiUser2.updateUserRole(OrganisationUser.Role.MAINTAINER.toString(), userId, orgId);
 
         // Remove the user
         organisationsApiUser2.deleteUserRole(userId, orgId);
@@ -304,13 +370,4 @@ public class OrganisationIT extends BaseIT {
                 .runSelectStatement("select count(*) from organisationuser where organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be no roles for user 2 and org 1, there are " + count2, 0, count2);
     }
-
-    /**
-     * This tests renaming an organisation both when no duplicate name exists and when one does
-     */
-    @Test
-    public void testRenameOrganisation() {
-
-    }
-
 }

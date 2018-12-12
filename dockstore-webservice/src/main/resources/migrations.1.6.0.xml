@@ -33,6 +33,9 @@
             <column name="name" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
+            <column name="permalink" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
     <changeSet author="aduncan (generated)" id="addOrganisationUserTable">
@@ -46,8 +49,16 @@
             <column name="accepted" type="BOOLEAN">
                 <constraints nullable="false"/>
             </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="role" type="VARCHAR(255)"/>
         </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="uniqueNameForOrgs">
+        <addUniqueConstraint columnNames="name" constraintName="nameUK" tableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="uniquePermalinkForOrgs">
+        <addUniqueConstraint columnNames="permalink" constraintName="permalinkUK" tableName="organisation"/>
     </changeSet>
     <changeSet author="aduncan (generated)" id="addOrganisationFKToOrgUser">
         <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="organisationuser" constraintName="orgFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
