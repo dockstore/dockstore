@@ -36,7 +36,7 @@ public class WDLHandlerTest {
         wdlHandler.parseWorkflowContent(workflow, "/foo.wdl", invalidDescriptionWdl, Collections.emptySet());
         Assert.assertNull(workflow.getAuthor());
         Assert.assertNull(workflow.getEmail());
-        Assert.assertNull(workflow.getDescription());
+        Assert.assertEquals(WDLHandler.WDL_SYNTAX_ERROR, workflow.getDescription());
 
     }
 }

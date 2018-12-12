@@ -54,7 +54,9 @@ import wdl4s.parser.WdlParser;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
+    public static final String WDL_SYNTAX_ERROR = "There is a syntax error, please check the WDL file.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
+
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
@@ -124,7 +126,7 @@ public class WDLHandler implements LanguageHandlerInterface {
     private void clearMetadata(Entry entry) {
         entry.setAuthor(null);
         entry.setEmail(null);
-        entry.setDescription(null);
+        entry.setDescription(WDL_SYNTAX_ERROR);
     }
 
     private String extractRuntimeAttributeFromAST(WdlParser.AstNode node, String key) {
