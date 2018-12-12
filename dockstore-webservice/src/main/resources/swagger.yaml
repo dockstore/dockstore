@@ -5561,26 +5561,28 @@ definitions:
         type: "string"
         position: 1
         description: "Name of the organisation (ex. OICR)"
-        pattern: "\\D+"
+        minLength: 3
+        maxLength: 39
+        pattern: "\\d*[a-zA-Z][a-zA-Z\\d]*"
       description:
         type: "string"
-        position: 3
+        position: 2
         description: "Description of the organisation"
       link:
         type: "string"
-        position: 4
+        position: 3
         description: "Link to the organisation website"
       location:
         type: "string"
-        position: 5
+        position: 4
         description: "Location of the organisation"
       email:
         type: "string"
-        position: 6
+        position: 5
         description: "Contact email for the organisation"
       approved:
         type: "boolean"
-        position: 7
+        position: 6
         description: "Is the organisation approved"
   OrganisationUser:
     type: "object"

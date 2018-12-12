@@ -6015,7 +6015,9 @@ components:
         name:
           type: string
           description: Name of the organisation (ex. OICR)
-          pattern: \D+
+          minLength: 3
+          maxLength: 39
+          pattern: '\d*[a-zA-Z][a-zA-Z\d]*'
         description:
           type: string
           description: Description of the organisation

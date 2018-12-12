@@ -16,6 +16,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
@@ -44,33 +45,34 @@ public class Organisation implements Serializable {
     @ApiModelProperty(value = "Implementation specific ID for the organisation in this web service", position = 0)
     private long id;
 
-    @Column(nullable = false, unique = true) // add length constraint 3?4?
-    @Pattern(regexp = "\\D+")
-    @ApiModelProperty(value = "Name of the organisation (ex. OICR)", required = true, position = 1)
+    @Column(nullable = false, unique = true)
+    @Pattern(regexp = "\\d*[a-zA-Z][a-zA-Z\\d]*")
+    @Size(min = 3, max = 39)
+    @ApiModelProperty(value = "Name of the organisation (ex. OICR).", required = true, position = 1)
     private String name;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "Description of the organisation", position = 3)
+    @ApiModelProperty(value = "Description of the organisation", position = 2)
     private String description;
 
     @Column
-    @ApiModelProperty(value = "Link to the organisation website", position = 4)
+    @ApiModelProperty(value = "Link to the organisation website", position = 3)
     private String link;
 
     @Column
-    @ApiModelProperty(value = "Location of the organisation", position = 5)
+    @ApiModelProperty(value = "Location of the organisation", position = 4)
     private String location;
 
     @Column
-    @ApiModelProperty(value = "Contact email for the organisation", position = 6)
+    @ApiModelProperty(value = "Contact email for the organisation", position = 5)
     private String email;
 
     @Column
-    @ApiModelProperty(value = "Is the organisation approved", required = true, position = 7)
+    @ApiModelProperty(value = "Is the organisation approved", required = true, position = 6)
     private boolean approved = false;
 
     @Column
-    @ApiModelProperty(value = "Set of users in the organisation", required = true, position = 8)
+    @ApiModelProperty(value = "Set of users in the organisation", required = true, position = 7)
     @OneToMany(mappedBy = "organisation", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<OrganisationUser> users = new HashSet<>();
