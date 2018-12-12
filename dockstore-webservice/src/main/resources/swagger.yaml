@@ -2714,29 +2714,6 @@ paths:
             $ref: "#/definitions/Organisation"
       security:
       - BEARER: []
-  /organisations/permalink/{permalink}:
-    get:
-      tags:
-      - "organisations"
-      summary: "Retrieves an organisation by permalink."
-      description: "Does not require authentication for approved organisations, authentication\
-        \ can be provided for unapproved organisations"
-      operationId: "getOrganisationByPermalink"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "permalink"
-        in: "path"
-        description: "Organisation permalink."
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Organisation"
-      security:
-      - BEARER: []
   /organisations/update/{organisationId}:
     post:
       tags:
@@ -5568,7 +5545,6 @@ definitions:
     required:
     - "approved"
     - "name"
-    - "permalink"
     properties:
       id:
         type: "integer"
@@ -5586,10 +5562,6 @@ definitions:
         position: 1
         description: "Name of the organisation (ex. OICR)"
         pattern: "\\D+"
-      permalink:
-        type: "string"
-        position: 2
-        description: "Used in URL for permalink. Cannot be changed later"
       description:
         type: "string"
         position: 3

@@ -47,14 +47,6 @@ public class OrganisationDAO extends AbstractDAO<Organisation> {
         return uniqueResult(query);
     }
 
-    public Organisation findByPermalink(String permalink, boolean onlyApproved) {
-        String queryString = "io.dockstore.webservice.core.Organisation.";
-        queryString += onlyApproved ? "findApprovedByPermalink" : "findByPermalink";
-        Query query =  namedQuery(queryString)
-                .setParameter("permalink", permalink);
-        return uniqueResult(query);
-    }
-
     public Organisation findApprovedById(Long id) {
         Query query =  namedQuery("io.dockstore.webservice.core.Organisation.findApprovedById")
                 .setParameter("id", id);

@@ -51,7 +51,6 @@ public class OrganisationIT extends BaseIT {
     private Organisation stubOrgObject() {
         Organisation organisation = new Organisation();
         organisation.setName("testname");
-        organisation.setPermalink("testpermalink");
         organisation.setLocation("testlocation");
         organisation.setLink("testlink");
         organisation.setEmail("test@email.com");
@@ -110,10 +109,6 @@ public class OrganisationIT extends BaseIT {
         organisation = organisationsApiAdmin.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
-        // Curator should be able to see by id
-        organisation = organisationsApiCurator.getOrganisationById(registeredOrganisation.getId());
-        assertTrue("Organisation should be returned.", organisation != null);
-
         // Other user should not be able to see by id
         try {
             organisation = organisationsApiUser1.getOrganisationById(registeredOrganisation.getId());
@@ -123,25 +118,8 @@ public class OrganisationIT extends BaseIT {
         }
         assertTrue("Organisation should NOT be returned.", organisation == null);
 
-        // User should be able to get by permalink
-        organisation = organisationsApiUser2.getOrganisationByPermalink(registeredOrganisation.getPermalink());
-        assertTrue("Organisation should be returned.", organisation != null);
-
-        // Admin should be able to see by permalink
-        organisation = organisationsApiAdmin.getOrganisationByPermalink(registeredOrganisation.getPermalink());
-        assertTrue("Organisation should be returned.", organisation != null);
-
-        // Other user should not be able to get by permalink
-        try {
-            organisation = organisationsApiUser1.getOrganisationByPermalink(registeredOrganisation.getPermalink());
-        } catch (ApiException ex) {
-        } finally {
-            organisation = null;
-        }
-        assertTrue("Organisation should NOT be returned.", organisation == null);
-
-        // Curator should be able to see by permalink
-        organisation = organisationsApiCurator.getOrganisationByPermalink(registeredOrganisation.getPermalink());
+        // Curator should be able to see by id
+        organisation = organisationsApiCurator.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
         // Update the organisation
@@ -177,22 +155,6 @@ public class OrganisationIT extends BaseIT {
         organisation = organisationsApiCurator.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
-        // User should be able to get by id
-        organisation = organisationsApiUser2.getOrganisationByPermalink(registeredOrganisation.getPermalink());
-        assertTrue("Organisation should be returned.", organisation != null);
-
-        // Other user should also be able to get by id
-        organisation = organisationsApiUser1.getOrganisationByPermalink(registeredOrganisation.getPermalink());
-        assertTrue("Organisation should be returned.", organisation != null);
-
-        // Admin should also be able to get by id
-        organisation = organisationsApiAdmin.getOrganisationByPermalink(registeredOrganisation.getPermalink());
-        assertTrue("Organisation should be returned.", organisation != null);
-
-        // Curator should be able to see by id
-        organisation = organisationsApiCurator.getOrganisationByPermalink(registeredOrganisation.getPermalink());
-        assertTrue("Organisation should be returned.", organisation != null);
-
         // Update the organisation
         String link = "www.anothersite.com";
         newOrganisation.setLink(link);
@@ -204,7 +166,7 @@ public class OrganisationIT extends BaseIT {
     }
 
     /**
-     * Tests that you cannot create an organisation if another organisation already exists with the same name/permalink.
+     * Tests that you cannot create an organisation if another organisation already exists with the same name.
      * Also will test renaming of organisations.
      */
     @Test
@@ -227,7 +189,6 @@ public class OrganisationIT extends BaseIT {
         // Register another organisation
         Organisation organisation = stubOrgObject();
         organisation.setName("anotherorg");
-        organisation.setPermalink("anotherpermalink");
 
         organisation = organisationsApi.createOrganisation(organisation);
 
@@ -248,19 +209,6 @@ public class OrganisationIT extends BaseIT {
         organisation = organisationsApi.updateOrganisation(organisation, organisation.getId());
 
         assertEquals("The organisation should have an updated name", "testname2", organisation.getName());
-
-        // Try creating another organisation with a duplicate permalink, should fail
-        organisation = stubOrgObject();
-        organisation.setName("anewname");
-        try {
-            organisationsApi.createOrganisation(organisation);
-        } catch (ApiException ex) {
-            throwsError = true;
-        }
-
-        if (!throwsError) {
-            fail("Was able to create an organisation with a duplicate organisation permalink.");
-        }
     }
 
     /**

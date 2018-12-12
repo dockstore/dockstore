@@ -3010,31 +3010,6 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/Organisation'
-  '/organisations/permalink/{permalink}':
-    get:
-      tags:
-        - organisations
-      summary: Retrieves an organisation by permalink.
-      description: >-
-        Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getOrganisationByPermalink
-      parameters:
-        - name: permalink
-          in: path
-          description: Organisation permalink.
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organisation'
-      security:
-        - BEARER: []
   '/organisations/update/{organisationId}':
     post:
       tags:
@@ -6026,7 +6001,6 @@ components:
       required:
         - approved
         - name
-        - permalink
       properties:
         id:
           type: integer
@@ -6042,9 +6016,6 @@ components:
           type: string
           description: Name of the organisation (ex. OICR)
           pattern: \D+
-        permalink:
-          type: string
-          description: Used in URL for permalink. Cannot be changed later
         description:
           type: string
           description: Description of the organisation
