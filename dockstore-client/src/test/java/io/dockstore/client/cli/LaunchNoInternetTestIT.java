@@ -43,7 +43,7 @@ public class LaunchNoInternetTestIT {
     private static final File DESCRIPTOR_FILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/CWL/nonexistent_image.cwl"));
     private static final File YAML_FILE = new File(ResourceHelpers.resourceFilePath("echo-job.yml"));
     private static final File DOCKERFILE = new File(ResourceHelpers.resourceFilePath("nonexistent_image/Dockerfile"));
-    private static final String FAKE_IMAGE_NAME = "somefakedockstoreimage:0118999881999119725...3";
+    private static final String FAKE_IMAGE_NAME = "dockstore.org/bashwithbinbash:0118999881999119725...3";
 
     /**
      * Downloading an image with bash (Nextflow needs it) and saving it on the filesystem as something weird that is unlikely to be on the internet

@@ -9,7 +9,7 @@ task hello {
   }
 
   runtime {
-    docker: "somefakedockstoreimage:0118999881999119725...3"
+    docker: "dockstore.org/bashwithbinbash:0118999881999119725...3"
   }
 }
 
