@@ -573,6 +573,11 @@ paths:
         description: "Platform to report on"
         required: true
         type: "string"
+      - name: "platform_version"
+        in: "query"
+        description: "Version of the platform to report on"
+        required: true
+        type: "string"
       - name: "verified"
         in: "query"
         description: "Verification status, omit to delete key"
@@ -5876,6 +5881,8 @@ definitions:
       verified:
         type: "boolean"
       metadata:
+        type: "string"
+      platformVersion:
         type: "string"
   VerifyRequest:
     type: "object"
