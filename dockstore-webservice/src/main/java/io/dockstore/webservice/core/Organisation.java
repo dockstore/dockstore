@@ -15,6 +15,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
@@ -29,7 +30,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel("Organisation")
 @Entity
-@Table(name = "organisation")
+@Table(name = "organisation", uniqueConstraints = @UniqueConstraint(columnNames = { "name" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllApproved", query = "SELECT org FROM Organisation org WHERE org.approved = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAll", query = "SELECT org FROM Organisation org"),

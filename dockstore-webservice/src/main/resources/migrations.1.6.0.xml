@@ -18,7 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
                    context="1.6.0">
-    <changeSet author="aduncan (generated)" id="1543940692732-2">
+    <changeSet author="aduncan (generated)" id="addOrganisationTable">
         <createTable tableName="organisation">
             <column autoIncrement="true" name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" primaryKeyName="organisation_pkey"/>
@@ -35,7 +35,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="1543940692732-3">
+    <changeSet author="aduncan (generated)" id="addOrganisationUserTable">
         <createTable tableName="organisationuser">
             <column name="organisationid" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="organisationuser_pkey"/>
@@ -49,11 +49,11 @@
             <column name="role" type="VARCHAR(255)"/>
         </createTable>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="1543940692732-5">
-        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="organisationuser" constraintName="fk25no6ryoq74l2ikofwun0wvc5" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    <changeSet author="aduncan (generated)" id="addOrganisationFKToOrgUser">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="organisationuser" constraintName="orgFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="1543940692732-6">
-        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="organisationuser" constraintName="fkfthvhj354w2xopgfd3qtecnl7" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    <changeSet author="aduncan (generated)" id="addUserFKToOrgUser">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="organisationuser" constraintName="userFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
 
 </databaseChangeLog>

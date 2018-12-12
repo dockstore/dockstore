@@ -1,6 +1,7 @@
 package io.dockstore.webservice.core;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -13,6 +14,8 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModelProperty;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "OrganisationUser")
@@ -30,7 +33,7 @@ public class OrganisationUser implements Serializable {
     private Organisation organisation;
 
     public enum Role {
-        ADMIN, MAINTAINER, MEMBER
+        MAINTAINER, MEMBER
     }
 
     @Enumerated(EnumType.STRING)
@@ -39,6 +42,14 @@ public class OrganisationUser implements Serializable {
 
     @ApiModelProperty(value = "Has the user accepted their membership.", required = true)
     private boolean accepted = false;
+
+    @Column(updatable = false)
+    @CreationTimestamp
+    private Timestamp dbCreateDate;
+
+    @Column()
+    @UpdateTimestamp
+    private Timestamp dbUpdateDate;
 
     public OrganisationUser() {
 
@@ -94,6 +105,22 @@ public class OrganisationUser implements Serializable {
 
     public void setAccepted(boolean accepted) {
         this.accepted = accepted;
+    }
+
+    public Timestamp getDbCreateDate() {
+        return dbCreateDate;
+    }
+
+    public void setDbCreateDate(Timestamp dbCreateDate) {
+        this.dbCreateDate = dbCreateDate;
+    }
+
+    public Timestamp getDbUpdateDate() {
+        return dbUpdateDate;
+    }
+
+    public void setDbUpdateDate(Timestamp dbUpdateDate) {
+        this.dbUpdateDate = dbUpdateDate;
     }
 
     @Embeddable

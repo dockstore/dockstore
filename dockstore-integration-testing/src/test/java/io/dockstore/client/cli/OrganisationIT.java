@@ -52,7 +52,7 @@ public class OrganisationIT extends BaseIT {
         Organisation organisation = new Organisation();
         organisation.setName("testname");
         organisation.setLocation("testlocation");
-        organisation.setLocation("testlink");
+        organisation.setLink("testlink");
         organisation.setEmail("test@email.com");
         organisation.setDescription("This is the test description.");
         return  organisation;
@@ -189,9 +189,9 @@ public class OrganisationIT extends BaseIT {
     /**
      * Tests that an organisation maintainer can request a user to join.
      * The user can then join the organisation as a member.
-     * They cannot edit anything.
+     * They cannot edit the organisation metadata.
      * Change role to maintainer.
-     * They can edit anything.
+     * They can edit the organisation metadata.
      * Then the user can be removed by the maintainer.
      */
     @Test
@@ -303,6 +303,14 @@ public class OrganisationIT extends BaseIT {
         final long count2 = testingPostgres
                 .runSelectStatement("select count(*) from organisationuser where organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be no roles for user 2 and org 1, there are " + count2, 0, count2);
+    }
+
+    /**
+     * This tests renaming an organisation both when no duplicate name exists and when one does
+     */
+    @Test
+    public void testRenameOrganisation() {
+
     }
 
 }

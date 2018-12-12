@@ -82,7 +82,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/approved")
     @ApiOperation(value = "List all available organisations.", notes = "NO Authentication", responseContainer = "List", response = Organisation.class)
     public List<Organisation> getApprovedOrganisations() {
         return organisationDAO.findAllApproved();
@@ -165,7 +164,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/update/{organisationId}")
-    @ApiOperation(value = "Update an organisation.", notes = "Currently only description, email, link and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
+    @ApiOperation(value = "Update an organisation.", notes = "Currently only name, description, email, link and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation updateOrganisation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation to register.", required = true) Organisation organisation,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
@@ -182,7 +181,18 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         // Ensure that the user is a maintainer of the organisation
         checkUserOrgRole(oldOrganisation, user.getId(), OrganisationUser.Role.MAINTAINER);
 
+        // Check if new name is valid
+        if (!Objects.equals(oldOrganisation.getName(), organisation.getName())) {
+            Organisation duplicateName = organisationDAO.findByName(organisation.getName());
+            if (duplicateName != null) {
+                String msg = "An organisation already exists with the name '" + organisation.getName() + "', please try another one.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
         // Update organisation
+        oldOrganisation.setName(organisation.getName());
         oldOrganisation.setDescription(organisation.getDescription());
         oldOrganisation.setEmail(organisation.getEmail());
         oldOrganisation.setLink(organisation.getLink());
