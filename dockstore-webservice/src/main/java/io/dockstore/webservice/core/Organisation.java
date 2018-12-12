@@ -34,6 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "organisation")
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllApproved", query = "SELECT org FROM Organisation org WHERE org.approved = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllUnapproved", query = "SELECT org FROM Organisation org WHERE org.approved = false"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAll", query = "SELECT org FROM Organisation org"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByName", query = "SELECT org FROM Organisation org WHERE org.name = :name"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id AND org.approved = true")
