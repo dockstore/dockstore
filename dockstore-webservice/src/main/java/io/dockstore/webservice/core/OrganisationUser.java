@@ -18,7 +18,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "OrganisationUser")
+@Table(name = "organisation_user")
 public class OrganisationUser implements Serializable {
 
     @EmbeddedId
