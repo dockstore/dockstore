@@ -74,4 +74,36 @@
         <dropTable tableName="usergroup"/>
     </changeSet>
 
+    <changeSet author="aduncan (generated)" id="createEventsTable">
+        <createTable tableName="event">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="event_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="initiatoruserid" type="BIGINT"/>
+            <column name="organisationid" type="BIGINT"/>
+            <column name="toolid" type="BIGINT"/>
+            <column name="userid" type="BIGINT"/>
+            <column name="workflowid" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addOrganisationFKEvent">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="event" constraintName="fkOrganisationId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addInitiatorUserFKEvent">
+        <addForeignKeyConstraint baseColumnNames="initiatoruserid" baseTableName="event" constraintName="FKInitiatorUserId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addToolFKEvent">
+        <addForeignKeyConstraint baseColumnNames="toolid" baseTableName="event" constraintName="FKToolId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addUserFKEvent">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="event" constraintName="FKUserId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addWorkflowFKEvent">
+        <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="event" constraintName="FKWorkflowId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+
 </databaseChangeLog>

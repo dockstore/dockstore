@@ -18,9 +18,11 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organisation;
 import io.dockstore.webservice.core.OrganisationUser;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganisationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dropwizard.auth.Auth;
@@ -53,11 +55,13 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
     private final OrganisationDAO organisationDAO;
     private final UserDAO userDAO;
+    private final EventDAO eventDAO;
     private final SessionFactory sessionFactory;
 
     public OrganisationResource(SessionFactory sessionFactory) {
         this.organisationDAO = new OrganisationDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
+        this.eventDAO = new EventDAO(sessionFactory);
         this.sessionFactory = sessionFactory;
     }
 
@@ -157,6 +161,9 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organisationUser);
 
+        Event createOrganisationEvent = new Event(null, organisation, null, null, foundUser, Event.EventType.CREATE_ORG);
+        eventDAO.create(createOrganisationEvent);
+
         return organisationDAO.findById(id);
     }
 
@@ -203,6 +210,9 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         oldOrganisation.setLink(organisation.getLink());
         oldOrganisation.setLocation(organisation.getLocation());
 
+        Event updateOrganisationEvent = new Event(null, oldOrganisation, null, null, user, Event.EventType.MODIFY_ORG);
+        eventDAO.create(updateOrganisationEvent);
+
         return organisationDAO.findById(id);
     }
 
@@ -233,6 +243,9 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
+        Event addUserOrganisationEvent = new Event(organisationAndUserToAdd.getRight(), organisationAndUserToAdd.getLeft(), null, null, user, Event.EventType.ADD_USER_TO_ORG);
+        eventDAO.create(addUserOrganisationEvent);
+
         return organisationUser;
     }
 
@@ -259,6 +272,9 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             existingRole.setRole(OrganisationUser.Role.valueOf(role));
         }
 
+        Event updateUserOrganisationEvent = new Event(organisationAndUserToUpdate.getRight(), organisationAndUserToUpdate.getLeft(), null, null, user, Event.EventType.MODIFY_USER_ROLE_ORG);
+        eventDAO.create(updateUserOrganisationEvent);
+
         return existingRole;
     }
 
@@ -284,6 +300,9 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.delete(existingRole);
         }
+
+        Event deleteUserOrganisationEvent = new Event(organisationAndUserToDelete.getRight(), organisationAndUserToDelete.getLeft(), null, null, user, Event.EventType.REMOVE_USER_FROM_ORG);
+        eventDAO.create(deleteUserOrganisationEvent);
     }
 
     @POST
@@ -328,6 +347,10 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.delete(organisationUser);
         }
+
+        Event.EventType eventType = accept ? Event.EventType.APPROVE_ORG_INVITE : Event.EventType.REJECT_ORG_INVITE;
+        Event addUserOrganisationEvent = new Event(null, organisation, null, null, user, eventType);
+        eventDAO.create(addUserOrganisationEvent);
 
         return user;
     }

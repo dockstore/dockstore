@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.Organisation;
@@ -121,7 +122,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
-            WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class) {
+            WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class, Event.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
