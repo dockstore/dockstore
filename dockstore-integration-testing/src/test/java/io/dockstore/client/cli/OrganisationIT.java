@@ -296,7 +296,7 @@ public class OrganisationIT extends BaseIT {
 
         // There should exist a role that is not accepted
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from organisationuser where accepted = false and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from organisation_user where accepted = false and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
         // Approve request
@@ -309,7 +309,7 @@ public class OrganisationIT extends BaseIT {
 
         // There should exist a role that is accepted
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from organisationuser where accepted = true and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from organisation_user where accepted = true and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
         // Should be able to update email of organisation
@@ -392,7 +392,7 @@ public class OrganisationIT extends BaseIT {
 
         // There should exist a role that is not accepted
         final long count3 = testingPostgres
-                .runSelectStatement("select count(*) from organisationuser where accepted = false and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from organisation_user where accepted = false and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
         // Disapprove request
@@ -405,22 +405,42 @@ public class OrganisationIT extends BaseIT {
 
         // Should not have a role
         final long count5 = testingPostgres
-                .runSelectStatement("select count(*) from organisationuser where organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
+                .runSelectStatement("select count(*) from organisation_user where organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
     }
 
     /**
      * Tests that you cannot create an organisation where the name is all numbers.
      * This is because we would like to use the same endpoint to grab an organisation by either name or DB id.
+     *
+     * Also tests some other cases where the name should fail
      */
     @Test
-    public void testCreateOrganisationWithNumbers() {
+    public void testCreateOrganisationWithInvalidNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
         OrganisationsApi organisationsApi = new OrganisationsApi(webClientUser2);
 
         // Create org with name that is all numbers
+        createOrgWithBadName("1234", organisationsApi);
+
+        // Create org with name that is too short
+        createOrgWithBadName("ab", organisationsApi);
+
+        // Create org with name that is too long
+        createOrgWithBadName("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", organisationsApi);
+
+        // Create org with name in foreign characters
+        createOrgWithBadName("我喜欢狗", organisationsApi);
+    }
+
+    /**
+     * Helper that creates an organisation with a name that should fail
+     * @param name
+     * @param organisationsApi
+     */
+    private void createOrgWithBadName(String name, OrganisationsApi organisationsApi) {
         Organisation organisation = stubOrgObject();
-        organisation.setName("1234");
+        organisation.setName(name);
 
         boolean throwsError = false;
         try {
@@ -430,7 +450,7 @@ public class OrganisationIT extends BaseIT {
         }
 
         if (!throwsError) {
-            fail("Was able to create an organisation with a name of all numbers.");
+            fail("Was able to create an organisation with an incorrect name.");
         }
     }
 }

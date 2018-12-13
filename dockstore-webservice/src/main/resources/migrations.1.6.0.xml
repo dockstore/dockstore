@@ -44,7 +44,7 @@
         </createTable>
     </changeSet>
     <changeSet author="aduncan (generated)" id="addOrganisationUserTable">
-        <createTable tableName="organisationuser">
+        <createTable tableName="organisation_user">
             <column name="organisationid" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="organisationuser_pkey"/>
             </column>
@@ -63,10 +63,10 @@
         <addUniqueConstraint columnNames="name" constraintName="nameUK" tableName="organisation"/>
     </changeSet>
     <changeSet author="aduncan (generated)" id="addOrganisationFKToOrgUser">
-        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="organisationuser" constraintName="orgFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="organisation_user" constraintName="orgFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
     </changeSet>
     <changeSet author="aduncan (generated)" id="addUserFKToOrgUser">
-        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="organisationuser" constraintName="userFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="organisation_user" constraintName="userFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
 
     <changeSet author="aduncan (generated)" id="dropEndUserGroupFK1">
