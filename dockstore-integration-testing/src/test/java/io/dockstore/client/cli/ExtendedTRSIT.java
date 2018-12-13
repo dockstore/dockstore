@@ -50,6 +50,8 @@ import org.junit.rules.ExpectedException;
 public class ExtendedTRSIT extends BaseIT {
 
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/dockstore_workflow_cnv";
+    private static final String AWESOME_PLATFORM = "awesome platform";
+    private static final String CRUMMY_PLATFORM = "crummy platform";
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -98,8 +100,6 @@ public class ExtendedTRSIT extends BaseIT {
     private void testVerificationWithGivenClient(ApiClient registeringUser, ApiClient verifyingUser) {
         String defaultTestParameterFilePath = "/test.json";
         String id = "#workflow/github.com/DockstoreTestUser2/dockstore_workflow_cnv";
-        String awesomePlatform = "awesome platform";
-        String crummyPlatform = "crummy platform";
         final Workflow workflowByPathGithub;
         {
             // do initial registration as registeringUser
@@ -121,16 +121,18 @@ public class ExtendedTRSIT extends BaseIT {
             ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(verifyingUser);
             // try to add verification metadata
             Map<String, Object> stringObjectMap = extendedGa4GhApi
-                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, awesomePlatform, "metadata", true);
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, AWESOME_PLATFORM, "2.0.0", "metadata", true);
             Assert.assertEquals(1, stringObjectMap.size());
             stringObjectMap = extendedGa4GhApi
-                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, crummyPlatform, "metadata", true);
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0", "metadata", true);
             Assert.assertEquals(2, stringObjectMap.size());
 
             // assert some things about map structure
             Assert.assertTrue("verification information seems off",
-                stringObjectMap.containsKey(awesomePlatform) && stringObjectMap.containsKey(crummyPlatform) && stringObjectMap.get(awesomePlatform) instanceof Map && stringObjectMap.get(crummyPlatform) instanceof Map
-                    && ((Map)stringObjectMap.get(awesomePlatform)).size() == 2 && ((Map)stringObjectMap.get(awesomePlatform)).get("metadata").equals("metadata"));
+                stringObjectMap.containsKey(AWESOME_PLATFORM) && stringObjectMap.containsKey(CRUMMY_PLATFORM) && stringObjectMap.get(AWESOME_PLATFORM) instanceof Map && stringObjectMap.get(CRUMMY_PLATFORM) instanceof Map
+                    && ((Map)stringObjectMap.get(AWESOME_PLATFORM)).size() == 3 && ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("metadata").equals("metadata"));
+            Assert.assertEquals("AWESOME_PLATFORM has the wrong version", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "2.0.0");
+            Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "1.0.0");
 
             // verification on a sourcefile level should flow up to to version and entry level
             Ga4GhApi api = new Ga4GhApi(verifyingUser);
@@ -144,18 +146,20 @@ public class ExtendedTRSIT extends BaseIT {
             // refresh should not destroy verification data
             workflowApi.refresh(workflowByPathGithub.getId());
             Map<String, Object>  stringObjectMap = extendedGa4GhApi
-                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, crummyPlatform, "new metadata",
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0", "new metadata",
                     true);
             Assert.assertEquals(2, stringObjectMap.size());
+            Assert.assertEquals("AWESOME_PLATFORM has the wrong version", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "2.0.0");
+            Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "1.0.0");
         }
 
         {
             ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(verifyingUser);
             // try to remove verification metadata
             extendedGa4GhApi
-                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, awesomePlatform, "metadata", null);
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, AWESOME_PLATFORM, "2.0.0", "metadata", null);
             Map<String, Object> stringObjectMap = extendedGa4GhApi
-                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, crummyPlatform, "metadata", null);
+                .toolsIdVersionsVersionIdTypeTestsPost("CWL", id, "master", defaultTestParameterFilePath, CRUMMY_PLATFORM, "1.0.0", "metadata", null);
             Assert.assertEquals(0, stringObjectMap.size());
         }
     }
@@ -192,14 +196,16 @@ public class ExtendedTRSIT extends BaseIT {
         // try to add verification metadata
         Map<String, Object> stringObjectMap = extendedGa4GhApi
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", "quay.io/dockstoretestuser2/dockstore-cgpmap", "symbolic.v1",
-                "/examples/cgpmap/bamOut/bam_input.json", "awesome platform", "metadata", true);
+                "/examples/cgpmap/bamOut/bam_input.json", AWESOME_PLATFORM, "2.0.0", "metadata", true);
         Assert.assertEquals(1, stringObjectMap.size());
 
         // see if refresh destroys verification metadata
         registeredTool = toolApi.refresh(registeredTool.getId());
         stringObjectMap = extendedGa4GhApi
             .toolsIdVersionsVersionIdTypeTestsPost("CWL", "quay.io/dockstoretestuser2/dockstore-cgpmap", "symbolic.v1",
-                "/examples/cgpmap/bamOut/bam_input.json", "crummy platform", "metadata", true);
+                "/examples/cgpmap/bamOut/bam_input.json", "crummy platform", "1.0.0","metadata", true);
         Assert.assertEquals(2, stringObjectMap.size());
+        Assert.assertEquals("AWESOME_PLATFORM has the wrong version", ((Map)stringObjectMap.get(AWESOME_PLATFORM)).get("platformVersion"), "2.0.0");
+        Assert.assertEquals("CRUMMY_PLATFORM has the wrong version", ((Map)stringObjectMap.get(CRUMMY_PLATFORM)).get("platformVersion"), "1.0.0");
     }
 }
