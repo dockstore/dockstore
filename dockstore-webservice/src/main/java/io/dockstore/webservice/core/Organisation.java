@@ -86,10 +86,6 @@ public class Organisation implements Serializable {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public Organisation() {
-
-    }
-
     public long getId() {
         return id;
     }
