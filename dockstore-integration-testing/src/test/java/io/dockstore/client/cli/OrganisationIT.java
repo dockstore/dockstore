@@ -78,6 +78,9 @@ public class OrganisationIT extends BaseIT {
      */
     @Test
     public void testCreateNewOrganisation() {
+        // Setup postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         // Setup user two
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
         OrganisationsApi organisationsApiUser2 = new OrganisationsApi(webClientUser2);
@@ -97,6 +100,11 @@ public class OrganisationIT extends BaseIT {
         // Create the organisation
         Organisation registeredOrganisation = createOrg(organisationsApiUser2);
         assertTrue(!registeredOrganisation.isApproved());
+
+        // There should be one CREATE_ORG event
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
 
         // Should not appear in approved list
         List<Organisation> organisationList = organisationsApiUser2.getApprovedOrganisations();
@@ -129,12 +137,22 @@ public class OrganisationIT extends BaseIT {
         newOrganisation.setEmail(email);
         organisation = organisationsApiUser2.updateOrganisation(newOrganisation, organisation.getId());
 
+        // There should be one MODIFY_ORG event
+        final long count2 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count2, 1, count2);
+
         // Organisation should have new information
         organisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
         assertEquals("Organisation should be returned and have an updated email.", email, organisation.getEmail());
 
         // Admin approve it
         organisationsApiAdmin.approveOrganisation(registeredOrganisation.getId());
+
+        // There should be one APPROVE_ORG event
+        final long count3 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'APPROVE_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type APPROVE_ORG, there are " + count3, 1, count3);
 
         // Should now appear in approved list
         organisationList = organisationsApiUser2.getApprovedOrganisations();
@@ -161,6 +179,11 @@ public class OrganisationIT extends BaseIT {
         newOrganisation.setLink(link);
         organisation = organisationsApiUser2.updateOrganisation(newOrganisation, organisation.getId());
 
+        // There should be two MODIFY_ORG events
+        final long count4 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 2 events of type MODIFY_ORG, there are " + count4, 2, count4);
+
         // Organisation should have new information
         organisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
         assertEquals("Organisation should be returned and have an updated link.", link, organisation.getLink());
@@ -172,9 +195,18 @@ public class OrganisationIT extends BaseIT {
      */
     @Test
     public void testCreateDuplicateOrganisation() {
+        // Setup postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Setup API client
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         OrganisationsApi organisationsApi = new OrganisationsApi(webClient);
         createOrg(organisationsApi);
+
+        // There should be one CREATE_ORG event
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
 
         boolean throwsError = false;
         try {
@@ -193,6 +225,11 @@ public class OrganisationIT extends BaseIT {
 
         organisation = organisationsApi.createOrganisation(organisation);
 
+        // There should be one CREATE_ORG event
+        final long count2 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 2 events of type CREATE_ORG, there are " + count2, 2, count2);
+
         // Try renaming organisation to testname, should fail
         organisation.setName("testname");
         try {
@@ -208,6 +245,11 @@ public class OrganisationIT extends BaseIT {
         // Try renaming to testname2, should work
         organisation.setName("testname2");
         organisation = organisationsApi.updateOrganisation(organisation, organisation.getId());
+
+        // There should be two MODIFY_ORG events
+        final long count3 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count3, 1, count3);
 
         assertEquals("The organisation should have an updated name", "testname2", organisation.getName());
     }
@@ -235,24 +277,40 @@ public class OrganisationIT extends BaseIT {
         // Create an organisation
         Organisation organisation = createOrg(organisationsApiUser2);
         assertTrue(!organisation.isApproved());
+
+        // There should be one CREATE_ORG event
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
+
         long orgId = organisation.getId();
         long userId = 2;
 
         // Request that other user joins
         organisationsApiUser2.addUserToOrg(OrganisationUser.Role.MEMBER.toString(), userId, orgId, "");
 
+        // There should be one ADD_USER_TO_ORG event
+        final long count2 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
+
         // There should exist a role that is not accepted
-        final long count = testingPostgres
+        final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from organisationuser where accepted = false and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
-        assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count, 1, count);
+        assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
         // Approve request
         organisationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
 
+        // There should be one APPROVE_ORG_INVITE event
+        final long count4 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'APPROVE_ORG_INVITE'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type APPROVE_ORG_INVITE, there are " + count4, 1, count4);
+
         // There should exist a role that is accepted
-        final long count2 = testingPostgres
+        final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from organisationuser where accepted = true and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
-        assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count2, 1, count2);
+        assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
         // Should be able to update email of organisation
         String email = "another@email.com";
@@ -261,11 +319,26 @@ public class OrganisationIT extends BaseIT {
         organisation = organisationsApiOtherUser.updateOrganisation(newOrganisation, orgId);
         assertEquals("Organisation should be returned and have an updated email.", email, organisation.getEmail());
 
+        // There should be one MODIFY_ORG event
+        final long count6 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type MODIFY_ORG, there are " + count6, 1, count6);
+
         // Maintainer should be able to change the members role to maintainer
         organisationsApiUser2.updateUserRole(OrganisationUser.Role.MAINTAINER.toString(), userId, orgId);
 
+        // There should be one MODIFY_USER_ROLE_ORG event
+        final long count7 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_USER_ROLE_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type MODIFY_USER_ROLE_ORG, there are " + count7, 1, count7);
+
         // Remove the user
         organisationsApiUser2.deleteUserRole(userId, orgId);
+
+        // There should be one REMOVE_USER_FROM_ORG event
+        final long count8 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'REMOVE_USER_FROM_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type REMOVE_USER_FROM_ORG, there are " + count8, 1, count8);
 
         // Should once again not be able to update the email
         email = "hello@email.com";
@@ -300,24 +373,40 @@ public class OrganisationIT extends BaseIT {
         // Create an organisation
         Organisation organisation = createOrg(organisationsApiUser2);
         assertTrue(!organisation.isApproved());
+
+        // There should be one CREATE_ORG event
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'CREATE_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type CREATE_ORG, there are " + count, 1, count);
+
         long orgId = organisation.getId();
         long userId = 2;
 
         // Request that other user joins
         organisationsApiUser2.addUserToOrg(OrganisationUser.Role.MEMBER.toString(), userId, orgId, "");
 
+        // There should be one ADD_USER_TO_ORG event
+        final long count2 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'ADD_USER_TO_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type ADD_USER_TO_ORG, there are " + count2, 1, count2);
+
         // There should exist a role that is not accepted
-        final long count = testingPostgres
+        final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from organisationuser where accepted = false and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
-        assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count, 1, count);
+        assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
         // Disapprove request
         organisationsApiOtherUser.acceptOrRejectInvitation(orgId, false);
 
+        // There should be one REJECT_ORG_INVITE event
+        final long count4 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'REJECT_ORG_INVITE'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type REJECT_ORG_INVITE, there are " + count4, 1, count4);
+
         // Should not have a role
-        final long count2 = testingPostgres
+        final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from organisationuser where organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
-        assertEquals("There should be no roles for user 2 and org 1, there are " + count2, 0, count2);
+        assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
     }
 
     /**

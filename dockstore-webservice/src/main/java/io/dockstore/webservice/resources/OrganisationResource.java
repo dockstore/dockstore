@@ -88,6 +88,10 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
         organisation.setApproved(true);
+
+        Event createOrganisationEvent = new Event(null, organisation, null, null, user, Event.EventType.APPROVE_ORG);
+        eventDAO.create(createOrganisationEvent);
+
         return organisationDAO.findById(id);
     }
 
