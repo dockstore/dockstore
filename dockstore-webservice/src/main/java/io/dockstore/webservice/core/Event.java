@@ -31,7 +31,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the organisation in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the event in this web service", position = 0)
     private long id;
 
     @ManyToOne
