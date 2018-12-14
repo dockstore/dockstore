@@ -1266,6 +1266,64 @@ paths:
             $ref: "#/definitions/Collection"
       security:
       - BEARER: []
+  /collections/{collectionId}/add:
+    post:
+      tags:
+      - "collections"
+      summary: "Add an entry to a collection."
+      description: ""
+      operationId: "addEntryToCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryId"
+        in: "query"
+        description: "Entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /collections/{collectionId}/delete:
+    delete:
+      tags:
+      - "collections"
+      summary: "Delete an entry from a collection."
+      description: ""
+      operationId: "deleteEntryFromCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryId"
+        in: "query"
+        description: "Entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
   /containers/dockerRegistryList:
     get:
       tags:

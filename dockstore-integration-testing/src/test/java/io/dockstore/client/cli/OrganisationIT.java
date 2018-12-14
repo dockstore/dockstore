@@ -8,9 +8,11 @@ import io.dockstore.webservice.core.OrganisationUser;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.CollectionsApi;
+import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.OrganisationsApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.Organisation;
+import io.swagger.client.model.PublishRequest;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Before;
 import org.junit.Rule;
@@ -474,6 +476,9 @@ public class OrganisationIT extends BaseIT {
      */
     @Test
     public void testCollections() {
+        // Setup postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
         // Setup user who creates organisation and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
         OrganisationsApi organisationsApi = new OrganisationsApi(webClientUser2);
@@ -486,7 +491,6 @@ public class OrganisationIT extends BaseIT {
 
         // Setup other user
         final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
-        OrganisationsApi organisationsApiOtherUser = new OrganisationsApi(webClientOtherUser);
         CollectionsApi collectionsApiOtherUser = new CollectionsApi(webClientOtherUser);
 
         // Create the organisation and collection
@@ -496,6 +500,11 @@ public class OrganisationIT extends BaseIT {
         // Attach collection
         Collection collection = collectionsApi.createCollection(organisation.getId(), stubCollection);
         long collectionId = collection.getId();
+
+        // There should be one CREATE_COLLECTION event
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'CREATE_COLLECTION'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type CREATE_COLLECTION, there are " + count, 1, count);
 
         // The creating user should be able to see the collection even though the organisation is not approved
         collection = collectionsApi.getCollectionById(collectionId);
@@ -527,5 +536,34 @@ public class OrganisationIT extends BaseIT {
         // Admin should be able to see the collection
         collection = collectionsApiAdmin.getCollectionById(collectionId);
         assertNotNull("Should be able to see the collection.", collection);
+
+        // Publish a tool
+        long entryId = 2;
+        ContainersApi containersApi = new ContainersApi(webClientUser2);
+        PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
+        containersApi.publish(entryId, publishRequest);
+
+        // Add tool to collection
+        collectionsApi.addEntryToCollection(collectionId, entryId);
+
+        // Publish another tool
+        entryId = 1;
+        containersApi.publish(entryId, publishRequest);
+
+        // Add tool to collection
+        collectionsApi.addEntryToCollection(collectionId, entryId);
+
+        // There should be two entries for collection with ID 1
+        final long count2 = testingPostgres
+                .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", new ScalarHandler<>());
+        assertEquals("There should be 2 entries associated with the collection, there are " + count2, 2, count2);
+
+        // Remove a tool from the collection
+        collectionsApi.deleteEntryFromCollection(collectionId, entryId);
+
+        // There should now be one entry for collection with ID 1
+        final long count3 = testingPostgres
+                .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", new ScalarHandler<>());
+        assertEquals("There should be 1 entry associated with the collection, there are " + count3, 1, count3);
     }
 }

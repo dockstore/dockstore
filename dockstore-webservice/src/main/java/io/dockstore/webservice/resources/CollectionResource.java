@@ -4,16 +4,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organisation;
 import io.dockstore.webservice.core.OrganisationUser;
@@ -22,12 +26,14 @@ import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganisationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -50,16 +56,16 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
     private final CollectionDAO collectionDAO;
     private final OrganisationDAO organisationDAO;
+    private final WorkflowDAO workflowDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
-    private final SessionFactory sessionFactory;
 
     public CollectionResource(SessionFactory sessionFactory) {
         this.collectionDAO = new CollectionDAO(sessionFactory);
         this.organisationDAO = new OrganisationDAO(sessionFactory);
+        this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
-        this.sessionFactory = sessionFactory;
     }
 
     @GET
@@ -99,6 +105,80 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             Collection collection = collectionDAO.findById(id);
             return collection;
         }
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/{collectionId}/add")
+    @ApiOperation(value = "Add an entry to a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
+    public Collection addEntryToCollection(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId,
+            @ApiParam(value = "Entry ID", required = true) @QueryParam("entryId") Long entryId) {
+        // Call common code to check if entry and collection exist and return them
+        ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(entryId, collectionId, user);
+
+        // Add the entry to the organisation
+        entryAndCollection.getRight().addEntry(entryAndCollection.getLeft());
+
+        return collectionDAO.findById(collectionId);
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{collectionId}/delete")
+    @ApiOperation(value = "Delete an entry from a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
+    public Collection deleteEntryFromCollection(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId,
+            @ApiParam(value = "Entry ID", required = true) @QueryParam("entryId") Long entryId) {
+        // Call common code to check if entry and collection exist and return them
+        ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(entryId, collectionId, user);
+
+        // Remove the entry from the organisation
+        entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft());
+
+        return collectionDAO.findById(collectionId);
+    }
+
+    /**
+     * Common code used to add and delete from a collection. Will ensure that both the entry and collection are
+     * visible to the user and that the user has the correct credentials to edit the collection.
+     * @param entryId
+     * @param collectionId
+     * @param user
+     * @return Pair of found Entry and Collection
+     */
+    private ImmutablePair<Entry, Collection> commonModifyCollection(Long entryId, Long collectionId, User user) {
+        // Check that entry exists (could use either workflowDAO or toolDAO here)
+        // Note that only published entries can be added
+        Entry entry = workflowDAO.findEntryById(entryId);
+        if (entry == null || !entry.getIsPublished()) {
+            String msg = "Entry not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+        // Check that collection exists to user
+        boolean doesCollectionExist = doesCollectionExistToUser(collectionId, user.getId()) || user.getIsAdmin() || user.isCurator();
+        if (!doesCollectionExist) {
+            String msg = "Collection not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Collection collection = collectionDAO.findById(collectionId);
+
+        // Check that user is a member of the organisation
+        Organisation organisation = organisationDAO.findById(collection.getOrganisation().getId());
+
+        OrganisationUser organisationUser = getUserOrgRole(organisation, user.getId());
+        if (organisationUser == null) {
+            String msg = "User does not have rights to modify a collection from this organisation.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        return new ImmutablePair<>(entry, collection);
     }
 
     @PUT
