@@ -7,7 +7,9 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.core.OrganisationUser;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
+import io.swagger.client.api.CollectionsApi;
 import io.swagger.client.api.OrganisationsApi;
+import io.swagger.client.model.Collection;
 import io.swagger.client.model.Organisation;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.junit.Before;
@@ -21,6 +23,8 @@ import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -57,6 +61,17 @@ public class OrganisationIT extends BaseIT {
         organisation.setEmail("test@email.com");
         organisation.setDescription(markdownDescription);
         return organisation;
+    }
+
+    /**
+     * Creates a stub collection object
+     * @return Collection object
+     */
+    private Collection stubCollectionObject() {
+        Collection collection = new Collection();
+        collection.setName("Alignment");
+        collection.setDescription("A collection of alignment algorithms");
+        return collection;
     }
 
     /**
@@ -452,5 +467,65 @@ public class OrganisationIT extends BaseIT {
         if (!throwsError) {
             fail("Was able to create an organisation with an incorrect name.");
         }
+    }
+
+    /**
+     * This tests that you can add a collection to an organisation and tests conditions for when it is visible
+     */
+    @Test
+    public void testCollections() {
+        // Setup user who creates organisation and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganisationsApi organisationsApi = new OrganisationsApi(webClientUser2);
+        CollectionsApi collectionsApi = new CollectionsApi(webClientUser2);
+
+        // Setup admin
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        OrganisationsApi organisationsApiAdmin = new OrganisationsApi(webClientAdminUser);
+        CollectionsApi collectionsApiAdmin = new CollectionsApi(webClientAdminUser);
+
+        // Setup other user
+        final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
+        OrganisationsApi organisationsApiOtherUser = new OrganisationsApi(webClientOtherUser);
+        CollectionsApi collectionsApiOtherUser = new CollectionsApi(webClientOtherUser);
+
+        // Create the organisation and collection
+        Organisation organisation = createOrg(organisationsApi);
+        Collection stubCollection = stubCollectionObject();
+
+        // Attach collection
+        Collection collection = collectionsApi.createCollection(organisation.getId(), stubCollection);
+        long collectionId = collection.getId();
+
+        // The creating user should be able to see the collection even though the organisation is not approved
+        collection = collectionsApi.getCollectionById(collectionId);
+        assertNotNull("Should be able to see the collection." ,collection);
+
+        // Other user should not be able to see
+        try {
+            collection = collectionsApiOtherUser.getCollectionById(collectionId);
+        } catch (ApiException ex) {
+            collection = null;
+        }
+        assertNull("Should not be able to see the collection.", collection);
+
+        // Admin should be able to see the collection
+        collection = collectionsApiAdmin.getCollectionById(collectionId);
+        assertNotNull("Should be able to see the collection.", collection);
+
+        // Approve the organisation
+        organisation = organisationsApiAdmin.approveOrganisation(organisation.getId());
+
+        // The creating user should be able to see
+        collection = collectionsApi.getCollectionById(collectionId);
+        assertNotNull("Should be able to see the collection.", collection);
+
+        // Other user should be able to see
+        collection = collectionsApiOtherUser.getCollectionById(collectionId);
+        assertNotNull("Should be able to see the collection.", collection);
+
+        // Admin should be able to see the collection
+        collection = collectionsApiAdmin.getCollectionById(collectionId);
+        assertNotNull("Should be able to see the collection.", collection);
     }
 }

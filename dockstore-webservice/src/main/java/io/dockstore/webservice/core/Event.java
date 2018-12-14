@@ -55,13 +55,18 @@ public class Event {
     private Workflow workflow;
 
     @ManyToOne
+    @JoinColumn(name = "collectionId", referencedColumnName = "id")
+    @ApiModelProperty(value = "Collection that the event is acting on.", position = 5)
+    private Collection collection;
+
+    @ManyToOne
     @JoinColumn(name = "initiatorUserId", referencedColumnName = "id")
-    @ApiModelProperty(value = "User initiating the event.", position = 5)
+    @ApiModelProperty(value = "User initiating the event.", position = 6)
     private User initiatorUser;
 
     @Column
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "The event type.", required = true, position = 6)
+    @ApiModelProperty(value = "The event type.", required = true, position = 7)
     private EventType type;
 
     // database timestamps
@@ -73,9 +78,10 @@ public class Event {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public Event(User user, Organisation organisation, Workflow workflow, Tool tool, User initiatorUser, EventType type) {
+    public Event(User user, Organisation organisation, Collection collection, Workflow workflow, Tool tool, User initiatorUser, EventType type) {
         this.user = user;
         this.organisation = organisation;
+        this.collection = collection;
         this.workflow = workflow;
         this.tool = tool;
         this.initiatorUser = initiatorUser;
@@ -163,6 +169,8 @@ public class Event {
         REMOVE_USER_FROM_ORG,
         MODIFY_USER_ROLE_ORG,
         APPROVE_ORG_INVITE,
-        REJECT_ORG_INVITE
+        REJECT_ORG_INVITE,
+        CREATE_COLLECTION,
+        MODIFY_COLLECTION
     }
 }

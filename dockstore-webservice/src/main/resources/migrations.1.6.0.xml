@@ -114,4 +114,47 @@
         <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="event" constraintName="FKWorkflowId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
     </changeSet>
 
+    <changeSet author="aduncan (generated)" id="1544737966182-3">
+        <createTable tableName="collection">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="collection_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="description" type="TEXT"/>
+            <column name="name" type="VARCHAR(39)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organisationid" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1544737966182-4">
+        <createTable tableName="collection_entry">
+            <column name="collectionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="collection_entry_pkey"/>
+            </column>
+            <column name="entryid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="collection_entry_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1544737966182-5">
+        <addUniqueConstraint columnNames="name" constraintName="uk_y9tqsfhcsdnb3oqmc6dmb2i1" tableName="collection"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1544737966182-7">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="collection" constraintName="fk7a33ojl6jbfa6n9os1xhof7xu" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1544737966182-8">
+        <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="collection_entry" constraintName="fkgeb6luwjr17p0q7w7qr01jheb" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addCollectionColumnToEvent">
+        <addColumn tableName="event">
+            <column name="collectionid" type="int8"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addCollectionFKEvent">
+        <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="event" constraintName="fkom220e5fvyd8npyen20t581l6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+    </changeSet>
+
 </databaseChangeLog>

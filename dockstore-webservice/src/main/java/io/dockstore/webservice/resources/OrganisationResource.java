@@ -89,7 +89,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
         organisation.setApproved(true);
 
-        Event createOrganisationEvent = new Event(null, organisation, null, null, user, Event.EventType.APPROVE_ORG);
+        Event createOrganisationEvent = new Event(null, organisation, null, null, null, user, Event.EventType.APPROVE_ORG);
         eventDAO.create(createOrganisationEvent);
 
         return organisationDAO.findById(id);
@@ -165,7 +165,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organisationUser);
 
-        Event createOrganisationEvent = new Event(null, organisation, null, null, foundUser, Event.EventType.CREATE_ORG);
+        Event createOrganisationEvent = new Event(null, organisation, null, null, null, foundUser, Event.EventType.CREATE_ORG);
         eventDAO.create(createOrganisationEvent);
 
         return organisationDAO.findById(id);
@@ -214,7 +214,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         oldOrganisation.setLink(organisation.getLink());
         oldOrganisation.setLocation(organisation.getLocation());
 
-        Event updateOrganisationEvent = new Event(null, oldOrganisation, null, null, user, Event.EventType.MODIFY_ORG);
+        Event updateOrganisationEvent = new Event(null, oldOrganisation, null, null, null, user, Event.EventType.MODIFY_ORG);
         eventDAO.create(updateOrganisationEvent);
 
         return organisationDAO.findById(id);
@@ -247,7 +247,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Event addUserOrganisationEvent = new Event(organisationAndUserToAdd.getRight(), organisationAndUserToAdd.getLeft(), null, null, user, Event.EventType.ADD_USER_TO_ORG);
+        Event addUserOrganisationEvent = new Event(organisationAndUserToAdd.getRight(), organisationAndUserToAdd.getLeft(), null, null, null, user, Event.EventType.ADD_USER_TO_ORG);
         eventDAO.create(addUserOrganisationEvent);
 
         return organisationUser;
@@ -276,7 +276,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             existingRole.setRole(OrganisationUser.Role.valueOf(role));
         }
 
-        Event updateUserOrganisationEvent = new Event(organisationAndUserToUpdate.getRight(), organisationAndUserToUpdate.getLeft(), null, null, user, Event.EventType.MODIFY_USER_ROLE_ORG);
+        Event updateUserOrganisationEvent = new Event(organisationAndUserToUpdate.getRight(), organisationAndUserToUpdate.getLeft(), null, null, null, user, Event.EventType.MODIFY_USER_ROLE_ORG);
         eventDAO.create(updateUserOrganisationEvent);
 
         return existingRole;
@@ -305,7 +305,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             currentSession.delete(existingRole);
         }
 
-        Event deleteUserOrganisationEvent = new Event(organisationAndUserToDelete.getRight(), organisationAndUserToDelete.getLeft(), null, null, user, Event.EventType.REMOVE_USER_FROM_ORG);
+        Event deleteUserOrganisationEvent = new Event(organisationAndUserToDelete.getRight(), organisationAndUserToDelete.getLeft(), null, null, null, user, Event.EventType.REMOVE_USER_FROM_ORG);
         eventDAO.create(deleteUserOrganisationEvent);
     }
 
@@ -353,7 +353,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
 
         Event.EventType eventType = accept ? Event.EventType.APPROVE_ORG_INVITE : Event.EventType.REJECT_ORG_INVITE;
-        Event addUserOrganisationEvent = new Event(null, organisation, null, null, user, eventType);
+        Event addUserOrganisationEvent = new Event(null, organisation, null, null, null, user, eventType);
         eventDAO.create(addUserOrganisationEvent);
 
         return user;

@@ -29,6 +29,7 @@ tags:
       repositories. Implements TRS
       [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)
       and is considered final (not subject to change)
+  - name: collections
   - name: containers
     description: >-
       List and register entries in the dockstore (pairs of images + metadata
@@ -1472,6 +1473,63 @@ paths:
       responses:
         '400':
           description: Invalid token value
+      security:
+        - BEARER: []
+  '/collections/create/{organisationId}':
+    put:
+      tags:
+        - collections
+      summary: Create a collection in the given organisation.
+      description: ''
+      operationId: createCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        description: Collection to register.
+        required: true
+  '/collections/{collectionId}':
+    get:
+      tags:
+        - collections
+      summary: Retrieves a collection by ID.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getCollectionById
+      parameters:
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
       security:
         - BEARER: []
   /containers/dockerRegistryList:
@@ -5384,6 +5442,30 @@ components:
       properties:
         content:
           type: string
+    Collection:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the collection in this web service
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+          description: Name of the collection (ex. OICR).
+          minLength: 3
+          maxLength: 39
+          pattern: '\d*[a-zA-Z][a-zA-Z\d]*'
+        description:
+          type: string
+          description: Description of the collection
     DescriptorLanguageBean:
       type: object
       properties:
@@ -5410,6 +5492,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -5612,6 +5699,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -6510,6 +6602,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries

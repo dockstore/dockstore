@@ -78,6 +78,10 @@ public class Organisation implements Serializable {
     @JsonIgnore
     private Set<OrganisationUser> users = new HashSet<>();
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "organisation")
+    private Set<Collection> collections = new HashSet<>();
+
     @Column(updatable = false)
     @CreationTimestamp
     private Timestamp dbCreateDate;
@@ -164,5 +168,23 @@ public class Organisation implements Serializable {
 
     public void setUsers(Set<OrganisationUser> users) {
         this.users = users;
+    }
+
+    public Set<Collection> getCollections() {
+        return collections;
+    }
+
+    public void setCollections(Set<Collection> collections) {
+        this.collections = collections;
+    }
+
+    public void addCollection(Collection collection) {
+        collections.add(collection);
+        collection.setOrganisation(this);
+    }
+
+    public void removeCollection(Collection collection) {
+        collections.remove(collection);
+        collection.setOrganisation(null);
     }
 }
