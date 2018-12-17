@@ -71,26 +71,6 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
         return get(id);
     }
 
-    public Entry findEntryById(Long id) {
-        String queryString = "Entry.getEntryById";
-        Query query = super.namedQuery(queryString);
-
-        query.setParameter("id", id);
-        List<Object[]> pair = list(query);
-        MutablePair<String, Entry> results = null;
-        if (pair.size() > 0) {
-            String type = (String)(pair.get(0))[0];
-            BigInteger entryId = (BigInteger)(pair.get(0))[1];
-            Long longId = entryId.longValue();
-            if ("workflow".equals(type)) {
-                results = new MutablePair<>("workflow", this.currentSession().get(Workflow.class, Objects.requireNonNull(longId)));
-            } else {
-                results = new MutablePair<>("tool", this.currentSession().get(Tool.class, Objects.requireNonNull(longId)));
-            }
-        }
-        return results.getRight();
-    }
-
     public MutablePair<String, Entry> findEntryByPath(String path, boolean isPublished) {
         String queryString = "Entry.";
         if (isPublished) {

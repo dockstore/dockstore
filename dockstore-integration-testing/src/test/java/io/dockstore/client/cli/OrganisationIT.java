@@ -475,7 +475,7 @@ public class OrganisationIT extends BaseIT {
      * This tests that you can add a collection to an organisation and tests conditions for when it is visible
      */
     @Test
-    public void testCollections() {
+    public void testBasicCollections() {
         // Setup postgres
         final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
 
@@ -565,5 +565,55 @@ public class OrganisationIT extends BaseIT {
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", new ScalarHandler<>());
         assertEquals("There should be 1 entry associated with the collection, there are " + count3, 1, count3);
+    }
+
+    /**
+     * This tests that you can update the name and description of a collection.
+     * Also tests when name is a duplicate.
+     */
+    @Test
+    public void testUpdatingCollectionMetadata() {
+        // Setup postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Setup user who creates organisation and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganisationsApi organisationsApi = new OrganisationsApi(webClientUser2);
+        CollectionsApi collectionsApi = new CollectionsApi(webClientUser2);
+
+        // Create the organisation and collection
+        Organisation organisation = createOrg(organisationsApi);
+        Collection stubCollection = stubCollectionObject();
+        Collection stubCollectionTwo = stubCollectionObject();
+        stubCollectionTwo.setName("anothername");
+
+        // Attach collections
+        Collection collection = collectionsApi.createCollection(organisation.getId(), stubCollection);
+        long collectionId = collection.getId();
+
+        Collection collectionTwo = collectionsApi.createCollection(organisation.getId(), stubCollectionTwo);
+        long collectionTwoId = collectionTwo.getId();
+
+        // Update description of collection
+        String desc = "This is a new description.";
+        collection.setDescription(desc);
+        collection = collectionsApi.updateCollection(collection, collectionId);
+
+        final long count = testingPostgres
+                .runSelectStatement("select count(*) from collection where description = '" + desc + "'", new ScalarHandler<>());
+        assertEquals("There should be 1 collection with the updated description, there are " + count, 1, count);
+
+        // Update collection name to existing one
+        collection.setName("anothername");
+        boolean throwsError = false;
+        try {
+            collectionsApi.updateCollection(collection, collectionId);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to update a collection with an existing name.");
+        }
     }
 }

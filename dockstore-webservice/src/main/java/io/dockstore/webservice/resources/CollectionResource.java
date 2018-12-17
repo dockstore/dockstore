@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organisation;
 import io.dockstore.webservice.core.OrganisationUser;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganisationDAO;
@@ -152,7 +153,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     private ImmutablePair<Entry, Collection> commonModifyCollection(Long entryId, Long collectionId, User user) {
         // Check that entry exists (could use either workflowDAO or toolDAO here)
         // Note that only published entries can be added
-        Entry entry = workflowDAO.findEntryById(entryId);
+        Entry<? extends Entry, ? extends Version> entry = workflowDAO.getGenericEntryById(entryId);
         if (entry == null || !entry.getIsPublished()) {
             String msg = "Entry not found.";
             LOG.info(msg);
@@ -220,6 +221,55 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         eventDAO.create(createCollectionEvent);
 
         return collectionDAO.findById(id);
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("/update/{collectionId}")
+    @ApiOperation(value = "Update a collection.", notes = "Currently only name and description can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
+    public Collection updateCollection(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Collection to register.", required = true) Collection collection,
+            @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long id) {
+        // Ensure collection exists to the user
+        boolean doesCollectionExist = doesCollectionExistToUser(id, user.getId());
+        if (!doesCollectionExist) {
+            String msg = "Collection not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        Collection existingCollection = collectionDAO.findById(id);
+        Organisation organisation = organisationDAO.findById(existingCollection.getOrganisation().getId());
+
+        // Check that the user has rights to the organisation
+        OrganisationUser organisationUser = getUserOrgRole(organisation, user.getId());
+        if (organisationUser == null) {
+            String msg = "User does not have rights to modify a collection from this organisation.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        // Check if new name is valid
+        if (!Objects.equals(existingCollection.getName(), collection.getName())) {
+            Collection duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganisation().getId());
+            if (duplicateName != null) {
+                String msg = "A collection already exists with the name '" + collection.getName() + "', please try another one.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            }
+        }
+
+        // Update the collection
+        existingCollection.setName(collection.getName());
+        existingCollection.setDescription(collection.getDescription());
+
+        // Event for update
+        Event updateCollectionEvent = new Event(null, organisation, collection, null, null, user, Event.EventType.MODIFY_COLLECTION);
+        eventDAO.create(updateCollectionEvent);
+
+        return collectionDAO.findById(id);
+
     }
 
     /**

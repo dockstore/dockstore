@@ -1500,12 +1500,33 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Collection'
-        description: Collection to register.
-        required: true
+        $ref: '#/components/requestBodies/Collection'
+  '/collections/update/{collectionId}':
+    post:
+      tags:
+        - collections
+      summary: Update a collection.
+      description: Currently only name and description can be updated.
+      operationId: updateCollection
+      parameters:
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/Collection'
   '/collections/{collectionId}':
     get:
       tags:
@@ -5471,6 +5492,13 @@ components:
       description: >-
         Set of updated sourcefiles, add files by adding new files with unknown
         paths, delete files by including them with emptied content
+      required: true
+    Collection:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Collection'
+      description: Collection to register.
       required: true
     StarRequest:
       content:
