@@ -284,7 +284,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @Path("{organisationId}/collections/{collectionId}")
     @ApiOperation(value = "Update a collection.", notes = "Currently only name and description can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection updateCollection(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Collection to register.", required = true) Collection collection,
+            @ApiParam(value = "Collection to update with.", required = true) Collection collection,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
             @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId) {
         // Ensure collection exists to the user

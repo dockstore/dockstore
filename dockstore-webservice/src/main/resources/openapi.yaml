@@ -3141,7 +3141,12 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/Collection'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        description: Collection to register.
+        required: true
   '/organisations/{organisationId}/collections/{collectionId}':
     get:
       tags:
@@ -3206,7 +3211,12 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/Collection'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        description: Collection to update with.
+        required: true
   '/organisations/{organisationId}/collections/{collectionId}/entry':
     post:
       tags:
@@ -5575,13 +5585,6 @@ components:
           schema:
             $ref: '#/components/schemas/VerifyRequest'
       description: Object containing verification information.
-      required: true
-    Collection:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Collection'
-      description: Collection to register.
       required: true
   securitySchemes:
     BEARER:
