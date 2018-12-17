@@ -25,7 +25,6 @@ tags:
   description: "A curated subset of resources proposed as a common standard for tool\
     \ repositories. Implements TRS [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)\
     \ and is considered final (not subject to change)"
-- name: "collections"
 - name: "containers"
   description: "List and register entries in the dockstore (pairs of images + metadata\
     \ (CWL and Dockerfile))"
@@ -1211,146 +1210,6 @@ paths:
       responses:
         400:
           description: "Invalid token value"
-      security:
-      - BEARER: []
-  /collections/create/{organisationId}:
-    put:
-      tags:
-      - "collections"
-      summary: "Create a collection in the given organisation."
-      description: ""
-      operationId: "createCollection"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "organisationId"
-        in: "path"
-        description: "Organisation ID."
-        required: true
-        type: "integer"
-        format: "int64"
-      - in: "body"
-        name: "body"
-        description: "Collection to register."
-        required: true
-        schema:
-          $ref: "#/definitions/Collection"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Collection"
-      security:
-      - BEARER: []
-  /collections/update/{collectionId}:
-    post:
-      tags:
-      - "collections"
-      summary: "Update a collection."
-      description: "Currently only name and description can be updated."
-      operationId: "updateCollection"
-      produces:
-      - "application/json"
-      parameters:
-      - in: "body"
-        name: "body"
-        description: "Collection to register."
-        required: true
-        schema:
-          $ref: "#/definitions/Collection"
-      - name: "collectionId"
-        in: "path"
-        description: "Collection ID."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Collection"
-      security:
-      - BEARER: []
-  /collections/{collectionId}:
-    get:
-      tags:
-      - "collections"
-      summary: "Retrieves a collection by ID."
-      description: "Does not require authentication for approved organisations, authentication\
-        \ can be provided for unapproved organisations"
-      operationId: "getCollectionById"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "collectionId"
-        in: "path"
-        description: "Collection ID."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Collection"
-      security:
-      - BEARER: []
-  /collections/{collectionId}/add:
-    post:
-      tags:
-      - "collections"
-      summary: "Add an entry to a collection."
-      description: ""
-      operationId: "addEntryToCollection"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "collectionId"
-        in: "path"
-        description: "Collection ID."
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "entryId"
-        in: "query"
-        description: "Entry ID"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Collection"
-      security:
-      - BEARER: []
-  /collections/{collectionId}/delete:
-    delete:
-      tags:
-      - "collections"
-      summary: "Delete an entry from a collection."
-      description: ""
-      operationId: "deleteEntryFromCollection"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "collectionId"
-        in: "path"
-        description: "Collection ID."
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "entryId"
-        in: "query"
-        description: "Entry ID"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Collection"
       security:
       - BEARER: []
   /containers/dockerRegistryList:
@@ -2919,6 +2778,193 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/collections:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieve all collections for an organisation."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getCollectionsFromOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organisations"
+      summary: "Create a collection in the given organisation."
+      description: ""
+      operationId: "createCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Collection to register."
+        required: true
+        schema:
+          $ref: "#/definitions/Collection"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/collections/{collectionId}:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves a collection by ID."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getCollectionById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    post:
+      tags:
+      - "organisations"
+      summary: "Update a collection."
+      description: "Currently only name and description can be updated."
+      operationId: "updateCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Collection to register."
+        required: true
+        schema:
+          $ref: "#/definitions/Collection"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/collections/{collectionId}/entry:
+    post:
+      tags:
+      - "organisations"
+      summary: "Add an entry to a collection."
+      description: ""
+      operationId: "addEntryToCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryId"
+        in: "query"
+        description: "Entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "organisations"
+      summary: "Delete an entry from a collection."
+      description: ""
+      operationId: "deleteEntryFromCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryId"
+        in: "query"
+        description: "Entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
       security:
       - BEARER: []
   /organisations/{organisationId}/invitation:

@@ -36,7 +36,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "collection")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllbyOrg", query = "SELECT col FROM Collection col WHERE organisationid = :organisationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organisationid = :organisationId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE col.name = :name AND organisationid = :organisationId"),
 })
 @SuppressWarnings("checkstyle:magicnumber")

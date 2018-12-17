@@ -183,7 +183,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("{organisationId}")
     @ApiOperation(value = "Update an organisation.", notes = "Currently only name, description, email, link and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation updateOrganisation(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Organisation to register.", required = true) Organisation organisation,
+            @ApiParam(value = "Organisation to update with.", required = true) Organisation organisation,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
 
         boolean doesOrgExist = doesOrganisationExistToUser(id, user.getId());

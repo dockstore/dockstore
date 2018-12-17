@@ -7,7 +7,6 @@ import io.dockstore.common.ConfidentialTest;
 import io.dockstore.webservice.core.OrganisationUser;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.api.CollectionsApi;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.OrganisationsApi;
 import io.swagger.client.model.Collection;
@@ -482,23 +481,21 @@ public class OrganisationIT extends BaseIT {
         // Setup user who creates organisation and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
         OrganisationsApi organisationsApi = new OrganisationsApi(webClientUser2);
-        CollectionsApi collectionsApi = new CollectionsApi(webClientUser2);
 
         // Setup admin
         final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
         OrganisationsApi organisationsApiAdmin = new OrganisationsApi(webClientAdminUser);
-        CollectionsApi collectionsApiAdmin = new CollectionsApi(webClientAdminUser);
 
         // Setup other user
         final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
-        CollectionsApi collectionsApiOtherUser = new CollectionsApi(webClientOtherUser);
+        OrganisationsApi organisationsApiOtherUser = new OrganisationsApi(webClientOtherUser);
 
         // Create the organisation and collection
         Organisation organisation = createOrg(organisationsApi);
         Collection stubCollection = stubCollectionObject();
 
         // Attach collection
-        Collection collection = collectionsApi.createCollection(organisation.getId(), stubCollection);
+        Collection collection = organisationsApi.createCollection(organisation.getId(), stubCollection);
         long collectionId = collection.getId();
 
         // There should be one CREATE_COLLECTION event
@@ -507,34 +504,34 @@ public class OrganisationIT extends BaseIT {
         assertEquals("There should be 1 event of type CREATE_COLLECTION, there are " + count, 1, count);
 
         // The creating user should be able to see the collection even though the organisation is not approved
-        collection = collectionsApi.getCollectionById(collectionId);
+        collection = organisationsApi.getCollectionById(organisation.getId(), collectionId);
         assertNotNull("Should be able to see the collection." ,collection);
 
         // Other user should not be able to see
         try {
-            collection = collectionsApiOtherUser.getCollectionById(collectionId);
+            collection = organisationsApiOtherUser.getCollectionById(organisation.getId(), collectionId);
         } catch (ApiException ex) {
             collection = null;
         }
         assertNull("Should not be able to see the collection.", collection);
 
         // Admin should be able to see the collection
-        collection = collectionsApiAdmin.getCollectionById(collectionId);
+        collection = organisationsApiAdmin.getCollectionById(organisation.getId(), collectionId);
         assertNotNull("Should be able to see the collection.", collection);
 
         // Approve the organisation
         organisation = organisationsApiAdmin.approveOrganisation(organisation.getId());
 
         // The creating user should be able to see
-        collection = collectionsApi.getCollectionById(collectionId);
+        collection = organisationsApi.getCollectionById(organisation.getId(), collectionId);
         assertNotNull("Should be able to see the collection.", collection);
 
         // Other user should be able to see
-        collection = collectionsApiOtherUser.getCollectionById(collectionId);
+        collection = organisationsApiOtherUser.getCollectionById(organisation.getId(), collectionId);
         assertNotNull("Should be able to see the collection.", collection);
 
         // Admin should be able to see the collection
-        collection = collectionsApiAdmin.getCollectionById(collectionId);
+        collection = organisationsApiAdmin.getCollectionById(organisation.getId(), collectionId);
         assertNotNull("Should be able to see the collection.", collection);
 
         // Publish a tool
@@ -544,14 +541,14 @@ public class OrganisationIT extends BaseIT {
         containersApi.publish(entryId, publishRequest);
 
         // Add tool to collection
-        collectionsApi.addEntryToCollection(collectionId, entryId);
+        organisationsApi.addEntryToCollection(organisation.getId(), collectionId, entryId);
 
         // Publish another tool
         entryId = 1;
         containersApi.publish(entryId, publishRequest);
 
         // Add tool to collection
-        collectionsApi.addEntryToCollection(collectionId, entryId);
+        organisationsApi.addEntryToCollection(organisation.getId(), collectionId, entryId);
 
         // There should be two entries for collection with ID 1
         final long count2 = testingPostgres
@@ -559,12 +556,16 @@ public class OrganisationIT extends BaseIT {
         assertEquals("There should be 2 entries associated with the collection, there are " + count2, 2, count2);
 
         // Remove a tool from the collection
-        collectionsApi.deleteEntryFromCollection(collectionId, entryId);
+        organisationsApi.deleteEntryFromCollection(organisation.getId(), collectionId, entryId);
 
         // There should now be one entry for collection with ID 1
         final long count3 = testingPostgres
                 .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", new ScalarHandler<>());
         assertEquals("There should be 1 entry associated with the collection, there are " + count3, 1, count3);
+
+        // Try getting all collections
+        List<Collection> collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId());
+        assertEquals("There should be 1 entry associated with the collection, there are " + collections.size(), 1, collections.size());
     }
 
     /**
@@ -579,7 +580,6 @@ public class OrganisationIT extends BaseIT {
         // Setup user who creates organisation and collection
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
         OrganisationsApi organisationsApi = new OrganisationsApi(webClientUser2);
-        CollectionsApi collectionsApi = new CollectionsApi(webClientUser2);
 
         // Create the organisation and collection
         Organisation organisation = createOrg(organisationsApi);
@@ -588,16 +588,16 @@ public class OrganisationIT extends BaseIT {
         stubCollectionTwo.setName("anothername");
 
         // Attach collections
-        Collection collection = collectionsApi.createCollection(organisation.getId(), stubCollection);
+        Collection collection = organisationsApi.createCollection(organisation.getId(), stubCollection);
         long collectionId = collection.getId();
 
-        Collection collectionTwo = collectionsApi.createCollection(organisation.getId(), stubCollectionTwo);
+        Collection collectionTwo = organisationsApi.createCollection(organisation.getId(), stubCollectionTwo);
         long collectionTwoId = collectionTwo.getId();
 
         // Update description of collection
         String desc = "This is a new description.";
         collection.setDescription(desc);
-        collection = collectionsApi.updateCollection(collection, collectionId);
+        collection = organisationsApi.updateCollection(collection, organisation.getId(), collectionId);
 
         final long count = testingPostgres
                 .runSelectStatement("select count(*) from collection where description = '" + desc + "'", new ScalarHandler<>());
@@ -607,7 +607,7 @@ public class OrganisationIT extends BaseIT {
         collection.setName("anothername");
         boolean throwsError = false;
         try {
-            collectionsApi.updateCollection(collection, collectionId);
+            organisationsApi.updateCollection(collection, organisation.getId(), collectionId);
         } catch (ApiException ex) {
             throwsError = true;
         }

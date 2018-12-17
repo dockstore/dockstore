@@ -29,7 +29,6 @@ tags:
       repositories. Implements TRS
       [1.0.0](https://github.com/ga4gh/tool-registry-service-schemas/releases/tag/1.0.0)
       and is considered final (not subject to change)
-  - name: collections
   - name: containers
     description: >-
       List and register entries in the dockstore (pairs of images + metadata
@@ -1473,146 +1472,6 @@ paths:
       responses:
         '400':
           description: Invalid token value
-      security:
-        - BEARER: []
-  '/collections/create/{organisationId}':
-    put:
-      tags:
-        - collections
-      summary: Create a collection in the given organisation.
-      description: ''
-      operationId: createCollection
-      parameters:
-        - name: organisationId
-          in: path
-          description: Organisation ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-        - BEARER: []
-      requestBody:
-        $ref: '#/components/requestBodies/Collection'
-  '/collections/update/{collectionId}':
-    post:
-      tags:
-        - collections
-      summary: Update a collection.
-      description: Currently only name and description can be updated.
-      operationId: updateCollection
-      parameters:
-        - name: collectionId
-          in: path
-          description: Collection ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-        - BEARER: []
-      requestBody:
-        $ref: '#/components/requestBodies/Collection'
-  '/collections/{collectionId}':
-    get:
-      tags:
-        - collections
-      summary: Retrieves a collection by ID.
-      description: >-
-        Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getCollectionById
-      parameters:
-        - name: collectionId
-          in: path
-          description: Collection ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-        - BEARER: []
-  '/collections/{collectionId}/add':
-    post:
-      tags:
-        - collections
-      summary: Add an entry to a collection.
-      description: ''
-      operationId: addEntryToCollection
-      parameters:
-        - name: collectionId
-          in: path
-          description: Collection ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: entryId
-          in: query
-          description: Entry ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-      security:
-        - BEARER: []
-  '/collections/{collectionId}/delete':
-    delete:
-      tags:
-        - collections
-      summary: Delete an entry from a collection.
-      description: ''
-      operationId: deleteEntryFromCollection
-      parameters:
-        - name: collectionId
-          in: path
-          description: Collection ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: entryId
-          in: query
-          description: Entry ID
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
       security:
         - BEARER: []
   /containers/dockerRegistryList:
@@ -3218,6 +3077,199 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+  '/organisations/{organisationId}/collections':
+    get:
+      tags:
+        - organisations
+      summary: Retrieve all collections for an organisation.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getCollectionsFromOrganisation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    put:
+      tags:
+        - organisations
+      summary: Create a collection in the given organisation.
+      description: ''
+      operationId: createCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/Collection'
+  '/organisations/{organisationId}/collections/{collectionId}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves a collection by ID.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getCollectionById
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    post:
+      tags:
+        - organisations
+      summary: Update a collection.
+      description: Currently only name and description can be updated.
+      operationId: updateCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/Collection'
+  '/organisations/{organisationId}/collections/{collectionId}/entry':
+    post:
+      tags:
+        - organisations
+      summary: Add an entry to a collection.
+      description: ''
+      operationId: addEntryToCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: entryId
+          in: query
+          description: Entry ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - organisations
+      summary: Delete an entry from a collection.
+      description: ''
+      operationId: deleteEntryFromCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: entryId
+          in: query
+          description: Entry ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
       security:
         - BEARER: []
   '/organisations/{organisationId}/invitation':
@@ -5500,13 +5552,6 @@ components:
         Set of updated sourcefiles, add files by adding new files with unknown
         paths, delete files by including them with emptied content
       required: true
-    Collection:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Collection'
-      description: Collection to register.
-      required: true
     StarRequest:
       content:
         application/json:
@@ -5527,6 +5572,13 @@ components:
           schema:
             $ref: '#/components/schemas/Organisation'
       description: Organisation to register.
+      required: true
+    Collection:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Collection'
+      description: Collection to register.
       required: true
   securitySchemes:
     BEARER:

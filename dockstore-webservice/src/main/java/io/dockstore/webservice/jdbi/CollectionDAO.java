@@ -1,5 +1,7 @@
 package io.dockstore.webservice.jdbi;
 
+import java.util.List;
+
 import io.dockstore.webservice.core.Collection;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;
@@ -29,10 +31,10 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         session.flush();
     }
 
-    public Collection findAllByOrg(String name, long organisationId) {
+    public List<Collection> findAllByOrg(long organisationId) {
         Query query = namedQuery("io.dockstore.webservice.core.Collection.findAllByOrg")
                 .setParameter("organisationId", organisationId);
-        return uniqueResult(query);
+        return list(query);
     }
 
     public Collection findByNameAndOrg(String name, long organisationId) {
