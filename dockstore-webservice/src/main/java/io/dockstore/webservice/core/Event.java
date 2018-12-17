@@ -128,6 +128,14 @@ public class Event {
         this.workflow = workflow;
     }
 
+    public Collection getCollection() {
+        return collection;
+    }
+
+    public void setCollection(Collection collection) {
+        this.collection = collection;
+    }
+
     public User getInitiatorUser() {
         return initiatorUser;
     }
