@@ -2795,49 +2795,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Organisation"
-  /organisations/all:
-    get:
-      tags:
-      - "organisations"
-      summary: "List all organisations."
-      description: "Admin/curator only"
-      operationId: "getAllOrganisations"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Organisation"
-      security:
-      - BEARER: []
-  /organisations/approve/{organisationId}:
-    post:
-      tags:
-      - "organisations"
-      summary: "Approves an organisation."
-      description: "Admin/curator only"
-      operationId: "approveOrganisation"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "organisationId"
-        in: "path"
-        description: "Organisation ID."
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Organisation"
-      security:
-      - BEARER: []
-  /organisations/create:
     put:
       tags:
       - "organisations"
@@ -2860,7 +2817,58 @@ paths:
             $ref: "#/definitions/Organisation"
       security:
       - BEARER: []
-  /organisations/update/{organisationId}:
+  /organisations/all:
+    get:
+      tags:
+      - "organisations"
+      summary: "List all organisations."
+      description: "Admin/curator only"
+      operationId: "getAllOrganisations"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "type"
+        in: "query"
+        description: "Filter to apply to organisations."
+        required: true
+        type: "string"
+        enum:
+        - "all"
+        - "unapproved"
+        - "approved"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an organisation by ID."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
     post:
       tags:
       - "organisations"
@@ -2890,14 +2898,13 @@ paths:
             $ref: "#/definitions/Organisation"
       security:
       - BEARER: []
-  /organisations/{organisationId}:
-    get:
+  /organisations/{organisationId}/approve:
+    post:
       tags:
       - "organisations"
-      summary: "Retrieves an organisation by ID."
-      description: "Does not require authentication for approved organisations, authentication\
-        \ can be provided for unapproved organisations"
-      operationId: "getOrganisationById"
+      summary: "Approves an organisation."
+      description: "Admin/curator only"
+      operationId: "approveOrganisation"
       produces:
       - "application/json"
       parameters:
@@ -2958,7 +2965,6 @@ paths:
         required: true
         type: "string"
         enum:
-        - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
       - name: "userId"
@@ -2995,7 +3001,6 @@ paths:
         required: true
         type: "string"
         enum:
-        - "ADMIN"
         - "MAINTAINER"
         - "MEMBER"
       - name: "userId"

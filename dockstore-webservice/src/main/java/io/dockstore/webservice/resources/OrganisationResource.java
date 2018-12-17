@@ -77,7 +77,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @Path("/approve/{organisationId}")
+    @Path("{organisationId}/approve/")
     @ApiOperation(value = "Approves an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organisation.class)
     public Organisation approveOrganisation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
@@ -132,14 +132,20 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/all")
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
-    public List<Organisation> getAllOrganisations() {
-        return organisationDAO.findAll();
+    public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, unapproved, approved") @QueryParam("type") String type) {
+        switch (type) {
+        case "unapproved":
+            return organisationDAO.findAllUnapproved();
+        case "approved":
+            return organisationDAO.findAllApproved();
+        case "all": default:
+            return organisationDAO.findAll();
+        }
     }
 
     @PUT
     @Timed
     @UnitOfWork
-    @Path("/create")
     @ApiOperation(value = "Create an organisation.", notes = "Organisation requires approval by an admin before being made public.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation createOrganisation(@ApiParam(hidden = true) @Auth User user,
@@ -174,7 +180,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/update/{organisationId}")
+    @Path("{organisationId}")
     @ApiOperation(value = "Update an organisation.", notes = "Currently only name, description, email, link and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation updateOrganisation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation to register.", required = true) Organisation organisation,
@@ -226,7 +232,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/{organisationId}/user")
     @ApiOperation(value = "Adds a user role to an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
     public OrganisationUser addUserToOrg(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @QueryParam("role") String role,
+            @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @QueryParam("role") String role,
             @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
@@ -259,7 +265,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/{organisationId}/user")
     @ApiOperation(value = "Updates a user role in an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
     public OrganisationUser updateUserRole(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @QueryParam("role") String role,
+            @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @QueryParam("role") String role,
             @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
 

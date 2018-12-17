@@ -3097,49 +3097,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organisation'
-  /organisations/all:
-    get:
-      tags:
-        - organisations
-      summary: List all organisations.
-      description: Admin/curator only
-      operationId: getAllOrganisations
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organisation'
-      security:
-        - BEARER: []
-  '/organisations/approve/{organisationId}':
-    post:
-      tags:
-        - organisations
-      summary: Approves an organisation.
-      description: Admin/curator only
-      operationId: approveOrganisation
-      parameters:
-        - name: organisationId
-          in: path
-          description: Organisation ID.
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organisation'
-      security:
-        - BEARER: []
-  /organisations/create:
     put:
       tags:
         - organisations
@@ -3157,7 +3114,61 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/Organisation'
-  '/organisations/update/{organisationId}':
+  /organisations/all:
+    get:
+      tags:
+        - organisations
+      summary: List all organisations.
+      description: Admin/curator only
+      operationId: getAllOrganisations
+      parameters:
+        - name: type
+          in: query
+          description: Filter to apply to organisations.
+          required: true
+          schema:
+            type: string
+            enum:
+              - all
+              - unapproved
+              - approved
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+  '/organisations/{organisationId}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves an organisation by ID.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getOrganisationById
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
     post:
       tags:
         - organisations
@@ -3185,15 +3196,13 @@ paths:
         - BEARER: []
       requestBody:
         $ref: '#/components/requestBodies/Organisation'
-  '/organisations/{organisationId}':
-    get:
+  '/organisations/{organisationId}/approve':
+    post:
       tags:
         - organisations
-      summary: Retrieves an organisation by ID.
-      description: >-
-        Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getOrganisationById
+      summary: Approves an organisation.
+      description: Admin/curator only
+      operationId: approveOrganisation
       parameters:
         - name: organisationId
           in: path
@@ -3256,7 +3265,6 @@ paths:
           schema:
             type: string
             enum:
-              - ADMIN
               - MAINTAINER
               - MEMBER
         - name: userId
@@ -3296,7 +3304,6 @@ paths:
           schema:
             type: string
             enum:
-              - ADMIN
               - MAINTAINER
               - MEMBER
         - name: userId
