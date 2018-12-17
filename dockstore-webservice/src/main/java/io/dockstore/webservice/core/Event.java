@@ -171,6 +171,8 @@ public class Event {
         APPROVE_ORG_INVITE,
         REJECT_ORG_INVITE,
         CREATE_COLLECTION,
-        MODIFY_COLLECTION
+        MODIFY_COLLECTION,
+        REMOVE_FROM_COLLECTION,
+        ADD_TO_COLLECTION
     }
 }

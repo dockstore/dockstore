@@ -22,8 +22,10 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organisation;
 import io.dockstore.webservice.core.OrganisationUser;
+import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganisationDAO;
@@ -125,6 +127,16 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         // Add the entry to the organisation
         entryAndCollection.getRight().addEntry(entryAndCollection.getLeft());
 
+        // Event for addition
+        Organisation organisation = organisationDAO.findById(organisationId);
+        Event addToCollectionEvent;
+        if (entryAndCollection.getLeft() instanceof Workflow) {
+            addToCollectionEvent = new Event(null, organisation, entryAndCollection.getRight(), (Workflow)entryAndCollection.getLeft(), null, user, Event.EventType.ADD_TO_COLLECTION);
+        } else {
+            addToCollectionEvent = new Event(null, organisation, entryAndCollection.getRight(), null, (Tool)entryAndCollection.getLeft(), user, Event.EventType.ADD_TO_COLLECTION);
+        }
+        eventDAO.create(addToCollectionEvent);
+
         return collectionDAO.findById(collectionId);
     }
 
@@ -142,6 +154,16 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
         // Remove the entry from the organisation
         entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft());
+
+        // Event for deletion
+        Organisation organisation = organisationDAO.findById(organisationId);
+        Event removeFromCollectionEvent;
+        if (entryAndCollection.getLeft() instanceof Workflow) {
+            removeFromCollectionEvent = new Event(null, organisation, entryAndCollection.getRight(), (Workflow)entryAndCollection.getLeft(), null, user, Event.EventType.REMOVE_FROM_COLLECTION);
+        } else {
+            removeFromCollectionEvent = new Event(null, organisation, entryAndCollection.getRight(), null, (Tool)entryAndCollection.getLeft(), user, Event.EventType.REMOVE_FROM_COLLECTION);
+        }
+        eventDAO.create(removeFromCollectionEvent);
 
         return collectionDAO.findById(collectionId);
     }

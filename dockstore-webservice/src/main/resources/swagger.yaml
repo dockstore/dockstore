@@ -2740,7 +2740,7 @@ paths:
       parameters:
       - in: "body"
         name: "body"
-        description: "Organisation to register."
+        description: "Organisation to update with."
         required: true
         schema:
           $ref: "#/definitions/Organisation"

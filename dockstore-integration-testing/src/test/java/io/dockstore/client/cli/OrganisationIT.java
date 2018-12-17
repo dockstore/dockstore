@@ -555,13 +555,23 @@ public class OrganisationIT extends BaseIT {
                 .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", new ScalarHandler<>());
         assertEquals("There should be 2 entries associated with the collection, there are " + count2, 2, count2);
 
+        // There should be two ADD_TO_COLLECTION events
+        final long count3 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'ADD_TO_COLLECTION'", new ScalarHandler<>());
+        assertEquals("There should be 2 events of type ADD_TO_COLLECTION, there are " + count3, 2, count3);
+
         // Remove a tool from the collection
         organisationsApi.deleteEntryFromCollection(organisation.getId(), collectionId, entryId);
 
+        // There should be one REMOVE_FROM_COLLECTION events
+        final long count4 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'REMOVE_FROM_COLLECTION'", new ScalarHandler<>());
+        assertEquals("There should be 1 event of type REMOVE_FROM_COLLECTION, there are " + count4, 1, count4);
+
         // There should now be one entry for collection with ID 1
-        final long count3 = testingPostgres
+        final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from collection_entry where collectionid = '1'", new ScalarHandler<>());
-        assertEquals("There should be 1 entry associated with the collection, there are " + count3, 1, count3);
+        assertEquals("There should be 1 entry associated with the collection, there are " + count5, 1, count5);
 
         // Try getting all collections
         List<Collection> collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId());

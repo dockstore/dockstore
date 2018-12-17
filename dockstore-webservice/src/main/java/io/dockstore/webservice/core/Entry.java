@@ -80,9 +80,6 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedNativeQuery(name = "Entry.getEntryByPath", query =
         "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname = :four union"
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname = :four"),
-        @NamedNativeQuery(name = "Entry.getEntryById", query =
-        "SELECT 'tool' as type, id from tool where id = :id union"
-            + " select 'workflow' as type, id from workflow where id = :id"),
     @NamedNativeQuery(name = "Entry.getEntryByPathNullName", query =
         "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL union"
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL"),

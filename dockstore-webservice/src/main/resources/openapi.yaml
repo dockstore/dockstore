@@ -2972,7 +2972,12 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/Organisation'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        description: Organisation to register.
+        required: true
   /organisations/all:
     get:
       tags:
@@ -3054,7 +3059,12 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/Organisation'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        description: Organisation to update with.
+        required: true
   '/organisations/{organisationId}/approve':
     post:
       tags:
@@ -5565,13 +5575,6 @@ components:
           schema:
             $ref: '#/components/schemas/VerifyRequest'
       description: Object containing verification information.
-      required: true
-    Organisation:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Organisation'
-      description: Organisation to register.
       required: true
     Collection:
       content:
