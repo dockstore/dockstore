@@ -20,8 +20,8 @@
                    context="1.6.0">
     <changeSet author="gluu (generated)" id="addPlatformVersionToSourcefileVerified">
         <addColumn tableName="sourcefile_verified">
-            <column name="platformversion" type="text" defaultValue="">
-                <constraints nullable="false" />
+            <column defaultValue="N/A" name="platformversion" type="text">
+                <constraints nullable="false"/>
             </column>
         </addColumn>
     </changeSet>
@@ -113,5 +113,4 @@
     <changeSet author="aduncan (generated)" id="addWorkflowFKEvent">
         <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="event" constraintName="FKWorkflowId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
     </changeSet>
-
 </databaseChangeLog>
