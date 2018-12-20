@@ -422,6 +422,9 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                             if (!(yamlRun != null ^ jsonRun != null ^ tsvRun != null)) {
                                 errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
                             } else {
+                                if (tsvRun == null){
+                                    validateInputFile(jsonRun);
+                                }
                                 try {
                                     languageClientInterface.launch(entry, false, yamlRun, jsonRun, tsvRun, null, uuid);
                                 } catch (IOException e) {
@@ -434,10 +437,9 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                             if (jsonRun == null) {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {
+                                validateInputFile(jsonRun);
                                 try {
                                     languageClientInterface.launch(entry, false, null, jsonRun, null, wdlOutputTarget, uuid);
-                                } catch (ParserException e) {
-                                    errorMessage("Could not launch entry, invalid json", IO_ERROR);
                                 }
                                 catch (Exception e) {
                                     errorMessage("Could not launch entry", IO_ERROR);
@@ -461,7 +463,17 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         }
     }
 
-    @Override
+    private void validateInputFile(String inputFile) {
+        try {
+            convertYAMLtoJSON(inputFile);
+        } catch (ParserException e) {
+            errorMessage("Could not launch entry, invalid syntax in " + inputFile, IO_ERROR);
+
+        } catch (IOException e) {
+            errorMessage("Could not launch entry, invalid input file", IO_ERROR);
+        }
+    }
+        @Override
     public Client getClient() {
         return this.client;
     }
