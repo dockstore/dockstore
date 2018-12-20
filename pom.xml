@@ -146,6 +146,7 @@
         <module>dockstore-file-plugin-parent</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
+        <module>swagger-java-wes-client</module>
         <module>swagger-java-quay-client</module>
         <module>swagger-java-bitbucket-client</module>
         <module>dockstore-client</module>
