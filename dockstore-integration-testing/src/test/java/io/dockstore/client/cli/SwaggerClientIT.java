@@ -51,7 +51,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
-import io.swagger.client.model.Group;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.Permission;
 import io.swagger.client.model.PublishRequest;
@@ -540,39 +539,6 @@ public class SwaggerClientIT extends BaseIT {
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId());
         assertEquals("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), 0,
             registeredContainer.getTags().size());
-    }
-
-    @Test
-    public void testUserGroups() throws ApiException {
-        ApiClient client = getAdminWebClient();
-
-        UsersApi usersApi = new UsersApi(client);
-
-        Group group = usersApi.createGroup("group1");
-        long groupId = group.getId();
-
-        List<Group> groups = usersApi.allGroups();
-        assertEquals(1, groups.size());
-
-        // add group to non-admin user
-        long userId = 2;
-        User user = usersApi.addGroupToUser(userId, group);
-
-        groups = usersApi.getGroupsFromUser(user.getId());
-        assertTrue(groups.size() > 0);
-
-        List<User> users = usersApi.getUsersFromGroup(groupId);
-        assertTrue(users.size() > 0);
-
-        // remove user from group
-        user = usersApi.removeUserFromGroup(userId, groupId);
-
-        groups = usersApi.getGroupsFromUser(user.getId());
-        assertTrue(groups.isEmpty());
-
-        users = usersApi.getUsersFromGroup(groupId);
-        assertTrue(users.isEmpty());
-
     }
 
     @Test
