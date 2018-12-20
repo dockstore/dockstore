@@ -20,9 +20,7 @@
                    context="1.6.0">
     <changeSet author="gluu (generated)" id="addPlatformVersionToSourcefileVerified">
         <addColumn tableName="sourcefile_verified">
-            <column defaultValue="N/A" name="platformversion" type="text">
-                <constraints nullable="false"/>
-            </column>
+            <column name="platformversion" type="text"/>
         </addColumn>
     </changeSet>
 

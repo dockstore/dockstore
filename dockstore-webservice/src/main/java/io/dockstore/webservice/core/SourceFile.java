@@ -43,7 +43,6 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -189,9 +188,8 @@ public class SourceFile implements Comparable<SourceFile> {
         @Column(columnDefinition = "text")
         public String metadata = "";
 
-        @Column(columnDefinition = "text", nullable = false)
-        @ColumnDefault("'N/A'")
-        public String platformVersion = "N/A";
+        @Column(columnDefinition = "text")
+        public String platformVersion;
 
         // database timestamps
         @Column(updatable = false)
