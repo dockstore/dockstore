@@ -17,6 +17,7 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
@@ -53,10 +54,12 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -1357,4 +1360,19 @@ public abstract class AbstractEntryClient<T> {
         out("");
     }
 
+
+
+    /**
+     * Converts a yaml file path to a json string.
+     * @param yamlRun
+     * @return
+     * @throws IOException
+     */
+    public String convertYAMLtoJSON(String yamlRun) throws IOException {
+        Yaml yaml = new Yaml();
+        final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
+        Map<String, Object> map = yaml.load(fileInputStream);
+        JSONObject jsonObject = new JSONObject(map);
+        return jsonObject.toString();
+    }
 }
