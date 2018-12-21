@@ -409,6 +409,12 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
         } else {
             if ((entry == null) != (localEntry == null)) {
+                if (jsonRun != null) {
+                    validateInputFile(jsonRun);
+                }
+                if (yamlRun != null) {
+                    validateInputFile(yamlRun);
+                }
                 if (entry != null) {
                     String[] parts = entry.split(":");
                     String path = parts[0];
@@ -422,9 +428,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                             if (!(yamlRun != null ^ jsonRun != null ^ tsvRun != null)) {
                                 errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
                             } else {
-                                if (tsvRun == null){
-                                    validateInputFile(jsonRun);
-                                }
                                 try {
                                     languageClientInterface.launch(entry, false, yamlRun, jsonRun, tsvRun, null, uuid);
                                 } catch (IOException e) {
@@ -437,11 +440,10 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                             if (jsonRun == null) {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {
-                                validateInputFile(jsonRun);
+                                //validateInputFile(jsonRun);
                                 try {
                                     languageClientInterface.launch(entry, false, null, jsonRun, null, wdlOutputTarget, uuid);
-                                }
-                                catch (Exception e) {
+                                } catch (Exception e) {
                                     errorMessage("Could not launch entry", IO_ERROR);
                                 }
                             }
@@ -463,17 +465,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         }
     }
 
-    private void validateInputFile(String inputFile) {
-        try {
-            convertYAMLtoJSON(inputFile);
-        } catch (ParserException e) {
-            errorMessage("Could not launch entry, invalid syntax in " + inputFile, IO_ERROR);
-
-        } catch (IOException e) {
-            errorMessage("Could not launch entry, invalid input file", IO_ERROR);
-        }
-    }
-        @Override
+    @Override
     public Client getClient() {
         return this.client;
     }
