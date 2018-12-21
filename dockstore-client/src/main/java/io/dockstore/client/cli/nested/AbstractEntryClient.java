@@ -64,6 +64,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.parser.ParserException;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.DOWNLOAD;
@@ -950,6 +951,12 @@ public abstract class AbstractEntryClient<T> {
         if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)) {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
+        if (jsonRun != null) {
+            validateInputFile(jsonRun);
+        }
+        if (yamlRun != null) {
+            validateInputFile(yamlRun);
+        }
         CWLClient client = new CWLClient(this);
         client.launch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, uuid);
     }
@@ -993,6 +1000,12 @@ public abstract class AbstractEntryClient<T> {
         if (!(yamlRun != null ^ jsonRun != null)) {
             errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
         }
+        if (jsonRun != null) {
+            validateInputFile(jsonRun);
+        }
+        if (yamlRun != null) {
+            validateInputFile(yamlRun);
+        }
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
         final String uuid = optVal(args, "--uuid", null);
         WDLClient client = new WDLClient(this);
@@ -1001,6 +1014,9 @@ public abstract class AbstractEntryClient<T> {
 
     private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
+        if (json != null) {
+            validateInputFile(json);
+        }
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);
         client.launch(entry, isLocalEntry, null, json, null, null, uuid);
@@ -1360,7 +1376,16 @@ public abstract class AbstractEntryClient<T> {
         out("");
     }
 
+    public void validateInputFile(String inputFile) {
+        try {
+            convertYAMLtoJSON(inputFile);
+        } catch (ParserException e) {
+            errorMessage("Could not launch entry, invalid syntax in " + inputFile, IO_ERROR);
 
+        } catch (IOException e) {
+            errorMessage("Could not launch entry, invalid input file", IO_ERROR);
+        }
+    }
 
     /**
      * Converts a yaml file path to a json string.
