@@ -686,8 +686,8 @@ public class CWLHandler implements LanguageHandlerInterface {
     @Override
     public ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
-        sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
-        Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+        Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
+        Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
         Boolean isValid = true;
         String validationMessage = null;

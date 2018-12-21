@@ -539,7 +539,7 @@ public abstract class SourceCodeRepoInterface {
      * @param mainDescriptorPath Descriptor path to validate
      * @return Workflow version with validation information
      */
-    WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
+    public WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, String mainDescriptorPath) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects
@@ -574,7 +574,7 @@ public abstract class SourceCodeRepoInterface {
      * @param version Version to check validation
      * @return True if valid workflow version, false otherwise
      */
-    boolean isValidVersion(WorkflowVersion version) {
+    public boolean isValidVersion(WorkflowVersion version) {
         return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
     }
 }

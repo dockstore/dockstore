@@ -196,11 +196,11 @@ public class WDLHandler implements LanguageHandlerInterface {
         String mainDescriptor = null;
 
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL));
-        sourcefiles = filterSourcefiles(sourcefiles, fileTypes);
+        Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
 
-        if (sourcefiles.size() > 0) {
+        if (filteredSourceFiles.size() > 0) {
             try {
-                Optional<SourceFile> primaryDescriptor = sourcefiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
+                Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
 
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
@@ -212,7 +212,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
 
                 Map<String, String> secondaryDescContent = new HashMap<>();
-                for (SourceFile sourceFile : sourcefiles) {
+                for (SourceFile sourceFile : filteredSourceFiles) {
                     if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
                         if (sourceFile.getContent() != null) {
                             if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
