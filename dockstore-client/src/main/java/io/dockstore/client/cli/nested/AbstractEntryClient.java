@@ -888,6 +888,34 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
+     * Checks that there is either a --entry or --local-entry argument. Validates that any JSON and/or YAML files
+     * are syntactically valid.
+     * @param args
+     */
+    protected void preValidateLaunchArguments(List<String> args) {
+        if (args.contains("--json")) {
+            String jsonFile = reqVal(args, "--json");
+            try {
+                fileToJSON(jsonFile);
+            } catch (ParserException ex) {
+                errorMessage("Syntax error in json", CLIENT_ERROR);
+            } catch (IOException e) {
+                errorMessage("Syntax error in json", CLIENT_ERROR);
+            }
+        }
+        if (args.contains("--yaml")) {
+            String yamlFile = reqVal(args, "--yaml");
+            try {
+                fileToJSON(yamlFile);
+            } catch (ParserException ex) {
+                errorMessage("Syntax error in json", CLIENT_ERROR);
+            } catch (IOException e) {
+                errorMessage("Syntax error in json", CLIENT_ERROR);
+            }
+        }
+    }
+
+    /**
      * Launches tools and workflows.
      *
      * @param args Arguments entered into the CLI
@@ -900,6 +928,7 @@ public abstract class AbstractEntryClient<T> {
                 errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.",
                         CLIENT_ERROR);
             } else if (args.contains("--local-entry")) {
+                preValidateLaunchArguments(args);
                 final String descriptor = optVal(args, "--descriptor", null);
                 final String localFilePath = reqVal(args, "--local-entry");
                 checkEntryFile(localFilePath, args, descriptor);
@@ -907,6 +936,7 @@ public abstract class AbstractEntryClient<T> {
                 if (!args.contains("--entry")) {
                     errorMessage("dockstore: missing required flag --entry", CLIENT_ERROR);
                 }
+                preValidateLaunchArguments(args);
                 final String descriptor = optVal(args, "--descriptor", CWL_STRING);
                 if (descriptor.equals(CWL_STRING)) {
                     try {
@@ -951,12 +981,6 @@ public abstract class AbstractEntryClient<T> {
         if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)) {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
-        if (jsonRun != null) {
-            validateInputFile(jsonRun);
-        }
-        if (yamlRun != null) {
-            validateInputFile(yamlRun);
-        }
         CWLClient client = new CWLClient(this);
         client.launch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, uuid);
     }
@@ -1000,12 +1024,6 @@ public abstract class AbstractEntryClient<T> {
         if (!(yamlRun != null ^ jsonRun != null)) {
             errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
         }
-        if (jsonRun != null) {
-            validateInputFile(jsonRun);
-        }
-        if (yamlRun != null) {
-            validateInputFile(yamlRun);
-        }
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
         final String uuid = optVal(args, "--uuid", null);
         WDLClient client = new WDLClient(this);
@@ -1014,9 +1032,6 @@ public abstract class AbstractEntryClient<T> {
 
     private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
-        if (json != null) {
-            validateInputFile(json);
-        }
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);
         client.launch(entry, isLocalEntry, null, json, null, null, uuid);
@@ -1376,24 +1391,15 @@ public abstract class AbstractEntryClient<T> {
         out("");
     }
 
-    public void validateInputFile(String inputFile) {
-        try {
-            convertYAMLtoJSON(inputFile);
-        } catch (ParserException e) {
-            errorMessage("Could not launch entry, invalid syntax in " + inputFile, IO_ERROR);
 
-        } catch (IOException e) {
-            errorMessage("Could not launch entry, invalid input file", IO_ERROR);
-        }
-    }
 
     /**
-     * Converts a yaml file path to a json string.
+     * Reads a file whose format is either YAML or JSON and makes a JSON string out of the contents
      * @param yamlRun
      * @return
-     * @throws IOException
+     * @throws IOException, ParserException
      */
-    public String convertYAMLtoJSON(String yamlRun) throws IOException {
+    public String fileToJSON(String yamlRun) throws IOException, ParserException {
         Yaml yaml = new Yaml();
         final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
         Map<String, Object> map = yaml.load(fileInputStream);
