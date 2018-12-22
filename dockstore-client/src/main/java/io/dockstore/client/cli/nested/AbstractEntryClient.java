@@ -888,8 +888,8 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
-     * Checks that there is either a --entry or --local-entry argument. Validates that any JSON and/or YAML files
-     * are syntactically valid.
+     * Validates that any JSON and/or YAML files are syntactically valid.
+     *
      * @param args
      */
     protected void preValidateLaunchArguments(List<String> args) {

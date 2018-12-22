@@ -396,12 +396,12 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         this.jCommander.parse(both);
         String entry = commandLaunch.entry;
         String localEntry = commandLaunch.localEntry;
-        preValidateLaunchArguments(args);
         String jsonRun = commandLaunch.json;
         String yamlRun = commandLaunch.yaml;
         String tsvRun = commandLaunch.tsv;
         String wdlOutputTarget = commandLaunch.wdlOutputTarget;
         String uuid = commandLaunch.uuid;
+        preValidateLaunchArguments(args);
 
         // trim the final slash on output if it is present, probably an error ( https://github.com/aws/aws-cli/issues/421 ) causes a double slash which can fail
         wdlOutputTarget = wdlOutputTarget != null ? wdlOutputTarget.replaceAll("/$", "") : null;
