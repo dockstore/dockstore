@@ -48,6 +48,7 @@ import io.dockstore.common.WDLFileProvisioning;
 import io.github.collaboratory.cwl.LauncherCWL;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
+import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
@@ -121,8 +122,8 @@ public class WDLClient implements LanguageClientInterface {
      * @return an exit code for the run
      */
     @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid)
-        throws ApiException {
+    @SuppressWarnings({"checkstyle:parameternumber", "checkstyle:methodlength"})
+    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid, String wesUrl) throws ApiException {
 
         boolean hasRequiredFlags = ((yamlRun != null || jsonRun != null) && ((yamlRun != null) != (jsonRun != null)) && csvRuns == null);
         if (!hasRequiredFlags) {
@@ -170,92 +171,105 @@ public class WDLClient implements LanguageClientInterface {
                 workingDir = Paths.get(entry).toAbsolutePath().normalize().getParent().toString();
             }
 
-            // Else if local entry then need to get parent path of entry variable (path)
-            System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
-            notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
-            try {
-                Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
-                // Make new json file
-                String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-                wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
-            } catch (Exception e) {
-                notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
-                throw e;
-            }
-            notificationsClient.sendMessage(NotificationsClient.RUN, true);
-            // run a workflow
-            System.out.println("Calling out to Cromwell to run your workflow");
-
-            // Currently Cromwell does not support HTTP(S) imports
-            // https://github.com/broadinstitute/cromwell/issues/1528
-
-            final String[] s = { "java", "-jar", cromwellTargetFile.getAbsolutePath(), "run" };
-            List<String> arguments = new ArrayList<>();
-            arguments.addAll(Arrays.asList(s));
-            arguments.addAll(wdlRun);
-
-            int exitCode = 0;
-            String stdout;
-            String stderr;
-            try {
-                // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
-                final String join = Joiner.on(" ").join(arguments);
-                System.out.println(join);
-                final ImmutablePair<String, String> execute = Utilities.executeCommand(join, localPrimaryDescriptorFile.getParentFile());
-                stdout = execute.getLeft();
-                stderr = execute.getRight();
-            } catch (RuntimeException e) {
-                LOG.error("Problem running cromwell: ", e);
-                if (e.getCause() instanceof ExecuteException) {
-                    exitCode = ((ExecuteException)e.getCause()).getExitValue();
-                    throw new ExecuteException("problems running command: " + Joiner.on(" ").join(arguments), exitCode);
+            if (wesUrl.isEmpty()) {
+                // Else if local entry then need to get parent path of entry variable (path)
+                System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
+                notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
+                try {
+                    Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+                    // Make new json file
+                    String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
+                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
+                } catch (Exception e) {
+                    notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
+                    throw e;
                 }
-                notificationsClient.sendMessage(NotificationsClient.RUN, false);
-                throw new RuntimeException("Could not run Cromwell", e);
-            } finally {
-                System.out.println("Cromwell exit code: " + exitCode);
-            }
-            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
-            try {
-                LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"),
-                    stderr.replaceAll("\n", "\t"), "Cromwell");
-                // capture the output and provision it
-                if (wdlOutputTarget != null) {
-                    // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
-                    String outputPrefix = "Final Outputs:";
-                    int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
-                    int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
-                    String bracketContents = stdout.substring(startIndex, endIndex).trim();
-                    if (bracketContents.isEmpty()) {
-                        throw new RuntimeException("No cromwell output");
-                    }
+                notificationsClient.sendMessage(NotificationsClient.RUN, true);
+                // run a workflow
+                System.out.println("Calling out to Cromwell to run your workflow");
 
-                    // grab values from output JSON
-                    Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
-                    System.out.println("Provisioning your output files to their final destinations");
-                    final List<String> outputFiles = bridge.getOutputFiles(localPrimaryDescriptorFile);
-                    FileProvisioning fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
-                    List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
-                    for (String outFile : outputFiles) {
-                        // find file path from output
-                        final File resultFile = new File(outputJson.get(outFile));
-                        FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
-                        new1.setUrl(wdlOutputTarget + "/" + outFile);
-                        new1.setLocalPath(resultFile.getAbsolutePath());
-                        if (inputJson.containsKey(outFile + ".metadata")) {
-                            byte[] metadatas = Base64.getDecoder().decode((String)inputJson.get(outFile + ".metadata"));
-                            new1.setMetadata(new String(metadatas, StandardCharsets.UTF_8));
+                // Currently Cromwell does not support HTTP(S) imports
+                // https://github.com/broadinstitute/cromwell/issues/1528
+
+                final String[] s = { "java", "-jar", cromwellTargetFile.getAbsolutePath(), "run" };
+                List<String> arguments = new ArrayList<>();
+                arguments.addAll(Arrays.asList(s));
+                arguments.addAll(wdlRun);
+
+                int exitCode = 0;
+                String stdout;
+                String stderr;
+                try {
+                    // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
+                    final String join = Joiner.on(" ").join(arguments);
+                    System.out.println(join);
+                    final ImmutablePair<String, String> execute = Utilities.executeCommand(join, localPrimaryDescriptorFile.getParentFile());
+                    stdout = execute.getLeft();
+                    stderr = execute.getRight();
+                } catch (RuntimeException e) {
+                    LOG.error("Problem running cromwell: ", e);
+                    if (e.getCause() instanceof ExecuteException) {
+                        exitCode = ((ExecuteException)e.getCause()).getExitValue();
+                        throw new ExecuteException("problems running command: " + Joiner.on(" ").join(arguments), exitCode);
+                    }
+                    notificationsClient.sendMessage(NotificationsClient.RUN, false);
+                    throw new RuntimeException("Could not run Cromwell", e);
+                } finally {
+                    System.out.println("Cromwell exit code: " + exitCode);
+                }
+                notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
+                try {
+                    LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout.replaceAll("\n", "\t"),
+                            stderr.replaceAll("\n", "\t"), "Cromwell");
+                    // capture the output and provision it
+                    if (wdlOutputTarget != null) {
+                        // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
+                        String outputPrefix = "Final Outputs:";
+                        int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
+                        int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
+                        String bracketContents = stdout.substring(startIndex, endIndex).trim();
+                        if (bracketContents.isEmpty()) {
+                            throw new RuntimeException("No cromwell output");
                         }
-                        System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
-                        outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
+
+                        // grab values from output JSON
+                        Map<String, String> outputJson = gson.fromJson(bracketContents, HashMap.class);
+                        System.out.println("Provisioning your output files to their final destinations");
+                        final List<String> outputFiles = bridge.getOutputFiles(localPrimaryDescriptorFile);
+                        FileProvisioning fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
+                        List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
+                        for (String outFile : outputFiles) {
+                            // find file path from output
+                            final File resultFile = new File(outputJson.get(outFile));
+                            FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
+                            new1.setUrl(wdlOutputTarget + "/" + outFile);
+                            new1.setLocalPath(resultFile.getAbsolutePath());
+                            if (inputJson.containsKey(outFile + ".metadata")) {
+                                byte[] metadatas = Base64.getDecoder().decode((String)inputJson.get(outFile + ".metadata"));
+                                new1.setMetadata(new String(metadatas, StandardCharsets.UTF_8));
+                            }
+                            System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
+                            outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
+                        }
+                        fileProvisioning.uploadFiles(outputList);
+                    } else {
+                        System.out.println("Output files left in place");
                     }
-                    fileProvisioning.uploadFiles(outputList);
-                } else {
-                    System.out.println("Output files left in place");
+                } catch (Exception e) {
+                    notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
+                    throw e;
                 }
-            } catch (Exception e) {
-                notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
-                throw e;
+            } else {
+                WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = abstractEntryClient.getWorkflowExecutionServiceApi(wesUrl);
+                try {
+                    String tags = "WorkflowExecutionService";
+                    byte[] descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
+                    List<byte[]> workflowAttachment = new ArrayList<byte[]>();
+                    workflowAttachment.add(descriptorContent);
+                    clientWorkflowExecutionServiceApi.runWorkflow(jsonString, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
+                } catch (io.swagger.wes.client.ApiException e) {
+                    e.printStackTrace();
+                }
             }
         } catch (ApiException ex) {
             if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {

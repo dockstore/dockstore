@@ -61,8 +61,12 @@ public interface LanguageClientInterface {
      *                          instead we specify one specific directory (either remote or local) and dump all output there,
      *                          re-creating the directory structure that Cromwell ends up with there
      * @param uuid         uuid that was optional specified for notifications
+     * @param wesUrl       URL of WES endpoint
+     * @return
      * @throws IOException
      * @throws ApiException
+     *
      */
-    long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid) throws IOException, ApiException;
+    @SuppressWarnings("checkstyle:parameternumber")
+    long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid, String wesUrl) throws IOException, ApiException;
 }

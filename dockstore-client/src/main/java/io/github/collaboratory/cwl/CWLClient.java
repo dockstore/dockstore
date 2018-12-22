@@ -86,8 +86,9 @@ public class CWLClient implements LanguageClientInterface {
      * @throws ApiException
      */
     @Override
+    @SuppressWarnings("checkstyle:parameternumber")
     public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget,
-        String uuid) throws IOException, ApiException {
+        String uuid, String wesUrl) throws IOException, ApiException {
         String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlRun, jsonRun, csvRuns);
         if (!SCRIPT.get()) {
             abstractEntryClient.getClient().checkForCWLDependencies();

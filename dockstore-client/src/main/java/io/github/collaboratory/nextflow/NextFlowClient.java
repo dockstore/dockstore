@@ -58,7 +58,8 @@ public class NextFlowClient implements LanguageClientInterface {
 
 
     @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid)
+    @SuppressWarnings("checkstyle:parameternumber")
+    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid, String wesUrl)
         throws ApiException {
         assert (yamlRun == null && jsonRun != null && csvRuns == null);
 

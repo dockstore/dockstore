@@ -49,6 +49,10 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
+import io.swagger.wes.client.ApiClient;
+import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
+import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -233,6 +237,9 @@ public abstract class AbstractEntryClient<T> {
                 break;
             case "test_parameter":
                 testParameter(args);
+                break;
+            case "wes":
+                processWesCommands(args);
                 break;
             default:
                 return false;
@@ -878,6 +885,67 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
+     * Creates a WES API object and sets the endpoint.
+     *
+     * @param wesUrl URL to WES endpoint
+     */
+    public WorkflowExecutionServiceApi getWorkflowExecutionServiceApi(String wesUrl) {
+        WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
+        ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
+
+        //String wesUrl = optVal(args, "--wes-url", null);
+        if (wesUrl != null && !wesUrl.isEmpty()) {
+            INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+            SubnodeConfiguration configSubNode = null;
+            try {
+                configSubNode = config.getSection("WES");
+            } catch (Exception e) {
+                //?????what should the return code be?????
+                exceptionMessage(e, "Could not get WES section", ENTRY_NOT_FOUND);
+            }
+            String wesEndpointUrl = configSubNode.getString("url");
+            wesApiClient.setBasePath(wesEndpointUrl);
+        } else {
+            wesApiClient.setBasePath(wesUrl);
+        }
+
+        clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
+        return clientWorkflowExecutionServiceApi;
+    }
+
+    /**
+     * Processes Workflow Execution Schema (WES) commands.
+     *
+     * @param args Arguments entered into the CLI
+     */
+    public void processWesCommands(final List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            launchHelp();
+        } else {
+            String wesUrl = optVal(args, "--wes-url", null);
+            WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(wesUrl);
+            if (args.contains("launch")) {
+                launch(args);
+            } else if (args.contains("status")) {
+                String workflowId = reqVal(args, "--id");
+                try {
+                    clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
+                } catch (io.swagger.wes.client.ApiException e) {
+                    e.printStackTrace();
+                }
+            } else if (args.contains("cancel")) {
+                String workflowId = reqVal(args, "--id");
+                try {
+                    clientWorkflowExecutionServiceApi.cancelRun(workflowId);
+                } catch (io.swagger.wes.client.ApiException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+
+    /**
      * Launches tools and workflows.
      *
      * @param args Arguments entered into the CLI
@@ -941,8 +1009,11 @@ public abstract class AbstractEntryClient<T> {
         if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)) {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
+
+
         CWLClient client = new CWLClient(this);
-        client.launch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, uuid);
+        String wesUrl = optVal(args, "--wes-url", null);
+        client.launch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, uuid, wesUrl);
     }
 
     /**
@@ -987,14 +1058,17 @@ public abstract class AbstractEntryClient<T> {
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
         final String uuid = optVal(args, "--uuid", null);
         WDLClient client = new WDLClient(this);
-        client.launch(entry, isLocalEntry, yamlRun, jsonRun, null, wdlOutputTarget, uuid);
+
+        String wesUrl = optVal(args, "--wes-url", null);
+        client.launch(entry, isLocalEntry, yamlRun, jsonRun, null, wdlOutputTarget, uuid, wesUrl);
     }
 
     private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);
-        client.launch(entry, isLocalEntry, null, json, null, null, uuid);
+        String wesUrl = optVal(args, "--wes-url", null);
+        client.launch(entry, isLocalEntry, null, json, null, null, uuid, wesUrl);
     }
 
     private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {
