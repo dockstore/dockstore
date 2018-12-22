@@ -156,7 +156,7 @@ public class WDLClient implements LanguageClientInterface {
             WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(abstractEntryClient.getConfigFile());
             Gson gson = new Gson();
             // Don't care whether it's actually a yaml or already a json, just convert to json anyways
-            String jsonString = abstractEntryClient.convertYAMLtoJSON(jsonRun != null ? jsonRun : yamlRun);
+            String jsonString = abstractEntryClient.fileToJSON(jsonRun != null ? jsonRun : yamlRun);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
             final List<String> wdlRun;
 

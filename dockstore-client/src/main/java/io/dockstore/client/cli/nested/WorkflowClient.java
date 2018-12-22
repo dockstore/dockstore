@@ -396,6 +396,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         this.jCommander.parse(both);
         String entry = commandLaunch.entry;
         String localEntry = commandLaunch.localEntry;
+        preValidateLaunchArguments(args);
         String jsonRun = commandLaunch.json;
         String yamlRun = commandLaunch.yaml;
         String tsvRun = commandLaunch.tsv;
@@ -409,12 +410,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
         } else {
             if ((entry == null) != (localEntry == null)) {
-                if (jsonRun != null) {
-                    validateInputFile(jsonRun);
-                }
-                if (yamlRun != null) {
-                    validateInputFile(yamlRun);
-                }
                 if (entry != null) {
                     String[] parts = entry.split(":");
                     String path = parts[0];
@@ -440,7 +435,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                             if (jsonRun == null) {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {
-                                //validateInputFile(jsonRun);
                                 try {
                                     languageClientInterface.launch(entry, false, null, jsonRun, null, wdlOutputTarget, uuid);
                                 } catch (Exception e) {
