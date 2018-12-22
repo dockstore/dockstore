@@ -1204,47 +1204,7 @@ public class LaunchTestIT {
 
         runClientCommand(args, false);
         exit.checkAssertionAfterwards(() ->
-                assertTrue("output should include an error message", systemErrRule.getLog().contains("\"outputs section is not valid\""))
+            assertTrue("output should include an error message", systemErrRule.getLog().contains("\"outputs section is not valid\""))
         );
-    }
-    @Test
-    public void MalJsonWorkflowWdlLocal() {
-        //checks if json input has broken syntax
-
-        File helloWdl = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
-        File jsonFile = new File(ResourceHelpers.resourceFilePath("testInvalidJSON.json"));
-        ArrayList<String> args = new ArrayList<String>() {{
-            add("workflow");
-            add("launch");
-            add("--local-entry");
-            add(helloWdl.getAbsolutePath());
-            add("--json");
-            add(jsonFile.getAbsolutePath());
-        }};
-        exit.expectSystemExit();
-        exit.checkAssertionAfterwards(() ->
-                assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch entry, invalid syntax in " + jsonFile))
-        );
-        runClientCommand(args, false);
-    }
-    @Test
-    public void MalJsonToolWdlLocal() {
-        //checks if json input has broken syntax
-
-        File helloWdl = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
-        File jsonFile = new File(ResourceHelpers.resourceFilePath("testInvalidJSON.json"));
-        ArrayList<String> args = new ArrayList<String>() {{
-            add("tool");
-            add("launch");
-            add("--local-entry");
-            add(helloWdl.getAbsolutePath());
-            add("--json");
-            add(jsonFile.getAbsolutePath());
-        }};
-        exit.expectSystemExit();
-        exit.checkAssertionAfterwards(() ->
-                assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch entry, invalid syntax in " + jsonFile))
-        );
-        runClientCommand(args, false);
     }
 }
