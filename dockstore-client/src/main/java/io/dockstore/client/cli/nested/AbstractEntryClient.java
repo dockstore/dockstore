@@ -908,9 +908,9 @@ public abstract class AbstractEntryClient<T> {
             try {
                 fileToJSON(yamlFile);
             } catch (ParserException ex) {
-                errorMessage("Syntax error in json", CLIENT_ERROR);
+                errorMessage("Syntax error in yaml", CLIENT_ERROR);
             } catch (IOException e) {
-                errorMessage("Syntax error in json", CLIENT_ERROR);
+                errorMessage("Syntax error in yaml", CLIENT_ERROR);
             }
         }
     }
