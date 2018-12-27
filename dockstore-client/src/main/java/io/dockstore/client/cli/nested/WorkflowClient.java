@@ -390,6 +390,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     @Override
     public void launch(final List<String> args) {
         String commandName = "launch";
+        preValidateLaunchArguments(args);
         String[] argv = args.toArray(new String[0]);
         String[] argv1 = { commandName };
         String[] both = ArrayUtils.addAll(argv1, argv);
@@ -401,7 +402,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         String tsvRun = commandLaunch.tsv;
         String wdlOutputTarget = commandLaunch.wdlOutputTarget;
         String uuid = commandLaunch.uuid;
-        preValidateLaunchArguments(args);
+
 
         // trim the final slash on output if it is present, probably an error ( https://github.com/aws/aws-cli/issues/421 ) causes a double slash which can fail
         wdlOutputTarget = wdlOutputTarget != null ? wdlOutputTarget.replaceAll("/$", "") : null;
