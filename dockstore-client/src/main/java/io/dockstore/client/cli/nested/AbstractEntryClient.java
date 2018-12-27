@@ -898,9 +898,9 @@ public abstract class AbstractEntryClient<T> {
             try {
                 fileToJSON(jsonFile);
             } catch (ParserException ex) {
-                errorMessage("Syntax error in json", CLIENT_ERROR);
+                errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
             } catch (IOException e) {
-                errorMessage("Syntax error in json", CLIENT_ERROR);
+                errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
             }
         }
         if (args.contains("--yaml")) {
@@ -908,9 +908,9 @@ public abstract class AbstractEntryClient<T> {
             try {
                 fileToJSON(yamlFile);
             } catch (ParserException ex) {
-                errorMessage("Syntax error in yaml", CLIENT_ERROR);
+                errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
             } catch (IOException e) {
-                errorMessage("Syntax error in yaml", CLIENT_ERROR);
+                errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
             }
         }
     }

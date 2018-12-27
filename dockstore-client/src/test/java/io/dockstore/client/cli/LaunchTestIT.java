@@ -1208,9 +1208,8 @@ public class LaunchTestIT {
         );
     }
     @Test
-    public void MalJsonWorkflowWdlLocal() {
-        //checks if json input has broken syntax
-
+    public void malJsonWorkflowWdlLocal() {
+        //checks if json input has broken syntax for workflows
         File helloWdl = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
         File jsonFile = new File(ResourceHelpers.resourceFilePath("testInvalidJSON.json"));
         ArrayList<String> args = new ArrayList<String>() {{
@@ -1223,14 +1222,13 @@ public class LaunchTestIT {
         }};
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(() ->
-                assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch entry, invalid syntax in " + jsonFile))
+                assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch, syntax error in json file: " + jsonFile))
         );
         runClientCommand(args, false);
     }
     @Test
-    public void MalJsonToolWdlLocal() {
-        //checks if json input has broken syntax
-
+    public void malJsonToolWdlLocal() {
+        //checks if json input has broken syntax for tools
         File helloWdl = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
         File jsonFile = new File(ResourceHelpers.resourceFilePath("testInvalidJSON.json"));
         ArrayList<String> args = new ArrayList<String>() {{
@@ -1243,7 +1241,7 @@ public class LaunchTestIT {
         }};
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(() ->
-                assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch entry, invalid syntax in " + jsonFile))
+                assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch, syntax error in json file: " + jsonFile))
         );
         runClientCommand(args, false);
     }
