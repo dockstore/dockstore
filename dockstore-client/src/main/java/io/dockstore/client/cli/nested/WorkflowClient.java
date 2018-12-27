@@ -58,7 +58,6 @@ import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.parser.ParserException;
 
 import static io.dockstore.client.cli.ArgumentUtility.DESCRIPTION_HEADER;
 import static io.dockstore.client.cli.ArgumentUtility.GIT_HEADER;

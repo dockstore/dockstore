@@ -1210,6 +1210,7 @@ public class LaunchTestIT {
     @Test
     public void malJsonWorkflowWdlLocal() {
         //checks if json input has broken syntax for workflows
+
         File helloWdl = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
         File jsonFile = new File(ResourceHelpers.resourceFilePath("testInvalidJSON.json"));
         ArrayList<String> args = new ArrayList<String>() {{
@@ -1229,6 +1230,7 @@ public class LaunchTestIT {
     @Test
     public void malJsonToolWdlLocal() {
         //checks if json input has broken syntax for tools
+
         File helloWdl = new File(ResourceHelpers.resourceFilePath("hello.wdl"));
         File jsonFile = new File(ResourceHelpers.resourceFilePath("testInvalidJSON.json"));
         ArrayList<String> args = new ArrayList<String>() {{
