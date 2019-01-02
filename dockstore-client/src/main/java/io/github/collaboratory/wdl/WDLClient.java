@@ -123,6 +123,7 @@ public class WDLClient implements LanguageClientInterface {
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid)
         throws ApiException {
+        this.abstractEntryClient.loadDockerImages();
 
         boolean hasRequiredFlags = ((yamlRun != null || jsonRun != null) && ((yamlRun != null) != (jsonRun != null)) && csvRuns == null);
         if (!hasRequiredFlags) {
