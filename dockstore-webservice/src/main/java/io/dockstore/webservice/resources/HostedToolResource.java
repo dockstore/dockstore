@@ -34,7 +34,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.VersionValidation;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
@@ -150,24 +150,24 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
         Set<SourceFile> sourceFiles = version.getSourceFiles();
 
         ImmutablePair validDockerfile = validateDockerfile(sourceFiles);
-        VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile);
-        version.addOrUpdateVersionValidation(dockerfileValidation);
+        Validation dockerfileValidation = new Validation(SourceFile.FileType.DOCKERFILE, validDockerfile);
+        version.addOrUpdateValidation(dockerfileValidation);
 
         ImmutablePair validCWLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateToolSet(sourceFiles, "/Dockstore.cwl");
-        VersionValidation cwlValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_CWL, validCWLDescriptorSet);
-        version.addOrUpdateVersionValidation(cwlValidation);
+        Validation cwlValidation = new Validation(SourceFile.FileType.DOCKSTORE_CWL, validCWLDescriptorSet);
+        version.addOrUpdateValidation(cwlValidation);
 
         ImmutablePair validCWLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_CWL).validateTestParameterSet(sourceFiles);
-        VersionValidation cwlTestParameterValidation = new VersionValidation(SourceFile.FileType.CWL_TEST_JSON, validCWLTestParameterSet);
-        version.addOrUpdateVersionValidation(cwlTestParameterValidation);
+        Validation cwlTestParameterValidation = new Validation(SourceFile.FileType.CWL_TEST_JSON, validCWLTestParameterSet);
+        version.addOrUpdateValidation(cwlTestParameterValidation);
 
         ImmutablePair validWDLDescriptorSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateToolSet(sourceFiles, "/Dockstore.wdl");
-        VersionValidation wdlValidation = new VersionValidation(SourceFile.FileType.DOCKSTORE_WDL, validWDLDescriptorSet);
-        version.addOrUpdateVersionValidation(wdlValidation);
+        Validation wdlValidation = new Validation(SourceFile.FileType.DOCKSTORE_WDL, validWDLDescriptorSet);
+        version.addOrUpdateValidation(wdlValidation);
 
         ImmutablePair validWDLTestParameterSet = LanguageHandlerFactory.getInterface(SourceFile.FileType.DOCKSTORE_WDL).validateTestParameterSet(sourceFiles);
-        VersionValidation wdlTestParameterValidation = new VersionValidation(SourceFile.FileType.WDL_TEST_JSON, validWDLTestParameterSet);
-        version.addOrUpdateVersionValidation(wdlTestParameterValidation);
+        Validation wdlTestParameterValidation = new Validation(SourceFile.FileType.WDL_TEST_JSON, validWDLTestParameterSet);
+        version.addOrUpdateValidation(wdlTestParameterValidation);
 
         return version;
     }
@@ -193,12 +193,12 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
      */
     @Override
     protected boolean isValidVersion(Tag tag) {
-        SortedSet<VersionValidation> versionValidations = tag.getValidations();
-        boolean validDockerfile = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKERFILE);
-        boolean validCwl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_CWL);
-        boolean validWdl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_WDL);
-        boolean validCwlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.CWL_TEST_JSON);
-        boolean validWdlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.WDL_TEST_JSON);
+        SortedSet<Validation> validations = tag.getValidations();
+        boolean validDockerfile = isVersionTypeValidated(validations, SourceFile.FileType.DOCKERFILE);
+        boolean validCwl = isVersionTypeValidated(validations, SourceFile.FileType.DOCKSTORE_CWL);
+        boolean validWdl = isVersionTypeValidated(validations, SourceFile.FileType.DOCKSTORE_WDL);
+        boolean validCwlTestParameters = isVersionTypeValidated(validations, SourceFile.FileType.CWL_TEST_JSON);
+        boolean validWdlTestParameters = isVersionTypeValidated(validations, SourceFile.FileType.WDL_TEST_JSON);
 
         boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
         boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
@@ -208,14 +208,14 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
 
     /**
      * A helper function which finds the first sourcefile of a given type and returns whether or not it is valid
-     * @param versionValidations Set of version validations
+     * @param validations Set of version validations
      * @param fileType FileType to look for
      * @return True if sourcefile exists and is valid, false otherwise
      */
-    protected boolean isVersionTypeValidated(SortedSet<VersionValidation> versionValidations, SourceFile.FileType fileType) {
-        Optional<VersionValidation> foundFile = versionValidations
+    protected boolean isVersionTypeValidated(SortedSet<Validation> validations, SourceFile.FileType fileType) {
+        Optional<Validation> foundFile = validations
                 .stream()
-                .filter(versionValidation -> Objects.equals(versionValidation.getType(), fileType))
+                .filter(Validation -> Objects.equals(Validation.getType(), fileType))
                 .findFirst();
 
         return foundFile.isPresent() && foundFile.get().isValid();

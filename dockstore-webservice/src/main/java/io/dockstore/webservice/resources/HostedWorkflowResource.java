@@ -33,7 +33,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.VersionValidation;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -190,14 +190,14 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
         // Validate descriptor set
         ImmutablePair validDescriptorSet;
-        VersionValidation descriptorValidation;
+        Validation descriptorValidation;
         if (mainDescriptor.isPresent()) {
             validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
         } else {
             validDescriptorSet = new ImmutablePair(false, "Missing the primary descriptor.");
         }
-        descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet);
-        version.addOrUpdateVersionValidation(descriptorValidation);
+        descriptorValidation = new Validation(identifiedType, validDescriptorSet);
+        version.addOrUpdateValidation(descriptorValidation);
 
         // Validate test parameter set
         SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
@@ -205,8 +205,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
             testParameterType = SourceFile.FileType.WDL_TEST_JSON;
         }
         ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-        VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet);
-        version.addOrUpdateVersionValidation(testParameterValidation);
+        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+        version.addOrUpdateValidation(testParameterValidation);
 
         return version;
     }
@@ -218,7 +218,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
      */
     @Override
     protected boolean isValidVersion(WorkflowVersion version) {
-        return !version.getValidations().stream().filter(versionValidation -> !versionValidation.isValid()).findFirst().isPresent();
+        return !version.getValidations().stream().filter(Validation -> !Validation.isValid()).findFirst().isPresent();
     }
 
     @Override

@@ -39,7 +39,7 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.VersionValidation;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -547,12 +547,12 @@ public abstract class SourceCodeRepoInterface {
 
         if (mainDescriptor.isPresent()) {
             ImmutablePair validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
-            VersionValidation descriptorValidation = new VersionValidation(identifiedType, validDescriptorSet);
-            version.addOrUpdateVersionValidation(descriptorValidation);
+            Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
+            version.addOrUpdateValidation(descriptorValidation);
         } else {
             ImmutablePair noPrimaryDescriptor = new ImmutablePair(false, "Missing the primary descriptor.");
-            VersionValidation noPrimaryDescriptorValidation = new VersionValidation(identifiedType, noPrimaryDescriptor);
-            version.addOrUpdateVersionValidation(noPrimaryDescriptorValidation);
+            Validation noPrimaryDescriptorValidation = new Validation(identifiedType, noPrimaryDescriptor);
+            version.addOrUpdateValidation(noPrimaryDescriptorValidation);
         }
 
         SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
@@ -561,8 +561,8 @@ public abstract class SourceCodeRepoInterface {
         }
 
         ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-        VersionValidation testParameterValidation = new VersionValidation(testParameterType, validTestParameterSet);
-        version.addOrUpdateVersionValidation(testParameterValidation);
+        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+        version.addOrUpdateValidation(testParameterValidation);
 
         version.setValid(isValidVersion(version));
 

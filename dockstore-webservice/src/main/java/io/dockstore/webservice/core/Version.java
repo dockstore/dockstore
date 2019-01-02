@@ -161,7 +161,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @ApiModelProperty(value = "Cached validations for each version.")
     @OrderBy("type")
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)
-    private final SortedSet<VersionValidation> validations;
+    private final SortedSet<Validation> validations;
 
     public Version() {
         sourceFiles = new TreeSet<>();
@@ -244,12 +244,12 @@ public abstract class Version<T extends Version> implements Comparable<T> {
         sourceFiles.add(file);
     }
 
-    public SortedSet<VersionValidation> getValidations() {
+    public SortedSet<Validation> getValidations() {
         return validations;
     }
 
-    public void addOrUpdateVersionValidation(VersionValidation versionValidation) {
-        Optional<VersionValidation> matchingValidation = getValidations().stream().filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
+    public void addOrUpdateValidation(Validation versionValidation) {
+        Optional<Validation> matchingValidation = getValidations().stream().filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
         if (matchingValidation.isPresent()) {
             matchingValidation.get().setMessage(versionValidation.getMessage());
             matchingValidation.get().setValid(versionValidation.isValid());

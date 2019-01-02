@@ -41,7 +41,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
-import io.dockstore.webservice.core.VersionValidation;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.ElasticManager;
@@ -219,7 +219,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     protected String createValidationMessages(U version) {
         StringBuilder result = new StringBuilder();
         int count = 1;
-        for (VersionValidation versionValidation : version.getValidations()) {
+        for (Validation versionValidation : version.getValidations()) {
             if (!versionValidation.isValid() && versionValidation.getMessage() != null) {
                 result.append(count + ") " + versionValidation.getMessage());
                 count++;

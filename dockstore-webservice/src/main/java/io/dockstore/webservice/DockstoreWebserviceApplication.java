@@ -40,7 +40,7 @@ import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.VersionValidation;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
@@ -123,7 +123,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
-            WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class, Event.class, VersionValidation.class) {
+            WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class, Event.class, Validation.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();

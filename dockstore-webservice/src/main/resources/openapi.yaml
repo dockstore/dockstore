@@ -6013,7 +6013,7 @@ components:
           description: Cached validations for each version.
           uniqueItems: true
           items:
-            $ref: '#/components/schemas/VersionValidation'
+            $ref: '#/components/schemas/Validation'
         last_modified:
           type: string
           format: date-time
@@ -6482,25 +6482,7 @@ components:
           type: boolean
           description: Indicates whether this user has accepted their username
       description: End users for the dockstore
-    VerificationInformation:
-      type: object
-      properties:
-        verified:
-          type: boolean
-        metadata:
-          type: string
-        platformVersion:
-          type: string
-    VerifyRequest:
-      type: object
-      properties:
-        verify:
-          type: boolean
-          readOnly: true
-        verifiedSource:
-          type: string
-          readOnly: true
-    VersionValidation:
+    Validation:
       type: object
       required:
         - id
@@ -6530,6 +6512,24 @@ components:
         message:
           type: string
           description: Validation message
+    VerificationInformation:
+      type: object
+      properties:
+        verified:
+          type: boolean
+        metadata:
+          type: string
+        platformVersion:
+          type: string
+    VerifyRequest:
+      type: object
+      properties:
+        verify:
+          type: boolean
+          readOnly: true
+        verifiedSource:
+          type: string
+          readOnly: true
     Workflow:
       type: object
       required:
@@ -6723,7 +6723,7 @@ components:
           description: Cached validations for each version.
           uniqueItems: true
           items:
-            $ref: '#/components/schemas/VersionValidation'
+            $ref: '#/components/schemas/Validation'
         workingDirectory:
           type: string
         last_modified:

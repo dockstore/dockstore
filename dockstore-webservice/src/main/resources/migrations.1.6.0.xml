@@ -114,20 +114,20 @@
     </changeSet>
 
 
-    <changeSet author="aduncan (generated)" id="AddVersionValidationJoinTable">
-        <createTable tableName="version_versionvalidation">
+    <changeSet author="aduncan" id="AddValidationJoinTable">
+        <createTable tableName="version_validation">
             <column name="versionid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="version_versionvalidation_pkey"/>
+                <constraints primaryKey="true" primaryKeyName="version_validation_pkey"/>
             </column>
-            <column name="versionvalidationid" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="version_versionvalidation_pkey"/>
+            <column name="validationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_validation_pkey"/>
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="AddVersionValidationTable">
-        <createTable tableName="versionvalidation">
+    <changeSet author="aduncan" id="AddValidationTable">
+        <createTable tableName="validation">
             <column autoIncrement="true" name="id" type="BIGSERIAL">
-                <constraints primaryKey="true" primaryKeyName="versionvalidation_pkey"/>
+                <constraints primaryKey="true" primaryKeyName="validation_pkey"/>
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
@@ -136,11 +136,11 @@
             <column name="valid" type="BOOLEAN"/>
         </createTable>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="AddJoinVersionValidationConstraint">
-        <addUniqueConstraint columnNames="versionvalidationid" constraintName="uk_versionvalidationid" tableName="version_versionvalidation"/>
+    <changeSet author="aduncan" id="AddJoinValidationConstraint">
+        <addUniqueConstraint columnNames="validationid" constraintName="uk_validationid" tableName="version_validation"/>
     </changeSet>
-    <changeSet author="aduncan (generated)" id="AddVersionValidationIdConstraint">
-        <addForeignKeyConstraint baseColumnNames="versionvalidationid" baseTableName="version_versionvalidation" constraintName="fkversionvalidationid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="versionvalidation"/>
+    <changeSet author="aduncan" id="AddValidationIdConstraint">
+        <addForeignKeyConstraint baseColumnNames="validationid" baseTableName="version_validation" constraintName="fkvalidationid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation"/>
     </changeSet>
 
 </databaseChangeLog>

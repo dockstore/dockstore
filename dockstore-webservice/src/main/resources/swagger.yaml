@@ -5574,7 +5574,7 @@ definitions:
         description: "Cached validations for each version."
         uniqueItems: true
         items:
-          $ref: "#/definitions/VersionValidation"
+          $ref: "#/definitions/Validation"
       last_modified:
         type: "string"
         format: "date-time"
@@ -6041,25 +6041,7 @@ definitions:
         position: 12
         description: "Indicates whether this user has accepted their username"
     description: "End users for the dockstore"
-  VerificationInformation:
-    type: "object"
-    properties:
-      verified:
-        type: "boolean"
-      metadata:
-        type: "string"
-      platformVersion:
-        type: "string"
-  VerifyRequest:
-    type: "object"
-    properties:
-      verify:
-        type: "boolean"
-        readOnly: true
-      verifiedSource:
-        type: "string"
-        readOnly: true
-  VersionValidation:
+  Validation:
     type: "object"
     required:
     - "id"
@@ -6092,6 +6074,24 @@ definitions:
         type: "string"
         position: 3
         description: "Validation message"
+  VerificationInformation:
+    type: "object"
+    properties:
+      verified:
+        type: "boolean"
+      metadata:
+        type: "string"
+      platformVersion:
+        type: "string"
+  VerifyRequest:
+    type: "object"
+    properties:
+      verify:
+        type: "boolean"
+        readOnly: true
+      verifiedSource:
+        type: "string"
+        readOnly: true
   Workflow:
     type: "object"
     required:
@@ -6298,7 +6298,7 @@ definitions:
         description: "Cached validations for each version."
         uniqueItems: true
         items:
-          $ref: "#/definitions/VersionValidation"
+          $ref: "#/definitions/Validation"
       workingDirectory:
         type: "string"
       last_modified:

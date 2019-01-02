@@ -41,7 +41,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
-import io.dockstore.webservice.core.VersionValidation;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
@@ -441,7 +441,7 @@ public abstract class AbstractImageRegistry {
      * @return True if valid tag, false otherwise
      */
     private boolean isValidVersion(Tag tag) {
-        SortedSet<VersionValidation> versionValidations = tag.getValidations();
+        SortedSet<Validation> versionValidations = tag.getValidations();
         boolean validDockerfile = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKERFILE);
         boolean validCwl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_CWL);
         boolean validWdl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_WDL);
@@ -460,8 +460,8 @@ public abstract class AbstractImageRegistry {
      * @param fileType File Type to look for
      * @return True if exists and valid, false otherwise
      */
-    private boolean isVersionTypeValidated(SortedSet<VersionValidation> versionValidations, SourceFile.FileType fileType) {
-        Optional<VersionValidation> foundFile = versionValidations
+    private boolean isVersionTypeValidated(SortedSet<Validation> versionValidations, SourceFile.FileType fileType) {
+        Optional<Validation> foundFile = versionValidations
                 .stream()
                 .filter(versionValidation -> Objects.equals(versionValidation.getType(), fileType))
                 .findFirst();
@@ -484,8 +484,8 @@ public abstract class AbstractImageRegistry {
         } else {
             validDockerfile = new ImmutablePair<>(false, "Missing a Dockerfile.");
         }
-        VersionValidation dockerfileValidation = new VersionValidation(SourceFile.FileType.DOCKERFILE, validDockerfile);
-        tag.addOrUpdateVersionValidation(dockerfileValidation);
+        Validation dockerfileValidation = new Validation(SourceFile.FileType.DOCKERFILE, validDockerfile);
+        tag.addOrUpdateValidation(dockerfileValidation);
         return tag;
     }
 
@@ -499,15 +499,15 @@ public abstract class AbstractImageRegistry {
     private Tag validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
         ImmutablePair isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
                 .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
-        VersionValidation descriptorValidation = new VersionValidation(fileType, isValidDescriptor);
-        tag.addOrUpdateVersionValidation(descriptorValidation);
+        Validation descriptorValidation = new Validation(fileType, isValidDescriptor);
+        tag.addOrUpdateValidation(descriptorValidation);
 
         SourceFile.FileType testParamType = Objects.equals(fileType, SourceFile.FileType.DOCKSTORE_WDL) ? SourceFile.FileType.WDL_TEST_JSON : SourceFile.FileType.CWL_TEST_JSON;
 
         ImmutablePair isValidTestParameter = LanguageHandlerFactory.getInterface(fileType)
                 .validateTestParameterSet(tag.getSourceFiles());
-        VersionValidation testParameterValidation = new VersionValidation(testParamType, isValidTestParameter);
-        tag.addOrUpdateVersionValidation(testParameterValidation);
+        Validation testParameterValidation = new Validation(testParamType, isValidTestParameter);
+        tag.addOrUpdateValidation(testParameterValidation);
 
         return tag;
     }

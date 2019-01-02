@@ -41,11 +41,11 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author aduncan
  * @since 1.6.0
  */
-@ApiModel("VersionValidation")
+@ApiModel("Validation")
 @Entity
-@Table(name = "versionvalidation")
+@Table(name = "validation")
 @SuppressWarnings("checkstyle:magicnumber")
-public class VersionValidation implements Comparable<VersionValidation> {
+public class Validation implements Comparable<Validation> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -73,23 +73,23 @@ public class VersionValidation implements Comparable<VersionValidation> {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public VersionValidation() {
+    public Validation() {
 
     }
 
-    public VersionValidation(SourceFile.FileType fileType, boolean valid, String message) {
+    public Validation(SourceFile.FileType fileType, boolean valid, String message) {
         this.type = fileType;
         this.valid = valid;
         this.message = message;
     }
 
-    public VersionValidation(VersionValidation versionValidation) {
+    public Validation(Validation versionValidation) {
         this.type = versionValidation.getType();
         this.valid = versionValidation.isValid();
         this.message = versionValidation.getMessage();
     }
 
-    public VersionValidation(SourceFile.FileType fileType, ImmutablePair<Boolean, String> validMessagePair) {
+    public Validation(SourceFile.FileType fileType, ImmutablePair<Boolean, String> validMessagePair) {
         this.type = fileType;
         this.valid = validMessagePair.getKey();
         this.message = validMessagePair.getValue();
@@ -133,14 +133,14 @@ public class VersionValidation implements Comparable<VersionValidation> {
         this.type = type;
     }
 
-    public void update(VersionValidation versionValidation) {
+    public void update(Validation versionValidation) {
         type = versionValidation.type;
         valid = versionValidation.valid;
         message = versionValidation.message;
     }
 
     @Override
-    public int compareTo(VersionValidation that) {
+    public int compareTo(Validation that) {
         return ComparisonChain.start().compare(this.type, that.type).result();
     }
 
@@ -151,6 +151,6 @@ public class VersionValidation implements Comparable<VersionValidation> {
 
     @Override
     public boolean equals(Object obj) {
-        return Objects.equals(((VersionValidation)obj).getType(), getType());
+        return Objects.equals(((Validation)obj).getType(), getType());
     }
 }
