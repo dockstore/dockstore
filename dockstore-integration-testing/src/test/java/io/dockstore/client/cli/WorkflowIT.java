@@ -718,6 +718,7 @@ public class WorkflowIT extends BaseIT {
         assertEquals(1, filteredLowercase.size());
         List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE" , "stars", null);
         assertEquals(1, filteredUppercase.size());
+        assertEquals(filteredLowercase, filteredUppercase);
     }
 
     /**

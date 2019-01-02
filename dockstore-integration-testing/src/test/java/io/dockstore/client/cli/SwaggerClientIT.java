@@ -143,6 +143,7 @@ public class SwaggerClientIT extends BaseIT {
         assertEquals(1, pagedToolsLowercase.size());
         List<DockstoreTool> pagedToolsUppercase = containersApi.allPublishedContainers("0", 1, "TEST", "stars", "desc");
         assertEquals(1, pagedToolsUppercase.size());
+        assertEquals(pagedToolsLowercase, pagedToolsUppercase);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         assertFalse(container.isIsPublished());
