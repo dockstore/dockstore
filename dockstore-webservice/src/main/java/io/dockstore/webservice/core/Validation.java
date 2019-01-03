@@ -63,7 +63,7 @@ public class Validation implements Comparable<Validation> {
     private Boolean valid = false;
 
     @Column
-    @ApiModelProperty(value = "Validation message object", required = true, position = 3)
+    @ApiModelProperty(value = "Mapping of filepath to validation message", required = true, position = 3)
     private String message;
 
     // database timestamps
