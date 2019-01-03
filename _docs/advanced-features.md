@@ -54,7 +54,7 @@ Get more information on the implementing plugin at [s3-plugin](https://github.co
 
 ### ICGC Storage
 
-For ICGC Storage, configure the location of the client using the configuration key `dockstore-file-icgc-storage-client-plugin.client` in `~/.dockstore/config` under the section `[dockstore-file-icgc-storage-client-plugin]`. Then configure the ICGC storage client as documented [here](http://docs.icgc.org/cloud/guide/#configuration).
+For ICGC Storage, configure the location of the client using the configuration key `dockstore-file-icgc-storage-client-plugin.client` in `~/.dockstore/config` under the section `[dockstore-file-icgc-storage-client-plugin]`. Then configure the ICGC storage client as documented [here](https://docs.icgc.org/download/guide/#configuration).
 
 Get more information on the implementing plugin at [icgc-storage-client-plugin](https://github.com/dockstore/icgc-storage-client-plugin).
 

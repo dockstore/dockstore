@@ -11,7 +11,7 @@ permalink: /faq/
 The Dockstore CLI has utilities to generate JSON parameter files from entries on Dockstore (`dockstore tool convert`).
 
 When launching tools, the Dockstore CLI makes it easy to specify entries from Dockstore.
-We can also provision input and output files using HTTP, FTP, and S3. We also have preliminary support for [Synapse](https://www.synapse.org/) and the [ICGC Storage client](http://docs.icgc.org/cloud/guide/#storage-client-usage). Please see [file provisioning plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) for more information on these two file transfer sources.
+We can also provision input and output files using HTTP, FTP, and S3. We also have preliminary support for [Synapse](https://www.synapse.org/) and the [ICGC Storage client](https://docs.icgc.org/download/guide/#score-client-usage). Please see [file provisioning plugins](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent) for more information on these two file transfer sources.
 
 ## What environment do you test tools in?
 
