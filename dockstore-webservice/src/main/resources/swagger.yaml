@@ -6073,7 +6073,7 @@ definitions:
       message:
         type: "string"
         position: 3
-        description: "Validation message"
+        description: "Validation message object"
   VerificationInformation:
     type: "object"
     properties:

@@ -6511,7 +6511,7 @@ components:
           description: Is the file type valid
         message:
           type: string
-          description: Validation message
+          description: Validation message object
     VerificationInformation:
       type: object
       properties:

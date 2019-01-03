@@ -198,17 +198,21 @@ public class WDLHandler implements LanguageHandlerInterface {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_WDL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
 
+        Map<String, String> validationMessageObject = new HashMap<>();
+
         if (filteredSourceFiles.size() > 0) {
             try {
                 Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
 
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
-                        return new ImmutablePair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' has no content. Please make it a valid WDL document if you want to save.");
+                        validationMessageObject.put(primaryDescriptorFilePath, "The primary descriptor '" + primaryDescriptorFilePath + "' has no content. Please make it a valid WDL document if you want to save.");
+                        return new ImmutablePair<>(false, validationMessageObject);
                     }
                     mainDescriptor = primaryDescriptor.get().getContent();
                 } else {
-                    return new ImmutablePair<>(false, "The primary descriptor '" + primaryDescriptorFilePath + "' could not be found.");
+                    validationMessageObject.put(primaryDescriptorFilePath, "The primary descriptor '" + primaryDescriptorFilePath + "' could not be found.");
+                    return new ImmutablePair<>(false, validationMessageObject);
                 }
 
                 Map<String, String> secondaryDescContent = new HashMap<>();
@@ -217,12 +221,13 @@ public class WDLHandler implements LanguageHandlerInterface {
                         if (sourceFile.getContent() != null) {
                             if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
                                 if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
-                                    return new ImmutablePair(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
+                                    validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
                                 } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
-                                    return new ImmutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
+                                    validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
                                 } else {
-                                    return new ImmutablePair<>(false, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
+                                    validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
                                 }
+                                return new ImmutablePair<>(false, validationMessageObject);
                             }
                             secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
                         }
@@ -238,16 +243,19 @@ public class WDLHandler implements LanguageHandlerInterface {
                     bridge.isValidWorkflow(tempMainDescriptor);
                 }
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
-                return new ImmutablePair<>(false, e.getMessage());
+                validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
+                return new ImmutablePair<>(false, validationMessageObject);
             } catch (NullPointerException e) {
-                return new ImmutablePair<>(false, "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.");
+                validationMessageObject.put(primaryDescriptorFilePath, "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.");
+                return new ImmutablePair<>(false, validationMessageObject);
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
                 FileUtils.deleteQuietly(tempMainDescriptor);
             }
         } else {
-            return new ImmutablePair<>(false, "Primary WDL descriptor is not present.");
+            validationMessageObject.put(primaryDescriptorFilePath, "Primary WDL descriptor is not present.");
+            return new ImmutablePair<>(false, validationMessageObject);
         }
         return new ImmutablePair<>(true, null);
     }

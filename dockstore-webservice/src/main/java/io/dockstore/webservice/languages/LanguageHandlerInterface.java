@@ -119,20 +119,20 @@ public interface LanguageHandlerInterface {
      * @return Pair of isValid and validationMessage
      */
     default ImmutablePair checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
-        List<String> validationMessages = new ArrayList<>();
         Boolean isValid = true;
+        Map<String, String> validationMessageObject = new HashMap<>();
         for (SourceFile sourcefile : sourcefiles) {
             if (Objects.equals(sourcefile.getType(), fileType)) {
                 Yaml yaml = new Yaml();
                 try {
                     yaml.load(sourcefile.getContent());
                 } catch (YAMLException e) {
-                    validationMessages.add("'" + sourcefile.getPath() + "' validation failed - " + e.getMessage());
+                    validationMessageObject.put(sourcefile.getPath(), e.getMessage());
                     isValid = false;
                 }
             }
         }
-        return new ImmutablePair(isValid, validationMessages.size() > 0 ? validationMessages.toString() : null);
+        return new ImmutablePair(isValid, validationMessageObject);
     }
 
     /**

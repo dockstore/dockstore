@@ -550,7 +550,9 @@ public abstract class SourceCodeRepoInterface {
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
             version.addOrUpdateValidation(descriptorValidation);
         } else {
-            ImmutablePair noPrimaryDescriptor = new ImmutablePair(false, "Missing the primary descriptor.");
+            Map<String, String> validationMessage = new HashMap<>();
+            validationMessage.put(mainDescriptorPath, "Missing the primary descriptor.");
+            ImmutablePair noPrimaryDescriptor = new ImmutablePair(false, validationMessage);
             Validation noPrimaryDescriptorValidation = new Validation(identifiedType, noPrimaryDescriptor);
             version.addOrUpdateValidation(noPrimaryDescriptorValidation);
         }

@@ -691,6 +691,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
         Boolean isValid = true;
         String validationMessage = null;
+        Map<String, String> validationMessageObject = new HashMap<>();
 
         if (mainDescriptor.isPresent()) {
             Yaml yaml = new Yaml();
@@ -709,6 +710,8 @@ public class CWLHandler implements LanguageHandlerInterface {
             validationMessage = "Primary CWL descriptor is not present.";
             isValid = false;
         }
+
+        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
         return new ImmutablePair<>(isValid, validationMessage);
     }
 
@@ -720,6 +723,7 @@ public class CWLHandler implements LanguageHandlerInterface {
 
         Boolean isValid = true;
         String validationMessage = null;
+        Map<String, String> validationMessageObject = new HashMap<>();
 
         if (mainDescriptor.isPresent()) {
             Yaml yaml = new Yaml();
@@ -738,7 +742,9 @@ public class CWLHandler implements LanguageHandlerInterface {
             isValid = false;
             validationMessage = "Primary CWL descriptor is not present.";
         }
-        return new ImmutablePair(isValid, validationMessage);
+
+        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
+        return new ImmutablePair(isValid, validationMessageObject);
     }
 
     @Override

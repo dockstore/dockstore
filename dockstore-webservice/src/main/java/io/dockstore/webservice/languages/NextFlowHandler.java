@@ -406,27 +406,38 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     @Override
     public ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+        Map<String, String> validationMessageObject = new HashMap<>();
+        String validationMessage = null;
         String content;
         if (mainDescriptor.isPresent()) {
             content = mainDescriptor.get().getContent();
             if (content.contains("manifest")) {
                 return new ImmutablePair(true, null);
             } else {
-                return new ImmutablePair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.");
+                validationMessage = "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.";
             }
+        } else {
+            validationMessage = "Descriptor file '" + primaryDescriptorFilePath + "' not found.";
         }
-        return new ImmutablePair<>(false, "Descriptor file '" + primaryDescriptorFilePath + "' not found.");
+        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
+        return new ImmutablePair<>(false, validationMessageObject);
     }
 
     @Override
     public ImmutablePair validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         // Todo: Throw exception instead?
-        return new ImmutablePair<>(true, "Nextflow does not support tools.");
+        Map<String, String> validationMessageObject = new HashMap<>();
+        validationMessageObject.put(primaryDescriptorFilePath, "Nextflow does not support tools.");
+        return new ImmutablePair<>(true, validationMessageObject);
     }
 
     @Override
     public ImmutablePair validateTestParameterSet(Set<SourceFile> sourceFiles) {
         // Todo: Throw exception instead?
-        return new ImmutablePair<>(true, "Nextflow does not support test parameter files.");
+        Map<String, String> validationMessageObject = new HashMap<>();
+        for (SourceFile sourceFile : sourceFiles) {
+            validationMessageObject.put(sourceFile.getPath(), "Nextflow does not support test parameter files.");
+        }
+        return new ImmutablePair<>(true, validationMessageObject);
     }
 }

@@ -19,6 +19,7 @@ package io.dockstore.webservice.helpers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -476,13 +477,15 @@ public abstract class AbstractImageRegistry {
      * @return Tag with updated version validation for Dockerfile
      */
     private Tag validateTagDockerfile(Tag tag, boolean isPrivateAccess) {
-        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(sf -> Objects.equals(sf.getType(), SourceFile.FileType.DOCKERFILE));
+        Optional<SourceFile> dockerfile = tag.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKERFILE)).findFirst();
         ImmutablePair validDockerfile;
         // Private tools don't require a dockerfile
-        if (hasDockerfile || isPrivateAccess) {
+        if (dockerfile.isPresent() || isPrivateAccess) {
             validDockerfile = new ImmutablePair<>(true, null);
         } else {
-            validDockerfile = new ImmutablePair<>(false, "Missing a Dockerfile.");
+            Map<String, String> validationMessage = new HashMap<>();
+            validationMessage.put("/Dockerfile", "Missing a Dockerfile.");
+            validDockerfile = new ImmutablePair<>(false, validationMessage);
         }
         Validation dockerfileValidation = new Validation(SourceFile.FileType.DOCKERFILE, validDockerfile);
         tag.addOrUpdateValidation(dockerfileValidation);

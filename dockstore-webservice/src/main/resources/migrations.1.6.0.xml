@@ -113,6 +113,18 @@
         <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="event" constraintName="FKWorkflowId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
     </changeSet>
 
+    <changeSet author="aduncan" id="AddValidationTable">
+        <createTable tableName="validation">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="validation_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="message" type="VARCHAR(255)" remarks="A mapping of file path to message."/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="valid" type="BOOLEAN"/>
+        </createTable>
+    </changeSet>
 
     <changeSet author="aduncan" id="AddValidationJoinTable">
         <createTable tableName="version_validation">
@@ -124,18 +136,7 @@
             </column>
         </createTable>
     </changeSet>
-    <changeSet author="aduncan" id="AddValidationTable">
-        <createTable tableName="validation">
-            <column autoIncrement="true" name="id" type="BIGSERIAL">
-                <constraints primaryKey="true" primaryKeyName="validation_pkey"/>
-            </column>
-            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="message" type="TEXT"/>
-            <column name="type" type="VARCHAR(255)"/>
-            <column name="valid" type="BOOLEAN"/>
-        </createTable>
-    </changeSet>
+
     <changeSet author="aduncan" id="AddJoinValidationConstraint">
         <addUniqueConstraint columnNames="validationid" constraintName="uk_validationid" tableName="version_validation"/>
     </changeSet>

@@ -157,7 +157,7 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
     @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
-    @JoinTable(name = "version_versionvalidation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "versionvalidationid", referencedColumnName = "id"))
+    @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
     @ApiModelProperty(value = "Cached validations for each version.")
     @OrderBy("type")
     @Cascade(org.hibernate.annotations.CascadeType.DETACH)

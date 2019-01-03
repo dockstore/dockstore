@@ -17,6 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -35,6 +36,7 @@ import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.json.JSONObject;
 
 /**
  * This describes the validation information associated with one or more files for a version
@@ -60,9 +62,9 @@ public class Validation implements Comparable<Validation> {
     @ApiModelProperty(value = "Is the file type valid", required = true, position = 2)
     private Boolean valid = false;
 
-    @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "Validation message", required = true, position = 3)
-    private String message = null;
+    @Column
+    @ApiModelProperty(value = "Validation message object", required = true, position = 3)
+    private String message;
 
     // database timestamps
     @Column(updatable = false)
@@ -77,10 +79,10 @@ public class Validation implements Comparable<Validation> {
 
     }
 
-    public Validation(SourceFile.FileType fileType, boolean valid, String message) {
+    public Validation(SourceFile.FileType fileType, boolean valid, HashMap message) {
         this.type = fileType;
         this.valid = valid;
-        this.message = message;
+        this.message = new JSONObject(message).toString();
     }
 
     public Validation(Validation versionValidation) {
@@ -89,10 +91,10 @@ public class Validation implements Comparable<Validation> {
         this.message = versionValidation.getMessage();
     }
 
-    public Validation(SourceFile.FileType fileType, ImmutablePair<Boolean, String> validMessagePair) {
+    public Validation(SourceFile.FileType fileType, ImmutablePair<Boolean, HashMap> validMessagePair) {
         this.type = fileType;
         this.valid = validMessagePair.getKey();
-        this.message = validMessagePair.getValue();
+        this.message = new JSONObject(validMessagePair.getValue()).toString();
     }
 
     public long getId() {
