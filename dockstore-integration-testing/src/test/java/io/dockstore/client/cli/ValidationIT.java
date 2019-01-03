@@ -213,28 +213,28 @@ public class ValidationIT extends BaseIT {
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 
         // change to empty cwl - should be invalid
-        workflow.setWorkflowPath("empty.cwl");
+        workflow.setWorkflowPath("/empty.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be invalid", !isWorkflowVersionValid(workflow, "master"));
 
         // change to wrong version - should be invalid
-        workflow.setWorkflowPath("wrongVersion.cwl");
+        workflow.setWorkflowPath("/wrongVersion.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be invalid", !isWorkflowVersionValid(workflow, "master"));
 
         // change to tool - should be invalid
-        workflow.setWorkflowPath("validTool.cwl");
+        workflow.setWorkflowPath("/validTool.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be invalid", !isWorkflowVersionValid(workflow, "master"));
 
         // change back to valid workflow - should be valid
-        workflow.setWorkflowPath("validWorkflow.cwl");
+        workflow.setWorkflowPath("/validWorkflow.cwl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());

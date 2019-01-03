@@ -1198,7 +1198,7 @@ public class WorkflowIT extends BaseIT {
         });
 
         Workflow md5workflow = workflowApi
-            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
+            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/checker-workflow-wrapping-workflow.cwl",
                 "test", "cwl", null);
         workflowApi.refresh(md5workflow.getId());
         workflowApi.publish(md5workflow.getId(), new PublishRequest(){
