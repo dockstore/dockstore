@@ -712,7 +712,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
 
         validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
-        return new ImmutablePair<>(isValid, validationMessage);
+        return new ImmutablePair<>(isValid, validationMessageObject);
     }
 
     @Override

@@ -118,7 +118,7 @@
             </column>
             <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
             <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
-            <column name="message" type="VARCHAR(255)" remarks="A mapping of file path to message."/>
+            <column name="message" type="VARCHAR" remarks="A mapping of file path to message."/>
             <column name="type" type="VARCHAR(255)"/>
             <column name="valid" type="BOOLEAN"/>
         </createTable>
