@@ -5,6 +5,9 @@
 - title: WDL
   link: http://www.openwdl.org/
   img: /assets/images/wdl.png
+- title: Nextflow
+  link: https://www.nextflow.io/
+  img: /assets/images/nfl.png
 - title: DNAstack
   link: https://dnastack.com/
   img: /assets/images/dnastack.png

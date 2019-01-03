@@ -30,3 +30,11 @@ To add a new document to an existing section, do the following:
 ```
 3. Add to the appropriate list in `_data/docs.yml` the filename (not including extension)
 4. If the doc has images, place them in `assets/images/docs`
+
+## Building and Serving the site locally
+
+1. When checking out this branch, remove folder artifacts from other branches `rm -Rf swagger-java-client dockstore-client dockstore-common dockstore-event-consumer dockstore-file-plugin-parent dockstore-integration-testing dockstore-webservice swagger-java-bitbucket-client swagger-java-client swagger-java-quay-client swagger-java-sam-client`
+2. `gem install bundler jekyll` if you have not already (installs Jekyll site generator)
+3. `bundle install` if you have not already (installs special site-specific dependencies)
+4. ` bundle exec jekyll serve` serves the site
+5. Visit the site at [ http://127.0.0.1:4000]( http://127.0.0.1:4000)

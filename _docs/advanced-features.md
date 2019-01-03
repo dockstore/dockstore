@@ -27,7 +27,7 @@ In the following JSON file, this file indicates for a CWL run that the input fil
 }
 ```
 
-The Dockstore command-line allows you to specify that the input file can be at an HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](http://docs.icgc.org/cloud/guide/#cloud-guide), or a [DOS URI](https://github.com/ga4gh/data-object-service-schemas/issues/49) in place of that path. For example the following indicates that the input file will be downloaded under HTTP.
+The Dockstore command-line allows you to specify that the input file can be at an HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](https://docs.icgc.org/download/guide/), or a [DRS URI](https://github.com/ga4gh/data-repository-service-schemas/issues/49) in place of that path. For example the following indicates that the input file will be downloaded under HTTP.
 
 ```
 {
@@ -54,7 +54,7 @@ Get more information on the implementing plugin at [s3-plugin](https://github.co
 
 ### ICGC Storage
 
-For ICGC Storage, configure the location of the client using the configuration key `dockstore-file-icgc-storage-client-plugin.client` in `~/.dockstore/config` under the section `[dockstore-file-icgc-storage-client-plugin]`. Then configure the ICGC storage client as documented [here](http://docs.icgc.org/cloud/guide/#configuration).
+For ICGC Storage, configure the location of the client using the configuration key `dockstore-file-icgc-storage-client-plugin.client` in `~/.dockstore/config` under the section `[dockstore-file-icgc-storage-client-plugin]`. Then configure the ICGC storage client as documented [here](https://docs.icgc.org/download/guide/#configuration).
 
 Get more information on the implementing plugin at [icgc-storage-client-plugin](https://github.com/dockstore/icgc-storage-client-plugin).
 
