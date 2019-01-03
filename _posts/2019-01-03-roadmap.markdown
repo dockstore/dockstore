@@ -1,0 +1,23 @@
+---
+layout: post
+title:  "2019 Roadmap"
+date:   2019-01-03 09:00:00 -0400
+categories: dockstore update
+---
+
+In addition to the regular bugfixes and user-driven requests, we also had a joint brainstorming session between OICR and UCSC to think about our overall goals for larger features going forward. 
+These are our initial thoughts, copied from [Dockstore Roadmap](https://github.com/ga4gh/dockstore/wiki/Dockstore-Roadmap)
+
+#### Organizations
+As the amount of content on Dockstore increases, users increasingly want ways to share curated lists of content whether that consists of workflows that they or their organization created, specific collections of workflows created by grants or working groups, or thematic groups of vetted workflows. For this feature, users will be able to apply to create and display organizations which can contain playlists/collections of workflows that they can describe in the ways that they wish.    
+
+#### Services 
+One category of Docker image that is not well captured currently by Dockstore would be the service. This would be permanent services that can run beside multiple workflows or may, potentially, not be integrated with workflows at all. This feature would allow users register these services with the use of a Docker compose file. 
+
+This will also be a test bed for an improved, automatic, and more intuitive registration process that can eventually be re-used for older tools and workflows.
+
+#### Integration with popular developer tools and cloud services
+As the CWL, WDL, and Nextflow communities evolve, we anticipate the creation of innovative tools for developers like the Rabix composer, helpful visualizations, and the continuing evolution of robust cloud platforms like FireCloud and Arvados. We seek to collaborate with those communities to make it easier for these tools and services to integrate with, work with, pull, and launch content from Dockstore. For example, we look forward to working with the FireCloud team in order to create a more robust integration between the two services.
+
+#### WES CLI Proof of Concept
+Last, but not least, as the GA4GH community moves forward, the Dockstore CLI should continue being a useful toolbox. One useful feature would be to simply launch workflows not just locally but in a variety of cloud platforms by taking advantage of the GA4GH WES standard to launch workflows in compatible environments. 

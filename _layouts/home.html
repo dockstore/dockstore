@@ -35,7 +35,7 @@ layout: default
   </div>
 
   <div class="row text-center sponsor-padding">
-    <h4 class="sponsor-text">In Affiliation With</h4><br />
+    <h4 class="fix-sponsor-text">In Affiliation With</h4><br />
     {% for sponsor in site.data.sponsors %}
       <div class="col-md-3 col-sm-6">
         <a href="{{ sponsor.link }}" target="_blank">
@@ -45,9 +45,8 @@ layout: default
     {%  endfor %}
   </div>
 
-  <div class="row text-center">
-    <h4 class="sponsor-text">Works With</h4><br />
-    <div class="col-lg-1 col-sm-12"></div>
+  <div class="row text-center sponsor-padding">
+    <h4 class="fix-sponsor-text">Works With</h4><br />
     {% for partner in site.data.works %}
     <div class="col-md-3 col-sm-6">
       <a href="{{ partner.link }}" target="_blank">
