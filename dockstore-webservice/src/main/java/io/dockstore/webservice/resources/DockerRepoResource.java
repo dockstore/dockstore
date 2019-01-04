@@ -402,7 +402,7 @@ public class DockerRepoResource
             }
         }
         elasticManager.handleIndexUpdate(foundTool, ElasticMode.UPDATE);
-        return foundTool;
+        return toolDAO.findById(containerId);
     }
 
     @GET

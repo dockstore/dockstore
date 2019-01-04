@@ -407,7 +407,7 @@ public abstract class AbstractImageRegistry {
         for (SourceFile oldFile : oldFilesTempSet) {
             boolean found = false;
             for (SourceFile newFile : newFiles) {
-                if (Objects.equals(oldFile.getPath(), newFile.getPath())) {
+                if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
                     newFiles.remove(newFile);
                     found = true;
@@ -415,6 +415,7 @@ public abstract class AbstractImageRegistry {
                 }
             }
             if (!found) {
+
                 tag.getSourceFiles().remove(oldFile);
             }
         }

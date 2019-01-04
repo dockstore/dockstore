@@ -154,28 +154,28 @@ public class ValidationIT extends BaseIT {
         Assert.assertTrue("Should be invalid", !isWorkflowVersionValid(workflow, "master"));
 
         // change to missing import - should be invalid
-        workflow.setWorkflowPath("missingImport.wdl");
+        workflow.setWorkflowPath("/missingImport.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be invalid", !isWorkflowVersionValid(workflow, "master"));
 
         // change to missing workflow section - should be invalid
-        workflow.setWorkflowPath("missingWorkflowSection.wdl");
+        workflow.setWorkflowPath("/missingWorkflowSection.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be invalid", !isWorkflowVersionValid(workflow, "master"));
 
         // change to valid tool - should be valid
-        workflow.setWorkflowPath("validTool.wdl");
+        workflow.setWorkflowPath("/validTool.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());
         Assert.assertTrue("Should be valid", isWorkflowVersionValid(workflow, "master"));
 
         // change back to valid workflow - should be valid
-        workflow.setWorkflowPath("validWorkflow.wdl");
+        workflow.setWorkflowPath("/validWorkflow.wdl");
         workflow = workflowsApi.updateWorkflow(workflow.getId(), workflow);
         workflowsApi.updateWorkflowPath(workflow.getId(), workflow);
         workflow = workflowsApi.refresh(workflow.getId());
