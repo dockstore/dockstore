@@ -19,6 +19,9 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -27,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.google.common.base.CharMatcher;
@@ -49,7 +53,9 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -1022,6 +1028,39 @@ public abstract class AbstractEntryClient<T> {
             return languageCLient.get();
         }
         throw new UnsupportedOperationException("language not supported yet");
+    }
+
+    /**
+     * Loads docker images from file system if there are any
+     */
+    public void loadDockerImages() {
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        String dockerImageDirectory = config.getString("docker-images");
+        if (!StringUtils.isBlank(dockerImageDirectory)) {
+            Path directoryPath = Paths.get(dockerImageDirectory);
+            Supplier<Stream<Path>> list = () -> {
+                try {
+                    return java.nio.file.Files.list(directoryPath);
+                } catch (NotDirectoryException e) {
+                    System.out.println("The specified Docker image directory is a file: " + directoryPath.toAbsolutePath());
+                } catch (NoSuchFileException e) {
+                    System.out.println("The specified Docker image directory not found: " + directoryPath.toAbsolutePath());
+                } catch (IOException e) {
+                    // Not able to find a situation in which this occurs
+                    System.out.println("Something is wrong with the specified Docker image directory: " + directoryPath.toAbsolutePath());
+                    System.out.println(e.toString());
+                }
+                return Stream.empty();
+            };
+            if (list.get().count() == 0) {
+                System.out.println("There are no files in the docker image directory: " + directoryPath.toAbsolutePath());
+            } else {
+                System.out.println("Loading docker images...");
+                list.get().forEach(path -> Utilities.executeCommand("docker load -i \"" + path + "\"", System.out, System.err));
+            }
+        } else {
+            LOG.info("No docker image directory specified in Dockstore config file");
+        }
     }
 
     public abstract Client getClient();

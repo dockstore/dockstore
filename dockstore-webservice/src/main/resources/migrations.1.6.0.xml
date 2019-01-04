@@ -18,12 +18,10 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
                    context="1.6.0">
-
     <changeSet author="gluu (generated)" id="addPlatformVersionToSourcefileVerified">
         <addColumn tableName="sourcefile_verified">
-            <column name="platformversion" type="text"/>
+            <column name="platformversion" type="text" remarks="By default set to null"/>
         </addColumn>
-        <addNotNullConstraint columnDataType="clob" columnName="platformversion" tableName="sourcefile_verified"/>
     </changeSet>
 
     <changeSet author="aduncan (generated)" id="addOrganisationTable">
@@ -113,7 +111,6 @@
     <changeSet author="aduncan (generated)" id="addWorkflowFKEvent">
         <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="event" constraintName="FKWorkflowId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
     </changeSet>
-
     <changeSet author="aduncan (generated)" id="createCollectionTable">
         <createTable tableName="collection">
             <column autoIncrement="true" name="id" type="BIGSERIAL">

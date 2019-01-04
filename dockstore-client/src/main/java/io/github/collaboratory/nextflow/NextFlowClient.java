@@ -50,8 +50,10 @@ public class NextFlowClient implements LanguageClientInterface {
     private static final String DEFAULT_NEXTFLOW_VERSION = "0.27.6";
     private static final Logger LOG = LoggerFactory.getLogger(NextFlowClient.class);
     private final INIConfiguration iniConfiguration;
+    private final AbstractEntryClient abstractEntryClient;
 
     public NextFlowClient(AbstractEntryClient abstractEntryClient) {
+        this.abstractEntryClient = abstractEntryClient;
         this.iniConfiguration = Utilities.parseConfig(abstractEntryClient.getConfigFile());
     }
 
@@ -60,6 +62,7 @@ public class NextFlowClient implements LanguageClientInterface {
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid)
         throws ApiException {
+        this.abstractEntryClient.loadDockerImages();
         assert (yamlRun == null && jsonRun != null && csvRuns == null);
 
         String notificationsWebHookURL = iniConfiguration.getString("notifications", "");
