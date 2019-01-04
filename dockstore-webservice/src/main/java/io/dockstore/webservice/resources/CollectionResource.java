@@ -87,13 +87,13 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             if (collection == null) {
                 String msg = "Collection not found.";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
             Organisation organisation = organisationDAO.findApprovedById(collection.getOrganisation().getId());
             if (organisation == null) {
                 String msg = "Collection not found.";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
             return collection;
@@ -104,7 +104,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             if (!doesCollectionExist) {
                 String msg = "Collection not found.";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
             Collection collection = collectionDAO.findById(collectionId);
@@ -124,7 +124,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(entryId, collectionId, user);
 
-        // Add the entry to the organisation
+        // Add the entry to the collection
         entryAndCollection.getRight().addEntry(entryAndCollection.getLeft());
 
         // Event for addition
@@ -173,7 +173,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
      * visible to the user and that the user has the correct credentials to edit the collection.
      * @param entryId
      * @param collectionId
-     * @param user
+     * @param user User performing the action
      * @return Pair of found Entry and Collection
      */
     private ImmutablePair<Entry, Collection> commonModifyCollection(Long entryId, Long collectionId, User user) {
@@ -183,14 +183,14 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         if (entry == null || !entry.getIsPublished()) {
             String msg = "Entry not found.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
         // Check that collection exists to user
         boolean doesCollectionExist = doesCollectionExistToUser(collectionId, user.getId()) || user.getIsAdmin() || user.isCurator();
         if (!doesCollectionExist) {
             String msg = "Collection not found.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         Collection collection = collectionDAO.findById(collectionId);
@@ -202,7 +202,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         if (organisationUser == null) {
             String msg = "User does not have rights to modify a collection from this organisation.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         return new ImmutablePair<>(entry, collection);
@@ -221,7 +221,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             if (organisation == null) {
                 String msg = "Organisation not found";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
             return collectionDAO.findAllByOrg(organisationId);
@@ -230,7 +230,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             if (!doesOrgExist) {
                 String msg = "Organisation not found.";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
             return collectionDAO.findAllByOrg(organisationId);
@@ -252,7 +252,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         if (!doesOrgExist) {
             String msg = "Organisation not found.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         // Check if any other collections in the organisation exist with that name
@@ -292,7 +292,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         if (!doesCollectionExist) {
             String msg = "Collection not found.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         Collection existingCollection = collectionDAO.findById(collectionId);
@@ -303,7 +303,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         if (organisationUser == null) {
             String msg = "User does not have rights to modify a collection from this organisation.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         // Check if new name is valid
@@ -341,7 +341,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         if (collection == null) {
             String msg = "Collection not found.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         return doesOrganisationExistToUser(collection.getOrganisation().getId(), userId);
@@ -373,10 +373,6 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         Set<OrganisationUser> organisationUserSet = organisation.getUsers();
         Optional<OrganisationUser> matchingUser = organisationUserSet.stream().filter(organisationUser -> Objects
                 .equals(organisationUser.getUser().getId(), userId)).findFirst();
-        if (matchingUser.isPresent()) {
-            return matchingUser.get();
-        } else {
-            return null;
-        }
+        return matchingUser.orElse(null);
     }
 }

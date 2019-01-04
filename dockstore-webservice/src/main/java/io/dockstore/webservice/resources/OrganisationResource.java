@@ -85,7 +85,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisation == null) {
             String msg = "Organisation not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
         organisation.setApproved(true);
 
@@ -108,7 +108,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             if (organisation == null) {
                 String msg = "Organisation not found";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
             return organisation;
         } else {
@@ -118,7 +118,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             if (!doesOrgExist) {
                 String msg = "Organisation not found";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
             Organisation organisation = organisationDAO.findById(id);
@@ -190,7 +190,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (!doesOrgExist) {
             String msg = "Organisation not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         Organisation oldOrganisation = organisationDAO.findById(id);
@@ -200,7 +200,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisationUser == null) {
             String msg = "You do not have permissions to update the organisation.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         // Check if new name is valid
@@ -277,7 +277,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (existingRole == null) {
             String msg = "The user with id '" + userId + "' does not have a role in the organisation with id '" + organisationId + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             existingRole.setRole(OrganisationUser.Role.valueOf(role));
         }
@@ -305,7 +305,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (existingRole == null) {
             String msg = "The user with id '" + userId + "' does not have a role in the organisation with id '" + organisationId + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.delete(existingRole);
@@ -329,7 +329,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (!doesOrgExist) {
             String msg = "Organisation not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         Organisation organisation = organisationDAO.findById(organisationId);
@@ -339,7 +339,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisationUser == null) {
             String msg = "The user with id '" + user.getId() + "' does not have a role in the organisation with id '" + organisation.getId() + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         // Check that the role is not already accepted
@@ -393,11 +393,11 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisationUser == null) {
             String msg = "The user with id '" + userId + "' does not have a role in the organisation with id '" + organisation.getId() + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else if (!Objects.equals(organisationUser.getRole(), role)) {
             String msg = "The user with id '" + userId + "' does not have the required role in the organisation with id '" + organisation.getId() + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             return organisationUser;
         }
@@ -432,7 +432,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (!doesOrgExist) {
             String msg = "Organisation not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         Organisation organisation = organisationDAO.findById(organisationId);
@@ -442,7 +442,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (userToAdd == null) {
             String msg = "No user exists with the ID '" + userId + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         // Check that you are not applying action on yourself
