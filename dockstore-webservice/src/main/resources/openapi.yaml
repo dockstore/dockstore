@@ -5614,7 +5614,8 @@ components:
           format: date-time
         name:
           type: string
-          description: Name of the collection (ex. OICR).
+          example: OICR
+          description: Name of the collection.
           minLength: 3
           maxLength: 39
           pattern: '\d*[a-zA-Z][a-zA-Z\d]*'

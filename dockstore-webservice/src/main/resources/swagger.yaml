@@ -5129,8 +5129,9 @@ definitions:
         format: "date-time"
       name:
         type: "string"
+        example: "OICR"
         position: 1
-        description: "Name of the collection (ex. OICR)."
+        description: "Name of the collection."
         minLength: 3
         maxLength: 39
         pattern: "\\d*[a-zA-Z][a-zA-Z\\d]*"

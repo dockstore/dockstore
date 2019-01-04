@@ -129,12 +129,20 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
         // Event for addition
         Organisation organisation = organisationDAO.findById(organisationId);
-        Event addToCollectionEvent;
+
+        Event.Builder eventBuild = new Event.Builder()
+                .withOrganisation(organisation)
+                .withCollection(entryAndCollection.getRight())
+                .withInitiatorUser(user)
+                .withType(Event.EventType.ADD_TO_COLLECTION);
+
         if (entryAndCollection.getLeft() instanceof Workflow) {
-            addToCollectionEvent = new Event(null, organisation, entryAndCollection.getRight(), (Workflow)entryAndCollection.getLeft(), null, user, Event.EventType.ADD_TO_COLLECTION);
+            eventBuild = eventBuild.withWorkflow((Workflow)entryAndCollection.getLeft());
         } else {
-            addToCollectionEvent = new Event(null, organisation, entryAndCollection.getRight(), null, (Tool)entryAndCollection.getLeft(), user, Event.EventType.ADD_TO_COLLECTION);
+            eventBuild = eventBuild.withTool((Tool)entryAndCollection.getLeft());
         }
+
+        Event addToCollectionEvent = eventBuild.build();
         eventDAO.create(addToCollectionEvent);
 
         return collectionDAO.findById(collectionId);
@@ -157,12 +165,20 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
         // Event for deletion
         Organisation organisation = organisationDAO.findById(organisationId);
-        Event removeFromCollectionEvent;
+
+        Event.Builder eventBuild = new Event.Builder()
+                .withOrganisation(organisation)
+                .withCollection(entryAndCollection.getRight())
+                .withInitiatorUser(user)
+                .withType(Event.EventType.REMOVE_FROM_COLLECTION);
+
         if (entryAndCollection.getLeft() instanceof Workflow) {
-            removeFromCollectionEvent = new Event(null, organisation, entryAndCollection.getRight(), (Workflow)entryAndCollection.getLeft(), null, user, Event.EventType.REMOVE_FROM_COLLECTION);
+            eventBuild = eventBuild.withWorkflow((Workflow)entryAndCollection.getLeft());
         } else {
-            removeFromCollectionEvent = new Event(null, organisation, entryAndCollection.getRight(), null, (Tool)entryAndCollection.getLeft(), user, Event.EventType.REMOVE_FROM_COLLECTION);
+            eventBuild = eventBuild.withTool((Tool)entryAndCollection.getLeft());
         }
+
+        Event removeFromCollectionEvent = eventBuild.build();
         eventDAO.create(removeFromCollectionEvent);
 
         return collectionDAO.findById(collectionId);
@@ -272,7 +288,12 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
         // Event for creation
         User foundUser = userDAO.findById(user.getId());
-        Event createCollectionEvent = new Event(null, organisation, collection, null, null, foundUser, Event.EventType.CREATE_COLLECTION);
+        Event createCollectionEvent = new Event.Builder()
+                .withOrganisation(organisation)
+                .withCollection(collection)
+                .withInitiatorUser(foundUser)
+                .withType(Event.EventType.CREATE_COLLECTION)
+                .build();
         eventDAO.create(createCollectionEvent);
 
         return collectionDAO.findById(id);
@@ -321,7 +342,12 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         existingCollection.setDescription(collection.getDescription());
 
         // Event for update
-        Event updateCollectionEvent = new Event(null, organisation, collection, null, null, user, Event.EventType.MODIFY_COLLECTION);
+        Event updateCollectionEvent = new Event.Builder()
+                .withOrganisation(organisation)
+                .withCollection(collection)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.MODIFY_COLLECTION)
+                .build();
         eventDAO.create(updateCollectionEvent);
 
         return collectionDAO.findById(collectionId);

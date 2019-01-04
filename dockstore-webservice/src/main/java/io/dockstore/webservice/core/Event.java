@@ -27,7 +27,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @ApiModel(value = "Event", description = "This describes events that occur on the Dockstore site.")
 @Entity
 @Table(name = "event")
-@SuppressWarnings("checkstyle:magicnumber")
+@SuppressWarnings({"checkstyle:magicnumber", "checkstyle:hiddenfield"})
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -78,6 +78,7 @@ public class Event {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    public Event() { }
     public Event(User user, Organisation organisation, Collection collection, Workflow workflow, Tool tool, User initiatorUser, EventType type) {
         this.user = user;
         this.organisation = organisation;
@@ -182,5 +183,65 @@ public class Event {
         MODIFY_COLLECTION,
         REMOVE_FROM_COLLECTION,
         ADD_TO_COLLECTION
+    }
+
+    public static class Builder {
+        private User user;
+        private Organisation organisation;
+        private Tool tool;
+        private Workflow workflow;
+        private Collection collection;
+        private User initiatorUser;
+        private EventType type;
+
+        public Builder() { }
+
+        public Builder withUser(User user) {
+            this.user = user;
+            return this;
+        }
+
+        public Builder withOrganisation(Organisation organisation) {
+            this.organisation = organisation;
+            return this;
+        }
+
+        public Builder withTool(Tool tool) {
+            this.tool = tool;
+            return this;
+        }
+
+        public Builder withWorkflow(Workflow workflow) {
+            this.workflow = workflow;
+            return this;
+        }
+
+        public Builder withCollection(Collection collection) {
+            this.collection = collection;
+            return this;
+        }
+
+        public Builder withInitiatorUser(User initiatorUser) {
+            this.initiatorUser = initiatorUser;
+            return this;
+        }
+
+        public Builder withType(EventType type) {
+            this.type = type;
+            return this;
+        }
+
+        public Event build() {
+            Event event = new Event();
+            event.user = this.user;
+            event.organisation = this.organisation;
+            event.tool = this.tool;
+            event.workflow = this.workflow;
+            event.collection = this.collection;
+            event.initiatorUser = this.initiatorUser;
+            event.type = this.type;
+
+            return event;
+        }
     }
 }
