@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Label;
@@ -55,6 +56,7 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
 import io.dockstore.webservice.resources.EntryResource;
@@ -123,7 +125,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
-            WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class, Event.class, Validation.class) {
+            WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class, Event.class, Collection.class, Validation.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -255,6 +257,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
         environment.jersey().register(new OrganisationResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
 
 
         // attach the container dao statically to avoid too much modification of generated code

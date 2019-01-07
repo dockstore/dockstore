@@ -139,8 +139,11 @@ public class SwaggerClientIT extends BaseIT {
 
         // do some minor testing on pagination, majority of tests are in WorkflowIT.testPublishingAndListingOfPublished for now
         // TODO: better testing of pagination when we use it
-        List<DockstoreTool> pagedTools = containersApi.allPublishedContainers("0", 1, "test", "stars", "desc");
-        assertEquals(1, pagedTools.size());
+        List<DockstoreTool> pagedToolsLowercase = containersApi.allPublishedContainers("0", 1, "test", "stars", "desc");
+        assertEquals(1, pagedToolsLowercase.size());
+        List<DockstoreTool> pagedToolsUppercase = containersApi.allPublishedContainers("0", 1, "TEST", "stars", "desc");
+        assertEquals(1, pagedToolsUppercase.size());
+        assertEquals(pagedToolsLowercase, pagedToolsUppercase);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         assertFalse(container.isIsPublished());

@@ -2956,6 +2956,28 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Organisation'
+    put:
+      tags:
+        - organisations
+      summary: Create an organisation.
+      description: Organisation requires approval by an admin before being made public.
+      operationId: createOrganisation
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        description: Organisation to register.
+        required: true
   /organisations/all:
     get:
       tags:
@@ -2963,6 +2985,17 @@ paths:
       summary: List all organisations.
       description: Admin/curator only
       operationId: getAllOrganisations
+      parameters:
+        - name: type
+          in: query
+          description: Filter to apply to organisations.
+          required: true
+          schema:
+            type: string
+            enum:
+              - all
+              - unapproved
+              - approved
       responses:
         '200':
           description: successful operation
@@ -2974,13 +3007,15 @@ paths:
                   $ref: '#/components/schemas/Organisation'
       security:
         - BEARER: []
-  '/organisations/approve/{organisationId}':
-    post:
+  '/organisations/{organisationId}':
+    get:
       tags:
         - organisations
-      summary: Approves an organisation.
-      description: Admin/curator only
-      operationId: approveOrganisation
+      summary: Retrieves an organisation by ID.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getOrganisationById
       parameters:
         - name: organisationId
           in: path
@@ -2998,25 +3033,6 @@ paths:
                 $ref: '#/components/schemas/Organisation'
       security:
         - BEARER: []
-  /organisations/create:
-    put:
-      tags:
-        - organisations
-      summary: Create an organisation.
-      description: Organisation requires approval by an admin before being made public.
-      operationId: createOrganisation
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organisation'
-      security:
-        - BEARER: []
-      requestBody:
-        $ref: '#/components/requestBodies/Organisation'
-  '/organisations/update/{organisationId}':
     post:
       tags:
         - organisations
@@ -3043,16 +3059,19 @@ paths:
       security:
         - BEARER: []
       requestBody:
-        $ref: '#/components/requestBodies/Organisation'
-  '/organisations/{organisationId}':
-    get:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        description: Organisation to update with.
+        required: true
+  '/organisations/{organisationId}/approve':
+    post:
       tags:
         - organisations
-      summary: Retrieves an organisation by ID.
-      description: >-
-        Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getOrganisationById
+      summary: Approves an organisation.
+      description: Admin/curator only
+      operationId: approveOrganisation
       parameters:
         - name: organisationId
           in: path
@@ -3068,6 +3087,209 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+  '/organisations/{organisationId}/collections':
+    get:
+      tags:
+        - organisations
+      summary: Retrieve all collections for an organisation.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getCollectionsFromOrganisation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    put:
+      tags:
+        - organisations
+      summary: Create a collection in the given organisation.
+      description: ''
+      operationId: createCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        description: Collection to register.
+        required: true
+  '/organisations/{organisationId}/collections/{collectionId}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves a collection by ID.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getCollectionById
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    post:
+      tags:
+        - organisations
+      summary: Update a collection.
+      description: Currently only name and description can be updated.
+      operationId: updateCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        description: Collection to update with.
+        required: true
+  '/organisations/{organisationId}/collections/{collectionId}/entry':
+    post:
+      tags:
+        - organisations
+      summary: Add an entry to a collection.
+      description: ''
+      operationId: addEntryToCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: entryId
+          in: query
+          description: Entry ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - organisations
+      summary: Delete an entry from a collection.
+      description: ''
+      operationId: deleteEntryFromCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: entryId
+          in: query
+          description: Entry ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
       security:
         - BEARER: []
   '/organisations/{organisationId}/invitation':
@@ -3115,7 +3337,6 @@ paths:
           schema:
             type: string
             enum:
-              - ADMIN
               - MAINTAINER
               - MEMBER
         - name: userId
@@ -3155,7 +3376,6 @@ paths:
           schema:
             type: string
             enum:
-              - ADMIN
               - MAINTAINER
               - MEMBER
         - name: userId
@@ -5366,13 +5586,6 @@ components:
             $ref: '#/components/schemas/VerifyRequest'
       description: Object containing verification information.
       required: true
-    Organisation:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Organisation'
-      description: Organisation to register.
-      required: true
   securitySchemes:
     BEARER:
       type: apiKey
@@ -5384,6 +5597,31 @@ components:
       properties:
         content:
           type: string
+    Collection:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the collection in this web service
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+          example: Alignment
+          description: Name of the collection.
+          minLength: 3
+          maxLength: 39
+          pattern: '\d*[a-zA-Z][a-zA-Z\d]*'
+        description:
+          type: string
+          description: Description of the collection
     DescriptorLanguageBean:
       type: object
       properties:
@@ -5410,6 +5648,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -5612,6 +5855,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -5819,6 +6067,7 @@ components:
           format: date-time
         name:
           type: string
+          example: OICR
           description: Name of the organisation (ex. OICR).
           minLength: 3
           maxLength: 39
@@ -6546,6 +6795,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
