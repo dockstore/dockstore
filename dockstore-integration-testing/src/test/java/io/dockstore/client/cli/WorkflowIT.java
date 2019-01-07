@@ -714,8 +714,11 @@ public class WorkflowIT extends BaseIT {
         List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc");
         assertEquals("sort by id does not seem to be working", ascId.get(0).getId(), descId.get(descId.size() - 1).getId());
         // test filter
-        List<Workflow> filtered = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
-        assertEquals(1, filtered.size());
+        List<Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
+        assertEquals(1, filteredLowercase.size());
+        List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE" , "stars", null);
+        assertEquals(1, filteredUppercase.size());
+        assertEquals(filteredLowercase, filteredUppercase);
     }
 
     /**
