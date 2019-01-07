@@ -671,6 +671,7 @@ public class WorkflowResource
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
+        workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         return filterContainersForHiddenTags(workflow);
     }
 
@@ -802,6 +803,8 @@ public class WorkflowResource
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
         checkCanRead(user, workflow);
+
+        workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         return workflow;
     }
 
@@ -976,6 +979,7 @@ public class WorkflowResource
     public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
         Workflow workflow = workflowDAO.findByPath(path, true);
         checkEntry(workflow);
+        workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         filterContainersForHiddenTags(workflow);
         return workflow;
     }

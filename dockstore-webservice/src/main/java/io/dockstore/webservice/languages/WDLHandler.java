@@ -217,20 +217,18 @@ public class WDLHandler implements LanguageHandlerInterface {
 
                 Map<String, String> secondaryDescContent = new HashMap<>();
                 for (SourceFile sourceFile : filteredSourceFiles) {
-                    if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)) {
-                        if (sourceFile.getContent() != null) {
-                            if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
-                                if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
-                                    validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
-                                } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
-                                    validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
-                                } else {
-                                    validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
-                                }
-                                return new ImmutablePair<>(false, validationMessageObject);
+                    if (!Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath) && sourceFile.getContent() != null) {
+                        if (sourceFile.getContent().trim().replaceAll("\n", "").isEmpty()) {
+                            if (Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKSTORE_WDL)) {
+                                validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL document.");
+                            } else if (Objects.equals(sourceFile.getType(), SourceFile.FileType.WDL_TEST_JSON)) {
+                                validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it a valid WDL JSON/YAML file.");
+                            } else {
+                                validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
                             }
-                            secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
+                            return new ImmutablePair<>(false, validationMessageObject);
                         }
+                        secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
                     }
                 }
                 tempMainDescriptor = File.createTempFile("main", "descriptor", Files.createTempDir());

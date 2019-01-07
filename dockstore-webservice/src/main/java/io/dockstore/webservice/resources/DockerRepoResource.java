@@ -428,6 +428,8 @@ public class DockerRepoResource
     public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
         Tool tool = toolDAO.findPublishedById(containerId);
         checkEntry(tool);
+
+        tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         return filterContainersForHiddenTags(tool);
     }
 
@@ -678,6 +680,8 @@ public class DockerRepoResource
         Tool tool = toolDAO.findByPath(path, false);
         checkEntry(tool);
         checkUser(user, tool);
+
+        tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         return tool;
     }
 
@@ -691,6 +695,7 @@ public class DockerRepoResource
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
+            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
             filterContainersForHiddenTags(tool);
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {
