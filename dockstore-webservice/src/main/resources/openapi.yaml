@@ -5614,7 +5614,7 @@ components:
           format: date-time
         name:
           type: string
-          example: OICR
+          example: Alignment
           description: Name of the collection.
           minLength: 3
           maxLength: 39
@@ -6067,6 +6067,7 @@ components:
           format: date-time
         name:
           type: string
+          example: OICR
           description: Name of the organisation (ex. OICR).
           minLength: 3
           maxLength: 39

@@ -5129,7 +5129,7 @@ definitions:
         format: "date-time"
       name:
         type: "string"
-        example: "OICR"
+        example: "Alignment"
         position: 1
         description: "Name of the collection."
         minLength: 3
@@ -5600,6 +5600,7 @@ definitions:
         format: "date-time"
       name:
         type: "string"
+        example: "OICR"
         position: 1
         description: "Name of the organisation (ex. OICR)."
         minLength: 3

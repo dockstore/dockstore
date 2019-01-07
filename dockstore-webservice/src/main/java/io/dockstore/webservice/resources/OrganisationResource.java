@@ -87,14 +87,17 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
-        organisation.setApproved(true);
 
-        Event approveOrgEvent = new Event.Builder()
-                .withOrganisation(organisation)
-                .withInitiatorUser(user)
-                .withType(Event.EventType.APPROVE_ORG)
-                .build();
-        eventDAO.create(approveOrgEvent);
+        if (!organisation.isApproved()) {
+            organisation.setApproved(true);
+
+            Event approveOrgEvent = new Event.Builder()
+                    .withOrganisation(organisation)
+                    .withInitiatorUser(user)
+                    .withType(Event.EventType.APPROVE_ORG)
+                    .build();
+            eventDAO.create(approveOrgEvent);
+        }
 
         return organisationDAO.findById(id);
     }
