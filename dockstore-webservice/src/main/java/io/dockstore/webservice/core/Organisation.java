@@ -49,7 +49,7 @@ public class Organisation implements Serializable {
     @Column(nullable = false, unique = true)
     @Pattern(regexp = "\\d*[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
-    @ApiModelProperty(value = "Name of the organisation (ex. OICR).", required = true, position = 1)
+    @ApiModelProperty(value = "Name of the organisation (ex. OICR).", required = true, example = "OICR", position = 1)
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -77,6 +77,10 @@ public class Organisation implements Serializable {
     @OneToMany(mappedBy = "organisation", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<OrganisationUser> users = new HashSet<>();
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "organisation")
+    private Set<Collection> collections = new HashSet<>();
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -164,5 +168,23 @@ public class Organisation implements Serializable {
 
     public void setUsers(Set<OrganisationUser> users) {
         this.users = users;
+    }
+
+    public Set<Collection> getCollections() {
+        return collections;
+    }
+
+    public void setCollections(Set<Collection> collections) {
+        this.collections = collections;
+    }
+
+    public void addCollection(Collection collection) {
+        collections.add(collection);
+        collection.setOrganisation(this);
+    }
+
+    public void removeCollection(Collection collection) {
+        collections.remove(collection);
+        collection.setOrganisation(null);
     }
 }

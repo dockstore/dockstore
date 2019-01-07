@@ -77,7 +77,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @RolesAllowed({ "curator", "admin" })
-    @Path("/approve/{organisationId}")
+    @Path("{organisationId}/approve/")
     @ApiOperation(value = "Approves an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organisation.class)
     public Organisation approveOrganisation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
@@ -85,12 +85,19 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisation == null) {
             String msg = "Organisation not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
-        organisation.setApproved(true);
 
-        Event createOrganisationEvent = new Event(null, organisation, null, null, user, Event.EventType.APPROVE_ORG);
-        eventDAO.create(createOrganisationEvent);
+        if (!organisation.isApproved()) {
+            organisation.setApproved(true);
+
+            Event approveOrgEvent = new Event.Builder()
+                    .withOrganisation(organisation)
+                    .withInitiatorUser(user)
+                    .withType(Event.EventType.APPROVE_ORG)
+                    .build();
+            eventDAO.create(approveOrgEvent);
+        }
 
         return organisationDAO.findById(id);
     }
@@ -108,7 +115,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             if (organisation == null) {
                 String msg = "Organisation not found";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
             return organisation;
         } else {
@@ -118,7 +125,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             if (!doesOrgExist) {
                 String msg = "Organisation not found";
                 LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
             Organisation organisation = organisationDAO.findById(id);
@@ -132,14 +139,20 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/all")
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
-    public List<Organisation> getAllOrganisations() {
-        return organisationDAO.findAll();
+    public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, unapproved, approved") @QueryParam("type") String type) {
+        switch (type) {
+        case "unapproved":
+            return organisationDAO.findAllUnapproved();
+        case "approved":
+            return organisationDAO.findAllApproved();
+        case "all": default:
+            return organisationDAO.findAll();
+        }
     }
 
     @PUT
     @Timed
     @UnitOfWork
-    @Path("/create")
     @ApiOperation(value = "Create an organisation.", notes = "Organisation requires approval by an admin before being made public.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation createOrganisation(@ApiParam(hidden = true) @Auth User user,
@@ -165,7 +178,11 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         Session currentSession = sessionFactory.getCurrentSession();
         currentSession.persist(organisationUser);
 
-        Event createOrganisationEvent = new Event(null, organisation, null, null, foundUser, Event.EventType.CREATE_ORG);
+        Event createOrganisationEvent = new Event.Builder()
+                .withOrganisation(organisation)
+                .withInitiatorUser(foundUser)
+                .withType(Event.EventType.CREATE_ORG)
+                .build();
         eventDAO.create(createOrganisationEvent);
 
         return organisationDAO.findById(id);
@@ -174,17 +191,17 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @POST
     @Timed
     @UnitOfWork
-    @Path("/update/{organisationId}")
+    @Path("{organisationId}")
     @ApiOperation(value = "Update an organisation.", notes = "Currently only name, description, email, link and location can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation updateOrganisation(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Organisation to register.", required = true) Organisation organisation,
+            @ApiParam(value = "Organisation to update with.", required = true) Organisation organisation,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
 
         boolean doesOrgExist = doesOrganisationExistToUser(id, user.getId());
         if (!doesOrgExist) {
             String msg = "Organisation not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         Organisation oldOrganisation = organisationDAO.findById(id);
@@ -194,7 +211,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisationUser == null) {
             String msg = "You do not have permissions to update the organisation.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         // Check if new name is valid
@@ -214,7 +231,11 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         oldOrganisation.setLink(organisation.getLink());
         oldOrganisation.setLocation(organisation.getLocation());
 
-        Event updateOrganisationEvent = new Event(null, oldOrganisation, null, null, user, Event.EventType.MODIFY_ORG);
+        Event updateOrganisationEvent = new Event.Builder()
+                .withOrganisation(oldOrganisation)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.MODIFY_ORG)
+                .build();
         eventDAO.create(updateOrganisationEvent);
 
         return organisationDAO.findById(id);
@@ -226,7 +247,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/{organisationId}/user")
     @ApiOperation(value = "Adds a user role to an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
     public OrganisationUser addUserToOrg(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @QueryParam("role") String role,
+            @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @QueryParam("role") String role,
             @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
             @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
@@ -247,7 +268,12 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        Event addUserOrganisationEvent = new Event(organisationAndUserToAdd.getRight(), organisationAndUserToAdd.getLeft(), null, null, user, Event.EventType.ADD_USER_TO_ORG);
+        Event addUserOrganisationEvent = new Event.Builder()
+                .withUser(organisationAndUserToAdd.getRight())
+                .withOrganisation(organisationAndUserToAdd.getLeft())
+                .withInitiatorUser(user)
+                .withType(Event.EventType.ADD_USER_TO_ORG)
+                .build();
         eventDAO.create(addUserOrganisationEvent);
 
         return organisationUser;
@@ -259,7 +285,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/{organisationId}/user")
     @ApiOperation(value = "Updates a user role in an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
     public OrganisationUser updateUserRole(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Role of user.", required = true, allowableValues = "ADMIN, MAINTAINER, MEMBER") @QueryParam("role") String role,
+            @ApiParam(value = "Role of user.", required = true, allowableValues = "MAINTAINER, MEMBER") @QueryParam("role") String role,
             @ApiParam(value = "User to add to org.", required = true) @QueryParam("userId") Long userId,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
 
@@ -271,12 +297,18 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (existingRole == null) {
             String msg = "The user with id '" + userId + "' does not have a role in the organisation with id '" + organisationId + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             existingRole.setRole(OrganisationUser.Role.valueOf(role));
         }
 
-        Event updateUserOrganisationEvent = new Event(organisationAndUserToUpdate.getRight(), organisationAndUserToUpdate.getLeft(), null, null, user, Event.EventType.MODIFY_USER_ROLE_ORG);
+        Event updateUserOrganisationEvent = new Event.Builder()
+                .withUser(organisationAndUserToUpdate.getRight())
+                .withOrganisation(organisationAndUserToUpdate.getLeft())
+                .withInitiatorUser(user)
+                .withType(Event.EventType.MODIFY_USER_ROLE_ORG)
+                .build();
+
         eventDAO.create(updateUserOrganisationEvent);
 
         return existingRole;
@@ -299,13 +331,18 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (existingRole == null) {
             String msg = "The user with id '" + userId + "' does not have a role in the organisation with id '" + organisationId + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.delete(existingRole);
         }
 
-        Event deleteUserOrganisationEvent = new Event(organisationAndUserToDelete.getRight(), organisationAndUserToDelete.getLeft(), null, null, user, Event.EventType.REMOVE_USER_FROM_ORG);
+        Event deleteUserOrganisationEvent = new Event.Builder()
+                .withUser(organisationAndUserToDelete.getRight())
+                .withOrganisation(organisationAndUserToDelete.getLeft())
+                .withInitiatorUser(user)
+                .withType(Event.EventType.REMOVE_USER_FROM_ORG)
+                .build();
         eventDAO.create(deleteUserOrganisationEvent);
     }
 
@@ -323,7 +360,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (!doesOrgExist) {
             String msg = "Organisation not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         Organisation organisation = organisationDAO.findById(organisationId);
@@ -333,7 +370,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisationUser == null) {
             String msg = "The user with id '" + user.getId() + "' does not have a role in the organisation with id '" + organisation.getId() + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         // Check that the role is not already accepted
@@ -353,7 +390,11 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
 
         Event.EventType eventType = accept ? Event.EventType.APPROVE_ORG_INVITE : Event.EventType.REJECT_ORG_INVITE;
-        Event addUserOrganisationEvent = new Event(null, organisation, null, null, user, eventType);
+        Event addUserOrganisationEvent = new Event.Builder()
+                .withOrganisation(organisation)
+                .withInitiatorUser(user)
+                .withType(eventType)
+                .build();
         eventDAO.create(addUserOrganisationEvent);
 
         return user;
@@ -387,11 +428,11 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisationUser == null) {
             String msg = "The user with id '" + userId + "' does not have a role in the organisation with id '" + organisation.getId() + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else if (!Objects.equals(organisationUser.getRole(), role)) {
             String msg = "The user with id '" + userId + "' does not have the required role in the organisation with id '" + organisation.getId() + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         } else {
             return organisationUser;
         }
@@ -426,7 +467,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (!doesOrgExist) {
             String msg = "Organisation not found";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         Organisation organisation = organisationDAO.findById(organisationId);
@@ -436,7 +477,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (userToAdd == null) {
             String msg = "No user exists with the ID '" + userId + "'.";
             LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
         // Check that you are not applying action on yourself
