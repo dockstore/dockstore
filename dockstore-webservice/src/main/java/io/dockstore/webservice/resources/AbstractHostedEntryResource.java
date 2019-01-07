@@ -31,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -218,11 +219,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      */
     protected String createValidationMessages(U version) {
         StringBuilder result = new StringBuilder();
-        int count = 1;
+        result.append("Unable to save the new version due to the following error(s): ");
+        Gson g = new Gson();
         for (Validation versionValidation : version.getValidations()) {
             if (!versionValidation.isValid() && versionValidation.getMessage() != null) {
-                result.append(count + ") " + versionValidation.getMessage());
-                count++;
+                Map<String, String> message = g.fromJson(versionValidation.getMessage(), HashMap.class);
+                for (Map.Entry<String, String> entry : message.entrySet()) {
+                    result.append(entry.getKey() + ": " + entry.getValue() + " ");
+                }
             }
         }
 
