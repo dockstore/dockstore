@@ -1,5 +1,5 @@
 /*
- *    Copyright 2018 OICR
+ *    Copyright 2019 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.dockstore.webservice.core;
 
 import java.sql.Timestamp;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -60,7 +60,7 @@ public class Validation implements Comparable<Validation> {
 
     @Column
     @ApiModelProperty(value = "Is the file type valid", required = true, position = 2)
-    private Boolean valid = false;
+    private boolean valid = false;
 
     @Column
     @ApiModelProperty(value = "Mapping of filepath to validation message", required = true, position = 3)
@@ -79,7 +79,7 @@ public class Validation implements Comparable<Validation> {
 
     }
 
-    public Validation(SourceFile.FileType fileType, boolean valid, HashMap message) {
+    public Validation(SourceFile.FileType fileType, boolean valid, Map message) {
         this.type = fileType;
         this.valid = valid;
         this.message = new JSONObject(message).toString();
@@ -91,7 +91,7 @@ public class Validation implements Comparable<Validation> {
         this.message = versionValidation.getMessage();
     }
 
-    public Validation(SourceFile.FileType fileType, ImmutablePair<Boolean, HashMap> validMessagePair) {
+    public Validation(SourceFile.FileType fileType, ImmutablePair<Boolean, Map> validMessagePair) {
         this.type = fileType;
         this.valid = validMessagePair.getKey();
         this.message = new JSONObject(validMessagePair.getValue()).toString();

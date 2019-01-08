@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category;
 
 
 /**
+ * A collection of tests for the version validation system
  * @author aduncan
  */
 @Category({ ConfidentialTest.class})

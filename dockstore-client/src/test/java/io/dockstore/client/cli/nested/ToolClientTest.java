@@ -56,7 +56,7 @@ public class ToolClientTest {
         when(containersApi.cwl(CONTAINER_ID, null)).thenThrow(apiException);
         when(containersApi.cwl(CONTAINER_ID, GOOD_TAG)).thenReturn(Mockito.mock(SourceFile.class));
         when(containersApi
-                .getPublishedContainerByToolPath(REPOSITORY))
+                .getPublishedContainerByToolPath(REPOSITORY, null))
                 .thenReturn(dockstoreTool);
     }
 

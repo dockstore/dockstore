@@ -145,7 +145,7 @@ public class SwaggerClientIT extends BaseIT {
         assertEquals(1, pagedToolsUppercase.size());
         assertEquals(pagedToolsLowercase, pagedToolsUppercase);
 
-        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2", null);
         assertFalse(container.isIsPublished());
 
         long containerId = container.getId();
@@ -160,12 +160,12 @@ public class SwaggerClientIT extends BaseIT {
         ContainersApi userApi1 = new ContainersApi(getWebClient(true, false));
         ContainersApi userApi2 = new ContainersApi(getWebClient(false, false));
 
-        DockstoreTool container = userApi1.getContainerByToolPath("quay.io/test_org/test2");
+        DockstoreTool container = userApi1.getContainerByToolPath("quay.io/test_org/test2", null);
         assertFalse(container.isIsPublished());
 
         long containerId = container.getId();
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
-        container = userApi1.getContainerByToolPath("quay.io/test_org/test2");
+        container = userApi1.getContainerByToolPath("quay.io/test_org/test2", null);
         assertEquals(3, container.getLabels().size());
         thrown.expect(ApiException.class);
         userApi2.updateLabels(containerId, "foobar", "");
@@ -177,13 +177,13 @@ public class SwaggerClientIT extends BaseIT {
         WorkflowsApi userApi1 = new WorkflowsApi(getWebClient(true, true));
         WorkflowsApi userApi2 = new WorkflowsApi(getWebClient(false, false));
 
-        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l");
+        Workflow workflow = userApi1.getWorkflowByPath("github.com/A/l", null);
         assertTrue(workflow.isIsPublished());
 
         long containerId = workflow.getId();
 
         userApi1.updateLabels(containerId, "foo,spam,phone", "");
-        workflow = userApi1.getWorkflowByPath("github.com/A/l");
+        workflow = userApi1.getWorkflowByPath("github.com/A/l", null);
         assertEquals(3, workflow.getLabels().size());
         thrown.expect(ApiException.class);
         userApi2.updateLabels(containerId, "foobar", "");
@@ -494,7 +494,7 @@ public class SwaggerClientIT extends BaseIT {
 
         assertEquals(5, containers.size());
 
-        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test5");
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test5", null);
         assertFalse(container.isIsPublished());
 
         long containerId = container.getId();
@@ -539,7 +539,7 @@ public class SwaggerClientIT extends BaseIT {
 
         ApiClient muggleClient = getWebClient();
         ContainersApi muggleContainersApi = new ContainersApi(muggleClient);
-        final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId());
+        final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId(), null);
         assertEquals("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), 0,
             registeredContainer.getTags().size());
     }
@@ -561,7 +561,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarUnpublishedTool() throws ApiException {
         ApiClient client = getWebClient(true, true);
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test1");
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test1", null);
         long containerId = container.getId();
         assertEquals(1, containerId);
 
@@ -645,7 +645,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarStarredTool() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2", null);
         assertTrue("There should be at least one user of the workflow", container.getUsers().size() > 0);
         Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
@@ -671,7 +671,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testUnstarUnstarredTool() throws ApiException {
         ApiClient client = getWebClient();
         ContainersApi containersApi = new ContainersApi(client);
-        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
+        DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2", null);
         Assert.assertNotNull("Upon checkUser(), a container with lazy loaded users should still get users", container.getUsers());
         long containerId = container.getId();
         assertEquals(2, containerId);
@@ -689,7 +689,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testStarStarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowsApi = new WorkflowsApi(client);
-        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l");
+        Workflow workflow = workflowsApi.getPublishedWorkflowByPath("github.com/A/l", null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         StarRequest request = SwaggerUtility.createStarRequest(true);
@@ -711,7 +711,7 @@ public class SwaggerClientIT extends BaseIT {
     public void testUnstarUnstarredWorkflow() throws ApiException {
         ApiClient client = getWebClient();
         WorkflowsApi workflowApi = new WorkflowsApi(client);
-        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l");
+        Workflow workflow = workflowApi.getPublishedWorkflowByPath("github.com/A/l", null);
         long workflowId = workflow.getId();
         assertEquals(11, workflowId);
         thrown.expect(ApiException.class);
@@ -822,7 +822,7 @@ public class SwaggerClientIT extends BaseIT {
 
         // User 2 should not be able to read user 1's hosted workflow
         try {
-            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1);
+            user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null);
             Assert.fail("User 2 should not have rights to hosted workflow");
         } catch (ApiException e) {
             Assert.assertEquals(403, e.getCode());
@@ -840,8 +840,8 @@ public class SwaggerClientIT extends BaseIT {
         Assert.assertEquals(fullWorkflowPath1, firstShared.getWorkflows().get(0).getFullWorkflowPath());
 
         // User 2 can now read the hosted workflow (will throw exception if it fails).
-        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1);
-        user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId());
+        user2WorkflowsApi.getWorkflowByPath(fullWorkflowPath1, null);
+        user2WorkflowsApi.getWorkflow(hostedWorkflow1.getId(), null);
 
         // But User 2 cannot edit the hosted workflow
         try {
@@ -907,7 +907,7 @@ public class SwaggerClientIT extends BaseIT {
 
     private void checkAnonymousUser(WorkflowsApi anonWorkflowsApi, Workflow hostedWorkflow) {
         try {
-            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath());
+            anonWorkflowsApi.getWorkflowByPath(hostedWorkflow.getFullWorkflowPath(), null);
             Assert.fail("Anon user should not have rights to " + hostedWorkflow.getFullWorkflowPath());
         } catch (ApiException ex) {
             Assert.assertEquals(401, ex.getCode());

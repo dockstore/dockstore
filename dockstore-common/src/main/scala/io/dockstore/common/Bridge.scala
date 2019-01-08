@@ -126,7 +126,7 @@ class Bridge(basePath : String) {
     // Should have a docker associated in runtime
     val dockerAttributes = onlyTask.runtimeAttributes.attrs.get("docker")
     if (!dockerAttributes.isDefined) {
-      throw new WdlParser.SyntaxError("'" + onlyTask.fullyQualifiedName + "' requires an associated docker container to make this a valid tool.")
+      throw new WdlParser.SyntaxError("'" + onlyTask.fullyQualifiedName + "' requires an associated docker container to make this a valid Dockstore tool.")
     }
   }
 

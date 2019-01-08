@@ -545,6 +545,7 @@ public abstract class SourceCodeRepoInterface {
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects
                 .equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
+        // Validate descriptor set
         if (mainDescriptor.isPresent()) {
             ImmutablePair validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
@@ -557,14 +558,18 @@ public abstract class SourceCodeRepoInterface {
             version.addOrUpdateValidation(noPrimaryDescriptorValidation);
         }
 
-        SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
-        if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
-            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
-        }
+        // Validate test parameter set
+        if (!Objects.equals(identifiedType, SourceFile.FileType.NEXTFLOW_CONFIG)) {
+            // Nextflow does not currently have test parameter files
+            SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
+                testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            }
 
-        ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
-        version.addOrUpdateValidation(testParameterValidation);
+            ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+            version.addOrUpdateValidation(testParameterValidation);
+        }
 
         version.setValid(isValidVersion(version));
 

@@ -200,13 +200,17 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         version.addOrUpdateValidation(descriptorValidation);
 
         // Validate test parameter set
-        SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
-        if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
-            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+        if (Objects.equals(identifiedType, SourceFile.FileType.NEXTFLOW_CONFIG)) {
+            // Nextflow does not currently have test parameter files
+            SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
+                testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            }
+
+            ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+            version.addOrUpdateValidation(testParameterValidation);
         }
-        ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
-        version.addOrUpdateValidation(testParameterValidation);
 
         return version;
     }

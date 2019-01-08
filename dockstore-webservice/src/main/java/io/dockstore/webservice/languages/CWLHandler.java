@@ -689,7 +689,7 @@ public class CWLHandler implements LanguageHandlerInterface {
         Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
 
-        Boolean isValid = true;
+        boolean isValid = true;
         String validationMessage = null;
         Map<String, String> validationMessageObject = new HashMap<>();
 
