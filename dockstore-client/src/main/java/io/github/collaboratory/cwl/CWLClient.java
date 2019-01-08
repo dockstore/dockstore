@@ -43,8 +43,11 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.FileProvisioning;
+import io.dockstore.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
+import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -73,6 +76,32 @@ public class CWLClient implements LanguageClientInterface {
     public CWLClient(AbstractEntryClient abstractEntryClient) {
         this.abstractEntryClient = abstractEntryClient;
     }
+
+    public boolean runWESCommand(String jsonString, File localPrimaryDescriptorFile, String wesUrl) {
+        WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = abstractEntryClient.getWorkflowExecutionServiceApi(wesUrl);
+        try {
+            String tags = "WorkflowExecutionService";
+            // Convert the filename to an array of bytes using a standard encoding
+            byte[] descriptorContent = localPrimaryDescriptorFile.getAbsolutePath().getBytes(StandardCharsets.UTF_8);
+            //byte[] descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
+            byte[] jsonContent = jsonString.getBytes(StandardCharsets.UTF_8);
+
+
+            List<byte[]> workflowAttachment = new ArrayList<byte[]>();
+            workflowAttachment.add(descriptorContent);
+            workflowAttachment.add(jsonContent);
+
+            System.out.println("runWESCommand: jsonString is: " + jsonString);
+
+
+            clientWorkflowExecutionServiceApi
+                    .runWorkflow(jsonString, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
+        } catch (io.swagger.wes.client.ApiException e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
 
     /**
      *
@@ -114,6 +143,13 @@ public class CWLClient implements LanguageClientInterface {
         }
         jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
+        if (wesUrl == null || wesUrl.isEmpty()) {
+            System.out.println("WES URL is empty from command line; getting it from config file");
+            INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
+            wesUrl = config.getSection("WES").getString("url", "");
+            System.out.println("WES URL from config is: " + wesUrl);
+        }
+
         try {
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             if (jsonRun != null) {
@@ -136,21 +172,32 @@ public class CWLClient implements LanguageClientInterface {
                         final String finalString = gson.toJson(element);
                         final File tempJson = File.createTempFile("parameter", ".json", Files.createTempDir());
                         FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
+
+                        if (wesUrl.isEmpty()) {
+                            final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(),
+                                    tempJson.getAbsolutePath(), null, null, originalTestParameterFilePath, uuid);
+                            if (abstractEntryClient instanceof WorkflowClient) {
+                                cwlLauncher.run(Workflow.class);
+                            } else {
+                                cwlLauncher.run(CommandLineTool.class);
+                            }
+                        } else {
+                            System.out.println("CWL file is: " + tempCWL.getAbsolutePath() + " \nJSON input is: " + tempJson.getAbsolutePath());
+                            runWESCommand(tempJson.getAbsolutePath(), tempCWL, wesUrl);
+                        }
+                    }
+                } else {
+                    if (wesUrl.isEmpty()) {
                         final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(),
-                            tempJson.getAbsolutePath(), null, null, originalTestParameterFilePath, uuid);
+                                jsonRun, null, null, originalTestParameterFilePath, uuid);
                         if (abstractEntryClient instanceof WorkflowClient) {
                             cwlLauncher.run(Workflow.class);
                         } else {
                             cwlLauncher.run(CommandLineTool.class);
                         }
-                    }
-                } else {
-                    final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(), jsonRun,
-                        null, null, originalTestParameterFilePath, uuid);
-                    if (abstractEntryClient instanceof WorkflowClient) {
-                        cwlLauncher.run(Workflow.class);
                     } else {
-                        cwlLauncher.run(CommandLineTool.class);
+                        System.out.println("CWL file is: " + tempCWL.getAbsolutePath() + " \nJSON input is: " + jsonRun);
+                        runWESCommand(jsonRun, tempCWL, wesUrl);
                     }
                 }
             } else if (csvRuns != null) {
@@ -187,15 +234,22 @@ public class CWLClient implements LanguageClientInterface {
                         // write it out
                         FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
 
-                        // final String stringMapAsString = gson.toJson(stringMap);
-                        // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
-                        final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(),
-                            tempJson.getAbsolutePath(), null, null, originalTestParameterFilePath, uuid);
-                        if (abstractEntryClient instanceof WorkflowClient) {
-                            cwlLauncher.run(Workflow.class);
+                        if (wesUrl.isEmpty()) {
+
+                            // final String stringMapAsString = gson.toJson(stringMap);
+                            // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
+                            final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(),
+                                    tempJson.getAbsolutePath(), null, null, originalTestParameterFilePath, uuid);
+                            if (abstractEntryClient instanceof WorkflowClient) {
+                                cwlLauncher.run(Workflow.class);
+                            } else {
+                                cwlLauncher.run(CommandLineTool.class);
+                            }
+
                         } else {
-                            cwlLauncher.run(CommandLineTool.class);
+                            runWESCommand(tempJson.getAbsolutePath(), tempCWL, wesUrl);
                         }
+
                     }
                 }
             } else {

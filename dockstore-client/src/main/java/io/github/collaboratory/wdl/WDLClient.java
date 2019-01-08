@@ -135,6 +135,13 @@ public class WDLClient implements LanguageClientInterface {
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
+
+        if (wesUrl == null || wesUrl.isEmpty()) {
+            System.out.println("WES URL is empty from command line; getting it from config file");
+            wesUrl = config.getSection("WES").getString("url", "");
+            System.out.println("WES URL from config is: " + wesUrl);
+        }
+
         try {
             final File tempLaunchDirectory = Files.createTempDir();
             File localPrimaryDescriptorFile;
@@ -263,10 +270,18 @@ public class WDLClient implements LanguageClientInterface {
                 WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = abstractEntryClient.getWorkflowExecutionServiceApi(wesUrl);
                 try {
                     String tags = "WorkflowExecutionService";
-                    byte[] descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
+                    // Convert the filename to an array of bytes using a standard encoding
+                    byte[] descriptorContent = localPrimaryDescriptorFile.getAbsolutePath().getBytes(StandardCharsets.UTF_8);
+                    byte[] jsonContent = jsonRun.getBytes(StandardCharsets.UTF_8);
+
+                    //byte[] descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
                     List<byte[]> workflowAttachment = new ArrayList<byte[]>();
                     workflowAttachment.add(descriptorContent);
-                    clientWorkflowExecutionServiceApi.runWorkflow(jsonString, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
+                    workflowAttachment.add(jsonContent);
+
+                    System.out.println("runWorkflow: jsonRun is: " + jsonRun + "descriptor is: " + localPrimaryDescriptorFile.getAbsolutePath());
+
+                    clientWorkflowExecutionServiceApi.runWorkflow(jsonRun, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
                 } catch (io.swagger.wes.client.ApiException e) {
                     e.printStackTrace();
                 }

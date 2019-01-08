@@ -148,6 +148,8 @@ public abstract class AbstractEntryClient<T> {
         out("");
         out("  star             :  star/unstar a " + getEntryType() + " in the dockstore");
         out("");
+        out("  wes              :  calls a Workflow Execution Schema API (WES) for a version of a " + getEntryType() + "");
+        out("");
         out("  test_parameter   :  updates test parameter files for a version of a " + getEntryType() + "");
         out("");
         out("  " + CONVERT + "          :  utilities that allow you to convert file types");
@@ -922,18 +924,22 @@ public abstract class AbstractEntryClient<T> {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
+            out("Getting WES URL");
             String wesUrl = optVal(args, "--wes-url", null);
             WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(wesUrl);
             if (args.contains("launch")) {
+                out("Lauching workflow using WES");
                 launch(args);
             } else if (args.contains("status")) {
                 String workflowId = reqVal(args, "--id");
+                out("Getting status of WES workflow");
                 try {
                     clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
                 } catch (io.swagger.wes.client.ApiException e) {
                     e.printStackTrace();
                 }
             } else if (args.contains("cancel")) {
+                out("Canceling WES workflow");
                 String workflowId = reqVal(args, "--id");
                 try {
                     clientWorkflowExecutionServiceApi.cancelRun(workflowId);
