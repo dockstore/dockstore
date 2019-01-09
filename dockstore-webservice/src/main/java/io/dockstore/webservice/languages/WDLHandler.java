@@ -254,9 +254,6 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 return new ImmutablePair<>(false, validationMessageObject);
-            } catch (NullPointerException e) {
-                validationMessageObject.put(primaryDescriptorFilePath, "At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.");
-                return new ImmutablePair<>(false, validationMessageObject);
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {

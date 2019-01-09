@@ -90,28 +90,33 @@ class Bridge(basePath : String) {
     * Will throw an error if the file is an invalid workflow
     * @param file
     * @throws wdl4s.parser.WdlParser.SyntaxError
-    * @throws java.lang.NullPointerException
     */
   @throws(classOf[WdlParser.SyntaxError])
-  @throws(classOf[NullPointerException])
   def isValidWorkflow(file: JFile) = {
+    try {
       val lines = scala.io.Source.fromFile(file).mkString
       WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
+    } catch {
+      case ex: NullPointerException => throw new WdlParser.SyntaxError("At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.")
+    }
   }
 
   /**
     * Will throw an error if the file is an invalid tool
     * @param file
     * @throws wdl4s.parser.WdlParser.SyntaxError
-    * @throws java.lang.NullPointerException
     */
   @throws(classOf[WdlParser.SyntaxError])
-  @throws(classOf[NullPointerException])
   def isValidTool(file: JFile) = {
-    val lines = scala.io.Source.fromFile(file).mkString
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
+    var ns: WdlNamespaceWithWorkflow = null
+    try {
+      val lines = scala.io.Source.fromFile(file).mkString
+      ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
+    } catch {
+      case ex: NullPointerException => throw new WdlParser.SyntaxError("At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.")
+    }
     var taskCount = 0
-    var onlyTask : WdlTask = WdlTask.empty
+    var onlyTask: WdlTask = WdlTask.empty
 
     val allTasks = findCallToTasks(ns)
     allTasks.foreach(taskTuple => {
