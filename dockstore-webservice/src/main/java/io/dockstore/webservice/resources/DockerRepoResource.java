@@ -18,7 +18,6 @@ package io.dockstore.webservice.resources;
 
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -284,8 +283,7 @@ public class DockerRepoResource
         // This somehow forces users to get loaded, c.getUsers() does not work.  c.getUsers().size works too.
         Hibernate.initialize(tool.getUsers());
 
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
-        if (includeSplit.contains("validations")) {
+        if (checkIncludes(include, "validations")) {
             tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
 
@@ -433,8 +431,7 @@ public class DockerRepoResource
         Tool tool = toolDAO.findPublishedById(containerId);
         checkEntry(tool);
 
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
-        if (includeSplit.contains("validations")) {
+        if (checkIncludes(include, "validations")) {
             tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
         return filterContainersForHiddenTags(tool);
@@ -688,8 +685,7 @@ public class DockerRepoResource
         checkEntry(tool);
         checkUser(user, tool);
 
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
-        if (includeSplit.contains("validations")) {
+        if (checkIncludes(include, "validations")) {
             tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
         }
         return tool;
@@ -706,8 +702,7 @@ public class DockerRepoResource
             Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
 
-            ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
-            if (includeSplit.contains("validations")) {
+            if (checkIncludes(include, "validations")) {
                 tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
             }
             filterContainersForHiddenTags(tool);

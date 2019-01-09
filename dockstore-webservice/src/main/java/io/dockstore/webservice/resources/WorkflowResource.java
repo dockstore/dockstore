@@ -466,8 +466,7 @@ public class WorkflowResource
 
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
-        if (includeSplit.contains("validations")) {
+        if (checkIncludes(include, "validations")) {
             workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
         return workflow;
@@ -676,8 +675,7 @@ public class WorkflowResource
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId, @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
-        if (includeSplit.contains("validations")) {
+        if (checkIncludes(include, "validations")) {
             workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
         return filterContainersForHiddenTags(workflow);
@@ -812,8 +810,7 @@ public class WorkflowResource
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
-        if (includeSplit.contains("validations")) {
+        if (checkIncludes(include, "validations")) {
             workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
         return workflow;
@@ -987,12 +984,11 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
-    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("include") String path, @QueryParam("include") String include) {
+    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findByPath(path, true);
         checkEntry(workflow);
 
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
-        if (includeSplit.contains("validations")) {
+        if (checkIncludes(include, "validations")) {
             workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
         }
         filterContainersForHiddenTags(workflow);

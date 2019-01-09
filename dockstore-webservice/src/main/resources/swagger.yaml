@@ -4041,7 +4041,7 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: "include"
+      - name: "repository"
         in: "path"
         description: "repository path"
         required: true

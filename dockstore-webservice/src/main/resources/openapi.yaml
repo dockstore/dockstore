@@ -4409,7 +4409,7 @@ paths:
       description: Does not require workflow name.
       operationId: getPublishedWorkflowByPath
       parameters:
-        - name: include
+        - name: repository
           in: path
           description: repository path
           required: true

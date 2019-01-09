@@ -19,6 +19,8 @@ package io.dockstore.webservice.helpers;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -342,6 +344,18 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Checks if the include string (csv) includes some field
+     * @param include CSV string
+     * @param field Field to query for
+     * @return True if include has the given field, false otherwise
+     */
+    default boolean checkIncludes(String include, String field) {
+        include = include == null ? "" : include;
+        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
+        return includeSplit.contains(field);
     }
 
     /**
