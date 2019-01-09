@@ -44,7 +44,6 @@ import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
@@ -684,7 +683,7 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
@@ -712,11 +711,11 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
 
         validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
-        return new ImmutablePair<>(isValid, validationMessageObject);
+        return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
     @Override
-    public ImmutablePair validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
         Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
         Optional<SourceFile> mainDescriptor = filteredSourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
@@ -744,11 +743,11 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
 
         validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
-        return new ImmutablePair(isValid, validationMessageObject);
+        return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
     @Override
-    public ImmutablePair validateTestParameterSet(Set<SourceFile> sourceFiles) {
+    public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.CWL_TEST_JSON);
     }
 }

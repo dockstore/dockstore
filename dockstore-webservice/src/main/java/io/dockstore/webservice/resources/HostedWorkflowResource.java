@@ -46,7 +46,6 @@ import io.dockstore.webservice.permissions.Role;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -189,12 +188,14 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
-        ImmutablePair validDescriptorSet;
+        LanguageHandlerInterface.VersionTypeValidation validDescriptorSet;
         Validation descriptorValidation;
         if (mainDescriptor.isPresent()) {
             validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
         } else {
-            validDescriptorSet = new ImmutablePair(false, "Missing the primary descriptor.");
+            Map<String, String> validationMessage = new HashMap<>();
+            validationMessage.put("Unknown", "Missing the primary descriptor.");
+            validDescriptorSet = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
         }
         descriptorValidation = new Validation(identifiedType, validDescriptorSet);
         version.addOrUpdateValidation(descriptorValidation);
@@ -207,7 +208,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
                 testParameterType = SourceFile.FileType.WDL_TEST_JSON;
             }
 
-            ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
             Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
             version.addOrUpdateValidation(testParameterValidation);
         }

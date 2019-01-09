@@ -37,7 +37,6 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -68,7 +67,7 @@ public interface LanguageHandlerInterface {
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid workflow set, error message
      */
-    ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+    VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
     /**
      * Validates a tool set for the workflow described by with primaryDescriptorFilePath
@@ -76,14 +75,14 @@ public interface LanguageHandlerInterface {
      * @param primaryDescriptorFilePath Primary descriptor path
      * @return Is a valid tool set, error message
      */
-    ImmutablePair validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
+    VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath);
 
     /**
      * Validates a test parameter set
      * @param sourceFiles Set of sourcefiles
      * @return Are all test parameter files valid, collection of error messages
      */
-    ImmutablePair validateTestParameterSet(Set<SourceFile> sourceFiles);
+    VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles);
 
     /**
      * Parse a descriptor file and return a recursive mapping of its imports
@@ -118,7 +117,7 @@ public interface LanguageHandlerInterface {
      * @param fileType Test parameter file type
      * @return Pair of isValid and validationMessage
      */
-    default ImmutablePair checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
+    default VersionTypeValidation checkValidJsonAndYamlFiles(Set<SourceFile> sourcefiles, SourceFile.FileType fileType) {
         Boolean isValid = true;
         Map<String, String> validationMessageObject = new HashMap<>();
         for (SourceFile sourcefile : sourcefiles) {
@@ -132,7 +131,7 @@ public interface LanguageHandlerInterface {
                 }
             }
         }
-        return new ImmutablePair(isValid, validationMessageObject);
+        return new VersionTypeValidation(isValid, validationMessageObject);
     }
 
     /**
@@ -441,6 +440,32 @@ public interface LanguageHandlerInterface {
         ToolInfo(String dockerContainer, List<String> toolDependencyList) {
             this.dockerContainer = dockerContainer;
             this.toolDependencyList = toolDependencyList;
+        }
+    }
+
+    class VersionTypeValidation {
+        boolean isValid;
+        Map<String, String> message;
+
+        public VersionTypeValidation(boolean isValid, Map<String, String> message) {
+            this.isValid = isValid;
+            this.message = message;
+        }
+
+        public boolean isValid() {
+            return isValid;
+        }
+
+        public void setValid(boolean valid) {
+            isValid = valid;
+        }
+
+        public Map<String, String> getMessage() {
+            return message;
+        }
+
+        public void setMessage(Map<String, String> message) {
+            this.message = message;
         }
     }
 }

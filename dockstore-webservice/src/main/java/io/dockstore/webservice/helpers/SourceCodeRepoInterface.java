@@ -46,7 +46,6 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -547,13 +546,13 @@ public abstract class SourceCodeRepoInterface {
 
         // Validate descriptor set
         if (mainDescriptor.isPresent()) {
-            ImmutablePair validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            LanguageHandlerInterface.VersionTypeValidation validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
             version.addOrUpdateValidation(descriptorValidation);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
             validationMessage.put(mainDescriptorPath, "Missing the primary descriptor.");
-            ImmutablePair noPrimaryDescriptor = new ImmutablePair(false, validationMessage);
+            LanguageHandlerInterface.VersionTypeValidation noPrimaryDescriptor = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
             Validation noPrimaryDescriptorValidation = new Validation(identifiedType, noPrimaryDescriptor);
             version.addOrUpdateValidation(noPrimaryDescriptorValidation);
         }
@@ -566,7 +565,7 @@ public abstract class SourceCodeRepoInterface {
                 testParameterType = SourceFile.FileType.WDL_TEST_JSON;
             }
 
-            ImmutablePair validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
             Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
             version.addOrUpdateValidation(testParameterValidation);
         }

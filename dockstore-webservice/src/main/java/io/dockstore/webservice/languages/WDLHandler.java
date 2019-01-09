@@ -47,7 +47,6 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,7 +201,7 @@ public class WDLHandler implements LanguageHandlerInterface {
      * @param type workflow or tool
      * @return
      */
-    public ImmutablePair validateEntrySet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
+    public VersionTypeValidation validateEntrySet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath, String type) {
         File tempMainDescriptor = null;
         String mainDescriptor = null;
 
@@ -218,12 +217,12 @@ public class WDLHandler implements LanguageHandlerInterface {
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
                         validationMessageObject.put(primaryDescriptorFilePath, "The primary descriptor '" + primaryDescriptorFilePath + "' has no content. Please make it a valid WDL document if you want to save.");
-                        return new ImmutablePair<>(false, validationMessageObject);
+                        return new VersionTypeValidation(false, validationMessageObject);
                     }
                     mainDescriptor = primaryDescriptor.get().getContent();
                 } else {
                     validationMessageObject.put(primaryDescriptorFilePath, "The primary descriptor '" + primaryDescriptorFilePath + "' could not be found.");
-                    return new ImmutablePair<>(false, validationMessageObject);
+                    return new VersionTypeValidation(false, validationMessageObject);
                 }
 
                 Map<String, String> secondaryDescContent = new HashMap<>();
@@ -237,7 +236,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                             } else {
                                 validationMessageObject.put(primaryDescriptorFilePath, "File '" + sourceFile.getPath() + "' has no content. Either delete the file or make it valid.");
                             }
-                            return new ImmutablePair<>(false, validationMessageObject);
+                            return new VersionTypeValidation(false, validationMessageObject);
                         }
                         secondaryDescContent.put(sourceFile.getPath(), sourceFile.getContent());
                     }
@@ -253,7 +252,7 @@ public class WDLHandler implements LanguageHandlerInterface {
                 }
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
-                return new ImmutablePair<>(false, validationMessageObject);
+                return new VersionTypeValidation(false, validationMessageObject);
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
@@ -261,23 +260,23 @@ public class WDLHandler implements LanguageHandlerInterface {
             }
         } else {
             validationMessageObject.put(primaryDescriptorFilePath, "Primary WDL descriptor is not present.");
-            return new ImmutablePair<>(false, validationMessageObject);
+            return new VersionTypeValidation(false, validationMessageObject);
         }
-        return new ImmutablePair<>(true, null);
+        return new VersionTypeValidation(true, null);
     }
 
     @Override
-    public ImmutablePair validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "workflow");
     }
 
     @Override
-    public ImmutablePair validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+    public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
         return validateEntrySet(sourcefiles, primaryDescriptorFilePath, "tool");
     }
 
     @Override
-    public ImmutablePair validateTestParameterSet(Set<SourceFile> sourceFiles) {
+    public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
         return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.WDL_TEST_JSON);
     }
 
