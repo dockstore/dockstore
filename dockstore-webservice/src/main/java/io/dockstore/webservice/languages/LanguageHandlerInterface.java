@@ -444,8 +444,8 @@ public interface LanguageHandlerInterface {
     }
 
     class VersionTypeValidation {
-        boolean isValid;
-        Map<String, String> message;
+        protected boolean isValid;
+        protected Map<String, String> message;
 
         public VersionTypeValidation(boolean isValid, Map<String, String> message) {
             this.isValid = isValid;

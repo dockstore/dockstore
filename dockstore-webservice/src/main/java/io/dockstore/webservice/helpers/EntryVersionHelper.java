@@ -353,8 +353,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @return True if include has the given field, false otherwise
      */
     default boolean checkIncludes(String include, String field) {
-        include = include == null ? "" : include;
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(include.split(",")));
+        String includeString = (include == null ? "" : include);
+        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(includeString.split(",")));
         return includeSplit.contains(field);
     }
 
