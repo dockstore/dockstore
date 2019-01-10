@@ -98,8 +98,8 @@ Docker behaves a bit differently on a [Mac](https://docs.docker.com/docker-for-m
 ```
 export TMPDIR=/tmp/docker_tmp
 ```
-By default, Docker for Mac has reduced resource allocations (CPU, Memory, Swap) compared to what might be available on your machine. You can change this allocation using the Docker for Mac GUI under `Preferences > Advanced` as described [here](https://docs.docker.com/docker-for-mac/#advanced).
-* The default allocation can cause workflows or tools to fail without actually informing the user with a memory or resource related error message. If you find that your workflow or tool is behaving differently on a Mac compared to a similarly resourced Ubuntu environment, you can try increasing the resources allocated to Docker on the Mac to resolve the discrepancy.
+By default, Docker for Mac allocates fewer resources (CPU, Memory, Swap) to containers compared to what is available on your host machine. You can change what it allocates using the Docker for Mac GUI under `Preferences > Advanced` as described [here](https://docs.docker.com/docker-for-mac/#advanced).
+* The default allocation can cause workflows or tools to fail without informing the user with a memory or resource related error message. If you find that your workflow or tool is behaving differently on a Mac compared to a similarly resourced Ubuntu environment, you can try increasing the resources allocated to Docker on the Mac to resolve the discrepancy.
 
 ## What is a verified tool or workflow?
 
