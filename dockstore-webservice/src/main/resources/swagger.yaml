@@ -3045,7 +3045,7 @@ paths:
             type: "array"
             uniqueItems: true
             items:
-              $ref: "#/definitions/User"
+              $ref: "#/definitions/OrganisationUser"
       security:
       - BEARER: []
   /organisations/{organisationId}/user:

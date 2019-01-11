@@ -137,7 +137,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{organisationId}/members")
-    @ApiOperation(value = "Retrieves all members for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class, responseContainer = "Set")
+    @ApiOperation(value = "Retrieves all members for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class, responseContainer = "Set")
     public Set<OrganisationUser> getOrganisationMembers(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
         if (!user.isPresent()) {

@@ -207,6 +207,10 @@ public class OrganisationIT extends BaseIT {
 
         List<Event> events = organisationsApiUser2.getOrganisationEvents(registeredOrganisation.getId());
         assertEquals("There should be 4 events, there are " + events.size(),4, events.size());
+
+        List<io.swagger.client.model.OrganisationUser> users = organisationsApiUser2.getOrganisationMembers(registeredOrganisation.getId());
+        assertEquals("There should be 1 user, there are " + users.size(),1, users.size());
+
     }
 
     /**
@@ -331,6 +335,9 @@ public class OrganisationIT extends BaseIT {
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from organisation_user where accepted = true and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
+
+        List<io.swagger.client.model.OrganisationUser> users = organisationsApiUser2.getOrganisationMembers(organisation.getId());
+        assertEquals("There should be 2 users, there are " + users.size(),2, users.size());
 
         // Should be able to update email of organisation
         String email = "another@email.com";

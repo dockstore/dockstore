@@ -3376,7 +3376,7 @@ paths:
                 type: array
                 uniqueItems: true
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: '#/components/schemas/OrganisationUser'
       security:
         - BEARER: []
   '/organisations/{organisationId}/user':
