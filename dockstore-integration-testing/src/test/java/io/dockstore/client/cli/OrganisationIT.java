@@ -148,6 +148,27 @@ public class OrganisationIT extends BaseIT {
         organisation = organisationsApiCurator.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
 
+        // User should be able to get by name
+        organisation = organisationsApiUser2.getOrganisationByName(registeredOrganisation.getName());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Admin should be able to see by name
+        organisation = organisationsApiAdmin.getOrganisationByName(registeredOrganisation.getName());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Other user should not be able to see by name
+        try {
+            organisation = organisationsApiUser1.getOrganisationByName(registeredOrganisation.getName());
+        } catch (ApiException ex) {
+        } finally {
+            organisation = null;
+        }
+        assertTrue("Organisation should NOT be returned.", organisation == null);
+
+        // Curator should be able to see by name
+        organisation = organisationsApiCurator.getOrganisationByName(registeredOrganisation.getName());
+        assertTrue("Organisation should be returned.", organisation != null);
+
         // Update the organisation
         String email = "another@email.com";
         Organisation newOrganisation = stubOrgObject();

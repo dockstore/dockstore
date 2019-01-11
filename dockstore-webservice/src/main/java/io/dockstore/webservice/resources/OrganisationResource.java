@@ -105,11 +105,42 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/name/{name}/")
+    @ApiOperation(value = "Retrieves an organisation by name.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
+    public Organisation getOrganisationByName(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organisation name.", required = true) @PathParam("name") String name) {
+        if (!user.isPresent()) {
+            // No user given, only show approved organisations
+            Organisation organisation = organisationDAO.findApprovedByName(name);
+            if (organisation == null) {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            }
+            return organisation;
+        } else {
+            // User is given, check if organisation is either approved or the user has access
+            // Admins and curators should be able to see unapproved organisations
+            boolean doesOrgExist = doesOrganisationByNameExistToUser(name, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+            if (!doesOrgExist) {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            }
+
+            Organisation organisation = organisationDAO.findByName(name);
+            return organisation;
+        }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{organisationId}")
     @ApiOperation(value = "Retrieves an organisation by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation getOrganisationById(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
-        return getOrganisationOptionalAuth(user, id);
+        return getOrganisationByIdOptionalAuth(user, id);
     }
 
     @GET
@@ -119,7 +150,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Retrieves all members for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class, responseContainer = "Set")
     public Set<OrganisationUser> getOrganisationMembers(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
-        return getOrganisationOptionalAuth(user, id).getUsers();
+        return getOrganisationByIdOptionalAuth(user, id).getUsers();
     }
 
     @GET
@@ -129,7 +160,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Retrieves all events for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Event.class, responseContainer = "List")
     public List<Event> getOrganisationEvents(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
-        getOrganisationOptionalAuth(user, id);
+        getOrganisationByIdOptionalAuth(user, id);
         return eventDAO.findEventsForOrganisation(id);
     }
 
@@ -139,7 +170,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
      * @param id Organisation id
      * @return Organisation with given id
      */
-    private Organisation getOrganisationOptionalAuth(Optional<User> user, Long id) {
+    private Organisation getOrganisationByIdOptionalAuth(Optional<User> user, Long id) {
         if (!user.isPresent()) {
             // No user given, only show approved organisations
             Organisation organisation = organisationDAO.findApprovedById(id);
@@ -479,6 +510,22 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
      */
     private boolean doesOrganisationExistToUser(Long organisationId, Long userId) {
         Organisation organisation = organisationDAO.findById(organisationId);
+        if (organisation == null) {
+            return false;
+        }
+        OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
+        return organisation.isApproved() || (organisationUser != null);
+    }
+
+    /**
+     * Checks if the given user should know of the existence of the organisation by name
+     * For a user to see an organsation, either it must be approved or the user must have a role in the organisation
+     * @param organisationName
+     * @param userId
+     * @return True if organisation exists to user, false otherwise
+     */
+    private boolean doesOrganisationByNameExistToUser(String organisationName, Long userId) {
+        Organisation organisation = organisationDAO.findByName(organisationName);
         if (organisation == null) {
             return false;
         }

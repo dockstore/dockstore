@@ -3007,6 +3007,31 @@ paths:
                   $ref: '#/components/schemas/Organisation'
       security:
         - BEARER: []
+  '/organisations/name/{name}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves an organisation by name.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getOrganisationByName
+      parameters:
+        - name: name
+          in: path
+          description: Organisation name.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
   '/organisations/{organisationId}':
     get:
       tags:
