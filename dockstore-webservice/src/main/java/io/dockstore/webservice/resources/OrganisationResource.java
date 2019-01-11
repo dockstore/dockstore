@@ -109,28 +109,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Retrieves an organisation by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
     public Organisation getOrganisationById(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
-        if (!user.isPresent()) {
-            // No user given, only show approved organisations
-            Organisation organisation = organisationDAO.findApprovedById(id);
-            if (organisation == null) {
-                String msg = "Organisation not found";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
-            return organisation;
-        } else {
-            // User is given, check if organisation is either approved or the user has access
-            // Admins and curators should be able to see unapproved organisations
-            boolean doesOrgExist = doesOrganisationExistToUser(id, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
-            if (!doesOrgExist) {
-                String msg = "Organisation not found";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
-
-            Organisation organisation = organisationDAO.findById(id);
-            return organisation;
-        }
+        return getOrganisationOptionalAuth(user, id);
     }
 
     @GET
@@ -140,6 +119,27 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Retrieves all members for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class, responseContainer = "Set")
     public Set<OrganisationUser> getOrganisationMembers(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        return getOrganisationOptionalAuth(user, id).getUsers();
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{organisationId}/events")
+    @ApiOperation(value = "Retrieves all events for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Event.class, responseContainer = "List")
+    public List<Event> getOrganisationEvents(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        getOrganisationOptionalAuth(user, id);
+        return eventDAO.findEventsForOrganisation(id);
+    }
+
+    /**
+     * Retrieve an organisation using optional authentication
+     * @param user Optional user to authenticate with
+     * @param id Organisation id
+     * @return Organisation with given id
+     */
+    private Organisation getOrganisationOptionalAuth(Optional<User> user, Long id) {
         if (!user.isPresent()) {
             // No user given, only show approved organisations
             Organisation organisation = organisationDAO.findApprovedById(id);
@@ -148,7 +148,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
-            return organisation.getUsers();
+            return organisation;
         } else {
             // User is given, check if organisation is either approved or the user has access
             // Admins and curators should be able to see unapproved organisations
@@ -160,40 +160,10 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             }
 
             Organisation organisation = organisationDAO.findById(id);
-            return organisation.getUsers();
+            return organisation;
         }
     }
 
-    @GET
-    @Timed
-    @UnitOfWork
-    @Path("/{organisationId}/events")
-    @ApiOperation(value = "Retrieves all events for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Event.class, responseContainer = "List")
-    public List<Event> getOrganisationEvents(@ApiParam(hidden = true) @Auth Optional<User> user,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
-        if (!user.isPresent()) {
-            // No user given, only show approved organisations
-            Organisation organisation = organisationDAO.findApprovedById(id);
-            if (organisation == null) {
-                String msg = "Organisation not found";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
-
-            return eventDAO.findEventsForOrganisation(id);
-        } else {
-            // User is given, check if organisation is either approved or the user has access
-            // Admins and curators should be able to see unapproved organisations
-            boolean doesOrgExist = doesOrganisationExistToUser(id, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
-            if (!doesOrgExist) {
-                String msg = "Organisation not found";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
-
-            return eventDAO.findEventsForOrganisation(id);
-        }
-    }
 
     @GET
     @Timed
