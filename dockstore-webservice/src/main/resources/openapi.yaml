@@ -3322,6 +3322,35 @@ paths:
                 $ref: '#/components/schemas/User'
       security:
         - BEARER: []
+  '/organisations/{organisationId}/members':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves all members for an organisation.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getOrganisationMembers
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
   '/organisations/{organisationId}/user':
     post:
       tags:
