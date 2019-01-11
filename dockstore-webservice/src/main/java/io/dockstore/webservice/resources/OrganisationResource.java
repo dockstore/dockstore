@@ -167,6 +167,37 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{organisationId}/events")
+    @ApiOperation(value = "Retrieves all events for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Event.class, responseContainer = "List")
+    public List<Event> getOrganisationEvents(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        if (!user.isPresent()) {
+            // No user given, only show approved organisations
+            Organisation organisation = organisationDAO.findApprovedById(id);
+            if (organisation == null) {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            }
+
+            return eventDAO.findEventsForOrganisation(id);
+        } else {
+            // User is given, check if organisation is either approved or the user has access
+            // Admins and curators should be able to see unapproved organisations
+            boolean doesOrgExist = doesOrganisationExistToUser(id, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+            if (!doesOrgExist) {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            }
+
+            return eventDAO.findEventsForOrganisation(id);
+        }
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/all")
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
