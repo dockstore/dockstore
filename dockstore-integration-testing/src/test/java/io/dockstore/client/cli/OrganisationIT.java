@@ -139,7 +139,6 @@ public class OrganisationIT extends BaseIT {
         try {
             organisation = organisationsApiUser1.getOrganisationById(registeredOrganisation.getId());
         } catch (ApiException ex) {
-        } finally {
             organisation = null;
         }
         assertTrue("Organisation should NOT be returned.", organisation == null);
@@ -160,7 +159,6 @@ public class OrganisationIT extends BaseIT {
         try {
             organisation = organisationsApiUser1.getOrganisationByName(registeredOrganisation.getName());
         } catch (ApiException ex) {
-        } finally {
             organisation = null;
         }
         assertTrue("Organisation should NOT be returned.", organisation == null);
@@ -394,8 +392,6 @@ public class OrganisationIT extends BaseIT {
         try {
             organisation = organisationsApiOtherUser.updateOrganisation(newOrganisation, orgId);
         } catch (ApiException ex) {
-
-        } finally {
             organisation = null;
         }
         assertTrue("Other user should not be able to update the organisation.", organisation == null);
