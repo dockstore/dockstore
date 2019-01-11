@@ -10,6 +10,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.OrganisationsApi;
 import io.swagger.client.model.Collection;
+import io.swagger.client.model.Event;
 import io.swagger.client.model.Organisation;
 import io.swagger.client.model.PublishRequest;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -203,6 +204,9 @@ public class OrganisationIT extends BaseIT {
         // Organisation should have new information
         organisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
         assertEquals("Organisation should be returned and have an updated link.", link, organisation.getLink());
+
+        List<Event> events = organisationsApiUser2.getOrganisationEvents(registeredOrganisation.getId());
+        assertEquals("There should be 4 events, there are " + events.size(),4, events.size());
     }
 
     /**
