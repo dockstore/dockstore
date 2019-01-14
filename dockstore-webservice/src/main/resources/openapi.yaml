@@ -3131,6 +3131,11 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: include
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         '200':
           description: successful operation
@@ -5688,6 +5693,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the collection in this web service
+        entries:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Entry'
         dbCreateDate:
           type: string
           format: date-time

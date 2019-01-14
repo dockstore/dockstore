@@ -571,6 +571,10 @@ public class OrganisationIT extends BaseIT {
         // Add tool to collection
         organisationsApi.addEntryToCollection(organisation.getId(), collectionId, entryId);
 
+        // The collection should have an entry
+        collection = organisationsApiAdmin.getCollectionById(organisation.getId(), collectionId);
+        assertEquals("There should be one entry with the collection, there are " + collection.getEntries().size(), 1, collection.getEntries().size());
+
         // Publish another tool
         entryId = 1;
         containersApi.publish(entryId, publishRequest);
@@ -602,8 +606,11 @@ public class OrganisationIT extends BaseIT {
         assertEquals("There should be 1 entry associated with the collection, there are " + count5, 1, count5);
 
         // Try getting all collections
-        List<Collection> collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId());
-        assertEquals("There should be 1 entry associated with the collection, there are " + collections.size(), 1, collections.size());
+        List<Collection> collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId(), "");
+        assertEquals("There should be 1 collection associated with the organisation, there are " + collections.size(), 1, collections.size());
+
+        collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId(), "entries");
+        assertEquals("There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size(), 1, collections.get(0).getEntries().size());
     }
 
     /**

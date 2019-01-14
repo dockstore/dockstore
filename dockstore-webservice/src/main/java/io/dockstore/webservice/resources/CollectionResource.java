@@ -1,5 +1,7 @@
 package io.dockstore.webservice.resources;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,6 +41,7 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,6 +111,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             }
 
             Collection collection = collectionDAO.findById(collectionId);
+            Hibernate.initialize(collection.getEntries());
             return collection;
         }
     }
@@ -231,7 +235,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @ApiOperation(value = "Retrieve all collections for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, responseContainer = "List", response = Collection.class)
     public List<Collection> getCollectionsFromOrganisation(@ApiParam(hidden = true) @Auth Optional<User> user,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId, @QueryParam("include") String include) {
         if (!user.isPresent()) {
             Organisation organisation = organisationDAO.findApprovedById(organisationId);
             if (organisation == null) {
@@ -239,8 +243,6 @@ public class CollectionResource implements AuthenticatedResourceInterface {
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
-
-            return collectionDAO.findAllByOrg(organisationId);
         } else {
             boolean doesOrgExist = doesOrganisationExistToUser(organisationId, user.get().getId());
             if (!doesOrgExist) {
@@ -248,9 +250,15 @@ public class CollectionResource implements AuthenticatedResourceInterface {
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
-
-            return collectionDAO.findAllByOrg(organisationId);
         }
+
+        List<Collection> collections = collectionDAO.findAllByOrg(organisationId);
+
+        if (checkIncludes(include, "entries")) {
+            collections.forEach(collection -> Hibernate.initialize(collection.getEntries()));
+        }
+
+        return collectionDAO.findAllByOrg(organisationId);
     }
 
     @PUT
@@ -400,5 +408,17 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         Optional<OrganisationUser> matchingUser = organisationUserSet.stream().filter(organisationUser -> Objects
                 .equals(organisationUser.getUser().getId(), userId)).findFirst();
         return matchingUser.orElse(null);
+    }
+
+    /**
+     * Checks if the include string (csv) includes some field
+     * @param include CSV string
+     * @param field Field to query for
+     * @return True if include has the given field, false otherwise
+     */
+    private boolean checkIncludes(String include, String field) {
+        String includeString = (include == null ? "" : include);
+        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(includeString.split(",")));
+        return includeSplit.contains(field);
     }
 }

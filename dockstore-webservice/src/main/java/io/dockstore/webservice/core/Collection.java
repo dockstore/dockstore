@@ -22,6 +22,7 @@ import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -56,7 +57,7 @@ public class Collection implements Serializable {
     @ApiModelProperty(value = "Description of the collection", position = 2)
     private String description;
 
-    @JsonIgnore
+    @JsonIgnoreProperties("collections")
     @ManyToMany
     @JoinTable(name = "collection_entry", joinColumns = @JoinColumn(name = "collectionid"), inverseJoinColumns = @JoinColumn(name = "entryid"))
     private Set<Entry> entries = new HashSet<>();
