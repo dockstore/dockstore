@@ -33,9 +33,9 @@ import static org.junit.Assert.assertTrue;
 public class LaunchNoInternetTestIT {
     private static String DOCKER_IMAGE_DIRECTORY;
     @Rule
-    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
     @Rule
-    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog().muteForSuccessfulTests();
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
     @Rule
