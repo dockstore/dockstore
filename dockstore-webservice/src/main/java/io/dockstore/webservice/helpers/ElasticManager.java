@@ -29,6 +29,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.jackson.Jackson;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -106,6 +107,9 @@ public class ElasticManager {
             org.elasticsearch.client.Response post;
             switch (command) {
             case UPDATE:
+                if (entry instanceof Workflow && ((Workflow)entry).isIsChecker()) {
+                    return;
+                }
                 post = restClient
                         .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
                 break;
@@ -152,6 +156,7 @@ public class ElasticManager {
     }
 
     public void bulkUpsert(List<Entry> entries) {
+        entries.removeIf(entry -> entry instanceof Workflow && ((Workflow)entry).isIsChecker());
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String newlineDJSON = getNDJSON(entries);
             HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
@@ -174,6 +179,7 @@ public class ElasticManager {
         ObjectMapper mapper = Jackson.newObjectMapper();
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
+        publishedEntries.removeIf(entry -> entry instanceof Workflow && ((Workflow)entry).isIsChecker());
         publishedEntries.forEach(entry -> {
             Map<String, Map<String, String>> index = new HashMap<>();
             Map<String, String> internal = new HashMap<>();
