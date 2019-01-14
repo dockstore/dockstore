@@ -149,9 +149,10 @@ public class ToolsExtendedApi {
         @ApiParam(value = "An identifier of the tool version for this particular tool registry, for example `v1`", required = true) @PathParam("version_id") String versionId,
         @ApiParam(value = "A relative path to the test json as retrieved from the files endpoint or the tests endpoint", required = true) @PathParam("relative_path") String relativePath,
         @ApiParam(value = "Platform to report on", required = true) @QueryParam("platform") String platform,
+        @ApiParam(value = "Version of the platform to report on", required = true) @QueryParam("platform_version") String platformVersion,
         @ApiParam(value = "Verification status, omit to delete key") @QueryParam("verified") Boolean verified,
         @ApiParam(value = "Additional information on the verification (notes, explanation)", required = true) @QueryParam("metadata") String metadata,
         @Context SecurityContext securityContext, @Context ContainerRequestContext containerContext) {
-        return delegate.setSourceFileMetadata(type, id, versionId, platform, relativePath, verified, metadata);
+        return delegate.setSourceFileMetadata(type, id, versionId, platform, platformVersion, relativePath, verified, metadata);
     }
 }

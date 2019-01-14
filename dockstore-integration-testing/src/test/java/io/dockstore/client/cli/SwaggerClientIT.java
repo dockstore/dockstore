@@ -51,7 +51,6 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
 import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Entry;
-import io.swagger.client.model.Group;
 import io.swagger.client.model.MetadataV1;
 import io.swagger.client.model.Permission;
 import io.swagger.client.model.PublishRequest;
@@ -140,8 +139,11 @@ public class SwaggerClientIT extends BaseIT {
 
         // do some minor testing on pagination, majority of tests are in WorkflowIT.testPublishingAndListingOfPublished for now
         // TODO: better testing of pagination when we use it
-        List<DockstoreTool> pagedTools = containersApi.allPublishedContainers("0", 1, "test", "stars", "desc");
-        assertEquals(1, pagedTools.size());
+        List<DockstoreTool> pagedToolsLowercase = containersApi.allPublishedContainers("0", 1, "test", "stars", "desc");
+        assertEquals(1, pagedToolsLowercase.size());
+        List<DockstoreTool> pagedToolsUppercase = containersApi.allPublishedContainers("0", 1, "TEST", "stars", "desc");
+        assertEquals(1, pagedToolsUppercase.size());
+        assertEquals(pagedToolsLowercase, pagedToolsUppercase);
 
         DockstoreTool container = containersApi.getContainerByToolPath("quay.io/test_org/test2");
         assertFalse(container.isIsPublished());
@@ -223,6 +225,7 @@ public class SwaggerClientIT extends BaseIT {
         fileCWL.setContent("cwlstuff");
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
+        fileCWL.setAbsolutePath("/Dockstore.cwl");
         List<SourceFile> files = new ArrayList<>();
         files.add(fileCWL);
         tag.setSourceFiles(files);
@@ -230,16 +233,19 @@ public class SwaggerClientIT extends BaseIT {
         fileDockerFile.setContent("dockerstuff");
         fileDockerFile.setType(SourceFile.TypeEnum.DOCKERFILE);
         fileDockerFile.setPath("/Dockerfile");
+        fileDockerFile.setAbsolutePath("/Dockerfile");
         tag.getSourceFiles().add(fileDockerFile);
         SourceFile testParameterFile = new SourceFile();
         testParameterFile.setContent("testparameterstuff");
         testParameterFile.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
         testParameterFile.setPath("/test1.json");
+        testParameterFile.setAbsolutePath("/test1.json");
         tag.getSourceFiles().add(testParameterFile);
         SourceFile testParameterFile2 = new SourceFile();
         testParameterFile2.setContent("moretestparameterstuff");
         testParameterFile2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
         testParameterFile2.setPath("/test2.json");
+        testParameterFile2.setAbsolutePath("/test2.json");
         tag.getSourceFiles().add(testParameterFile2);
         List<Tag> tags = new ArrayList<>();
         tags.add(tag);
@@ -536,39 +542,6 @@ public class SwaggerClientIT extends BaseIT {
         final DockstoreTool registeredContainer = muggleContainersApi.getPublishedContainer(c.getId());
         assertEquals("should see no tags as a regular user, saw " + registeredContainer.getTags().size(), 0,
             registeredContainer.getTags().size());
-    }
-
-    @Test
-    public void testUserGroups() throws ApiException {
-        ApiClient client = getAdminWebClient();
-
-        UsersApi usersApi = new UsersApi(client);
-
-        Group group = usersApi.createGroup("group1");
-        long groupId = group.getId();
-
-        List<Group> groups = usersApi.allGroups();
-        assertEquals(1, groups.size());
-
-        // add group to non-admin user
-        long userId = 2;
-        User user = usersApi.addGroupToUser(userId, group);
-
-        groups = usersApi.getGroupsFromUser(user.getId());
-        assertTrue(groups.size() > 0);
-
-        List<User> users = usersApi.getUsersFromGroup(groupId);
-        assertTrue(users.size() > 0);
-
-        // remove user from group
-        user = usersApi.removeUserFromGroup(userId, groupId);
-
-        groups = usersApi.getGroupsFromUser(user.getId());
-        assertTrue(groups.isEmpty());
-
-        users = usersApi.getUsersFromGroup(groupId);
-        assertTrue(users.isEmpty());
-
     }
 
     @Test
@@ -946,6 +919,7 @@ public class SwaggerClientIT extends BaseIT {
         fileCWL.setContent("class: Workflow\ncwlVersion: v1.0"); // Need this for CWLHandler:isValidWorkflow
         fileCWL.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         fileCWL.setPath("/Dockstore.cwl");
+        fileCWL.setAbsolutePath("/Dockstore.cwl");
         return fileCWL;
     }
 

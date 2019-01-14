@@ -207,8 +207,9 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
         return Response.ok().entity(0).build();
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     @Override
-    public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String relativePath, Boolean verified,
+    public Response setSourceFileMetadata(String type, String id, String versionId, String platform, String platformVersion, String relativePath, Boolean verified,
         String metadata) {
 
         ToolsApiServiceImpl impl = new ToolsApiServiceImpl();
@@ -243,6 +244,7 @@ public class ToolsApiExtendedServiceImpl extends ToolsExtendedApiService {
                     SourceFile.VerificationInformation verificationInformation = new SourceFile.VerificationInformation();
                     verificationInformation.metadata = metadata;
                     verificationInformation.verified = verified;
+                    verificationInformation.platformVersion = platformVersion;
                     sourceFile.getVerifiedBySource().put(platform, verificationInformation);
                 }
                 // denormalizes verification out to the version level for performance

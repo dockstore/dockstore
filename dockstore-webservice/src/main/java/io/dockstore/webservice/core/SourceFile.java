@@ -82,8 +82,12 @@ public class SourceFile implements Comparable<SourceFile> {
     private String content;
 
     @Column(nullable = false)
-    @ApiModelProperty(value = "Path to source file in git repo", required = true, position = 3)
+    @ApiModelProperty(value = "Path to sourcefile relative to its parent", required = true, position = 3)
     private String path;
+
+    @Column(nullable = false)
+    @ApiModelProperty(value = "Absolute path of sourcefile in git repo", required = true, position = 4)
+    private String absolutePath;
 
     // database timestamps
     @Column(updatable = false)
@@ -141,6 +145,14 @@ public class SourceFile implements Comparable<SourceFile> {
         this.path = path;
     }
 
+    public String getAbsolutePath() {
+        return absolutePath;
+    }
+
+    public void setAbsolutePath(String absolutePath) {
+        this.absolutePath = absolutePath;
+    }
+
     @JsonIgnore
     public Timestamp getDbCreateDate() {
         return dbCreateDate;
@@ -155,12 +167,16 @@ public class SourceFile implements Comparable<SourceFile> {
 
     @Override
     public int compareTo(@NotNull SourceFile that) {
-        return ComparisonChain.start().compare(this.path, that.path).result();
+        if (this.absolutePath == null || that.absolutePath == null) {
+            return ComparisonChain.start().compare(this.path, that.path).result();
+        } else {
+            return ComparisonChain.start().compare(this.absolutePath, that.absolutePath).result();
+        }
     }
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).toString();
+        return MoreObjects.toStringHelper(this).add("id", id).add("type", type).add("path", path).add("absolutePath", absolutePath).toString();
     }
 
     /**
@@ -171,6 +187,10 @@ public class SourceFile implements Comparable<SourceFile> {
         public boolean verified = false;
         @Column(columnDefinition = "text")
         public String metadata = "";
+
+        // By default set to null in database
+        @Column(columnDefinition = "text")
+        public String platformVersion = null;
 
         // database timestamps
         @Column(updatable = false)

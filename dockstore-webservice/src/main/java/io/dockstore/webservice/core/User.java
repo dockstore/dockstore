@@ -16,8 +16,10 @@
 
 package io.dockstore.webservice.core;
 
+import java.io.Serializable;
 import java.security.Principal;
 import java.sql.Timestamp;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,6 +45,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -75,7 +78,7 @@ import org.hibernate.annotations.UpdateTimestamp;
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGoogleEmail", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'google.com' AND p.email = :email)"),
     @NamedQuery(name = "io.dockstore.webservice.core.User.findByGitHubUsername", query = "SELECT t FROM User t JOIN t.userProfiles p where( KEY(p) = 'github.com' AND p.username = :username)") })
 @SuppressWarnings("checkstyle:magicnumber")
-public class User implements Principal, Comparable<User> {
+public class User implements Principal, Comparable<User>, Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
@@ -113,13 +116,6 @@ public class User implements Principal, Comparable<User> {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinTable(name = "endusergroup", joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "groupid", nullable = false, updatable = false, referencedColumnName = "id"))
-    @ApiModelProperty(value = "Groups that this user belongs to", position = 8)
-    @JsonIgnore
-    @OrderBy("id")
-    private final SortedSet<Group> groups;
-
     @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(name = "user_entry", inverseJoinColumns = @JoinColumn(name = "entryid", nullable = false, updatable = false, referencedColumnName = "id"), joinColumns = @JoinColumn(name = "userid", nullable = false, updatable = false, referencedColumnName = "id"))
     @ApiModelProperty(value = "Entries in the dockstore that this user manages", position = 9)
@@ -142,10 +138,24 @@ public class User implements Principal, Comparable<User> {
     @ApiModelProperty(value = "Indicates whether this user has accepted their username", required = true, position = 12)
     private boolean setupComplete = false;
 
+    @Column
+    @ApiModelProperty(value = "Set of organisations the user belongs to", required = true, position = 13)
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Set<OrganisationUser> organisations;
+
     public User() {
-        groups = new TreeSet<>();
         entries = new TreeSet<>();
         starredEntries = new TreeSet<>();
+        organisations = new HashSet<>();
+    }
+
+    public Set<OrganisationUser> getOrganisations() {
+        return organisations;
+    }
+
+    public void setOrganisations(Set<OrganisationUser> organisations) {
+        this.organisations = organisations;
     }
 
     /**
@@ -248,18 +258,6 @@ public class User implements Principal, Comparable<User> {
         this.isAdmin = isAdmin;
     }
 
-    public Set<Group> getGroups() {
-        return groups;
-    }
-
-    public void addGroup(Group group) {
-        groups.add(group);
-    }
-
-    public boolean removeGroup(Group group) {
-        return groups.remove(group);
-    }
-
     public Set<Entry> getEntries() {
         return entries;
     }
@@ -360,7 +358,7 @@ public class User implements Principal, Comparable<User> {
      * The order of the properties are important, the UI lists these properties in this order.
      */
     @Embeddable
-    public static class Profile {
+    public static class Profile implements Serializable {
         @Column(columnDefinition = "text")
         public String name;
         @Column(columnDefinition = "text")

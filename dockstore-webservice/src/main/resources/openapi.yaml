@@ -45,6 +45,7 @@ tags:
     description: Created and modify hosted entries in the dockstore
   - name: metadata
     description: 'Information about Dockstore like RSS, sitemap, lists of dependencies, etc.'
+  - name: organisations
   - name: tokens
     description: 'List, modify, refresh, and delete tokens for external services'
   - name: users
@@ -694,6 +695,12 @@ paths:
         - name: platform
           in: query
           description: Platform to report on
+          required: true
+          schema:
+            type: string
+        - name: platform_version
+          in: query
+          description: Version of the platform to report on
           required: true
           schema:
             type: string
@@ -2933,6 +2940,495 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
+  /organisations:
+    get:
+      tags:
+        - organisations
+      summary: List all available organisations.
+      description: NO Authentication
+      operationId: getApprovedOrganisations
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+    put:
+      tags:
+        - organisations
+      summary: Create an organisation.
+      description: Organisation requires approval by an admin before being made public.
+      operationId: createOrganisation
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        description: Organisation to register.
+        required: true
+  /organisations/all:
+    get:
+      tags:
+        - organisations
+      summary: List all organisations.
+      description: Admin/curator only
+      operationId: getAllOrganisations
+      parameters:
+        - name: type
+          in: query
+          description: Filter to apply to organisations.
+          required: true
+          schema:
+            type: string
+            enum:
+              - all
+              - unapproved
+              - approved
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+  '/organisations/{organisationId}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves an organisation by ID.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getOrganisationById
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+    post:
+      tags:
+        - organisations
+      summary: Update an organisation.
+      description: >-
+        Currently only name, description, email, link and location can be
+        updated.
+      operationId: updateOrganisation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Organisation'
+        description: Organisation to update with.
+        required: true
+  '/organisations/{organisationId}/approve':
+    post:
+      tags:
+        - organisations
+      summary: Approves an organisation.
+      description: Admin/curator only
+      operationId: approveOrganisation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+      security:
+        - BEARER: []
+  '/organisations/{organisationId}/collections':
+    get:
+      tags:
+        - organisations
+      summary: Retrieve all collections for an organisation.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getCollectionsFromOrganisation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    put:
+      tags:
+        - organisations
+      summary: Create a collection in the given organisation.
+      description: ''
+      operationId: createCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        description: Collection to register.
+        required: true
+  '/organisations/{organisationId}/collections/{collectionId}':
+    get:
+      tags:
+        - organisations
+      summary: Retrieves a collection by ID.
+      description: >-
+        Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getCollectionById
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    post:
+      tags:
+        - organisations
+      summary: Update a collection.
+      description: Currently only name and description can be updated.
+      operationId: updateCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Collection'
+        description: Collection to update with.
+        required: true
+  '/organisations/{organisationId}/collections/{collectionId}/entry':
+    post:
+      tags:
+        - organisations
+      summary: Add an entry to a collection.
+      description: ''
+      operationId: addEntryToCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: entryId
+          in: query
+          description: Entry ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+    delete:
+      tags:
+        - organisations
+      summary: Delete an entry from a collection.
+      description: ''
+      operationId: deleteEntryFromCollection
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: entryId
+          in: query
+          description: Entry ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+      security:
+        - BEARER: []
+  '/organisations/{organisationId}/invitation':
+    post:
+      tags:
+        - organisations
+      summary: Accept or reject an organisation invitation.
+      description: 'True accepts the invitation, false rejects the invitation.'
+      operationId: acceptOrRejectInvitation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: accept
+          in: query
+          description: Accept or reject
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - BEARER: []
+  '/organisations/{organisationId}/user':
+    post:
+      tags:
+        - organisations
+      summary: Updates a user role in an organisation.
+      description: ''
+      operationId: updateUserRole
+      parameters:
+        - name: role
+          in: query
+          description: Role of user.
+          required: true
+          schema:
+            type: string
+            enum:
+              - MAINTAINER
+              - MEMBER
+        - name: userId
+          in: query
+          description: User to add to org.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganisationUser'
+      security:
+        - BEARER: []
+    put:
+      tags:
+        - organisations
+      summary: Adds a user role to an organisation.
+      description: ''
+      operationId: addUserToOrg
+      parameters:
+        - name: role
+          in: query
+          description: Role of user.
+          required: true
+          schema:
+            type: string
+            enum:
+              - MAINTAINER
+              - MEMBER
+        - name: userId
+          in: query
+          description: User to add to org.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganisationUser'
+      security:
+        - BEARER: []
+      requestBody:
+        $ref: '#/components/requestBodies/updateLabelsBody'
+    delete:
+      tags:
+        - organisations
+      summary: Remove a user from an organisation.
+      description: ''
+      operationId: deleteUserRole
+      parameters:
+        - name: userId
+          in: query
+          description: User to add to org.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        default:
+          description: successful operation
+      security:
+        - BEARER: []
   '/users/checkUser/{username}':
     get:
       tags:
@@ -2954,95 +3450,6 @@ paths:
             application/json:
               schema:
                 type: boolean
-      security:
-        - BEARER: []
-  /users/groups:
-    get:
-      tags:
-        - users
-      summary: List all groups.
-      description: This is not tied into PermissionsInterface but could be
-      operationId: allGroups
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Group'
-      security:
-        - BEARER: []
-    post:
-      tags:
-        - users
-      summary: Create user group.
-      description: ''
-      operationId: createGroup
-      parameters:
-        - name: group_name
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-      security:
-        - BEARER: []
-  '/users/groups/{groupId}':
-    get:
-      tags:
-        - users
-      summary: List a group.
-      description: This is not tied into PermissionsInterface but could be
-      operationId: getGroup
-      parameters:
-        - name: groupId
-          in: path
-          description: Group
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Group'
-      security:
-        - BEARER: []
-  '/users/groups/{groupId}/users':
-    get:
-      tags:
-        - users
-      summary: Get users that belongs to a group.
-      description: This is not tied into PermissionsInterface but could be
-      operationId: getUsersFromGroup
-      parameters:
-        - name: groupId
-          in: path
-          description: Group
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
       security:
         - BEARER: []
   /users/starredTools:
@@ -3352,95 +3759,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DockstoreTool'
-      security:
-        - BEARER: []
-  '/users/{userId}/groups':
-    get:
-      tags:
-        - users
-      summary: Get groups that the user belongs to.
-      description: This is not tied into PermissionsInterface but could be
-      operationId: getGroupsFromUser
-      parameters:
-        - name: userId
-          in: path
-          description: User
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Group'
-      security:
-        - BEARER: []
-    put:
-      tags:
-        - users
-      summary: Add a group to a user.
-      description: This is not tied into PermissionsInterface but could be
-      operationId: addGroupToUser
-      parameters:
-        - name: userId
-          in: path
-          description: User ID of user
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-      security:
-        - BEARER: []
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Group'
-        description: PublishRequest to refresh the list of repos for a user
-        required: true
-  '/users/{userId}/groups/{groupId}':
-    delete:
-      tags:
-        - users
-      summary: Remove a user from a group.
-      description: This is not tied into PermissionsInterface but could be
-      operationId: removeUserFromGroup
-      parameters:
-        - name: userId
-          in: path
-          description: User ID of user
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: groupId
-          in: path
-          description: Group ID of group
-          required: true
-          schema:
-            type: integer
-            format: int64
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        '400':
-          description: Invalid user or group value
       security:
         - BEARER: []
   '/users/{userId}/tokens':
@@ -5279,6 +5597,31 @@ components:
       properties:
         content:
           type: string
+    Collection:
+      type: object
+      required:
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the collection in this web service
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+          example: Alignment
+          description: Name of the collection.
+          minLength: 3
+          maxLength: 39
+          pattern: '\d*[a-zA-Z][a-zA-Z\d]*'
+        description:
+          type: string
+          description: Description of the collection
     DescriptorLanguageBean:
       type: object
       properties:
@@ -5305,6 +5648,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -5507,6 +5855,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -5645,29 +5998,6 @@ components:
         containerfile is a document that describes how to build a particular
         container image. Examples include Dockerfiles for creating Docker images
         and Singularity recipes for Singularity images 
-    Group:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          readOnly: true
-        name:
-          type: string
-        users:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/User'
-        dbCreateDate:
-          type: string
-          format: date-time
-        dbUpdateDate:
-          type: string
-          format: date-time
-      description: >-
-        This describes a grouping of end-users for the purposes of managing
-        sharing. Implementation-specific.
     Label:
       type: object
       required:
@@ -5719,6 +6049,80 @@ components:
         friendly-name:
           type: string
       description: Describes this registry to better allow for mirroring and indexing.
+    Organisation:
+      type: object
+      required:
+        - approved
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Implementation specific ID for the organisation in this web service
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+          example: OICR
+          description: Name of the organisation (ex. OICR).
+          minLength: 3
+          maxLength: 39
+          pattern: '\d*[a-zA-Z][a-zA-Z\d]*'
+        description:
+          type: string
+          description: Description of the organisation
+        link:
+          type: string
+          description: Link to the organisation website
+        location:
+          type: string
+          description: Location of the organisation
+        email:
+          type: string
+          description: Contact email for the organisation
+        approved:
+          type: boolean
+          description: Is the organisation approved
+    OrganisationUser:
+      type: object
+      required:
+        - accepted
+        - role
+      properties:
+        id:
+          $ref: '#/components/schemas/OrganisationUserId'
+        user:
+          $ref: '#/components/schemas/User'
+        organisation:
+          $ref: '#/components/schemas/Organisation'
+        role:
+          type: string
+          description: The role of the user in the organisation
+          enum:
+            - MAINTAINER
+            - MEMBER
+        accepted:
+          type: boolean
+          description: Has the user accepted their membership.
+        dbCreateDate:
+          type: string
+          format: date-time
+        dbUpdateDate:
+          type: string
+          format: date-time
+    OrganisationUserId:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        organisationId:
+          type: integer
+          format: int64
     Permission:
       type: object
       properties:
@@ -5791,6 +6195,7 @@ components:
     SourceFile:
       type: object
       required:
+        - absolutePath
         - path
         - type
       properties:
@@ -5822,7 +6227,10 @@ components:
           description: Cache for the contents of the target file
         path:
           type: string
-          description: Path to source file in git repo
+          description: Path to sourcefile relative to its parent
+        absolutePath:
+          type: string
+          description: Absolute path of sourcefile in git repo
     StarRequest:
       type: object
       properties:
@@ -6324,6 +6732,8 @@ components:
           type: boolean
         metadata:
           type: string
+        platformVersion:
+          type: string
     VerifyRequest:
       type: object
       properties:
@@ -6349,6 +6759,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
+        collections:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries

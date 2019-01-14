@@ -18,6 +18,7 @@ package io.dockstore.webservice.languages;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,9 +54,11 @@ import wdl4s.parser.WdlParser;
  */
 public class WDLHandler implements LanguageHandlerInterface {
     public static final Logger LOG = LoggerFactory.getLogger(WDLHandler.class);
+    public static final String WDL_SYNTAX_ERROR = "There is a syntax error, please check the WDL file.";
     private static final Pattern IMPORT_PATTERN = Pattern.compile("^import\\s+\"(\\S+)\"");
+
     @Override
-    public Entry parseWorkflowContent(Entry entry, String content, Set<SourceFile> sourceFiles) {
+    public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // Use Broad WDL parser to grab data
         // Todo: Currently just checks validity of file.  In the future pull data such as author from the WDL file
         try {
@@ -69,7 +72,8 @@ public class WDLHandler implements LanguageHandlerInterface {
             WdlParser.Ast ast = (WdlParser.Ast)parser.parse(tokens).toAst();
 
             if (ast == null) {
-                LOG.info("Error with WDL file.");
+                LOG.error(MessageFormat.format("Unable to parse WDL file {0}", filepath));
+                clearMetadata(entry);
                 return entry;
             } else {
                 LOG.info("Repository has Dockstore.wdl");
@@ -112,10 +116,17 @@ public class WDLHandler implements LanguageHandlerInterface {
                 entry.setDescription(description[0]);
             }
         } catch (WdlParser.SyntaxError syntaxError) {
-            LOG.info("Invalid WDL file.");
+            LOG.error(MessageFormat.format("Unable to parse WDL file {0}", filepath), syntaxError);
+            clearMetadata(entry);
         }
 
         return entry;
+    }
+
+    private void clearMetadata(Entry entry) {
+        entry.setAuthor(null);
+        entry.setEmail(null);
+        entry.setDescription(WDL_SYNTAX_ERROR);
     }
 
     private String extractRuntimeAttributeFromAST(WdlParser.AstNode node, String key) {
@@ -195,12 +206,12 @@ public class WDLHandler implements LanguageHandlerInterface {
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface) {
-        return processImports(repositoryId, content, version, sourceCodeRepoInterface, new HashMap<>());
+        SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
+        return processImports(repositoryId, content, version, sourceCodeRepoInterface, new HashMap<>(), filepath);
     }
 
     private Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
-        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports) {
+        SourceCodeRepoInterface sourceCodeRepoInterface, Map<String, SourceFile> imports, String currentFilePath) {
         SourceFile.FileType fileType = SourceFile.FileType.DOCKSTORE_WDL;
 
         // Use matcher to get imports
@@ -221,17 +232,19 @@ public class WDLHandler implements LanguageHandlerInterface {
         for (String importPath : currentFileImports) {
             if (!imports.containsKey(importPath)) {
                 SourceFile importFile = new SourceFile();
+                String absoluteImportPath = convertRelativePathToAbsolutePath(currentFilePath, importPath);
 
-                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, importPath);
+                final String fileResponse = sourceCodeRepoInterface.readGitRepositoryFile(repositoryId, fileType, version, absoluteImportPath);
                 if (fileResponse == null) {
-                    SourceCodeRepoInterface.LOG.error("Could not read: " + importPath);
+                    SourceCodeRepoInterface.LOG.error("Could not read: " + absoluteImportPath);
                     continue;
                 }
                 importFile.setContent(fileResponse);
                 importFile.setPath(importPath);
                 importFile.setType(SourceFile.FileType.DOCKSTORE_WDL);
+                importFile.setAbsolutePath(absoluteImportPath);
                 imports.put(importFile.getPath(), importFile);
-                imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports));
+                imports.putAll(processImports(repositoryId, importFile.getContent(), version, sourceCodeRepoInterface, imports, absoluteImportPath));
             }
         }
         return imports;

@@ -313,6 +313,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 // Sourcefile doesn't exist, add a stub which will have it's content filled on refresh
                 SourceFile sourceFile = new SourceFile();
                 sourceFile.setPath(path);
+                sourceFile.setAbsolutePath(path);
                 sourceFile.setType(fileType);
 
                 long id = fileDAO.create(sourceFile);
@@ -331,7 +332,7 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
-                Path resolve = workingDirectory.resolve(sourceFile.getPath());
+                Path resolve = workingDirectory.resolve(sourceFile.getAbsolutePath());
                 // remove quirk of working directory
                 String stripStart = StringUtils.stripStart(resolve.toFile().toString(), "./");
                 ZipEntry secondaryZipEntry = new ZipEntry(stripStart);

@@ -105,6 +105,8 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setCollections(null);
+        container.setCollections(null);
         assertEquals(container, hostedTool);
         assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> assertNull("getContainer() endpoint should not have user profiles", user.getUserProfiles()));
@@ -119,10 +121,12 @@ public class CRUDClientIT extends BaseIT {
         descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         descriptorFile.setPath("/Dockstore.cwl");
+        descriptorFile.setAbsolutePath("/Dockstore.cwl");
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
         dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
         DockstoreTool dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
         Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 2, first.get().getSourceFiles().size());
@@ -132,6 +136,7 @@ public class CRUDClientIT extends BaseIT {
         file2.setContent("{\"message\": \"Hello world!\"}");
         file2.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
         file2.setPath("/test.json");
+        file2.setAbsolutePath("/test.json");
         // add one file and include the old one implicitly
         dockstoreTool = api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file2));
         first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
@@ -192,6 +197,8 @@ public class CRUDClientIT extends BaseIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setCollections(null);
+        container.setCollections(null);
         assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> assertNull("getWorkflow() endpoint should not have user profiles", user.getUserProfiles()));
         assertEquals(container, hostedTool);
@@ -206,6 +213,7 @@ public class CRUDClientIT extends BaseIT {
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertEquals("correct number of source files", 1, first.get().getSourceFiles().size());
@@ -215,6 +223,7 @@ public class CRUDClientIT extends BaseIT {
         file2.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("arguments.cwl")), StandardCharsets.UTF_8));
         file2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file2.setPath("/arguments.cwl");
+        file2.setAbsolutePath("/arguments.cwl");
         // add one file and include the old one implicitly
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file2));
         first = dockstoreWorkflow .getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
@@ -224,6 +233,7 @@ public class CRUDClientIT extends BaseIT {
         file3.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         file3.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file3.setPath("/tar-param.cwl");
+        file3.setAbsolutePath("/tar-param.cwl");
         // add one file and include the old one implicitly
         dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file3));
         first = dockstoreWorkflow .getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
@@ -271,6 +281,7 @@ public class CRUDClientIT extends BaseIT {
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("hosted_metadata/Dockstore.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         assertTrue(!dockstoreWorkflow.getAuthor().isEmpty() && !dockstoreWorkflow.getEmail().isEmpty());
     }
@@ -282,6 +293,7 @@ public class CRUDClientIT extends BaseIT {
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("metadata_example2.wdl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_WDL);
         file.setPath("/Dockstore.wdl");
+        file.setAbsolutePath("/Dockstore.wdl");
         Workflow dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         assertTrue(!dockstoreWorkflow.getAuthor().isEmpty() && !dockstoreWorkflow.getEmail().isEmpty());
     }
@@ -346,10 +358,12 @@ public class CRUDClientIT extends BaseIT {
         descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         descriptorFile.setPath("/Dockstore.cwl");
+        descriptorFile.setAbsolutePath("/Dockstore.cwl");
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
         dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
         DockstoreTool dockstoreTool = hostedApi.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
         Optional<Tag> first = dockstoreTool.getTags().stream().max(Comparator.comparingInt((Tag t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());
@@ -373,6 +387,7 @@ public class CRUDClientIT extends BaseIT {
         file.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("1st-workflow.cwl")), StandardCharsets.UTF_8));
         file.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         file.setPath("/Dockstore.cwl");
+        file.setAbsolutePath("/Dockstore.cwl");
         Workflow dockstoreWorkflow = hostedApi.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file));
         Optional<WorkflowVersion> first = dockstoreWorkflow.getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
         assertTrue(first.isPresent());

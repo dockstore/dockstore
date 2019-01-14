@@ -125,6 +125,8 @@ public class LimitedCRUDClientIT {
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
+        hostedTool.setCollections(null);
+        container.setCollections(null);
         assertEquals(container, hostedTool);
         assertEquals(1, container.getUsers().size());
         container.getUsers().forEach(user -> assertNull("getContainer() endpoint should not have user profiles", user.getUserProfiles()));
@@ -148,10 +150,12 @@ public class LimitedCRUDClientIT {
         descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         descriptorFile.setPath("/Dockstore.cwl");
+        descriptorFile.setAbsolutePath("/Dockstore.cwl");
         SourceFile dockerfile = new SourceFile();
         dockerfile.setContent("FROM ubuntu:latest");
         dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
         dockerfile.setPath("/Dockerfile");
+        dockerfile.setAbsolutePath("/Dockerfile");
         api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
 
         // test repeated workflow version creation up to limit

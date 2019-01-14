@@ -343,6 +343,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                     SourceFile file = new SourceFile();
                     file.setContent(decodedContent);
                     file.setPath(calculatedPath);
+                    file.setAbsolutePath(calculatedPath);
                     file.setType(identifiedType);
                     version.setValid(validWorkflow);
                     version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
@@ -365,6 +366,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                             }
 
                             testJson.setPath(workflow.getDefaultTestParameterFilePath());
+                            testJson.setAbsolutePath(workflow.getDefaultTestParameterFilePath());
                             testJson.setContent(testJsonContent);
 
                             // Check if test parameter file has already been added

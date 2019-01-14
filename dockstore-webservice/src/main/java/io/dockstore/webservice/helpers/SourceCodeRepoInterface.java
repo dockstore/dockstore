@@ -105,6 +105,7 @@ public abstract class SourceCodeRepoInterface {
             }
             dockstoreFile.setContent(fileResponse);
             dockstoreFile.setPath(path);
+            dockstoreFile.setAbsolutePath(path);
             return Optional.of(dockstoreFile);
         }
         return Optional.empty();
@@ -293,7 +294,7 @@ public abstract class SourceCodeRepoInterface {
 
         // Parse file content and update
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(type);
-        entry = anInterface.parseWorkflowContent(entry, firstFileContent, sourceFiles);
+        entry = anInterface.parseWorkflowContent(entry, finalFilePath, firstFileContent, sourceFiles);
         return entry;
     }
 
@@ -391,7 +392,7 @@ public abstract class SourceCodeRepoInterface {
 
         if (sourceFile != null && sourceFile.getContent() != null) {
             final Map<String, SourceFile> stringSourceFileMap = this
-                .resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version);
+                .resolveImports(repositoryId, sourceFile.getContent(), identifiedType, version, sourceFile.getPath());
             sourceFileSet.addAll(stringSourceFileMap.values());
         }
 
@@ -481,9 +482,9 @@ public abstract class SourceCodeRepoInterface {
         }
     }
 
-    Map<String, SourceFile> resolveImports(String repositoryId, String content, SourceFile.FileType fileType, Version version) {
+    public Map<String, SourceFile> resolveImports(String repositoryId, String content, SourceFile.FileType fileType, Version version, String filepath) {
         LanguageHandlerInterface languageInterface = LanguageHandlerFactory.getInterface(fileType);
-        return languageInterface.processImports(repositoryId, content, version, this);
+        return languageInterface.processImports(repositoryId, content, version, this, filepath);
     }
 
     /**

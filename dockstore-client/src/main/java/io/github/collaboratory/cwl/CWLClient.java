@@ -75,6 +75,7 @@ public class CWLClient implements LanguageClientInterface {
     }
 
     /**
+     *
      * @param entry        either a dockstore.cwl or a local file
      * @param isLocalEntry is the descriptor a local file
      * @param yamlRun      runtime descriptor, one of these is required
@@ -87,6 +88,7 @@ public class CWLClient implements LanguageClientInterface {
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget,
         String uuid) throws IOException, ApiException {
+        this.abstractEntryClient.loadDockerImages();
         String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlRun, jsonRun, csvRuns);
         if (!SCRIPT.get()) {
             abstractEntryClient.getClient().checkForCWLDependencies();

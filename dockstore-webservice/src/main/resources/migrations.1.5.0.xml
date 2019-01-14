@@ -216,4 +216,13 @@
             UPDATE workflow SET descriptorType='nfl' WHERE descriptorType='nextflow'
         </sql>
     </changeSet>
+    <changeSet id="addSourcefileAbsolutePath" author="agduncan">
+        <addColumn tableName="sourcefile">
+            <column name="absolutepath" type="varchar(255 BYTE)"/>
+        </addColumn>
+        <sql dbms="postgresql">
+            UPDATE sourcefile SET absolutepath=path
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>

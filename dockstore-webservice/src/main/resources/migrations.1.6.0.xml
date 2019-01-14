@@ -1,0 +1,157 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<!--
+  ~    Copyright 2018 OICR
+  ~
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~
+  ~        http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd"
+                   context="1.6.0">
+    <changeSet author="gluu (generated)" id="addPlatformVersionToSourcefileVerified">
+        <addColumn tableName="sourcefile_verified">
+            <column name="platformversion" type="text" remarks="By default set to null"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addOrganisationTable">
+        <createTable tableName="organisation">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="organisation_pkey"/>
+            </column>
+            <column name="approved" type="BOOLEAN"/>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="description" type="TEXT"/>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="link" type="VARCHAR(255)"/>
+            <column name="location" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addOrganisationUserTable">
+        <createTable tableName="organisation_user">
+            <column name="organisationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="organisationuser_pkey"/>
+            </column>
+            <column name="userid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="organisationuser_pkey"/>
+            </column>
+            <column name="accepted" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="role" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="uniqueNameForOrgs">
+        <addUniqueConstraint columnNames="name" constraintName="nameUK" tableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addOrganisationFKToOrgUser">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="organisation_user" constraintName="orgFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addUserFKToOrgUser">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="organisation_user" constraintName="userFKOrgUser" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupFK1">
+        <dropForeignKeyConstraint baseTableName="endusergroup" constraintName="fkm0exig2r3dsxqafwaraf7rnr3"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupFK2">
+        <dropForeignKeyConstraint baseTableName="endusergroup" constraintName="fkrxn6hh2max4sk4ceehyv7mt2e"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropEndUserGroupTable">
+        <dropTable tableName="endusergroup"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="dropUserGroupTable">
+        <dropTable tableName="usergroup"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="createEventsTable">
+        <createTable tableName="event">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="event_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="initiatoruserid" type="BIGINT"/>
+            <column name="organisationid" type="BIGINT"/>
+            <column name="toolid" type="BIGINT"/>
+            <column name="userid" type="BIGINT"/>
+            <column name="workflowid" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addOrganisationFKEvent">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="event" constraintName="fkOrganisationId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addInitiatorUserFKEvent">
+        <addForeignKeyConstraint baseColumnNames="initiatoruserid" baseTableName="event" constraintName="FKInitiatorUserId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addToolFKEvent">
+        <addForeignKeyConstraint baseColumnNames="toolid" baseTableName="event" constraintName="FKToolId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="tool"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addUserFKEvent">
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="event" constraintName="FKUserId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addWorkflowFKEvent">
+        <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="event" constraintName="FKWorkflowId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="createCollectionTable">
+        <createTable tableName="collection">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="collection_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="description" type="TEXT"/>
+            <column name="name" type="VARCHAR(39)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="organisationid" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="createCollectionEntryTable">
+        <createTable tableName="collection_entry">
+            <column name="collectionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="collection_entry_pkey"/>
+            </column>
+            <column name="entryid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="collection_entry_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addCollectionNameConstraint">
+        <addUniqueConstraint columnNames="name" constraintName="uk_collectionName" tableName="collection"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addOrgIdFKConstraint">
+        <addForeignKeyConstraint baseColumnNames="organisationid" baseTableName="collection" constraintName="fk_orgIdInCollection" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organisation"/>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="1addCollectionIdFKConstraint">
+        <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="collection_entry" constraintName="fk_collectionIdInCollectionEntry" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addCollectionColumnToEvent">
+        <addColumn tableName="event">
+            <column name="collectionid" type="int8"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addCollectionFKEvent">
+        <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="event" constraintName="fk_collectionIdInEvent" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
+    </changeSet>
+
+</databaseChangeLog>
