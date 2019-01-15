@@ -508,7 +508,7 @@ public abstract class AbstractImageRegistry {
         Validation descriptorValidation = new Validation(fileType, isValidDescriptor);
         tag.addOrUpdateValidation(descriptorValidation);
 
-        SourceFile.FileType testParamType;
+        SourceFile.FileType testParamType = null;
         switch (fileType) {
         case DOCKSTORE_CWL:
             testParamType = SourceFile.FileType.CWL_TEST_JSON;
@@ -516,14 +516,18 @@ public abstract class AbstractImageRegistry {
         case DOCKSTORE_WDL:
             testParamType = SourceFile.FileType.WDL_TEST_JSON;
             break;
+        case NEXTFLOW_CONFIG:
+            // Nextflow does not have test parameter files, so do not fail
+            break;
         default:
             throw new CustomWebApplicationException(fileType + " is not a valid tool type.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        LanguageHandlerInterface.VersionTypeValidation isValidTestParameter = LanguageHandlerFactory.getInterface(fileType)
-                .validateTestParameterSet(tag.getSourceFiles());
-        Validation testParameterValidation = new Validation(testParamType, isValidTestParameter);
-        tag.addOrUpdateValidation(testParameterValidation);
+        if (testParamType != null) {
+            LanguageHandlerInterface.VersionTypeValidation isValidTestParameter = LanguageHandlerFactory.getInterface(fileType).validateTestParameterSet(tag.getSourceFiles());
+            Validation testParameterValidation = new Validation(testParamType, isValidTestParameter);
+            tag.addOrUpdateValidation(testParameterValidation);
+        }
 
         return tag;
     }

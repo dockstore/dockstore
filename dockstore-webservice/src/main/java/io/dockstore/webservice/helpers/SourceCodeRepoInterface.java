@@ -560,7 +560,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Validate test parameter set
-        SourceFile.FileType testParameterType;
+        SourceFile.FileType testParameterType = null;
         switch (identifiedType) {
         case DOCKSTORE_CWL:
             testParameterType = SourceFile.FileType.CWL_TEST_JSON;
@@ -568,13 +568,18 @@ public abstract class SourceCodeRepoInterface {
         case DOCKSTORE_WDL:
             testParameterType = SourceFile.FileType.WDL_TEST_JSON;
             break;
+        case NEXTFLOW_CONFIG:
+            // Nextflow does not have test parameter files, so do not fail
+            break;
         default:
             throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
         }
 
-        LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
-        version.addOrUpdateValidation(testParameterValidation);
+        if (testParameterType != null) {
+            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+            version.addOrUpdateValidation(testParameterValidation);
+        }
 
         version.setValid(isValidVersion(version));
 
