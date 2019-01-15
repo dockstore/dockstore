@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -100,6 +101,10 @@ public class ElasticManager {
             LOGGER.error("Could not perform the elastic search index update.");
             return;
         }
+
+        if (entry instanceof Workflow && ((Workflow)entry).isIsChecker()) {
+            return;
+        }
         String json = getDocumentValueFromEntry(entry);
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String entryType = entry instanceof Tool ? "tool" : "workflow";
@@ -156,7 +161,10 @@ public class ElasticManager {
     }
 
     public void bulkUpsert(List<Entry> entries) {
-        entries.removeIf(entry -> entry instanceof Workflow && ((Workflow)entry).isIsChecker());
+        entries = filterCheckerWorkflows(entries);
+        if (entries.isEmpty()) {
+            return;
+        }
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String newlineDJSON = getNDJSON(entries);
             HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
@@ -167,6 +175,10 @@ public class ElasticManager {
         } catch (IOException e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
         }
+    }
+
+    public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
+        return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow && !((Workflow)entry).isIsChecker())).collect(Collectors.toList());
     }
 
     /**
