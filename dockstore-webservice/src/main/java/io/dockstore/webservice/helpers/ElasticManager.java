@@ -92,6 +92,10 @@ public class ElasticManager {
      * @param command The command to perform for the document, either "update" or "delete" document
      */
     public void handleIndexUpdate(Entry entry, ElasticMode command) {
+        entry = filterCheckerWorkflows(entry);
+        if (entry == null) {
+            return;
+        }
         LOGGER.info("Performing index update with " + command + ".");
         if (ElasticManager.hostname == null || ElasticManager.hostname.isEmpty()) {
             LOGGER.error("No elastic search host found.");
@@ -101,10 +105,6 @@ public class ElasticManager {
             LOGGER.error("Could not perform the elastic search index update.");
             return;
         }
-
-        if (entry instanceof Workflow && ((Workflow)entry).isIsChecker()) {
-            return;
-        }
         String json = getDocumentValueFromEntry(entry);
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String entryType = entry instanceof Tool ? "tool" : "workflow";
@@ -112,9 +112,6 @@ public class ElasticManager {
             org.elasticsearch.client.Response post;
             switch (command) {
             case UPDATE:
-                if (entry instanceof Workflow && ((Workflow)entry).isIsChecker()) {
-                    return;
-                }
                 post = restClient
                         .performRequest("POST", "/entry/" + entryType + "/" + entry.getId() + "/_update", Collections.emptyMap(), entity);
                 break;
@@ -177,6 +174,24 @@ public class ElasticManager {
         }
     }
 
+    /**
+     * If entry is a checker workflow, return null.  Otherwise, return entry
+     * @param entry     The entry to check
+     * @return          null if checker, entry otherwise
+     */
+    public static Entry filterCheckerWorkflows(Entry entry) {
+        if (entry instanceof Workflow && ((Workflow)entry).isIsChecker()) {
+            return null;
+        } else {
+            return entry;
+        }
+    }
+
+    /**
+     * Remove checker workflow from list of entries
+     * @param entries   List of all entries
+     * @return          List of entries without checker workflows
+     */
     public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
         return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow && !((Workflow)entry).isIsChecker())).collect(Collectors.toList());
     }
@@ -191,7 +206,6 @@ public class ElasticManager {
         ObjectMapper mapper = Jackson.newObjectMapper();
         Gson gson = new GsonBuilder().create();
         StringBuilder builder = new StringBuilder();
-        publishedEntries.removeIf(entry -> entry instanceof Workflow && ((Workflow)entry).isIsChecker());
         publishedEntries.forEach(entry -> {
             Map<String, Map<String, String>> index = new HashMap<>();
             Map<String, String> internal = new HashMap<>();
