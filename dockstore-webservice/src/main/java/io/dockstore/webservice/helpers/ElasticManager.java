@@ -180,11 +180,7 @@ public class ElasticManager {
      * @return          null if checker, entry otherwise
      */
     public static Entry filterCheckerWorkflows(Entry entry) {
-        if (entry instanceof Workflow && ((Workflow)entry).isIsChecker()) {
-            return null;
-        } else {
-            return entry;
-        }
+        return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
     }
 
     /**
