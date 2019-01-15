@@ -89,12 +89,14 @@ public class ElasticManagerIT {
 
     @Test
     public void filterCheckerWorkflows() {
+        Workflow checkerWorkflow = new Workflow();
+        checkerWorkflow.setIsChecker(true);
         Workflow workflow = new Workflow();
-        workflow.setIsChecker(true);
+        workflow.setIsChecker(false);
         Tool tool = new Tool();
-        List<Entry> entries = manager.filterCheckerWorkflows(Arrays.asList(workflow, tool));
-        Assert.assertEquals("There should've been 1 entry without checker workflow", 1, entries.size());
-        entries.forEach(entry -> Assert.assertFalse("There should be no workflow", entry instanceof Workflow));
+        List<Entry> entries = manager.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
+        Assert.assertEquals("There should've been 2 entries without the checker workflow", 2, entries.size());
+        entries.forEach(entry -> Assert.assertFalse("There should be no checker workflows", entry instanceof Workflow && ((Workflow)entry).isIsChecker()));
     }
 
 
