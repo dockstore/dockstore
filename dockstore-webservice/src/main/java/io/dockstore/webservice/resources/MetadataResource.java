@@ -55,6 +55,8 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApiService;
 import io.dockstore.webservice.resources.rss.RSSEntry;
 import io.dockstore.webservice.resources.rss.RSSFeed;
 import io.dockstore.webservice.resources.rss.RSSHeader;
@@ -79,6 +81,8 @@ import org.slf4j.LoggerFactory;
 public class MetadataResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
+    private static final int ERROR_STATUS_CODE = 500;
+    private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
@@ -277,6 +281,21 @@ public class MetadataResource {
             LOG.warn("unable to determine cache size, may not have initialized yet");
         }
         return results;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/elasticSearch")
+    @ApiOperation(value = "Successful response if elastic search is up and running.", notes = "NO authentication")
+    public Response checkElasticSearch() {
+        Response elasticSearchResponse;
+        try {
+            elasticSearchResponse = delegate.toolsIndexSearch(null, null, null);
+        } catch (Exception ex) {
+            return Response.status(ERROR_STATUS_CODE).build();
+        }
+        return Response.ok().build();
     }
 
 }
