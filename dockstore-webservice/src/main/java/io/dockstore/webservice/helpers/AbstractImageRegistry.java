@@ -35,6 +35,7 @@ import javax.validation.constraints.NotNull;
 
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -50,6 +51,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -506,7 +508,17 @@ public abstract class AbstractImageRegistry {
         Validation descriptorValidation = new Validation(fileType, isValidDescriptor);
         tag.addOrUpdateValidation(descriptorValidation);
 
-        SourceFile.FileType testParamType = Objects.equals(fileType, SourceFile.FileType.DOCKSTORE_WDL) ? SourceFile.FileType.WDL_TEST_JSON : SourceFile.FileType.CWL_TEST_JSON;
+        SourceFile.FileType testParamType;
+        switch (fileType) {
+        case DOCKSTORE_CWL:
+            testParamType = SourceFile.FileType.CWL_TEST_JSON;
+            break;
+        case DOCKSTORE_WDL:
+            testParamType = SourceFile.FileType.WDL_TEST_JSON;
+            break;
+        default:
+            throw new CustomWebApplicationException(fileType + " is not a valid tool type.", HttpStatus.SC_BAD_REQUEST);
+        }
 
         LanguageHandlerInterface.VersionTypeValidation isValidTestParameter = LanguageHandlerFactory.getInterface(fileType)
                 .validateTestParameterSet(tag.getSourceFiles());

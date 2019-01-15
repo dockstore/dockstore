@@ -275,7 +275,7 @@ public class DockerRepoResource
     @ApiOperation(value = "Retrieve a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @QueryParam("include") String include) {
+        @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findById(containerId);
         checkEntry(tool);
         checkUser(user, tool);
@@ -427,7 +427,7 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/published/{containerId}")
     @ApiOperation(value = "Get a published tool.", notes = "NO authentication", response = Tool.class)
-    public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @QueryParam("include") String include) {
+    public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findPublishedById(containerId);
         checkEntry(tool);
 
@@ -680,7 +680,7 @@ public class DockerRepoResource
     @ApiOperation(value = "Get a tool by the specific tool path", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @QueryParam("include") String include) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findByPath(path, false);
         checkEntry(tool);
         checkUser(user, tool);
@@ -697,7 +697,7 @@ public class DockerRepoResource
     @Path("/path/tool/{repository}/published")
     @ApiOperation(value = "Get a published tool by the specific tool path.", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @QueryParam("include") String include) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);

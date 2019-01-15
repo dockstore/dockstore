@@ -34,6 +34,7 @@ import javax.validation.constraints.NotNull;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.LanguageType;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -46,6 +47,7 @@ import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -558,17 +560,21 @@ public abstract class SourceCodeRepoInterface {
         }
 
         // Validate test parameter set
-        if (!Objects.equals(identifiedType, SourceFile.FileType.NEXTFLOW_CONFIG)) {
-            // Nextflow does not currently have test parameter files
-            SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
-            if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
-                testParameterType = SourceFile.FileType.WDL_TEST_JSON;
-            }
-
-            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
-            version.addOrUpdateValidation(testParameterValidation);
+        SourceFile.FileType testParameterType;
+        switch (identifiedType) {
+        case DOCKSTORE_CWL:
+            testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            break;
+        case DOCKSTORE_WDL:
+            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            break;
+        default:
+            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
         }
+
+        LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+        version.addOrUpdateValidation(testParameterValidation);
 
         version.setValid(isValidVersion(version));
 

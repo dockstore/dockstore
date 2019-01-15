@@ -200,18 +200,21 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         descriptorValidation = new Validation(identifiedType, validDescriptorSet);
         version.addOrUpdateValidation(descriptorValidation);
 
-        // Validate test parameter set
-        if (Objects.equals(identifiedType, SourceFile.FileType.NEXTFLOW_CONFIG)) {
-            // Nextflow does not currently have test parameter files
-            SourceFile.FileType testParameterType = SourceFile.FileType.CWL_TEST_JSON;
-            if (Objects.equals(identifiedType, SourceFile.FileType.DOCKSTORE_WDL)) {
-                testParameterType = SourceFile.FileType.WDL_TEST_JSON;
-            }
-
-            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
-            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
-            version.addOrUpdateValidation(testParameterValidation);
+        SourceFile.FileType testParameterType;
+        switch (identifiedType) {
+        case DOCKSTORE_CWL:
+            testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            break;
+        case DOCKSTORE_WDL:
+            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            break;
+        default:
+            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
         }
+
+        LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+        Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+        version.addOrUpdateValidation(testParameterValidation);
 
         return version;
     }
