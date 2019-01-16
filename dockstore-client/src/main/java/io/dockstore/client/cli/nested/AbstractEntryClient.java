@@ -900,7 +900,7 @@ public abstract class AbstractEntryClient<T> {
             } catch (ParserException ex) {
                 errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
             } catch (IOException e) {
-                errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
+                errorMessage("Could not launch, try checking file path or permissions " + jsonFile, CLIENT_ERROR);
             }
         }
         if (args.contains("--yaml")) {
@@ -910,7 +910,7 @@ public abstract class AbstractEntryClient<T> {
             } catch (ParserException ex) {
                 errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
             } catch (IOException e) {
-                errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
+                errorMessage("Could not launch, try checking file path or permissions: " + yamlFile, CLIENT_ERROR);
             }
         }
     }
@@ -928,9 +928,9 @@ public abstract class AbstractEntryClient<T> {
                 errorMessage("You can only use one of --local-entry and --entry at a time. Please use --help for more information.",
                         CLIENT_ERROR);
             } else if (args.contains("--local-entry")) {
-                preValidateLaunchArguments(args);
                 final String descriptor = optVal(args, "--descriptor", null);
                 final String localFilePath = reqVal(args, "--local-entry");
+                preValidateLaunchArguments(args);
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
                 if (!args.contains("--entry")) {
