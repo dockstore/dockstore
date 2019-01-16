@@ -5740,11 +5740,6 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
-        collections:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -5947,11 +5942,6 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
-        collections:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
@@ -6902,11 +6892,6 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the container in this web service
-        collections:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/Collection'
         aliases:
           type: object
           description: aliases can be used as an alternate unique id for entries
