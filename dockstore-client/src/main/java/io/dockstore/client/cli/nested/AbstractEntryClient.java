@@ -893,8 +893,9 @@ public abstract class AbstractEntryClient<T> {
      * @param args
      */
     protected void preValidateLaunchArguments(List<String> args) {
-        if (args.contains("--json")) {
-            String jsonFile = reqVal(args, "--json");
+        String jsonFile = optVal(args, "--json", null);
+        String yamlFile = optVal(args, "--yaml", null);
+        if (jsonFile != null) {
             try {
                 fileToJSON(jsonFile);
             } catch (ParserException ex) {
@@ -903,8 +904,7 @@ public abstract class AbstractEntryClient<T> {
                 errorMessage("Could not launch, try checking file path or permissions " + jsonFile, CLIENT_ERROR);
             }
         }
-        if (args.contains("--yaml")) {
-            String yamlFile = reqVal(args, "--yaml");
+        if (yamlFile != null) {
             try {
                 fileToJSON(yamlFile);
             } catch (ParserException ex) {
@@ -1397,9 +1397,10 @@ public abstract class AbstractEntryClient<T> {
      * Reads a file whose format is either YAML or JSON and makes a JSON string out of the contents
      * @param yamlRun
      * @return
-     * @throws IOException, ParserException
+     * @throws ParserException if the JSON or YAML is not syntactically valid
+     * @throws IOException
      */
-    public String fileToJSON(String yamlRun) throws IOException, ParserException {
+    public String fileToJSON(String yamlRun) throws IOException {
         Yaml yaml = new Yaml();
         final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
         Map<String, Object> map = yaml.load(fileInputStream);
