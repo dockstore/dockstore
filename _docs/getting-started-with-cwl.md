@@ -266,11 +266,7 @@ So what's going on here?  What's the Dockstore CLI doing?  It can best be summed
 
 The command line first provisions file.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs.  After provisioning the docker image is pulled and ran via the `cwltool` command line. This uses the `Dockerfile.cwl` and parameterization JSON file (`sample_configs.local.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.  In this case it's just a file copy to `/tmp/bamstats_report.zip` but it could copy the result to a destination in S3 for example.
 
-**Tip:** you can use `--debug` to get much more information during this run, including the actual call to cwltool (which can be super helpful in debugging):
-
-```
-cwltool --non-strict --enable-net --outdir /home/ubuntu/gitroot/dockstore-tool-bamstats/./datastore/launcher-08852137-71c1-4b75-b2fc-16ab7ca3243b/outputs/ /home/ubuntu/gitroot/dockstore-tool-bamstats/Dockstore.cwl /home/ubuntu/gitroot/dockstore-tool-bamstats/./datastore/launcher-08852137-71c1-4b75-b2fc-16ab7ca3243b/workflow_params.json
-```
+**Tip:** you can use `--debug` to get much more information during this run, including the actual call to cwltool (which can be super helpful in debugging).
 
 **Tip:** the `dockstore` CLI automatically create a `datastore` directory in the current working directory where you execute the command and uses it for inputs/outputs.  It can get quite large depending on the tool/inputs/outputs being used.  Plan accordingly e.g. execute the dockstore CLI in a directory located on a partition with sufficient storage.
 
