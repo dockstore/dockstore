@@ -156,7 +156,7 @@
 
     <changeSet author="aduncan (generated)" id="addTopicToOrganisation">
         <addColumn tableName="organisation">
-            <column name="topic" type="TEXT"/>
+            <column name="topic" type="VARCHAR(255)"/>
         </addColumn>
     </changeSet>
 

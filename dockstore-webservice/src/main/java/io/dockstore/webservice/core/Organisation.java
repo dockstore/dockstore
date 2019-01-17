@@ -78,7 +78,7 @@ public class Organisation implements Serializable {
     @JsonIgnore
     private Set<OrganisationUser> users = new HashSet<>();
 
-    @Column(columnDefinition = "TEXT")
+    @Column
     @ApiModelProperty(value = "Short description of the organisation", position = 8)
     private String topic;
 
