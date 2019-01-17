@@ -525,27 +525,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     }
 
     /**
-     * Checks if the given user should know of the existence of the organisation by name
-     * For a user to see an organsation, either it must be approved or the user must have a role in the organisation
-     * @param organisationName
-     * @param userId
-     * @return True if organisation exists to user, false otherwise
-     */
-    private boolean doesOrganisationByNameExistToUser(String organisationName, Long userId) {
-        Organisation organisation = organisationDAO.findByName(organisationName);
-        if (organisation == null) {
-            return false;
-        }
-
-        if (organisation.isApproved()) {
-            return true;
-        } else {
-            OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
-            return organisationUser != null;
-        }
-    }
-
-    /**
      * Common checks done by the user add/edit/delete endpoints
      * @param organisationId
      * @param userId
