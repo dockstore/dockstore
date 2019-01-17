@@ -154,4 +154,10 @@
         <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="event" constraintName="fk_collectionIdInEvent" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
     </changeSet>
 
+    <changeSet author="aduncan (generated)" id="addTopicToOrganisation">
+        <addColumn tableName="organisation">
+            <column name="topic" type="VARCHAR(255)"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

@@ -297,6 +297,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         // Update organisation
         oldOrganisation.setName(organisation.getName());
         oldOrganisation.setDescription(organisation.getDescription());
+        oldOrganisation.setTopic(organisation.getTopic());
         oldOrganisation.setEmail(organisation.getEmail());
         oldOrganisation.setLink(organisation.getLink());
         oldOrganisation.setLocation(organisation.getLocation());
