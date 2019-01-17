@@ -903,7 +903,7 @@ public abstract class AbstractEntryClient<T> {
             } catch (ParserException ex) {
                 errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
             } catch (IOException e) {
-                errorMessage("Could not launch, try checking file path or permissions " + jsonFile, CLIENT_ERROR);
+                errorMessage("Could not launch, try checking file path or permissions " + jsonFile, IO_ERROR);
             }
         }
         if (yamlFile != null) {
@@ -912,7 +912,7 @@ public abstract class AbstractEntryClient<T> {
             } catch (ParserException ex) {
                 errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
             } catch (IOException e) {
-                errorMessage("Could not launch, try checking file path or permissions: " + yamlFile, CLIENT_ERROR);
+                errorMessage("Could not launch, try checking file path or permissions: " + yamlFile, IO_ERROR);
             }
         }
     }
