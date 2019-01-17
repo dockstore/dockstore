@@ -10,6 +10,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.OrganisationsApi;
 import io.swagger.client.model.Collection;
+import io.swagger.client.model.Event;
 import io.swagger.client.model.Organisation;
 import io.swagger.client.model.PublishRequest;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
@@ -138,13 +139,32 @@ public class OrganisationIT extends BaseIT {
         try {
             organisation = organisationsApiUser1.getOrganisationById(registeredOrganisation.getId());
         } catch (ApiException ex) {
-        } finally {
             organisation = null;
         }
         assertTrue("Organisation should NOT be returned.", organisation == null);
 
         // Curator should be able to see by id
         organisation = organisationsApiCurator.getOrganisationById(registeredOrganisation.getId());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // User should be able to get by name
+        organisation = organisationsApiUser2.getOrganisationByName(registeredOrganisation.getName());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Admin should be able to see by name
+        organisation = organisationsApiAdmin.getOrganisationByName(registeredOrganisation.getName());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Other user should not be able to see by name
+        try {
+            organisation = organisationsApiUser1.getOrganisationByName(registeredOrganisation.getName());
+        } catch (ApiException ex) {
+            organisation = null;
+        }
+        assertTrue("Organisation should NOT be returned.", organisation == null);
+
+        // Curator should be able to see by name
+        organisation = organisationsApiCurator.getOrganisationByName(registeredOrganisation.getName());
         assertTrue("Organisation should be returned.", organisation != null);
 
         // Update the organisation
@@ -203,6 +223,13 @@ public class OrganisationIT extends BaseIT {
         // Organisation should have new information
         organisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
         assertEquals("Organisation should be returned and have an updated link.", link, organisation.getLink());
+
+        List<Event> events = organisationsApiUser2.getOrganisationEvents(registeredOrganisation.getId());
+        assertEquals("There should be 4 events, there are " + events.size(),4, events.size());
+
+        List<io.swagger.client.model.OrganisationUser> users = organisationsApiUser2.getOrganisationMembers(registeredOrganisation.getId());
+        assertEquals("There should be 1 user, there are " + users.size(),1, users.size());
+
     }
 
     /**
@@ -328,6 +355,9 @@ public class OrganisationIT extends BaseIT {
                 .runSelectStatement("select count(*) from organisation_user where accepted = true and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be 1 accepted role for user 2 and org 1, there are " + count5, 1, count5);
 
+        List<io.swagger.client.model.OrganisationUser> users = organisationsApiUser2.getOrganisationMembers(organisation.getId());
+        assertEquals("There should be 2 users, there are " + users.size(),2, users.size());
+
         // Should be able to update email of organisation
         String email = "another@email.com";
         Organisation newOrganisation = stubOrgObject();
@@ -362,8 +392,6 @@ public class OrganisationIT extends BaseIT {
         try {
             organisation = organisationsApiOtherUser.updateOrganisation(newOrganisation, orgId);
         } catch (ApiException ex) {
-
-        } finally {
             organisation = null;
         }
         assertTrue("Other user should not be able to update the organisation.", organisation == null);
@@ -543,6 +571,10 @@ public class OrganisationIT extends BaseIT {
         // Add tool to collection
         organisationsApi.addEntryToCollection(organisation.getId(), collectionId, entryId);
 
+        // The collection should have an entry
+        collection = organisationsApiAdmin.getCollectionById(organisation.getId(), collectionId);
+        assertEquals("There should be one entry with the collection, there are " + collection.getEntries().size(), 1, collection.getEntries().size());
+
         // Publish another tool
         entryId = 1;
         containersApi.publish(entryId, publishRequest);
@@ -574,8 +606,11 @@ public class OrganisationIT extends BaseIT {
         assertEquals("There should be 1 entry associated with the collection, there are " + count5, 1, count5);
 
         // Try getting all collections
-        List<Collection> collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId());
-        assertEquals("There should be 1 entry associated with the collection, there are " + collections.size(), 1, collections.size());
+        List<Collection> collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId(), "");
+        assertEquals("There should be 1 collection associated with the organisation, there are " + collections.size(), 1, collections.size());
+
+        collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId(), "entries");
+        assertEquals("There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size(), 1, collections.get(0).getEntries().size());
     }
 
     /**

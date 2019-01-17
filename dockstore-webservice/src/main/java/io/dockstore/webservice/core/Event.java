@@ -11,6 +11,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import io.swagger.annotations.ApiModel;
@@ -28,6 +30,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "event")
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:hiddenfield"})
+@NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganisation", query = "SELECT eve FROM Event eve WHERE eve.organisation.id = :organisationId")
+})
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

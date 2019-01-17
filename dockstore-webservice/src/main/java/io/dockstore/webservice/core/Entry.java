@@ -19,7 +19,6 @@ package io.dockstore.webservice.core;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -147,9 +146,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     @Column
     @ApiModelProperty(value = "This is a link to the associated repo with a descriptor, required GA4GH", required = true, position = 11)
     private String gitUrl;
-
-    @ManyToMany(mappedBy = "entries")
-    private Set<Collection> collections = new HashSet<>();
 
     @JsonIgnore
     @JoinColumn(name = "checkerid")
@@ -351,14 +347,6 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
 
     public boolean removeStarredUser(User user) {
         return starredUsers.remove(user);
-    }
-
-    public Set<Collection> getCollections() {
-        return collections;
-    }
-
-    public void setCollections(Set<Collection> collections) {
-        this.collections = collections;
     }
 
     /**
