@@ -289,8 +289,9 @@ public class MetadataResource {
     @Path("/elasticSearch")
     @ApiOperation(value = "Successful response if elastic search is up and running.", notes = "NO authentication")
     public Response checkElasticSearch() {
+        Response elasticSearchResponse;
         try {
-            delegate.toolsIndexSearch(null, null, null);
+            elasticSearchResponse = delegate.toolsIndexSearch(null, null, null);
         } catch (Exception ex) {
             return Response.status(ERROR_STATUS_CODE).build();
         }
