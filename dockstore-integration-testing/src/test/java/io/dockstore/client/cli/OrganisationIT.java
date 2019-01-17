@@ -1,5 +1,6 @@
 package io.dockstore.client.cli;
 
+import java.util.Arrays;
 import java.util.List;
 
 import io.dockstore.common.CommonTestUtilities;
@@ -49,6 +50,9 @@ public class OrganisationIT extends BaseIT {
     public void resetDBBetweenTests() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
     }
+
+    // All numbers, too short, bad pattern, too long, foreign characters
+    final List<String> badNames = Arrays.asList("1234", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "我喜欢狗");
 
     /**
      * Creates a stub organisation object
@@ -464,18 +468,7 @@ public class OrganisationIT extends BaseIT {
     public void testCreateOrganisationWithInvalidNames() {
         final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
         OrganisationsApi organisationsApi = new OrganisationsApi(webClientUser2);
-
-        // Create org with name that is all numbers
-        createOrgWithBadName("1234", organisationsApi);
-
-        // Create org with name that is too short
-        createOrgWithBadName("ab", organisationsApi);
-
-        // Create org with name that is too long
-        createOrgWithBadName("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", organisationsApi);
-
-        // Create org with name in foreign characters
-        createOrgWithBadName("我喜欢狗", organisationsApi);
+        badNames.forEach(name -> createOrgWithBadName(name, organisationsApi));
     }
 
     /**
@@ -495,7 +488,28 @@ public class OrganisationIT extends BaseIT {
         }
 
         if (!throwsError) {
-            fail("Was able to create an organisation with an incorrect name.");
+            fail("Was able to create an organisation with an incorrect name: " + name);
+        }
+    }
+
+    /**
+     * Helper that creates an organisation with a name that should fail
+     * @param name
+     * @param organisationsApi
+     */
+    private void createCollectionWithBadName(String name, OrganisationsApi organisationsApi, Long organizationId) {
+        Collection collection = stubCollectionObject();
+        collection.setName(name);
+
+        boolean throwsError = false;
+        try {
+            organisationsApi.createCollection(organizationId, collection);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to create a collection with an incorrect name: " + name);
         }
     }
 
@@ -522,6 +536,11 @@ public class OrganisationIT extends BaseIT {
         // Create the organisation and collection
         Organisation organisation = createOrg(organisationsApi);
         Collection stubCollection = stubCollectionObject();
+
+        final Long organizationID = organisation.getId();
+        badNames.forEach(name -> {
+            createCollectionWithBadName(name, organisationsApi, organizationID);
+        });
 
         // Attach collection
         Collection collection = organisationsApi.createCollection(organisation.getId(), stubCollection);
