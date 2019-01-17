@@ -1,6 +1,5 @@
 package io.dockstore.webservice.resources;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -412,13 +411,13 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
     /**
      * Checks if the include string (csv) includes some field
-     * @param include CSV string
+     * @param include CSV string where each field is of the form [a-zA-Z]+
      * @param field Field to query for
      * @return True if include has the given field, false otherwise
      */
     private boolean checkIncludes(String include, String field) {
         String includeString = (include == null ? "" : include);
-        ArrayList<String> includeSplit = new ArrayList(Arrays.asList(includeString.split(",")));
+        List<String> includeSplit = Arrays.asList(includeString.split(","));
         return includeSplit.contains(field);
     }
 }

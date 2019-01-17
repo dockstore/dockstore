@@ -121,15 +121,22 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         } else {
             // User is given, check if organisation is either approved or the user has access
             // Admins and curators should be able to see unapproved organisations
-            boolean doesOrgExist = doesOrganisationByNameExistToUser(name, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
-            if (!doesOrgExist) {
+            Organisation organisation = organisationDAO.findByName(name);
+            if (organisation == null) {
                 String msg = "Organisation not found";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
-            Organisation organisation = organisationDAO.findByName(name);
-            return organisation;
+            OrganisationUser role = getUserOrgRole(organisation, user.get().getId());
+
+            if (user.get().getIsAdmin() || user.get().isCurator() || role != null) {
+                return organisation;
+            } else {
+                String msg = "Organisation not found";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            }
         }
     }
 
@@ -529,8 +536,13 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (organisation == null) {
             return false;
         }
-        OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
-        return organisation.isApproved() || (organisationUser != null);
+
+        if (organisation.isApproved()) {
+            return true;
+        } else {
+            OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
+            return organisationUser != null;
+        }
     }
 
     /**
