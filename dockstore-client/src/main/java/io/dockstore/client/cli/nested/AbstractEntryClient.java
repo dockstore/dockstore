@@ -893,8 +893,10 @@ public abstract class AbstractEntryClient<T> {
      * @param args
      */
     protected void preValidateLaunchArguments(List<String> args) {
-        String jsonFile = optVal(args, "--json", null);
-        String yamlFile = optVal(args, "--yaml", null);
+        //create a copy of args for prevalidation since optVal removes args from list
+        List<String> argsCopy = new java.util.ArrayList(args);
+        String jsonFile = optVal(argsCopy, "--json", null);
+        String yamlFile = optVal(argsCopy, "--yaml", null);
         if (jsonFile != null) {
             try {
                 fileToJSON(jsonFile);
