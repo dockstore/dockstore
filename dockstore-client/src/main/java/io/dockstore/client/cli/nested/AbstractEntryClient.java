@@ -893,7 +893,7 @@ public abstract class AbstractEntryClient<T> {
      * @param args
      */
     protected void preValidateLaunchArguments(List<String> args) {
-        //create a copy of args for prevalidation since optVal removes args from list
+        // Create a copy of args for prevalidation since optVal removes args from list
         List<String> argsCopy = new java.util.ArrayList(args);
         String jsonFile = optVal(argsCopy, "--json", null);
         String yamlFile = optVal(argsCopy, "--yaml", null);
@@ -902,9 +902,9 @@ public abstract class AbstractEntryClient<T> {
                 fileToJSON(jsonFile);
             } catch (ParserException ex) {
                 errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
-            }
-            catch (IOException e) {
-                //Fail silently, let existing code handle
+            } catch (IOException e) {
+                // Log error, but let existing code handle
+                LOG.error("Could not launch. IO error, check path or permissions of input file: " + jsonFile, e);
             }
         }
         if (yamlFile != null) {
@@ -913,7 +913,8 @@ public abstract class AbstractEntryClient<T> {
             } catch (ParserException ex) {
                 errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
             } catch (IOException e) {
-                //Fail silently, let existing code handle
+                // Log error, but let existing code handle
+                LOG.error("Could not launch. IO error, check path or permissions of input file: " + yamlFile, e);
             }
         }
     }
