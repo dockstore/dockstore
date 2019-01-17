@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,9 +67,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import okhttp3.Cache;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -292,6 +296,13 @@ public class MetadataResource {
         Response elasticSearchResponse;
         try {
             elasticSearchResponse = delegate.toolsIndexSearch(null, null, null);
+            String result = IOUtils.toString((InputStream)(elasticSearchResponse.getEntity()), StandardCharsets.UTF_8);
+            JSONObject jsonObj = new JSONObject(result);
+            JSONObject hitsHolder = jsonObj.getJSONObject("hits");
+            JSONArray hitsArray = hitsHolder.getJSONArray("hits");
+            if (hitsArray.length() == 0) {
+                return Response.status(ERROR_STATUS_CODE).build();
+            }
         } catch (Exception ex) {
             return Response.status(ERROR_STATUS_CODE).build();
         }
