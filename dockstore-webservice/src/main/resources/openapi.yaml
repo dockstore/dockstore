@@ -4,7 +4,7 @@ info:
     This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-alpha.1-SNAPSHOT
+  version: 1.6.0-alpha.3-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -6068,7 +6068,7 @@ components:
         name:
           type: string
           example: OICR
-          description: Name of the organisation (ex. OICR).
+          description: Name of the organisation (ex. OICR)
           minLength: 3
           maxLength: 39
           pattern: '\d*[a-zA-Z][a-zA-Z\d]*'
@@ -6087,6 +6087,9 @@ components:
         approved:
           type: boolean
           description: Is the organisation approved
+        topic:
+          type: string
+          description: Short description of the organisation
     OrganisationUser:
       type: object
       required:

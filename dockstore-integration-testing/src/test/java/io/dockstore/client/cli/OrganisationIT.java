@@ -61,6 +61,7 @@ public class OrganisationIT extends BaseIT {
         organisation.setLink("testlink");
         organisation.setEmail("test@email.com");
         organisation.setDescription(markdownDescription);
+        organisation.setTopic("This is a short topic");
         return organisation;
     }
 
