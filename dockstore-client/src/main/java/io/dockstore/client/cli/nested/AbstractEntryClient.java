@@ -888,12 +888,14 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
-     * Validates that any JSON and/or YAML files are syntactically valid.
+     * Validates that any JSON and/or YAML files being passed in are syntactically valid.
+     * If there is any error other than invalid syntax, the error is ignored and expected to be handled later.
+     * Because prevalidation occurs prior to launch, the args need to be preserved for the later handling.
      *
      * @param args
      */
     protected void preValidateLaunchArguments(List<String> args) {
-        // Create a copy of args for prevalidation since optVal removes args from list
+        // Create a copy of args for prevalidation since optVals removes args from list
         List<String> argsCopy = new java.util.ArrayList(args);
         String jsonFile = optVal(argsCopy, "--json", null);
         String yamlFile = optVal(argsCopy, "--yaml", null);
