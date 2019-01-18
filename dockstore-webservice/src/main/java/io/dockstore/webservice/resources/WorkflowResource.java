@@ -466,9 +466,7 @@ public class WorkflowResource
 
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
-        if (checkIncludes(include, "validations")) {
-            workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
-        }
+        initializeValidations(include, workflow);
         return workflow;
     }
 
@@ -675,9 +673,7 @@ public class WorkflowResource
     public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
-        if (checkIncludes(include, "validations")) {
-            workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
-        }
+        initializeValidations(include, workflow);
         return filterContainersForHiddenTags(workflow);
     }
 
@@ -810,9 +806,7 @@ public class WorkflowResource
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
-        if (checkIncludes(include, "validations")) {
-            workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
-        }
+        initializeValidations(include, workflow);
         return workflow;
     }
 
@@ -988,9 +982,7 @@ public class WorkflowResource
         Workflow workflow = workflowDAO.findByPath(path, true);
         checkEntry(workflow);
 
-        if (checkIncludes(include, "validations")) {
-            workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
-        }
+        initializeValidations(include, workflow);
         filterContainersForHiddenTags(workflow);
         return workflow;
     }
@@ -1684,6 +1676,17 @@ public class WorkflowResource
 
         // Return the original entry
         return toolDAO.getGenericEntryById(entryId);
+    }
+
+    /**
+     * If include contains validations field, initialize the workflows validations for all of its workflow versions
+     * @param include
+     * @param workflow
+     */
+    private void initializeValidations(String include, Workflow workflow) {
+        if (checkIncludes(include, "validations")) {
+            workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
+        }
     }
 
     @Override
