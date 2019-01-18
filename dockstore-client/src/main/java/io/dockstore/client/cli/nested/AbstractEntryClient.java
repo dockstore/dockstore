@@ -1406,7 +1406,7 @@ public abstract class AbstractEntryClient<T> {
      */
     public String fileToJSON(String yamlRun) throws IOException {
         Yaml yaml = new Yaml();
-        try (final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun))) {
+        try (FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun))) {
             Map<String, Object> map = yaml.load(fileInputStream);
             JSONObject jsonObject = new JSONObject(map);
             return jsonObject.toString();
