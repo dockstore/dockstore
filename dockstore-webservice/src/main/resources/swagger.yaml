@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-alpha.1-SNAPSHOT"
+  version: "1.6.0-alpha.3-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2724,6 +2724,29 @@ paths:
               $ref: "#/definitions/Organisation"
       security:
       - BEARER: []
+  /organisations/name/{name}:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an organisation by name."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationByName"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "name"
+        in: "path"
+        description: "Organisation name."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
   /organisations/{organisationId}:
     get:
       tags:
@@ -2817,6 +2840,10 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2987,6 +3014,32 @@ paths:
             $ref: "#/definitions/Collection"
       security:
       - BEARER: []
+  /organisations/{organisationId}/events:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves all events for an organisation."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationEvents"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Event"
+      security:
+      - BEARER: []
   /organisations/{organisationId}/invitation:
     post:
       tags:
@@ -3013,6 +3066,33 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/User"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/members:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves all members for an organisation."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationMembers"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            uniqueItems: true
+            items:
+              $ref: "#/definitions/OrganisationUser"
       security:
       - BEARER: []
   /organisations/{organisationId}/user:
@@ -5161,6 +5241,11 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the collection in this web service"
+      entries:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Entry"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -5205,11 +5290,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      collections:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Collection"
       aliases:
         type: "object"
         description: "aliases can be used as an alternate unique id for entries"
@@ -5424,11 +5504,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      collections:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Collection"
       aliases:
         type: "object"
         description: "aliases can be used as an alternate unique id for entries"
@@ -5535,6 +5610,64 @@ definitions:
         format: "int32"
       message:
         type: "string"
+  Event:
+    type: "object"
+    required:
+    - "type"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the event in this web service"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      user:
+        position: 1
+        description: "User that the event is acting on."
+        $ref: "#/definitions/User"
+      organisation:
+        position: 2
+        description: "Organisation that the event is acting on."
+        $ref: "#/definitions/Organisation"
+      tool:
+        position: 3
+        description: "Tool that the event is acting on."
+        $ref: "#/definitions/DockstoreTool"
+      workflow:
+        position: 4
+        description: "Workflow that the event is acting on."
+        $ref: "#/definitions/Workflow"
+      collection:
+        position: 5
+        description: "Collection that the event is acting on."
+        $ref: "#/definitions/Collection"
+      initiatorUser:
+        position: 6
+        description: "User initiating the event."
+        $ref: "#/definitions/User"
+      type:
+        type: "string"
+        position: 7
+        description: "The event type."
+        enum:
+        - "CREATE_ORG"
+        - "DELETE_ORG"
+        - "MODIFY_ORG"
+        - "APPROVE_ORG"
+        - "ADD_USER_TO_ORG"
+        - "REMOVE_USER_FROM_ORG"
+        - "MODIFY_USER_ROLE_ORG"
+        - "APPROVE_ORG_INVITE"
+        - "REJECT_ORG_INVITE"
+        - "CREATE_COLLECTION"
+        - "MODIFY_COLLECTION"
+        - "REMOVE_FROM_COLLECTION"
+        - "ADD_TO_COLLECTION"
+    description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
     properties:
@@ -5642,7 +5775,7 @@ definitions:
         type: "string"
         example: "OICR"
         position: 1
-        description: "Name of the organisation (ex. OICR)."
+        description: "Name of the organisation (ex. OICR)"
         minLength: 3
         maxLength: 39
         pattern: "\\d*[a-zA-Z][a-zA-Z\\d]*"
@@ -5666,6 +5799,10 @@ definitions:
         type: "boolean"
         position: 6
         description: "Is the organisation approved"
+      topic:
+        type: "string"
+        position: 8
+        description: "Short description of the organisation"
   OrganisationUser:
     type: "object"
     required:
@@ -6378,11 +6515,6 @@ definitions:
         type: "integer"
         format: "int64"
         description: "Implementation specific ID for the container in this web service"
-      collections:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/Collection"
       aliases:
         type: "object"
         description: "aliases can be used as an alternate unique id for entries"

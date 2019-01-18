@@ -37,7 +37,8 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllUnapproved", query = "SELECT org FROM Organisation org WHERE org.approved = false"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAll", query = "SELECT org FROM Organisation org"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByName", query = "SELECT org FROM Organisation org WHERE org.name = :name"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id AND org.approved = true")
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id AND org.approved = true"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedByName", query = "SELECT org FROM Organisation org WHERE org.name = :name AND org.approved = true")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Organisation implements Serializable {
@@ -49,7 +50,7 @@ public class Organisation implements Serializable {
     @Column(nullable = false, unique = true)
     @Pattern(regexp = "\\d*[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
-    @ApiModelProperty(value = "Name of the organisation (ex. OICR).", required = true, example = "OICR", position = 1)
+    @ApiModelProperty(value = "Name of the organisation (ex. OICR)", required = true, example = "OICR", position = 1)
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -77,6 +78,10 @@ public class Organisation implements Serializable {
     @OneToMany(mappedBy = "organisation", fetch = FetchType.LAZY)
     @JsonIgnore
     private Set<OrganisationUser> users = new HashSet<>();
+
+    @Column
+    @ApiModelProperty(value = "Short description of the organisation", position = 8)
+    private String topic;
 
     @JsonIgnore
     @OneToMany(mappedBy = "organisation")
@@ -186,5 +191,13 @@ public class Organisation implements Serializable {
     public void removeCollection(Collection collection) {
         collections.remove(collection);
         collection.setOrganisation(null);
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 }

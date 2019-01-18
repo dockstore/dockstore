@@ -69,7 +69,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public class WDLClient implements LanguageClientInterface {
 
-    private static final String DEFAULT_CROMWELL_VERSION = "30.2";
+    private static final String DEFAULT_CROMWELL_VERSION = "36";
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
 
 

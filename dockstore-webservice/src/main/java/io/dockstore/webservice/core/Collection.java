@@ -56,8 +56,7 @@ public class Collection implements Serializable {
     @ApiModelProperty(value = "Description of the collection", position = 2)
     private String description;
 
-    @JsonIgnore
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "collection_entry", joinColumns = @JoinColumn(name = "collectionid"), inverseJoinColumns = @JoinColumn(name = "entryid"))
     private Set<Entry> entries = new HashSet<>();
 
@@ -108,12 +107,10 @@ public class Collection implements Serializable {
 
     public void addEntry(Entry entry) {
         this.entries.add(entry);
-        entry.getCollections().add(this);
     }
 
     public void removeEntry(Entry entry) {
         this.entries.remove(entry);
-        entry.getCollections().remove(this);
     }
 
     public Organisation getOrganisation() {

@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc446ce0a9bd4f81b3258c50f95e01b5)](https://app.codacy.com/app/dockstore/dockstore?utm_source=github.com&utm_medium=referral&utm_content=ga4gh/dockstore&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://travis-ci.org/ga4gh/dockstore.svg?branch=develop)](https://travis-ci.org/ga4gh/dockstore) 
 [![codecov](https://codecov.io/gh/ga4gh/dockstore/branch/develop/graph/badge.svg)](https://codecov.io/gh/ga4gh/dockstore)
 [![Website](https://img.shields.io/website/https/dockstore.org.svg)](https://dockstore.org)
