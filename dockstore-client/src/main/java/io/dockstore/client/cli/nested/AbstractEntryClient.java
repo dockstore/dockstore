@@ -902,9 +902,9 @@ public abstract class AbstractEntryClient<T> {
                 fileToJSON(jsonFile);
             } catch (ParserException ex) {
                 errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // Log error, but let existing code handle
-                LOG.error("Could not launch. IO error, check path or permissions of input file: " + jsonFile, e);
+                LOG.error("Error prevalidating input file: " + jsonFile, e);
             }
         }
         if (yamlFile != null) {
@@ -912,9 +912,9 @@ public abstract class AbstractEntryClient<T> {
                 fileToJSON(yamlFile);
             } catch (ParserException ex) {
                 errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // Log error, but let existing code handle
-                LOG.error("Could not launch. IO error, check path or permissions of input file: " + yamlFile, e);
+                LOG.error("Error prevalidating input file: " + yamlFile, e);
             }
         }
     }
@@ -1406,9 +1406,10 @@ public abstract class AbstractEntryClient<T> {
      */
     public String fileToJSON(String yamlRun) throws IOException {
         Yaml yaml = new Yaml();
-        final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
-        Map<String, Object> map = yaml.load(fileInputStream);
-        JSONObject jsonObject = new JSONObject(map);
-        return jsonObject.toString();
+        try (final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun))) {
+            Map<String, Object> map = yaml.load(fileInputStream);
+            JSONObject jsonObject = new JSONObject(map);
+            return jsonObject.toString();
+        }
     }
 }
