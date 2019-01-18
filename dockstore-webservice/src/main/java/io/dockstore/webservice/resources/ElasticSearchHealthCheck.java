@@ -22,22 +22,23 @@ public class ElasticSearchHealthCheck extends HealthCheck {
 
     @Override
     protected Result check() throws Exception {
+        String baseMessage = "Error contacting Elastic Search";
         // If elastic search is up with a valid index this should return healthy
         Response response;
         try {
             response = toolsExtendedApi.toolsIndexSearch(null, null, null);
         } catch (CustomWebApplicationException ex) {
-            LOG.info(ex.getStackTrace().toString());
-            return Result.unhealthy("Error contacting Elastic Search: " + ex.getResponse().getEntity());
+            LOG.info(baseMessage, ex);
+            return Result.unhealthy(baseMessage + ": " + ex.getResponse().getEntity());
         } catch (Exception ex) {
-            LOG.info(ex.getStackTrace().toString());
-            return Result.unhealthy("Error contacting Elastic Search: " + ex.getMessage());
+            LOG.info(baseMessage, ex);
+            return Result.unhealthy(baseMessage + ": " + ex.getMessage());
         }
 
         if (response.getStatus() >= Response.Status.OK.getStatusCode() && response.getStatus() < Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
             return Result.healthy();
         } else {
-            return Result.unhealthy("Error contacting Elastic Search, got status code '" + response.getStatus() + "'.");
+            return Result.unhealthy(baseMessage + ", got status code '" + response.getStatus() + "'.");
         }
     }
 }

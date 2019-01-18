@@ -85,7 +85,6 @@ import org.slf4j.LoggerFactory;
 public class MetadataResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
-    private static final int ERROR_STATUS_CODE = 500;
     private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
     private final ToolDAO toolDAO;
@@ -300,11 +299,11 @@ public class MetadataResource {
             JSONObject jsonObj = new JSONObject(result);
             JSONObject hitsHolder = jsonObj.getJSONObject("hits");
             JSONArray hitsArray = hitsHolder.getJSONArray("hits");
-            if (hitsArray.length() == 0) {
-                return Response.status(ERROR_STATUS_CODE).build();
+            if (hitsArray.toList().isEmpty()) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
             }
         } catch (Exception ex) {
-            return Response.status(ERROR_STATUS_CODE).build();
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
         }
         return Response.ok().build();
     }
