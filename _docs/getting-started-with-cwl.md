@@ -191,6 +191,7 @@ This downloads to my current directory and then moves to `/tmp`.  I could choose
 {
     "bam_input": {
         "class": "File",
+        "format": "http://edamontology.org/format_2572",
         "path": "/tmp/NA12878.chrom20.ILLUMINA.bwa.CEU.low_coverage.20121211.bam"
     },
     "bamstats_report": {
