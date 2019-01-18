@@ -58,6 +58,7 @@ import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
+import io.dockstore.webservice.resources.ElasticSearchHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
@@ -218,6 +219,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
+
+        final ElasticSearchHealthCheck elasticSearchHealthCheck = new ElasticSearchHealthCheck(new ToolsExtendedApi());
+        environment.healthChecks().register("elasticSearch", elasticSearchHealthCheck);
 
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());

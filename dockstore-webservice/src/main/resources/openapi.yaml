@@ -2825,6 +2825,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/RegistryBean'
+  /metadata/elasticSearch:
+    get:
+      tags:
+        - metadata
+      summary: Successful response if elastic search is up and running.
+      description: NO authentication
+      operationId: checkElasticSearch
+      responses:
+        default:
+          description: successful operation
   /metadata/okHttpCachePerformance:
     get:
       tags:

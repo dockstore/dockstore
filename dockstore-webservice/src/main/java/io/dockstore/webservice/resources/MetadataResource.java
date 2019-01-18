@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +56,8 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApiService;
 import io.dockstore.webservice.resources.rss.RSSEntry;
 import io.dockstore.webservice.resources.rss.RSSFeed;
 import io.dockstore.webservice.resources.rss.RSSHeader;
@@ -64,9 +67,12 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import okhttp3.Cache;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +85,7 @@ import org.slf4j.LoggerFactory;
 public class MetadataResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
+    private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
@@ -277,6 +284,28 @@ public class MetadataResource {
             LOG.warn("unable to determine cache size, may not have initialized yet");
         }
         return results;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/elasticSearch")
+    @ApiOperation(value = "Successful response if elastic search is up and running.", notes = "NO authentication")
+    public Response checkElasticSearch() {
+        Response elasticSearchResponse;
+        try {
+            elasticSearchResponse = delegate.toolsIndexSearch(null, null, null);
+            String result = IOUtils.toString((InputStream)(elasticSearchResponse.getEntity()), StandardCharsets.UTF_8);
+            JSONObject jsonObj = new JSONObject(result);
+            JSONObject hitsHolder = jsonObj.getJSONObject("hits");
+            JSONArray hitsArray = hitsHolder.getJSONArray("hits");
+            if (hitsArray.toList().isEmpty()) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
+            }
+        } catch (Exception ex) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
+        }
+        return Response.ok().build();
     }
 
 }
