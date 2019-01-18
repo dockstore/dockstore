@@ -1367,6 +1367,11 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -1388,6 +1393,11 @@ paths:
         in: "path"
         description: "repository path"
         required: true
+        type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
         type: "string"
       responses:
         200:
@@ -1534,6 +1544,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -1604,6 +1619,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -3978,6 +3998,11 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -4120,6 +4145,11 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -4219,6 +4249,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -4303,6 +4338,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -5950,6 +5990,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
       last_modified:
         type: "string"
         format: "date-time"
@@ -6416,6 +6462,39 @@ definitions:
         position: 12
         description: "Indicates whether this user has accepted their username"
     description: "End users for the dockstore"
+  Validation:
+    type: "object"
+    required:
+    - "id"
+    - "message"
+    - "type"
+    - "valid"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the source file in this web service"
+      type:
+        type: "string"
+        position: 1
+        description: "Enumerates the type of file"
+        enum:
+        - "DOCKSTORE_CWL"
+        - "DOCKSTORE_WDL"
+        - "DOCKERFILE"
+        - "CWL_TEST_JSON"
+        - "WDL_TEST_JSON"
+        - "NEXTFLOW"
+        - "NEXTFLOW_CONFIG"
+        - "NEXTFLOW_TEST_PARAMS"
+      valid:
+        type: "boolean"
+        position: 2
+        description: "Is the file type valid"
+      message:
+        type: "string"
+        position: 3
+        description: "Mapping of filepath to validation message"
   VerificationInformation:
     type: "object"
     properties:
@@ -6635,6 +6714,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
       workingDirectory:
         type: "string"
       last_modified:

@@ -64,11 +64,6 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public boolean isValidWorkflow(String content) {
-        return content.contains("manifest");
-    }
-
-    @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
         ConfigObject parse = getConfigObject(content);
@@ -405,5 +400,43 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             LOG.warn("could not parse", e);
         }
         return map;
+    }
+
+    @Override
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+        Map<String, String> validationMessageObject = new HashMap<>();
+        String validationMessage = null;
+        String content;
+        if (mainDescriptor.isPresent()) {
+            content = mainDescriptor.get().getContent();
+            if (content.contains("manifest")) {
+                return new VersionTypeValidation(true, null);
+            } else {
+                validationMessage = "Descriptor file '" + primaryDescriptorFilePath + "' is missing the manifest section.";
+            }
+        } else {
+            validationMessage = "Descriptor file '" + primaryDescriptorFilePath + "' not found.";
+        }
+        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
+        return new VersionTypeValidation(false, validationMessageObject);
+    }
+
+    @Override
+    public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        // Todo: Throw exception instead?
+        Map<String, String> validationMessageObject = new HashMap<>();
+        validationMessageObject.put(primaryDescriptorFilePath, "Nextflow does not support tools.");
+        return new VersionTypeValidation(true, validationMessageObject);
+    }
+
+    @Override
+    public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        // Todo: Throw exception instead?
+        Map<String, String> validationMessageObject = new HashMap<>();
+        for (SourceFile sourceFile : sourceFiles) {
+            validationMessageObject.put(sourceFile.getPath(), "Nextflow does not support test parameter files.");
+        }
+        return new VersionTypeValidation(true, validationMessageObject);
     }
 }

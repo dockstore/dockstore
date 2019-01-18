@@ -234,7 +234,7 @@ public class CheckerWorkflowIT extends BaseIT {
         // Add checker workflow
         final Entry checkerWorkflowBase = workflowApi
             .registerCheckerWorkflow("/checker-workflow-wrapping-workflow.cwl", baseEntryId, "cwl", null);
-        final Workflow stubCheckerWorkflow = workflowApi.getWorkflow(checkerWorkflowBase.getCheckerId());
+        final Workflow stubCheckerWorkflow = workflowApi.getWorkflow(checkerWorkflowBase.getCheckerId(), null);
         assertSame(stubCheckerWorkflow.getMode(), Workflow.ModeEnum.STUB);
 
         // should be able to refresh all or the organization when a checker stub is present without a failure (constraints issue from #1405)
@@ -287,7 +287,7 @@ public class CheckerWorkflowIT extends BaseIT {
         Workflow refreshedEntry = workflowApi.refresh(githubWorkflow.getId());
 
         // Should be able to download zip for first version
-        Workflow checkerWorkflow = workflowApi.getWorkflow(refreshedEntry.getCheckerId());
+        Workflow checkerWorkflow = workflowApi.getWorkflow(refreshedEntry.getCheckerId(), null);
         workflowApi.getWorkflowZip(checkerWorkflow.getId(), checkerWorkflow.getWorkflowVersions().get(0).getId());
 
         // Refreshing the entry also calls the update user metadata function which populates the user profile

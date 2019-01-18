@@ -29,7 +29,6 @@ import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
-import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
 import org.apache.commons.io.FilenameUtils;
@@ -338,16 +337,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 // Get contents of descriptor file and store
                 String decodedContent = this.readFileFromRepo(calculatedPath, ref.getLeft(), repository);
                 if (decodedContent != null) {
-                    boolean validWorkflow = LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(decodedContent);
-                    // if we have a valid workflow document
                     SourceFile file = new SourceFile();
                     file.setContent(decodedContent);
                     file.setPath(calculatedPath);
                     file.setAbsolutePath(calculatedPath);
                     file.setType(identifiedType);
-                    version.setValid(validWorkflow);
                     version = combineVersionAndSourcefile(repositoryId, file, workflow, identifiedType, version, existingDefaults);
-
 
                     // Use default test parameter file if either new version or existing version that hasn't been edited
                     // TODO: why is this here? Does this code not have a counterpart in BitBucket and GitLab?
@@ -382,6 +377,7 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
                 LOG.info(gitUsername + ": " + workflow.getDefaultWorkflowPath() + " on " + ref + " was not valid workflow", ex);
             }
 
+            version = versionValidation(version, workflow, calculatedPath);
 
             workflow.addWorkflowVersion(version);
         }

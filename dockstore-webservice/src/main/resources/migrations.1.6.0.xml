@@ -111,6 +111,7 @@
     <changeSet author="aduncan (generated)" id="addWorkflowFKEvent">
         <addForeignKeyConstraint baseColumnNames="workflowid" baseTableName="event" constraintName="FKWorkflowId" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="workflow"/>
     </changeSet>
+
     <changeSet author="aduncan (generated)" id="createCollectionTable">
         <createTable tableName="collection">
             <column autoIncrement="true" name="id" type="BIGSERIAL">
@@ -153,11 +154,41 @@
     <changeSet author="aduncan (generated)" id="addCollectionFKEvent">
         <addForeignKeyConstraint baseColumnNames="collectionid" baseTableName="event" constraintName="fk_collectionIdInEvent" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="collection"/>
     </changeSet>
-
     <changeSet author="aduncan (generated)" id="addTopicToOrganisation">
         <addColumn tableName="organisation">
             <column name="topic" type="VARCHAR(255)"/>
         </addColumn>
+    </changeSet>
+
+    <changeSet author="aduncan" id="AddValidationTable">
+        <createTable tableName="validation">
+            <column autoIncrement="true" name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" primaryKeyName="validation_pkey"/>
+            </column>
+            <column name="dbcreatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="dbupdatedate" type="TIMESTAMP WITHOUT TIME ZONE"/>
+            <column name="message" type="VARCHAR" remarks="A mapping of file path to message."/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="valid" type="BOOLEAN"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="aduncan" id="AddValidationJoinTable">
+        <createTable tableName="version_validation">
+            <column name="versionid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_validation_pkey"/>
+            </column>
+            <column name="validationid" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="version_validation_pkey"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="aduncan" id="AddJoinValidationConstraint">
+        <addUniqueConstraint columnNames="validationid" constraintName="uk_validationid" tableName="version_validation"/>
+    </changeSet>
+    <changeSet author="aduncan" id="AddValidationIdConstraint">
+        <addForeignKeyConstraint baseColumnNames="validationid" baseTableName="version_validation" constraintName="fkvalidationid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation"/>
     </changeSet>
 
 </databaseChangeLog>

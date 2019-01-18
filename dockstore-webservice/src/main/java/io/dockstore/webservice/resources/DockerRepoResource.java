@@ -275,14 +275,19 @@ public class DockerRepoResource
     @ApiOperation(value = "Retrieve a tool.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tool.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Tool getContainer(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
-        Tool c = toolDAO.findById(containerId);
-        checkEntry(c);
-        checkUser(user, c);
+        @ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
+        Tool tool = toolDAO.findById(containerId);
+        checkEntry(tool);
+        checkUser(user, tool);
 
         // This somehow forces users to get loaded, c.getUsers() does not work.  c.getUsers().size works too.
-        Hibernate.initialize(c.getUsers());
-        return c;
+        Hibernate.initialize(tool.getUsers());
+
+        if (checkIncludes(include, "validations")) {
+            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+        }
+
+        return tool;
     }
 
     @PUT
@@ -399,7 +404,7 @@ public class DockerRepoResource
             }
         }
         elasticManager.handleIndexUpdate(foundTool, ElasticMode.UPDATE);
-        return foundTool;
+        return toolDAO.findById(containerId);
     }
 
     @GET
@@ -422,9 +427,13 @@ public class DockerRepoResource
     @UnitOfWork
     @Path("/published/{containerId}")
     @ApiOperation(value = "Get a published tool.", notes = "NO authentication", response = Tool.class)
-    public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId) {
+    public Tool getPublishedContainer(@ApiParam(value = "Tool ID", required = true) @PathParam("containerId") Long containerId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findPublishedById(containerId);
         checkEntry(tool);
+
+        if (checkIncludes(include, "validations")) {
+            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+        }
         return filterContainersForHiddenTags(tool);
     }
 
@@ -671,10 +680,14 @@ public class DockerRepoResource
     @ApiOperation(value = "Get a tool by the specific tool path", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getContainerByToolPath(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Tool tool = toolDAO.findByPath(path, false);
         checkEntry(tool);
         checkUser(user, tool);
+
+        if (checkIncludes(include, "validations")) {
+            tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+        }
         return tool;
     }
 
@@ -684,10 +697,14 @@ public class DockerRepoResource
     @Path("/path/tool/{repository}/published")
     @ApiOperation(value = "Get a published tool by the specific tool path.", notes = "Requires full path (including tool name if applicable).", response = Tool.class)
     public Tool getPublishedContainerByToolPath(
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         try {
             Tool tool = toolDAO.findByPath(path, true);
             checkEntry(tool);
+
+            if (checkIncludes(include, "validations")) {
+                tool.getTags().forEach(tag -> Hibernate.initialize(tag.getValidations()));
+            }
             filterContainersForHiddenTags(tool);
             return tool;
         } catch (ArrayIndexOutOfBoundsException e) {

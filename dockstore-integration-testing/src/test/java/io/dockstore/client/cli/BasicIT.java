@@ -1190,7 +1190,7 @@ public class BasicIT extends BaseIT {
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
 
         ContainersApi containersApi = new ContainersApi(correctWebClient);
-        final DockstoreTool containerByToolPath = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json");
+        final DockstoreTool containerByToolPath = containersApi.getContainerByToolPath("quay.io/dockstoretestuser/test_input_json", null);
         containersApi.refresh(containerByToolPath.getId());
 
         // Check that no WDL or CWL test files

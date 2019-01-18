@@ -106,7 +106,7 @@ public class ExtendedTRSIT extends BaseIT {
             WorkflowsApi workflowApi = new WorkflowsApi(registeringUser);
             workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl",
                 defaultTestParameterFilePath);
-            workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+            workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
 
             // refresh and publish the workflow
             final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());

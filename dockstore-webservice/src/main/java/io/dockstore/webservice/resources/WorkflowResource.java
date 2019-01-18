@@ -66,6 +66,7 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
@@ -385,6 +386,8 @@ public class WorkflowResource
     }
 
     /**
+     * Updates the existing workflow in the database with new information from newWorkflow, including new, updated, and removed
+     * workflow verions.
      * @param workflow    workflow to be updated
      * @param newWorkflow workflow to grab new content from
      */
@@ -441,6 +444,11 @@ public class WorkflowResource
                     workflowVersionFromDB.getSourceFiles().remove(entry.getValue());
                 }
             }
+
+            // Update the validations
+            for (Validation versionValidation : version.getValidations()) {
+                workflowVersionFromDB.addOrUpdateValidation(versionValidation);
+            }
         }
     }
 
@@ -451,13 +459,14 @@ public class WorkflowResource
     @ApiOperation(value = "Retrieve a workflow", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class, notes = "This is one of the few endpoints that returns the user object with populated properties (minus the userProfiles property)")
     public Workflow getWorkflow(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+        @ApiParam(value = "workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findById(workflowId);
         checkEntry(workflow);
         checkCanRead(user, workflow);
 
         // This somehow forces users to get loaded
         Hibernate.initialize(workflow.getUsers());
+        initializeValidations(include, workflow);
         return workflow;
     }
 
@@ -661,9 +670,10 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/published/{workflowId}")
     @ApiOperation(value = "Get a published workflow.", notes = "Hidden versions will not be visible. NO authentication", response = Workflow.class)
-    public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId) {
+    public Workflow getPublishedWorkflow(@ApiParam(value = "Workflow ID", required = true) @PathParam("workflowId") Long workflowId, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findPublishedById(workflowId);
         checkEntry(workflow);
+        initializeValidations(include, workflow);
         return filterContainersForHiddenTags(workflow);
     }
 
@@ -790,11 +800,13 @@ public class WorkflowResource
     @ApiOperation(value = "Get a workflow by path.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Requires full path (including workflow name if applicable).", response = Workflow.class)
     public Workflow getWorkflowByPath(@ApiParam(hidden = true) @Auth User user,
-        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+        @ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
 
         Workflow workflow = workflowDAO.findByPath(path, false);
         checkEntry(workflow);
         checkCanRead(user, workflow);
+
+        initializeValidations(include, workflow);
         return workflow;
     }
 
@@ -966,9 +978,11 @@ public class WorkflowResource
     @UnitOfWork
     @Path("/path/workflow/{repository}/published")
     @ApiOperation(value = "Get a published workflow by path", notes = "Does not require workflow name.", response = Workflow.class)
-    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path) {
+    public Workflow getPublishedWorkflowByPath(@ApiParam(value = "repository path", required = true) @PathParam("repository") String path, @ApiParam(value = "Comma-delimited list of fields to include: validations") @QueryParam("include") String include) {
         Workflow workflow = workflowDAO.findByPath(path, true);
         checkEntry(workflow);
+
+        initializeValidations(include, workflow);
         filterContainersForHiddenTags(workflow);
         return workflow;
     }
@@ -1172,12 +1186,6 @@ public class WorkflowResource
 
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
 
-        if (!workflowVersion.isValid()) {
-            String msg = "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
-        }
-
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
         // Add new test parameter files
@@ -1213,13 +1221,6 @@ public class WorkflowResource
         }
 
         WorkflowVersion workflowVersion = potentialWorfklowVersion.get();
-
-        if (!workflowVersion.isValid()) {
-            LOG.info("The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.");
-            throw new CustomWebApplicationException(
-                "The version \'" + version + "\' for workflow \'" + workflow.getWorkflowPath() + "\' is invalid.",
-                HttpStatus.SC_BAD_REQUEST);
-        }
 
         Set<SourceFile> sourceFiles = workflowVersion.getSourceFiles();
 
@@ -1675,6 +1676,17 @@ public class WorkflowResource
 
         // Return the original entry
         return toolDAO.getGenericEntryById(entryId);
+    }
+
+    /**
+     * If include contains validations field, initialize the workflows validations for all of its workflow versions
+     * @param include
+     * @param workflow
+     */
+    private void initializeValidations(String include, Workflow workflow) {
+        if (checkIncludes(include, "validations")) {
+            workflow.getVersions().forEach(workflowVersion -> Hibernate.initialize(workflowVersion.getValidations()));
+        }
     }
 
     @Override

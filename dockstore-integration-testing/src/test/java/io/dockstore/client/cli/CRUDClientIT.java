@@ -101,7 +101,7 @@ public class CRUDClientIT extends BaseIT {
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);
-        DockstoreTool container = oldApi.getContainer(hostedTool.getId());
+        DockstoreTool container = oldApi.getContainer(hostedTool.getId(), null);
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);
@@ -191,7 +191,7 @@ public class CRUDClientIT extends BaseIT {
         assertTrue("workflow was not created with a valid if", hostedTool.getId() != 0);
         // can get it back with regular api
         WorkflowsApi oldApi = new WorkflowsApi(webClient);
-        Workflow container = oldApi.getWorkflow(hostedTool.getId());
+        Workflow container = oldApi.getWorkflow(hostedTool.getId(), null);
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);

@@ -16,6 +16,7 @@
 package io.dockstore.webservice.languages;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -136,18 +137,14 @@ public class CWLHandler implements LanguageHandlerInterface {
     }
 
     @Override
-    public boolean isValidWorkflow(String content) {
-        Yaml yaml = new Yaml();
-        return content.contains("class: Workflow") && this.isValidCwl(content, yaml);
-    }
+    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
+        SourceCodeRepoInterface sourceCodeRepoInterface, String workingDirectoryForFile) {
 
-    @Override
-    public Map<String, SourceFile> processImports(String repositoryId, String content, Version version, SourceCodeRepoInterface sourceCodeRepoInterface, String currentFilePath) {
         Map<String, SourceFile> imports = new HashMap<>();
         Yaml yaml = new Yaml();
         try {
             Map<String, ?> fileContentMap = yaml.loadAs(content, Map.class);
-            handleMap(repositoryId, currentFilePath, version, imports, fileContentMap, sourceCodeRepoInterface);
+            handleMap(repositoryId, workingDirectoryForFile, version, imports, fileContentMap, sourceCodeRepoInterface);
         } catch (YAMLException e) {
             SourceCodeRepoInterface.LOG.error("Could not process content from workflow as yaml");
         }
@@ -642,6 +639,12 @@ public class CWLHandler implements LanguageHandlerInterface {
         return false;
     }
 
+    /**
+     * Checks that the CWL file is the correct version
+     * @param content
+     * @param yaml
+     * @return true if file is valid CWL version, false otherwise
+     */
     private boolean isValidCwl(String content, Yaml yaml) {
         try {
             Map<String, Object> mapping = yaml.loadAs(content, Map.class);
@@ -654,7 +657,7 @@ public class CWLHandler implements LanguageHandlerInterface {
                 }
                 return equals;
             }
-        } catch (ClassCastException e) {
+        } catch (ClassCastException | YAMLException e) {
             return false;
         }
         return false;
@@ -677,5 +680,74 @@ public class CWLHandler implements LanguageHandlerInterface {
         }
 
         return filteredArray;
+    }
+
+    @Override
+    public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        Set<SourceFile> filteredSourcefiles = filterSourcefiles(sourcefiles, fileTypes);
+        Optional<SourceFile> mainDescriptor = filteredSourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+
+        boolean isValid = true;
+        String validationMessage = null;
+        Map<String, String> validationMessageObject = new HashMap<>();
+
+        if (mainDescriptor.isPresent()) {
+            Yaml yaml = new Yaml();
+            String content = mainDescriptor.get().getContent();
+            if (content == null || content.isEmpty()) {
+                isValid = false;
+                validationMessage = "Primary descriptor is empty.";
+            } else if (!content.contains("class: Workflow")) {
+                isValid = false;
+                validationMessage = "Requires class: Workflow.";
+            } else if (!this.isValidCwl(content, yaml)) {
+                isValid = false;
+                validationMessage = "Invalid CWL version.";
+            }
+        } else {
+            validationMessage = "Primary CWL descriptor is not present.";
+            isValid = false;
+        }
+
+        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
+        return new VersionTypeValidation(isValid, validationMessageObject);
+    }
+
+    @Override
+    public VersionTypeValidation validateToolSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
+        List<SourceFile.FileType> fileTypes = new ArrayList<>(Arrays.asList(SourceFile.FileType.DOCKSTORE_CWL));
+        Set<SourceFile> filteredSourceFiles = filterSourcefiles(sourcefiles, fileTypes);
+        Optional<SourceFile> mainDescriptor = filteredSourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+
+        Boolean isValid = true;
+        String validationMessage = null;
+        Map<String, String> validationMessageObject = new HashMap<>();
+
+        if (mainDescriptor.isPresent()) {
+            Yaml yaml = new Yaml();
+            String content = mainDescriptor.get().getContent();
+            if (content == null || content.isEmpty()) {
+                isValid = false;
+                validationMessage = "Primary CWL descriptor is empty.";
+            } else if (!content.contains("class: CommandLineTool") && !content.contains("class: ExpressionTool")) {
+                isValid = false;
+                validationMessage = "Requires class: CommandLineTool or ExpressionTool.";
+            } else if (!this.isValidCwl(content, yaml)) {
+                isValid = false;
+                validationMessage = "Invalid CWL version.";
+            }
+        } else {
+            isValid = false;
+            validationMessage = "Primary CWL descriptor is not present.";
+        }
+
+        validationMessageObject.put(primaryDescriptorFilePath, validationMessage);
+        return new VersionTypeValidation(isValid, validationMessageObject);
+    }
+
+    @Override
+    public VersionTypeValidation validateTestParameterSet(Set<SourceFile> sourceFiles) {
+        return checkValidJsonAndYamlFiles(sourceFiles, SourceFile.FileType.CWL_TEST_JSON);
     }
 }

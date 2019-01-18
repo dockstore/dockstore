@@ -19,12 +19,15 @@ package io.dockstore.webservice.helpers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
@@ -32,6 +35,7 @@ import javax.validation.constraints.NotNull;
 
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
@@ -39,11 +43,15 @@ import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.jdbi.FileDAO;
 import io.dockstore.webservice.jdbi.FileFormatDAO;
 import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
+import io.dockstore.webservice.languages.LanguageHandlerFactory;
+import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -342,6 +350,7 @@ public abstract class AbstractImageRegistry {
             for (Tag t : toDelete) {
                 LOG.info(tool.getToolPath() + " : DELETING tag: {}", t.getName());
                 t.getSourceFiles().clear();
+                t.getValidations().clear();
                 // tagDAO.delete(t);
                 tool.getTags().remove(t);
             }
@@ -400,7 +409,7 @@ public abstract class AbstractImageRegistry {
         for (SourceFile oldFile : oldFilesTempSet) {
             boolean found = false;
             for (SourceFile newFile : newFiles) {
-                if (Objects.equals(oldFile.getPath(), newFile.getPath())) {
+                if (Objects.equals(oldFile.getAbsolutePath(), newFile.getAbsolutePath())) {
                     oldFile.setContent(newFile.getContent());
                     newFiles.remove(newFile);
                     found = true;
@@ -408,6 +417,7 @@ public abstract class AbstractImageRegistry {
                 }
             }
             if (!found) {
+
                 tag.getSourceFiles().remove(oldFile);
             }
         }
@@ -419,18 +429,107 @@ public abstract class AbstractImageRegistry {
             tag.addSourceFile(file);
         }
 
-        // need to go through all files for the booleans
-        boolean hasDockerfile = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKERFILE);
+        // Update the tag with validation information
+        tag = validateTagDockerfile(tag, tool.isPrivateAccess());
+        tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_CWL, tag.getCwlPath());
+        tag = validateTagDescriptorType(tag, SourceFile.FileType.DOCKSTORE_WDL, tag.getWdlPath());
+
+        boolean isValidVersion = isValidVersion(tag);
+        tag.setValid(isValidVersion);
+    }
+
+    /**
+     * Checks if the given tag is valid given its version validations.
+     * TODO: Duplicate in HostedToolResource.java
+     * @param tag Tag to check validation
+     * @return True if valid tag, false otherwise
+     */
+    private boolean isValidVersion(Tag tag) {
+        SortedSet<Validation> versionValidations = tag.getValidations();
+        boolean validDockerfile = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKERFILE);
+        boolean validCwl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_CWL);
+        boolean validWdl = isVersionTypeValidated(versionValidations, SourceFile.FileType.DOCKSTORE_WDL);
+        boolean validCwlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.CWL_TEST_JSON);
+        boolean validWdlTestParameters = isVersionTypeValidated(versionValidations, SourceFile.FileType.WDL_TEST_JSON);
+
         boolean hasCwl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_CWL);
         boolean hasWdl = tag.getSourceFiles().stream().anyMatch(file -> file.getType() == SourceFile.FileType.DOCKSTORE_WDL);
 
+        return validDockerfile && ((hasCwl && validCwl && validCwlTestParameters) || (hasWdl && validWdl && validWdlTestParameters));
+    }
 
+    /**
+     * Finds the first occurrence of a specific sourcefile type in a set of validations and returns whether or not it is valid
+     * @param versionValidations Set of version validations
+     * @param fileType File Type to look for
+     * @return True if exists and valid, false otherwise
+     */
+    private boolean isVersionTypeValidated(SortedSet<Validation> versionValidations, SourceFile.FileType fileType) {
+        Optional<Validation> foundFile = versionValidations
+                .stream()
+                .filter(versionValidation -> Objects.equals(versionValidation.getType(), fileType))
+                .findFirst();
+
+        return foundFile.isPresent() && foundFile.get().isValid();
+    }
+
+    /**
+     * Adds a version validation for a tag and its Dockerfile
+     * @param tag Tag to validate
+     * @param isPrivateAccess Is the tool private access
+     * @return Tag with updated version validation for Dockerfile
+     */
+    private Tag validateTagDockerfile(Tag tag, boolean isPrivateAccess) {
+        Optional<SourceFile> dockerfile = tag.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKERFILE)).findFirst();
+        LanguageHandlerInterface.VersionTypeValidation validDockerfile;
         // Private tools don't require a dockerfile
-        if (tool.isPrivateAccess()) {
-            tag.setValid((hasCwl || hasWdl));
+        if (dockerfile.isPresent() || isPrivateAccess) {
+            validDockerfile = new LanguageHandlerInterface.VersionTypeValidation(true, null);
         } else {
-            tag.setValid((hasCwl || hasWdl) && hasDockerfile);
+            Map<String, String> validationMessage = new HashMap<>();
+            validationMessage.put("/Dockerfile", "Missing a Dockerfile.");
+            validDockerfile = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
         }
+        Validation dockerfileValidation = new Validation(SourceFile.FileType.DOCKERFILE, validDockerfile);
+        tag.addOrUpdateValidation(dockerfileValidation);
+        return tag;
+    }
+
+    /**
+     * Validates the given tag files of the given filetype
+     * @param tag Tag to validate
+     * @param fileType Descriptor type to validate
+     * @param primaryDescriptorPath Path to the primary descriptor
+     * @return Validated tag
+     */
+    private Tag validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
+        LanguageHandlerInterface.VersionTypeValidation isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
+                .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
+        Validation descriptorValidation = new Validation(fileType, isValidDescriptor);
+        tag.addOrUpdateValidation(descriptorValidation);
+
+        SourceFile.FileType testParamType = null;
+        switch (fileType) {
+        case DOCKSTORE_CWL:
+            testParamType = SourceFile.FileType.CWL_TEST_JSON;
+            break;
+        case DOCKSTORE_WDL:
+            testParamType = SourceFile.FileType.WDL_TEST_JSON;
+            break;
+        case NEXTFLOW_CONFIG:
+            // Nextflow does not have test parameter files, so do not fail
+            break;
+        default:
+            throw new CustomWebApplicationException(fileType + " is not a valid tool type.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (testParamType != null) {
+            LanguageHandlerInterface.VersionTypeValidation isValidTestParameter = LanguageHandlerFactory.getInterface(fileType).validateTestParameterSet(tag.getSourceFiles());
+            Validation testParameterValidation = new Validation(testParamType, isValidTestParameter);
+            tag.addOrUpdateValidation(testParameterValidation);
+        }
+
+        return tag;
     }
 
     /**
