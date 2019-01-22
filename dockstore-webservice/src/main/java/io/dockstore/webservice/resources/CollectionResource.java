@@ -393,7 +393,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             return false;
         }
         OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
-        return organisation.isApproved() || (organisationUser != null);
+        return Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED) || (organisationUser != null);
     }
 
     /**

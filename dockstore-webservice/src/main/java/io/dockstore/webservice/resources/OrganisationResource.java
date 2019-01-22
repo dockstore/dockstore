@@ -88,13 +88,42 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        if (!organisation.isApproved()) {
-            organisation.setApproved(true);
+        if (!Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+            organisation.setStatus(Organisation.ApplicationState.APPROVED);
 
             Event approveOrgEvent = new Event.Builder()
                     .withOrganisation(organisation)
                     .withInitiatorUser(user)
                     .withType(Event.EventType.APPROVE_ORG)
+                    .build();
+            eventDAO.create(approveOrgEvent);
+        }
+
+        return organisationDAO.findById(id);
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Path("{organisationId}/reject/")
+    @ApiOperation(value = "Rejects an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organisation.class)
+    public Organisation rejectOrganisation(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        Organisation organisation = organisationDAO.findById(id);
+        if (organisation == null) {
+            String msg = "Organisation not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        if (!Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+            organisation.setStatus(Organisation.ApplicationState.REJECTED);
+
+            Event approveOrgEvent = new Event.Builder()
+                    .withOrganisation(organisation)
+                    .withInitiatorUser(user)
+                    .withType(Event.EventType.REJECT_ORG)
                     .build();
             eventDAO.create(approveOrgEvent);
         }
@@ -209,10 +238,12 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/all")
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
-    public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, unapproved, approved") @QueryParam("type") String type) {
+    public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, pending, rejected, approved") @QueryParam("type") String type) {
         switch (type) {
-        case "unapproved":
-            return organisationDAO.findAllUnapproved();
+        case "pending":
+            return organisationDAO.findAllPending();
+        case "rejected":
+            return organisationDAO.findAllRejected();
         case "approved":
             return organisationDAO.findAllApproved();
         case "all": default:
@@ -237,7 +268,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
 
         // Save organisation
-        organisation.setApproved(false); // should not be approved by default
+        organisation.setStatus(Organisation.ApplicationState.PENDING); // should not be approved by default
         long id = organisationDAO.create(organisation);
 
         User foundUser = userDAO.findById(user.getId());
@@ -522,7 +553,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             return false;
         }
         OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
-        return organisation.isApproved() || (organisationUser != null);
+        return Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED) || (organisationUser != null);
     }
 
     /**

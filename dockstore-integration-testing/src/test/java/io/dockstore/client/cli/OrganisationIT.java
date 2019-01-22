@@ -1,6 +1,7 @@
 package io.dockstore.client.cli;
 
 import java.util.List;
+import java.util.Objects;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -117,7 +118,7 @@ public class OrganisationIT extends BaseIT {
 
         // Create the organisation
         Organisation registeredOrganisation = createOrg(organisationsApiUser2);
-        assertTrue(!registeredOrganisation.isApproved());
+        assertTrue(!Objects.equals(registeredOrganisation.getStatus(), io.dockstore.webservice.core.Organisation.ApplicationState.APPROVED));
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
@@ -320,7 +321,7 @@ public class OrganisationIT extends BaseIT {
 
         // Create an organisation
         Organisation organisation = createOrg(organisationsApiUser2);
-        assertTrue(!organisation.isApproved());
+        assertTrue(!Objects.equals(organisation.getStatus(), io.dockstore.webservice.core.Organisation.ApplicationState.APPROVED));
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
@@ -417,7 +418,7 @@ public class OrganisationIT extends BaseIT {
 
         // Create an organisation
         Organisation organisation = createOrg(organisationsApiUser2);
-        assertTrue(!organisation.isApproved());
+        assertTrue(!Objects.equals(organisation.getStatus(), io.dockstore.webservice.core.Organisation.ApplicationState.APPROVED));
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres

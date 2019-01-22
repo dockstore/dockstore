@@ -7,6 +7,8 @@ import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -33,12 +35,13 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "organisation")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllApproved", query = "SELECT org FROM Organisation org WHERE org.approved = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllUnapproved", query = "SELECT org FROM Organisation org WHERE org.approved = false"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllApproved", query = "SELECT org FROM Organisation org WHERE org.status = 'APPROVED'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllPending", query = "SELECT org FROM Organisation org WHERE org.status = 'PENDING'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllRejected", query = "SELECT org FROM Organisation org WHERE org.status = 'REJECTED'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAll", query = "SELECT org FROM Organisation org"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByName", query = "SELECT org FROM Organisation org WHERE org.name = :name"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id AND org.approved = true"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedByName", query = "SELECT org FROM Organisation org WHERE org.name = :name AND org.approved = true")
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id AND org.status = 'APPROVED'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedByName", query = "SELECT org FROM Organisation org WHERE org.name = :name AND org.status = 'APPROVED'")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Organisation implements Serializable {
@@ -69,9 +72,10 @@ public class Organisation implements Serializable {
     @ApiModelProperty(value = "Contact email for the organisation", position = 5)
     private String email;
 
-    @Column
-    @ApiModelProperty(value = "Is the organisation approved", required = true, position = 6)
-    private boolean approved = false;
+    @Column(columnDefinition = "text default 'PENDING'", nullable = false)
+    @Enumerated(EnumType.STRING)
+    @ApiModelProperty(value = "Is the organisation approved, pending, or rejected", required = true, position = 6)
+    private ApplicationState status = ApplicationState.PENDING;
 
     @Column
     @ApiModelProperty(value = "Set of users in the organisation", required = true, position = 7)
@@ -143,14 +147,6 @@ public class Organisation implements Serializable {
         this.email = email;
     }
 
-    public boolean isApproved() {
-        return approved;
-    }
-
-    public void setApproved(boolean approved) {
-        this.approved = approved;
-    }
-
     public Timestamp getDbCreateDate() {
         return dbCreateDate;
     }
@@ -200,4 +196,14 @@ public class Organisation implements Serializable {
     public void setTopic(String topic) {
         this.topic = topic;
     }
+
+    public ApplicationState getStatus() {
+        return status;
+    }
+
+    public void setStatus(ApplicationState status) {
+        this.status = status;
+    }
+
+    public enum ApplicationState { PENDING, REJECTED, APPROVED }
 }

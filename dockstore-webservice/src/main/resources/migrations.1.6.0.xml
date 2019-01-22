@@ -191,4 +191,16 @@
         <addForeignKeyConstraint baseColumnNames="validationid" baseTableName="version_validation" constraintName="fkvalidationid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation"/>
     </changeSet>
 
+    <changeSet author="aduncan" id="AddStatusColumnToOrganisations">
+        <addColumn tableName="organisation">
+            <column defaultValue="PENDING" name="status" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="aduncan" id="dropOldApprovedFieldFromOrganisations">
+        <dropColumn columnName="approved" tableName="organisation"/>
+    </changeSet>
+
 </databaseChangeLog>
