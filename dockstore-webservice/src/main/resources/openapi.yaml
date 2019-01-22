@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-alpha.3-SNAPSHOT
+  version: 1.6.0-alpha.4-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -3704,6 +3704,25 @@ paths:
       security:
         - BEARER:
             []
+  /users/user/organisations:
+    get:
+      tags:
+        - users
+      summary: Get the logged-in users organisations.
+      description: ""
+      operationId: getUserOrganisations
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organisation"
+      security:
+        - BEARER:
+            []
   /users/user/updateUserMetadata:
     get:
       tags:
@@ -5852,10 +5871,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -5871,6 +5886,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6036,10 +6055,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6055,6 +6070,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6253,6 +6272,7 @@ components:
       required:
         - name
         - status
+        - users
       properties:
         id:
           type: integer
@@ -6290,6 +6310,12 @@ components:
             - PENDING
             - REJECTED
             - APPROVED
+        users:
+          type: array
+          description: Set of users in the organisation
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OrganisationUser"
         topic:
           type: string
           description: Short description of the organisation
@@ -6303,8 +6329,6 @@ components:
           $ref: "#/components/schemas/OrganisationUserId"
         user:
           $ref: "#/components/schemas/User"
-        organisation:
-          $ref: "#/components/schemas/Organisation"
         role:
           type: string
           description: The role of the user in the organisation
@@ -6973,10 +6997,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6992,6 +7012,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

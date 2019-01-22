@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-alpha.3"
+  version: "1.6.0-alpha.4-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3390,6 +3390,25 @@ paths:
             $ref: "#/definitions/ExtendedUserData"
       security:
       - BEARER: []
+  /users/user/organisations:
+    get:
+      tags:
+      - "users"
+      summary: "Get the logged-in users organisations."
+      description: ""
+      operationId: "getUserOrganisations"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
   /users/user/updateUserMetadata:
     get:
       tags:
@@ -5342,10 +5361,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5361,6 +5376,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5553,10 +5572,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5572,6 +5587,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5798,6 +5817,7 @@ definitions:
     required:
     - "name"
     - "status"
+    - "users"
     properties:
       id:
         type: "integer"
@@ -5842,6 +5862,13 @@ definitions:
         - "PENDING"
         - "REJECTED"
         - "APPROVED"
+      users:
+        type: "array"
+        position: 7
+        description: "Set of users in the organisation"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrganisationUser"
       topic:
         type: "string"
         position: 8
@@ -5856,8 +5883,6 @@ definitions:
         $ref: "#/definitions/OrganisationUserId"
       user:
         $ref: "#/definitions/User"
-      organisation:
-        $ref: "#/definitions/Organisation"
       role:
         type: "string"
         description: "The role of the user in the organisation"
@@ -6573,10 +6598,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6592,6 +6613,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

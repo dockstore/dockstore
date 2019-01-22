@@ -80,7 +80,6 @@ public class Organisation implements Serializable {
     @Column
     @ApiModelProperty(value = "Set of users in the organisation", required = true, position = 7)
     @OneToMany(mappedBy = "organisation", fetch = FetchType.LAZY)
-    @JsonIgnore
     private Set<OrganisationUser> users = new HashSet<>();
 
     @Column

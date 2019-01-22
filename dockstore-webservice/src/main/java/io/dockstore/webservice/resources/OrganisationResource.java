@@ -34,6 +34,7 @@ import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -239,16 +240,26 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
     public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, pending, rejected, approved") @QueryParam("type") String type) {
+        List<Organisation> organisations;
+
         switch (type) {
         case "pending":
-            return organisationDAO.findAllPending();
+            organisations = organisationDAO.findAllPending();
+            break;
         case "rejected":
-            return organisationDAO.findAllRejected();
+            organisations = organisationDAO.findAllRejected();
+            break;
         case "approved":
-            return organisationDAO.findAllApproved();
+            organisations = organisationDAO.findAllApproved();
+            break;
         case "all": default:
-            return organisationDAO.findAll();
+            organisations = organisationDAO.findAll();
+            break;
         }
+
+        organisations.forEach(organisation -> Hibernate.initialize(organisation.getUsers()));
+
+        return organisations;
     }
 
     @PUT

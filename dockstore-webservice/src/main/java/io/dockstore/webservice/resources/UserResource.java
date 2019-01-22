@@ -17,6 +17,7 @@
 package io.dockstore.webservice.resources;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -42,6 +43,8 @@ import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
+import io.dockstore.webservice.core.Organisation;
+import io.dockstore.webservice.core.OrganisationUser;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -141,6 +144,23 @@ public class UserResource implements AuthenticatedResourceInterface {
         Hibernate.initialize(foundUser.getUserProfiles());
         return foundUser;
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/user/organisations")
+    @ApiOperation(value = "Get the logged-in users organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class, responseContainer = "list")
+    public List<Organisation> getUserOrganisations(@ApiParam(hidden = true) @Auth User user) {
+        User foundUser = userDAO.findById(user.getId());
+        Set<OrganisationUser> organisationUsers = foundUser.getOrganisations();
+        List<Organisation> organisations = new ArrayList<>();
+        for (OrganisationUser organisationUser : organisationUsers) {
+            organisations.add(organisationUser.getOrganisation());
+        }
+        return organisations;
+    }
+
+
 
     @GET
     @Timed
