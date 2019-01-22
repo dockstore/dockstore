@@ -48,7 +48,7 @@ public class Organisation implements Serializable {
     private long id;
 
     @Column(nullable = false, unique = true)
-    @Pattern(regexp = "\\d*[a-zA-Z][a-zA-Z\\d]*")
+    @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the organisation (ex. OICR)", required = true, example = "OICR", position = 1)
     private String name;
