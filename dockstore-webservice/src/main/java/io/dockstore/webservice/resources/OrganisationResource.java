@@ -153,6 +153,56 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
+    @Path("/{organisationId}/description")
+    @ApiOperation(value = "Retrieves an organisation description by organization ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
+    public String getOrganisationDescription(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        return getOrganisationByIdOptionalAuth(user, id).getDescription();
+    }
+
+    @PUT
+    @Timed
+    @Path("{organisationId}/description")
+    @UnitOfWork
+    @ApiOperation(value = "Update an organization's description.", notes = "Description in markdown", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
+    public Organisation updateOrganizationDescription(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organization to update description.", required = true) @PathParam("organisationId") Long organizationId,
+            @ApiParam(value = "Organization's description in markdown", required = true) String description) {
+
+        boolean doesOrgExist = doesOrganisationExistToUser(organizationId, user.getId());
+        if (!doesOrgExist) {
+            String msg = "Organisation not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Organisation oldOrganisation = organisationDAO.findById(organizationId);
+
+        // Ensure that the user is a member of the organisation
+        OrganisationUser organisationUser = getUserOrgRole(oldOrganisation, user.getId());
+        if (organisationUser == null) {
+            String msg = "You do not have permissions to update the organisation.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        }
+
+        // Update organisation
+        oldOrganisation.setDescription(description);
+
+        Event updateOrganisationEvent = new Event.Builder()
+                .withOrganisation(oldOrganisation)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.MODIFY_ORG)
+                .build();
+        eventDAO.create(updateOrganisationEvent);
+
+        return organisationDAO.findById(organizationId);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("/{organisationId}/members")
     @ApiOperation(value = "Retrieves all members for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class, responseContainer = "Set")
     public Set<OrganisationUser> getOrganisationMembers(@ApiParam(hidden = true) @Auth Optional<User> user,

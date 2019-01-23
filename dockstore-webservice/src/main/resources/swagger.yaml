@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-alpha.3"
+  version: "1.6.0-alpha.4-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3028,6 +3028,58 @@ paths:
             $ref: "#/definitions/Collection"
       security:
       - BEARER: []
+  /organisations/{organisationId}/description:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an organisation description by organization ID."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organisations"
+      summary: "Update an organization's description."
+      description: "Description in markdown"
+      operationId: "updateOrganizationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organization to update description."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Organization's description in markdown"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
   /organisations/{organisationId}/events:
     get:
       tags:
@@ -5273,7 +5325,7 @@ definitions:
         description: "Name of the collection."
         minLength: 3
         maxLength: 39
-        pattern: "\\d*[a-zA-Z][a-zA-Z\\d]*"
+        pattern: "[a-zA-Z][a-zA-Z\\d]*"
       description:
         type: "string"
         position: 2
@@ -5318,10 +5370,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5337,6 +5385,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5529,10 +5581,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5548,6 +5596,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5792,7 +5844,7 @@ definitions:
         description: "Name of the organisation (ex. OICR)"
         minLength: 3
         maxLength: 39
-        pattern: "\\d*[a-zA-Z][a-zA-Z\\d]*"
+        pattern: "[a-zA-Z][a-zA-Z\\d]*"
       description:
         type: "string"
         position: 2
@@ -6544,10 +6596,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6563,6 +6611,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
