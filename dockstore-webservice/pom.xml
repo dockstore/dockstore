@@ -904,6 +904,33 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- replaces com.github.kongchen:swagger-maven-plugin for OpenAPI 3.0 -->
+            <plugin>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <version>${openapi-annotations-version}</version>
+                <configuration>
+                    <outputFileName>openapi</outputFileName>
+                    <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
+                    <outputFormat>JSONANDYAML</outputFormat>
+                    <resourcePackages>
+                        <package>io.swagger.api</package>
+                        <package>io.swagger.model</package>
+                        <package>io.dockstore.webservice.resources</package>
+                        <package>io.dockstore.webservice.resources.rss</package>
+                        <package>io.dockstore.webservice.resources.proposedGA4GH</package>
+                    </resourcePackages>
+                    <prettyPrint>true</prettyPrint>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>resolve</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
