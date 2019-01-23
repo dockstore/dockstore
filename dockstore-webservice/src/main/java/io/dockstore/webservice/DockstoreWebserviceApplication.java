@@ -95,6 +95,7 @@ import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
@@ -262,6 +263,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
         environment.jersey().register(new OrganisationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(OpenApiResource.class);
 
 
         // attach the container dao statically to avoid too much modification of generated code
