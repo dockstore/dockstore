@@ -102,7 +102,7 @@ public class ElasticManager {
             return;
         }
         if (!checkValid(entry, command)) {
-            LOGGER.error("Could not perform the elastic search index update.");
+            LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
         String json = getDocumentValueFromEntry(entry);
@@ -125,7 +125,7 @@ public class ElasticManager {
             if (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED) {
                 LOGGER.info("Successful " + command + ".");
             } else {
-                LOGGER.info("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
+                LOGGER.error("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
             }
         } catch (IOException e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
