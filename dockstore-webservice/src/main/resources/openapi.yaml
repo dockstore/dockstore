@@ -3704,6 +3704,26 @@ paths:
       security:
         - BEARER:
             []
+  /users/user/memberships:
+    get:
+      tags:
+        - users
+      summary: Get the logged-in users memberships.
+      description: ""
+      operationId: getUserMemberships
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: "#/components/schemas/OrganisationUser"
+      security:
+        - BEARER:
+            []
   /users/user/organisations:
     get:
       tags:
@@ -5871,6 +5891,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -5886,10 +5910,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6055,6 +6075,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6070,10 +6094,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6329,6 +6349,8 @@ components:
           $ref: "#/components/schemas/OrganisationUserId"
         user:
           $ref: "#/components/schemas/User"
+        organisation:
+          $ref: "#/components/schemas/Organisation"
         role:
           type: string
           description: The role of the user in the organisation
@@ -6997,6 +7019,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7012,10 +7038,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

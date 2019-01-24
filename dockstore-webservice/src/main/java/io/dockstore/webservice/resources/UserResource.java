@@ -148,16 +148,13 @@ public class UserResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
-    @Path("/user/organisations")
-    @ApiOperation(value = "Get the logged-in users organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class, responseContainer = "list")
-    public List<Organisation> getUserOrganisations(@ApiParam(hidden = true) @Auth User user) {
+    @Path("/user/memberships")
+    @ApiOperation(value = "Get the logged-in users memberships.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class, responseContainer = "set")
+    public Set<OrganisationUser> getUserMemberships(@ApiParam(hidden = true) @Auth User user) {
         User foundUser = userDAO.findById(user.getId());
         Set<OrganisationUser> organisationUsers = foundUser.getOrganisations();
-        List<Organisation> organisations = new ArrayList<>();
-        for (OrganisationUser organisationUser : organisationUsers) {
-            organisations.add(organisationUser.getOrganisation());
-        }
-        return organisations;
+        organisationUsers.forEach(organisationUser -> Hibernate.initialize(organisationUser.getOrganisation()));
+        return organisationUsers;
     }
 
 

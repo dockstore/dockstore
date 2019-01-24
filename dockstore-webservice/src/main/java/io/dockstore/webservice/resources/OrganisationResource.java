@@ -258,7 +258,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
 
         organisations.forEach(organisation -> Hibernate.initialize(organisation.getUsers()));
-
         return organisations;
     }
 
@@ -463,8 +462,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{organisationId}/invitation")
-    @ApiOperation(value = "Accept or reject an organisation invitation.", notes = "True accepts the invitation, false rejects the invitation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User acceptOrRejectInvitation(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Accept or reject an organisation invitation.", notes = "True accepts the invitation, false rejects the invitation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void acceptOrRejectInvitation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
             @ApiParam(value = "Accept or reject", required = true) @QueryParam("accept") boolean accept) {
 
@@ -509,8 +508,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
                 .withType(eventType)
                 .build();
         eventDAO.create(addUserOrganisationEvent);
-
-        return user;
     }
 
     /**
