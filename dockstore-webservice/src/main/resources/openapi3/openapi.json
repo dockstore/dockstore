@@ -1,6 +1,87 @@
 {
   "openapi" : "3.0.1",
+  "tags" : [ {
+    "name" : "metadata",
+    "description" : "description of the webservice itself"
+  } ],
   "paths" : {
+    "/organisations/{organisationId}/collections" : {
+      "get" : {
+        "operationId" : "getCollectionsFromOrganisation",
+        "parameters" : [ {
+          "name" : "organisationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "include",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Collection"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "operationId" : "createCollection",
+        "parameters" : [ {
+          "name" : "organisationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Collection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/organisations/{organisationId}/collections/{collectionId}" : {
       "get" : {
         "operationId" : "getCollectionById",
@@ -183,11 +264,81 @@
         }
       }
     },
-    "/organisations/{organisationId}/collections" : {
-      "get" : {
-        "operationId" : "getCollectionsFromOrganisation",
+    "/containers/{containerId}/publish" : {
+      "post" : {
+        "operationId" : "publish",
         "parameters" : [ {
-          "name" : "organisationId",
+          "name" : "containerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Tool"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/containers/{containerId}/refresh" : {
+      "get" : {
+        "operationId" : "refresh",
+        "parameters" : [ {
+          "name" : "containerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Tool"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/containers/{containerId}" : {
+      "get" : {
+        "operationId" : "getContainer",
+        "parameters" : [ {
+          "name" : "containerId",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -216,10 +367,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Collection"
-                  }
+                  "$ref" : "#/components/schemas/Tool"
                 }
               }
             }
@@ -227,9 +375,9 @@
         }
       },
       "put" : {
-        "operationId" : "createCollection",
+        "operationId" : "updateContainer",
         "parameters" : [ {
-          "name" : "organisationId",
+          "name" : "containerId",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -252,7 +400,73 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Collection"
+                  "$ref" : "#/components/schemas/Tool"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "operationId" : "deleteContainer",
+        "parameters" : [ {
+          "name" : "containerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        }
+      }
+    },
+    "/containers/tags" : {
+      "get" : {
+        "operationId" : "tags",
+        "parameters" : [ {
+          "name" : "containerId",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Tag"
+                  }
                 }
               }
             }
@@ -405,109 +619,6 @@
                   "$ref" : "#/components/schemas/Tool"
                 }
               }
-            }
-          }
-        }
-      }
-    },
-    "/containers/{containerId}" : {
-      "get" : {
-        "operationId" : "getContainer",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "include",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Tool"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put" : {
-        "operationId" : "updateContainer",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Tool"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete" : {
-        "operationId" : "deleteContainer",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
             }
           }
         }
@@ -1224,6 +1335,120 @@
         }
       }
     },
+    "/containers/{containerId}/labels" : {
+      "put" : {
+        "operationId" : "updateLabels",
+        "parameters" : [ {
+          "name" : "containerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "labels",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Tool"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/containers/{toolId}/defaultVersion" : {
+      "put" : {
+        "operationId" : "updateDefaultVersion",
+        "parameters" : [ {
+          "name" : "toolId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Tool"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/containers/{containerId}/users" : {
+      "get" : {
+        "operationId" : "getUsers",
+        "parameters" : [ {
+          "name" : "containerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/User"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/containers/{containerId}/star" : {
       "put" : {
         "operationId" : "starEntry",
@@ -1350,321 +1575,6 @@
             "description" : "default response",
             "content" : {
               "application/zip" : { }
-            }
-          }
-        }
-      }
-    },
-    "/containers/{containerId}/labels" : {
-      "put" : {
-        "operationId" : "updateLabels",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "labels",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Tool"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/containers/{toolId}/defaultVersion" : {
-      "put" : {
-        "operationId" : "updateDefaultVersion",
-        "parameters" : [ {
-          "name" : "toolId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Tool"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/containers/{containerId}/users" : {
-      "get" : {
-        "operationId" : "getUsers",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/User"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/containers/{containerId}/publish" : {
-      "post" : {
-        "operationId" : "publish",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Tool"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/containers/{containerId}/refresh" : {
-      "get" : {
-        "operationId" : "refresh",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Tool"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/containers/tags" : {
-      "get" : {
-        "operationId" : "tags",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "query",
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Tag"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/containers/{containerId}/verify/{tagId}" : {
-      "put" : {
-        "operationId" : "verifyToolTag",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "tagId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "uniqueItems" : true,
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Tag"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/containers/{containerId}/requestDOI/{tagId}" : {
-      "post" : {
-        "operationId" : "requestDOIForToolTag",
-        "parameters" : [ {
-          "name" : "containerId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "tagId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "uniqueItems" : true,
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Tag"
-                  }
-                }
-              }
             }
           }
         }
@@ -1824,6 +1734,100 @@
         }
       }
     },
+    "/containers/{containerId}/verify/{tagId}" : {
+      "put" : {
+        "operationId" : "verifyToolTag",
+        "parameters" : [ {
+          "name" : "containerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "tagId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "uniqueItems" : true,
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Tag"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/containers/{containerId}/requestDOI/{tagId}" : {
+      "post" : {
+        "operationId" : "requestDOIForToolTag",
+        "parameters" : [ {
+          "name" : "containerId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "tagId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "uniqueItems" : true,
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Tag"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/entries/{id}/aliases" : {
       "put" : {
         "operationId" : "updateAliases",
@@ -1914,7 +1918,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Tool"
+                  "$ref" : "#/components/schemas/Entry"
                 }
               }
             }
@@ -1955,7 +1959,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Tool"
+                  "$ref" : "#/components/schemas/Entry"
                 }
               }
             }
@@ -2129,10 +2133,12 @@
     },
     "/metadata/dockerRegistryList" : {
       "get" : {
+        "tags" : [ "metadata" ],
+        "summary" : "Get the list of docker registries supported on Dockstore",
+        "description" : "Get the list of docker registries supported on Dockstore, NO authentication",
         "operationId" : "getDockerRegistries_1",
         "responses" : {
           "default" : {
-            "description" : "default response",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -2149,16 +2155,21 @@
     },
     "/metadata/runner_dependencies" : {
       "get" : {
+        "tags" : [ "metadata" ],
+        "summary" : "Returns the file containing runner dependencies",
+        "description" : "Returns the file containing runner dependencies, NO authentication",
         "operationId" : "getRunnerDependencies",
         "parameters" : [ {
           "name" : "client_version",
           "in" : "query",
+          "description" : "The Dockstore client version",
           "schema" : {
             "type" : "string"
           }
         }, {
           "name" : "python_version",
           "in" : "query",
+          "description" : "Python version, only relevant for the cwltool runner",
           "schema" : {
             "type" : "string",
             "default" : "2"
@@ -2166,24 +2177,30 @@
         }, {
           "name" : "runner",
           "in" : "query",
+          "description" : "The tool runner",
           "schema" : {
             "type" : "string",
+            "enum" : [ "cwltool" ],
             "default" : "cwltool"
           }
         }, {
           "name" : "output",
           "in" : "query",
+          "description" : "Response type",
           "schema" : {
             "type" : "string",
+            "enum" : [ "json", "text" ],
             "default" : "text"
           }
         } ],
         "responses" : {
           "default" : {
-            "description" : "default response",
             "content" : {
-              "text/plain" : { },
-              "application/json" : { }
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
             }
           }
         }
@@ -2191,10 +2208,12 @@
     },
     "/metadata/sourceControlList" : {
       "get" : {
+        "tags" : [ "metadata" ],
+        "summary" : "Get the list of source controls supported on Dockstore",
+        "description" : "Get the list of source controls supported on Dockstore, NO authentication",
         "operationId" : "getSourceControlList",
         "responses" : {
           "default" : {
-            "description" : "default response",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -2211,10 +2230,12 @@
     },
     "/metadata/descriptorLanguageList" : {
       "get" : {
+        "tags" : [ "metadata" ],
+        "summary" : "Get the list of descriptor languages supported on Dockstore",
+        "description" : "Get the list of descriptor languages supported on Dockstore, NO authentication",
         "operationId" : "getDescriptorLanguages",
         "responses" : {
           "default" : {
-            "description" : "default response",
             "content" : {
               "application/json" : {
                 "schema" : {
@@ -2231,15 +2252,17 @@
     },
     "/metadata/okHttpCachePerformance" : {
       "get" : {
+        "tags" : [ "metadata" ],
+        "summary" : "Get measures of cache performance",
+        "description" : "Get measures of cache performance, NO authentication",
         "operationId" : "getCachePerformance",
         "responses" : {
           "default" : {
-            "description" : "default response",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "object",
-                  "additionalProperties" : {
+                  "type" : "array",
+                  "items" : {
                     "type" : "string"
                   }
                 }
@@ -2251,6 +2274,9 @@
     },
     "/metadata/elasticSearch" : {
       "get" : {
+        "tags" : [ "metadata" ],
+        "summary" : "Successful response if elastic search is up and running",
+        "description" : "Successful response if elastic search is up and running, NO authentication",
         "operationId" : "checkElasticSearch",
         "responses" : {
           "default" : {
@@ -2265,6 +2291,9 @@
     },
     "/metadata/rss" : {
       "get" : {
+        "tags" : [ "metadata" ],
+        "summary" : "List all published tools and workflows in creation order",
+        "description" : "List all published tools and workflows in creation order, NO authentication",
         "operationId" : "rssFeed",
         "responses" : {
           "default" : {
@@ -2282,6 +2311,9 @@
     },
     "/metadata/sitemap" : {
       "get" : {
+        "tags" : [ "metadata" ],
+        "summary" : "List all published workflow and tool paths",
+        "description" : "List all published workflow and tool paths, NO authentication",
         "operationId" : "sitemap",
         "responses" : {
           "default" : {
@@ -2914,21 +2946,14 @@
         }
       }
     },
-    "/auth/tokens/bitbucket.org" : {
-      "get" : {
-        "operationId" : "addBitbucketToken",
-        "parameters" : [ {
-          "name" : "code",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
+    "/auth/tokens/github" : {
+      "post" : {
+        "operationId" : "addToken",
         "requestBody" : {
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/User"
+                "type" : "string"
               }
             }
           }
@@ -2980,14 +3005,21 @@
         }
       }
     },
-    "/auth/tokens/github" : {
-      "post" : {
-        "operationId" : "addToken",
+    "/auth/tokens/bitbucket.org" : {
+      "get" : {
+        "operationId" : "addBitbucketToken",
+        "parameters" : [ {
+          "name" : "code",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "*/*" : {
               "schema" : {
-                "type" : "string"
+                "$ref" : "#/components/schemas/User"
               }
             }
           }
@@ -2999,6 +3031,44 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Token"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{userId}/containers/refresh" : {
+      "get" : {
+        "operationId" : "refresh_1",
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Tool"
+                  }
                 }
               }
             }
@@ -3113,6 +3183,44 @@
               "application/json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{userId}/tokens" : {
+      "get" : {
+        "operationId" : "getUserTokens",
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Token"
+                  }
                 }
               }
             }
@@ -3773,11 +3881,11 @@
         }
       }
     },
-    "/users/{userId}/tokens" : {
-      "get" : {
-        "operationId" : "getUserTokens",
+    "/workflows/{workflowId}/publish" : {
+      "post" : {
+        "operationId" : "publish_1",
         "parameters" : [ {
-          "name" : "userId",
+          "name" : "workflowId",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -3800,10 +3908,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Token"
-                  }
+                  "$ref" : "#/components/schemas/Workflow"
                 }
               }
             }
@@ -3811,11 +3916,11 @@
         }
       }
     },
-    "/users/{userId}/containers/refresh" : {
+    "/workflows/{workflowId}/refresh" : {
       "get" : {
-        "operationId" : "refresh_1",
+        "operationId" : "refresh_2",
         "parameters" : [ {
-          "name" : "userId",
+          "name" : "workflowId",
           "in" : "path",
           "required" : true,
           "schema" : {
@@ -3838,9 +3943,43 @@
             "content" : {
               "application/json" : {
                 "schema" : {
+                  "$ref" : "#/components/schemas/Workflow"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/versions" : {
+      "get" : {
+        "operationId" : "tags_1",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/Tool"
+                    "$ref" : "#/components/schemas/WorkflowVersion"
                   }
                 }
               }
@@ -4289,98 +4428,6 @@
         }
       }
     },
-    "/workflows/{workflowId}/star" : {
-      "put" : {
-        "operationId" : "starEntry_1",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{workflowId}/unstar" : {
-      "delete" : {
-        "operationId" : "unstarEntry_1",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{workflowId}/starredUsers" : {
-      "get" : {
-        "operationId" : "getStarredUsers_1",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "uniqueItems" : true,
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/User"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/workflows/{workflowId}/labels" : {
       "put" : {
         "operationId" : "updateLabels_1",
@@ -4495,474 +4542,6 @@
         }
       }
     },
-    "/workflows/path/entry/{repository}/published" : {
-      "get" : {
-        "operationId" : "getPublishedEntryByPath",
-        "parameters" : [ {
-          "name" : "repository",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Entry"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/path/{repository}" : {
-      "get" : {
-        "operationId" : "getAllWorkflowByPath",
-        "parameters" : [ {
-          "name" : "repository",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/Workflow"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/path/workflow/{repository}/published" : {
-      "get" : {
-        "operationId" : "getPublishedWorkflowByPath",
-        "parameters" : [ {
-          "name" : "repository",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "include",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Workflow"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{workflowId}/nextflow" : {
-      "get" : {
-        "operationId" : "nextflow",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "tag",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SourceFile"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{workflowId}/nextflow/{relative-path}" : {
-      "get" : {
-        "operationId" : "secondaryNextFlowPath",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "tag",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "relative-path",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SourceFile"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{workflowId}/secondaryNextflow" : {
-      "get" : {
-        "operationId" : "secondaryNextflow",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "tag",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/SourceFile"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/manualRegister" : {
-      "post" : {
-        "operationId" : "manualRegister",
-        "parameters" : [ {
-          "name" : "workflowRegistry",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "workflowPath",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "defaultWorkflowPath",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "workflowName",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "descriptorType",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "defaultTestParameterFilePath",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Workflow"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{workflowId}/workflowVersions" : {
-      "put" : {
-        "operationId" : "updateWorkflowVersion",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "uniqueItems" : true,
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/WorkflowVersion"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{workflowId}/dag/{workflowVersionId}" : {
-      "get" : {
-        "operationId" : "getWorkflowDag",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "workflowVersionId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{workflowId}/tools/{workflowVersionId}" : {
-      "get" : {
-        "operationId" : "getTableToolContent",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "workflowVersionId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/{entryId}/registerCheckerWorkflow/{descriptorType}" : {
-      "post" : {
-        "operationId" : "registerCheckerWorkflow",
-        "parameters" : [ {
-          "name" : "checkerWorkflowPath",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "testParameterPath",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "entryId",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        }, {
-          "name" : "descriptorType",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Entry"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/workflows/{workflowId}/zip/{workflowVersionId}" : {
       "get" : {
         "operationId" : "getWorkflowZip",
@@ -4997,6 +4576,98 @@
             "description" : "default response",
             "content" : {
               "application/zip" : { }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/star" : {
+      "put" : {
+        "operationId" : "starEntry_1",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/unstar" : {
+      "delete" : {
+        "operationId" : "unstarEntry_1",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/starredUsers" : {
+      "get" : {
+        "operationId" : "getStarredUsers_1",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "uniqueItems" : true,
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/User"
+                  }
+                }
+              }
             }
           }
         }
@@ -5617,34 +5288,24 @@
         }
       }
     },
-    "/workflows/{workflowId}/publish" : {
-      "post" : {
-        "operationId" : "publish_1",
+    "/workflows/path/entry/{repository}/published" : {
+      "get" : {
+        "operationId" : "getPublishedEntryByPath",
         "parameters" : [ {
-          "name" : "workflowId",
+          "name" : "repository",
           "in" : "path",
           "required" : true,
           "schema" : {
-            "type" : "integer",
-            "format" : "int64"
+            "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
         "responses" : {
           "default" : {
             "description" : "default response",
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/Workflow"
+                  "$ref" : "#/components/schemas/Entry"
                 }
               }
             }
@@ -5652,50 +5313,15 @@
         }
       }
     },
-    "/workflows/{workflowId}/refresh" : {
+    "/workflows/path/{repository}" : {
       "get" : {
-        "operationId" : "refresh_2",
+        "operationId" : "getAllWorkflowByPath",
         "parameters" : [ {
-          "name" : "workflowId",
+          "name" : "repository",
           "in" : "path",
           "required" : true,
           "schema" : {
-            "type" : "integer",
-            "format" : "int64"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Workflow"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/workflows/versions" : {
-      "get" : {
-        "operationId" : "tags_1",
-        "parameters" : [ {
-          "name" : "workflowId",
-          "in" : "query",
-          "schema" : {
-            "type" : "integer",
-            "format" : "int64"
+            "type" : "string"
           }
         } ],
         "requestBody" : {
@@ -5715,8 +5341,414 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
+                    "$ref" : "#/components/schemas/Workflow"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/path/workflow/{repository}/published" : {
+      "get" : {
+        "operationId" : "getPublishedWorkflowByPath",
+        "parameters" : [ {
+          "name" : "repository",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "include",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Workflow"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/nextflow" : {
+      "get" : {
+        "operationId" : "nextflow",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "tag",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SourceFile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/nextflow/{relative-path}" : {
+      "get" : {
+        "operationId" : "secondaryNextFlowPath",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "tag",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "relative-path",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SourceFile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/secondaryNextflow" : {
+      "get" : {
+        "operationId" : "secondaryNextflow",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "tag",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SourceFile"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/manualRegister" : {
+      "post" : {
+        "operationId" : "manualRegister",
+        "parameters" : [ {
+          "name" : "workflowRegistry",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "workflowPath",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "defaultWorkflowPath",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "workflowName",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "descriptorType",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "defaultTestParameterFilePath",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Workflow"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/workflowVersions" : {
+      "put" : {
+        "operationId" : "updateWorkflowVersion",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "uniqueItems" : true,
+                  "type" : "array",
+                  "items" : {
                     "$ref" : "#/components/schemas/WorkflowVersion"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/dag/{workflowVersionId}" : {
+      "get" : {
+        "operationId" : "getWorkflowDag",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "workflowVersionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{workflowId}/tools/{workflowVersionId}" : {
+      "get" : {
+        "operationId" : "getTableToolContent",
+        "parameters" : [ {
+          "name" : "workflowId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "workflowVersionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workflows/{entryId}/registerCheckerWorkflow/{descriptorType}" : {
+      "post" : {
+        "operationId" : "registerCheckerWorkflow",
+        "parameters" : [ {
+          "name" : "checkerWorkflowPath",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "testParameterPath",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "entryId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "descriptorType",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Entry"
                 }
               }
             }
@@ -5997,6 +6029,98 @@
         }
       }
     },
+    "/api/ga4gh/v2/tools" : {
+      "get" : {
+        "operationId" : "toolsGet",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "alias",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "registry",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "organization",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "name",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "toolname",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "description",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "author",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "checker",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 1000
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/User"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "default" : {
+            "description" : "default response",
+            "content" : {
+              "application/json" : { },
+              "text/plain" : { }
+            }
+          }
+        }
+      }
+    },
     "/api/ga4gh/v2/tools/{id}/versions" : {
       "get" : {
         "operationId" : "toolsIdVersionsGet",
@@ -6208,76 +6332,15 @@
         }
       }
     },
-    "/api/ga4gh/v2/tools" : {
+    "/api/ga4gh/v2/tools/{id}" : {
       "get" : {
-        "operationId" : "toolsGet",
+        "operationId" : "toolsIdGet",
         "parameters" : [ {
           "name" : "id",
-          "in" : "query",
+          "in" : "path",
+          "required" : true,
           "schema" : {
             "type" : "string"
-          }
-        }, {
-          "name" : "alias",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "registry",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "organization",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "name",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "toolname",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "description",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "author",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "checker",
-          "in" : "query",
-          "schema" : {
-            "type" : "boolean"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "limit",
-          "in" : "query",
-          "schema" : {
-            "type" : "integer",
-            "format" : "int32",
-            "default" : 1000
           }
         } ],
         "requestBody" : {
@@ -6383,26 +6446,65 @@
         }
       }
     },
-    "/api/ga4gh/v2/tools/{id}" : {
+    "/api/ga4gh/v1/tools" : {
       "get" : {
-        "operationId" : "toolsIdGet",
+        "operationId" : "toolsGet_1",
         "parameters" : [ {
           "name" : "id",
-          "in" : "path",
-          "required" : true,
+          "in" : "query",
           "schema" : {
             "type" : "string"
           }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/User"
-              }
-            }
+        }, {
+          "name" : "registry",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
           }
-        },
+        }, {
+          "name" : "organization",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "name",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "toolname",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "description",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "author",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        } ],
         "responses" : {
           "default" : {
             "description" : "default response",
@@ -6609,76 +6711,6 @@
         }
       }
     },
-    "/api/ga4gh/v1/tools" : {
-      "get" : {
-        "operationId" : "toolsGet_1",
-        "parameters" : [ {
-          "name" : "id",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "registry",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "organization",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "name",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "toolname",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "description",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "author",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "offset",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "limit",
-          "in" : "query",
-          "schema" : {
-            "type" : "integer",
-            "format" : "int32"
-          }
-        } ],
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "application/json" : { },
-              "text/plain" : { }
-            }
-          }
-        }
-      }
-    },
     "/api/ga4gh/v1/tools/{id}" : {
       "get" : {
         "operationId" : "toolsIdGet_1",
@@ -6713,20 +6745,26 @@
         }
       },
       "Collection" : {
+        "required" : [ "description", "name" ],
         "type" : "object",
         "properties" : {
           "id" : {
             "type" : "integer",
+            "description" : "Implementation specific ID for the collection in this web service",
             "format" : "int64"
           },
           "name" : {
             "maxLength" : 39,
             "minLength" : 3,
             "pattern" : "[a-zA-Z][a-zA-Z\\d]*",
-            "type" : "string"
+            "type" : "string",
+            "description" : "Name of the collection",
+            "example" : "Alignment"
           },
           "description" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "Description of the collection",
+            "example" : "Alignment"
           },
           "entries" : {
             "uniqueItems" : true,
@@ -6743,7 +6781,8 @@
             "type" : "string",
             "format" : "date-time"
           }
-        }
+        },
+        "description" : "Collection in an organization, collects entries"
       },
       "Entry" : {
         "type" : "object",
@@ -6813,6 +6852,10 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "last_modified_date" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "checker_id" : {
             "type" : "integer",
             "format" : "int64"
@@ -6833,10 +6876,6 @@
             "items" : {
               "$ref" : "#/components/schemas/FileFormat"
             }
-          },
-          "last_modified_date" : {
-            "type" : "string",
-            "format" : "date-time"
           }
         }
       },
@@ -7133,15 +7172,15 @@
               "$ref" : "#/components/schemas/Tag"
             }
           },
-          "customerDockerRegistryPath" : {
-            "type" : "string",
-            "writeOnly" : true
-          },
           "descriptorType" : {
             "type" : "array",
             "items" : {
               "type" : "string"
             }
+          },
+          "customerDockerRegistryPath" : {
+            "type" : "string",
+            "writeOnly" : true
           },
           "path" : {
             "type" : "string"
@@ -7187,6 +7226,10 @@
           "custom_docker_registry_path" : {
             "type" : "string"
           },
+          "last_modified_date" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "checker_id" : {
             "type" : "integer",
             "format" : "int64"
@@ -7207,10 +7250,6 @@
             "items" : {
               "$ref" : "#/components/schemas/FileFormat"
             }
-          },
-          "last_modified_date" : {
-            "type" : "string",
-            "format" : "date-time"
           }
         }
       },
@@ -7247,6 +7286,14 @@
           }
         }
       },
+      "PublishRequest" : {
+        "type" : "object",
+        "properties" : {
+          "publish" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "RegistryBean" : {
         "type" : "object",
         "properties" : {
@@ -7274,14 +7321,6 @@
         "type" : "object",
         "properties" : {
           "star" : {
-            "type" : "boolean"
-          }
-        }
-      },
-      "PublishRequest" : {
-        "type" : "object",
-        "properties" : {
-          "publish" : {
             "type" : "boolean"
           }
         }
@@ -7414,6 +7453,10 @@
           "source_control_provider" : {
             "type" : "string"
           },
+          "last_modified_date" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
           "checker_id" : {
             "type" : "integer",
             "format" : "int64"
@@ -7434,10 +7477,6 @@
             "items" : {
               "$ref" : "#/components/schemas/FileFormat"
             }
-          },
-          "last_modified_date" : {
-            "type" : "string",
-            "format" : "date-time"
           }
         }
       },

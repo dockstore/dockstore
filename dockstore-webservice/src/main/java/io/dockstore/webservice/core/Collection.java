@@ -24,6 +24,7 @@ import javax.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -33,6 +34,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  * @author aduncan
  */
 @ApiModel("Collection")
+@Schema(name = "Collection", description = "Collection in an organization, collects entries")
 @Entity
 @Table(name = "collection")
 @NamedQueries({
@@ -44,16 +46,19 @@ public class Collection implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ApiModelProperty(value = "Implementation specific ID for the collection in this web service", position = 0)
+    @Schema(description = "Implementation specific ID for the collection in this web service")
     private long id;
 
     @Column(nullable = false, unique = true)
     @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the collection.", required = true, example = "Alignment", position = 1)
+    @Schema(description = "Name of the collection", required = true, example = "Alignment")
     private String name;
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "Description of the collection", position = 2)
+    @Schema(description = "Description of the collection", required = true, example = "Alignment")
     private String description;
 
     @ManyToMany(fetch = FetchType.LAZY)
