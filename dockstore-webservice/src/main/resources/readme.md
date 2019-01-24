@@ -1,1 +1,1 @@
-These is the natively generated swagger2 which is auto-converted to an openapi3 description. 
+This is the natively generated swagger2 which is also auto-converted to an openapi3 description. 

@@ -1,1 +1,1 @@
-These is the natively generated openapi3 descriptions. 
+This is the natively generated (from annotations) openapi3 descriptions. 
