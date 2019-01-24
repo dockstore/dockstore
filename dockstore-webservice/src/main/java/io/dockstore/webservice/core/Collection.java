@@ -47,7 +47,7 @@ public class Collection implements Serializable {
     private long id;
 
     @Column(nullable = false, unique = true)
-    @Pattern(regexp = "\\d*[a-zA-Z][a-zA-Z\\d]*")
+    @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the collection.", required = true, example = "Alignment", position = 1)
     private String name;

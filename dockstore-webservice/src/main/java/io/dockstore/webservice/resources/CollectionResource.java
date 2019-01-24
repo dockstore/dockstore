@@ -351,7 +351,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         // Event for update
         Event updateCollectionEvent = new Event.Builder()
                 .withOrganisation(organisation)
-                .withCollection(collection)
+                .withCollection(existingCollection)
                 .withInitiatorUser(user)
                 .withType(Event.EventType.MODIFY_COLLECTION)
                 .build();

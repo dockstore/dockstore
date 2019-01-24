@@ -3376,12 +3376,8 @@ paths:
           schema:
             type: boolean
       responses:
-        "200":
+        default:
           description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
       security:
         - BEARER:
             []
@@ -3721,25 +3717,6 @@ paths:
                 uniqueItems: true
                 items:
                   $ref: "#/components/schemas/OrganisationUser"
-      security:
-        - BEARER:
-            []
-  /users/user/organisations:
-    get:
-      tags:
-        - users
-      summary: Get the logged-in users organisations.
-      description: ""
-      operationId: getUserOrganisations
-      responses:
-        "200":
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Organisation"
       security:
         - BEARER:
             []
@@ -5847,7 +5824,7 @@ components:
           description: Name of the collection.
           minLength: 3
           maxLength: 39
-          pattern: \d*[a-zA-Z][a-zA-Z\d]*
+          pattern: "[a-zA-Z][a-zA-Z\\d]*"
         description:
           type: string
           description: Description of the collection
@@ -6310,7 +6287,7 @@ components:
           description: Name of the organisation (ex. OICR)
           minLength: 3
           maxLength: 39
-          pattern: \d*[a-zA-Z][a-zA-Z\d]*
+          pattern: "[a-zA-Z][a-zA-Z\\d]*"
         description:
           type: string
           description: Description of the organisation

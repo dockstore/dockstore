@@ -21,7 +21,6 @@ import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -52,7 +51,7 @@ public class Organisation implements Serializable {
     private long id;
 
     @Column(nullable = false, unique = true)
-    @Pattern(regexp = "\\d*[a-zA-Z][a-zA-Z\\d]*")
+    @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the organisation (ex. OICR)", required = true, example = "OICR", position = 1)
     private String name;

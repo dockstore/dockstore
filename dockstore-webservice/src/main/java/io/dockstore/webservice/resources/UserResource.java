@@ -17,7 +17,6 @@
 package io.dockstore.webservice.resources;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,7 +42,6 @@ import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
-import io.dockstore.webservice.core.Organisation;
 import io.dockstore.webservice.core.OrganisationUser;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
