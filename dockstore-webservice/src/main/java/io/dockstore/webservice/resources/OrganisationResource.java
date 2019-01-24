@@ -121,12 +121,12 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         if (!Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
             organisation.setStatus(Organisation.ApplicationState.REJECTED);
 
-            Event approveOrgEvent = new Event.Builder()
+            Event rejectOrgEvent = new Event.Builder()
                     .withOrganisation(organisation)
                     .withInitiatorUser(user)
                     .withType(Event.EventType.REJECT_ORG)
                     .build();
-            eventDAO.create(approveOrgEvent);
+            eventDAO.create(rejectOrgEvent);
         }
 
         return organisationDAO.findById(id);

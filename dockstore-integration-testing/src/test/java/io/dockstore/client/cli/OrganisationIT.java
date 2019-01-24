@@ -11,6 +11,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.OrganisationsApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Organisation;
@@ -378,6 +379,7 @@ public class OrganisationIT extends BaseIT {
         // Setup other user
         final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
         OrganisationsApi organisationsApiOtherUser = new OrganisationsApi(webClientOtherUser);
+        UsersApi usersOtherUser = new UsersApi(webClientOtherUser);
 
         // Create an organisation
         Organisation organisation = createOrg(organisationsApiUser2);
@@ -390,6 +392,10 @@ public class OrganisationIT extends BaseIT {
 
         long orgId = organisation.getId();
         long userId = 2;
+
+        // Other user should be in no orgs
+        List<io.swagger.client.model.OrganisationUser> memberships = usersOtherUser.getUserMemberships();
+        assertEquals("Should have no memberships, has " + memberships.size(), 0, memberships.size());
 
         // Request that other user joins
         organisationsApiUser2.addUserToOrg(OrganisationUser.Role.MEMBER.toString(), userId, orgId, "");
@@ -404,8 +410,16 @@ public class OrganisationIT extends BaseIT {
                 .runSelectStatement("select count(*) from organisation_user where accepted = false and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
+        // Should exist in the users membership list
+        memberships = usersOtherUser.getUserMemberships();
+        assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
+
         // Approve request
         organisationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
+
+        // Should still exist in the users membership list
+        memberships = usersOtherUser.getUserMemberships();
+        assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
 
         // There should be one APPROVE_ORG_INVITE event
         final long count4 = testingPostgres
