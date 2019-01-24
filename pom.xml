@@ -147,6 +147,7 @@
         <module>dockstore-file-plugin-parent</module>
         <module>dockstore-webservice</module>
         <module>swagger-java-client</module>
+        <module>openapi-java-client</module>
         <module>swagger-java-quay-client</module>
         <module>swagger-java-bitbucket-client</module>
         <module>dockstore-client</module>
@@ -773,7 +774,7 @@
             <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
-                <version>2.3.0</version>
+                <version>2.2.8</version>
             </dependency>
             <dependency>
                 <groupId>com.sun.xml.bind</groupId>
@@ -997,7 +998,7 @@
                         <dependency>
                             <groupId>javax.xml.bind</groupId>
                             <artifactId>jaxb-api</artifactId>
-                            <version>2.3.0</version>
+                            <version>2.2.8</version>
                         </dependency>
                     </dependencies>
                 </plugin>

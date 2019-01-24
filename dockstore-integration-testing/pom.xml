@@ -47,6 +47,12 @@
             <version>1.6.0-alpha.4-SNAPSHOT</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.dockstore</groupId>
+            <artifactId>openapi-java-client</artifactId>
+            <version>1.6.0-alpha.4-SNAPSHOT</version>
+        </dependency>
+
         <!-- testing -->
         <dependency>
             <groupId>io.dockstore</groupId>

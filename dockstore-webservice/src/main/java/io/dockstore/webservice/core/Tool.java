@@ -43,6 +43,7 @@ import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Check;
@@ -322,6 +323,9 @@ public class Tool extends Entry<Tool, Tag> {
      */
     @Enumerated(EnumType.STRING)
     @JsonProperty("registry")
+    //FIXME: breaks this for OpenAPI, if we don't break it, the enum is generated using dockerPath via toString which
+    // fails horribly
+    @Schema(type = "integer")
     @ApiModelProperty(position = 30)
     public Registry getRegistryProvider() {
         for (Registry r : Registry.values()) {
