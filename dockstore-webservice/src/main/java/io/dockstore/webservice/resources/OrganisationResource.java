@@ -118,7 +118,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        if (!Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+        if (Objects.equals(organisation.getStatus(), Organisation.ApplicationState.PENDING)) {
             organisation.setStatus(Organisation.ApplicationState.REJECTED);
 
             Event rejectOrgEvent = new Event.Builder()
@@ -127,6 +127,10 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
                     .withType(Event.EventType.REJECT_ORG)
                     .build();
             eventDAO.create(rejectOrgEvent);
+        } else if (Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+            String msg = "The organization is already approved";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         return organisationDAO.findById(id);

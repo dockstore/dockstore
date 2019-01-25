@@ -702,6 +702,19 @@ public class OrganisationIT extends BaseIT {
 
         collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId(), "entries");
         assertEquals("There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size(), 1, collections.get(0).getEntries().size());
+
+        // Should not be able to reject an approved organization
+        boolean throwsError = false;
+        try {
+            organisation = organisationsApiAdmin.rejectOrganisation(organizationID);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to reject an approved collection");
+        }
+
     }
 
     /**
