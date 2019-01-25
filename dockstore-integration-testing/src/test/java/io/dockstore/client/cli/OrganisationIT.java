@@ -235,6 +235,11 @@ public class OrganisationIT extends BaseIT {
         List<io.swagger.client.model.OrganisationUser> users = organisationsApiUser2.getOrganisationMembers(registeredOrganisation.getId());
         assertEquals("There should be 1 user, there are " + users.size(),1, users.size());
 
+        // Update organization test
+        organisation = organisationsApiUser2.updateOrganizationDescription(organisation.getId(), "potato");
+        assertEquals("potato", organisation.getDescription());
+        String description = organisationsApiUser2.getOrganisationDescription(organisation.getId());
+        assertEquals("potato", description);
     }
 
     /**
