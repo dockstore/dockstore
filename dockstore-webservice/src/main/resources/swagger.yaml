@@ -3032,7 +3032,7 @@ paths:
     get:
       tags:
       - "organisations"
-      summary: "Retrieves an organisation description by organization ID."
+      summary: "Retrieves an organization description by organization ID."
       description: "Does not require authentication for approved organisations, authentication\
         \ can be provided for unapproved organisations"
       operationId: "getOrganisationDescription"

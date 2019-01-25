@@ -154,7 +154,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{organisationId}/description")
-    @ApiOperation(value = "Retrieves an organisation description by organization ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
+    @ApiOperation(value = "Retrieves an organization description by organization ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
     public String getOrganisationDescription(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
         return getOrganisationByIdOptionalAuth(user, id).getDescription();
