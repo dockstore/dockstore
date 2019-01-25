@@ -191,4 +191,10 @@
         <addForeignKeyConstraint baseColumnNames="validationid" baseTableName="version_validation" constraintName="fkvalidationid" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="validation"/>
     </changeSet>
 
+    <changeSet id="AddNotNullAbsolutePathConstraint" author="coverbeck">
+        <sql dbms="postgres">
+            UPDATE sourcefile SET absolutepath=path WHERE absolutepath isnull
+        </sql>
+        <addNotNullConstraint tableName="sourcefile" columnName="absolutepath"/>
+    </changeSet>
 </databaseChangeLog>

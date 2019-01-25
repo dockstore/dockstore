@@ -185,6 +185,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
+        // When submitted from UI absolutePath is null.
+        // Optionally, we could give an error here and force UI to set it.
+        sourceFiles.stream().forEach(sourceFile -> {
+            if (sourceFile.getAbsolutePath() == null) {
+                sourceFile.setAbsolutePath(sourceFile.getPath());
+            }
+        });
+
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
 
