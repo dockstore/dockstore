@@ -456,6 +456,11 @@ public class OrganisationIT extends BaseIT {
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from organisation_user where organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
+
+        // Test that events are sorted by DESC dbCreateDate
+        List<Event> events = organisationsApiUser2.getOrganisationEvents(orgId);
+        assertEquals("Should have 3 events returned, there are " + events.size(), 3, events.size());
+        assertEquals("First event should be most recent, which is REJECT_ORG_INVITE, but is actually " + events.get(0).getType().getValue(), "REJECT_ORG_INVITE" , events.get(0).getType().getValue());
     }
 
     /**
