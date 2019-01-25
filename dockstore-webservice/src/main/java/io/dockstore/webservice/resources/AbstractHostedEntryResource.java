@@ -214,10 +214,14 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     }
 
     /**
-     * UI submits source files without the
+     * For all source files whose absolutePath is not set, set the absolutePath to the path.
+     *
+     * The absolutePath may not be null in the database, but it is not set when the UI invokes
+     * the Webservice API.
+     *
      * @param sourceFiles
      */
-    private void updateUnsetAbsolutePaths(@ApiParam(value = "Set of updated sourcefiles, add files by adding new files with unknown paths, delete files by including them with emptied content", required = true) Set<SourceFile> sourceFiles) {
+    private void updateUnsetAbsolutePaths(Set<SourceFile> sourceFiles) {
         sourceFiles.stream().forEach(sourceFile -> {
             if (sourceFile.getAbsolutePath() == null) {
                 sourceFile.setAbsolutePath(sourceFile.getPath());
