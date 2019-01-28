@@ -365,6 +365,19 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @PUT
     @Timed
     @UnitOfWork
+    @Path("/{organisationId}/users/{username}")
+    @ApiOperation(value = "Adds a user role to an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
+    public OrganisationUser addUserToOrgByUsername(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Role of user. \"MAINTAINER\" or \"MEMBER\"", required = true) String role,
+            @ApiParam(value = "User to add to org.", required = true) @PathParam("username") String username,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
+        long userId = userDAO.findByUsername(username).getId();
+        return addUserToOrg(user, role, userId, organisationId, "");
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
     @Path("/{organisationId}/user")
     @ApiOperation(value = "Adds a user role to an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
     public OrganisationUser addUserToOrg(@ApiParam(hidden = true) @Auth User user,
@@ -384,9 +397,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.persist(organisationUser);
         } else {
-            String msg = "The user with id '" + userId + "' already has a role in the organisation with id ." + organisationId + "'.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            updateUserRole(user, role, userId, organisationId);
         }
 
         Event addUserOrganisationEvent = new Event.Builder()
@@ -603,7 +614,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
         // Check that you are not applying action on yourself
         if (Objects.equals(user.getId(), userId)) {
-            String msg = "You cannot add yourself to an organisation.";
+            String msg = "You cannot modify yourself in an organisation.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
