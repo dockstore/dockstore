@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -51,6 +52,9 @@ import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.wes.client.ApiClient;
 import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
+import io.swagger.wes.client.model.RunId;
+import io.swagger.wes.client.model.RunListResponse;
+import io.swagger.wes.client.model.RunStatus;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -99,9 +103,17 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  * @author dyuen
  */
 public abstract class AbstractEntryClient<T> {
+    private static final long LIST_RUNS_PAGE_SIZE = 60L;
+
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String BEARER = "Bearer";
+    private static final String BASIC = "basic";
+    private static final String DIGEST = "digest";
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     protected boolean isAdmin = false;
+
+
 
     static String getCleanedDescription(String description) {
         description = MoreObjects.firstNonNull(description, "");
@@ -886,6 +898,7 @@ public abstract class AbstractEntryClient<T> {
         }
     }
 
+
     /**
      * Creates a WES API object and sets the endpoint.
      *
@@ -895,8 +908,9 @@ public abstract class AbstractEntryClient<T> {
         WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
         ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
 
+        out("getWorkflowExecutionServiceApi WES URL is " + wesUrl);
         //String wesUrl = optVal(args, "--wes-url", null);
-        if (wesUrl != null && !wesUrl.isEmpty()) {
+        if (wesUrl == null || wesUrl.isEmpty()) {
             INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
             SubnodeConfiguration configSubNode = null;
             try {
@@ -906,6 +920,38 @@ public abstract class AbstractEntryClient<T> {
                 exceptionMessage(e, "Could not get WES section", ENTRY_NOT_FOUND);
             }
             String wesEndpointUrl = configSubNode.getString("url");
+            out("wes endpoint url is:" + wesEndpointUrl);
+
+            //TODO: somehow make this case insensitive?
+            String wesAuthorizationTypeCredentials = configSubNode.getString("authorization", null);
+            String wesAuthorizationType = null;
+            String wesAuthorizationCredentials = null;
+            out("wes config authorization string is " + wesAuthorizationTypeCredentials);
+            if (wesAuthorizationTypeCredentials != null) {
+                String[] wesAuthorizationTypeCredentialsArray = wesAuthorizationTypeCredentials.split("\\s+");
+                out("wes authorization credentials array:" + Arrays.toString(wesAuthorizationTypeCredentialsArray));
+                out("wes auth array length is:" + wesAuthorizationTypeCredentialsArray.length);
+                if (wesAuthorizationTypeCredentialsArray.length > 1) {
+                    wesAuthorizationType = wesAuthorizationTypeCredentialsArray[0];
+                    out("wes authorization type:" + wesAuthorizationType.toString());
+
+                    wesAuthorizationCredentials = wesAuthorizationTypeCredentialsArray[1];
+                    out("wes authorization credentials:" + wesAuthorizationCredentials.toString());
+
+                    if (wesAuthorizationType.equalsIgnoreCase(BEARER)) {
+                        out("set token to " + wesAuthorizationCredentials);
+                        // TODO: The WES schema should specify the security scheme so we do not need to add a default header
+                        wesApiClient.addDefaultHeader(AUTHORIZATION, BEARER + " " + wesAuthorizationCredentials);
+                        //wesApiClient.setAccessToken(wesAuthorizationCredentials);
+                    } else if (wesAuthorizationType.equalsIgnoreCase(BASIC)) {
+                        //wesApiClient.setPassword(wesAuthorizationCredentials);
+                        wesApiClient.addDefaultHeader(AUTHORIZATION, BASIC + " " + wesAuthorizationCredentials);
+                    }
+                }
+            }
+
+
+
             wesApiClient.setBasePath(wesEndpointUrl);
         } else {
             wesApiClient.setBasePath(wesUrl);
@@ -930,11 +976,39 @@ public abstract class AbstractEntryClient<T> {
             if (args.contains("launch")) {
                 out("Lauching workflow using WES");
                 launch(args);
+            } else if (args.contains("listRuns")) {
+                out("Getting list of WES workflows");
+                RunListResponse response = null;
+                try {
+                    response = clientWorkflowExecutionServiceApi.listRuns(LIST_RUNS_PAGE_SIZE, "1");
+                    //response = clientWorkflowExecutionServiceApi.listRuns(null, null);
+                } catch (io.swagger.wes.client.ApiException e) {
+                    e.printStackTrace();
+                }
+                String nextPageToken = response.getNextPageToken();
+                out("next page token is: " + nextPageToken);
+                try {
+                    response = clientWorkflowExecutionServiceApi.listRuns(LIST_RUNS_PAGE_SIZE, nextPageToken);
+                } catch (io.swagger.wes.client.ApiException e) {
+                    e.printStackTrace();
+                }
+
+                List runs = response.getRuns();
+                if (runs != null) {
+                    out("runs is not null!!!!");
+                }
+                //out("runs list is:" + runs.toString());
+                Iterator runIterator = runs.iterator();
+                out("Run list response is:");
+                while (runIterator.hasNext()) {
+                    System.out.println(runIterator.next().toString());
+                }
             } else if (args.contains("status")) {
                 String workflowId = reqVal(args, "--id");
                 out("Getting status of WES workflow");
                 try {
-                    clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
+                    RunStatus response = clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
+                    out("Run status is: " + response.toString());
                 } catch (io.swagger.wes.client.ApiException e) {
                     e.printStackTrace();
                 }
@@ -942,7 +1016,8 @@ public abstract class AbstractEntryClient<T> {
                 out("Canceling WES workflow");
                 String workflowId = reqVal(args, "--id");
                 try {
-                    clientWorkflowExecutionServiceApi.cancelRun(workflowId);
+                    RunId response = clientWorkflowExecutionServiceApi.cancelRun(workflowId);
+                    out("Cancelled run with id: " + response.toString());
                 } catch (io.swagger.wes.client.ApiException e) {
                     e.printStackTrace();
                 }

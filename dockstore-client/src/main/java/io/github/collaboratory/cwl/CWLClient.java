@@ -17,12 +17,14 @@ package io.github.collaboratory.cwl;
 
 import java.io.File;
 import java.io.FileInputStream;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +72,7 @@ import static io.dockstore.client.cli.Client.SCRIPT;
  * Grouping code for launching CWL tools and workflows
  */
 public class CWLClient implements LanguageClientInterface {
+    public static final String WORKFLOW_URL = "workflow_url";
 
     private final AbstractEntryClient abstractEntryClient;
 
@@ -81,21 +84,46 @@ public class CWLClient implements LanguageClientInterface {
         WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = abstractEntryClient.getWorkflowExecutionServiceApi(wesUrl);
         try {
             String tags = "WorkflowExecutionService";
-            // Convert the filename to an array of bytes using a standard encoding
-            byte[] descriptorContent = localPrimaryDescriptorFile.getAbsolutePath().getBytes(StandardCharsets.UTF_8);
-            //byte[] descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
-            byte[] jsonContent = jsonString.getBytes(StandardCharsets.UTF_8);
 
+
+            // Convert the filename to an array of bytes using a standard encoding
+            //byte[] descriptorContent = localPrimaryDescriptorFile.getAbsolutePath().getBytes(StandardCharsets.UTF_8);
+            byte[] descriptorContent = null;
+            try {
+                descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+            //byte[] jsonContent = jsonString.getBytes(StandardCharsets.UTF_8);
 
             List<byte[]> workflowAttachment = new ArrayList<byte[]>();
-            workflowAttachment.add(descriptorContent);
-            workflowAttachment.add(jsonContent);
+
+
+            //workflowAttachment.add(WORKFLOW_URL.getBytes(StandardCharsets.UTF_8));
+            //workflowAttachment.add(descriptorContent);
+
+
+            //workflowAttachment.add(jsonContent);
 
             System.out.println("runWESCommand: jsonString is: " + jsonString);
+            System.out.println("runWESCommand: workflow absolute path is: " + localPrimaryDescriptorFile.getAbsolutePath());
 
+            //String workflowURL = "file://" + localPrimaryDescriptorFile.getAbsolutePath();
+            String workflowURL = localPrimaryDescriptorFile.getAbsolutePath();
+
+            System.out.println("runWESCommand: workflow URI is: " + workflowURL);
+
+            for (int i = 0; i < workflowAttachment.size(); i++) {
+                String str = new String(workflowAttachment.get(i), StandardCharsets.UTF_8);
+                System.out.println("runWESCommand: workflow attachment " + i + " is: " + str);
+                //System.out.println("runWESCommand: workflow attachment " + i + " is: " + Arrays.toString(workflowAttachment.get(i)));
+            }
+            //System.out.println("runWESCommand: workflow URI is: " + localPrimaryDescriptorFile.toURI().toString());
 
             clientWorkflowExecutionServiceApi
-                    .runWorkflow(jsonString, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
+                    .runWorkflow(jsonString, "WDL", "1.0", tags, "", workflowURL, workflowAttachment);
         } catch (io.swagger.wes.client.ApiException e) {
             e.printStackTrace();
         }
@@ -143,6 +171,8 @@ public class CWLClient implements LanguageClientInterface {
         }
         jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
+        // If no WES URL was part of the command line check if a WES URL is indicated in the config file
+        // If there is a WES section in the config file then use the URL listed there and launch the workflow at the WES endpoint
         if (wesUrl == null || wesUrl.isEmpty()) {
             System.out.println("WES URL is empty from command line; getting it from config file");
             INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
