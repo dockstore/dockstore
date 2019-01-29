@@ -57,6 +57,21 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         if (configuration != null && configuration.containsKey("manifest.author")) {
             entry.setAuthor(configuration.getString("manifest.author"));
         }
+        // look for extended help message from nf-core workflows when it is available
+        String mainScriptPath = "main.nf";
+        if (configuration != null && configuration.containsKey("manifest.mainScript")) {
+            mainScriptPath = configuration.getString("manifest.mainScript");
+        }
+        String finalMainScriptPath = mainScriptPath;
+        final Optional<SourceFile> potentialScript = sourceFiles.stream().filter(file -> file.getPath().equals(finalMainScriptPath))
+            .findFirst();
+        if (potentialScript.isPresent()) {
+            final String helpMessage = getHelpMessage(potentialScript.get().getContent());
+            // abitrarily follow description, markdown looks funny without the line breaks
+            String builder = entry.getDescription() == null || entry.getDescription().isEmpty() ? helpMessage
+                : entry.getDescription() + "\n\n" + helpMessage;
+            entry.setDescription(builder);
+        }
         return entry;
     }
 
@@ -73,7 +88,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         }
         String mainScriptAbsolutePath = convertRelativePathToAbsolutePath(filepath, mainScriptPath);
 
-        Optional<SourceFile> sourceFile = sourceCodeRepoInterface.readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptAbsolutePath);
+        Optional<SourceFile> sourceFile = sourceCodeRepoInterface
+            .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptAbsolutePath);
         if (sourceFile.isPresent()) {
             sourceFile.get().setPath(mainScriptPath);
             imports.put(mainScriptPath, sourceFile.get());
@@ -104,8 +120,9 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Returns the first AST found with some keyword as text
-     * @param ast An AST
-     * @param keyword Text to search node for (exact match)
+     *
+     * @param ast          An AST
+     * @param keyword      Text to search node for (exact match)
      * @param compareChild If true will check first child for keyword, if false will check current node
      * @return AST with some keyword as text
      */
@@ -146,9 +163,9 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         return subtree;
     }
 
-
     /**
      * Given an AST for an EXPR will return the text name
+     *
      * @param exprAST AST of an EXPR
      * @return Input channel name
      */
@@ -156,9 +173,9 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         return exprAST == null ? null : exprAST.getFirstChild().getFirstChild().getNextSibling().getFirstChild().getText();
     }
 
-
     /**
      * Given an AST for a process, returns the name of the process
+     *
      * @param processAST AST of a process
      * @return Process name
      */
@@ -168,6 +185,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Get a list of all channel names for either inputs or outputs of an EXPR
+     *
      * @param processAST AST of a process
      * @return List of channels for inputs or outputs of a process
      */
@@ -177,9 +195,10 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         inputs.add(getInputChannelNameForEXPR(firstEXPR));
 
         // Only look at next sibling under certain conditions
-        if (!(processAST != null && processAST.getNextSibling() != null && processAST.getNextSibling().getFirstChild() != null && Objects.equals(processAST.getNextSibling().getFirstChild().getText(), "output"))) {
+        if (!(processAST != null && processAST.getNextSibling() != null && processAST.getNextSibling().getFirstChild() != null && Objects
+            .equals(processAST.getNextSibling().getFirstChild().getText(), "output"))) {
             if (processAST != null && processAST.getNextSibling() != null) {
-                inputs.addAll(getListOfIO((GroovySourceAST) processAST.getNextSibling()));
+                inputs.addAll(getListOfIO((GroovySourceAST)processAST.getNextSibling()));
             }
         }
         return inputs;
@@ -191,7 +210,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Gets a list of all subtrees with text keyword
-     * @param ast Some AST
+     *
+     * @param ast     Some AST
      * @param keyword A keyword of an existing node in an AST
      * @return List of AST with some keyword
      */
@@ -228,6 +248,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Returns a list of input channels the process AST depends on
+     *
      * @param processAST AST of a process
      * @return List of input channels for a process
      */
@@ -242,6 +263,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     /**
      * Returns a list of all channels written to by the given process AST
+     *
      * @param processAST AST of a process
      * @return List of output channels for a process
      */
@@ -300,6 +322,71 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     }
 
     /**
+     * Get help message from nf-core workflows
+     *
+     * @return the aggregated help message
+     */
+    private String getHelpMessage(String mainDescriptor) {
+        try {
+            StringBuilder builder = new StringBuilder();
+            final List<GroovySourceAST> process = getGroovySourceASTList(mainDescriptor, "helpMessage");
+            process.forEach(ast -> getHelpMessage(ast, builder, new HashSet<GroovySourceAST>()));
+            return builder.toString();
+        } catch (IOException | TokenStreamException | RecognitionException e) {
+            LOG.warn("could not parse", e);
+        }
+        return null;
+    }
+
+    /**
+     * Aggregates the help message from what looks like log comments
+     *
+     * @param definition the ast
+     * @param builder    aggregates text
+     * @param set        the set of AST seen before (to avoid looping)
+     */
+    private void getHelpMessage(GroovySourceAST definition, StringBuilder builder, Set<GroovySourceAST> set) {
+        if (set.contains(definition)) {
+            return;
+        }
+        set.add(definition);
+        // not sure why groovy puts text under a type of 88, cannot find a constant for this
+        final int groovyTextType = 88;
+        if (definition.getType() == groovyTextType) {
+            builder.append(definition.getText());
+        }
+        for (int i = 0; i < definition.getNumberOfChildren(); i++) {
+            final GroovySourceAST groovySourceAST = definition.childAt(i);
+            getHelpMessage(groovySourceAST, builder, set);
+        }
+        GroovySourceAST nextSibling = (GroovySourceAST)definition.getNextSibling();
+        while (nextSibling != null) {
+            getHelpMessage(nextSibling, builder, set);
+            nextSibling = (GroovySourceAST)nextSibling.getNextSibling();
+        }
+    }
+
+    /**
+     * Given string content, look for a keyword inside the AST representation of it
+     *
+     * @param mainDescriptor content
+     * @param keyword        keyword to lookup
+     * @return
+     * @throws RecognitionException
+     * @throws TokenStreamException
+     * @throws IOException
+     */
+    private List<GroovySourceAST> getGroovySourceASTList(String mainDescriptor, String keyword)
+        throws RecognitionException, TokenStreamException, IOException {
+        try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
+            GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
+            make.compilationUnit();
+            GroovySourceAST ast = (GroovySourceAST)make.getAST();
+            return getSubtreesOfKeyword(ast, keyword);
+        }
+    }
+
+    /**
      * Returns map from names of processes to their dependencies (processes that had to come before)
      *
      * @param mainDescriptor
@@ -308,13 +395,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     private Map<String, List<String>> getCallsToDependencies(String mainDescriptor) {
         //TODO: create proper dependency arrays, for now just list processes sequentially
         Map<String, List<String>> map = new HashMap<>();
-        try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
-            GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
-            make.compilationUnit();
-
-            GroovySourceAST ast = (GroovySourceAST)make.getAST();
-
-            List<GroovySourceAST> processList = getSubtreesOfKeyword(ast, "process");
+        try {
+            List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
             Map<String, List<String>> processNameToInputChannels = new HashMap<>();
             Map<String, List<String>> processNameToOutputChannels = new HashMap<>();
 
@@ -335,10 +417,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
                 List<String> dependencies = new ArrayList<>();
                 processNameToInputChannels.get(processName).forEach((String channelRead) -> {
                     processNameToOutputChannels.keySet().forEach((String dependentProcessName) -> {
-                        Optional<String> temp = processNameToOutputChannels.get(dependentProcessName)
-                                .stream()
-                                .filter(channelWrite -> Objects.equals(channelRead, channelWrite))
-                                .findFirst();
+                        Optional<String> temp = processNameToOutputChannels.get(dependentProcessName).stream()
+                            .filter(channelWrite -> Objects.equals(channelRead, channelWrite)).findFirst();
 
                         if (temp.isPresent()) {
                             dependencies.add(dependentProcessName);
@@ -355,11 +435,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     private Map<String, String> getCallsToDockerMap(String mainDescriptor, String defaultContainer) {
         Map<String, String> map = new HashMap<>();
-        try (InputStream stream = IOUtils.toInputStream(mainDescriptor, StandardCharsets.UTF_8)) {
-            GroovyRecognizer make = GroovyRecognizer.make(new GroovyLexer(stream));
-            make.compilationUnit();
-            GroovySourceAST ast = (GroovySourceAST)make.getAST();
-            List<GroovySourceAST> processList = getSubtreesOfKeyword(ast, "process");
+        try {
+            List<GroovySourceAST> processList = getGroovySourceASTList(mainDescriptor, "process");
 
             for (GroovySourceAST processAST : processList) {
                 String processName = getProcessValue(processAST);
@@ -384,9 +461,10 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
     @Override
     public VersionTypeValidation validateWorkflowSet(Set<SourceFile> sourcefiles, String primaryDescriptorFilePath) {
-        Optional<SourceFile> mainDescriptor = sourcefiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
+        Optional<SourceFile> mainDescriptor = sourcefiles.stream()
+            .filter((sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath))).findFirst();
         Map<String, String> validationMessageObject = new HashMap<>();
-        String validationMessage = null;
+        String validationMessage;
         String content;
         if (mainDescriptor.isPresent()) {
             content = mainDescriptor.get().getContent();

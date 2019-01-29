@@ -52,7 +52,7 @@ public final class NextflowUtilities {
         return getNextFlowTargetFile(nextflowVersion);
     }
 
-    public static File getNextFlowTargetFile() {
+    private static File getNextFlowTargetFile() {
         return getNextFlowTargetFile(DEFAULT_NEXTFLOW_VERSION);
     }
 
@@ -89,16 +89,16 @@ public final class NextflowUtilities {
     /**
      * Use nextflow to read nextflow configs
      * Relies on content being in it's own directory
-     * @param content
-     * @return
+     * TODO: nextflow normally uses this, investigate to see if this helps us https://github.com/ninjudd/drip
+     * @param content a file object with the content of nextflow
+     * @return a commons configuration file with the keys from the nextflow config file
      */
     public static Configuration grabConfig(File content) {
         try {
             final ArrayList<String> strings = new ArrayList<>(
                 Arrays.asList("java", "-jar", getNextFlowTargetFile().getAbsolutePath(), "config", "-properties"));
-            // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
             final String join = Joiner.on(" ").join(strings);
-            System.out.println(join);
+            LOG.info("running: " + join);
             final ImmutablePair<String, String> execute = Utilities.executeCommand(join, content.getParentFile());
             String stdout = execute.getLeft();
             Properties properties = new Properties();
@@ -111,11 +111,17 @@ public final class NextflowUtilities {
     }
 
     /**
-     * @param content
-     * @return
+     * @param content the content of the config file
+     * @return a commons configuration file with the keys from the nextflow config file
      */
     public static Configuration grabConfig(String content) {
         try {
+            // FIXME: this sucks, but we need to ignore includeConfig lines. We basically have a chicken and the egg problem
+            // FIXME: the nextflow config command only works when all included files are present, however we're trying to
+            // FIXME: use the nextflow config command to figure out what the list of included files is to
+            // FIXME: determine what files we want to get from the GitHub API in the first place
+            // FIXME: secondary case: when looking for description and author, we don't actually need includes either
+            content = content.replaceAll("(?i)(?m)^[ \t]*includeConfig.*", "");
             // needed since Nextflow binary assumes content is in working directory
             final Path nextflowDir = Files.createTempDirectory("nextflow");
             final Path tempFile = Paths.get(nextflowDir.toString(), "nextflow.config");
