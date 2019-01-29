@@ -3602,6 +3602,44 @@ paths:
       security:
         - BEARER:
             []
+  "/organisations/{organisationId}/users/{username}":
+    put:
+      tags:
+        - organisations
+      summary: Adds a user role to an organisation.
+      description: ""
+      operationId: addUserToOrgByUsername
+      parameters:
+        - name: username
+          in: path
+          description: User to add to org.
+          required: true
+          schema:
+            type: string
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Role of user. "MAINTAINER" or "MEMBER"
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganisationUser"
+      security:
+        - BEARER:
+            []
   "/users/checkUser/{username}":
     get:
       tags:
@@ -5925,10 +5963,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -5944,6 +5978,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6109,10 +6147,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6128,6 +6162,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7053,10 +7091,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7072,6 +7106,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
