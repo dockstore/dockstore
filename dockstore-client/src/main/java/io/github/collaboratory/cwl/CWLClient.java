@@ -49,6 +49,7 @@ import io.dockstore.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
+import io.swagger.wes.client.model.RunId;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -88,12 +89,12 @@ public class CWLClient implements LanguageClientInterface {
 
             // Convert the filename to an array of bytes using a standard encoding
             //byte[] descriptorContent = localPrimaryDescriptorFile.getAbsolutePath().getBytes(StandardCharsets.UTF_8);
-            byte[] descriptorContent = null;
-            try {
-                descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            //byte[] descriptorContent = null;
+            //try {
+            //    descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
+            //} catch (IOException e) {
+            //    e.printStackTrace();
+            //}
 
 
             //byte[] jsonContent = jsonString.getBytes(StandardCharsets.UTF_8);
@@ -122,8 +123,9 @@ public class CWLClient implements LanguageClientInterface {
             }
             //System.out.println("runWESCommand: workflow URI is: " + localPrimaryDescriptorFile.toURI().toString());
 
-            clientWorkflowExecutionServiceApi
+            RunId response = clientWorkflowExecutionServiceApi
                     .runWorkflow(jsonString, "WDL", "1.0", tags, "", workflowURL, workflowAttachment);
+            out("Launched CWL run with id: " + response.toString());
         } catch (io.swagger.wes.client.ApiException e) {
             e.printStackTrace();
         }

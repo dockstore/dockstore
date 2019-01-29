@@ -49,6 +49,7 @@ import io.github.collaboratory.cwl.LauncherCWL;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
+import io.swagger.wes.client.model.RunId;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.FileUtils;
@@ -60,6 +61,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
+import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
@@ -281,7 +283,8 @@ public class WDLClient implements LanguageClientInterface {
 
                     System.out.println("runWorkflow: jsonRun is: " + jsonRun + "descriptor is: " + localPrimaryDescriptorFile.getAbsolutePath());
 
-                    clientWorkflowExecutionServiceApi.runWorkflow(jsonRun, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
+                    RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonRun, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
+                    out("Launched WDL run with id: " + response.toString());
                 } catch (io.swagger.wes.client.ApiException e) {
                     e.printStackTrace();
                 }

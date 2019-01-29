@@ -910,51 +910,53 @@ public abstract class AbstractEntryClient<T> {
 
         out("getWorkflowExecutionServiceApi WES URL is " + wesUrl);
         //String wesUrl = optVal(args, "--wes-url", null);
+        //if (wesUrl == null || wesUrl.isEmpty()) {
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        SubnodeConfiguration configSubNode = null;
+        try {
+            configSubNode = config.getSection("WES");
+        } catch (Exception e) {
+            //?????what should the return code be?????
+            exceptionMessage(e, "Could not get WES section", ENTRY_NOT_FOUND);
+        }
+
         if (wesUrl == null || wesUrl.isEmpty()) {
-            INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
-            SubnodeConfiguration configSubNode = null;
-            try {
-                configSubNode = config.getSection("WES");
-            } catch (Exception e) {
-                //?????what should the return code be?????
-                exceptionMessage(e, "Could not get WES section", ENTRY_NOT_FOUND);
-            }
             String wesEndpointUrl = configSubNode.getString("url");
             out("wes endpoint url is:" + wesEndpointUrl);
-
-            //TODO: somehow make this case insensitive?
-            String wesAuthorizationTypeCredentials = configSubNode.getString("authorization", null);
-            String wesAuthorizationType = null;
-            String wesAuthorizationCredentials = null;
-            out("wes config authorization string is " + wesAuthorizationTypeCredentials);
-            if (wesAuthorizationTypeCredentials != null) {
-                String[] wesAuthorizationTypeCredentialsArray = wesAuthorizationTypeCredentials.split("\\s+");
-                out("wes authorization credentials array:" + Arrays.toString(wesAuthorizationTypeCredentialsArray));
-                out("wes auth array length is:" + wesAuthorizationTypeCredentialsArray.length);
-                if (wesAuthorizationTypeCredentialsArray.length > 1) {
-                    wesAuthorizationType = wesAuthorizationTypeCredentialsArray[0];
-                    out("wes authorization type:" + wesAuthorizationType.toString());
-
-                    wesAuthorizationCredentials = wesAuthorizationTypeCredentialsArray[1];
-                    out("wes authorization credentials:" + wesAuthorizationCredentials.toString());
-
-                    if (wesAuthorizationType.equalsIgnoreCase(BEARER)) {
-                        out("set token to " + wesAuthorizationCredentials);
-                        // TODO: The WES schema should specify the security scheme so we do not need to add a default header
-                        wesApiClient.addDefaultHeader(AUTHORIZATION, BEARER + " " + wesAuthorizationCredentials);
-                        //wesApiClient.setAccessToken(wesAuthorizationCredentials);
-                    } else if (wesAuthorizationType.equalsIgnoreCase(BASIC)) {
-                        //wesApiClient.setPassword(wesAuthorizationCredentials);
-                        wesApiClient.addDefaultHeader(AUTHORIZATION, BASIC + " " + wesAuthorizationCredentials);
-                    }
-                }
-            }
-
-
-
             wesApiClient.setBasePath(wesEndpointUrl);
         } else {
             wesApiClient.setBasePath(wesUrl);
+        }
+
+        /**
+         * Setup authentication credentials for the WES URL
+         */
+        //TODO: somehow make this case insensitive?
+        String wesAuthorizationTypeCredentials = configSubNode.getString("authorization", null);
+        String wesAuthorizationType = null;
+        String wesAuthorizationCredentials = null;
+        out("wes config authorization string is " + wesAuthorizationTypeCredentials);
+        if (wesAuthorizationTypeCredentials != null) {
+            String[] wesAuthorizationTypeCredentialsArray = wesAuthorizationTypeCredentials.split("\\s+");
+            out("wes authorization credentials array:" + Arrays.toString(wesAuthorizationTypeCredentialsArray));
+            out("wes auth array length is:" + wesAuthorizationTypeCredentialsArray.length);
+            if (wesAuthorizationTypeCredentialsArray.length > 1) {
+                wesAuthorizationType = wesAuthorizationTypeCredentialsArray[0];
+                out("wes authorization type:" + wesAuthorizationType.toString());
+
+                wesAuthorizationCredentials = wesAuthorizationTypeCredentialsArray[1];
+                out("wes authorization credentials:" + wesAuthorizationCredentials.toString());
+
+                if (wesAuthorizationType.equalsIgnoreCase(BEARER)) {
+                    out("set token to " + wesAuthorizationCredentials);
+                    // TODO: The WES schema should specify the security scheme so we do not need to add a default header
+                    wesApiClient.addDefaultHeader(AUTHORIZATION, BEARER + " " + wesAuthorizationCredentials);
+                    //wesApiClient.setAccessToken(wesAuthorizationCredentials);
+                } else if (wesAuthorizationType.equalsIgnoreCase(BASIC)) {
+                    //wesApiClient.setPassword(wesAuthorizationCredentials);
+                    wesApiClient.addDefaultHeader(AUTHORIZATION, BASIC + " " + wesAuthorizationCredentials);
+                }
+            }
         }
 
         clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
