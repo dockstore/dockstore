@@ -3326,6 +3326,63 @@ paths:
       security:
         - BEARER:
             []
+  "/organisations/{organisationId}/description":
+    get:
+      tags:
+        - organisations
+      summary: Retrieves an organization description by organization ID.
+      description: Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getOrganisationDescription
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BEARER:
+            []
+    put:
+      tags:
+        - organisations
+      summary: Update an organization's description.
+      description: Description in markdown
+      operationId: updateOrganizationDescription
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organization to update description.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Organization's description in markdown
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organisation"
+      security:
+        - BEARER:
+            []
   "/organisations/{organisationId}/events":
     get:
       tags:

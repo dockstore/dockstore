@@ -267,6 +267,19 @@ public class CRUDClientIT extends BaseIT {
         // files should be visible afterwards
         file = otherUserApi.cwl(dockstoreWorkflow.getId(), first.get().getName());
         assertTrue(!file.getContent().isEmpty());
+
+        // Check that absolute file gets set if not explicity set
+        SourceFile file4 = new SourceFile();
+        file4.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
+        file4.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
+        String ABS_PATH_TEST = "/no-absolute-path.cwl";
+        file4.setPath(ABS_PATH_TEST);
+        file4.setAbsolutePath(null); // Redundant, but clarifies intent of test
+        dockstoreWorkflow = api.editHostedWorkflow(hostedWorkflow.getId(), Lists.newArrayList(file4));
+        first = dockstoreWorkflow .getWorkflowVersions().stream().max(Comparator.comparingInt((WorkflowVersion t) -> Integer.parseInt(t.getName())));
+        Optional<SourceFile> msf = first.get().getSourceFiles().stream().filter(sf -> ABS_PATH_TEST.equals(sf.getPath())).findFirst();
+        String absolutePath = msf.get().getAbsolutePath();
+        assertEquals(ABS_PATH_TEST, absolutePath);
     }
 
     @Test

@@ -3029,6 +3029,58 @@ paths:
             $ref: "#/definitions/Collection"
       security:
       - BEARER: []
+  /organisations/{organisationId}/description:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an organization description by organization ID."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organisations"
+      summary: "Update an organization's description."
+      description: "Description in markdown"
+      operationId: "updateOrganizationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organization to update description."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Organization's description in markdown"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
   /organisations/{organisationId}/events:
     get:
       tags:
