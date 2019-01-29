@@ -2,6 +2,7 @@ package io.dockstore.client.cli;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
@@ -10,6 +11,7 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.OrganisationsApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Organisation;
@@ -121,7 +123,7 @@ public class OrganisationIT extends BaseIT {
 
         // Create the organisation
         Organisation registeredOrganisation = createOrg(organisationsApiUser2);
-        assertTrue(!registeredOrganisation.isApproved());
+        assertTrue(!Objects.equals(registeredOrganisation.getStatus().getValue(), io.dockstore.webservice.core.Organisation.ApplicationState.APPROVED));
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
@@ -135,6 +137,9 @@ public class OrganisationIT extends BaseIT {
         // User should be able to get by id
         Organisation organisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
         assertTrue("Organisation should be returned.", organisation != null);
+
+        // Should be in PENDING state
+        assertTrue(Objects.equals(organisation.getStatus(), Organisation.StatusEnum.PENDING));
 
         // Admin should be able to see by id
         organisation = organisationsApiAdmin.getOrganisationById(registeredOrganisation.getId());
@@ -195,6 +200,10 @@ public class OrganisationIT extends BaseIT {
                 .runSelectStatement("select count(*) from event where type = 'APPROVE_ORG'", new ScalarHandler<>());
         assertEquals("There should be 1 event of type APPROVE_ORG, there are " + count3, 1, count3);
 
+        // Should be in APPROVED state
+        registeredOrganisation = organisationsApiUser2.getOrganisationById(registeredOrganisation.getId());
+        assertEquals(registeredOrganisation.getStatus(), Organisation.StatusEnum.APPROVED);
+
         // Should now appear in approved list
         organisationList = organisationsApiUser2.getApprovedOrganisations();
         assertEquals("Should have one approved organisations." , organisationList.size(), 1);
@@ -235,6 +244,60 @@ public class OrganisationIT extends BaseIT {
         List<io.swagger.client.model.OrganisationUser> users = organisationsApiUser2.getOrganisationMembers(registeredOrganisation.getId());
         assertEquals("There should be 1 user, there are " + users.size(),1, users.size());
 
+        // Update organization test
+        organisation = organisationsApiUser2.updateOrganizationDescription(organisation.getId(), "potato");
+        assertEquals("potato", organisation.getDescription());
+        String description = organisationsApiUser2.getOrganisationDescription(organisation.getId());
+        assertEquals("potato", description);
+    }
+
+    /**
+     * This tests that an organisation can be rejected
+     */
+    @Test
+    public void testCreateOrganisationAndRejectIt() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganisationsApi organisationsApiUser2 = new OrganisationsApi(webClientUser2);
+
+        // Setup curator
+        final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME);
+        OrganisationsApi organisationsApiCurator = new OrganisationsApi(webClientCuratorUser);
+
+        // Setup admin
+        final ApiClient webClientAdminUser = getWebClient(ADMIN_USERNAME);
+        OrganisationsApi organisationsApiAdmin = new OrganisationsApi(webClientAdminUser);
+
+        // Create the organisation
+        Organisation registeredOrganisation = createOrg(organisationsApiUser2);
+        assertEquals(registeredOrganisation.getStatus(), Organisation.StatusEnum.PENDING);
+
+        // Should appear in the pending
+        List<Organisation> organisationList = organisationsApiAdmin.getAllOrganisations("pending");
+        assertEquals("Should have one pending organisation, there are " + organisationList.size(), 1, organisationList.size());
+
+        // Should not appear in rejected
+        organisationList = organisationsApiAdmin.getAllOrganisations("rejected");
+        assertEquals("Should have no rejected organisations, there are " + organisationList.size(), 0 , organisationList.size());
+
+        // Should not appear in approved
+        organisationList = organisationsApiAdmin.getAllOrganisations("approved");
+        assertEquals("Should have no approved organisations, there are " + organisationList.size(), 0 , organisationList.size());
+
+        // Curator reject org
+        organisationsApiCurator.rejectOrganisation(registeredOrganisation.getId());
+
+        // Should not appear in pending
+        organisationList = organisationsApiAdmin.getAllOrganisations("pending");
+        assertEquals("Should have no pending organisations, there are " + organisationList.size(), 0, organisationList.size());
+
+        // Should appear in rejected
+        organisationList = organisationsApiAdmin.getAllOrganisations("rejected");
+        assertEquals("Should have one rejected organisation, there are " + organisationList.size(), 1 , organisationList.size());
+
+        // Should not appear in approved
+        organisationList = organisationsApiAdmin.getAllOrganisations("approved");
+        assertEquals("Should have no approved organisations, there are " + organisationList.size(), 0 , organisationList.size());
     }
 
     /**
@@ -321,10 +384,11 @@ public class OrganisationIT extends BaseIT {
         // Setup other user
         final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
         OrganisationsApi organisationsApiOtherUser = new OrganisationsApi(webClientOtherUser);
+        UsersApi usersOtherUser = new UsersApi(webClientOtherUser);
 
         // Create an organisation
         Organisation organisation = createOrg(organisationsApiUser2);
-        assertTrue(!organisation.isApproved());
+        assertTrue(!Objects.equals(organisation.getStatus(), Organisation.StatusEnum.APPROVED));
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
@@ -333,6 +397,10 @@ public class OrganisationIT extends BaseIT {
 
         long orgId = organisation.getId();
         long userId = 2;
+
+        // Other user should be in no orgs
+        List<io.swagger.client.model.OrganisationUser> memberships = usersOtherUser.getUserMemberships();
+        assertEquals("Should have no memberships, has " + memberships.size(), 0, memberships.size());
 
         // Request that other user joins
         organisationsApiUser2.addUserToOrg(OrganisationUser.Role.MEMBER.toString(), userId, orgId, "");
@@ -347,8 +415,16 @@ public class OrganisationIT extends BaseIT {
                 .runSelectStatement("select count(*) from organisation_user where accepted = false and organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be 1 unaccepted role for user 2 and org 1, there are " + count3, 1, count3);
 
+        // Should exist in the users membership list
+        memberships = usersOtherUser.getUserMemberships();
+        assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
+
         // Approve request
         organisationsApiOtherUser.acceptOrRejectInvitation(orgId, true);
+
+        // Should still exist in the users membership list
+        memberships = usersOtherUser.getUserMemberships();
+        assertEquals("Should have one membership, has " + memberships.size(), 1, memberships.size());
 
         // There should be one APPROVE_ORG_INVITE event
         final long count4 = testingPostgres
@@ -421,7 +497,7 @@ public class OrganisationIT extends BaseIT {
 
         // Create an organisation
         Organisation organisation = createOrg(organisationsApiUser2);
-        assertTrue(!organisation.isApproved());
+        assertTrue(!Objects.equals(organisation.getStatus(), Organisation.StatusEnum.APPROVED));
 
         // There should be one CREATE_ORG event
         final long count = testingPostgres
@@ -456,6 +532,11 @@ public class OrganisationIT extends BaseIT {
         final long count5 = testingPostgres
                 .runSelectStatement("select count(*) from organisation_user where organisationId = '" + 1 + "' and userId = '" + 2 + "'", new ScalarHandler<>());
         assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
+
+        // Test that events are sorted by DESC dbCreateDate
+        List<Event> events = organisationsApiUser2.getOrganisationEvents(orgId);
+        assertEquals("Should have 3 events returned, there are " + events.size(), 3, events.size());
+        assertEquals("First event should be most recent, which is REJECT_ORG_INVITE, but is actually " + events.get(0).getType().getValue(), "REJECT_ORG_INVITE" , events.get(0).getType().getValue());
     }
 
     /**
@@ -631,6 +712,19 @@ public class OrganisationIT extends BaseIT {
 
         collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId(), "entries");
         assertEquals("There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size(), 1, collections.get(0).getEntries().size());
+
+        // Should not be able to reject an approved organization
+        boolean throwsError = false;
+        try {
+            organisation = organisationsApiAdmin.rejectOrganisation(organizationID);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to reject an approved collection");
+        }
+
     }
 
     /**

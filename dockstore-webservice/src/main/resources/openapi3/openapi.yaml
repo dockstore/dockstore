@@ -1015,9 +1015,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /containers/{containerId}/verify/{tagId}:
-    put:
-      operationId: verifyToolTag
+  /containers/{containerId}/requestDOI/{tagId}:
+    post:
+      operationId: requestDOIForToolTag
       parameters:
       - name: containerId
         in: path
@@ -1046,9 +1046,35 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Tag'
-  /containers/{containerId}/requestDOI/{tagId}:
-    post:
-      operationId: requestDOIForToolTag
+  /containers/{containerId}/tags/{tagId}:
+    delete:
+      operationId: deleteTags
+      parameters:
+      - name: containerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: tagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+  /containers/{containerId}/verify/{tagId}:
+    put:
+      operationId: verifyToolTag
       parameters:
       - name: containerId
         in: path
@@ -1126,32 +1152,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Tag'
-  /containers/{containerId}/tags/{tagId}:
-    delete:
-      operationId: deleteTags
-      parameters:
-      - name: containerId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: tagId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
   /containers/path/{containerId}/tags:
     get:
       operationId: getTagsByPath
@@ -1516,20 +1516,16 @@ paths:
             text/xml:
               schema:
                 type: string
-  /organisations:
-    get:
-      operationId: getApprovedOrganisations
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organisation'
-    put:
-      operationId: createOrganisation
+  /organisations/{organisationId}/approve:
+    post:
+      operationId: approveOrganisation
+      parameters:
+      - name: organisationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
       requestBody:
         content:
           '*/*':
@@ -1542,23 +1538,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organisation'
-  /organisations/all:
-    get:
-      operationId: getAllOrganisations
+  /organisations/{organisationId}/reject:
+    post:
+      operationId: rejectOrganisation
       parameters:
-      - name: type
-        in: query
+      - name: organisationId
+        in: path
+        required: true
         schema:
-          type: string
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organisation'
+                $ref: '#/components/schemas/Organisation'
+  /organisations/name/{name}:
+    get:
+      operationId: getOrganisationByName
+      parameters:
+      - name: name
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
   /organisations/{organisationId}:
     get:
       operationId: getOrganisationById
@@ -1602,6 +1624,168 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Organisation'
+  /organisations/{organisationId}/description:
+    get:
+      operationId: getOrganisationDescription
+      parameters:
+      - name: organisationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
+    put:
+      operationId: updateOrganizationDescription
+      parameters:
+      - name: organisationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+  /organisations/{organisationId}/members:
+    get:
+      operationId: getOrganisationMembers
+      parameters:
+      - name: organisationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganisationUser'
+  /organisations/{organisationId}/events:
+    get:
+      operationId: getOrganisationEvents
+      parameters:
+      - name: organisationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+  /organisations/all:
+    get:
+      operationId: getAllOrganisations
+      parameters:
+      - name: type
+        in: query
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+  /organisations:
+    get:
+      operationId: getApprovedOrganisations
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Organisation'
+    put:
+      operationId: createOrganisation
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organisation'
+  /organisations/{organisationId}/users/{username}:
+    put:
+      operationId: addUserToOrgByUsername
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: organisationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganisationUser'
   /organisations/{organisationId}/user:
     put:
       operationId: addUserToOrg
@@ -1710,101 +1894,7 @@ paths:
         default:
           description: default response
           content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  /organisations/{organisationId}/approve:
-    post:
-      operationId: approveOrganisation
-      parameters:
-      - name: organisationId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organisation'
-  /organisations/name/{name}:
-    get:
-      operationId: getOrganisationByName
-      parameters:
-      - name: name
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Organisation'
-  /organisations/{organisationId}/members:
-    get:
-      operationId: getOrganisationMembers
-      parameters:
-      - name: organisationId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
-                type: array
-                items:
-                  $ref: '#/components/schemas/OrganisationUser'
-  /organisations/{organisationId}/events:
-    get:
-      operationId: getOrganisationEvents
-      parameters:
-      - name: organisationId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Event'
+            application/json: {}
   /auth/tokens/github:
     post:
       operationId: addToken
@@ -1901,6 +1991,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token'
+  /auth/tokens/google:
+    post:
+      operationId: addGoogleToken
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
   /auth/tokens/github.com:
     get:
       operationId: addGithubToken
@@ -1929,21 +2034,6 @@ paths:
         in: query
         schema:
           type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Token'
-  /auth/tokens/google:
-    post:
-      operationId: addGoogleToken
       requestBody:
         content:
           '*/*':
@@ -1997,31 +2087,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /users/{userId}:
-    get:
-      operationId: getUser
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
   /users/user:
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -2048,6 +2116,73 @@ paths:
             application/json:
               schema:
                 type: boolean
+  /users/{userId}:
+    get:
+      operationId: getUser_1
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/checkUser/{username}:
+    get:
+      operationId: checkUserExists
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: boolean
+  /users/{userId}/tokens:
+    get:
+      operationId: getUserTokens
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Token'
   /users/{userId}/tokens/github.com:
     get:
       operationId: getGithubUserTokens
@@ -2406,6 +2541,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+  /users/user/memberships:
+    get:
+      operationId: getUserMemberships
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrganisationUser'
   /users/user/extended:
     get:
       operationId: getExtendedUserData
@@ -2441,51 +2594,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
-  /users/checkUser/{username}:
-    get:
-      operationId: checkUserExists
-      parameters:
-      - name: username
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: boolean
-  /users/{userId}/tokens:
-    get:
-      operationId: getUserTokens
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Token'
   /workflows/{workflowId}/publish:
     post:
       operationId: publish_1
@@ -4702,11 +4810,11 @@ components:
           type: boolean
         registry_string:
           type: string
+        custom_docker_registry_path:
+          type: string
         registry:
           type: integer
           format: int32
-        custom_docker_registry_path:
-          type: string
         tool_path:
           type: string
         last_modified_date:
@@ -4997,8 +5105,17 @@ components:
           type: string
         email:
           type: string
-        approved:
-          type: boolean
+        status:
+          type: string
+          enum:
+          - PENDING
+          - REJECTED
+          - APPROVED
+        users:
+          uniqueItems: true
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganisationUser'
         topic:
           type: string
         dbCreateDate:
@@ -5063,6 +5180,7 @@ components:
           - DELETE_ORG
           - MODIFY_ORG
           - APPROVE_ORG
+          - REJECT_ORG
           - ADD_USER_TO_ORG
           - REMOVE_USER_FROM_ORG
           - MODIFY_USER_ROLE_ORG

@@ -34,6 +34,7 @@ import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -88,8 +89,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        if (!organisation.isApproved()) {
-            organisation.setApproved(true);
+        if (!Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+            organisation.setStatus(Organisation.ApplicationState.APPROVED);
 
             Event approveOrgEvent = new Event.Builder()
                     .withOrganisation(organisation)
@@ -97,6 +98,39 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
                     .withType(Event.EventType.APPROVE_ORG)
                     .build();
             eventDAO.create(approveOrgEvent);
+        }
+
+        return organisationDAO.findById(id);
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Path("{organisationId}/reject/")
+    @ApiOperation(value = "Rejects an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organisation.class)
+    public Organisation rejectOrganisation(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        Organisation organisation = organisationDAO.findById(id);
+        if (organisation == null) {
+            String msg = "Organisation not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        if (Objects.equals(organisation.getStatus(), Organisation.ApplicationState.PENDING)) {
+            organisation.setStatus(Organisation.ApplicationState.REJECTED);
+
+            Event rejectOrgEvent = new Event.Builder()
+                    .withOrganisation(organisation)
+                    .withInitiatorUser(user)
+                    .withType(Event.EventType.REJECT_ORG)
+                    .build();
+            eventDAO.create(rejectOrgEvent);
+        } else if (Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+            String msg = "The organization is already approved";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         return organisationDAO.findById(id);
@@ -148,6 +182,56 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     public Organisation getOrganisationById(@ApiParam(hidden = true) @Auth Optional<User> user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
         return getOrganisationByIdOptionalAuth(user, id);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/{organisationId}/description")
+    @ApiOperation(value = "Retrieves an organization description by organization ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
+    public String getOrganisationDescription(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        return getOrganisationByIdOptionalAuth(user, id).getDescription();
+    }
+
+    @PUT
+    @Timed
+    @Path("{organisationId}/description")
+    @UnitOfWork
+    @ApiOperation(value = "Update an organization's description.", notes = "Description in markdown", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Organisation.class)
+    public Organisation updateOrganizationDescription(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organization to update description.", required = true) @PathParam("organisationId") Long organizationId,
+            @ApiParam(value = "Organization's description in markdown", required = true) String description) {
+
+        boolean doesOrgExist = doesOrganisationExistToUser(organizationId, user.getId());
+        if (!doesOrgExist) {
+            String msg = "Organisation not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Organisation oldOrganisation = organisationDAO.findById(organizationId);
+
+        // Ensure that the user is a member of the organisation
+        OrganisationUser organisationUser = getUserOrgRole(oldOrganisation, user.getId());
+        if (organisationUser == null) {
+            String msg = "You do not have permissions to update the organisation.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        }
+
+        // Update organisation
+        oldOrganisation.setDescription(description);
+
+        Event updateOrganisationEvent = new Event.Builder()
+                .withOrganisation(oldOrganisation)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.MODIFY_ORG)
+                .build();
+        eventDAO.create(updateOrganisationEvent);
+
+        return organisationDAO.findById(organizationId);
     }
 
     @GET
@@ -209,15 +293,26 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/all")
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
-    public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, unapproved, approved") @QueryParam("type") String type) {
+    public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, pending, rejected, approved") @QueryParam("type") String type) {
+        List<Organisation> organisations;
+
         switch (type) {
-        case "unapproved":
-            return organisationDAO.findAllUnapproved();
+        case "pending":
+            organisations = organisationDAO.findAllPending();
+            break;
+        case "rejected":
+            organisations = organisationDAO.findAllRejected();
+            break;
         case "approved":
-            return organisationDAO.findAllApproved();
+            organisations = organisationDAO.findAllApproved();
+            break;
         case "all": default:
-            return organisationDAO.findAll();
+            organisations = organisationDAO.findAll();
+            break;
         }
+
+        organisations.forEach(organisation -> Hibernate.initialize(organisation.getUsers()));
+        return organisations;
     }
 
     @PUT
@@ -237,7 +332,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
 
         // Save organisation
-        organisation.setApproved(false); // should not be approved by default
+        organisation.setStatus(Organisation.ApplicationState.PENDING); // should not be approved by default
         long id = organisationDAO.create(organisation);
 
         User foundUser = userDAO.findById(user.getId());
@@ -315,6 +410,19 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @PUT
     @Timed
     @UnitOfWork
+    @Path("/{organisationId}/users/{username}")
+    @ApiOperation(value = "Adds a user role to an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
+    public OrganisationUser addUserToOrgByUsername(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Role of user. \"MAINTAINER\" or \"MEMBER\"", required = true) String role,
+            @ApiParam(value = "User to add to org.", required = true) @PathParam("username") String username,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
+        long userId = userDAO.findByUsername(username).getId();
+        return addUserToOrg(user, role, userId, organisationId, "");
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
     @Path("/{organisationId}/user")
     @ApiOperation(value = "Adds a user role to an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class)
     public OrganisationUser addUserToOrg(@ApiParam(hidden = true) @Auth User user,
@@ -334,9 +442,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             Session currentSession = sessionFactory.getCurrentSession();
             currentSession.persist(organisationUser);
         } else {
-            String msg = "The user with id '" + userId + "' already has a role in the organisation with id ." + organisationId + "'.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+            updateUserRole(user, role, userId, organisationId);
         }
 
         Event addUserOrganisationEvent = new Event.Builder()
@@ -421,8 +527,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{organisationId}/invitation")
-    @ApiOperation(value = "Accept or reject an organisation invitation.", notes = "True accepts the invitation, false rejects the invitation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User acceptOrRejectInvitation(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Accept or reject an organisation invitation.", notes = "True accepts the invitation, false rejects the invitation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void acceptOrRejectInvitation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
             @ApiParam(value = "Accept or reject", required = true) @QueryParam("accept") boolean accept) {
 
@@ -467,8 +573,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
                 .withType(eventType)
                 .build();
         eventDAO.create(addUserOrganisationEvent);
-
-        return user;
     }
 
     /**
@@ -522,7 +626,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             return false;
         }
         OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
-        return organisation.isApproved() || (organisationUser != null);
+        return Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED) || (organisationUser != null);
     }
 
     /**
@@ -553,7 +657,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
 
         // Check that you are not applying action on yourself
         if (Objects.equals(user.getId(), userId)) {
-            String msg = "You cannot add yourself to an organisation.";
+            String msg = "You cannot modify yourself in an organisation.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }

@@ -36,8 +36,12 @@ public class OrganisationDAO extends AbstractDAO<Organisation> {
         return list(namedQuery("io.dockstore.webservice.core.Organisation.findAllApproved"));
     }
 
-    public List<Organisation> findAllUnapproved() {
-        return list(namedQuery("io.dockstore.webservice.core.Organisation.findAllUnapproved"));
+    public List<Organisation> findAllPending() {
+        return list(namedQuery("io.dockstore.webservice.core.Organisation.findAllPending"));
+    }
+
+    public List<Organisation> findAllRejected() {
+        return list(namedQuery("io.dockstore.webservice.core.Organisation.findAllRejected"));
     }
 
     public List<Organisation> findAll() {

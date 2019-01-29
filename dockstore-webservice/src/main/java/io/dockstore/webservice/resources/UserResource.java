@@ -42,6 +42,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.ExtendedUserData;
+import io.dockstore.webservice.core.OrganisationUser;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.Tool;
@@ -141,6 +142,20 @@ public class UserResource implements AuthenticatedResourceInterface {
         Hibernate.initialize(foundUser.getUserProfiles());
         return foundUser;
     }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/user/memberships")
+    @ApiOperation(value = "Get the logged-in users memberships.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = OrganisationUser.class, responseContainer = "set")
+    public Set<OrganisationUser> getUserMemberships(@ApiParam(hidden = true) @Auth User user) {
+        User foundUser = userDAO.findById(user.getId());
+        Set<OrganisationUser> organisationUsers = foundUser.getOrganisations();
+        organisationUsers.forEach(organisationUser -> Hibernate.initialize(organisationUser.getOrganisation()));
+        return organisationUsers;
+    }
+
+
 
     @GET
     @Timed

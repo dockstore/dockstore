@@ -185,6 +185,8 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
+        updateUnsetAbsolutePaths(sourceFiles);
+
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
 
@@ -209,6 +211,22 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         T newTool = getEntryDAO().findById(entryId);
         elasticManager.handleIndexUpdate(newTool, ElasticMode.UPDATE);
         return newTool;
+    }
+
+    /**
+     * For all source files whose absolutePath is not set, set the absolutePath to the path.
+     *
+     * The absolutePath may not be null in the database, but it is not set when the UI invokes
+     * the Webservice API.
+     *
+     * @param sourceFiles
+     */
+    private void updateUnsetAbsolutePaths(Set<SourceFile> sourceFiles) {
+        sourceFiles.stream().forEach(sourceFile -> {
+            if (sourceFile.getAbsolutePath() == null) {
+                sourceFile.setAbsolutePath(sourceFile.getPath());
+            }
+        });
     }
 
     /**

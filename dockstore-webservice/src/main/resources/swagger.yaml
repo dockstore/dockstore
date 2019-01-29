@@ -2727,7 +2727,8 @@ paths:
         type: "string"
         enum:
         - "all"
-        - "unapproved"
+        - "pending"
+        - "rejected"
         - "approved"
       responses:
         200:
@@ -3028,6 +3029,58 @@ paths:
             $ref: "#/definitions/Collection"
       security:
       - BEARER: []
+  /organisations/{organisationId}/description:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an organization description by organization ID."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organisations"
+      summary: "Update an organization's description."
+      description: "Description in markdown"
+      operationId: "updateOrganizationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organization to update description."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Organization's description in markdown"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
   /organisations/{organisationId}/events:
     get:
       tags:
@@ -3076,10 +3129,8 @@ paths:
         required: true
         type: "boolean"
       responses:
-        200:
+        default:
           description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
       security:
       - BEARER: []
   /organisations/{organisationId}/members:
@@ -3107,6 +3158,29 @@ paths:
             uniqueItems: true
             items:
               $ref: "#/definitions/OrganisationUser"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/reject:
+    post:
+      tags:
+      - "organisations"
+      summary: "Rejects an organisation."
+      description: "Admin/curator only"
+      operationId: "rejectOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
       security:
       - BEARER: []
   /organisations/{organisationId}/user:
@@ -3213,6 +3287,40 @@ paths:
       responses:
         default:
           description: "successful operation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/users/{username}:
+    put:
+      tags:
+      - "organisations"
+      summary: "Adds a user role to an organisation."
+      description: ""
+      operationId: "addUserToOrgByUsername"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Role of user. \"MAINTAINER\" or \"MEMBER\""
+        required: true
+        schema:
+          type: "string"
+      - name: "username"
+        in: "path"
+        description: "User to add to org."
+        required: true
+        type: "string"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/OrganisationUser"
       security:
       - BEARER: []
   /users/checkUser/{username}:
@@ -3364,6 +3472,26 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/ExtendedUserData"
+      security:
+      - BEARER: []
+  /users/user/memberships:
+    get:
+      tags:
+      - "users"
+      summary: "Get the logged-in users memberships."
+      description: ""
+      operationId: "getUserMemberships"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            uniqueItems: true
+            items:
+              $ref: "#/definitions/OrganisationUser"
       security:
       - BEARER: []
   /users/user/updateUserMetadata:
@@ -5672,6 +5800,7 @@ definitions:
         - "DELETE_ORG"
         - "MODIFY_ORG"
         - "APPROVE_ORG"
+        - "REJECT_ORG"
         - "ADD_USER_TO_ORG"
         - "REMOVE_USER_FROM_ORG"
         - "MODIFY_USER_ROLE_ORG"
@@ -5771,8 +5900,9 @@ definitions:
   Organisation:
     type: "object"
     required:
-    - "approved"
     - "name"
+    - "status"
+    - "users"
     properties:
       id:
         type: "integer"
@@ -5809,10 +5939,21 @@ definitions:
         type: "string"
         position: 5
         description: "Contact email for the organisation"
-      approved:
-        type: "boolean"
+      status:
+        type: "string"
         position: 6
-        description: "Is the organisation approved"
+        description: "Is the organisation approved, pending, or rejected"
+        enum:
+        - "PENDING"
+        - "REJECTED"
+        - "APPROVED"
+      users:
+        type: "array"
+        position: 7
+        description: "Set of users in the organisation"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrganisationUser"
       topic:
         type: "string"
         position: 8

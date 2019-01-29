@@ -31,7 +31,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "event")
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:hiddenfield"})
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganisation", query = "SELECT eve FROM Event eve WHERE eve.organisation.id = :organisationId")
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganisation", query = "SELECT eve FROM Event eve WHERE eve.organisation.id = :organisationId ORDER BY dbCreateDate DESC")
 })
 public class Event {
     @Id
@@ -179,6 +179,7 @@ public class Event {
         DELETE_ORG,
         MODIFY_ORG,
         APPROVE_ORG,
+        REJECT_ORG,
         ADD_USER_TO_ORG,
         REMOVE_USER_FROM_ORG,
         MODIFY_USER_ROLE_ORG,

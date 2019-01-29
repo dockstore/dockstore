@@ -2991,7 +2991,8 @@ paths:
             type: string
             enum:
               - all
-              - unapproved
+              - pending
+              - rejected
               - approved
       responses:
         "200":
@@ -3325,6 +3326,63 @@ paths:
       security:
         - BEARER:
             []
+  "/organisations/{organisationId}/description":
+    get:
+      tags:
+        - organisations
+      summary: Retrieves an organization description by organization ID.
+      description: Does not require authentication for approved organisations,
+        authentication can be provided for unapproved organisations
+      operationId: getOrganisationDescription
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BEARER:
+            []
+    put:
+      tags:
+        - organisations
+      summary: Update an organization's description.
+      description: Description in markdown
+      operationId: updateOrganizationDescription
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organization to update description.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Organization's description in markdown
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organisation"
+      security:
+        - BEARER:
+            []
   "/organisations/{organisationId}/events":
     get:
       tags:
@@ -3375,12 +3433,8 @@ paths:
           schema:
             type: boolean
       responses:
-        "200":
+        default:
           description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
       security:
         - BEARER:
             []
@@ -3410,6 +3464,31 @@ paths:
                 uniqueItems: true
                 items:
                   $ref: "#/components/schemas/OrganisationUser"
+      security:
+        - BEARER:
+            []
+  "/organisations/{organisationId}/reject":
+    post:
+      tags:
+        - organisations
+      summary: Rejects an organisation.
+      description: Admin/curator only
+      operationId: rejectOrganisation
+      parameters:
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organisation"
       security:
         - BEARER:
             []
@@ -3520,6 +3599,44 @@ paths:
       responses:
         default:
           description: successful operation
+      security:
+        - BEARER:
+            []
+  "/organisations/{organisationId}/users/{username}":
+    put:
+      tags:
+        - organisations
+      summary: Adds a user role to an organisation.
+      description: ""
+      operationId: addUserToOrgByUsername
+      parameters:
+        - name: username
+          in: path
+          description: User to add to org.
+          required: true
+          schema:
+            type: string
+        - name: organisationId
+          in: path
+          description: Organisation ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Role of user. "MAINTAINER" or "MEMBER"
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganisationUser"
       security:
         - BEARER:
             []
@@ -3675,6 +3792,26 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExtendedUserData"
+      security:
+        - BEARER:
+            []
+  /users/user/memberships:
+    get:
+      tags:
+        - users
+      summary: Get the logged-in users memberships.
+      description: ""
+      operationId: getUserMemberships
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                uniqueItems: true
+                items:
+                  $ref: "#/components/schemas/OrganisationUser"
       security:
         - BEARER:
             []
@@ -6128,6 +6265,7 @@ components:
             - DELETE_ORG
             - MODIFY_ORG
             - APPROVE_ORG
+            - REJECT_ORG
             - ADD_USER_TO_ORG
             - REMOVE_USER_FROM_ORG
             - MODIFY_USER_ROLE_ORG
@@ -6224,8 +6362,9 @@ components:
     Organisation:
       type: object
       required:
-        - approved
         - name
+        - status
+        - users
       properties:
         id:
           type: integer
@@ -6256,9 +6395,19 @@ components:
         email:
           type: string
           description: Contact email for the organisation
-        approved:
-          type: boolean
-          description: Is the organisation approved
+        status:
+          type: string
+          description: Is the organisation approved, pending, or rejected
+          enum:
+            - PENDING
+            - REJECTED
+            - APPROVED
+        users:
+          type: array
+          description: Set of users in the organisation
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/OrganisationUser"
         topic:
           type: string
           description: Short description of the organisation
