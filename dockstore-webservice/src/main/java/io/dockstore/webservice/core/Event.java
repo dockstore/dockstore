@@ -179,6 +179,7 @@ public class Event {
         DELETE_ORG,
         MODIFY_ORG,
         APPROVE_ORG,
+        REJECT_ORG,
         ADD_USER_TO_ORG,
         REMOVE_USER_FROM_ORG,
         MODIFY_USER_ROLE_ORG,

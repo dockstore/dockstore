@@ -34,6 +34,7 @@ import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpStatus;
+import org.hibernate.Hibernate;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
@@ -88,8 +89,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        if (!organisation.isApproved()) {
-            organisation.setApproved(true);
+        if (!Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+            organisation.setStatus(Organisation.ApplicationState.APPROVED);
 
             Event approveOrgEvent = new Event.Builder()
                     .withOrganisation(organisation)
@@ -97,6 +98,39 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
                     .withType(Event.EventType.APPROVE_ORG)
                     .build();
             eventDAO.create(approveOrgEvent);
+        }
+
+        return organisationDAO.findById(id);
+    }
+
+    @POST
+    @Timed
+    @UnitOfWork
+    @RolesAllowed({ "curator", "admin" })
+    @Path("{organisationId}/reject/")
+    @ApiOperation(value = "Rejects an organisation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", response = Organisation.class)
+    public Organisation rejectOrganisation(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long id) {
+        Organisation organisation = organisationDAO.findById(id);
+        if (organisation == null) {
+            String msg = "Organisation not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        if (Objects.equals(organisation.getStatus(), Organisation.ApplicationState.PENDING)) {
+            organisation.setStatus(Organisation.ApplicationState.REJECTED);
+
+            Event rejectOrgEvent = new Event.Builder()
+                    .withOrganisation(organisation)
+                    .withInitiatorUser(user)
+                    .withType(Event.EventType.REJECT_ORG)
+                    .build();
+            eventDAO.create(rejectOrgEvent);
+        } else if (Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+            String msg = "The organization is already approved";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
         return organisationDAO.findById(id);
@@ -259,15 +293,26 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Path("/all")
     @RolesAllowed({ "curator", "admin" })
     @ApiOperation(value = "List all organisations.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Admin/curator only", responseContainer = "List", response = Organisation.class)
-    public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, unapproved, approved") @QueryParam("type") String type) {
+    public List<Organisation> getAllOrganisations(@ApiParam(value = "Filter to apply to organisations.", required = true, allowableValues = "all, pending, rejected, approved") @QueryParam("type") String type) {
+        List<Organisation> organisations;
+
         switch (type) {
-        case "unapproved":
-            return organisationDAO.findAllUnapproved();
+        case "pending":
+            organisations = organisationDAO.findAllPending();
+            break;
+        case "rejected":
+            organisations = organisationDAO.findAllRejected();
+            break;
         case "approved":
-            return organisationDAO.findAllApproved();
+            organisations = organisationDAO.findAllApproved();
+            break;
         case "all": default:
-            return organisationDAO.findAll();
+            organisations = organisationDAO.findAll();
+            break;
         }
+
+        organisations.forEach(organisation -> Hibernate.initialize(organisation.getUsers()));
+        return organisations;
     }
 
     @PUT
@@ -287,7 +332,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
         }
 
         // Save organisation
-        organisation.setApproved(false); // should not be approved by default
+        organisation.setStatus(Organisation.ApplicationState.PENDING); // should not be approved by default
         long id = organisationDAO.create(organisation);
 
         User foundUser = userDAO.findById(user.getId());
@@ -471,8 +516,8 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
     @Timed
     @UnitOfWork
     @Path("/{organisationId}/invitation")
-    @ApiOperation(value = "Accept or reject an organisation invitation.", notes = "True accepts the invitation, false rejects the invitation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = User.class)
-    public User acceptOrRejectInvitation(@ApiParam(hidden = true) @Auth User user,
+    @ApiOperation(value = "Accept or reject an organisation invitation.", notes = "True accepts the invitation, false rejects the invitation.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void acceptOrRejectInvitation(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
             @ApiParam(value = "Accept or reject", required = true) @QueryParam("accept") boolean accept) {
 
@@ -517,8 +562,6 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
                 .withType(eventType)
                 .build();
         eventDAO.create(addUserOrganisationEvent);
-
-        return user;
     }
 
     /**
@@ -572,7 +615,7 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             return false;
         }
         OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
-        return organisation.isApproved() || (organisationUser != null);
+        return Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED) || (organisationUser != null);
     }
 
     /**

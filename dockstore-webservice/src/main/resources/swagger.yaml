@@ -2727,7 +2727,8 @@ paths:
         type: "string"
         enum:
         - "all"
-        - "unapproved"
+        - "pending"
+        - "rejected"
         - "approved"
       responses:
         200:
@@ -3128,10 +3129,8 @@ paths:
         required: true
         type: "boolean"
       responses:
-        200:
+        default:
           description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
       security:
       - BEARER: []
   /organisations/{organisationId}/members:
@@ -3159,6 +3158,29 @@ paths:
             uniqueItems: true
             items:
               $ref: "#/definitions/OrganisationUser"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/reject:
+    post:
+      tags:
+      - "organisations"
+      summary: "Rejects an organisation."
+      description: "Admin/curator only"
+      operationId: "rejectOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
       security:
       - BEARER: []
   /organisations/{organisationId}/user:
@@ -3416,6 +3438,26 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/ExtendedUserData"
+      security:
+      - BEARER: []
+  /users/user/memberships:
+    get:
+      tags:
+      - "users"
+      summary: "Get the logged-in users memberships."
+      description: ""
+      operationId: "getUserMemberships"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            uniqueItems: true
+            items:
+              $ref: "#/definitions/OrganisationUser"
       security:
       - BEARER: []
   /users/user/updateUserMetadata:
@@ -5724,6 +5766,7 @@ definitions:
         - "DELETE_ORG"
         - "MODIFY_ORG"
         - "APPROVE_ORG"
+        - "REJECT_ORG"
         - "ADD_USER_TO_ORG"
         - "REMOVE_USER_FROM_ORG"
         - "MODIFY_USER_ROLE_ORG"
@@ -5823,8 +5866,9 @@ definitions:
   Organisation:
     type: "object"
     required:
-    - "approved"
     - "name"
+    - "status"
+    - "users"
     properties:
       id:
         type: "integer"
@@ -5861,10 +5905,21 @@ definitions:
         type: "string"
         position: 5
         description: "Contact email for the organisation"
-      approved:
-        type: "boolean"
+      status:
+        type: "string"
         position: 6
-        description: "Is the organisation approved"
+        description: "Is the organisation approved, pending, or rejected"
+        enum:
+        - "PENDING"
+        - "REJECTED"
+        - "APPROVED"
+      users:
+        type: "array"
+        position: 7
+        description: "Set of users in the organisation"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrganisationUser"
       topic:
         type: "string"
         position: 8

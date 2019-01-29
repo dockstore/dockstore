@@ -197,4 +197,16 @@
         </sql>
         <addNotNullConstraint tableName="sourcefile" columnName="absolutepath"/>
     </changeSet>
+
+    <changeSet author="aduncan" id="AddStatusColumnToOrganisations">
+        <addColumn tableName="organisation">
+            <column defaultValue="PENDING" name="status" type="text">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="aduncan" id="dropOldApprovedFieldFromOrganisations">
+        <dropColumn columnName="approved" tableName="organisation"/>
+    </changeSet>
 </databaseChangeLog>
