@@ -27,16 +27,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import groovy.lang.MissingPropertyException;
-import groovy.util.ConfigObject;
-import groovy.util.ConfigSlurper;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
+import io.dockstore.common.NextflowUtilities;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.SourceCodeRepoInterface;
 import io.dockstore.webservice.jdbi.ToolDAO;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.codehaus.groovy.antlr.GroovySourceAST;
@@ -51,29 +50,26 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
-        ConfigObject parse = getConfigObject(content);
-        ConfigObject manifest = (ConfigObject)parse.get("manifest");
-        if (manifest != null && manifest.containsKey("description")) {
-            entry.setDescription((String)manifest.get("description"));
+        final Configuration configuration = NextflowUtilities.grabConfig(content);
+        if (configuration != null && configuration.containsKey("manifest.description")) {
+            entry.setDescription(configuration.getString("manifest.description"));
         }
-        if (manifest != null && manifest.containsKey("author")) {
-            entry.setAuthor((String)manifest.get("author"));
+        if (configuration != null && configuration.containsKey("manifest.author")) {
+            entry.setAuthor(configuration.getString("manifest.author"));
         }
-
         return entry;
     }
 
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
-        ConfigObject parse = getConfigObject(content);
+        final Configuration configuration = NextflowUtilities.grabConfig(content);
         Map<String, SourceFile> imports = new HashMap<>();
 
         // add the NextFlow scripts
-        ConfigObject manifest = (ConfigObject)parse.get("manifest");
         String mainScriptPath = "main.nf";
-        if (manifest != null && manifest.containsKey("mainScript")) {
-            mainScriptPath = (String)manifest.get("mainScript");
+        if (configuration != null && configuration.containsKey("manifest.mainScript")) {
+            mainScriptPath = configuration.getString("manifest.mainScript");
         }
         String mainScriptAbsolutePath = convertRelativePathToAbsolutePath(filepath, mainScriptPath);
 
@@ -99,19 +95,6 @@ public class NextFlowHandler implements LanguageHandlerInterface {
                     .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, FilenameUtils.concat(lib, library));
                 librarySourceFile.ifPresent(sourceFile -> imports.put(lib + "/" + library, sourceFile));
             }
-        }
-    }
-
-    private ConfigObject getConfigObject(String content) {
-        ConfigSlurper slurper = new ConfigSlurper();
-        //TODO: replace with NextFlow parser when licensing issues are dealt with
-        // this sucks, but we need to ignore includeConfig lines
-        String cleanedContent = content.replaceAll("(?i)(?m)^[ \t]*includeConfig.*", "");
-        try {
-            return slurper.parse(cleanedContent);
-        } catch (MissingPropertyException e) {
-            LOG.error("could not parse nextflow config due to " + e.getMessage());
-            return new ConfigObject();
         }
     }
 
@@ -284,24 +267,21 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
         // nextflow uses the main script from the manifest as the main descriptor
         // add the NextFlow scripts
-        ConfigObject parse = getConfigObject(mainDescriptor);
-        ConfigObject manifest = (ConfigObject)parse.get("manifest");
+        final Configuration configuration = NextflowUtilities.grabConfig(mainDescriptor);
         String mainScriptPath = "main.nf";
-        if (manifest != null && manifest.containsKey("mainScript")) {
-            mainScriptPath = manifest.get("mainScript").toString();
+        if (configuration != null && configuration.containsKey("manifest.mainScript")) {
+            mainScriptPath = configuration.getString("manifest.mainScript");
         }
         mainDescriptor = secondaryDescContent.get(mainScriptPath);
 
         // Get default container (process.container takes precedence over params.container)
-        ConfigObject params = (ConfigObject)parse.get("params");
         String defaultContainer = null;
-        if (params != null && params.containsKey("container")) {
-            defaultContainer = params.get("container").toString();
+        if (configuration != null && configuration.containsKey("manifest.container")) {
+            defaultContainer = configuration.getString("manifest.container");
         }
 
-        ConfigObject process = (ConfigObject)parse.get("process");
-        if (process != null && process.containsKey("container")) {
-            defaultContainer = process.get("container").toString();
+        if (configuration != null && configuration.containsKey("manifest.container")) {
+            defaultContainer = configuration.getString("manifest.container");
         }
 
         Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);
