@@ -54,7 +54,7 @@ import io.swagger.wes.client.ApiClient;
 import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
 import io.swagger.wes.client.model.RunId;
 import io.swagger.wes.client.model.RunListResponse;
-import io.swagger.wes.client.model.RunStatus;
+import io.swagger.wes.client.model.RunLog;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -976,7 +976,8 @@ public abstract class AbstractEntryClient<T> {
             String wesUrl = optVal(args, "--wes-url", null);
             WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(wesUrl);
             if (args.contains("launch")) {
-                out("Lauching workflow using WES");
+                out("Launching workflow using WES");
+                args.add(0, "wes");
                 launch(args);
             } else if (args.contains("listRuns")) {
                 out("Getting list of WES workflows");
@@ -1009,7 +1010,7 @@ public abstract class AbstractEntryClient<T> {
                 String workflowId = reqVal(args, "--id");
                 out("Getting status of WES workflow");
                 try {
-                    RunStatus response = clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
+                    RunLog response = clientWorkflowExecutionServiceApi.getRunLog(workflowId);
                     out("Run status is: " + response.toString());
                 } catch (io.swagger.wes.client.ApiException e) {
                     e.printStackTrace();

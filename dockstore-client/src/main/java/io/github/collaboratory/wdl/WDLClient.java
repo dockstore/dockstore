@@ -138,11 +138,11 @@ public class WDLClient implements LanguageClientInterface {
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
 
-        if (wesUrl == null || wesUrl.isEmpty()) {
-            System.out.println("WES URL is empty from command line; getting it from config file");
-            wesUrl = config.getSection("WES").getString("url", "");
-            System.out.println("WES URL from config is: " + wesUrl);
-        }
+        //if (wesUrl == null || wesUrl.isEmpty()) {
+        //    System.out.println("WES URL is empty from command line; getting it from config file");
+        //    wesUrl = config.getSection("WES").getString("url", "");
+        //    System.out.println("WES URL from config is: " + wesUrl);
+        //}
 
         try {
             final File tempLaunchDirectory = Files.createTempDir();
@@ -180,7 +180,7 @@ public class WDLClient implements LanguageClientInterface {
                 workingDir = Paths.get(entry).toAbsolutePath().normalize().getParent().toString();
             }
 
-            if (wesUrl.isEmpty()) {
+            if (wesUrl == null || wesUrl.isEmpty()) {
                 // Else if local entry then need to get parent path of entry variable (path)
                 System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
                 notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
@@ -276,14 +276,22 @@ public class WDLClient implements LanguageClientInterface {
                     byte[] descriptorContent = localPrimaryDescriptorFile.getAbsolutePath().getBytes(StandardCharsets.UTF_8);
                     byte[] jsonContent = jsonRun.getBytes(StandardCharsets.UTF_8);
 
+                    //String jsonStrContent = null;
+                    //try {
+                    //    jsonStrContent = new String(java.nio.file.Files.readAllBytes(Paths.get(jsonRun)), StandardCharsets.UTF_8);
+                    //} catch (IOException ioe) {
+                    //    ioe.printStackTrace();
+                    //}
+
                     //byte[] descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
                     List<byte[]> workflowAttachment = new ArrayList<byte[]>();
                     workflowAttachment.add(descriptorContent);
                     workflowAttachment.add(jsonContent);
 
-                    System.out.println("runWorkflow: jsonRun is: " + jsonRun + "descriptor is: " + localPrimaryDescriptorFile.getAbsolutePath());
+                    System.out.println("runWorkflow: json content is: " + jsonString);
+                    System.out.println(" descriptor is: " + localPrimaryDescriptorFile.getAbsolutePath());
 
-                    RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonRun, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
+                    RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonString, "WDL", "1.0", tags, "", localPrimaryDescriptorFile.getAbsolutePath(), workflowAttachment);
                     out("Launched WDL run with id: " + response.toString());
                 } catch (io.swagger.wes.client.ApiException e) {
                     e.printStackTrace();

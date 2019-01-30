@@ -40,6 +40,7 @@ import io.dockstore.client.cli.JCommanderUtility;
 import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.SourceControl;
+import io.dockstore.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -52,6 +53,7 @@ import io.swagger.client.model.User;
 import io.swagger.client.model.VerifyRequest;
 import io.swagger.client.model.Workflow;
 import io.swagger.client.model.WorkflowVersion;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -388,6 +390,25 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
      */
     @Override
     public void launch(final List<String> args) {
+
+        String wesUrl = null;
+        // if launch is the first keyword in the list then wes
+        if (args.get(0).equals("wes")) {
+            wesUrl = optVal(args, "--wes-url", null);
+            // If no WES URL was part of the command line check if a WES URL is indicated in the config file
+            // If there is a WES section in the config file then use the URL listed there and launch the workflow at the WES endpoint
+            if (wesUrl == null || wesUrl.isEmpty()) {
+                System.out.println("WorkflowClient launch: WES URL is empty from command line; getting it from config file");
+                INIConfiguration config = Utilities.parseConfig(getConfigFile());
+                wesUrl = config.getSection("WES").getString("url", "");
+                System.out.println("WorkflowClient launch: WES URL from config is: " + wesUrl);
+            }
+            //remove the wes keyword so command processing continues as usual
+            args.remove(0);
+            //remove the launch keyword so command processing continues as usual
+            args.remove(0);
+        }
+
         String commandName = "launch";
         String[] argv = args.toArray(new String[0]);
         String[] argv1 = { commandName };
@@ -404,7 +425,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         // trim the final slash on output if it is present, probably an error ( https://github.com/aws/aws-cli/issues/421 ) causes a double slash which can fail
         wdlOutputTarget = wdlOutputTarget != null ? wdlOutputTarget.replaceAll("/$", "") : null;
 
-        String wesUrl = optVal(args, "--wes-url", null);
 
         if (this.commandLaunch.help) {
             JCommanderUtility.printJCommanderHelpLaunch(jCommander, "dockstore workflow", commandName);
