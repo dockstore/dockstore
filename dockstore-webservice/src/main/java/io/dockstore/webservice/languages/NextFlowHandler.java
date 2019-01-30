@@ -38,6 +38,7 @@ import io.dockstore.webservice.jdbi.ToolDAO;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -66,10 +67,12 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         final Optional<SourceFile> potentialScript = sourceFiles.stream().filter(file -> file.getPath().equals(finalMainScriptPath))
             .findFirst();
         if (potentialScript.isPresent()) {
-            final String helpMessage = getHelpMessage(potentialScript.get().getContent());
+            String helpMessage = getHelpMessage(potentialScript.get().getContent());
             // abitrarily follow description, markdown looks funny without the line breaks
-            String builder = entry.getDescription() == null || entry.getDescription().isEmpty() ? helpMessage
-                : entry.getDescription() + "\n\n" + helpMessage;
+            if (!StringUtils.isEmpty(helpMessage)) {
+                helpMessage = "\n\n" + helpMessage;
+            }
+            String builder = String.join("", entry.getDescription(), helpMessage);
             entry.setDescription(builder);
         }
         return entry;
@@ -298,12 +301,12 @@ public class NextFlowHandler implements LanguageHandlerInterface {
 
         // Get default container (process.container takes precedence over params.container)
         String defaultContainer = null;
-        if (configuration != null && configuration.containsKey("manifest.container")) {
-            defaultContainer = configuration.getString("manifest.container");
+        if (configuration != null && configuration.containsKey("params.container")) {
+            defaultContainer = configuration.getString("params.container");
         }
 
-        if (configuration != null && configuration.containsKey("manifest.container")) {
-            defaultContainer = configuration.getString("manifest.container");
+        if (configuration != null && configuration.containsKey("process.container")) {
+            defaultContainer = configuration.getString("process.container");
         }
 
         Map<String, String> callToDockerMap = this.getCallsToDockerMap(mainDescriptor, defaultContainer);

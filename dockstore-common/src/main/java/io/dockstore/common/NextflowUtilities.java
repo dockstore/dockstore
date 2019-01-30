@@ -72,7 +72,7 @@ public final class NextflowUtilities {
             nextflowURL = new URL(nextflowExec);
             nextflowFilename = new File(nextflowURL.toURI().getPath()).getName();
         } catch (MalformedURLException | URISyntaxException e) {
-            throw new RuntimeException("Could not create Nextflow location", e);
+            throw new NextflowParsingException("Could not create Nextflow location", e);
         }
         String nextflowTarget = libraryLocation + nextflowFilename;
         File nextflowTargetFile = new File(nextflowTarget);
@@ -80,7 +80,7 @@ public final class NextflowUtilities {
             try {
                 FileUtils.copyURLToFile(nextflowURL, nextflowTargetFile);
             } catch (IOException e) {
-                throw new RuntimeException("Could not download Nextflow location", e);
+                throw new NextflowParsingException("Could not download Nextflow location", e);
             }
         }
         return nextflowTargetFile;
@@ -106,7 +106,7 @@ public final class NextflowUtilities {
             return ConfigurationConverter.getConfiguration(properties);
         } catch (RuntimeException | IOException e) {
             LOG.error("Problem running NextFlow: ", e);
-            throw new RuntimeException("Could not run NextFlow", e);
+            throw new NextflowParsingException("Could not run NextFlow", e);
         }
     }
 
@@ -131,7 +131,20 @@ public final class NextflowUtilities {
             Files.deleteIfExists(nextflowDir);
             return configuration;
         } catch (IOException e) {
-            throw new RuntimeException("unable to parse nexflow config");
+            throw new NextflowParsingException("unable to parse nexflow config");
+        }
+    }
+
+    /**
+     * Runtime exception for Nextflow integration issues
+     */
+    public static class NextflowParsingException extends RuntimeException {
+        NextflowParsingException(String message) {
+            super(message);
+        }
+
+        NextflowParsingException(String message, Throwable e) {
+            super(message, e);
         }
     }
 }
