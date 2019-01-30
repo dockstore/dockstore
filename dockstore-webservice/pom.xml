@@ -27,7 +27,7 @@
     </properties>
 
     <parent>
-        <version>1.6.0-alpha.4-SNAPSHOT</version>
+        <version>1.6.0-alpha.4</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -57,22 +57,22 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.6.0-alpha.4-SNAPSHOT</version>
+            <version>1.6.0-alpha.4</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.6.0-alpha.4-SNAPSHOT</version>
+            <version>1.6.0-alpha.4</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.6.0-alpha.4-SNAPSHOT</version>
+            <version>1.6.0-alpha.4</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.6.0-alpha.4-SNAPSHOT</version>
+            <version>1.6.0-alpha.4</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -483,7 +483,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.6.0-alpha.4-SNAPSHOT</version>
+            <version>1.6.0-alpha.4</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
