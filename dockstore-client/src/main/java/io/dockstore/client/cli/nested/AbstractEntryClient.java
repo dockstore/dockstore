@@ -55,6 +55,7 @@ import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
 import io.swagger.wes.client.model.RunId;
 import io.swagger.wes.client.model.RunListResponse;
 import io.swagger.wes.client.model.RunLog;
+import io.swagger.wes.client.model.RunStatus;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -908,9 +909,6 @@ public abstract class AbstractEntryClient<T> {
         WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
         ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
 
-        out("getWorkflowExecutionServiceApi WES URL is " + wesUrl);
-        //String wesUrl = optVal(args, "--wes-url", null);
-        //if (wesUrl == null || wesUrl.isEmpty()) {
         INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
         SubnodeConfiguration configSubNode = null;
         try {
@@ -922,7 +920,10 @@ public abstract class AbstractEntryClient<T> {
 
         if (wesUrl == null || wesUrl.isEmpty()) {
             String wesEndpointUrl = configSubNode.getString("url");
-            out("wes endpoint url is:" + wesEndpointUrl);
+            if (wesEndpointUrl == null || wesEndpointUrl.isEmpty()) {
+                errorMessage("No WES URL found in config file and no WES URL entered on command line.", CLIENT_ERROR);
+            }
+            out("WES endpoint url is: " + wesEndpointUrl);
             wesApiClient.setBasePath(wesEndpointUrl);
         } else {
             wesApiClient.setBasePath(wesUrl);
@@ -935,20 +936,20 @@ public abstract class AbstractEntryClient<T> {
         String wesAuthorizationTypeCredentials = configSubNode.getString("authorization", null);
         String wesAuthorizationType = null;
         String wesAuthorizationCredentials = null;
-        out("wes config authorization string is " + wesAuthorizationTypeCredentials);
+        //out("wes config authorization string is " + wesAuthorizationTypeCredentials);
         if (wesAuthorizationTypeCredentials != null) {
             String[] wesAuthorizationTypeCredentialsArray = wesAuthorizationTypeCredentials.split("\\s+");
-            out("wes authorization credentials array:" + Arrays.toString(wesAuthorizationTypeCredentialsArray));
-            out("wes auth array length is:" + wesAuthorizationTypeCredentialsArray.length);
+            //out("wes authorization credentials array:" + Arrays.toString(wesAuthorizationTypeCredentialsArray));
+            //out("wes auth array length is:" + wesAuthorizationTypeCredentialsArray.length);
             if (wesAuthorizationTypeCredentialsArray.length > 1) {
                 wesAuthorizationType = wesAuthorizationTypeCredentialsArray[0];
-                out("wes authorization type:" + wesAuthorizationType.toString());
+                //out("WES authorization type:" + wesAuthorizationType.toString());
 
                 wesAuthorizationCredentials = wesAuthorizationTypeCredentialsArray[1];
-                out("wes authorization credentials:" + wesAuthorizationCredentials.toString());
+                //out("WES authorization credentials:" + wesAuthorizationCredentials.toString());
 
                 if (wesAuthorizationType.equalsIgnoreCase(BEARER)) {
-                    out("set token to " + wesAuthorizationCredentials);
+                    //out("set token to " + wesAuthorizationCredentials);
                     // TODO: The WES schema should specify the security scheme so we do not need to add a default header
                     wesApiClient.addDefaultHeader(AUTHORIZATION, BEARER + " " + wesAuthorizationCredentials);
                     //wesApiClient.setAccessToken(wesAuthorizationCredentials);
@@ -972,57 +973,69 @@ public abstract class AbstractEntryClient<T> {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
-            out("Getting WES URL");
-            String wesUrl = optVal(args, "--wes-url", null);
-            WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(wesUrl);
             if (args.contains("launch")) {
                 out("Launching workflow using WES");
                 args.add(0, "wes");
                 launch(args);
-            } else if (args.contains("listRuns")) {
-                out("Getting list of WES workflows");
-                RunListResponse response = null;
-                try {
-                    response = clientWorkflowExecutionServiceApi.listRuns(LIST_RUNS_PAGE_SIZE, "1");
-                    //response = clientWorkflowExecutionServiceApi.listRuns(null, null);
-                } catch (io.swagger.wes.client.ApiException e) {
-                    e.printStackTrace();
-                }
-                String nextPageToken = response.getNextPageToken();
-                out("next page token is: " + nextPageToken);
-                try {
-                    response = clientWorkflowExecutionServiceApi.listRuns(LIST_RUNS_PAGE_SIZE, nextPageToken);
-                } catch (io.swagger.wes.client.ApiException e) {
-                    e.printStackTrace();
-                }
+            } else {
+                //out("Getting WES URL");
+                String wesUrl = optVal(args, "--wes-url", null);
+                WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(wesUrl);
 
-                List runs = response.getRuns();
-                if (runs != null) {
-                    out("runs is not null!!!!");
-                }
-                //out("runs list is:" + runs.toString());
-                Iterator runIterator = runs.iterator();
-                out("Run list response is:");
-                while (runIterator.hasNext()) {
-                    System.out.println(runIterator.next().toString());
-                }
-            } else if (args.contains("status")) {
-                String workflowId = reqVal(args, "--id");
-                out("Getting status of WES workflow");
-                try {
-                    RunLog response = clientWorkflowExecutionServiceApi.getRunLog(workflowId);
-                    out("Run status is: " + response.toString());
-                } catch (io.swagger.wes.client.ApiException e) {
-                    e.printStackTrace();
-                }
-            } else if (args.contains("cancel")) {
-                out("Canceling WES workflow");
-                String workflowId = reqVal(args, "--id");
-                try {
-                    RunId response = clientWorkflowExecutionServiceApi.cancelRun(workflowId);
-                    out("Cancelled run with id: " + response.toString());
-                } catch (io.swagger.wes.client.ApiException e) {
-                    e.printStackTrace();
+                if (args.contains("listRuns")) {
+                    out("Getting list of WES workflows");
+                    RunListResponse response = null;
+                    try {
+                        response = clientWorkflowExecutionServiceApi.listRuns(LIST_RUNS_PAGE_SIZE, "1");
+                        //response = clientWorkflowExecutionServiceApi.listRuns(null, null);
+                    } catch (io.swagger.wes.client.ApiException e) {
+                        e.printStackTrace();
+                    }
+                    String nextPageToken = response.getNextPageToken();
+                    out("next page token is: " + nextPageToken);
+                    try {
+                        response = clientWorkflowExecutionServiceApi.listRuns(LIST_RUNS_PAGE_SIZE, nextPageToken);
+                    } catch (io.swagger.wes.client.ApiException e) {
+                        e.printStackTrace();
+                    }
+
+                    List runs = response.getRuns();
+                    if (runs != null) {
+                        out("runs is not null!!!!");
+                    }
+                    //out("runs list is:" + runs.toString());
+                    Iterator runIterator = runs.iterator();
+                    out("Run list response is:");
+                    while (runIterator.hasNext()) {
+                        System.out.println(runIterator.next().toString());
+                    }
+                } else if (args.contains("status")) {
+                    String workflowId = reqVal(args, "--id");
+                    out("Getting status of WES workflow");
+                    if (args.contains("--verbose")) {
+                        try {
+                            RunLog response = clientWorkflowExecutionServiceApi.getRunLog(workflowId);
+                            out("Verbose run status is: " + response.toString());
+                        } catch (io.swagger.wes.client.ApiException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        try {
+                            RunStatus response = clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
+                            out("Brief run status is: " + response.toString());
+                        } catch (io.swagger.wes.client.ApiException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (args.contains("cancel")) {
+                    out("Canceling WES workflow");
+                    String workflowId = reqVal(args, "--id");
+                    try {
+                        RunId response = clientWorkflowExecutionServiceApi.cancelRun(workflowId);
+                        out("Cancelled run with id: " + response.toString());
+                    } catch (io.swagger.wes.client.ApiException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

@@ -401,6 +401,9 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 System.out.println("WorkflowClient launch: WES URL is empty from command line; getting it from config file");
                 INIConfiguration config = Utilities.parseConfig(getConfigFile());
                 wesUrl = config.getSection("WES").getString("url", "");
+                if (wesUrl == null || wesUrl.isEmpty()) {
+                    errorMessage("No WES URL found in config file and no WES URL entered on command line.", CLIENT_ERROR);
+                }
                 System.out.println("WorkflowClient launch: WES URL from config is: " + wesUrl);
             }
             //remove the wes keyword so command processing continues as usual

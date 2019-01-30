@@ -195,7 +195,7 @@ public class CWLClient implements LanguageClientInterface {
         //    wesUrl = config.getSection("WES").getString("url", "");
         //    System.out.println("WES URL from config is: " + wesUrl);
         //}
-        if (wesUrl == null || wesUrl.isEmpty()) {
+        if (wesUrl != null && !wesUrl.isEmpty()) {
             out("launch WES url is: " + wesUrl);
         }
 
