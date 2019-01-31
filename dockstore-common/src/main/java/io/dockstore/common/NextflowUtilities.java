@@ -25,8 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -88,15 +88,15 @@ public final class NextflowUtilities {
 
     /**
      * Use nextflow to read nextflow configs
-     * Relies on content being in it's own directory
-     * TODO: nextflow normally uses this, investigate to see if this helps us https://github.com/ninjudd/drip
+     * Nextflow binary assumes workflow is in the working directory (with no other workflows)
+     * TODO: nextflow normally uses DRIP, investigate to see if this helps us https://github.com/ninjudd/drip
      * @param content a file object with the content of nextflow
      * @return a commons configuration file with the keys from the nextflow config file
      */
     public static Configuration grabConfig(File content) {
         try {
-            final ArrayList<String> strings = new ArrayList<>(
-                Arrays.asList("java", "-jar", getNextFlowTargetFile().getAbsolutePath(), "config", "-properties"));
+            final List<String> strings =
+                Arrays.asList("java", "-jar", getNextFlowTargetFile().getAbsolutePath(), "config", "-properties");
             final String join = Joiner.on(" ").join(strings);
             LOG.info("running: " + join);
             final ImmutablePair<String, String> execute = Utilities.executeCommand(join, content.getParentFile());
@@ -115,23 +115,25 @@ public final class NextflowUtilities {
      * @return a commons configuration file with the keys from the nextflow config file
      */
     public static Configuration grabConfig(String content) {
+        Path nextflowDir = null;
         try {
             // FIXME: this sucks, but we need to ignore includeConfig lines. We basically have a chicken and the egg problem
             // FIXME: the nextflow config command only works when all included files are present, however we're trying to
             // FIXME: use the nextflow config command to figure out what the list of included files is to
             // FIXME: determine what files we want to get from the GitHub API in the first place
             // FIXME: secondary case: when looking for description and author, we don't actually need includes either
-            content = content.replaceAll("(?i)(?m)^[ \t]*includeConfig.*", "");
+            String newContent = content.replaceAll("(?i)(?m)^[ \t]*includeConfig.*", "");
             // needed since Nextflow binary assumes content is in working directory
-            final Path nextflowDir = Files.createTempDirectory("nextflow");
+            nextflowDir = Files.createTempDirectory("nextflow");
             final Path tempFile = Paths.get(nextflowDir.toString(), "nextflow.config");
-            Files.write(tempFile, content.getBytes(StandardCharsets.UTF_8));
-            final Configuration configuration = grabConfig(tempFile.toFile());
-            Files.deleteIfExists(tempFile);
-            Files.deleteIfExists(nextflowDir);
-            return configuration;
+            Files.write(tempFile, newContent.getBytes(StandardCharsets.UTF_8));
+            return grabConfig(tempFile.toFile());
         } catch (IOException e) {
             throw new NextflowParsingException("unable to parse nexflow config");
+        } finally {
+            if (nextflowDir != null) {
+                FileUtils.deleteQuietly(nextflowDir.toFile());
+            }
         }
     }
 
