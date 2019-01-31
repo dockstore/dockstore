@@ -392,8 +392,10 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
     public void launch(final List<String> args) {
 
         String wesUrl = null;
-        // if launch is the first keyword in the list then wes
+        // if the wes keyword is present then the user wants to launch a workflow on a WES endpoint
         if (args.get(0).equals("wes")) {
+            // Find out what the WES endpoint URL is. The user will have provided it by using the --wes-url switch
+            // or by putting it in a WES section in the config file
             wesUrl = optVal(args, "--wes-url", null);
             // If no WES URL was part of the command line check if a WES URL is indicated in the config file
             // If there is a WES section in the config file then use the URL listed there and launch the workflow at the WES endpoint

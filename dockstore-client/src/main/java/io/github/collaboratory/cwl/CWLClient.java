@@ -187,18 +187,6 @@ public class CWLClient implements LanguageClientInterface {
         }
         jsonRun = convertYamlToJson(yamlRun, jsonRun);
 
-        // If no WES URL was part of the command line check if a WES URL is indicated in the config file
-        // If there is a WES section in the config file then use the URL listed there and launch the workflow at the WES endpoint
-        //if (wesUrl == null || wesUrl.isEmpty()) {
-        //    System.out.println("WES URL is empty from command line; getting it from config file");
-        //    INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
-        //    wesUrl = config.getSection("WES").getString("url", "");
-        //    System.out.println("WES URL from config is: " + wesUrl);
-        //}
-        if (wesUrl != null && !wesUrl.isEmpty()) {
-            out("launch WES url is: " + wesUrl);
-        }
-
         try {
             final Gson gson = io.cwl.avro.CWL.getTypeSafeCWLToolDocument();
             if (jsonRun != null) {
@@ -284,7 +272,6 @@ public class CWLClient implements LanguageClientInterface {
                         FileUtils.write(tempJson, finalString, StandardCharsets.UTF_8);
 
                         if (wesUrl == null || wesUrl.isEmpty()) {
-
                             // final String stringMapAsString = gson.toJson(stringMap);
                             // Files.write(stringMapAsString, tempJson, StandardCharsets.UTF_8);
                             final LauncherCWL cwlLauncher = new LauncherCWL(abstractEntryClient.getConfigFile(), tempCWL.getAbsolutePath(),

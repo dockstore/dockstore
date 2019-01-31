@@ -138,12 +138,6 @@ public class WDLClient implements LanguageClientInterface {
         String notificationsWebHookURL = config.getString("notifications", "");
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
 
-        //if (wesUrl == null || wesUrl.isEmpty()) {
-        //    System.out.println("WES URL is empty from command line; getting it from config file");
-        //    wesUrl = config.getSection("WES").getString("url", "");
-        //    System.out.println("WES URL from config is: " + wesUrl);
-        //}
-
         try {
             final File tempLaunchDirectory = Files.createTempDir();
             File localPrimaryDescriptorFile;
@@ -180,6 +174,7 @@ public class WDLClient implements LanguageClientInterface {
                 workingDir = Paths.get(entry).toAbsolutePath().normalize().getParent().toString();
             }
 
+            // if a WES URL is provide then the workflow should be run at a WES endpoint
             if (wesUrl == null || wesUrl.isEmpty()) {
                 // Else if local entry then need to get parent path of entry variable (path)
                 System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);

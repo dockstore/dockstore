@@ -110,6 +110,7 @@ public abstract class AbstractEntryClient<T> {
     private static final String BEARER = "Bearer";
     private static final String BASIC = "basic";
     private static final String DIGEST = "digest";
+    private static final String WORKFLOW = "workflow";
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
     protected boolean isAdmin = false;
@@ -160,8 +161,10 @@ public abstract class AbstractEntryClient<T> {
         out("  label            :  updates labels for an individual " + getEntryType() + "");
         out("");
         out("  star             :  star/unstar a " + getEntryType() + " in the dockstore");
-        out("");
-        out("  wes              :  calls a Workflow Execution Schema API (WES) for a version of a " + getEntryType() + "");
+        if (getEntryType().toLowerCase().equals(WORKFLOW)) {
+            out("");
+            out("  wes              :  calls a Workflow Execution Schema API (WES) for a version of a " + getEntryType() + "");
+        }
         out("");
         out("  test_parameter   :  updates test parameter files for a version of a " + getEntryType() + "");
         out("");
@@ -254,7 +257,11 @@ public abstract class AbstractEntryClient<T> {
                 testParameter(args);
                 break;
             case "wes":
-                processWesCommands(args);
+                if (getEntryType().toLowerCase().equals(WORKFLOW)) {
+                    processWesCommands(args);
+                } else {
+                    errorMessage("WES API calls are only valid for workflows not tools.", CLIENT_ERROR);
+                }
                 break;
             default:
                 return false;
@@ -956,8 +963,14 @@ public abstract class AbstractEntryClient<T> {
                 } else if (wesAuthorizationType.equalsIgnoreCase(BASIC)) {
                     //wesApiClient.setPassword(wesAuthorizationCredentials);
                     wesApiClient.addDefaultHeader(AUTHORIZATION, BASIC + " " + wesAuthorizationCredentials);
+                } else {
+                    out("Could not set Authorization header. Unsupported authorization type in config file. "
+                            + "Please use " + BEARER + " or " + BASIC);
                 }
             }
+        } else {
+            out("Could not set Authorization header. Authorization key not found in config file. "
+                    + "Please add 'authorization: <type> <credentials> to config file");
         }
 
         clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
@@ -975,6 +988,10 @@ public abstract class AbstractEntryClient<T> {
         } else {
             if (args.contains("launch")) {
                 out("Launching workflow using WES");
+                // Add the wes keyword back onto the args list so later on
+                // we can determine if this launch is to a WES endpoint
+                // Once that is determined later on we can pull it back off the
+                // argument list
                 args.add(0, "wes");
                 launch(args);
             } else {
@@ -982,6 +999,7 @@ public abstract class AbstractEntryClient<T> {
                 String wesUrl = optVal(args, "--wes-url", null);
                 WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(wesUrl);
 
+                // TODO: broken needs to be fixed? Should we support this?
                 if (args.contains("listRuns")) {
                     out("Getting list of WES workflows");
                     RunListResponse response = null;
@@ -1107,7 +1125,6 @@ public abstract class AbstractEntryClient<T> {
             errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
         }
 
-
         CWLClient client = new CWLClient(this);
         String wesUrl = optVal(args, "--wes-url", null);
         client.launch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, uuid, wesUrl);
@@ -1164,6 +1181,7 @@ public abstract class AbstractEntryClient<T> {
         final String json = reqVal(args, "--json");
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);
+
         String wesUrl = optVal(args, "--wes-url", null);
         client.launch(entry, isLocalEntry, null, json, null, null, uuid, wesUrl);
     }
