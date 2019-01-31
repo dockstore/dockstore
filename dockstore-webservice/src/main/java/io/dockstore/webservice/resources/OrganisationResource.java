@@ -162,6 +162,12 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
+            // If approved then return
+            if (Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED)) {
+                return organisation;
+            }
+
+            // If user has a role then return
             OrganisationUser role = getUserOrgRole(organisation, user.get().getId());
 
             if (user.get().getIsAdmin() || user.get().isCurator() || role != null) {
