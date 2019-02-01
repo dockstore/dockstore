@@ -109,15 +109,20 @@ runtime {
 }
 ```
 
-Finally, we have a metadata section where we can store key value pairs. It is freeform, so we could put anything here. Dockstore is able to pick up both Author and Email if they are defined here. In this example we only have the Author.
+Finally, we have a metadata section where we can store key value pairs. It is freeform, so we could put anything here. Dockstore is able to pick up author, email, and description if they are defined here. 
+The description field can be used to add documentation to your workflow and can make use of markdown syntax. Currently, description values are limited to single line string, but multi-line documentation is possible by including new line characters into the string. 
+Below we have an example of a metadata section with author, email, and a multi-line description.
 
 ```
 meta {
     author: "Andrew Duncan"
+    email: "andrew@foobar.com"
+    description: "This is my WDL workflow. \n\n Adding documentation to my workflow improves clarity"
 }
 ```
 
 The workflow section here consists of two main parts. The first section is an input section, where we define the input BAM file and the memory to use.
+
 
 ```
 File bam_input
