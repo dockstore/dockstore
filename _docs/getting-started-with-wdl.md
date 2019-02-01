@@ -109,17 +109,20 @@ runtime {
 }
 ```
 
-Finally, we have a metadata section where we can store key value pairs. It is freeform, so we could put anything here. Dockstore is able to pick up author, email, and description if they are defined here. 
-The description field can be used to add documentation to your workflow and can make use of markdown syntax. Currently, description values are limited to single line string, but multi-line documentation is possible by including new line characters into the string. 
-Below we have an example of a metadata section with author, email, and a multi-line description.
+Finally, we have a metadata section where we can store key value pairs. It is freeform, so we could put anything here. Dockstore is able to pick up author, email, and description if they are defined here. All metadata values must be a single-line string. 
+
+The description field can be used to add documentation and Dockstore will treat the string as markdown, rendering accordingly. When writing a description in markdown that requires newlines, specify the newlines with \n or specify a blank line with \n\n. 
+
+Below we show an example metadata section and how it will display on your workflow's landing page:
 
 ```
 meta {
     author: "Andrew Duncan"
     email: "andrew@foobar.com"
-    description: "This is my WDL workflow. \n\n Adding documentation to my workflow improves clarity"
+    description: "## Bamstats \n This is the Bamstats workflow.\n\n Adding documentation improves clarity."
 }
 ```
+![wdl_metadata](/assets/images/docs/wdl_meta_example.png)
 
 The workflow section here consists of two main parts. The first section is an input section, where we define the input BAM file and the memory to use.
 
