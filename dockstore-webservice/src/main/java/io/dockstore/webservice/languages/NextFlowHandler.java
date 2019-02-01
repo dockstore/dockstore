@@ -51,6 +51,8 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
  */
 public class NextFlowHandler implements LanguageHandlerInterface {
 
+    private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
+
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
@@ -86,8 +88,7 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
         // FIXME: see{@link NextflowUtilities#grabConfig(String) grabConfig} method for comments on why
         // we have to look at imports in this crummy way
-        Pattern pattern = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
-        final Matcher matcher = pattern.matcher(content);
+        final Matcher matcher = INCLUDE_CONFIG_PATTERN.matcher(content);
         Set<String> suspectedConfigImports = new HashSet<>();
         while (matcher.find()) {
             suspectedConfigImports.add(CharMatcher.is('\'').trimFrom(matcher.group(1).trim()));
