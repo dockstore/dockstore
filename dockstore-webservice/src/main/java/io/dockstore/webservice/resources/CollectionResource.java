@@ -98,6 +98,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
+            Hibernate.initialize(collection.getEntries());
             return collection;
         } else {
             // User is given, check if the collections organisation is either approved or the user has access
