@@ -25,7 +25,7 @@ import io.swagger.v3.oas.annotations.info.License;
     info = @Info(
         title = "Dockstore",
         //FIXME: use the templating system with the current description
-        version = "1.6.0-alpha.4-SNAPSHOT",
+        version = "1.6.0-alpha.5-SNAPSHOT",
         description = "The Dockstore API, includes proprietary and GA4GH V1+V2 endpoints",
         license = @License(name = "Apache 2.0", url = "https://github.com/ga4gh/dockstore/blob/develop/LICENSE"),
         contact = @Contact(url = "https://discuss.dockstore.org/t/opening-helpdesk-tickets/1506", name = "Dockstore@ga4gh", email = "theglobalalliance@genomicsandhealth.org")
