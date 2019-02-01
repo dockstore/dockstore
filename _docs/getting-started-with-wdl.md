@@ -126,7 +126,6 @@ meta {
 
 The workflow section here consists of two main parts. The first section is an input section, where we define the input BAM file and the memory to use.
 
-
 ```
 File bam_input
 Int mem_gb
