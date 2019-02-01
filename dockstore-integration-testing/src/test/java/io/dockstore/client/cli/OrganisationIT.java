@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.OrganisationUser;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -121,6 +122,10 @@ public class OrganisationIT extends BaseIT {
         final ApiClient webClientCuratorUser = getWebClient(CURATOR_USERNAME);
         OrganisationsApi organisationsApiCurator = new OrganisationsApi(webClientCuratorUser);
 
+        // Setup unauthorized user
+        final ApiClient unauthClient = getWebClient(false, "");
+        OrganisationsApi organisationsApiUnauth = new OrganisationsApi(unauthClient);
+
         // Create the organisation
         Organisation registeredOrganisation = createOrg(organisationsApiUser2);
         assertTrue(!Objects.equals(registeredOrganisation.getStatus().getValue(), io.dockstore.webservice.core.Organisation.ApplicationState.APPROVED));
@@ -166,12 +171,22 @@ public class OrganisationIT extends BaseIT {
         assertTrue("Organisation should be returned.", organisation != null);
 
         // Other user should not be able to see by name
+        boolean failedUser1GetByName = false;
         try {
             organisation = organisationsApiUser1.getOrganisationByName(registeredOrganisation.getName());
         } catch (ApiException ex) {
-            organisation = null;
+            failedUser1GetByName = true;
         }
-        assertTrue("Organisation should NOT be returned.", organisation == null);
+        assertTrue("Organisation should NOT be returned.", failedUser1GetByName);
+
+        // Unauth user should not be able to see by name
+        boolean failedUnauthGetByName = false;
+        try {
+            organisation = organisationsApiUnauth.getOrganisationByName(registeredOrganisation.getName());
+        } catch (ApiException ex) {
+            failedUnauthGetByName = true;
+        }
+        assertTrue("Organisation should NOT be returned.", failedUnauthGetByName);
 
         // Curator should be able to see by name
         organisation = organisationsApiCurator.getOrganisationByName(registeredOrganisation.getName());
@@ -222,6 +237,14 @@ public class OrganisationIT extends BaseIT {
 
         // Curator should be able to see by id
         organisation = organisationsApiCurator.getOrganisationById(registeredOrganisation.getId());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Unauth user should be able to get by id
+        organisation = organisationsApiUnauth.getOrganisationById(registeredOrganisation.getId());
+        assertTrue("Organisation should be returned.", organisation != null);
+
+        // Unauth user should be able to get by name
+        organisation = organisationsApiUnauth.getOrganisationByName(registeredOrganisation.getName());
         assertTrue("Organisation should be returned.", organisation != null);
 
         // Update the organisation
@@ -614,6 +637,10 @@ public class OrganisationIT extends BaseIT {
         final ApiClient webClientOtherUser = getWebClient(OTHER_USERNAME);
         OrganisationsApi organisationsApiOtherUser = new OrganisationsApi(webClientOtherUser);
 
+        // Setup unauthorized user
+        final ApiClient unauthClient = getWebClient(false, "");
+        OrganisationsApi organisationsApiUnauth = new OrganisationsApi(unauthClient);
+
         // Create the organisation and collection
         Organisation organisation = createOrg(organisationsApi);
         Collection stubCollection = stubCollectionObject();
@@ -712,6 +739,10 @@ public class OrganisationIT extends BaseIT {
 
         collections = organisationsApi.getCollectionsFromOrganisation(organisation.getId(), "entries");
         assertEquals("There should be 1 entry associated with the collection, there are " + collections.get(0).getEntries().size(), 1, collections.get(0).getEntries().size());
+
+        // Unauth user should be able to see entries
+        Collection unauthCollection = organisationsApiUnauth.getCollectionById(organisation.getId(), collections.get(0).getId());
+        assertEquals("Should have one entry returned with the collection, there are " + unauthCollection.getEntries().size(), 1, unauthCollection.getEntries().size());
 
         // Should not be able to reject an approved organization
         boolean throwsError = false;
