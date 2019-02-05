@@ -357,9 +357,16 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         // if no master is present (for example, for hosted workflows), fail over to the latest descriptor
         if (!first.isPresent()) {
             first = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getLastModified));
+            System.out.println("Could not locate workflow with version '" + tag + "'. Using last modified version '"
+                    + first.get().getName() + "' instead.");
         }
 
         if (first.isPresent()) {
+            boolean isValid = first.get().isValid();
+            if (!isValid) {
+                errorMessage("Cannot use workflow version '" + first.get().getName() + "' because it is not valid. Please pick a"
+                        + " workflow version that is recognized as valid by Dockstore.", CLIENT_ERROR);
+            }
             Long versionId = first.get().getId();
             // https://github.com/ga4gh/dockstore/issues/1712 client seems to use jersey logging which is not controlled from logback
             workflowsApi.getApiClient().setDebugging(false);
