@@ -560,6 +560,18 @@ public class OrganisationIT extends BaseIT {
         List<Event> events = organisationsApiUser2.getOrganisationEvents(orgId);
         assertEquals("Should have 3 events returned, there are " + events.size(), 3, events.size());
         assertEquals("First event should be most recent, which is REJECT_ORG_INVITE, but is actually " + events.get(0).getType().getValue(), "REJECT_ORG_INVITE" , events.get(0).getType().getValue());
+
+        // Request a user that doesn't exist
+        boolean throwsError = false;
+        try {
+            organisationsApiUser2.addUserToOrgByUsername(OrganisationUser.Role.MEMBER.toString(), "IDONOTEXIST", orgId);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to add a user to an org with a username that does not exist");
+        }
     }
 
     /**
