@@ -357,8 +357,10 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         // if no master is present (for example, for hosted workflows), fail over to the latest descriptor
         if (!first.isPresent()) {
             first = workflow.getWorkflowVersions().stream().max(Comparator.comparing(WorkflowVersion::getLastModified));
-            System.out.println("Could not locate workflow with version '" + tag + "'. Using last modified version '"
-                    + first.get().getName() + "' instead.");
+            if (first.isPresent()) {
+                System.out.println("Could not locate workflow with version '" + tag + "'. Using last modified version '"
+                        + first.get().getName() + "' instead.");
+            }
         }
 
         if (first.isPresent()) {
