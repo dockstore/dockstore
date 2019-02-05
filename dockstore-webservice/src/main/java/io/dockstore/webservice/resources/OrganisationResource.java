@@ -422,8 +422,13 @@ public class OrganisationResource implements AuthenticatedResourceInterface {
             @ApiParam(value = "Role of user. \"MAINTAINER\" or \"MEMBER\"", required = true) String role,
             @ApiParam(value = "User to add to org.", required = true) @PathParam("username") String username,
             @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId) {
-        long userId = userDAO.findByUsername(username).getId();
-        return addUserToOrg(user, role, userId, organisationId, "");
+        User userToAdd = userDAO.findByUsername(username);
+        if (userToAdd == null) {
+            String msg = "No user exists with the username '" + username + "'.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+        return addUserToOrg(user, role, userToAdd.getId(), organisationId, "");
     }
 
     @PUT
