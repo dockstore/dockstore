@@ -199,7 +199,7 @@ public class WDLClient implements LanguageClientInterface {
                 // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
                 final String join = Joiner.on(" ").join(arguments);
                 System.out.println(join);
-                final ImmutablePair<String, String> execute = Utilities.executeCommand(join, localPrimaryDescriptorFile.getParentFile());
+                final ImmutablePair<String, String> execute = Utilities.executeCommand(join, System.out, System.err, localPrimaryDescriptorFile.getParentFile());
                 stdout = execute.getLeft();
                 stderr = execute.getRight();
             } catch (RuntimeException e) {
