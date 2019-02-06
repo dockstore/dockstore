@@ -29,7 +29,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * This describes a Dockstore collection that can be associated with an organisation.
+ * This describes a Dockstore collection that can be associated with an organization.
  *
  * @author aduncan
  */
@@ -38,8 +38,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "collection")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organisationid = :organisationId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE col.name = :name AND organisationid = :organisationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE col.name = :name AND organizationid = :organizationId"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Collection implements Serializable {
@@ -67,8 +67,8 @@ public class Collection implements Serializable {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organisationid")
-    private Organisation organisation;
+    @JoinColumn(name = "organizationid")
+    private Organization organization;
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -118,12 +118,12 @@ public class Collection implements Serializable {
         this.entries.remove(entry);
     }
 
-    public Organisation getOrganisation() {
-        return organisation;
+    public Organization getOrganization() {
+        return organization;
     }
 
-    public void setOrganisation(Organisation organisation) {
-        this.organisation = organisation;
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 
     public Timestamp getDbCreateDate() {

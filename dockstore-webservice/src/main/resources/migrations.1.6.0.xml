@@ -209,4 +209,17 @@
     <changeSet author="aduncan" id="dropOldApprovedFieldFromOrganisations">
         <dropColumn columnName="approved" tableName="organisation"/>
     </changeSet>
+
+    <changeSet author="dyuen" id="renameAllOrganization">
+        <renameTable newTableName="organization"
+                     oldTableName="organization"
+        />
+        <renameTable newTableName="organization_user"
+                     oldTableName="organization_user"
+        />
+        <renameColumn newColumnName="organizationid"
+                      oldColumnName="organizationid"
+                      tableName="organization_user"/>
+        <sql dbms="postgres">ALTER SEQUENCE organization_id_seq RENAME TO organization_id_seq</sql>
+    </changeSet>
 </databaseChangeLog>

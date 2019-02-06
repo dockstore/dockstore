@@ -110,9 +110,9 @@ public class BasicPostgreSQL {
         runUpdateStatement("delete from tag;");
         runUpdateStatement("delete from workflow_workflowversion;");
         runUpdateStatement("delete from workflowversion;");
-        runUpdateStatement("delete from organisation_user;");
+        runUpdateStatement("delete from organization_user;");
         runUpdateStatement("delete from event;");
-        runUpdateStatement("delete from organisation;");
+        runUpdateStatement("delete from organization;");
         runUpdateStatement("delete from enduser;");
         runUpdateStatement("delete from entry_label;");
         runUpdateStatement("delete from label;");
