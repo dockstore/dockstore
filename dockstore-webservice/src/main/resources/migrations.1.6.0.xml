@@ -206,6 +206,12 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="dyuen" id="constraintOrgNames">
+        <sql dbms="postgres">
+            create unique index organization_name_index on organisation (LOWER(name));
+        </sql>
+    </changeSet>
+
     <changeSet author="aduncan" id="dropOldApprovedFieldFromOrganisations">
         <dropColumn columnName="approved" tableName="organisation"/>
     </changeSet>

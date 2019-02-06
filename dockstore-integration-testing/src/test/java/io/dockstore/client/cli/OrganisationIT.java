@@ -6,7 +6,6 @@ import java.util.Objects;
 
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.OrganisationUser;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
@@ -272,6 +271,33 @@ public class OrganisationIT extends BaseIT {
         assertEquals("potato", organisation.getDescription());
         String description = organisationsApiUser2.getOrganisationDescription(organisation.getId());
         assertEquals("potato", description);
+    }
+
+    @Test(expected = ApiException.class)
+    public void testDuplicateOrgByCase() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganisationsApi organisationsApiUser2 = new OrganisationsApi(webClientUser2);
+
+        // Create the organisation
+        Organisation organisation = stubOrgObject();
+        organisationsApiUser2.createOrganisation(organisation);
+        organisation.setName(organisation.getName().toUpperCase());
+        organisationsApiUser2.createOrganisation(organisation);
+    }
+
+    @Test
+    public void testGetViaAlternateCase() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganisationsApi organisationsApiUser2 = new OrganisationsApi(webClientUser2);
+
+        // Create the organisation
+        Organisation organisation = stubOrgObject();
+        final Organisation createdOrg = organisationsApiUser2.createOrganisation(organisation);
+        String alternateName = organisation.getName().toUpperCase();
+        final Organisation organisationByName = organisationsApiUser2.getOrganisationByName(alternateName);
+        assertEquals(organisationByName.getId(), createdOrg.getId());
     }
 
     /**

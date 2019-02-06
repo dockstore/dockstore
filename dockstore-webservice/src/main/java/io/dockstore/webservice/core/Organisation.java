@@ -39,9 +39,9 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllPending", query = "SELECT org FROM Organisation org WHERE org.status = 'PENDING'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllRejected", query = "SELECT org FROM Organisation org WHERE org.status = 'REJECTED'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAll", query = "SELECT org FROM Organisation org"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByName", query = "SELECT org FROM Organisation org WHERE org.name = :name"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByName", query = "SELECT org FROM Organisation org WHERE lower(org.name) = lower(:name)"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id AND org.status = 'APPROVED'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedByName", query = "SELECT org FROM Organisation org WHERE org.name = :name AND org.status = 'APPROVED'")
+        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedByName", query = "SELECT org FROM Organisation org WHERE lower(org.name) = lower(:name) AND org.status = 'APPROVED'")
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Organisation implements Serializable {
