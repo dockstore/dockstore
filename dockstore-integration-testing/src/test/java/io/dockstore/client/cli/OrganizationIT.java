@@ -274,6 +274,33 @@ public class OrganizationIT extends BaseIT {
         assertEquals("potato", description);
     }
 
+    @Test(expected = ApiException.class)
+    public void testDuplicateOrgByCase() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Create the organisation
+        Organization organisation = stubOrgObject();
+        organisationsApiUser2.createOrganization(organisation);
+        organisation.setName(organisation.getName().toUpperCase());
+        organisationsApiUser2.createOrganization(organisation);
+    }
+
+    @Test
+    public void testGetViaAlternateCase() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Create the organisation
+        Organization organisation = stubOrgObject();
+        final Organization createdOrg = organisationsApiUser2.createOrganization(organisation);
+        String alternateName = organisation.getName().toUpperCase();
+        final Organization organisationByName = organisationsApiUser2.getOrganizationByName(alternateName);
+        assertEquals(organisationByName.getId(), createdOrg.getId());
+    }
+
     /**
      * This tests that an Organization can be rejected
      */
