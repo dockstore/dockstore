@@ -86,8 +86,8 @@ public abstract class CromwellLauncher {
      * @return Pair of downloaded primary descriptor and zip file
      */
     public Triple<File, File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type, boolean isLocalEntry, String entry) {
+        // Try to create a working directory
         File workingDir;
-
         try {
             workingDir = Files.createTempDir();
         } catch (IllegalStateException ex) {
@@ -99,6 +99,7 @@ public abstract class CromwellLauncher {
         File primaryDescriptor;
         File zipFile;
         if (!isLocalEntry) {
+            // If not a local entry then download remote descriptors
             try {
                 primaryDescriptor = abstractEntryClient.downloadTargetEntry(entry, type, true, workingDir);
                 String[] parts = entry.split(":");
@@ -120,6 +121,7 @@ public abstract class CromwellLauncher {
                 throw new RuntimeException(ex);
             }
         } else {
+            // For local entries zip the directory where the primary descriptor is located
             primaryDescriptor = new File(entry);
             File parentFile = primaryDescriptor.getParentFile();
             zipFile = zipDirectory(workingDir, parentFile);

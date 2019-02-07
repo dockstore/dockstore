@@ -991,13 +991,13 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
-     * Returns the first path that is not null and is not remote
+     * Returns the first path that is not null and is not remote (YAML preference)
      *
      * @param yamlRun The yaml file path
      * @param jsonRun The json file path
-     * @return
+     * @return Path to first not null file
      */
-    public String getOriginalTestParameterFilePath(String yamlRun, String jsonRun) {
+    public String getFirstNotNullParameterFile(String yamlRun, String jsonRun) {
         java.util.Optional<String> s = Stream.of(yamlRun, jsonRun).filter(Objects::nonNull).findFirst();
         if (s.isPresent() && Paths.get(s.get()).toFile().exists()) {
             // convert relative path to absolute path

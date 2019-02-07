@@ -83,23 +83,24 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
         //    abstractEntryClient.getClient().checkForCWLDependencies();
         //}
 
-        // Keep track of original parameter file given
-        String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlParameterFile, jsonParameterFile);
-
         // Setup temp directory and download files
-        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
-        File workingDir = descriptorAndZip.getLeft();
-        File primaryDescriptor = descriptorAndZip.getMiddle();
-        File zipFile = descriptorAndZip.getRight();
+        Triple<File, File, File> workingDirDescriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        File workingDir = workingDirDescriptorAndZip.getLeft();
+        File primaryDescriptor = workingDirDescriptorAndZip.getMiddle();
+        File importsZipFile = workingDirDescriptorAndZip.getRight();
 
-        // Update parameter file
+        // Keep track of original parameter file
+        String originalTestParameterFilePath = abstractEntryClient.getFirstNotNullParameterFile(yamlParameterFile, jsonParameterFile);
+
+        // Convert YAML to JSON if it exists
         String parameterFile = convertYamlToJson(yamlParameterFile, jsonParameterFile);
 
+        // Ensure that there is a parameter file
         if (parameterFile == null) {
             errorMessage("No parameter file found.", IO_ERROR);
         }
 
-        // Translate JSON to absolute path
+        // Translate JSON path to absolute path
         if (Paths.get(parameterFile).toFile().exists()) {
             parameterFile = Paths.get(parameterFile).toFile().getAbsolutePath();
         }
@@ -114,11 +115,8 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
                 null, null, originalTestParameterFilePath, uuid);
 
         // Continue launch process
-        if (abstractEntryClient instanceof WorkflowClient) {
-            cwlLauncher.run(Workflow.class, zipFile, workingDir);
-        } else {
-            cwlLauncher.run(CommandLineTool.class, zipFile, workingDir);
-        }
+        Class documentType = abstractEntryClient instanceof WorkflowClient ? Workflow.class : CommandLineTool.class;
+        cwlLauncher.run(documentType, importsZipFile, workingDir);
 
         return 0;
     }

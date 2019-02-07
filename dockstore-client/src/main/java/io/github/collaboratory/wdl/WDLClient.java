@@ -64,7 +64,6 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public class WDLClient extends CromwellLauncher implements LanguageClientInterface {
 
-    private static final String DEFAULT_CROMWELL_VERSION = "36";
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
 
 
@@ -97,10 +96,10 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
         NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
 
         // Setup temp directory and download files
-        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL, isLocalEntry, entry);
+        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.WDL, isLocalEntry, entry);
         File tempLaunchDirectory = descriptorAndZip.getLeft();
         File localPrimaryDescriptorFile = descriptorAndZip.getMiddle();
-        File zipFile = descriptorAndZip.getRight();
+        File importsZipFile = descriptorAndZip.getRight();
 
         try {
             // Get list of input files
@@ -135,10 +134,10 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
                 Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
                 // Make new json file
                 String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-                if (zipFile == null || abstractEntryClient instanceof ToolClient) {
+                if (importsZipFile == null || abstractEntryClient instanceof ToolClient) {
                     wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
                 } else {
-                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", zipFile.getAbsolutePath());
+                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", importsZipFile.getAbsolutePath());
                 }
             } catch (Exception e) {
                 notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
