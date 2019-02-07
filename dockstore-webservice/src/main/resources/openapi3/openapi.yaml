@@ -4810,12 +4810,12 @@ components:
           type: boolean
         registry_string:
           type: string
+        custom_docker_registry_path:
+          type: string
         registry:
           type: integer
           format: int32
         tool_path:
-          type: string
-        custom_docker_registry_path:
           type: string
         last_modified_date:
           type: string
