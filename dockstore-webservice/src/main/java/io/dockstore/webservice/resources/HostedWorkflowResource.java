@@ -33,6 +33,7 @@ import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
@@ -180,15 +181,57 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected boolean checkValidVersion(Set<SourceFile> sourceFiles, Workflow entry) {
+    protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry) {
+        Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
         String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
-        for (SourceFile sourceFile : sourceFiles) {
-            if (Objects.equals(sourceFile.getPath(), mainDescriptorPath)) {
-                return LanguageHandlerFactory.getInterface(identifiedType).isValidWorkflow(sourceFile.getContent());
-            }
+        Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
+
+        // Validate descriptor set
+        LanguageHandlerInterface.VersionTypeValidation validDescriptorSet;
+        Validation descriptorValidation;
+        if (mainDescriptor.isPresent()) {
+            validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+        } else {
+            Map<String, String> validationMessage = new HashMap<>();
+            validationMessage.put("Unknown", "Missing the primary descriptor.");
+            validDescriptorSet = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
         }
-        return false;
+        descriptorValidation = new Validation(identifiedType, validDescriptorSet);
+        version.addOrUpdateValidation(descriptorValidation);
+
+        SourceFile.FileType testParameterType = null;
+        switch (identifiedType) {
+        case DOCKSTORE_CWL:
+            testParameterType = SourceFile.FileType.CWL_TEST_JSON;
+            break;
+        case DOCKSTORE_WDL:
+            testParameterType = SourceFile.FileType.WDL_TEST_JSON;
+            break;
+        case NEXTFLOW_CONFIG:
+            // Nextflow does not have test parameter files, so do not fail
+            break;
+        default:
+            throw new CustomWebApplicationException(identifiedType + " is not a valid workflow type.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+        if (testParameterType != null) {
+            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
+            version.addOrUpdateValidation(testParameterValidation);
+        }
+
+        return version;
+    }
+
+    /**
+     * A workflow version is valid if it has a valid descriptor set and all valid test parameter files
+     * @param version Workflow Version to validate
+     * @return Updated workflow version
+     */
+    @Override
+    protected boolean isValidVersion(WorkflowVersion version) {
+        return !version.getValidations().stream().filter(Validation -> !Validation.isValid()).findFirst().isPresent();
     }
 
     @Override

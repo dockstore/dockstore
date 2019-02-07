@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -221,13 +222,17 @@ public final class ToolsImplCommon {
      * Get baseURL from DockstoreWebServiceConfiguration
      *
      * @param config The DockstoreWebServiceConfiguration
-     * @return The baseURL for GA4GH tools endpoint
+     * @return The baseURL for GA4GH tools endpoint (e.g. "http://localhost:8080/api/api/ga4gh/v2/tools/")
      * @throws URISyntaxException When URI building goes wrong
      */
     private static String baseURL(DockstoreWebserviceConfiguration config) throws URISyntaxException {
         int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
-        URI uri = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-            DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools/", null, null);
+        // basePath should be "/" or "/api/"
+        String basePath = MoreObjects.firstNonNull(config.getExternalConfig().getBasePath(), "/");
+        // Example without the replace: "/api/" + "/api/ga4gh/v2" + "/tools/" = "/api//api/ga4gh/v2/tools"
+        // Example with the replace: "/api/api/ga4gh/v2/tools"
+        String baseURI = basePath + DockstoreWebserviceApplication.GA4GH_API_PATH.replaceFirst("/", "") + "/tools/";
+        URI uri = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port, baseURI, null, null);
         return uri.toString();
     }
 
@@ -255,7 +260,8 @@ public final class ToolsImplCommon {
      */
     private static Tool setVerified(Tool tool, Set<? extends Version> versions) {
         tool.setVerified(versions.stream().anyMatch(Version::isVerified));
-        final List<String> collect = versions.stream().filter(Version::isVerified).map(Version::getVerifiedSource)
+        final List<String> collect = versions.stream().filter(Version::isVerified)
+            .map(e -> e.getVerifiedSource() != null ? e.getVerifiedSource() : "")
             .collect(Collectors.toList());
         Gson gson = new Gson();
         Collections.sort(collect);

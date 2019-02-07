@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +30,7 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.jackson.Jackson;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -90,13 +92,17 @@ public class ElasticManager {
      * @param command The command to perform for the document, either "update" or "delete" document
      */
     public void handleIndexUpdate(Entry entry, ElasticMode command) {
+        entry = filterCheckerWorkflows(entry);
+        if (entry == null) {
+            return;
+        }
         LOGGER.info("Performing index update with " + command + ".");
         if (ElasticManager.hostname == null || ElasticManager.hostname.isEmpty()) {
             LOGGER.error("No elastic search host found.");
             return;
         }
         if (!checkValid(entry, command)) {
-            LOGGER.error("Could not perform the elastic search index update.");
+            LOGGER.info("Could not perform the elastic search index update.");
             return;
         }
         String json = getDocumentValueFromEntry(entry);
@@ -119,7 +125,7 @@ public class ElasticManager {
             if (statusCode == HttpStatus.SC_OK || statusCode == HttpStatus.SC_CREATED) {
                 LOGGER.info("Successful " + command + ".");
             } else {
-                LOGGER.info("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
+                LOGGER.error("Could not submit index to elastic search. " + post.getStatusLine().getReasonPhrase());
             }
         } catch (IOException e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
@@ -152,6 +158,10 @@ public class ElasticManager {
     }
 
     public void bulkUpsert(List<Entry> entries) {
+        entries = filterCheckerWorkflows(entries);
+        if (entries.isEmpty()) {
+            return;
+        }
         try (RestClient restClient = RestClient.builder(new HttpHost(ElasticManager.hostname, ElasticManager.port, "http")).build()) {
             String newlineDJSON = getNDJSON(entries);
             HttpEntity bulkEntity = new NStringEntity(newlineDJSON, ContentType.APPLICATION_JSON);
@@ -162,6 +172,24 @@ public class ElasticManager {
         } catch (IOException e) {
             LOGGER.error("Could not submit index to elastic search. " + e.getMessage());
         }
+    }
+
+    /**
+     * If entry is a checker workflow, return null.  Otherwise, return entry
+     * @param entry     The entry to check
+     * @return          null if checker, entry otherwise
+     */
+    public static Entry filterCheckerWorkflows(Entry entry) {
+        return entry instanceof Workflow && ((Workflow)entry).isIsChecker() ? null : entry;
+    }
+
+    /**
+     * Remove checker workflow from list of entries
+     * @param entries   List of all entries
+     * @return          List of entries without checker workflows
+     */
+    public static List<Entry> filterCheckerWorkflows(List<Entry> entries) {
+        return entries.stream().filter(entry -> entry instanceof Tool || (entry instanceof Workflow && !((Workflow)entry).isIsChecker())).collect(Collectors.toList());
     }
 
     /**

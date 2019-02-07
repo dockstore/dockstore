@@ -242,6 +242,8 @@ public class LauncherCWL {
         try {
             if (cwlObject instanceof Workflow) {
                 Workflow workflow = (Workflow)cwlObject;
+                // this complex code is to handle the case where secondary files from tools define
+                // additional files that need to be provisioned also see https://github.com/ga4gh/dockstore/issues/563
                 SecondaryFilesUtility secondaryFilesUtility = new SecondaryFilesUtility(cwlUtil, this.gson);
                 secondaryFilesUtility.modifyWorkflowToIncludeToolSecondaryFiles(workflow);
 
@@ -817,6 +819,12 @@ public class LauncherCWL {
         return outputParameterFile.substring(0, replacementIndex) + mutationSuffixTarget;
     }
 
+    /**
+     *
+     * @param cwlObject         the CWLAvro instantiated document
+     * @param inputsOutputs     the input JSON file
+     * @return  map from ID to the FileInfo object that describes where we copied an input file to
+     */
     private Map<String, FileProvisioning.FileInfo> pullFiles(Object cwlObject, Map<String, Object> inputsOutputs) {
         Map<String, FileProvisioning.FileInfo> fileMap = new HashMap<>();
 
@@ -829,7 +837,7 @@ public class LauncherCWL {
 
             List<Pair<String, Path>> pairs = new ArrayList<>();
 
-            // for each file input from the CWL
+            // for each file input from the CWL, compare the IDs from CWL to the input JSON
             for (Object file : files) {
                 // pull back the name of the input from the CWL
                 LOG.info(file.toString());
@@ -843,7 +851,7 @@ public class LauncherCWL {
                 // remove extra namespace if needed
                 cwlInputFileID = cwlInputFileID.contains("/") ? cwlInputFileID.split("/")[1] : cwlInputFileID;
                 LOG.info("ID: {}", cwlInputFileID);
-
+                // to be clear, these are secondary files as defined by CWL, not secondary descriptors
                 List<String> secondaryFiles = getSecondaryFileStrings(file);
                 pairs.addAll(pullFilesHelper(inputsOutputs, fileMap, cwlInputFileID, secondaryFiles));
             }
@@ -882,6 +890,7 @@ public class LauncherCWL {
      * @param fileMap        a record of the files that we have provisioned
      * @param cwlInputFileID the file id from the CWL file
      * @param secondaryFiles a record of secondary files that were identified
+     * @return a list of pairs of remote URLs to input files paired with where we want to download it to
      */
     private List<Pair<String, Path>> pullFilesHelper(Map<String, Object> inputsOutputs, Map<String, FileProvisioning.FileInfo> fileMap,
             String cwlInputFileID, List<String> secondaryFiles) {
@@ -958,6 +967,7 @@ public class LauncherCWL {
      * @param cwlInputFileID looks like the descriptor for a particular path+class pair in the parameter json file, starts with a hash in the CWL file
      * @param fileMap        store information on each added file as a return type
      * @param secondaryFiles secondary files that also need to be transferred
+     * @return list of pairs of remote URLs to input files paired with where we want to download it to
      */
     private List<Pair<String, Path>> doProcessFile(final String key, final String path, final String cwlInputFileID,
             Map<String, FileProvisioning.FileInfo> fileMap, List<String> secondaryFiles) {
@@ -997,11 +1007,12 @@ public class LauncherCWL {
     /**
      * This methods seems to handle the copying of individual files
      *
-     * @param key
-     * @param path
-     * @param fileMap
-     * @param downloadDirFileObj
-     * @param record             add a record to the fileMap
+     * @param key                   ID of the input file to handle
+     * @param path                  where the input file is from (e.g. S3, https, local filesystem)
+     * @param fileMap               aggregates ID -> FileInfo objects
+     * @param downloadDirFileObj    where to download the file to locally (always local filesystem)
+     * @param record                add a record to the fileMap, pairs of remote URLs to input files paired with where we want to download it to
+     *                              might be redundant and removable
      */
     private Pair<String, Path> copyIndividualFile(String key, String path, Map<String, FileProvisioning.FileInfo> fileMap,
             File downloadDirFileObj, boolean record) {

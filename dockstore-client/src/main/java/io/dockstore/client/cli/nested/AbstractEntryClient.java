@@ -17,8 +17,12 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -27,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.google.common.base.CharMatcher;
@@ -49,12 +54,17 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.parser.ParserException;
 
 import static io.dockstore.client.cli.ArgumentUtility.CONVERT;
 import static io.dockstore.client.cli.ArgumentUtility.DOWNLOAD;
@@ -878,6 +888,40 @@ public abstract class AbstractEntryClient<T> {
     }
 
     /**
+     * Validates that any JSON and/or YAML files being passed in are syntactically valid.
+     * If there is any error other than invalid syntax, the error is ignored and expected to be handled later.
+     * Because prevalidation occurs prior to launch, the args need to be preserved for the later handling.
+     *
+     * @param args
+     */
+    protected void preValidateLaunchArguments(List<String> args) {
+        // Create a copy of args for prevalidation since optVals removes args from list
+        List<String> argsCopy = new java.util.ArrayList(args);
+        String jsonFile = optVal(argsCopy, "--json", null);
+        String yamlFile = optVal(argsCopy, "--yaml", null);
+        if (jsonFile != null) {
+            try {
+                fileToJSON(jsonFile);
+            } catch (ParserException ex) {
+                errorMessage("Could not launch, syntax error in json file: " + jsonFile, CLIENT_ERROR);
+            } catch (Exception e) {
+                // Log error, but let existing code handle
+                LOG.error("Error prevalidating input file: " + jsonFile, e);
+            }
+        }
+        if (yamlFile != null) {
+            try {
+                fileToJSON(yamlFile);
+            } catch (ParserException ex) {
+                errorMessage("Could not launch, syntax error in yaml file: " + yamlFile, CLIENT_ERROR);
+            } catch (Exception e) {
+                // Log error, but let existing code handle
+                LOG.error("Error prevalidating input file: " + yamlFile, e);
+            }
+        }
+    }
+
+    /**
      * Launches tools and workflows.
      *
      * @param args Arguments entered into the CLI
@@ -892,11 +936,13 @@ public abstract class AbstractEntryClient<T> {
             } else if (args.contains("--local-entry")) {
                 final String descriptor = optVal(args, "--descriptor", null);
                 final String localFilePath = reqVal(args, "--local-entry");
+                preValidateLaunchArguments(args);
                 checkEntryFile(localFilePath, args, descriptor);
             } else {
                 if (!args.contains("--entry")) {
                     errorMessage("dockstore: missing required flag --entry", CLIENT_ERROR);
                 }
+                preValidateLaunchArguments(args);
                 final String descriptor = optVal(args, "--descriptor", CWL_STRING);
                 if (descriptor.equals(CWL_STRING)) {
                     try {
@@ -1020,6 +1066,39 @@ public abstract class AbstractEntryClient<T> {
             return languageCLient.get();
         }
         throw new UnsupportedOperationException("language not supported yet");
+    }
+
+    /**
+     * Loads docker images from file system if there are any
+     */
+    public void loadDockerImages() {
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        String dockerImageDirectory = config.getString("docker-images");
+        if (!StringUtils.isBlank(dockerImageDirectory)) {
+            Path directoryPath = Paths.get(dockerImageDirectory);
+            Supplier<Stream<Path>> list = () -> {
+                try {
+                    return java.nio.file.Files.list(directoryPath);
+                } catch (NotDirectoryException e) {
+                    System.out.println("The specified Docker image directory is a file: " + directoryPath.toAbsolutePath());
+                } catch (NoSuchFileException e) {
+                    System.out.println("The specified Docker image directory not found: " + directoryPath.toAbsolutePath());
+                } catch (IOException e) {
+                    // Not able to find a situation in which this occurs
+                    System.out.println("Something is wrong with the specified Docker image directory: " + directoryPath.toAbsolutePath());
+                    System.out.println(e.toString());
+                }
+                return Stream.empty();
+            };
+            if (list.get().count() == 0) {
+                System.out.println("There are no files in the docker image directory: " + directoryPath.toAbsolutePath());
+            } else {
+                System.out.println("Loading docker images...");
+                list.get().forEach(path -> Utilities.executeCommand("docker load -i \"" + path + "\"", System.out, System.err));
+            }
+        } else {
+            LOG.info("No docker image directory specified in Dockstore config file");
+        }
     }
 
     public abstract Client getClient();
@@ -1315,4 +1394,21 @@ public abstract class AbstractEntryClient<T> {
         out("");
     }
 
+
+
+    /**
+     * Reads a file whose format is either YAML or JSON and makes a JSON string out of the contents
+     * @param yamlRun
+     * @return
+     * @throws ParserException if the JSON or YAML is not syntactically valid
+     * @throws IOException
+     */
+    public String fileToJSON(String yamlRun) throws IOException {
+        Yaml yaml = new Yaml();
+        try (FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun))) {
+            Map<String, Object> map = yaml.load(fileInputStream);
+            JSONObject jsonObject = new JSONObject(map);
+            return jsonObject.toString();
+        }
+    }
 }

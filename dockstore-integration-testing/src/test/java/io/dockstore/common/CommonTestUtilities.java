@@ -69,7 +69,7 @@ public final class CommonTestUtilities {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0");
+        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0");
     }
 
     /**
@@ -86,13 +86,9 @@ public final class CommonTestUtilities {
             application= support.getApplication();
         }
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.1.consistency");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "test");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.4.0");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.5.0");
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "test_1.5.0");
 
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0");
+        runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 
     /**
@@ -116,12 +112,9 @@ public final class CommonTestUtilities {
     private static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, String configPath) throws Exception {
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
-        application.run("db", "migrate", configPath, "--include", "1.3.0.generated");
-        application.run("db", "migrate", configPath, "--include", "1.3.1.consistency");
-        application.run("db", "migrate", configPath, "--include", "test.confidential1");
-        application.run("db", "migrate", configPath, "--include", "1.4.0");
-        application.run("db", "migrate", configPath, "--include", "1.5.0");
-        application.run("db", "migrate", configPath, "--include", "test.confidential1_1.5.0");
+
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test.confidential1", "1.4.0", "1.5.0", "test.confidential1_1.5.0", "1.6.0");
+        runMigration(migrationList, application, configPath);
     }
 
     public static void runMigration(List<String> migrationList, Application<DockstoreWebserviceConfiguration> application, String configPath) {
@@ -161,12 +154,9 @@ public final class CommonTestUtilities {
             application = support.getApplication();
         }
         application.run("db", "drop-all", "--confirm-delete-everything", configPath);
-        application.run("db", "migrate", configPath, "--include", "1.3.0.generated");
-        application.run("db", "migrate", configPath, "--include", "1.3.1.consistency");
-        application.run("db", "migrate", configPath, "--include", "test.confidential2");
-        application.run("db", "migrate", configPath, "--include", "1.4.0");
-        application.run("db", "migrate", configPath, "--include", "1.5.0");
-        application.run("db", "migrate", configPath, "--include", "test.confidential2_1.5.0");
+
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test.confidential2", "1.4.0", "1.5.0", "test.confidential2_1.5.0", "1.6.0");
+        runMigration(migrationList, application, configPath);
     }
 
     /**
@@ -192,7 +182,7 @@ public final class CommonTestUtilities {
         LOG.info("Migrating testworkflow migrations");
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
         application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0");
+        List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0");
         runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
     }
 

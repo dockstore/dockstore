@@ -16,29 +16,23 @@
 package io.github.collaboratory.nextflow;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import com.google.common.base.Joiner;
-import groovy.util.ConfigObject;
-import groovy.util.ConfigSlurper;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
+import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.LauncherCWL;
 import io.swagger.client.ApiException;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,11 +41,12 @@ import org.slf4j.LoggerFactory;
  * Grouping code for launching NextFlow tools and workflows
  */
 public class NextFlowClient implements LanguageClientInterface {
-    private static final String DEFAULT_NEXTFLOW_VERSION = "0.27.6";
     private static final Logger LOG = LoggerFactory.getLogger(NextFlowClient.class);
     private final INIConfiguration iniConfiguration;
+    private final AbstractEntryClient abstractEntryClient;
 
     public NextFlowClient(AbstractEntryClient abstractEntryClient) {
+        this.abstractEntryClient = abstractEntryClient;
         this.iniConfiguration = Utilities.parseConfig(abstractEntryClient.getConfigFile());
     }
 
@@ -60,6 +55,7 @@ public class NextFlowClient implements LanguageClientInterface {
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid)
         throws ApiException {
+        this.abstractEntryClient.loadDockerImages();
         assert (yamlRun == null && jsonRun != null);
 
         String notificationsWebHookURL = iniConfiguration.getString("notifications", "");
@@ -69,9 +65,8 @@ public class NextFlowClient implements LanguageClientInterface {
         Path currentRelativePath = Paths.get("");
         String currentWorkingDir = currentRelativePath.toAbsolutePath().toString();
         if (isLocalEntry) {
-            ConfigObject configObject = grabConfig(new File(entry));
-            ConfigObject manifest = (ConfigObject)configObject.get("manifest");
-            mainScript = (String)manifest.getOrDefault("mainScript", "main.nf");
+            final Configuration configuration = NextflowUtilities.grabConfig(new File(entry));
+            mainScript = configuration.getString("manifest.mainScript", "main.nf");
         } else {
             throw new UnsupportedOperationException("remote entry not supported yet");
         }
@@ -105,29 +100,18 @@ public class NextFlowClient implements LanguageClientInterface {
 
     /**
      * Checks for a valid groovy config for now
-     * @param content
-     * @return
+     * @param content the file with the potential nextflow config
+     * @return true when content is valid nextflow
      */
     @Override
     public Boolean check(File content) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         try {
-            ConfigObject parse = grabConfig(content);
-            ConfigObject manifest = (ConfigObject)parse.get("manifest");
-            return manifest != null;
+            final Configuration configuration = NextflowUtilities.grabConfig(content);
+            return configuration.getProperty("manifest") != null;
         } catch (Exception e) {
             // intentionally leaving blank, this check is used blind and should not throw exceptions, just return false
             return false;
-        }
-    }
-
-    private ConfigObject grabConfig(File content) {
-        ConfigSlurper slurper = new ConfigSlurper();
-        try {
-            return slurper.parse(content.toURI().toURL());
-        } catch (MalformedURLException e) {
-            // might not be a nextflow file
-            throw new RuntimeException("Could not parse Nextflow config");
         }
     }
 
@@ -137,41 +121,9 @@ public class NextFlowClient implements LanguageClientInterface {
         return "";
     }
 
-
-    private File getNextFlowTargetFile() {
-        String nextflowVersion = iniConfiguration.getString("nextflow-version", DEFAULT_NEXTFLOW_VERSION);
-        String nextflowExec =
-            "https://github.com/nextflow-io/nextflow/releases/download/v" + nextflowVersion + "/nextflow-" + nextflowVersion + "-all";
-        if (!Objects.equals(DEFAULT_NEXTFLOW_VERSION, nextflowVersion)) {
-            System.out.println("Running with Nextflow " + nextflowVersion + " , Dockstore tests with " + DEFAULT_NEXTFLOW_VERSION);
-        }
-
-        // grab the cromwell jar if needed
-        String libraryLocation =
-            System.getProperty("user.home") + File.separator + ".dockstore" + File.separator + "libraries" + File.separator;
-        URL nextflowURL;
-        String nextflowFilename;
-        try {
-            nextflowURL = new URL(nextflowExec);
-            nextflowFilename = new File(nextflowURL.toURI().getPath()).getName();
-        } catch (MalformedURLException | URISyntaxException e) {
-            throw new RuntimeException("Could not create Nextflow location", e);
-        }
-        String nextflowTarget = libraryLocation + nextflowFilename;
-        File nextflowTargetFile = new File(nextflowTarget);
-        if (!nextflowTargetFile.exists()) {
-            try {
-                FileUtils.copyURLToFile(nextflowURL, nextflowTargetFile);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not download Nextflow location", e);
-            }
-        }
-        return nextflowTargetFile;
-    }
-
     private List<String> getExecutionCommand(String outputDir, String workingDir, String nextflowFile, String jsonSettings) {
         return new ArrayList<>(Arrays
-            .asList("java", "-jar", getNextFlowTargetFile().getAbsolutePath(), "run", "-with-docker", "--outdir", outputDir, "-work-dir",
+            .asList("java", "-jar", NextflowUtilities.getNextFlowTargetFile(iniConfiguration).getAbsolutePath(), "run", "-with-docker", "--outdir", outputDir, "-work-dir",
                 workingDir, "-params-file", jsonSettings, nextflowFile));
     }
 }

@@ -93,6 +93,10 @@ public final class Utilities {
         return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), null);
     }
 
+    public static ImmutablePair<String, String> executeCommand(String command, OutputStream stdoutStream, OutputStream stderrStream, File workingDir) {
+        return executeCommand(command, true, Optional.of(stdoutStream), Optional.of(stderrStream), workingDir);
+    }
+
     /**
      * Execute a command and return stdout and stderr
      *

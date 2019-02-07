@@ -64,14 +64,24 @@ public class CWLClient extends CromwellLauncher implements LanguageClientInterfa
         super(abstractEntryClient);
     }
 
+
+    /**
+     *
+     * @param entry        either a dockstore.cwl or a local file
+     * @param isLocalEntry is the descriptor a local file
+     * @param yamlParameterFile      runtime descriptor, one of these is required
+     * @param jsonParameterFile      runtime descriptor, one of these is required
+     * @param uuid         uuid that was optional specified for notifications
+     * @throws IOException
+     * @throws ApiException
+     */
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String wdlOutputTarget,
-            String uuid) throws IOException, ApiException {
-        // Check for required values
-        boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)));
-        if (!hasRequiredFlags) {
-            errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
-        }
+        String uuid) throws IOException, ApiException {
+        this.abstractEntryClient.loadDockerImages();
+        //if (!SCRIPT.get()) {
+        //    abstractEntryClient.getClient().checkForCWLDependencies();
+        //}
 
         // Keep track of original parameter file given
         String originalTestParameterFilePath = abstractEntryClient.getOriginalTestParameterFilePath(yamlParameterFile, jsonParameterFile);

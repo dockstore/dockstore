@@ -20,7 +20,7 @@
     <parent>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
-        <version>1.6.0-alpha.1-SNAPSHOT</version>
+        <version>1.6.0-alpha.6-SNAPSHOT</version>
     </parent>
     <artifactId>dockstore-client</artifactId>
     <packaging>jar</packaging>
@@ -42,17 +42,17 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-client</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-file-plugin-parent</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -233,10 +233,6 @@
             <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
@@ -244,6 +240,19 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>findbugs</artifactId>
+        </dependency>
+
+        <!-- https://github.com/dropwizard/dropwizard/issues/2318 -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.1.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

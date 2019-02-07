@@ -121,7 +121,7 @@ public class LimitedCRUDClientIT {
         assertTrue("tool was not created with a valid id", hostedTool.getId() != 0);
         // can get it back with regular api
         ContainersApi oldApi = new ContainersApi(webClient);
-        DockstoreTool container = oldApi.getContainer(hostedTool.getId());
+        DockstoreTool container = oldApi.getContainer(hostedTool.getId(), null);
         // clear lazy fields for now till merge
         hostedTool.setAliases(null);
         container.setAliases(null);

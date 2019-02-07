@@ -19,6 +19,7 @@ package io.dockstore.webservice.core;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -155,8 +156,15 @@ public abstract class Version<T extends Version> implements Comparable<T> {
     @OrderBy("id")
     private SortedSet<FileFormat> outputFileFormats = new TreeSet<>();
 
+    @OneToMany(fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    @JoinTable(name = "version_validation", joinColumns = @JoinColumn(name = "versionid", referencedColumnName = "id"), inverseJoinColumns = @JoinColumn(name = "validationid", referencedColumnName = "id"))
+    @ApiModelProperty(value = "Cached validations for each version.")
+    @OrderBy("type")
+    private final SortedSet<Validation> validations;
+
     public Version() {
         sourceFiles = new TreeSet<>();
+        validations = new TreeSet<>();
         doiStatus = DOIStatus.NOT_REQUESTED;
     }
 
@@ -233,6 +241,20 @@ public abstract class Version<T extends Version> implements Comparable<T> {
 
     public void addSourceFile(SourceFile file) {
         sourceFiles.add(file);
+    }
+
+    public SortedSet<Validation> getValidations() {
+        return validations;
+    }
+
+    public void addOrUpdateValidation(Validation versionValidation) {
+        Optional<Validation> matchingValidation = getValidations().stream().filter(versionValidation1 -> Objects.equals(versionValidation.getType(), versionValidation1.getType())).findFirst();
+        if (matchingValidation.isPresent()) {
+            matchingValidation.get().setMessage(versionValidation.getMessage());
+            matchingValidation.get().setValid(versionValidation.isValid());
+        } else {
+            validations.add(versionValidation);
+        }
     }
 
     @JsonProperty

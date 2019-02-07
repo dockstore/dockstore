@@ -218,7 +218,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 publish(true, entryPath);
             } else {
                 try {
-                    DockstoreTool container = containersApi.getContainerByToolPath(entryPath);
+                    DockstoreTool container = containersApi.getContainerByToolPath(entryPath, null);
                     DockstoreTool newContainer = new DockstoreTool();
                     // copy only the fields that we want to replicate, not sure why simply blanking
                     // the returned container does not work
@@ -254,7 +254,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
     @Override
     protected void handleTestParameter(String entry, String versionName, List<String> adds, List<String> removes, String descriptorType, String parentEntry) {
         try {
-            DockstoreTool container = containersApi.getContainerByToolPath(entry);
+            DockstoreTool container = containersApi.getContainerByToolPath(entry, null);
             long containerId = container.getId();
 
             if (adds.size() > 0) {
@@ -314,7 +314,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         }
 
         try {
-            DockstoreTool container = containersApi.getContainerByToolPath(entry);
+            DockstoreTool container = containersApi.getContainerByToolPath(entry, null);
             //TODO where did the setter for PublishRequest go?
             PublishRequest pub = SwaggerUtility.createPublishRequest(publish);
             container = containersApi.publish(container.getId(), pub);
@@ -341,7 +341,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
             action = "unstar";
         }
         try {
-            DockstoreTool container = containersApi.getPublishedContainerByToolPath(entry);
+            DockstoreTool container = containersApi.getPublishedContainerByToolPath(entry, null);
             if (star) {
                 StarRequest request = SwaggerUtility.createStarRequest(true);
                 containersApi.starEntry(container.getId(), request);
@@ -594,7 +594,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
 
     public void refreshTargetEntry(String toolpath) {
         try {
-            DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
+            DockstoreTool container = containersApi.getContainerByToolPath(toolpath, null);
             final Long containerId = container.getId();
             out("Refreshing tool...");
             DockstoreTool updatedContainer = containersApi.refresh(containerId);
@@ -669,7 +669,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
     public void handleLabels(String entryPath, Set<String> addsSet, Set<String> removesSet) {
         // Try and update the labels for the given container
         try {
-            DockstoreTool container = containersApi.getContainerByToolPath(entryPath);
+            DockstoreTool container = containersApi.getContainerByToolPath(entryPath, null);
             long containerId = container.getId();
             List<Label> existingLabels = container.getLabels();
 
@@ -697,7 +697,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         boolean toOverwrite = true;
 
         try {
-            DockstoreTool tool = containersApi.getContainerByToolPath(entry);
+            DockstoreTool tool = containersApi.getContainerByToolPath(entry, null);
             List<Tag> tags = Optional.ofNullable(tool.getTags()).orElse(new ArrayList<>());
             final Optional<Tag> first = tags.stream().filter((Tag u) -> u.getName().equals(versionName)).findFirst();
 
@@ -742,7 +742,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
     @Override
     public void handleInfo(String entryPath) {
         try {
-            DockstoreTool container = containersApi.getPublishedContainerByToolPath(entryPath);
+            DockstoreTool container = containersApi.getPublishedContainerByToolPath(entryPath, null);
             if (container == null || !container.isIsPublished()) {
                 errorMessage("This container is not published.", Client.COMMAND_ERROR);
             } else {
@@ -829,7 +829,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
 
             final String toolpath = reqVal(args, "--entry");
             try {
-                DockstoreTool container = containersApi.getContainerByToolPath(toolpath);
+                DockstoreTool container = containersApi.getContainerByToolPath(toolpath, null);
                 long containerId = container.getId();
                 switch (subcommand) {
                 case "add":
@@ -953,7 +953,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         } else {
             final String toolpath = reqVal(args, "--entry");
             try {
-                DockstoreTool tool = containersApi.getContainerByToolPath(toolpath);
+                DockstoreTool tool = containersApi.getContainerByToolPath(toolpath, null);
                 long containerId = tool.getId();
 
                 final String cwlPath = optVal(args, "--cwl-path", tool.getDefaultCwlPath());
@@ -1098,11 +1098,11 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
         // simply getting published descriptors does not require permissions
         DockstoreTool container = null;
         try {
-            container = containersApi.getPublishedContainerByToolPath(path);
+            container = containersApi.getPublishedContainerByToolPath(path, null);
         } catch (ApiException e) {
             if (e.getResponseBody().contains("Entry not found")) {
                 LOG.info("Unable to locate entry without credentials, trying again as authenticated user");
-                container = containersApi.getContainerByToolPath(path);
+                container = containersApi.getContainerByToolPath(path, null);
             }
         } finally {
             if (container == null) {

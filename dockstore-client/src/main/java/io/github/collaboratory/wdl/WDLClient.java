@@ -16,7 +16,6 @@
 package io.github.collaboratory.wdl;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -48,13 +47,10 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -68,6 +64,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public class WDLClient extends CromwellLauncher implements LanguageClientInterface {
 
+    private static final String DEFAULT_CROMWELL_VERSION = "36";
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
 
 
@@ -86,6 +83,7 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid)
         throws ApiException {
+        this.abstractEntryClient.loadDockerImages();
 
         boolean hasRequiredFlags = ((yamlRun != null || jsonRun != null) && ((yamlRun != null) != (jsonRun != null)));
         if (!hasRequiredFlags) {
@@ -118,7 +116,7 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
             WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(abstractEntryClient.getConfigFile());
             Gson gson = new Gson();
             // Don't care whether it's actually a yaml or already a json, just convert to json anyways
-            String jsonString = convertYAMLtoJSON(jsonRun != null ? jsonRun : yamlRun);
+            String jsonString = abstractEntryClient.fileToJSON(jsonRun != null ? jsonRun : yamlRun);
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
             final List<String> wdlRun;
 
@@ -165,7 +163,7 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
                 // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
                 final String join = Joiner.on(" ").join(arguments);
                 System.out.println(join);
-                final ImmutablePair<String, String> execute = Utilities.executeCommand(join, tempLaunchDirectory);
+                final ImmutablePair<String, String> execute = Utilities.executeCommand(join, System.out, System.err, tempLaunchDirectory);
                 stdout = execute.getLeft();
                 stderr = execute.getRight();
             } catch (RuntimeException e) {
@@ -226,15 +224,6 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
         }
         notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
         return 0;
-    }
-
-    // Converts a yaml file path to a json string
-    public String convertYAMLtoJSON(String yamlRun) throws IOException {
-        Yaml yaml = new Yaml();
-        final FileInputStream fileInputStream = FileUtils.openInputStream(new File(yamlRun));
-        Map<String, Object> map = yaml.load(fileInputStream);
-        JSONObject jsonObject = new JSONObject(map);
-        return jsonObject.toString();
     }
 
     /**

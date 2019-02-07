@@ -30,14 +30,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module;
 import com.google.common.base.MoreObjects;
+import io.dockstore.webservice.core.Collection;
+import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
-import io.dockstore.webservice.core.Group;
 import io.dockstore.webservice.core.Label;
+import io.dockstore.webservice.core.OpenAPIDescription;
+import io.dockstore.webservice.core.Organisation;
+import io.dockstore.webservice.core.OrganisationUser;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.doi.DOIGeneratorFactory;
@@ -52,12 +57,15 @@ import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.permissions.PermissionsFactory;
 import io.dockstore.webservice.permissions.PermissionsInterface;
+import io.dockstore.webservice.resources.CollectionResource;
 import io.dockstore.webservice.resources.DockerRepoResource;
 import io.dockstore.webservice.resources.DockerRepoTagResource;
+import io.dockstore.webservice.resources.ElasticSearchHealthCheck;
 import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.MetadataResource;
+import io.dockstore.webservice.resources.OrganisationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
@@ -88,6 +96,7 @@ import io.swagger.api.impl.ToolsApiServiceImpl;
 import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
+import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import okhttp3.OkUrlFactory;
@@ -118,8 +127,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
     private static Cache cache = null;
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
-            Token.class, Tool.class, User.class, Group.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
-            WorkflowVersion.class, FileFormat.class) {
+            Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
+            WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class, Event.class, Collection.class, Validation.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -214,6 +223,9 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         final TemplateHealthCheck healthCheck = new TemplateHealthCheck(configuration.getTemplate());
         environment.healthChecks().register("template", healthCheck);
 
+        final ElasticSearchHealthCheck elasticSearchHealthCheck = new ElasticSearchHealthCheck(new ToolsExtendedApi());
+        environment.healthChecks().register("elasticSearch", elasticSearchHealthCheck);
+
         final UserDAO userDAO = new UserDAO(hibernate.getSessionFactory());
         final TokenDAO tokenDAO = new TokenDAO(hibernate.getSessionFactory());
         final ToolDAO toolDAO = new ToolDAO(hibernate.getSessionFactory());
@@ -250,6 +262,10 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
+        environment.jersey().register(new OrganisationResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(OpenApiResource.class);
+        environment.jersey().register(OpenAPIDescription.class);
 
 
         // attach the container dao statically to avoid too much modification of generated code

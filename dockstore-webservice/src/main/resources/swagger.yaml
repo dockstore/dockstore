@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-alpha.1-SNAPSHOT"
+  version: "1.6.0-alpha.5-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -40,6 +40,7 @@ tags:
 - name: "metadata"
   description: "Information about Dockstore like RSS, sitemap, lists of dependencies,\
     \ etc."
+- name: "organisations"
 - name: "tokens"
   description: "List, modify, refresh, and delete tokens for external services"
 - name: "users"
@@ -571,6 +572,11 @@ paths:
       - name: "platform"
         in: "query"
         description: "Platform to report on"
+        required: true
+        type: "string"
+      - name: "platform_version"
+        in: "query"
+        description: "Version of the platform to report on"
         required: true
         type: "string"
       - name: "verified"
@@ -1361,6 +1367,11 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -1382,6 +1393,11 @@ paths:
         in: "path"
         description: "repository path"
         required: true
+        type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
         type: "string"
       responses:
         200:
@@ -1528,6 +1544,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -1598,6 +1619,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -2520,6 +2546,20 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/RegistryBean"
+  /metadata/elasticSearch:
+    get:
+      tags:
+      - "metadata"
+      summary: "Successful response if elastic search is up and running."
+      description: "NO authentication"
+      operationId: "checkElasticSearch"
+      produces:
+      - "text/html"
+      - "text/xml"
+      parameters: []
+      responses:
+        default:
+          description: "successful operation"
   /metadata/okHttpCachePerformance:
     get:
       tags:
@@ -2631,6 +2671,658 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/SourceControlBean"
+  /organisations:
+    get:
+      tags:
+      - "organisations"
+      summary: "List all available organisations."
+      description: "NO Authentication"
+      operationId: "getApprovedOrganisations"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Organisation"
+    put:
+      tags:
+      - "organisations"
+      summary: "Create an organisation."
+      description: "Organisation requires approval by an admin before being made public."
+      operationId: "createOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Organisation to register."
+        required: true
+        schema:
+          $ref: "#/definitions/Organisation"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/all:
+    get:
+      tags:
+      - "organisations"
+      summary: "List all organisations."
+      description: "Admin/curator only"
+      operationId: "getAllOrganisations"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "type"
+        in: "query"
+        description: "Filter to apply to organisations."
+        required: true
+        type: "string"
+        enum:
+        - "all"
+        - "pending"
+        - "rejected"
+        - "approved"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/name/{name}:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an organisation by name."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationByName"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "name"
+        in: "path"
+        description: "Organisation name."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an organisation by ID."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+    post:
+      tags:
+      - "organisations"
+      summary: "Update an organisation."
+      description: "Currently only name, description, email, link and location can\
+        \ be updated."
+      operationId: "updateOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Organisation to update with."
+        required: true
+        schema:
+          $ref: "#/definitions/Organisation"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/approve:
+    post:
+      tags:
+      - "organisations"
+      summary: "Approves an organisation."
+      description: "Admin/curator only"
+      operationId: "approveOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/collections:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieve all collections for an organisation."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getCollectionsFromOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "include"
+        in: "query"
+        required: false
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organisations"
+      summary: "Create a collection in the given organisation."
+      description: ""
+      operationId: "createCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Collection to register."
+        required: true
+        schema:
+          $ref: "#/definitions/Collection"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/collections/{collectionId}:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves a collection by ID."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getCollectionById"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    post:
+      tags:
+      - "organisations"
+      summary: "Update a collection."
+      description: "Currently only name and description can be updated."
+      operationId: "updateCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Collection to update with."
+        required: true
+        schema:
+          $ref: "#/definitions/Collection"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/collections/{collectionId}/entry:
+    post:
+      tags:
+      - "organisations"
+      summary: "Add an entry to a collection."
+      description: ""
+      operationId: "addEntryToCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryId"
+        in: "query"
+        description: "Entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "organisations"
+      summary: "Delete an entry from a collection."
+      description: ""
+      operationId: "deleteEntryFromCollection"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "collectionId"
+        in: "path"
+        description: "Collection ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "entryId"
+        in: "query"
+        description: "Entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/description:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves an organization description by organization ID."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "string"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organisations"
+      summary: "Update an organization's description."
+      description: "Description in markdown"
+      operationId: "updateOrganizationDescription"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organization to update description."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Organization's description in markdown"
+        required: true
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/events:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves all events for an organisation."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationEvents"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Event"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/invitation:
+    post:
+      tags:
+      - "organisations"
+      summary: "Accept or reject an organisation invitation."
+      description: "True accepts the invitation, false rejects the invitation."
+      operationId: "acceptOrRejectInvitation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "accept"
+        in: "query"
+        description: "Accept or reject"
+        required: true
+        type: "boolean"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/members:
+    get:
+      tags:
+      - "organisations"
+      summary: "Retrieves all members for an organisation."
+      description: "Does not require authentication for approved organisations, authentication\
+        \ can be provided for unapproved organisations"
+      operationId: "getOrganisationMembers"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            uniqueItems: true
+            items:
+              $ref: "#/definitions/OrganisationUser"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/reject:
+    post:
+      tags:
+      - "organisations"
+      summary: "Rejects an organisation."
+      description: "Admin/curator only"
+      operationId: "rejectOrganisation"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organisation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/user:
+    post:
+      tags:
+      - "organisations"
+      summary: "Updates a user role in an organisation."
+      description: ""
+      operationId: "updateUserRole"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "role"
+        in: "query"
+        description: "Role of user."
+        required: true
+        type: "string"
+        enum:
+        - "MAINTAINER"
+        - "MEMBER"
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/OrganisationUser"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "organisations"
+      summary: "Adds a user role to an organisation."
+      description: ""
+      operationId: "addUserToOrg"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "role"
+        in: "query"
+        description: "Role of user."
+        required: true
+        type: "string"
+        enum:
+        - "MAINTAINER"
+        - "MEMBER"
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/OrganisationUser"
+      security:
+      - BEARER: []
+    delete:
+      tags:
+      - "organisations"
+      summary: "Remove a user from an organisation."
+      description: ""
+      operationId: "deleteUserRole"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "query"
+        description: "User to add to org."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        default:
+          description: "successful operation"
+      security:
+      - BEARER: []
+  /organisations/{organisationId}/users/{username}:
+    put:
+      tags:
+      - "organisations"
+      summary: "Adds a user role to an organisation."
+      description: ""
+      operationId: "addUserToOrgByUsername"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Role of user. \"MAINTAINER\" or \"MEMBER\""
+        required: true
+        schema:
+          type: "string"
+      - name: "username"
+        in: "path"
+        description: "User to add to org."
+        required: true
+        type: "string"
+      - name: "organisationId"
+        in: "path"
+        description: "Organisation ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/OrganisationUser"
+      security:
+      - BEARER: []
   /users/checkUser/{username}:
     get:
       tags:
@@ -2651,93 +3343,6 @@ paths:
           description: "successful operation"
           schema:
             type: "boolean"
-      security:
-      - BEARER: []
-  /users/groups:
-    get:
-      tags:
-      - "users"
-      summary: "List all groups."
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "allGroups"
-      produces:
-      - "application/json"
-      parameters: []
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Group"
-      security:
-      - BEARER: []
-    post:
-      tags:
-      - "users"
-      summary: "Create user group."
-      description: ""
-      operationId: "createGroup"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "group_name"
-        in: "query"
-        required: false
-        type: "string"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Group"
-      security:
-      - BEARER: []
-  /users/groups/{groupId}:
-    get:
-      tags:
-      - "users"
-      summary: "List a group."
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "getGroup"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "groupId"
-        in: "path"
-        description: "Group"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/Group"
-      security:
-      - BEARER: []
-  /users/groups/{groupId}/users:
-    get:
-      tags:
-      - "users"
-      summary: "Get users that belongs to a group."
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "getUsersFromGroup"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "groupId"
-        in: "path"
-        description: "Group"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/User"
       security:
       - BEARER: []
   /users/starredTools:
@@ -2867,6 +3472,26 @@ paths:
           description: "successful operation"
           schema:
             $ref: "#/definitions/ExtendedUserData"
+      security:
+      - BEARER: []
+  /users/user/memberships:
+    get:
+      tags:
+      - "users"
+      summary: "Get the logged-in users memberships."
+      description: ""
+      operationId: "getUserMemberships"
+      produces:
+      - "application/json"
+      parameters: []
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            type: "array"
+            uniqueItems: true
+            items:
+              $ref: "#/definitions/OrganisationUser"
       security:
       - BEARER: []
   /users/user/updateUserMetadata:
@@ -3042,90 +3667,6 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/DockstoreTool"
-      security:
-      - BEARER: []
-  /users/{userId}/groups:
-    get:
-      tags:
-      - "users"
-      summary: "Get groups that the user belongs to."
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "getGroupsFromUser"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Group"
-      security:
-      - BEARER: []
-    put:
-      tags:
-      - "users"
-      summary: "Add a group to a user."
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "addGroupToUser"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User ID of user"
-        required: true
-        type: "integer"
-        format: "int64"
-      - in: "body"
-        name: "body"
-        description: "PublishRequest to refresh the list of repos for a user"
-        required: true
-        schema:
-          $ref: "#/definitions/Group"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
-      security:
-      - BEARER: []
-  /users/{userId}/groups/{groupId}:
-    delete:
-      tags:
-      - "users"
-      summary: "Remove a user from a group."
-      description: "This is not tied into PermissionsInterface but could be"
-      operationId: "removeUserFromGroup"
-      produces:
-      - "application/json"
-      parameters:
-      - name: "userId"
-        in: "path"
-        description: "User ID of user"
-        required: true
-        type: "integer"
-        format: "int64"
-      - name: "groupId"
-        in: "path"
-        description: "Group ID of group"
-        required: true
-        type: "integer"
-        format: "int64"
-      responses:
-        200:
-          description: "successful operation"
-          schema:
-            $ref: "#/definitions/User"
-        400:
-          description: "Invalid user or group value"
       security:
       - BEARER: []
   /users/{userId}/tokens:
@@ -3585,6 +4126,11 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -3727,6 +4273,11 @@ paths:
         description: "repository path"
         required: true
         type: "string"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -3826,6 +4377,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -3910,6 +4466,11 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "include"
+        in: "query"
+        description: "Comma-delimited list of fields to include: validations"
+        required: false
+        type: "string"
       responses:
         200:
           description: "successful operation"
@@ -4813,6 +5374,38 @@ definitions:
     properties:
       content:
         type: "string"
+  Collection:
+    type: "object"
+    required:
+    - "name"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the collection in this web service"
+      entries:
+        type: "array"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Entry"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      name:
+        type: "string"
+        example: "Alignment"
+        position: 1
+        description: "Name of the collection."
+        minLength: 3
+        maxLength: 39
+        pattern: "[a-zA-Z][a-zA-Z\\d]*"
+      description:
+        type: "string"
+        position: 2
+        description: "Description of the collection"
   DescriptorLanguageBean:
     type: "object"
     properties:
@@ -5159,6 +5752,65 @@ definitions:
         format: "int32"
       message:
         type: "string"
+  Event:
+    type: "object"
+    required:
+    - "type"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the event in this web service"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      user:
+        position: 1
+        description: "User that the event is acting on."
+        $ref: "#/definitions/User"
+      organisation:
+        position: 2
+        description: "Organisation that the event is acting on."
+        $ref: "#/definitions/Organisation"
+      tool:
+        position: 3
+        description: "Tool that the event is acting on."
+        $ref: "#/definitions/DockstoreTool"
+      workflow:
+        position: 4
+        description: "Workflow that the event is acting on."
+        $ref: "#/definitions/Workflow"
+      collection:
+        position: 5
+        description: "Collection that the event is acting on."
+        $ref: "#/definitions/Collection"
+      initiatorUser:
+        position: 6
+        description: "User initiating the event."
+        $ref: "#/definitions/User"
+      type:
+        type: "string"
+        position: 7
+        description: "The event type."
+        enum:
+        - "CREATE_ORG"
+        - "DELETE_ORG"
+        - "MODIFY_ORG"
+        - "APPROVE_ORG"
+        - "REJECT_ORG"
+        - "ADD_USER_TO_ORG"
+        - "REMOVE_USER_FROM_ORG"
+        - "MODIFY_USER_ROLE_ORG"
+        - "APPROVE_ORG_INVITE"
+        - "REJECT_ORG_INVITE"
+        - "CREATE_COLLECTION"
+        - "MODIFY_COLLECTION"
+        - "REMOVE_FROM_COLLECTION"
+        - "ADD_TO_COLLECTION"
+    description: "This describes events that occur on the Dockstore site."
   ExtendedUserData:
     type: "object"
     properties:
@@ -5196,28 +5848,6 @@ definitions:
       \ that describes how to build a particular container image. Examples include\
       \ Dockerfiles for creating Docker images and Singularity recipes for Singularity\
       \ images "
-  Group:
-    type: "object"
-    properties:
-      id:
-        type: "integer"
-        format: "int64"
-        readOnly: true
-      name:
-        type: "string"
-      users:
-        type: "array"
-        uniqueItems: true
-        items:
-          $ref: "#/definitions/User"
-      dbCreateDate:
-        type: "string"
-        format: "date-time"
-      dbUpdateDate:
-        type: "string"
-        format: "date-time"
-    description: "This describes a grouping of end-users for the purposes of managing\
-      \ sharing. Implementation-specific."
   Label:
     type: "object"
     required:
@@ -5267,6 +5897,103 @@ definitions:
       friendly-name:
         type: "string"
     description: "Describes this registry to better allow for mirroring and indexing."
+  Organisation:
+    type: "object"
+    required:
+    - "name"
+    - "status"
+    - "users"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the organisation in this web\
+          \ service"
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+      name:
+        type: "string"
+        example: "OICR"
+        position: 1
+        description: "Name of the organisation (ex. OICR)"
+        minLength: 3
+        maxLength: 39
+        pattern: "[a-zA-Z][a-zA-Z\\d]*"
+      description:
+        type: "string"
+        position: 2
+        description: "Description of the organisation"
+      link:
+        type: "string"
+        position: 3
+        description: "Link to the organisation website"
+      location:
+        type: "string"
+        position: 4
+        description: "Location of the organisation"
+      email:
+        type: "string"
+        position: 5
+        description: "Contact email for the organisation"
+      status:
+        type: "string"
+        position: 6
+        description: "Is the organisation approved, pending, or rejected"
+        enum:
+        - "PENDING"
+        - "REJECTED"
+        - "APPROVED"
+      users:
+        type: "array"
+        position: 7
+        description: "Set of users in the organisation"
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/OrganisationUser"
+      topic:
+        type: "string"
+        position: 8
+        description: "Short description of the organisation"
+  OrganisationUser:
+    type: "object"
+    required:
+    - "accepted"
+    - "role"
+    properties:
+      id:
+        $ref: "#/definitions/OrganisationUserId"
+      user:
+        $ref: "#/definitions/User"
+      organisation:
+        $ref: "#/definitions/Organisation"
+      role:
+        type: "string"
+        description: "The role of the user in the organisation"
+        enum:
+        - "MAINTAINER"
+        - "MEMBER"
+      accepted:
+        type: "boolean"
+        description: "Has the user accepted their membership."
+      dbCreateDate:
+        type: "string"
+        format: "date-time"
+      dbUpdateDate:
+        type: "string"
+        format: "date-time"
+  OrganisationUserId:
+    type: "object"
+    properties:
+      userId:
+        type: "integer"
+        format: "int64"
+      organisationId:
+        type: "integer"
+        format: "int64"
   Permission:
     type: "object"
     properties:
@@ -5404,6 +6131,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
       last_modified:
         type: "string"
         format: "date-time"
@@ -5870,12 +6603,47 @@ definitions:
         position: 12
         description: "Indicates whether this user has accepted their username"
     description: "End users for the dockstore"
+  Validation:
+    type: "object"
+    required:
+    - "id"
+    - "message"
+    - "type"
+    - "valid"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+        description: "Implementation specific ID for the source file in this web service"
+      type:
+        type: "string"
+        position: 1
+        description: "Enumerates the type of file"
+        enum:
+        - "DOCKSTORE_CWL"
+        - "DOCKSTORE_WDL"
+        - "DOCKERFILE"
+        - "CWL_TEST_JSON"
+        - "WDL_TEST_JSON"
+        - "NEXTFLOW"
+        - "NEXTFLOW_CONFIG"
+        - "NEXTFLOW_TEST_PARAMS"
+      valid:
+        type: "boolean"
+        position: 2
+        description: "Is the file type valid"
+      message:
+        type: "string"
+        position: 3
+        description: "Mapping of filepath to validation message"
   VerificationInformation:
     type: "object"
     properties:
       verified:
         type: "boolean"
       metadata:
+        type: "string"
+      platformVersion:
         type: "string"
   VerifyRequest:
     type: "object"
@@ -6087,6 +6855,12 @@ definitions:
         - "BRANCH"
         - "NOT_APPLICABLE"
         - "UNSET"
+      validations:
+        type: "array"
+        description: "Cached validations for each version."
+        uniqueItems: true
+        items:
+          $ref: "#/definitions/Validation"
       workingDirectory:
         type: "string"
       last_modified:

@@ -584,12 +584,12 @@ public class GeneralIT extends BaseIT {
         usersApi.refresh(userid);
 
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
-        int size = containersApi.getContainer(c.getId()).getTags().size();
-        long size2 = containersApi.getContainer(c.getId()).getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
+        int size = containersApi.getContainer(c.getId(), null).getTags().size();
+        long size2 = containersApi.getContainer(c.getId(), null).getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size == size2 && size >= 1);
         // individual refresh should update image ids
         containersApi.refresh(c.getId());
-        DockstoreTool container = containersApi.getContainer(c.getId());
+        DockstoreTool container = containersApi.getContainer(c.getId(), null);
         size = container.getTags().size();
         size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -597,7 +597,7 @@ public class GeneralIT extends BaseIT {
         // so should overall refresh
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refresh(userid);
-        container = containersApi.getContainer(c.getId());
+        container = containersApi.getContainer(c.getId(), null);
         size = container.getTags().size();
         size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -605,7 +605,7 @@ public class GeneralIT extends BaseIT {
         // so should organizational refresh
         CommonTestUtilities.getTestingPostgres().runUpdateStatement("update tag set imageid = 'silly old value'");
         usersApi.refreshToolsByOrganization(userid, container.getNamespace());
-        container = containersApi.getContainer(c.getId());
+        container = containersApi.getContainer(c.getId(), null);
         size = container.getTags().size();
         size2 = container.getTags().stream().filter(tag -> tag.getImageId().equals("silly old value")).count();
         assertTrue(size2 == 0 && size >= 1);
@@ -626,7 +626,7 @@ public class GeneralIT extends BaseIT {
         DockstoreTool toolTest = toolsApi.registerManual(tool);
         toolsApi.refresh(toolTest.getId());
 
-        DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId());
+        DockstoreTool refreshedTool = toolsApi.getContainer(toolTest.getId(), null);
         assertNotNull("Author should be set, even if tag name and tag reference are mismatched.", refreshedTool.getAuthor());
     }
 

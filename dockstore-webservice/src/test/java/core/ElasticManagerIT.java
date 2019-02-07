@@ -17,14 +17,18 @@ package core;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import com.google.api.client.util.Charsets;
 import com.google.common.io.Files;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Tool;
+import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
 import io.dropwizard.testing.ResourceHelpers;
@@ -81,6 +85,18 @@ public class ElasticManagerIT {
 
         //TODO: should extend this by checking that elastic search holds the content we expect
         Assert.assertTrue("could not talk to elastic search", !systemOutRule.getLog().contains("Connection refused"));
+    }
+
+    @Test
+    public void filterCheckerWorkflows() {
+        Workflow checkerWorkflow = new Workflow();
+        checkerWorkflow.setIsChecker(true);
+        Workflow workflow = new Workflow();
+        workflow.setIsChecker(false);
+        Tool tool = new Tool();
+        List<Entry> entries = manager.filterCheckerWorkflows(Arrays.asList(workflow, tool, checkerWorkflow));
+        Assert.assertEquals("There should've been 2 entries without the checker workflow", 2, entries.size());
+        entries.forEach(entry -> Assert.assertFalse("There should be no checker workflows", entry instanceof Workflow && ((Workflow)entry).isIsChecker()));
     }
 
 

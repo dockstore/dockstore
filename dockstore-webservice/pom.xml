@@ -27,7 +27,7 @@
     </properties>
 
     <parent>
-        <version>1.6.0-alpha.1-SNAPSHOT</version>
+        <version>1.6.0-alpha.6-SNAPSHOT</version>
         <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
         <relativePath>../pom.xml</relativePath>
@@ -57,22 +57,22 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-quay-client</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-sam-client</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-bitbucket-client</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.swagger</groupId>
@@ -470,6 +470,42 @@
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <!-- note: this brings in a version of jaxb-api that breaks
+            liquibase https://liquibase.jira.com/browse/CORE-3262
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2 -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2</artifactId>
+            <!-- note: this brings in a version of jaxb-api that breaks
+            liquibase https://liquibase.jira.com/browse/CORE-3262
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-jaxrs2-servlet-initializer -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2-servlet-initializer</artifactId>
+        </dependency>
+
+
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
@@ -483,7 +519,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>dockstore-common</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.6-SNAPSHOT</version>
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
@@ -624,6 +660,10 @@
             <artifactId>mockito-core</artifactId>
             <version>${mockito.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-configuration2</artifactId>
         </dependency>
     </dependencies>
 
@@ -768,6 +808,7 @@
                             <usedDependencies>
                                 <usedDependency>io.swagger:swagger-jersey2-jaxrs</usedDependency>
                                 <usedDependency>io.swagger:swagger-core</usedDependency>
+                                <usedDependency>io.swagger.core.v3:swagger-jaxrs2-servlet-initializer</usedDependency>
                                 <usedDepdenency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</usedDepdenency>
                                 <usedDependency>javax.activation:activation</usedDependency>
                             </usedDependencies>
@@ -880,6 +921,33 @@
                         <phase>compile</phase>
                         <goals>
                             <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- replaces com.github.kongchen:swagger-maven-plugin for OpenAPI 3.0 -->
+            <plugin>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-maven-plugin</artifactId>
+                <version>${openapi-annotations-version}</version>
+                <configuration>
+                    <outputFileName>openapi</outputFileName>
+                    <outputPath>${pom.basedir}/src/main/resources/openapi3</outputPath>
+                    <outputFormat>YAML</outputFormat>
+                    <resourcePackages>
+                        <package>io.swagger.api</package>
+                        <package>io.swagger.model</package>
+                        <package>io.dockstore.webservice.resources</package>
+                        <package>io.dockstore.webservice.resources.rss</package>
+                        <package>io.dockstore.webservice.resources.proposedGA4GH</package>
+                    </resourcePackages>
+                    <prettyPrint>true</prettyPrint>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>resolve</goal>
                         </goals>
                     </execution>
                 </executions>

@@ -161,9 +161,9 @@ public class WorkflowIT extends BaseIT {
         }
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
-        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW);
+        final Workflow workflowByPathBitbucket = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_DOCKSTORE_WORKFLOW, null);
         final Workflow refreshBitbucket = workflowApi.refresh(workflowByPathBitbucket.getId());
 
         // tests for reference type for bitbucket workflows
@@ -230,7 +230,7 @@ public class WorkflowIT extends BaseIT {
         User user = usersApi.getUser();
         usersApi.refreshWorkflows(user.getId());
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
         // using hosted apis to edit normal workflows should fail
@@ -247,7 +247,7 @@ public class WorkflowIT extends BaseIT {
         User user = usersApi.getUser();
         usersApi.refreshWorkflows(user.getId());
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
         // using hosted apis to edit normal workflows should fail
@@ -515,13 +515,13 @@ public class WorkflowIT extends BaseIT {
         }
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
@@ -569,13 +569,13 @@ public class WorkflowIT extends BaseIT {
         }
 
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
-        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW);
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null);
         // need to set paths properly
         workflowByPathGithub.setWorkflowPath("/nextflow.config");
         workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
         workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
 
-        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW);
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW, null);
         final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
 
         assertSame("github workflow is not in full mode", refreshGithub.getMode(), Workflow.ModeEnum.FULL);
@@ -637,7 +637,7 @@ public class WorkflowIT extends BaseIT {
                 return true;
             }
         });
-        mtaNf = workflowApi.getWorkflow(mtaNf.getId());
+        mtaNf = workflowApi.getWorkflow(mtaNf.getId(), null);
         Assert.assertTrue("a workflow lacks a date", mtaNf.getLastModifiedDate() != null && mtaNf.getLastModified() != 0);
         assertNotNull("Nextflow workflow not found after update", mtaNf);
         assertTrue("nextflow workflow should have at least two versions", mtaNf.getWorkflowVersions().size() >= 2);
@@ -683,7 +683,7 @@ public class WorkflowIT extends BaseIT {
 
         // assertTrue("should have a bunch of stub workflows: " +  usersApi..allWorkflows().size(), workflowApi.allWorkflows().size() == 4);
 
-        final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow workflowByPath = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
         // refresh targeted
         workflowApi.refresh(workflowByPath.getId());
 
@@ -692,14 +692,14 @@ public class WorkflowIT extends BaseIT {
         workflowApi.publish(workflowByPath.getId(), publishRequest);
         assertEquals("should have one published, found  " + workflowApi.allPublishedWorkflows(null, null, null, null, null).size(), 1,
             workflowApi.allPublishedWorkflows(null, null, null, null, null).size());
-        final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId());
+        final Workflow publishedWorkflow = workflowApi.getPublishedWorkflow(workflowByPath.getId(), null);
         assertNotNull("did not get published workflow", publishedWorkflow);
-        final Workflow publishedWorkflowByPath = workflowApi.getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW);
+        final Workflow publishedWorkflowByPath = workflowApi.getPublishedWorkflowByPath(DOCKSTORE_TEST_USER2_HELLO_DOCKSTORE_WORKFLOW, null);
         assertNotNull("did not get published workflow", publishedWorkflowByPath);
 
         // publish everything so pagination testing makes more sense (going to unfortunately use rate limit)
         Lists.newArrayList("github.com/DockstoreTestUser2/hello-dockstore-workflow", "github.com/DockstoreTestUser2/dockstore-whalesay-imports", "github.com/DockstoreTestUser2/parameter_test_workflow").forEach(path -> {
-            Workflow workflow = workflowApi.getWorkflowByPath(path);
+            Workflow workflow = workflowApi.getWorkflowByPath(path, null);
             workflowApi.refresh(workflow.getId());
             workflowApi.publish(workflow.getId(), publishRequest);
         });
@@ -714,8 +714,11 @@ public class WorkflowIT extends BaseIT {
         List<Workflow> descId = workflowApi.allPublishedWorkflows(null, null, null, "id", "desc");
         assertEquals("sort by id does not seem to be working", ascId.get(0).getId(), descId.get(descId.size() - 1).getId());
         // test filter
-        List<Workflow> filtered = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
-        assertEquals(1, filtered.size());
+        List<Workflow> filteredLowercase = workflowApi.allPublishedWorkflows(null, null, "whale" , "stars", null);
+        assertEquals(1, filteredLowercase.size());
+        List<Workflow> filteredUppercase = workflowApi.allPublishedWorkflows(null, null, "WHALE" , "stars", null);
+        assertEquals(1, filteredUppercase.size());
+        assertEquals(filteredLowercase, filteredUppercase);
     }
 
     /**
@@ -879,7 +882,7 @@ public class WorkflowIT extends BaseIT {
         workflowApi.refresh(githubWorkflow.getId());
 
         // Confirm that correct number of sourcefiles are found
-        githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId());
+        githubWorkflow = workflowApi.getWorkflow(githubWorkflow.getId(), null);
         List<WorkflowVersion> versions = githubWorkflow.getWorkflowVersions();
         assertEquals("There should be two versions", 2, versions.size());
 
@@ -911,6 +914,7 @@ public class WorkflowIT extends BaseIT {
         ContainersApi toolApi = new ContainersApi(webClient);
 
         DockstoreTool tool = new DockstoreTool();
+        tool.setDefaultDockerfilePath("/Dockerfile");
         tool.setDefaultCwlPath("/cwls/cgpmap-bamOut.cwl");
         tool.setGitUrl("git@github.com:DockstoreTestUser2/dockstore-cgpmap.git");
         tool.setNamespace("dockstoretestuser2");
@@ -1019,7 +1023,7 @@ public class WorkflowIT extends BaseIT {
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
 
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore-whalesay-imports", "/Dockstore.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_IMPORTS_DOCKSTORE_WORKFLOW, null);
 
         // This checks if a workflow whose default name was manually registered as an empty string would become null
         assertNull(workflowByPathGithub.getWorkflowName());
@@ -1045,7 +1049,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
 
         // This checks if a workflow whose default name was manually registered as an empty string would become null
         assertNull(workflowByPathGithub.getWorkflowName());
@@ -1119,7 +1123,7 @@ public class WorkflowIT extends BaseIT {
     public void testAnonAndAdminGA4GH() throws ApiException, URISyntaxException, IOException {
         WorkflowsApi workflowApi = new WorkflowsApi(getWebClient(USER_2_USERNAME));
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
         workflowApi.refresh(workflowByPathGithub.getId());
 
         // should not be able to get content normally
@@ -1189,7 +1193,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_WORKFLOW, null);
         // do targetted refresh, should promote workflow to fully-fleshed out workflow
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
         workflowApi.publish(workflow.getId(), new PublishRequest(){
@@ -1197,7 +1201,7 @@ public class WorkflowIT extends BaseIT {
         });
 
         Workflow md5workflow = workflowApi
-            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "checker-workflow-wrapping-workflow.cwl",
+            .manualRegister(SourceControl.GITHUB.getFriendlyName(), "DockstoreTestUser2/md5sum-checker", "/checker-workflow-wrapping-workflow.cwl",
                 "test", "cwl", null);
         workflowApi.refresh(md5workflow.getId());
         workflowApi.publish(md5workflow.getId(), new PublishRequest(){
@@ -1228,7 +1232,7 @@ public class WorkflowIT extends BaseIT {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/gdc-dnaseq-cwl", "/workflows/dnaseq/transform.cwl", "", "cwl", "/workflows/dnaseq/transform.cwl.json");
-        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW);
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_GDC_DNASEQ_CWL_WORKFLOW, null);
         final Workflow workflow = workflowApi.refresh(workflowByPathGithub.getId());
 
         Assert.assertEquals("should have 2 version", 2, workflow.getWorkflowVersions().size());

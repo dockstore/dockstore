@@ -188,6 +188,10 @@ public class SourceFile implements Comparable<SourceFile> {
         @Column(columnDefinition = "text")
         public String metadata = "";
 
+        // By default set to null in database
+        @Column(columnDefinition = "text")
+        public String platformVersion = null;
+
         // database timestamps
         @Column(updatable = false)
         @CreationTimestamp

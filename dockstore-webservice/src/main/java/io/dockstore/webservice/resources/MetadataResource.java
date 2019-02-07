@@ -18,6 +18,7 @@ package io.dockstore.webservice.resources;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +56,8 @@ import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowVersion;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsApiExtendedServiceFactory;
+import io.dockstore.webservice.resources.proposedGA4GH.ToolsExtendedApiService;
 import io.dockstore.webservice.resources.rss.RSSEntry;
 import io.dockstore.webservice.resources.rss.RSSFeed;
 import io.dockstore.webservice.resources.rss.RSSHeader;
@@ -63,10 +66,20 @@ import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import okhttp3.Cache;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,9 +89,11 @@ import org.slf4j.LoggerFactory;
 @Path("/metadata")
 @Api("metadata")
 @Produces({MediaType.TEXT_HTML, MediaType.TEXT_XML})
+@io.swagger.v3.oas.annotations.tags.Tag(name = "metadata", description = "description of the webservice itself")
 public class MetadataResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
+    private final ToolsExtendedApiService delegate = ToolsApiExtendedServiceFactory.getToolsExtendedApi();
 
     private final ToolDAO toolDAO;
     private final WorkflowDAO workflowDAO;
@@ -94,6 +109,7 @@ public class MetadataResource {
     @Timed
     @UnitOfWork
     @Path("sitemap")
+    @Operation(summary = "List all published workflow and tool paths", description = "List all published workflow and tool paths, NO authentication")
     @ApiOperation(value = "List all published workflow and tool paths.", notes = "NO authentication")
     public String sitemap() {
         //TODO needs to be more efficient via JPA query
@@ -126,6 +142,7 @@ public class MetadataResource {
     @UnitOfWork
     @Path("rss")
     @Produces(MediaType.TEXT_XML)
+    @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
     @ApiOperation(value = "List all published tools and workflows in creation order.", notes = "NO authentication")
     public String rssFeed() {
 
@@ -194,11 +211,19 @@ public class MetadataResource {
     @GET
     @Produces({ "text/plain", "application/json" })
     @Path("/runner_dependencies")
+    @Operation(summary = "Returns the file containing runner dependencies", description = "Returns the file containing runner dependencies, NO authentication")
+    @ApiResponse(content = @Content(
+        mediaType = "application/json",
+        schema = @Schema(implementation = String.class)))
     @ApiOperation(value = "Returns the file containing runner dependencies.", response = String.class)
     public Response getRunnerDependencies(
+            @Parameter(name = "client_version", description = "The Dockstore client version")
             @ApiParam(value = "The Dockstore client version") @QueryParam("client_version") String clientVersion,
+            @Parameter(name = "python_version", description = "Python version, only relevant for the cwltool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "2"))
             @ApiParam(value = "Python version, only relevant for the cwltool runner") @DefaultValue("2") @QueryParam("python_version") String pythonVersion,
+            @Parameter(name = "runner", description = "The tool runner", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "cwltool", allowableValues = {"cwltool"}))
             @ApiParam(value = "The tool runner", allowableValues = "cwltool") @DefaultValue("cwltool") @QueryParam("runner") String runner,
+            @Parameter(name = "output", description = "Response type", in = ParameterIn.QUERY, schema = @Schema(defaultValue = "text", allowableValues = {"json", "text"}))
             @ApiParam(value = "Response type", allowableValues = "json, text") @DefaultValue("text") @QueryParam("output") String output,
             @Context ContainerRequestContext containerRequestContext) {
         if (!("cwltool").equals(runner)) {
@@ -222,6 +247,10 @@ public class MetadataResource {
     @UnitOfWork
     @Path("/sourceControlList")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get the list of source controls supported on Dockstore", description = "Get the list of source controls supported on Dockstore, NO authentication")
+    @ApiResponse(content = @Content(
+        mediaType = "application/json",
+        array = @ArraySchema(schema = @Schema(implementation = SourceControl.SourceControlBean.class))))
     @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "NO authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
     public List<SourceControl.SourceControlBean> getSourceControlList() {
         List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
@@ -234,6 +263,10 @@ public class MetadataResource {
     @UnitOfWork
     @Path("/dockerRegistryList")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get the list of docker registries supported on Dockstore", description = "Get the list of docker registries supported on Dockstore, NO authentication")
+    @ApiResponse(content = @Content(
+        mediaType = "application/json",
+        array = @ArraySchema(schema = @Schema(implementation = Registry.RegistryBean.class))))
     @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
         List<Registry.RegistryBean> registryList = new ArrayList<>();
@@ -246,6 +279,10 @@ public class MetadataResource {
     @UnitOfWork
     @Path("/descriptorLanguageList")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get the list of descriptor languages supported on Dockstore", description = "Get the list of descriptor languages supported on Dockstore, NO authentication")
+    @ApiResponse(content = @Content(
+        mediaType = "application/json",
+        array = @ArraySchema(schema = @Schema(implementation = DescriptorLanguage.DescriptorLanguageBean.class))))
     @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "NO authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
     public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
         List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
@@ -258,6 +295,10 @@ public class MetadataResource {
     @UnitOfWork
     @Path("/okHttpCachePerformance")
     @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get measures of cache performance", description = "Get measures of cache performance, NO authentication")
+    @ApiResponse(content = @Content(
+        mediaType = "application/json",
+        array = @ArraySchema(schema = @Schema(implementation = String.class))))
     @ApiOperation(value = "Get measures of cache performance.", notes = "NO authentication", response = Map.class, responseContainer = "List")
     public Map<String, String> getCachePerformance() {
         return extractCacheStatistics();
@@ -277,6 +318,29 @@ public class MetadataResource {
             LOG.warn("unable to determine cache size, may not have initialized yet");
         }
         return results;
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("/elasticSearch")
+    @Operation(summary = "Successful response if elastic search is up and running", description = "Successful response if elastic search is up and running, NO authentication")
+    @ApiOperation(value = "Successful response if elastic search is up and running.", notes = "NO authentication")
+    public Response checkElasticSearch() {
+        Response elasticSearchResponse;
+        try {
+            elasticSearchResponse = delegate.toolsIndexSearch(null, null, null);
+            String result = IOUtils.toString((InputStream)(elasticSearchResponse.getEntity()), StandardCharsets.UTF_8);
+            JSONObject jsonObj = new JSONObject(result);
+            JSONObject hitsHolder = jsonObj.getJSONObject("hits");
+            JSONArray hitsArray = hitsHolder.getJSONArray("hits");
+            if (hitsArray.toList().isEmpty()) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
+            }
+        } catch (Exception ex) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build();
+        }
+        return Response.ok().build();
     }
 
 }

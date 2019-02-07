@@ -31,6 +31,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.MoreObjects;
+import com.google.gson.Gson;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.CustomWebApplicationException;
@@ -41,6 +42,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.ToolMode;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
+import io.dockstore.webservice.core.Validation;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.helpers.ElasticManager;
@@ -183,13 +185,22 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
+        updateUnsetAbsolutePaths(sourceFiles);
+
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
-        boolean isValidVersion = checkValidVersion(versionSourceFiles, entry);
+
+        version = versionValidation(version, entry);
+
+        boolean isValidVersion = isValidVersion(version);
         if (!isValidVersion) {
-            throw new CustomWebApplicationException("Your edited files are invalid. No new version was created. Please check your syntax and try again.", HttpStatus.SC_BAD_REQUEST);
+            String fallbackMessage = "Your edited files are invalid. No new version was created. Please check your syntax and try again.";
+            String validationMessages = createValidationMessages(version);
+            validationMessages = (validationMessages != null && !validationMessages.isEmpty()) ? validationMessages : fallbackMessage;
+            throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
         }
-        version.setValid(true);
+
+        version.setValid(true); // Hosted entry versions must be valid to save
         version.setVersionEditor(user);
         populateMetadata(versionSourceFiles, entry, version);
         long l = getVersionDAO().create(version);
@@ -202,9 +213,61 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return newTool;
     }
 
+    /**
+     * For all source files whose absolutePath is not set, set the absolutePath to the path.
+     *
+     * The absolutePath may not be null in the database, but it is not set when the UI invokes
+     * the Webservice API.
+     *
+     * @param sourceFiles
+     */
+    private void updateUnsetAbsolutePaths(Set<SourceFile> sourceFiles) {
+        sourceFiles.stream().forEach(sourceFile -> {
+            if (sourceFile.getAbsolutePath() == null) {
+                sourceFile.setAbsolutePath(sourceFile.getPath());
+            }
+        });
+    }
+
+    /**
+     * Prints out all of the invalid validations
+     * Used for returning error messages on attempting to save
+     * @param version version of interest
+     * @return String containing all invalid validation messages
+     */
+    protected String createValidationMessages(U version) {
+        StringBuilder result = new StringBuilder();
+        result.append("Unable to save the new version due to the following error(s): ");
+        Gson g = new Gson();
+        for (Validation versionValidation : version.getValidations()) {
+            if (!versionValidation.isValid() && versionValidation.getMessage() != null) {
+                Map<String, String> message = g.fromJson(versionValidation.getMessage(), HashMap.class);
+                for (Map.Entry<String, String> entry : message.entrySet()) {
+                    result.append(entry.getKey() + ": " + entry.getValue() + " ");
+                }
+            }
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * Checks if the given version is valid based on existing version validations
+     * @param version Version to validate
+     * @return True if valid version, false otherwise
+     */
+    protected abstract boolean isValidVersion(U version);
+
     protected abstract void populateMetadata(Set<SourceFile> sourceFiles, T entry, U version);
 
-    protected abstract boolean checkValidVersion(Set<SourceFile> sourceFiles, T entry);
+    /**
+     * Will update the version with validation information
+     * Note: There is one validation entry for each sourcefile type. This is true for test parameter files too.
+     * @param version Version to validate
+     * @param entry Entry for the version
+     * @return Version with updated validation information
+     */
+    protected abstract U versionValidation(U version, T entry);
 
     private void checkHosted(T entry) {
         if (entry instanceof Tool) {
