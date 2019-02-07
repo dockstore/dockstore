@@ -269,7 +269,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      */
     protected abstract U versionValidation(U version, T entry);
 
-    private void checkHosted(T entry) {
+    protected void checkHosted(T entry) {
         if (entry instanceof Tool) {
             if (((Tool)entry).getMode() != ToolMode.HOSTED) {
                 throw new CustomWebApplicationException("cannot modify non-hosted entries this way", HttpStatus.SC_BAD_REQUEST);

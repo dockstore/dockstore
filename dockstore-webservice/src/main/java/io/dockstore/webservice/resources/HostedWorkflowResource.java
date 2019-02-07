@@ -15,6 +15,8 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,8 +24,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
 
+import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
@@ -43,9 +50,16 @@ import io.dockstore.webservice.languages.LanguageHandlerFactory;
 import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import io.dockstore.webservice.permissions.PermissionsInterface;
 import io.dockstore.webservice.permissions.Role;
+import io.dropwizard.auth.Auth;
+import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
@@ -154,6 +168,30 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Workflow.class)
     public Workflow editHosted(User user, Long entryId, Set<SourceFile> sourceFiles) {
         return super.editHosted(user, entryId, sourceFiles);
+    }
+
+
+    @POST
+    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
+    @Path("/hostedEntry/{entryId}")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(nickname = "Post a tarball", value = "Creates a new revision of a hosted workflow",
+            authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
+    public Workflow addTarball(@Auth User user, @PathParam("entryId") Long entryId, @RequestBody InputStream payload) {
+        final Workflow workflow = getEntryDAO().findById(entryId);
+        checkEntry(workflow);
+        checkHosted(workflow);
+        checkUserCanUpdate(user, workflow);
+        try (ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(payload)) {
+            ArchiveEntry entry;
+            while ((entry = archiveInputStream.getNextEntry()) != null) {
+                System.out.println(entry.getName());
+            }
+        } catch (ArchiveException | IOException e) {
+            throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
+        }
+        return null;
     }
 
     @Override
