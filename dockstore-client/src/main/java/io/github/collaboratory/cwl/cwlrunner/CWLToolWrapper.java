@@ -54,7 +54,7 @@ public class CWLToolWrapper implements CWLRunnerInterface {
         MetadataApi metadataApi = new MetadataApi(defaultApiClient);
         try {
             String runnerDependencies = metadataApi
-                .getRunnerDependencies(this.getClass().getPackage().getImplementationVersion(), "2", "cwltool", "text");
+                .getRunnerDependencies(Client.getClientVersion(), "2", "cwltool", "text");
             Map<String, String> stringStringMap = convertPipRequirementsStringToMap(runnerDependencies);
             final String expectedCwltoolVersion = stringStringMap.get("cwltool");
             final String expectedSchemaSaladVersion = stringStringMap.get("schema-salad");

@@ -48,6 +48,7 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.DepCommand;
 import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.common.GeneratedConstants;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
@@ -774,7 +775,7 @@ public class Client {
         String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
-        String cliVersion = Client.class.getPackage().getImplementationVersion();
+        String cliVersion = getClientVersion();
         defaultApiClient.setUserAgent("Dockstore-CLI/" + cliVersion + "/java");
 
         ApiKeyAuth bearer = (ApiKeyAuth)defaultApiClient.getAuthentication("BEARER");
@@ -801,6 +802,15 @@ public class Client {
 
         defaultApiClient.setDebugging(DEBUG.get());
         CWLRunnerFactory.setConfig(config);
+    }
+
+    public static String getClientVersion() {
+        String cliVersion = Client.class.getPackage().getImplementationVersion();
+        if (cliVersion == null) {
+            // then we're probably in an IDE or CI build test, it would be nice to get the current project version
+            cliVersion = GeneratedConstants.PROJECT_VERSION;
+        }
+        return cliVersion;
     }
 
     private INIConfiguration getIniConfiguration(List<String> args) {

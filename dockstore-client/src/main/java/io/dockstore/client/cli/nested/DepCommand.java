@@ -4,6 +4,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import io.dockstore.client.cli.ArgumentUtility;
+import io.dockstore.client.cli.Client;
 import io.dockstore.client.cli.JCommanderUtility;
 import io.swagger.client.ApiClient;
 import io.swagger.client.Configuration;
@@ -50,7 +51,7 @@ public final class DepCommand {
     @Parameters(separators = "=", commandDescription = "Print cwltool runner dependencies")
     private static class CommandDep {
         @Parameter(names = "--client-version", description = "Dockstore version")
-        private String clientVersion = getClass().getPackage().getImplementationVersion();
+        private String clientVersion = Client.getClientVersion();
         @Parameter(names = "--python-version", description = "Python version")
         private String pythonVersion = "2";
         // @Parameter(names = "--runner", description = "tool/workflow runner. Available options: 'cwltool'")
