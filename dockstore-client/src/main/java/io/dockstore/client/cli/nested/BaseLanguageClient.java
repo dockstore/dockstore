@@ -30,9 +30,11 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public abstract class BaseLanguageClient {
     protected final AbstractEntryClient abstractEntryClient;
+    protected String uuid;
     protected INIConfiguration config;
     protected String notificationsWebHookURL;
     protected NotificationsClient notificationsClient;
+    protected BaseLauncher launcher;
 
     protected File tempLaunchDirectory;
     protected File localPrimaryDescriptorFile;
@@ -46,23 +48,44 @@ public abstract class BaseLanguageClient {
     protected String stdout;
     protected String stderr;
 
-    public BaseLanguageClient(AbstractEntryClient abstractEntryClient) {
+    public BaseLanguageClient(AbstractEntryClient abstractEntryClient, BaseLauncher launcher) {
         this.abstractEntryClient = abstractEntryClient;
+        this.launcher = launcher;
     }
 
-    public void setupNotifications(String uuid) {
+    /**
+     * Selects the intended parameter file
+     * @param yamlParameterFile Path to YAML parameter file
+     * @param jsonParameterFile Path to JSON parameter file
+     */
+    public abstract void selectParameterFile(String yamlParameterFile, String jsonParameterFile);
+
+    /**
+     * Provision the input files based on the selected parameter file.
+     * Creates an updated version of the parameter file with new local file locations.
+     * @return Updated parameter file
+     */
+    public abstract File provisionInputFiles();
+
+    /**
+     * Runs the tool/workflow with the selected launcher
+     * @throws ExecuteException
+     */
+    public abstract void executeEntry() throws ExecuteException;
+
+    /**
+     * Provisions the output files
+     */
+    public abstract void provisionOutputFiles();
+
+    /**
+     * Setup for notifications to webhook
+     */
+    public void setupNotifications() {
         config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
         notificationsWebHookURL = config.getString("notifications", "");
         notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
     }
-
-    public abstract void selectParameterFile(String yamlParameterFile, String jsonParameterFile);
-
-    public abstract File provisionInputFiles();
-
-    public abstract void run() throws ExecuteException;
-
-    public abstract void provisionOutputFiles();
 
     /**
      * Creates a working directory and downloads descriptor files

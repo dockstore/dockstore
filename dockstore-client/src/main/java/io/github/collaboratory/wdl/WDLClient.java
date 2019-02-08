@@ -60,13 +60,18 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 public class WDLClient extends BaseLanguageClient implements LanguageClientInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
-    private BaseLauncher launcher;
     private Bridge bridge;
     private String wdlOutputTarget;
 
     public WDLClient(AbstractEntryClient abstractEntryClient) {
-        super(abstractEntryClient);
-        this.launcher = new CromwellLauncher(abstractEntryClient);
+        super(abstractEntryClient, new CromwellLauncher(abstractEntryClient));
+    }
+
+    public void setLaunchInformation(String entry, boolean isLocalEntry, String wdlOutputTarget, String uuid) {
+        this.entry = entry;
+        this.isLocalEntry = isLocalEntry;
+        this.wdlOutputTarget = wdlOutputTarget;
+        this.uuid = uuid;
     }
 
     @Override
@@ -122,7 +127,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     }
 
     @Override
-    public void run() throws ExecuteException {
+    public void executeEntry() throws ExecuteException {
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
         String runCommand = launcher.buildRunCommand(importsZipFile, localPrimaryDescriptorFile, provisionedParameterFile);
 
@@ -169,17 +174,17 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         throws ApiException {
         this.abstractEntryClient.loadDockerImages();
 
+        // Initialize client with some launch information
+        setLaunchInformation(entry, isLocalEntry, wdlOutputTarget, uuid);
+
         // Select the appropriate parameter file
-        this.isLocalEntry = isLocalEntry;
-        this.entry = entry;
-        this.wdlOutputTarget = outputTarget;
         selectParameterFile(yamlParameterFile, jsonParameterFile);
 
         // Setup the launcher
         launcher.setup();
 
         // Setup notifications
-        setupNotifications(uuid);
+        setupNotifications();
 
         // Setup temp directory and download files
         Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.WDL);
@@ -191,10 +196,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         provisionedParameterFile = provisionInputFiles();
 
         try {
-            // Run the tool/workflow
-            run();
-
-            // Provision the output files
+            executeEntry();
             provisionOutputFiles();
         } catch (ApiException ex) {
             if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
@@ -300,8 +302,8 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         if (json) {
             final List<String> wdlDocuments = Lists.newArrayList(primaryFile.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge bridgeTwo = new Bridge(primaryFile.getParent());
-            return bridgeTwo.inputs(wdlList);
+            Bridge b = new Bridge(primaryFile.getParent());
+            return b.inputs(wdlList);
         }
         return null;
     }
