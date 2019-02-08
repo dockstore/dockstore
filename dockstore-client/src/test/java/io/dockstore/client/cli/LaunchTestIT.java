@@ -1202,15 +1202,6 @@ public class LaunchTestIT {
         assertTrue("output should include an error message", systemErrRule.getLog().contains("Syntax error while parsing a block collection"));
     }
 
-
-    private void downloadTargetEntry(WorkflowClient workflowClient, String toolPath) {
-        try {
-            workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0", ToolDescriptor.TypeEnum.WDL, true);
-        } catch (IOException e) {
-
-        }
-    }
-
     @Test
     public void entry2jsonNoVersion() {
         /*
