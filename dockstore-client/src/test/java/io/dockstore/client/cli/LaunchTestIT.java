@@ -1199,7 +1199,7 @@ public class LaunchTestIT {
     }
 
     @Test
-    public void entry2jsonNoVersion() {
+    public void entry2jsonNoVersion() throws IOException {
         /*
          * Make a runtime JSON template for input to the workflow
          * but don't provide a version at the end of the entry
@@ -1233,15 +1233,11 @@ public class LaunchTestIT {
                 () -> assertTrue("output should include error message",
                         systemErrRule.getLog().contains("Cannot use workflow version 'master'")));
 
-        try {
-            workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort", ToolDescriptor.TypeEnum.WDL, false);
-        } catch (IOException e) {
-
-        }
+        workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort", ToolDescriptor.TypeEnum.WDL, false);
     }
 
     @Test
-    public void entry2jsonBadVersion() {
+    public void entry2jsonBadVersion() throws IOException {
         /*
          * Make a runtime JSON template for input to the workflow
          * but provide a non existent version at the end of the entry
@@ -1277,11 +1273,7 @@ public class LaunchTestIT {
                         (systemOutRule.getLog().contains("Could not locate workflow with version '2.0.0'") &&
                                 systemErrRule.getLog().contains("Cannot use workflow version '1.0.0'"))));
 
-        try {
-            workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0", ToolDescriptor.TypeEnum.WDL, false);
-        } catch (IOException e) {
-
-        }
+        workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0", ToolDescriptor.TypeEnum.WDL, false);
     }
 
 
