@@ -1245,8 +1245,8 @@ public class LaunchTestIT {
         /*
          * Make a runtime JSON template for input to the workflow
          * but provide a non existent version at the end of the entry
-         * E.g dockstore workflow convert entry2json --entry quay.io/collaboratory/dockstore-tool-linux-sort:9.9.9
-         * Dockstore will try to use the last modified version and print an explanation message.
+         * E.g dockstore workflow convert entry2json --entry quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0
+         * Dockstore will try to use the last modified version (1.0.0) and print an explanation message.
          * The last modified version is not valid so Dockstore should print an error message and exit
          * */
 
@@ -1273,11 +1273,9 @@ public class LaunchTestIT {
 
         exit.expectSystemExit();
         exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include error message",
-                        systemOutRule.getLog().contains("Could not locate workflow with version '2.0.0'")));
-        exit.checkAssertionAfterwards(
-                () -> assertTrue("output should include error message",
-                        systemErrRule.getLog().contains("Cannot use workflow version '1.0.0'")));
+                () -> assertTrue("output should include error messages",
+                        (systemOutRule.getLog().contains("Could not locate workflow with version '2.0.0'") &&
+                                systemErrRule.getLog().contains("Cannot use workflow version '1.0.0'"))));
 
         try {
             workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0", ToolDescriptor.TypeEnum.WDL, false);
