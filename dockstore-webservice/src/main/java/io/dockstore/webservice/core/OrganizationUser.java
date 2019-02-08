@@ -20,28 +20,28 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
-@Table(name = "organisation_user")
-public class OrganisationUser implements Serializable {
+@Table(name = "organization_user")
+public class OrganizationUser implements Serializable {
 
     @EmbeddedId
-    private OrganisationUserId id;
+    private OrganizationUserId id;
 
     @ManyToOne
     @JoinColumn(name = "userId", insertable = false, updatable = false)
-    @JsonIgnoreProperties({ "organisations", "entries", "starredEntries" })
+    @JsonIgnoreProperties({ "organizations", "entries", "starredEntries" })
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organisationId", insertable = false, updatable = false)
+    @JoinColumn(name = "organizationId", insertable = false, updatable = false)
     @JsonIgnoreProperties({ "users", "collections" })
-    private Organisation organisation;
+    private Organization organization;
 
     public enum Role {
         MAINTAINER, MEMBER
     }
 
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "The role of the user in the organisation", required = true)
+    @ApiModelProperty(value = "The role of the user in the organization", required = true)
     private Role role;
 
     @ApiModelProperty(value = "Has the user accepted their membership.", required = true)
@@ -55,27 +55,27 @@ public class OrganisationUser implements Serializable {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
-    public OrganisationUser() {
+    public OrganizationUser() {
 
     }
 
-    public OrganisationUser(User user, Organisation organisation, Role role) {
-        this.id = new OrganisationUserId(user.getId(), organisation.getId());
+    public OrganizationUser(User user, Organization organization, Role role) {
+        this.id = new OrganizationUserId(user.getId(), organization.getId());
 
         this.user = user;
-        this.organisation = organisation;
+        this.organization = organization;
         this.role = role;
         this.accepted = false;
 
-        organisation.getUsers().add(this);
-        user.getOrganisations().add(this);
+        organization.getUsers().add(this);
+        user.getOrganizations().add(this);
     }
 
-    public OrganisationUserId getId() {
+    public OrganizationUserId getId() {
         return id;
     }
 
-    public void setId(OrganisationUserId id) {
+    public void setId(OrganizationUserId id) {
         this.id = id;
     }
 
@@ -87,12 +87,12 @@ public class OrganisationUser implements Serializable {
         this.user = user;
     }
 
-    public Organisation getOrganisation() {
-        return organisation;
+    public Organization getOrganization() {
+        return organization;
     }
 
-    public void setOrganisation(Organisation organisation) {
-        this.organisation = organisation;
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 
     public Role getRole() {
@@ -128,19 +128,19 @@ public class OrganisationUser implements Serializable {
     }
 
     @Embeddable
-    public static class OrganisationUserId implements Serializable {
+    public static class OrganizationUserId implements Serializable {
         @Column(name = "userId")
         protected Long userId;
 
-        @Column(name = "organisationId")
-        protected Long organisationId;
+        @Column(name = "organizationId")
+        protected Long organizationId;
 
-        public OrganisationUserId() {
+        public OrganizationUserId() {
         }
 
-        public OrganisationUserId(Long userId, Long organisationId) {
+        public OrganizationUserId(Long userId, Long organizationId) {
             this.userId = userId;
-            this.organisationId = organisationId;
+            this.organizationId = organizationId;
         }
 
         public Long getUserId() {
@@ -151,24 +151,24 @@ public class OrganisationUser implements Serializable {
             this.userId = userId;
         }
 
-        public Long getOrganisationId() {
-            return organisationId;
+        public Long getOrganizationId() {
+            return organizationId;
         }
 
-        public void setOrganisationId(Long organisationId) {
-            this.organisationId = organisationId;
+        public void setOrganizationId(Long organizationId) {
+            this.organizationId = organizationId;
         }
 
         @Override
         public int hashCode() {
-            return (int)(userId + organisationId);
+            return (int)(userId + organizationId);
         }
 
         @Override
         public boolean equals(Object object) {
-            if (object instanceof OrganisationUserId) {
-                OrganisationUserId otherId = (OrganisationUserId) object;
-                return (otherId.userId.equals(this.userId)) && (otherId.organisationId.equals(this.organisationId));
+            if (object instanceof OrganizationUserId) {
+                OrganizationUserId otherId = (OrganizationUserId) object;
+                return (otherId.userId.equals(this.userId)) && (otherId.organizationId.equals(this.organizationId));
             }
             return false;
         }

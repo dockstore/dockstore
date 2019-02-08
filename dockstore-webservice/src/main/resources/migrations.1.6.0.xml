@@ -192,9 +192,10 @@
     </changeSet>
 
     <changeSet id="AddNotNullAbsolutePathConstraint" author="coverbeck">
-        <sql dbms="postgres">
-            UPDATE sourcefile SET absolutepath=path WHERE absolutepath is null
-        </sql>
+        <update tableName="sourcefile">
+            <column name="absolutepath" valueComputed="path"/>
+            <where>absolutepath is null</where>
+        </update>
         <addNotNullConstraint tableName="sourcefile" columnName="absolutepath"/>
     </changeSet>
 
@@ -214,5 +215,24 @@
 
     <changeSet author="aduncan" id="dropOldApprovedFieldFromOrganisations">
         <dropColumn columnName="approved" tableName="organisation"/>
+    </changeSet>
+
+    <changeSet author="dyuen" id="renameAllOrganization">
+        <renameTable newTableName="organization"
+                     oldTableName="organisation"
+        />
+        <renameTable newTableName="organization_user"
+                     oldTableName="organisation_user"
+        />
+        <renameColumn newColumnName="organizationid"
+                      oldColumnName="organisationid"
+                      tableName="organization_user"/>
+        <renameColumn newColumnName="organizationid"
+                      oldColumnName="organisationid"
+                      tableName="collection"/>
+        <renameColumn newColumnName="organizationid"
+                      oldColumnName="organisationid"
+                      tableName="event"/>
+        <sql dbms="postgres">ALTER SEQUENCE organisation_id_seq RENAME TO organization_id_seq</sql>
     </changeSet>
 </databaseChangeLog>

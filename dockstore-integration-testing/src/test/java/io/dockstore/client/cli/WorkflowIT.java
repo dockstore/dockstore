@@ -105,6 +105,8 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_LIB_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/rnatoy";
     // workflow that uses containers
     private static final String DOCKSTORE_TEST_USER2_NEXTFLOW_DOCKER_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/galaxy-workflows";
+    // workflow with includeConfig in config file directory
+    private static final String DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/vipr";
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = Registry.QUAY_IO.toString() + "/dockstoretestuser2/dockstore-cgpmap";
 
     @Rule
@@ -555,6 +557,36 @@ public class WorkflowIT extends BaseIT {
     }
 
     @Test
+    public void testNextFlowWorkflowWithConfigIncludes() {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+
+        final List<Workflow> workflows = usersApi.refreshWorkflows(user.getId());
+
+        for (Workflow workflow : workflows) {
+            assertNotSame("", workflow.getWorkflowName());
+        }
+
+        // do targetted refresh, should promote workflow to fully-fleshed out workflow
+        Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null);
+        // need to set paths properly
+        workflowByPathGithub.setWorkflowPath("/nextflow.config");
+        workflowByPathGithub.setDescriptorType(LanguageType.NEXTFLOW.toString());
+        workflowApi.updateWorkflow(workflowByPathGithub.getId(), workflowByPathGithub);
+
+        workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW, null);
+        final Workflow refreshGithub = workflowApi.refresh(workflowByPathGithub.getId());
+
+        assertEquals("workflow does not include expected config included files", 3,
+            refreshGithub.getWorkflowVersions().stream().filter(version -> version.getName().equals("master")).findFirst().get()
+                .getSourceFiles().stream().filter(file -> file.getPath().startsWith("conf/")).count());
+    }
+
+
+        @Test
     public void testNextFlowWorkflowWithImages() {
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
