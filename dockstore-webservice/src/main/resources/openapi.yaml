@@ -40,7 +40,7 @@ tags:
     description: Created and modify hosted entries in the dockstore
   - name: metadata
     description: Information about Dockstore like RSS, sitemap, lists of dependencies, etc.
-  - name: organisations
+  - name: organizations
   - name: tokens
     description: List, modify, refresh, and delete tokens for external services
   - name: users
@@ -2960,13 +2960,13 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/SourceControlBean"
-  /organisations:
+  /organizations:
     get:
       tags:
-        - organisations
-      summary: List all available organisations.
+        - organizations
+      summary: List all available organizations.
       description: NO Authentication
-      operationId: getApprovedOrganisations
+      operationId: getApprovedOrganizations
       responses:
         "200":
           description: successful operation
@@ -2975,19 +2975,19 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Organisation"
+                  $ref: "#/components/schemas/Organization"
     put:
       tags:
-        - organisations
-      summary: Create an organisation.
-      description: Organisation requires approval by an admin before being made public.
-      operationId: createOrganisation
+        - organizations
+      summary: Create an organization.
+      description: Organization requires approval by an admin before being made public.
+      operationId: createOrganization
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Organisation"
-        description: Organisation to register.
+              $ref: "#/components/schemas/Organization"
+        description: Organization to register.
         required: true
       responses:
         "200":
@@ -2995,21 +2995,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organisation"
+                $ref: "#/components/schemas/Organization"
       security:
         - BEARER:
             []
-  /organisations/all:
+  /organizations/all:
     get:
       tags:
-        - organisations
-      summary: List all organisations.
+        - organizations
+      summary: List all organizations.
       description: Admin/curator only
-      operationId: getAllOrganisations
+      operationId: getAllOrganizations
       parameters:
         - name: type
           in: query
-          description: Filter to apply to organisations.
+          description: Filter to apply to organizations.
           required: true
           schema:
             type: string
@@ -3026,22 +3026,22 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Organisation"
+                  $ref: "#/components/schemas/Organization"
       security:
         - BEARER:
             []
-  "/organisations/name/{name}":
+  "/organizations/name/{name}":
     get:
       tags:
-        - organisations
-      summary: Retrieves an organisation by name.
-      description: Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getOrganisationByName
+        - organizations
+      summary: Retrieves an organization by name.
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getOrganizationByName
       parameters:
         - name: name
           in: path
-          description: Organisation name.
+          description: Organization name.
           required: true
           schema:
             type: string
@@ -3051,22 +3051,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organisation"
+                $ref: "#/components/schemas/Organization"
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}":
+  "/organizations/{organizationId}":
     get:
       tags:
-        - organisations
-      summary: Retrieves an organisation by ID.
-      description: Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getOrganisationById
+        - organizations
+      summary: Retrieves an organization by ID.
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getOrganizationById
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3077,21 +3077,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organisation"
+                $ref: "#/components/schemas/Organization"
       security:
         - BEARER:
             []
     post:
       tags:
-        - organisations
-      summary: Update an organisation.
+        - organizations
+      summary: Update an organization.
       description: Currently only name, description, email, link and location can be
         updated.
-      operationId: updateOrganisation
+      operationId: updateOrganization
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3100,8 +3100,8 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Organisation"
-        description: Organisation to update with.
+              $ref: "#/components/schemas/Organization"
+        description: Organization to update with.
         required: true
       responses:
         "200":
@@ -3109,21 +3109,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organisation"
+                $ref: "#/components/schemas/Organization"
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/approve":
+  "/organizations/{organizationId}/approve":
     post:
       tags:
-        - organisations
-      summary: Approves an organisation.
+        - organizations
+      summary: Approves an organization.
       description: Admin/curator only
-      operationId: approveOrganisation
+      operationId: approveOrganization
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3134,22 +3134,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organisation"
+                $ref: "#/components/schemas/Organization"
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/collections":
+  "/organizations/{organizationId}/collections":
     get:
       tags:
-        - organisations
-      summary: Retrieve all collections for an organisation.
-      description: Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getCollectionsFromOrganisation
+        - organizations
+      summary: Retrieve all collections for an organization.
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getCollectionsFromOrganization
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3173,14 +3173,14 @@ paths:
             []
     put:
       tags:
-        - organisations
-      summary: Create a collection in the given organisation.
+        - organizations
+      summary: Create a collection in the given organization.
       description: ""
       operationId: createCollection
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3202,18 +3202,18 @@ paths:
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/collections/{collectionId}":
+  "/organizations/{organizationId}/collections/{collectionId}":
     get:
       tags:
-        - organisations
+        - organizations
       summary: Retrieves a collection by ID.
-      description: Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
       operationId: getCollectionById
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3237,14 +3237,14 @@ paths:
             []
     post:
       tags:
-        - organisations
+        - organizations
       summary: Update a collection.
       description: Currently only name and description can be updated.
       operationId: updateCollection
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3273,17 +3273,17 @@ paths:
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/collections/{collectionId}/entry":
+  "/organizations/{organizationId}/collections/{collectionId}/entry":
     post:
       tags:
-        - organisations
+        - organizations
       summary: Add an entry to a collection.
       description: ""
       operationId: addEntryToCollection
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3314,14 +3314,14 @@ paths:
             []
     delete:
       tags:
-        - organisations
+        - organizations
       summary: Delete an entry from a collection.
       description: ""
       operationId: deleteEntryFromCollection
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3350,18 +3350,18 @@ paths:
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/description":
+  "/organizations/{organizationId}/description":
     get:
       tags:
-        - organisations
+        - organizations
       summary: Retrieves an organization description by organization ID.
-      description: Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getOrganisationDescription
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getOrganizationDescription
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3378,12 +3378,12 @@ paths:
             []
     put:
       tags:
-        - organisations
+        - organizations
       summary: Update an organization's description.
       description: Description in markdown
       operationId: updateOrganizationDescription
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
           description: Organization to update description.
           required: true
@@ -3403,22 +3403,22 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organisation"
+                $ref: "#/components/schemas/Organization"
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/events":
+  "/organizations/{organizationId}/events":
     get:
       tags:
-        - organisations
-      summary: Retrieves all events for an organisation.
-      description: Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getOrganisationEvents
+        - organizations
+      summary: Retrieves all events for an organization.
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getOrganizationEvents
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3435,17 +3435,17 @@ paths:
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/invitation":
+  "/organizations/{organizationId}/invitation":
     post:
       tags:
-        - organisations
-      summary: Accept or reject an organisation invitation.
+        - organizations
+      summary: Accept or reject an organization invitation.
       description: True accepts the invitation, false rejects the invitation.
       operationId: acceptOrRejectInvitation
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3462,18 +3462,18 @@ paths:
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/members":
+  "/organizations/{organizationId}/members":
     get:
       tags:
-        - organisations
-      summary: Retrieves all members for an organisation.
-      description: Does not require authentication for approved organisations,
-        authentication can be provided for unapproved organisations
-      operationId: getOrganisationMembers
+        - organizations
+      summary: Retrieves all members for an organization.
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getOrganizationMembers
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3487,21 +3487,21 @@ paths:
                 type: array
                 uniqueItems: true
                 items:
-                  $ref: "#/components/schemas/OrganisationUser"
+                  $ref: "#/components/schemas/OrganizationUser"
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/reject":
+  "/organizations/{organizationId}/reject":
     post:
       tags:
-        - organisations
-      summary: Rejects an organisation.
+        - organizations
+      summary: Rejects an organization.
       description: Admin/curator only
-      operationId: rejectOrganisation
+      operationId: rejectOrganization
       parameters:
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3512,15 +3512,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Organisation"
+                $ref: "#/components/schemas/Organization"
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/user":
+  "/organizations/{organizationId}/user":
     post:
       tags:
-        - organisations
-      summary: Updates a user role in an organisation.
+        - organizations
+      summary: Updates a user role in an organization.
       description: ""
       operationId: updateUserRole
       parameters:
@@ -3540,9 +3540,9 @@ paths:
           schema:
             type: integer
             format: int64
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3553,14 +3553,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrganisationUser"
+                $ref: "#/components/schemas/OrganizationUser"
       security:
         - BEARER:
             []
     put:
       tags:
-        - organisations
-      summary: Adds a user role to an organisation.
+        - organizations
+      summary: Adds a user role to an organization.
       description: ""
       operationId: addUserToOrg
       parameters:
@@ -3580,9 +3580,9 @@ paths:
           schema:
             type: integer
             format: int64
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3595,14 +3595,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrganisationUser"
+                $ref: "#/components/schemas/OrganizationUser"
       security:
         - BEARER:
             []
     delete:
       tags:
-        - organisations
-      summary: Remove a user from an organisation.
+        - organizations
+      summary: Remove a user from an organization.
       description: ""
       operationId: deleteUserRole
       parameters:
@@ -3613,9 +3613,9 @@ paths:
           schema:
             type: integer
             format: int64
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3626,11 +3626,11 @@ paths:
       security:
         - BEARER:
             []
-  "/organisations/{organisationId}/users/{username}":
+  "/organizations/{organizationId}/users/{username}":
     put:
       tags:
-        - organisations
-      summary: Adds a user role to an organisation.
+        - organizations
+      summary: Adds a user role to an organization.
       description: ""
       operationId: addUserToOrgByUsername
       parameters:
@@ -3640,9 +3640,9 @@ paths:
           required: true
           schema:
             type: string
-        - name: organisationId
+        - name: organizationId
           in: path
-          description: Organisation ID.
+          description: Organization ID.
           required: true
           schema:
             type: integer
@@ -3660,7 +3660,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OrganisationUser"
+                $ref: "#/components/schemas/OrganizationUser"
       security:
         - BEARER:
             []
@@ -3835,7 +3835,7 @@ paths:
                 type: array
                 uniqueItems: true
                 items:
-                  $ref: "#/components/schemas/OrganisationUser"
+                  $ref: "#/components/schemas/OrganizationUser"
       security:
         - BEARER:
             []
@@ -5953,7 +5953,7 @@ components:
         collection:
           $ref: "#/components/schemas/Collection"
         organization:
-          $ref: "#/components/schemas/Organisation"
+          $ref: "#/components/schemas/Organization"
     DescriptorLanguageBean:
       type: object
       properties:
@@ -5994,6 +5994,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6009,10 +6013,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6178,6 +6178,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6193,10 +6197,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6278,8 +6278,8 @@ components:
           format: date-time
         user:
           $ref: "#/components/schemas/User"
-        organisation:
-          $ref: "#/components/schemas/Organisation"
+        organization:
+          $ref: "#/components/schemas/Organization"
         tool:
           $ref: "#/components/schemas/DockstoreTool"
         workflow:
@@ -6390,7 +6390,7 @@ components:
         friendly-name:
           type: string
       description: Describes this registry to better allow for mirroring and indexing.
-    Organisation:
+    Organization:
       type: object
       required:
         - name
@@ -6400,7 +6400,7 @@ components:
         id:
           type: integer
           format: int64
-          description: Implementation specific ID for the organisation in this web service
+          description: Implementation specific ID for the organization in this web service
         dbCreateDate:
           type: string
           format: date-time
@@ -6410,53 +6410,53 @@ components:
         name:
           type: string
           example: OICR
-          description: Name of the organisation (ex. OICR)
+          description: Name of the organization (ex. OICR)
           minLength: 3
           maxLength: 39
           pattern: "[a-zA-Z][a-zA-Z\\d]*"
         description:
           type: string
-          description: Description of the organisation
+          description: Description of the organization
         link:
           type: string
-          description: Link to the organisation website
+          description: Link to the organization website
         location:
           type: string
-          description: Location of the organisation
+          description: Location of the organization
         email:
           type: string
-          description: Contact email for the organisation
+          description: Contact email for the organization
         status:
           type: string
-          description: Is the organisation approved, pending, or rejected
+          description: Is the organization approved, pending, or rejected
           enum:
             - PENDING
             - REJECTED
             - APPROVED
         users:
           type: array
-          description: Set of users in the organisation
+          description: Set of users in the organization
           uniqueItems: true
           items:
-            $ref: "#/components/schemas/OrganisationUser"
+            $ref: "#/components/schemas/OrganizationUser"
         topic:
           type: string
-          description: Short description of the organisation
-    OrganisationUser:
+          description: Short description of the organization
+    OrganizationUser:
       type: object
       required:
         - accepted
         - role
       properties:
         id:
-          $ref: "#/components/schemas/OrganisationUserId"
+          $ref: "#/components/schemas/OrganizationUserId"
         user:
           $ref: "#/components/schemas/User"
-        organisation:
-          $ref: "#/components/schemas/Organisation"
+        organization:
+          $ref: "#/components/schemas/Organization"
         role:
           type: string
-          description: The role of the user in the organisation
+          description: The role of the user in the organization
           enum:
             - MAINTAINER
             - MEMBER
@@ -6469,13 +6469,13 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-    OrganisationUserId:
+    OrganizationUserId:
       type: object
       properties:
         userId:
           type: integer
           format: int64
-        organisationId:
+        organizationId:
           type: integer
           format: int64
     Permission:
@@ -7122,6 +7122,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7137,10 +7141,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

@@ -27,9 +27,9 @@ import org.hibernate.Hibernate;
  */
 public class CollectionOrganization {
     public final Collection collection;
-    public final Organisation organization;
+    public final Organization organization;
 
-    public CollectionOrganization(Collection collection, Organisation organization)  {
+    public CollectionOrganization(Collection collection, Organization organization)  {
         Hibernate.initialize(organization);
         Hibernate.initialize(collection);
         this.collection = collection;

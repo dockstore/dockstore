@@ -3,11 +3,60 @@ tags:
 - name: metadata
   description: description of the webservice itself
 paths:
-  /organisations/{organisationId}/collections/{collectionId}:
+  /organizations/{organizationId}/collections:
+    get:
+      operationId: getCollectionsFromOrganization
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: include
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Collection'
+    put:
+      operationId: createCollection
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+  /organizations/{organizationId}/collections/{collectionId}:
     get:
       operationId: getCollectionById
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -34,7 +83,7 @@ paths:
     post:
       operationId: updateCollection
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -58,11 +107,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
-  /organisations/{organisationId}/collections/{collectionId}/entry:
+  /organizations/{organizationId}/collections/{collectionId}/entry:
     post:
       operationId: addEntryToCollection
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -94,7 +143,7 @@ paths:
     delete:
       operationId: deleteEntryFromCollection
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -123,85 +172,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Collection'
-  /organisations/{organisationId}/collections:
+  /containers/tags:
     get:
-      operationId: getCollectionsFromOrganisation
+      operationId: tags
       parameters:
-      - name: organisationId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: include
+      - name: containerId
         in: query
         schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Collection'
-    put:
-      operationId: createCollection
-      parameters:
-      - name: organisationId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Collection'
-  /containers/{containerId}/updateTagPaths:
-    put:
-      operationId: updateTagContainerPath
-      parameters:
-      - name: containerId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-  /containers/{containerId}/users:
-    get:
-      operationId: getUsers
-      parameters:
-      - name: containerId
-        in: path
-        required: true
-        schema:
           type: integer
           format: int64
       requestBody:
@@ -217,68 +194,39 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
-  /containers/published/{containerId}:
-    get:
-      operationId: getPublishedContainer
-      parameters:
-      - name: containerId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: include
-        in: query
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-  /containers/namespace/{namespace}/published:
-    get:
-      operationId: getPublishedContainersByNamespace
-      parameters:
-      - name: namespace
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tool'
-  /containers/schema/{containerId}/published:
-    get:
-      operationId: getPublishedContainerSchema
-      parameters:
-      - name: containerId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-  /containers/registerManual:
+                  $ref: '#/components/schemas/Tag'
+  /containers/{containerId}/publish:
     post:
-      operationId: registerManual
+      operationId: publish
+      parameters:
+      - name: containerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+  /containers/{containerId}/refresh:
+    get:
+      operationId: refresh
+      parameters:
+      - name: containerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
       requestBody:
         content:
           '*/*':
@@ -357,6 +305,101 @@ paths:
           description: default response
           content:
             application/json: {}
+  /containers/{containerId}/updateTagPaths:
+    put:
+      operationId: updateTagContainerPath
+      parameters:
+      - name: containerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+  /containers/published/{containerId}:
+    get:
+      operationId: getPublishedContainer
+      parameters:
+      - name: containerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: include
+        in: query
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+  /containers/namespace/{namespace}/published:
+    get:
+      operationId: getPublishedContainersByNamespace
+      parameters:
+      - name: namespace
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+  /containers/schema/{containerId}/published:
+    get:
+      operationId: getPublishedContainerSchema
+      parameters:
+      - name: containerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+  /containers/registerManual:
+    post:
+      operationId: registerManual
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
   /containers/published:
     get:
       operationId: allPublishedContainers
@@ -474,54 +517,6 @@ paths:
         in: query
         schema:
           type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-  /containers/{containerId}/labels:
-    put:
-      operationId: updateLabels
-      parameters:
-      - name: containerId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: labels
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-  /containers/{toolId}/defaultVersion:
-    put:
-      operationId: updateDefaultVersion
-      parameters:
-      - name: toolId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
@@ -948,34 +943,13 @@ paths:
           description: default response
           content:
             application/zip: {}
-  /containers/{containerId}/publish:
-    post:
-      operationId: publish
+  /containers/{containerId}/users:
+    get:
+      operationId: getUsers
       parameters:
       - name: containerId
         in: path
         required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Tool'
-  /containers/tags:
-    get:
-      operationId: tags
-      parameters:
-      - name: containerId
-        in: query
         schema:
           type: integer
           format: int64
@@ -992,10 +966,58 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tag'
-  /containers/{containerId}/refresh:
+                  $ref: '#/components/schemas/User'
+  /containers/{containerId}/labels:
+    put:
+      operationId: updateLabels
+      parameters:
+      - name: containerId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: labels
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+  /containers/{toolId}/defaultVersion:
+    put:
+      operationId: updateDefaultVersion
+      parameters:
+      - name: toolId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+  /containers/path/{containerId}/tags:
     get:
-      operationId: refresh
+      operationId: getTagsByPath
       parameters:
       - name: containerId
         in: path
@@ -1014,7 +1036,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
   /containers/{containerId}/tags:
     put:
       operationId: updateTags
@@ -1152,31 +1177,25 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Tag'
-  /containers/path/{containerId}/tags:
+  /entries/{id}/collections:
     get:
-      operationId: getTagsByPath
+      operationId: entryCollections
       parameters:
-      - name: containerId
+      - name: id
         in: path
         required: true
         schema:
           type: integer
           format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
       responses:
         default:
           description: default response
           content:
             application/json:
               schema:
-                uniqueItems: true
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tag'
+                  $ref: '#/components/schemas/CollectionOrganization'
   /entries/{id}/aliases:
     put:
       operationId: updateAliases
@@ -1203,25 +1222,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-  /entries/{id}/collections:
-    get:
-      operationId: entryCollections
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CollectionOrganization'
   /containers/hostedEntry:
     post:
       operationId: createHosted_1
@@ -1257,7 +1257,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
   /containers/hostedEntry/{entryId}:
     delete:
       operationId: deleteHostedVersion_1
@@ -1340,7 +1340,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
   /workflows/hostedEntry/{entryId}:
     delete:
       operationId: deleteHostedVersion_2
@@ -1366,7 +1366,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
     patch:
       operationId: editHosted_1
       parameters:
@@ -1388,6 +1388,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workflow'
+  /metadata/dockerRegistryList:
+    get:
+      tags:
+      - metadata
+      summary: Get the list of docker registries supported on Dockstore
+      description: Get the list of docker registries supported on Dockstore, NO authentication
+      operationId: getDockerRegistries_1
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistryBean'
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -1520,24 +1535,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SourceControlBean'
-  /metadata/dockerRegistryList:
+  /organizations:
     get:
-      tags:
-      - metadata
-      summary: Get the list of docker registries supported on Dockstore
-      description: Get the list of docker registries supported on Dockstore, NO authentication
-      operationId: getDockerRegistries_1
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistryBean'
-  /organisations:
-    get:
-      operationId: getApprovedOrganisations
+      operationId: getApprovedOrganizations
       responses:
         default:
           description: default response
@@ -1546,9 +1546,9 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Organisation'
+                  $ref: '#/components/schemas/Organization'
     put:
-      operationId: createOrganisation
+      operationId: createOrganization
       requestBody:
         content:
           '*/*':
@@ -1560,12 +1560,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
-  /organisations/{organisationId}/approve:
+                $ref: '#/components/schemas/Organization'
+  /organizations/{organizationId}/approve:
     post:
-      operationId: approveOrganisation
+      operationId: approveOrganization
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1582,12 +1582,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
-  /organisations/{organisationId}/reject:
+                $ref: '#/components/schemas/Organization'
+  /organizations/{organizationId}/reject:
     post:
-      operationId: rejectOrganisation
+      operationId: rejectOrganization
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1604,10 +1604,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
-  /organisations/name/{name}:
+                $ref: '#/components/schemas/Organization'
+  /organizations/name/{name}:
     get:
-      operationId: getOrganisationByName
+      operationId: getOrganizationByName
       parameters:
       - name: name
         in: path
@@ -1625,12 +1625,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
-  /organisations/{organisationId}:
+                $ref: '#/components/schemas/Organization'
+  /organizations/{organizationId}:
     get:
-      operationId: getOrganisationById
+      operationId: getOrganizationById
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1647,11 +1647,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
+                $ref: '#/components/schemas/Organization'
     post:
-      operationId: updateOrganisation
+      operationId: updateOrganization
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1668,12 +1668,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
-  /organisations/{organisationId}/description:
+                $ref: '#/components/schemas/Organization'
+  /organizations/{organizationId}/description:
     get:
-      operationId: getOrganisationDescription
+      operationId: getOrganizationDescription
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1694,7 +1694,7 @@ paths:
     put:
       operationId: updateOrganizationDescription
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1711,12 +1711,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organisation'
-  /organisations/{organisationId}/members:
+                $ref: '#/components/schemas/Organization'
+  /organizations/{organizationId}/members:
     get:
-      operationId: getOrganisationMembers
+      operationId: getOrganizationMembers
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1736,12 +1736,12 @@ paths:
                 uniqueItems: true
                 type: array
                 items:
-                  $ref: '#/components/schemas/OrganisationUser'
-  /organisations/{organisationId}/events:
+                  $ref: '#/components/schemas/OrganizationUser'
+  /organizations/{organizationId}/events:
     get:
-      operationId: getOrganisationEvents
+      operationId: getOrganizationEvents
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1761,9 +1761,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Event'
-  /organisations/all:
+  /organizations/all:
     get:
-      operationId: getAllOrganisations
+      operationId: getAllOrganizations
       parameters:
       - name: type
         in: query
@@ -1777,8 +1777,8 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Organisation'
-  /organisations/{organisationId}/users/{username}:
+                  $ref: '#/components/schemas/Organization'
+  /organizations/{organizationId}/users/{username}:
     put:
       operationId: addUserToOrgByUsername
       parameters:
@@ -1787,7 +1787,7 @@ paths:
         required: true
         schema:
           type: string
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1804,8 +1804,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganisationUser'
-  /organisations/{organisationId}/user:
+                $ref: '#/components/schemas/OrganizationUser'
+  /organizations/{organizationId}/user:
     put:
       operationId: addUserToOrg
       parameters:
@@ -1818,7 +1818,7 @@ paths:
         schema:
           type: integer
           format: int64
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1835,7 +1835,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganisationUser'
+                $ref: '#/components/schemas/OrganizationUser'
     post:
       operationId: updateUserRole
       parameters:
@@ -1848,7 +1848,7 @@ paths:
         schema:
           type: integer
           format: int64
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1865,7 +1865,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganisationUser'
+                $ref: '#/components/schemas/OrganizationUser'
     delete:
       operationId: deleteUserRole
       parameters:
@@ -1874,7 +1874,7 @@ paths:
         schema:
           type: integer
           format: int64
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -1890,11 +1890,11 @@ paths:
           description: default response
           content:
             application/json: {}
-  /organisations/{organisationId}/invitation:
+  /organizations/{organizationId}/invitation:
     post:
       operationId: acceptOrRejectInvitation
       parameters:
-      - name: organisationId
+      - name: organizationId
         in: path
         required: true
         schema:
@@ -2010,6 +2010,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token'
+  /auth/tokens/github:
+    post:
+      operationId: addToken
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
   /auth/tokens/github.com:
     get:
       operationId: addGithubToken
@@ -2050,24 +2065,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Token'
-  /auth/tokens/github:
-    post:
-      operationId: addToken
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Token'
-  /users/updateUserMetadata:
+  /users/{userId}/containers/refresh:
     get:
-      operationId: updateUserMetadata
+      operationId: refresh_1
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
       requestBody:
         content:
           '*/*':
@@ -2081,10 +2088,32 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/User'
-  /users/user:
+                  $ref: '#/components/schemas/Tool'
+  /users/{userId}:
     get:
       operationId: getUser
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/user:
+    get:
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -2111,79 +2140,9 @@ paths:
             application/json:
               schema:
                 type: boolean
-  /users/{userId}:
+  /users/updateUserMetadata:
     get:
-      operationId: getUser_1
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  /users/user/changeUsername:
-    post:
-      operationId: changeUsername
-      parameters:
-      - name: username
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-  /users/checkUser/{username}:
-    get:
-      operationId: checkUserExists
-      parameters:
-      - name: username
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: boolean
-  /users/{userId}/tokens:
-    get:
-      operationId: getUserTokens
-      parameters:
-      - name: userId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
+      operationId: updateUserMetadata
       requestBody:
         content:
           '*/*':
@@ -2197,7 +2156,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Token'
+                  $ref: '#/components/schemas/User'
   /users/{userId}/tokens/github.com:
     get:
       operationId: getGithubUserTokens
@@ -2573,7 +2532,7 @@ paths:
                 uniqueItems: true
                 type: array
                 items:
-                  $ref: '#/components/schemas/OrganisationUser'
+                  $ref: '#/components/schemas/OrganizationUser'
   /users/user/extended:
     get:
       operationId: getExtendedUserData
@@ -2589,9 +2548,50 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExtendedUserData'
-  /users/{userId}/containers/refresh:
+  /users/user/changeUsername:
+    post:
+      operationId: changeUsername
+      parameters:
+      - name: username
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/checkUser/{username}:
     get:
-      operationId: refresh_1
+      operationId: checkUserExists
+      parameters:
+      - name: username
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: boolean
+  /users/{userId}/tokens:
+    get:
+      operationId: getUserTokens
       parameters:
       - name: userId
         in: path
@@ -2612,14 +2612,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Tool'
-  /workflows/{workflowId}/users:
+                  $ref: '#/components/schemas/Token'
+  /workflows/versions:
     get:
-      operationId: getUsers_1
+      operationId: tags_1
       parameters:
       - name: workflowId
-        in: path
-        required: true
+        in: query
         schema:
           type: integer
           format: int64
@@ -2634,329 +2633,19 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
-  /workflows/{workflowId}/labels:
-    put:
-      operationId: updateLabels_1
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: labels
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-  /workflows/{workflowId}/defaultVersion:
-    put:
-      operationId: updateDefaultVersion_1
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-  /workflows/path/{repository}:
-    get:
-      operationId: getAllWorkflowByPath
-      parameters:
-      - name: repository
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workflow'
-  /workflows/path/workflow/{repository}/published:
-    get:
-      operationId: getPublishedWorkflowByPath
-      parameters:
-      - name: repository
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: include
-        in: query
-        schema:
-          type: string
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-  /workflows/{workflowId}/nextflow:
-    get:
-      operationId: nextflow
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: tag
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-  /workflows/{workflowId}/nextflow/{relative-path}:
-    get:
-      operationId: secondaryNextFlowPath
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: tag
-        in: query
-        schema:
-          type: string
-      - name: relative-path
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SourceFile'
-  /workflows/{workflowId}/secondaryNextflow:
-    get:
-      operationId: secondaryNextflow
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: tag
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SourceFile'
-  /workflows/manualRegister:
-    post:
-      operationId: manualRegister
-      parameters:
-      - name: workflowRegistry
-        in: query
-        schema:
-          type: string
-      - name: workflowPath
-        in: query
-        schema:
-          type: string
-      - name: defaultWorkflowPath
-        in: query
-        schema:
-          type: string
-      - name: workflowName
-        in: query
-        schema:
-          type: string
-      - name: descriptorType
-        in: query
-        schema:
-          type: string
-      - name: defaultTestParameterFilePath
-        in: query
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Workflow'
-  /workflows/{workflowId}/workflowVersions:
-    put:
-      operationId: updateWorkflowVersion
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                uniqueItems: true
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkflowVersion'
-  /workflows/{workflowId}/dag/{workflowVersionId}:
-    get:
-      operationId: getWorkflowDag
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: workflowVersionId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
-  /workflows/{workflowId}/tools/{workflowVersionId}:
-    get:
-      operationId: getTableToolContent
-      parameters:
-      - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: workflowVersionId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json:
-              schema:
-                type: string
-  /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
+  /workflows/{workflowId}/publish:
     post:
-      operationId: registerCheckerWorkflow
+      operationId: publish_1
       parameters:
-      - name: checkerWorkflowPath
-        in: query
-        schema:
-          type: string
-      - name: testParameterPath
-        in: query
-        schema:
-          type: string
-      - name: entryId
+      - name: workflowId
         in: path
         required: true
         schema:
           type: integer
           format: int64
-      - name: descriptorType
-        in: path
-        required: true
-        schema:
-          type: string
       requestBody:
         content:
           '*/*':
@@ -2968,18 +2657,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
-  /workflows/{workflowId}/zip/{workflowVersionId}:
+                $ref: '#/components/schemas/Workflow'
+  /workflows/{workflowId}/refresh:
     get:
-      operationId: getWorkflowZip
+      operationId: refresh_2
       parameters:
       - name: workflowId
-        in: path
-        required: true
-        schema:
-          type: integer
-          format: int64
-      - name: workflowVersionId
         in: path
         required: true
         schema:
@@ -2994,7 +2677,9 @@ paths:
         default:
           description: default response
           content:
-            application/zip: {}
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
   /workflows/{workflowId}/verifiedSources:
     get:
       operationId: verifiedSources_1
@@ -3338,9 +3023,59 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /workflows/{workflowId}/restub:
+  /workflows/{workflowId}/users:
     get:
-      operationId: restub
+      operationId: getUsers_1
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+  /workflows/{workflowId}/labels:
+    put:
+      operationId: updateLabels_1
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: labels
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+  /workflows/{workflowId}/defaultVersion:
+    put:
+      operationId: updateDefaultVersion_1
       parameters:
       - name: workflowId
         in: path
@@ -3754,9 +3489,177 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entry'
-  /workflows/{workflowId}/publish:
+  /workflows/path/{repository}:
+    get:
+      operationId: getAllWorkflowByPath
+      parameters:
+      - name: repository
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workflow'
+  /workflows/path/workflow/{repository}/published:
+    get:
+      operationId: getPublishedWorkflowByPath
+      parameters:
+      - name: repository
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: include
+        in: query
+        schema:
+          type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+  /workflows/{workflowId}/nextflow:
+    get:
+      operationId: nextflow
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: tag
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  /workflows/{workflowId}/nextflow/{relative-path}:
+    get:
+      operationId: secondaryNextFlowPath
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: tag
+        in: query
+        schema:
+          type: string
+      - name: relative-path
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceFile'
+  /workflows/{workflowId}/secondaryNextflow:
+    get:
+      operationId: secondaryNextflow
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: tag
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SourceFile'
+  /workflows/manualRegister:
     post:
-      operationId: publish_1
+      operationId: manualRegister
+      parameters:
+      - name: workflowRegistry
+        in: query
+        schema:
+          type: string
+      - name: workflowPath
+        in: query
+        schema:
+          type: string
+      - name: defaultWorkflowPath
+        in: query
+        schema:
+          type: string
+      - name: workflowName
+        in: query
+        schema:
+          type: string
+      - name: descriptorType
+        in: query
+        schema:
+          type: string
+      - name: defaultTestParameterFilePath
+        in: query
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+  /workflows/{workflowId}/workflowVersions:
+    put:
+      operationId: updateWorkflowVersion
       parameters:
       - name: workflowId
         in: path
@@ -3775,13 +3678,23 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
-  /workflows/versions:
+                uniqueItems: true
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkflowVersion'
+  /workflows/{workflowId}/dag/{workflowVersionId}:
     get:
-      operationId: tags_1
+      operationId: getWorkflowDag
       parameters:
       - name: workflowId
-        in: query
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: workflowVersionId
+        in: path
+        required: true
         schema:
           type: integer
           format: int64
@@ -3796,12 +3709,99 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WorkflowVersion'
-  /workflows/{workflowId}/refresh:
+                type: string
+  /workflows/{workflowId}/tools/{workflowVersionId}:
     get:
-      operationId: refresh_2
+      operationId: getTableToolContent
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: workflowVersionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                type: string
+  /workflows/{entryId}/registerCheckerWorkflow/{descriptorType}:
+    post:
+      operationId: registerCheckerWorkflow
+      parameters:
+      - name: checkerWorkflowPath
+        in: query
+        schema:
+          type: string
+      - name: testParameterPath
+        in: query
+        schema:
+          type: string
+      - name: entryId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: descriptorType
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entry'
+  /workflows/{workflowId}/zip/{workflowVersionId}:
+    get:
+      operationId: getWorkflowZip
+      parameters:
+      - name: workflowId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: workflowVersionId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/zip: {}
+  /workflows/{workflowId}/restub:
+    get:
+      operationId: restub
       parameters:
       - name: workflowId
         in: path
@@ -3877,24 +3877,24 @@ paths:
           content:
             application/json: {}
             text/plain: {}
-  /api/ga4gh/v2/extended/organizations:
-    get:
-      operationId: entriesOrgGet
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       parameters:
       - name: organization
         in: path
         required: true
         schema:
           type: string
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
+  /api/ga4gh/v2/extended/organizations:
+    get:
+      operationId: entriesOrgGet_1
       responses:
         default:
           description: default response
@@ -4047,36 +4047,6 @@ paths:
           type: integer
           format: int32
           default: 1000
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: default response
-          content:
-            application/json: {}
-            text/plain: {}
-  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files:
-    get:
-      operationId: toolsIdVersionsVersionIdTypeFilesGet
-      parameters:
-      - name: type
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: version_id
-        in: path
-        required: true
-        schema:
-          type: string
       requestBody:
         content:
           '*/*':
@@ -4252,6 +4222,36 @@ paths:
     get:
       operationId: toolsIdVersionsVersionIdContainerfileGet
       parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: version_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          description: default response
+          content:
+            application/json: {}
+            text/plain: {}
+  /api/ga4gh/v2/tools/{id}/versions/{version_id}/{type}/files:
+    get:
+      operationId: toolsIdVersionsVersionIdTypeFilesGet
+      parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
       - name: id
         in: path
         required: true
@@ -4559,6 +4559,9 @@ components:
         last_modified:
           type: integer
           format: int32
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -4574,9 +4577,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     FileFormat:
       type: object
       properties:
@@ -4734,6 +4734,36 @@ components:
           type: string
         wdl_path:
           type: string
+    Validation:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum:
+          - DOCKSTORE_CWL
+          - DOCKSTORE_WDL
+          - DOCKERFILE
+          - CWL_TEST_JSON
+          - WDL_TEST_JSON
+          - NEXTFLOW
+          - NEXTFLOW_CONFIG
+          - NEXTFLOW_TEST_PARAMS
+        valid:
+          type: boolean
+        message:
+          type: string
+    VerificationInformation:
+      type: object
+      properties:
+        verified:
+          type: boolean
+        metadata:
+          type: string
+        platformVersion:
+          type: string
     Tool:
       type: object
       properties:
@@ -4799,15 +4829,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Tag'
-        customerDockerRegistryPath:
-          type: string
-          writeOnly: true
         path:
           type: string
         descriptorType:
           type: array
           items:
             type: string
+        customerDockerRegistryPath:
+          type: string
+          writeOnly: true
         is_published:
           type: boolean
         last_modified:
@@ -4836,6 +4866,9 @@ components:
           type: string
         custom_docker_registry_path:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -4851,39 +4884,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
-    Validation:
+    PublishRequest:
       type: object
       properties:
-        id:
-          type: integer
-          format: int64
-        type:
-          type: string
-          enum:
-          - DOCKSTORE_CWL
-          - DOCKSTORE_WDL
-          - DOCKERFILE
-          - CWL_TEST_JSON
-          - WDL_TEST_JSON
-          - NEXTFLOW
-          - NEXTFLOW_CONFIG
-          - NEXTFLOW_TEST_PARAMS
-        valid:
+        publish:
           type: boolean
-        message:
-          type: string
-    VerificationInformation:
-      type: object
-      properties:
-        verified:
-          type: boolean
-        metadata:
-          type: string
-        platformVersion:
-          type: string
     RegistryBean:
       type: object
       properties:
@@ -4904,11 +4909,6 @@ components:
       properties:
         star:
           type: boolean
-    PublishRequest:
-      type: object
-      properties:
-        publish:
-          type: boolean
     VerifyRequest:
       type: object
       properties:
@@ -4922,8 +4922,8 @@ components:
         collection:
           $ref: '#/components/schemas/Collection'
         organization:
-          $ref: '#/components/schemas/Organisation'
-    Organisation:
+          $ref: '#/components/schemas/Organization'
+    Organization:
       type: object
       properties:
         id:
@@ -4952,7 +4952,7 @@ components:
           uniqueItems: true
           type: array
           items:
-            $ref: '#/components/schemas/OrganisationUser'
+            $ref: '#/components/schemas/OrganizationUser'
         topic:
           type: string
         dbCreateDate:
@@ -4961,15 +4961,15 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-    OrganisationUser:
+    OrganizationUser:
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/OrganisationUserId'
+          $ref: '#/components/schemas/OrganizationUserId'
         user:
           $ref: '#/components/schemas/User'
-        organisation:
-          $ref: '#/components/schemas/Organisation'
+        organization:
+          $ref: '#/components/schemas/Organization'
         role:
           type: string
           enum:
@@ -4983,13 +4983,13 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-    OrganisationUserId:
+    OrganizationUserId:
       type: object
       properties:
         userId:
           type: integer
           format: int64
-        organisationId:
+        organizationId:
           type: integer
           format: int64
     Workflow:
@@ -5082,6 +5082,9 @@ components:
           format: int64
         source_control_provider:
           type: string
+        last_modified_date:
+          type: string
+          format: date-time
         checker_id:
           type: integer
           format: int64
@@ -5097,9 +5100,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FileFormat'
-        last_modified_date:
-          type: string
-          format: date-time
     WorkflowVersion:
       type: object
       properties:
@@ -5189,8 +5189,8 @@ components:
           format: int64
         user:
           $ref: '#/components/schemas/User'
-        organisation:
-          $ref: '#/components/schemas/Organisation'
+        organization:
+          $ref: '#/components/schemas/Organization'
         tool:
           $ref: '#/components/schemas/Tool'
         workflow:

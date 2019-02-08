@@ -26,7 +26,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
 import io.dockstore.common.NextflowUtilities;
@@ -48,19 +51,21 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
  */
 public class NextFlowHandler implements LanguageHandlerInterface {
 
+    private static final Pattern INCLUDE_CONFIG_PATTERN = Pattern.compile("(?i)(?m)^[ \t]*includeConfig(.*)");
+
     @Override
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         final Configuration configuration = NextflowUtilities.grabConfig(content);
-        if (configuration != null && configuration.containsKey("manifest.description")) {
+        if (configuration.containsKey("manifest.description")) {
             entry.setDescription(configuration.getString("manifest.description"));
         }
-        if (configuration != null && configuration.containsKey("manifest.author")) {
+        if (configuration.containsKey("manifest.author")) {
             entry.setAuthor(configuration.getString("manifest.author"));
         }
         // look for extended help message from nf-core workflows when it is available
         String mainScriptPath = "main.nf";
-        if (configuration != null && configuration.containsKey("manifest.mainScript")) {
+        if (configuration.containsKey("manifest.mainScript")) {
             mainScriptPath = configuration.getString("manifest.mainScript");
         }
         String finalMainScriptPath = mainScriptPath;
@@ -81,21 +86,33 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     @Override
     public Map<String, SourceFile> processImports(String repositoryId, String content, Version version,
         SourceCodeRepoInterface sourceCodeRepoInterface, String filepath) {
+        // FIXME: see{@link NextflowUtilities#grabConfig(String) grabConfig} method for comments on why
+        // we have to look at imports in this crummy way
+        final Matcher matcher = INCLUDE_CONFIG_PATTERN.matcher(content);
+        Set<String> suspectedConfigImports = new HashSet<>();
+        while (matcher.find()) {
+            suspectedConfigImports.add(CharMatcher.is('\'').trimFrom(matcher.group(1).trim()));
+        }
+
         final Configuration configuration = NextflowUtilities.grabConfig(content);
         Map<String, SourceFile> imports = new HashMap<>();
 
         // add the NextFlow scripts
         String mainScriptPath = "main.nf";
-        if (configuration != null && configuration.containsKey("manifest.mainScript")) {
+        if (configuration.containsKey("manifest.mainScript")) {
             mainScriptPath = configuration.getString("manifest.mainScript");
         }
-        String mainScriptAbsolutePath = convertRelativePathToAbsolutePath(filepath, mainScriptPath);
 
-        Optional<SourceFile> sourceFile = sourceCodeRepoInterface
-            .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, mainScriptAbsolutePath);
-        if (sourceFile.isPresent()) {
-            sourceFile.get().setPath(mainScriptPath);
-            imports.put(mainScriptPath, sourceFile.get());
+        suspectedConfigImports.add(mainScriptPath);
+
+        for (String filename : suspectedConfigImports) {
+            String filenameAbsolutePath = convertRelativePathToAbsolutePath(filepath, filename);
+            Optional<SourceFile> sourceFile = sourceCodeRepoInterface
+                .readFile(repositoryId, version, SourceFile.FileType.NEXTFLOW, filenameAbsolutePath);
+            if (sourceFile.isPresent()) {
+                sourceFile.get().setPath(filename);
+                imports.put(filename, sourceFile.get());
+            }
         }
         // source files in /lib seem to be automatically added to the script classpath
         // binaries are also there and will need to be ignored
@@ -294,18 +311,18 @@ public class NextFlowHandler implements LanguageHandlerInterface {
         // add the NextFlow scripts
         final Configuration configuration = NextflowUtilities.grabConfig(mainDescriptor);
         String mainScriptPath = "main.nf";
-        if (configuration != null && configuration.containsKey("manifest.mainScript")) {
+        if (configuration.containsKey("manifest.mainScript")) {
             mainScriptPath = configuration.getString("manifest.mainScript");
         }
         mainDescriptor = secondaryDescContent.get(mainScriptPath);
 
         // Get default container (process.container takes precedence over params.container)
         String defaultContainer = null;
-        if (configuration != null && configuration.containsKey("params.container")) {
+        if (configuration.containsKey("params.container")) {
             defaultContainer = configuration.getString("params.container");
         }
 
-        if (configuration != null && configuration.containsKey("process.container")) {
+        if (configuration.containsKey("process.container")) {
             defaultContainer = configuration.getString("process.container");
         }
 

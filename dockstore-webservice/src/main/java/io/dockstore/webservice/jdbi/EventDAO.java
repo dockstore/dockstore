@@ -25,9 +25,9 @@ public class EventDAO extends AbstractDAO<Event> {
         return persist(event).getId();
     }
 
-    public List<Event> findEventsForOrganisation(long organisationId) {
-        Query query = namedQuery("io.dockstore.webservice.core.Event.findAllForOrganisation")
-                .setParameter("organisationId", organisationId);
+    public List<Event> findEventsForOrganization(long organizationId) {
+        Query query = namedQuery("io.dockstore.webservice.core.Event.findAllForOrganization")
+                .setParameter("organizationId", organizationId);
         return list(query);
     }
 
