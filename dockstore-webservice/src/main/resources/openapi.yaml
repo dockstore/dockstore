@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-alpha.5-SNAPSHOT
+  version: 1.6.0-alpha.6-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -2779,6 +2779,30 @@ paths:
       security:
         - BEARER:
             []
+  "/entries/{id}/collections":
+    get:
+      tags:
+        - entries
+      summary: Get a published entry's collections and organizations it's part of
+      description: Entry must be published
+      operationId: entryCollections
+      parameters:
+        - name: id
+          in: path
+          description: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollectionOrganization"
   /metadata/descriptorLanguageList:
     get:
       tags:
@@ -5923,6 +5947,13 @@ components:
         description:
           type: string
           description: Description of the collection
+    CollectionOrganization:
+      type: object
+      properties:
+        collection:
+          $ref: "#/components/schemas/Collection"
+        organization:
+          $ref: "#/components/schemas/Organisation"
     DescriptorLanguageBean:
       type: object
       properties:
@@ -5963,10 +5994,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -5982,6 +6009,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6147,10 +6178,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6166,6 +6193,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7091,10 +7122,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7110,6 +7137,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

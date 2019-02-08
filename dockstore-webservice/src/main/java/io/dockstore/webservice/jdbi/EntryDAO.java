@@ -34,6 +34,7 @@ import javax.persistence.criteria.Root;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Version;
@@ -138,6 +139,14 @@ public abstract class EntryDAO<T extends Entry> extends AbstractDockstoreDAO<T> 
 
     public Entry<? extends Entry, ? extends Version> getGenericEntryByAlias(String alias) {
         return uniqueResult(namedQuery("Entry.getGenericEntryByAlias").setParameter("alias", alias));
+    }
+
+    public List<CollectionOrganization> findCollectionsByEntryId(long entryId) {
+        EntityManager entityManager = currentSession().getEntityManagerFactory().createEntityManager();
+        List<CollectionOrganization> collectionOrganizations = entityManager
+                .createNamedQuery("io.dockstore.webservice.core.Entry.findCollectionsByEntryId", CollectionOrganization.class)
+                .setParameter("entryId", entryId).getResultList();
+        return collectionOrganizations;
     }
 
     public T findPublishedById(long id) {
