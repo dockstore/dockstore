@@ -31,16 +31,16 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         session.flush();
     }
 
-    public List<Collection> findAllByOrg(long organisationId) {
+    public List<Collection> findAllByOrg(long organizationId) {
         Query query = namedQuery("io.dockstore.webservice.core.Collection.findAllByOrg")
-                .setParameter("organisationId", organisationId);
+                .setParameter("organizationId", organizationId);
         return list(query);
     }
 
-    public Collection findByNameAndOrg(String name, long organisationId) {
+    public Collection findByNameAndOrg(String name, long organizationId) {
         Query query = namedQuery("io.dockstore.webservice.core.Collection.findByNameAndOrg")
                 .setParameter("name", name)
-                .setParameter("organisationId", organisationId);
+                .setParameter("organizationId", organizationId);
         return uniqueResult(query);
     }
 
