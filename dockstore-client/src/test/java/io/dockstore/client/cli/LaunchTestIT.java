@@ -1213,7 +1213,13 @@ public class LaunchTestIT {
 
     @Test
     public void entry2jsonNoVersion() {
-
+        /*
+         * Make a runtime JSON template for input to the workflow
+         * but don't provide a version at the end of the entry
+         * E.g dockstore workflow convert entry2json --entry quay.io/collaboratory/dockstore-tool-linux-sort
+         * Dockstore will try to use the 'master' version, however the 'master' version
+         * is not valid so Dockstore should print an error message and exit
+         * */
         WorkflowVersion aWorkflowVersion1 = new WorkflowVersion();
         aWorkflowVersion1.setName("master");
         aWorkflowVersion1.setValid(false);
@@ -1249,6 +1255,13 @@ public class LaunchTestIT {
 
     @Test
     public void entry2jsonBadVersion() {
+        /*
+         * Make a runtime JSON template for input to the workflow
+         * but provide a non existent version at the end of the entry
+         * E.g dockstore workflow convert entry2json --entry quay.io/collaboratory/dockstore-tool-linux-sort:9.9.9
+         * Dockstore will try to use the last modified version and print an explanation message.
+         * The last modified version is not valid so Dockstore should print an error message and exit
+         * */
 
         WorkflowVersion aWorkflowVersion1 = new WorkflowVersion();
         aWorkflowVersion1.setName("1.0.0");
