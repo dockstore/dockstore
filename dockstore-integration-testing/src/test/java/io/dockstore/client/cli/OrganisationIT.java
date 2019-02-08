@@ -10,13 +10,16 @@ import io.dockstore.webservice.core.OrganisationUser;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
+import io.swagger.client.api.EntriesApi;
 import io.swagger.client.api.OrganisationsApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Collection;
+import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
 import io.swagger.client.model.Organisation;
 import io.swagger.client.model.PublishRequest;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -734,8 +737,28 @@ public class OrganisationIT extends BaseIT {
         PublishRequest publishRequest = SwaggerUtility.createPublishRequest(true);
         containersApi.publish(entryId, publishRequest);
 
+        // Able to retrieve the collection and organization an entry is part of, even if there aren't any
+        EntriesApi entriesApi = new EntriesApi(webClientUser2);
+        List<CollectionOrganization> collectionOrganizations = entriesApi.entryCollections(entryId);
+        Assert.assertEquals(0, collectionOrganizations.size());
+
         // Add tool to collection
         organisationsApi.addEntryToCollection(organisation.getId(), collectionId, entryId);
+
+        // Able to retrieve the collection and organization an entry is part of
+        collectionOrganizations = entriesApi.entryCollections(entryId);
+        Assert.assertEquals(1, collectionOrganizations.size());
+        CollectionOrganization collectionOrganization = collectionOrganizations.get(0);
+        Assert.assertEquals(organisation.getId(), collectionOrganization.getOrganization().getId());
+        Assert.assertEquals(collection.getId(), collectionOrganization.getCollection().getId());
+
+        // Unable to retrieve the collection and organization of an entry that does not exist
+        try {
+            entriesApi.entryCollections(9001l);
+            Assert.fail("Should have gotten an exception because the entry does not exist");
+        } catch (Exception e) {
+            // Everything is fine, carrying on
+        }
 
         // The collection should have an entry
         collection = organisationsApiAdmin.getCollectionById(organisation.getId(), collectionId);
