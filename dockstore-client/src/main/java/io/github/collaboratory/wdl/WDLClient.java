@@ -20,32 +20,26 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.BaseLanguageClient;
+import io.dockstore.client.cli.nested.BaseLauncher;
 import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
-import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.common.Bridge;
-import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WDLFileProvisioning;
-import io.github.collaboratory.cwl.LauncherCWL;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
-import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -57,160 +51,151 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
+import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 
 /**
  * Grouping code for launching WDL tools and workflows
  */
-public class WDLClient extends CromwellLauncher implements LanguageClientInterface {
+public class WDLClient extends BaseLanguageClient implements LanguageClientInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
-
+    private BaseLauncher launcher;
+    private Bridge bridge;
+    private String wdlOutputTarget;
 
     public WDLClient(AbstractEntryClient abstractEntryClient) {
         super(abstractEntryClient);
+        this.launcher = new CromwellLauncher(abstractEntryClient);
+    }
+
+    @Override
+    public void selectParameterFile(String yamlParameterFile, String jsonParameterFile) {
+        boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)));
+        if (!hasRequiredFlags) {
+            errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
+        }
+
+        selectedParameterFile = jsonParameterFile != null ? jsonParameterFile : yamlParameterFile;
+    }
+
+    @Override
+    public File provisionInputFiles() {
+        // Get list of input files
+        bridge = new Bridge(localPrimaryDescriptorFile.getParent());
+        Map<String, String> wdlInputs = null;
+        try {
+            wdlInputs = bridge.getInputFiles(localPrimaryDescriptorFile);
+        } catch (NullPointerException e) {
+            exceptionMessage(e, "Could not get WDL imports: " + e.getMessage(), API_ERROR);
+        }
+
+        // Convert parameter JSON to a map
+        WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(abstractEntryClient.getConfigFile());
+        Gson gson = new Gson();
+        // Don't care whether it's actually a yaml or already a json, just convert to json anyways
+        String jsonString = null;
+        try {
+            jsonString = abstractEntryClient.fileToJSON(selectedParameterFile);
+        } catch (IOException ex) {
+            errorMessage(ex.getMessage(), IO_ERROR);
+        }
+        inputJson = gson.fromJson(jsonString, HashMap.class);
+
+        // The working directory is based on the location of the primary descriptor
+        if (!isLocalEntry) {
+            workingDirectory = tempLaunchDirectory.getAbsolutePath();
+        } else {
+            workingDirectory = Paths.get(entry).toAbsolutePath().normalize().getParent().toString();
+        }
+
+        // Else if local entry then need to get parent path of entry variable (path)
+        System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDirectory);
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
+        try {
+            Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
+            return new File(wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap));
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
+            throw e;
+        }
+    }
+
+    @Override
+    public void run() throws ExecuteException {
+        notificationsClient.sendMessage(NotificationsClient.RUN, true);
+        String runCommand = launcher.buildRunCommand(importsZipFile, localPrimaryDescriptorFile, provisionedParameterFile);
+
+        int exitCode = 0;
+        try {
+            // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
+            final ImmutablePair<String, String> execute = Utilities.executeCommand(runCommand, System.out, System.err, tempLaunchDirectory);
+            stdout = execute.getLeft();
+            stderr = execute.getRight();
+        } catch (RuntimeException e) {
+            LOG.error("Problem running launcher: ", e);
+            if (e.getCause() instanceof ExecuteException) {
+                exitCode = ((ExecuteException)e.getCause()).getExitValue();
+                throw new ExecuteException("problems running command: " + runCommand, exitCode);
+            }
+            notificationsClient.sendMessage(NotificationsClient.RUN, false);
+            throw new RuntimeException("Could not run launcher", e);
+        } finally {
+            System.out.println("Cromwell exit code: " + exitCode);
+        }
+    }
+
+    @Override
+    public void provisionOutputFiles() {
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
+        try {
+            launcher.provisionOutputFiles(stdout, stderr, workingDirectory, wdlOutputTarget, bridge, localPrimaryDescriptorFile, inputJson);
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
+            throw e;
+        }
     }
 
     /**
      * @param entry           file path for the wdl file or a dockstore id
      * @param isLocalEntry
-     * @param jsonRun           file path for the json parameter file
-     * @param wdlOutputTarget directory where to drop off output for wdl
+     * @param jsonParameterFile           file path for the json parameter file
+     * @param outputTarget directory where to drop off output for wdl
      * @param uuid
      * @return an exit code for the run
      */
     @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid)
+    public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String outputTarget, String uuid)
         throws ApiException {
         this.abstractEntryClient.loadDockerImages();
 
-        boolean hasRequiredFlags = ((yamlRun != null || jsonRun != null) && ((yamlRun != null) != (jsonRun != null)));
-        if (!hasRequiredFlags) {
-            errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
-        }
+        // Select the appropriate parameter file
+        this.isLocalEntry = isLocalEntry;
+        this.entry = entry;
+        this.wdlOutputTarget = outputTarget;
+        selectParameterFile(yamlParameterFile, jsonParameterFile);
 
-        File cromwellTargetFile = getCromwellTargetFile();
+        // Setup the launcher
+        launcher.setup();
 
-        INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
-        String notificationsWebHookURL = config.getString("notifications", "");
-        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
+        // Setup notifications
+        setupNotifications(uuid);
 
         // Setup temp directory and download files
-        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.WDL, isLocalEntry, entry);
-        File tempLaunchDirectory = descriptorAndZip.getLeft();
-        File localPrimaryDescriptorFile = descriptorAndZip.getMiddle();
-        File importsZipFile = descriptorAndZip.getRight();
+        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.WDL);
+        tempLaunchDirectory = descriptorAndZip.getLeft();
+        localPrimaryDescriptorFile = descriptorAndZip.getMiddle();
+        importsZipFile = descriptorAndZip.getRight();
+
+        // Provision the input files
+        provisionedParameterFile = provisionInputFiles();
 
         try {
-            // Get list of input files
-            Bridge bridge = new Bridge(localPrimaryDescriptorFile.getParent());
-            Map<String, String> wdlInputs = null;
-            try {
-                wdlInputs = bridge.getInputFiles(localPrimaryDescriptorFile);
-            } catch (NullPointerException e) {
-                exceptionMessage(e, "Could not get WDL imports: " + e.getMessage(), API_ERROR);
-            }
+            // Run the tool/workflow
+            run();
 
-            // Convert parameter JSON to a map
-            WDLFileProvisioning wdlFileProvisioning = new WDLFileProvisioning(abstractEntryClient.getConfigFile());
-            Gson gson = new Gson();
-            // Don't care whether it's actually a yaml or already a json, just convert to json anyways
-            String jsonString = abstractEntryClient.fileToJSON(jsonRun != null ? jsonRun : yamlRun);
-            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
-            final List<String> wdlRun;
-
-            // The working directory is based on the location of the primary descriptor
-            String workingDir;
-            if (!isLocalEntry) {
-                workingDir = tempLaunchDirectory.getAbsolutePath();
-            } else {
-                workingDir = Paths.get(entry).toAbsolutePath().normalize().getParent().toString();
-            }
-
-            // Else if local entry then need to get parent path of entry variable (path)
-            System.out.println("Creating directories for run of Dockstore launcher in current working directory: " + workingDir);
-            notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, true);
-            try {
-                Map<String, Object> fileMap = wdlFileProvisioning.pullFiles(inputJson, wdlInputs);
-                // Make new json file
-                String newJsonPath = wdlFileProvisioning.createUpdatedInputsJson(inputJson, fileMap);
-                if (importsZipFile == null || abstractEntryClient instanceof ToolClient) {
-                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath);
-                } else {
-                    wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", newJsonPath, "--imports", importsZipFile.getAbsolutePath());
-                }
-            } catch (Exception e) {
-                notificationsClient.sendMessage(NotificationsClient.PROVISION_INPUT, false);
-                throw e;
-            }
-            notificationsClient.sendMessage(NotificationsClient.RUN, true);
-            // run a workflow
-            System.out.println("Calling out to Cromwell to run your workflow");
-
-            // Currently Cromwell does not support HTTP(S) imports
-            // https://github.com/broadinstitute/cromwell/issues/1528
-
-            final String[] s = { "java", "-jar", cromwellTargetFile.getAbsolutePath(), "run" };
-            List<String> arguments = new ArrayList<>();
-            arguments.addAll(Arrays.asList(s));
-            arguments.addAll(wdlRun);
-
-            int exitCode = 0;
-            String stdout;
-            String stderr;
-            try {
-                // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
-                final String join = Joiner.on(" ").join(arguments);
-                System.out.println(join);
-                final ImmutablePair<String, String> execute = Utilities.executeCommand(join, System.out, System.err, tempLaunchDirectory);
-                stdout = execute.getLeft();
-                stderr = execute.getRight();
-            } catch (RuntimeException e) {
-                LOG.error("Problem running cromwell: ", e);
-                if (e.getCause() instanceof ExecuteException) {
-                    exitCode = ((ExecuteException)e.getCause()).getExitValue();
-                    throw new ExecuteException("problems running command: " + Joiner.on(" ").join(arguments), exitCode);
-                }
-                notificationsClient.sendMessage(NotificationsClient.RUN, false);
-                throw new RuntimeException("Could not run Cromwell", e);
-            } finally {
-                System.out.println("Cromwell exit code: " + exitCode);
-            }
-            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
-            try {
-                LauncherCWL.outputIntegrationOutput(workingDir, ImmutablePair.of(stdout, stderr), stdout,
-                    stderr, "Cromwell");
-                // capture the output and provision it
-                if (wdlOutputTarget != null) {
-                    // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
-                    // grab values from output JSON
-                    Map<String, String> outputJson = parseOutputObjectFromCromwellStdout(stdout, gson);
-
-                    System.out.println("Provisioning your output files to their final destinations");
-                    final List<String> outputFiles = bridge.getOutputFiles(localPrimaryDescriptorFile);
-                    FileProvisioning fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
-                    List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
-                    for (String outFile : outputFiles) {
-                        // find file path from output
-                        final File resultFile = new File(outputJson.get(outFile));
-                        FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
-                        new1.setUrl(wdlOutputTarget + "/" + outFile);
-                        new1.setLocalPath(resultFile.getAbsolutePath());
-                        if (inputJson.containsKey(outFile + ".metadata")) {
-                            byte[] metadatas = Base64.getDecoder().decode((String)inputJson.get(outFile + ".metadata"));
-                            new1.setMetadata(new String(metadatas, StandardCharsets.UTF_8));
-                        }
-                        System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
-                        outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
-                    }
-                    fileProvisioning.uploadFiles(outputList);
-                } else {
-                    System.out.println("Output files left in place");
-                }
-            } catch (Exception e) {
-                notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
-                throw e;
-            }
+            // Provision the output files
+            provisionOutputFiles();
         } catch (ApiException ex) {
             if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
                 exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
@@ -218,9 +203,11 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
                 exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
                     ENTRY_NOT_FOUND);
             }
-        } catch (IOException ex) {
-            exceptionMessage(ex, "", IO_ERROR);
+        } catch (ExecuteException ex) {
+            exceptionMessage(ex, ex.getMessage(),
+                    GENERIC_ERROR);
         }
+
         notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
         return 0;
     }
@@ -313,8 +300,8 @@ public class WDLClient extends CromwellLauncher implements LanguageClientInterfa
         if (json) {
             final List<String> wdlDocuments = Lists.newArrayList(primaryFile.getAbsolutePath());
             final scala.collection.immutable.List<String> wdlList = scala.collection.JavaConversions.asScalaBuffer(wdlDocuments).toList();
-            Bridge bridge = new Bridge(primaryFile.getParent());
-            return bridge.inputs(wdlList);
+            Bridge bridgeTwo = new Bridge(primaryFile.getParent());
+            return bridgeTwo.inputs(wdlList);
         }
         return null;
     }
