@@ -192,9 +192,10 @@
     </changeSet>
 
     <changeSet id="AddNotNullAbsolutePathConstraint" author="coverbeck">
-        <sql dbms="postgres">
-            UPDATE sourcefile SET absolutepath=path WHERE absolutepath is null
-        </sql>
+        <update tableName="sourcefile">
+            <column name="absolutepath" valueComputed="path"/>
+            <where>absolutepath is null</where>
+        </update>
         <addNotNullConstraint tableName="sourcefile" columnName="absolutepath"/>
     </changeSet>
 
