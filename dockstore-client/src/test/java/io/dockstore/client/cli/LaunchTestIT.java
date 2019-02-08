@@ -31,7 +31,6 @@ import io.dockstore.client.cli.nested.ToolClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.Utilities;
 import io.dropwizard.testing.ResourceHelpers;
-import io.swagger.client.ApiClient;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
@@ -57,13 +56,10 @@ import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 public class LaunchTestIT {
     //create tests that will call client.checkEntryFile for workflow launch with different files and descriptor
