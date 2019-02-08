@@ -4836,26 +4836,6 @@ paths:
             application/json: {}
             text/plain: {}
           description: default response
-  /api/ga4gh/v2/tools/{id}/versions:
-    get:
-      operationId: toolsIdVersionsGet
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          content:
-            application/json: {}
-            text/plain: {}
-          description: default response
   /api/ga4gh/v2/tools/{id}/versions/{version_id}:
     get:
       operationId: toolsIdVersionsVersionIdGet
@@ -5051,6 +5031,26 @@ paths:
             application/json: {}
             text/plain: {}
           description: default response
+  /api/ga4gh/v2/tools/{id}/versions:
+    get:
+      operationId: toolsIdVersionsGet
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
   /api/ga4gh/v1/tools:
     get:
       operationId: toolsGet_1
@@ -5092,21 +5092,6 @@ paths:
         schema:
           format: int32
           type: integer
-      responses:
-        default:
-          content:
-            application/json: {}
-            text/plain: {}
-          description: default response
-  /api/ga4gh/v1/tools/{id}/versions:
-    get:
-      operationId: toolsIdVersionsGet_1
-      parameters:
-      - in: path
-        name: id
-        required: true
-        schema:
-          type: string
       responses:
         default:
           content:
@@ -5236,6 +5221,21 @@ paths:
   /api/ga4gh/v1/tools/{id}:
     get:
       operationId: toolsIdGet_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json: {}
+            text/plain: {}
+          description: default response
+  /api/ga4gh/v1/tools/{id}/versions:
+    get:
+      operationId: toolsIdVersionsGet_1
       parameters:
       - in: path
         name: id
