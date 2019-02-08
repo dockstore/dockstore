@@ -17,6 +17,7 @@ package io.swagger;
 
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.swagger.v3.oas.integration.api.ObjectMapperProcessor;
 
 public class OrderedObjectMapperProcessor implements ObjectMapperProcessor {
@@ -28,5 +29,6 @@ public class OrderedObjectMapperProcessor implements ObjectMapperProcessor {
     @Override
     public void processYamlObjectMapper(ObjectMapper mapper) {
         mapper.configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true);
+        mapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
     }
 }
