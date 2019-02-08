@@ -15,21 +15,6 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.MediaType;
-
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
@@ -56,15 +41,27 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -176,19 +173,19 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(nickname = "Post a tarball", value = "Creates a new revision of a hosted workflow",
+    @ApiOperation(nickname = "Post a zip", value = "Creates a new revision of a hosted workflow",
             authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
-    public Workflow addTarball(@Auth User user, @PathParam("entryId") Long entryId, @RequestBody InputStream payload) {
+    public Workflow addZip(@Auth User user, @PathParam("entryId") Long entryId, @RequestBody InputStream payload) {
         final Workflow workflow = getEntryDAO().findById(entryId);
         checkEntry(workflow);
         checkHosted(workflow);
         checkUserCanUpdate(user, workflow);
-        try (ArchiveInputStream archiveInputStream = new ArchiveStreamFactory().createArchiveInputStream(payload)) {
-            ArchiveEntry entry;
-            while ((entry = archiveInputStream.getNextEntry()) != null) {
+        try (ZipInputStream zipInputStream = new ZipInputStream(payload)) {
+            ZipEntry entry;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
                 System.out.println(entry.getName());
             }
-        } catch (ArchiveException | IOException e) {
+        } catch (IOException e) {
             throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
         }
         return null;
