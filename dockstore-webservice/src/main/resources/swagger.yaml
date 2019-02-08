@@ -3942,6 +3942,39 @@ paths:
       security:
       - BEARER: []
   /workflows/hostedEntry/{entryId}:
+    post:
+      tags:
+      - "hosted"
+      summary: "Creates a new revision of a hosted workflow"
+      description: ""
+      operationId: "Post a zip"
+      consumes:
+      - "application/octet-stream"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/User"
+      - name: "entryId"
+        in: "path"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        required: false
+        schema:
+          $ref: "#/definitions/InputStream"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
     delete:
       tags:
       - "hosted"
@@ -5848,6 +5881,8 @@ definitions:
       \ that describes how to build a particular container image. Examples include\
       \ Dockerfiles for creating Docker images and Singularity recipes for Singularity\
       \ images "
+  InputStream:
+    type: "object"
   Label:
     type: "object"
     required:

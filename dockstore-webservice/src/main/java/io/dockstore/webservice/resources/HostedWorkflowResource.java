@@ -183,7 +183,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         try (ZipInputStream zipInputStream = new ZipInputStream(payload)) {
             ZipEntry entry;
             while ((entry = zipInputStream.getNextEntry()) != null) {
-                System.out.println(entry.getName());
+                System.out.println(entry.getName() + " size is " + entry.getCompressedSize());
             }
         } catch (IOException e) {
             throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
