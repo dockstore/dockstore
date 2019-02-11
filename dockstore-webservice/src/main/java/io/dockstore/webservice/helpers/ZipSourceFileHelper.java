@@ -1,21 +1,20 @@
 package io.dockstore.webservice.helpers;
 
-import io.dockstore.webservice.CustomWebApplicationException;
-import io.dockstore.webservice.core.SourceFile;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpStatus;
-import org.yaml.snakeyaml.Yaml;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.SourceFile;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
+import org.yaml.snakeyaml.Yaml;
 
 /**
  * Converts the contents of a zip file into a <code>List</code> of <code>SourceFile</code>s, ensuring that
@@ -56,16 +55,12 @@ public class ZipSourceFileHelper {
             return
                     zipFile.stream().map(zipEntry -> {
                         SourceFile sourceFile = new SourceFile();
-                        if (((ZipEntry) zipEntry).getName().equals(primaryDescriptorName)){
+                        if (((ZipEntry) zipEntry).getName().equals(primaryDescriptorName)) {
                             sourceFile.setType(SourceFile.FileType.DOCKSTORE_CWL);
-                        } else {
-//                            sourceFile.setType(SourceFile.FileType.);
                         }
-
                         return sourceFile;
                     }).collect(Collectors.toList());
-        }
-        else {
+        } else {
             throw new CustomWebApplicationException("Blah", HttpStatus.SC_BAD_REQUEST);
         }
 
