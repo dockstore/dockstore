@@ -73,7 +73,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String outputTarget, String uuid)
             throws ApiException {
         // Call common launch command
-        return launchPipeline(entry, isLocalEntry, outputTarget, uuid, yamlParameterFile, jsonParameterFile, ToolDescriptor.TypeEnum.WDL);
+        return launchPipeline(entry, isLocalEntry, yamlParameterFile, jsonParameterFile, outputTarget, uuid, ToolDescriptor.TypeEnum.WDL);
     }
 
     @Override
