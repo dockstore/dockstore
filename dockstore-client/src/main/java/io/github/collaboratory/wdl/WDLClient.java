@@ -31,7 +31,6 @@ import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.BaseLanguageClient;
-import io.dockstore.client.cli.nested.BaseLauncher;
 import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
@@ -42,7 +41,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +48,6 @@ import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
-import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
-import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 
 /**
@@ -60,22 +56,29 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 public class WDLClient extends BaseLanguageClient implements LanguageClientInterface {
 
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
-    private Bridge bridge;
-    private String wdlOutputTarget;
 
     public WDLClient(AbstractEntryClient abstractEntryClient) {
         super(abstractEntryClient, new CromwellLauncher(abstractEntryClient));
     }
 
-    public void setLaunchInformation(String entry, boolean isLocalEntry, String wdlOutputTarget, String uuid) {
-        this.entry = entry;
-        this.isLocalEntry = isLocalEntry;
-        this.wdlOutputTarget = wdlOutputTarget;
-        this.uuid = uuid;
+    /**
+     * @param entry           file path for the wdl file or a dockstore id
+     * @param isLocalEntry
+     * @param jsonParameterFile           file path for the json parameter file
+     * @param outputTarget directory where to drop off output for wdl
+     * @param uuid
+     * @return an exit code for the run
+     */
+    @Override
+    public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String outputTarget, String uuid)
+            throws ApiException {
+        // Call common launch command
+        return launchPipeline(entry, isLocalEntry, outputTarget, uuid, yamlParameterFile, jsonParameterFile, ToolDescriptor.TypeEnum.WDL);
     }
 
     @Override
-    public void selectParameterFile(String yamlParameterFile, String jsonParameterFile) {
+    public void selectParameterFile() {
+        // Decide on which parameter file to use (JSON takes precedence)
         boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)));
         if (!hasRequiredFlags) {
             errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
@@ -87,7 +90,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     @Override
     public File provisionInputFiles() {
         // Get list of input files
-        bridge = new Bridge(localPrimaryDescriptorFile.getParent());
+        Bridge bridge = new Bridge(localPrimaryDescriptorFile.getParent());
         Map<String, String> wdlInputs = null;
         try {
             wdlInputs = bridge.getInputFiles(localPrimaryDescriptorFile);
@@ -105,7 +108,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         } catch (IOException ex) {
             errorMessage(ex.getMessage(), IO_ERROR);
         }
-        inputJson = gson.fromJson(jsonString, HashMap.class);
+        Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
         // The working directory is based on the location of the primary descriptor
         if (!isLocalEntry) {
@@ -129,7 +132,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     @Override
     public void executeEntry() throws ExecuteException {
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
-        String runCommand = launcher.buildRunCommand(importsZipFile, localPrimaryDescriptorFile, provisionedParameterFile);
+        String runCommand = launcher.buildRunCommand();
 
         int exitCode = 0;
         try {
@@ -154,64 +157,11 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     public void provisionOutputFiles() {
         notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
         try {
-            launcher.provisionOutputFiles(stdout, stderr, workingDirectory, wdlOutputTarget, bridge, localPrimaryDescriptorFile, inputJson);
+            launcher.provisionOutputFiles(stdout, stderr, workingDirectory, wdlOutputTarget);
         } catch (Exception e) {
             notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
             throw e;
         }
-    }
-
-    /**
-     * @param entry           file path for the wdl file or a dockstore id
-     * @param isLocalEntry
-     * @param jsonParameterFile           file path for the json parameter file
-     * @param outputTarget directory where to drop off output for wdl
-     * @param uuid
-     * @return an exit code for the run
-     */
-    @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String outputTarget, String uuid)
-        throws ApiException {
-        this.abstractEntryClient.loadDockerImages();
-
-        // Initialize client with some launch information
-        setLaunchInformation(entry, isLocalEntry, wdlOutputTarget, uuid);
-
-        // Select the appropriate parameter file
-        selectParameterFile(yamlParameterFile, jsonParameterFile);
-
-        // Setup the launcher
-        launcher.setup();
-
-        // Setup notifications
-        setupNotifications();
-
-        // Setup temp directory and download files
-        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.WDL);
-        tempLaunchDirectory = descriptorAndZip.getLeft();
-        localPrimaryDescriptorFile = descriptorAndZip.getMiddle();
-        importsZipFile = descriptorAndZip.getRight();
-
-        // Provision the input files
-        provisionedParameterFile = provisionInputFiles();
-
-        try {
-            executeEntry();
-            provisionOutputFiles();
-        } catch (ApiException ex) {
-            if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
-                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
-            } else {
-                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
-                    ENTRY_NOT_FOUND);
-            }
-        } catch (ExecuteException ex) {
-            exceptionMessage(ex, ex.getMessage(),
-                    GENERIC_ERROR);
-        }
-
-        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
-        return 0;
     }
 
     /**

@@ -34,6 +34,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 
+import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
@@ -52,18 +53,18 @@ public class CromwellLauncher extends BaseLauncher {
         this.abstractEntryClient = abstractEntryClient;
     }
 
-    public void setup() {
+    public void initialize() {
         cromwell = getCromwellTargetFile();
     }
 
     @Override
-    public String buildRunCommand(File importsZipFile, File localPrimaryDescriptorFile, File provisionedParameterFile) {
+    public String buildRunCommand() {
         // Start building run command
         final List<String> wdlRun;
-        if (importsZipFile == null || abstractEntryClient instanceof ToolClient) {
-            wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
+        if (importsZip == null || abstractEntryClient instanceof ToolClient) {
+            wdlRun = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
         } else {
-            wdlRun = Lists.newArrayList(localPrimaryDescriptorFile.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", importsZipFile.getAbsolutePath());
+            wdlRun = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", importsZip.getAbsolutePath());
         }
         // run a workflow
         System.out.println("Calling out to Cromwell to run your workflow");
@@ -81,7 +82,16 @@ public class CromwellLauncher extends BaseLauncher {
     }
 
     @Override
-    public void provisionOutputFiles(String stdout, String stderr, String workingDirectory, String wdlOutputTarget, Bridge bridge, File localPrimaryDescriptorFile, Map<String, Object> inputJson) {
+    public void provisionOutputFiles(String stdout, String stderr, String workingDirectory, String wdlOutputTarget) {
+        Gson gson = new Gson();
+        String jsonString = null;
+        try {
+            jsonString = abstractEntryClient.fileToJSON(originalParameterFile);
+        } catch (IOException ex) {
+            errorMessage(ex.getMessage(), IO_ERROR);
+        }
+        Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
+
         LauncherCWL.outputIntegrationOutput(workingDirectory, ImmutablePair.of(stdout, stderr), stdout,
                 stderr, "Cromwell");
         // capture the output and provision it
@@ -91,7 +101,8 @@ public class CromwellLauncher extends BaseLauncher {
             Map<String, String> outputJson = parseOutputObjectFromCromwellStdout(stdout, new Gson());
 
             System.out.println("Provisioning your output files to their final destinations");
-            final List<String> outputFiles = bridge.getOutputFiles(localPrimaryDescriptorFile);
+            Bridge bridge = new Bridge(primaryDescriptor.getParent());
+            final List<String> outputFiles = bridge.getOutputFiles(primaryDescriptor);
             FileProvisioning fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
             List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
             for (String outFile : outputFiles) {

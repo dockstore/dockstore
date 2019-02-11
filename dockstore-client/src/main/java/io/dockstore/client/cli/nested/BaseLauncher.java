@@ -1,39 +1,49 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
-import java.util.Map;
-
-import io.dockstore.common.Bridge;
 
 public abstract class BaseLauncher {
+    protected File primaryDescriptor;
+    protected File importsZip;
+    protected File provisionedParameterFile;
+    protected String originalParameterFile;
+
     public BaseLauncher() {
 
     }
 
     /**
+     * Sets the files to be launched
+     * @param descriptor
+     * @param imports
+     * @param provisionedParameters
+     * @params originalParameters
+     */
+    public void setFiles(File descriptor, File imports, File provisionedParameters, String originalParameters) {
+        this.primaryDescriptor = descriptor;
+        this.importsZip = imports;
+        this.provisionedParameterFile = provisionedParameters;
+        this.originalParameterFile = originalParameters;
+    }
+
+    /**
      * Download and install the launcher if necessary
      */
-    public abstract void setup();
+    public abstract void initialize();
 
     /**
      * Create a command to execute entry on the command line
-     * @param importsZipFile Secondary files imported as ZIP
-     * @param localPrimaryDescriptorFile Local copy of primary descriptor
-     * @param provisionedParameterFile Parameter file with provisioning
      * @return Command to run entry
      */
-    public abstract String buildRunCommand(File importsZipFile, File localPrimaryDescriptorFile, File provisionedParameterFile);
+    public abstract String buildRunCommand();
 
     /**
-     *
-     * @param stdout
-     * @param stderr
+     * Provisions output files defined in the parameter file
+     * @param stdout stdout of running entry
+     * @param stderr stderr of running entry
      * @param workingDirectory
      * @param wdlOutputTarget
-     * @param bridge
-     * @param localPrimaryDescriptorFile
-     * @param inputJson
      */
-    public abstract void provisionOutputFiles(String stdout, String stderr, String workingDirectory, String wdlOutputTarget, Bridge bridge, File localPrimaryDescriptorFile, Map<String, Object> inputJson);
+    public abstract void provisionOutputFiles(String stdout, String stderr, String workingDirectory, String wdlOutputTarget);
 
 }

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Map;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -22,6 +21,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
+import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 
 /**
@@ -30,21 +30,26 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  */
 public abstract class BaseLanguageClient {
     protected final AbstractEntryClient abstractEntryClient;
-    protected String uuid;
     protected INIConfiguration config;
     protected String notificationsWebHookURL;
     protected NotificationsClient notificationsClient;
     protected BaseLauncher launcher;
 
+    // Fields set on initial launch
+    protected boolean isLocalEntry;
+    protected String entry;
+    protected String wdlOutputTarget;
+    protected String yamlParameterFile;
+    protected String jsonParameterFile;
+    protected String uuid;
+
+    // Fields generated during setup and running of entry
     protected File tempLaunchDirectory;
     protected File localPrimaryDescriptorFile;
     protected File importsZipFile;
     protected String selectedParameterFile;
     protected File provisionedParameterFile;
-    protected boolean isLocalEntry;
-    protected String entry;
     protected String workingDirectory;
-    protected Map<String, Object> inputJson;
     protected String stdout;
     protected String stderr;
 
@@ -55,10 +60,8 @@ public abstract class BaseLanguageClient {
 
     /**
      * Selects the intended parameter file
-     * @param yamlParameterFile Path to YAML parameter file
-     * @param jsonParameterFile Path to JSON parameter file
      */
-    public abstract void selectParameterFile(String yamlParameterFile, String jsonParameterFile);
+    public abstract void selectParameterFile();
 
     /**
      * Provision the input files based on the selected parameter file.
@@ -85,6 +88,77 @@ public abstract class BaseLanguageClient {
         config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
         notificationsWebHookURL = config.getString("notifications", "");
         notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
+    }
+
+    /**
+     * Sets some high level launch variables
+     * @param entryVal
+     * @param localEntry
+     * @param yamlFile
+     * @param jsonFile
+     * @param outputTarget
+     * @param notificationUUID
+     */
+    public void setLaunchInformation(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID) {
+        this.entry = entryVal;
+        this.isLocalEntry = localEntry;
+        this.yamlParameterFile = yamlFile;
+        this.jsonParameterFile = jsonFile;
+        this.wdlOutputTarget = outputTarget;
+        this.uuid = notificationUUID;
+    }
+
+    /**
+     * Common code to setup and launch a pipeline
+     * @return Exit code of process
+     */
+    public long launchPipeline(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID, ToolDescriptor.TypeEnum language) {
+        // Initialize client with some launch information
+        setLaunchInformation(entryVal, localEntry, yamlFile, jsonFile, outputTarget, notificationUUID);
+
+        // Load up Docker images
+        this.abstractEntryClient.loadDockerImages();
+
+        // Select the appropriate parameter file
+        selectParameterFile();
+
+        // Setup the launcher (Download dependencies)
+        launcher.initialize();
+
+        // Setup notifications
+        setupNotifications();
+
+        // Setup temp directory and download files
+        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(language);
+        tempLaunchDirectory = descriptorAndZip.getLeft();
+        localPrimaryDescriptorFile = descriptorAndZip.getMiddle();
+        importsZipFile = descriptorAndZip.getRight();
+
+        // Provision the input files
+        provisionedParameterFile = provisionInputFiles();
+
+        // Update the launcher with references to the files to be launched
+        this.launcher.setFiles(localPrimaryDescriptorFile, importsZipFile, provisionedParameterFile, selectedParameterFile);
+
+        // Attempt to run launcher and provision output if successful
+        try {
+            executeEntry();
+            provisionOutputFiles();
+        } catch (ApiException ex) {
+            if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
+                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
+            } else {
+                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
+                        ENTRY_NOT_FOUND);
+            }
+        } catch (ExecuteException ex) {
+            exceptionMessage(ex, ex.getMessage(),
+                    GENERIC_ERROR);
+        }
+
+        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
+
+        return 0;
     }
 
     /**
