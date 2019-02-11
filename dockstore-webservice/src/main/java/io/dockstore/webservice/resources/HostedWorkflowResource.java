@@ -16,6 +16,7 @@
 package io.dockstore.webservice.resources;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.common.SourceControl;
@@ -29,6 +30,7 @@ import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.core.WorkflowMode;
 import io.dockstore.webservice.core.WorkflowVersion;
+import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dockstore.webservice.jdbi.WorkflowVersionDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
@@ -41,27 +43,37 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
 import org.hibernate.SessionFactory;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipFile;
 
 import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 
@@ -180,18 +192,25 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         checkEntry(workflow);
         checkHosted(workflow);
         checkUserCanUpdate(user, workflow);
-        try (ZipInputStream zipInputStream = new ZipInputStream(payload)) {
-            ZipEntry entry;
-            while ((entry = zipInputStream.getNextEntry()) != null) {
-                System.out.println(entry.getName() + " size is " + entry.getCompressedSize());
-            }
+        File tempDir = Files.createTempDir();
+        File zipFile = new File(tempDir, entryId + ".zip");
+        try {
+            FileUtils.copyToFile(payload, zipFile);
+            ZipSourceFileHelper.sourceFilesFromZip(new ZipFile(zipFile));
         } catch (IOException e) {
-            throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Error reading zip file", HttpStatus.SC_BAD_REQUEST);
+        }
+        finally {
+            try {
+                FileUtils.deleteDirectory(tempDir);
+            } catch (IOException e) {
+                LOG.error("Error deleting temp zip", e);
+            }
         }
         return null;
     }
 
-    @Override
+        @Override
     protected void populateMetadata(Set<SourceFile> sourceFiles, Workflow workflow, WorkflowVersion version) {
         LanguageHandlerInterface anInterface = LanguageHandlerFactory.getInterface(workflow.getFileType());
         Optional<SourceFile> first = sourceFiles.stream().filter(file -> file.getPath().equals(version.getWorkflowPath())).findFirst();
