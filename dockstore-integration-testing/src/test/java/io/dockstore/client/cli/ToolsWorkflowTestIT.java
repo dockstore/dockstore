@@ -37,7 +37,6 @@ import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-
 /**
  * @author jpatricia on 04/07/16.
  */

@@ -32,7 +32,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-
 /**
  * Testing migration
  *
