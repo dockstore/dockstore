@@ -195,20 +195,12 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${basedir}/target/generated-sources</source>
+                                <source>${basedir}/target/generated-sources/swagger/src/gen/java</source>
                                 <source>${basedir}/src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <configuration>
-                    <!-- skip the generated description class -->
-                    <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -226,6 +218,7 @@
                                     <directory>${project.basedir}/src/main/templates/io/dockstore/common</directory>
                                     <includes>
                                         <include>GeneratedConstants.java</include>
+                                        <include>package-info.java</include>
                                     </includes>
                                     <filtering>true</filtering>
                                 </resource>

@@ -1,5 +1,5 @@
 /*
- *    Copyright 2019 OICR
+ *    Copyright 2017 OICR
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -16,19 +16,3 @@
 
 package io.dockstore.common;
 
-import javax.annotation.Generated;
-
-/**
- * WARNING: This is a generated file, do not edit directly.
- * Edit the template in src/main/templates/io/dockstore/common
- *
- * @author dyuen
- */
-@Generated("maven resources template")
-public final class GeneratedConstants  {
-    public static final String PROJECT_VERSION = "${project.version}";
-
-    private GeneratedConstants() {
-        // hide the default constructor for a constant class
-    }
-}
