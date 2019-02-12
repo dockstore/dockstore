@@ -2,7 +2,6 @@ package io.dockstore.webservice.jdbi;
 
 import java.util.List;
 
-
 import io.dockstore.webservice.core.Organization;
 import io.dropwizard.hibernate.AbstractDAO;
 import org.hibernate.Session;

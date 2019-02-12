@@ -25,7 +25,6 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.junit.experimental.categories.Category;
 
-
 /**
  * A collection of tests for the version validation system
  * @author aduncan
