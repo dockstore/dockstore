@@ -1679,7 +1679,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -3525,7 +3525,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -3641,7 +3641,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
@@ -4017,7 +4017,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
@@ -4043,7 +4043,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
