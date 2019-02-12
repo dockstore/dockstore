@@ -3,6 +3,8 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 
 public abstract class BaseLauncher {
+    protected final AbstractEntryClient abstractEntryClient;
+
     // The primary descriptor of the workflow
     protected File primaryDescriptor;
     // A zip file for the entire entry
@@ -16,8 +18,8 @@ public abstract class BaseLauncher {
     // For remote entries this is the tmp dir where workflow files are downloaded to
     protected String workingDirectory;
 
-    public BaseLauncher() {
-
+    public BaseLauncher(AbstractEntryClient abstractEntryClient) {
+        this.abstractEntryClient = abstractEntryClient;
     }
 
     /**

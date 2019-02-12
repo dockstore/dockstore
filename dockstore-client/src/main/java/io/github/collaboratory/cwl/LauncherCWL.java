@@ -1042,10 +1042,4 @@ public class LauncherCWL {
             throw new RuntimeException("Could not parse command-line", exp);
         }
     }
-
-    private String trimAndPrintInput(String input) {
-        input = input.trim();
-        System.out.println(input);
-        return input;
-    }
 }

@@ -57,6 +57,10 @@ public abstract class BaseLanguageClient {
         this.launcher = launcher;
     }
 
+    public void setLauncher(BaseLauncher launcher) {
+        this.launcher = launcher;
+    }
+
     /**
      * Selects the intended parameter file
      * Must set the variable selectedParameterFile

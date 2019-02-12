@@ -14,10 +14,9 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class NextflowLauncher extends BaseLauncher {
     protected File nextflow;
-    protected final AbstractEntryClient abstractEntryClient;
 
     public NextflowLauncher(AbstractEntryClient abstractEntryClient) {
-        this.abstractEntryClient = abstractEntryClient;
+        super(abstractEntryClient);
     }
 
     @Override
