@@ -3,10 +3,18 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 
 public abstract class BaseLauncher {
+    // The primary descriptor of the workflow
     protected File primaryDescriptor;
+    // A zip file for the entire entry
     protected File importsZip;
+    // Parameter file with all remote files resolved locally
     protected File provisionedParameterFile;
+    // Path to original parameter file
     protected String originalParameterFile;
+    // The working directory
+    // For local entries this is the parent dir of the primary file
+    // For remote entries this is the tmp dir where workflow files are downloaded to
+    protected String workingDirectory;
 
     public BaseLauncher() {
 
@@ -19,11 +27,12 @@ public abstract class BaseLauncher {
      * @param provisionedParameters
      * @params originalParameters
      */
-    public void setFiles(File descriptor, File imports, File provisionedParameters, String originalParameters) {
+    public void setFiles(File descriptor, File imports, File provisionedParameters, String originalParameters, String workDir) {
         this.primaryDescriptor = descriptor;
         this.importsZip = imports;
         this.provisionedParameterFile = provisionedParameters;
         this.originalParameterFile = originalParameters;
+        this.workingDirectory = workDir;
     }
 
     /**
@@ -41,9 +50,8 @@ public abstract class BaseLauncher {
      * Provisions output files defined in the parameter file
      * @param stdout stdout of running entry
      * @param stderr stderr of running entry
-     * @param workingDirectory
      * @param wdlOutputTarget
      */
-    public abstract void provisionOutputFiles(String stdout, String stderr, String workingDirectory, String wdlOutputTarget);
+    public abstract void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget);
 
 }

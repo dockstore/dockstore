@@ -112,12 +112,12 @@ public abstract class BaseLanguageClient {
      * Common code to setup and launch a pipeline
      * @return Exit code of process
      */
-    public long launchPipeline(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID, ToolDescriptor.TypeEnum language) {
+    public long launchPipeline(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID, ToolDescriptor.TypeEnum language) throws ApiException {
         // Initialize client with some launch information
         setLaunchInformation(entryVal, localEntry, yamlFile, jsonFile, outputTarget, notificationUUID);
 
         // Load up Docker images
-        this.abstractEntryClient.loadDockerImages();
+        abstractEntryClient.loadDockerImages();
 
         // Select the appropriate parameter file
         selectParameterFile();
@@ -129,31 +129,33 @@ public abstract class BaseLanguageClient {
         setupNotifications();
 
         // Setup temp directory and download files
-        Triple<File, File, File> descriptorAndZip = initializeWorkingDirectoryWithFiles(language);
-        tempLaunchDirectory = descriptorAndZip.getLeft();
-        localPrimaryDescriptorFile = descriptorAndZip.getMiddle();
-        importsZipFile = descriptorAndZip.getRight();
+        Triple<File, File, File> zipFiles = initializeWorkingDirectoryWithFiles(language);
+        tempLaunchDirectory = zipFiles.getLeft();
+        localPrimaryDescriptorFile = zipFiles.getMiddle();
+        importsZipFile = zipFiles.getRight();
 
-        // Provision the input files
-        provisionedParameterFile = provisionInputFiles();
-
-        // Update the launcher with references to the files to be launched
-        this.launcher.setFiles(localPrimaryDescriptorFile, importsZipFile, provisionedParameterFile, selectedParameterFile);
-
-        // Attempt to run launcher and provision output if successful
         try {
+            // Provision the input files
+            provisionedParameterFile = provisionInputFiles();
+
+            // Update the launcher with references to the files to be launched
+            launcher.setFiles(localPrimaryDescriptorFile, importsZipFile, provisionedParameterFile, selectedParameterFile, workingDirectory);
+
+            // Attempt to run launcher
             executeEntry();
+
+            // Provision the output files if run is successful
             provisionOutputFiles();
         } catch (ApiException ex) {
             if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
-                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?", ENTRY_NOT_FOUND);
+                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
+                        ENTRY_NOT_FOUND);
             } else {
                 exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
                         ENTRY_NOT_FOUND);
             }
-        } catch (ExecuteException ex) {
-            exceptionMessage(ex, ex.getMessage(),
-                    GENERIC_ERROR);
+        } catch (IOException ex) {
+            exceptionMessage(ex, ex.getMessage(), IO_ERROR);
         }
 
         notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);

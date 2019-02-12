@@ -62,6 +62,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     }
 
     /**
+     * Launches the tool/workflow
      * @param entry           file path for the wdl file or a dockstore id
      * @param isLocalEntry
      * @param jsonParameterFile           file path for the json parameter file
@@ -157,7 +158,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     public void provisionOutputFiles() {
         notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
         try {
-            launcher.provisionOutputFiles(stdout, stderr, workingDirectory, wdlOutputTarget);
+            launcher.provisionOutputFiles(stdout, stderr, wdlOutputTarget);
         } catch (Exception e) {
             notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
             throw e;

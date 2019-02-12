@@ -82,7 +82,7 @@ public class CromwellLauncher extends BaseLauncher {
     }
 
     @Override
-    public void provisionOutputFiles(String stdout, String stderr, String workingDirectory, String wdlOutputTarget) {
+    public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
         Gson gson = new Gson();
         String jsonString = null;
         try {
