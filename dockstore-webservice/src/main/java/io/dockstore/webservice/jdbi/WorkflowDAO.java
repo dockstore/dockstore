@@ -19,16 +19,16 @@ package io.dockstore.webservice.jdbi;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.dockstore.webservice.core.SourceControlConverter;
-import io.dockstore.webservice.core.Workflow;
-import org.hibernate.SessionFactory;
-import org.hibernate.query.Query;
-
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+
+import io.dockstore.webservice.core.SourceControlConverter;
+import io.dockstore.webservice.core.Workflow;
+import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
 
 /**
  * @author dyuen
