@@ -41,6 +41,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +75,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String outputTarget, String uuid)
             throws ApiException {
         // Call common launch command
-        return launchPipeline(entry, isLocalEntry, yamlParameterFile, jsonParameterFile, outputTarget, uuid, ToolDescriptor.TypeEnum.WDL);
+        return launchPipeline(entry, isLocalEntry, yamlParameterFile, jsonParameterFile, outputTarget, uuid);
     }
 
     @Override
@@ -86,6 +87,14 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         }
 
         selectedParameterFile = jsonParameterFile != null ? jsonParameterFile : yamlParameterFile;
+    }
+
+    @Override
+    public void downloadFiles() {
+        Triple<File, File, File> workingDirectoryFiles = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.WDL);
+        tempLaunchDirectory = workingDirectoryFiles.getLeft();
+        localPrimaryDescriptorFile = workingDirectoryFiles.getMiddle();
+        importsZipFile = workingDirectoryFiles.getRight();
     }
 
     @Override

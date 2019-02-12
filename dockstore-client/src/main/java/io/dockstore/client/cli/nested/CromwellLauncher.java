@@ -53,6 +53,7 @@ public class CromwellLauncher extends BaseLauncher {
         this.abstractEntryClient = abstractEntryClient;
     }
 
+    @Override
     public void initialize() {
         cromwell = getCromwellTargetFile();
     }

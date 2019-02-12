@@ -24,14 +24,15 @@ import java.util.List;
 
 import com.google.common.base.Joiner;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
+import io.dockstore.client.cli.nested.BaseLanguageClient;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
+import io.dockstore.client.cli.nested.NextflowLauncher;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.Utilities;
-import io.github.collaboratory.cwl.LauncherCWL;
 import io.swagger.client.ApiException;
+import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.configuration2.Configuration;
-import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
@@ -40,62 +41,79 @@ import org.slf4j.LoggerFactory;
 /**
  * Grouping code for launching NextFlow tools and workflows
  */
-public class NextFlowClient implements LanguageClientInterface {
+public class NextFlowClient extends BaseLanguageClient implements LanguageClientInterface {
     private static final Logger LOG = LoggerFactory.getLogger(NextFlowClient.class);
-    private final INIConfiguration iniConfiguration;
-    private final AbstractEntryClient abstractEntryClient;
 
     public NextFlowClient(AbstractEntryClient abstractEntryClient) {
-        this.abstractEntryClient = abstractEntryClient;
-        this.iniConfiguration = Utilities.parseConfig(abstractEntryClient.getConfigFile());
+        super(abstractEntryClient, new NextflowLauncher(abstractEntryClient));
     }
 
-
+    @Override
+    public void selectParameterFile() {
+        assert (yamlParameterFile == null && jsonParameterFile != null);
+        selectedParameterFile = jsonParameterFile;
+    }
 
     @Override
-    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid)
-        throws ApiException {
-        this.abstractEntryClient.loadDockerImages();
-        assert (yamlRun == null && jsonRun != null);
-
-        String notificationsWebHookURL = iniConfiguration.getString("notifications", "");
-        NotificationsClient notificationsClient = new NotificationsClient(notificationsWebHookURL, uuid);
-
-        String mainScript;
-        Path currentRelativePath = Paths.get("");
-        String currentWorkingDir = currentRelativePath.toAbsolutePath().toString();
+    public void downloadFiles() {
+        // Remote launching not yet done for Nextflow
         if (isLocalEntry) {
             final Configuration configuration = NextflowUtilities.grabConfig(new File(entry));
-            mainScript = configuration.getString("manifest.mainScript", "main.nf");
+            String mainScript = configuration.getString("manifest.mainScript", "main.nf");
+            ((NextflowLauncher)launcher).setMainScript(mainScript);
         } else {
-            throw new UnsupportedOperationException("remote entry not supported yet");
+            throw new UnsupportedOperationException("Remote entry not supported yet");
         }
+    }
+
+    @Override
+    public File provisionInputFiles() {
+        // Does not have any parameter files to provision, everything done by Nextflow launcher
+        Path currentRelativePath = Paths.get("");
+        workingDirectory = currentRelativePath.toAbsolutePath().toString();
+
+        return null;
+    }
+
+    @Override
+    public void executeEntry() throws ExecuteException {
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
-        List<String> executionCommand = getExecutionCommand(currentWorkingDir, currentWorkingDir, mainScript, jsonRun);
+        String runCommand = launcher.buildRunCommand();
 
         int exitCode = 0;
-        String stdout;
-        String stderr;
         try {
             // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
-            final String join = Joiner.on(" ").join(executionCommand);
-            System.out.println(join);
-            final ImmutablePair<String, String> execute = Utilities.executeCommand(join);
+            final ImmutablePair<String, String> execute = Utilities.executeCommand(runCommand, System.out, System.err);
             stdout = execute.getLeft();
             stderr = execute.getRight();
         } catch (RuntimeException e) {
             LOG.error("Problem running NextFlow: ", e);
             if (e.getCause() instanceof ExecuteException) {
-                return ((ExecuteException)e.getCause()).getExitValue();
+                exitCode = ((ExecuteException)e.getCause()).getExitValue();
+                throw new ExecuteException("problems running command: " + runCommand, exitCode);
             }
             notificationsClient.sendMessage(NotificationsClient.RUN, false);
             throw new RuntimeException("Could not run NextFlow", e);
         }
         System.out.println("NextFlow exit code: " + exitCode);
-        LauncherCWL.outputIntegrationOutput(currentWorkingDir, ImmutablePair.of(stdout, stderr), stdout,
-            stderr, "NextFlow");
-        notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);
-        return 0;
+    }
+
+    @Override
+    public void provisionOutputFiles() {
+        notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
+        try {
+            launcher.provisionOutputFiles(stdout, stderr, wdlOutputTarget);
+        } catch (Exception e) {
+            notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, false);
+            throw e;
+        }
+    }
+
+    @Override
+    public long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid)
+        throws ApiException {
+        // Call common launch command
+        return launchPipeline(entry, isLocalEntry, yamlRun, jsonRun, null, uuid);
     }
 
     /**
@@ -121,9 +139,4 @@ public class NextFlowClient implements LanguageClientInterface {
         return "";
     }
 
-    private List<String> getExecutionCommand(String outputDir, String workingDir, String nextflowFile, String jsonSettings) {
-        return new ArrayList<>(Arrays
-            .asList("java", "-jar", NextflowUtilities.getNextFlowTargetFile(iniConfiguration).getAbsolutePath(), "run", "-with-docker", "--outdir", outputDir, "-work-dir",
-                workingDir, "-params-file", jsonSettings, nextflowFile));
-    }
 }

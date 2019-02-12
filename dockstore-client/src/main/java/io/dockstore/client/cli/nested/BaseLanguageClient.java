@@ -21,7 +21,6 @@ import org.apache.commons.lang3.tuple.Triple;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
-import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 
 /**
@@ -60,18 +59,21 @@ public abstract class BaseLanguageClient {
 
     /**
      * Selects the intended parameter file
+     * Must set the variable selectedParameterFile
      */
     public abstract void selectParameterFile();
 
     /**
      * Provision the input files based on the selected parameter file.
      * Creates an updated version of the parameter file with new local file locations.
+     * Must set the variable workingDirectory
      * @return Updated parameter file
      */
     public abstract File provisionInputFiles();
 
     /**
      * Runs the tool/workflow with the selected launcher
+     * Must set the variables stdout and stderr
      * @throws ExecuteException
      */
     public abstract void executeEntry() throws ExecuteException;
@@ -80,6 +82,11 @@ public abstract class BaseLanguageClient {
      * Provisions the output files
      */
     public abstract void provisionOutputFiles();
+
+    /**
+     * Download files and put them in a temporary directory
+     */
+    public abstract void downloadFiles();
 
     /**
      * Setup for notifications to webhook
@@ -112,7 +119,7 @@ public abstract class BaseLanguageClient {
      * Common code to setup and launch a pipeline
      * @return Exit code of process
      */
-    public long launchPipeline(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID, ToolDescriptor.TypeEnum language) throws ApiException {
+    public long launchPipeline(String entryVal, boolean localEntry, String yamlFile, String jsonFile, String outputTarget, String notificationUUID) throws ApiException {
         // Initialize client with some launch information
         setLaunchInformation(entryVal, localEntry, yamlFile, jsonFile, outputTarget, notificationUUID);
 
@@ -129,10 +136,7 @@ public abstract class BaseLanguageClient {
         setupNotifications();
 
         // Setup temp directory and download files
-        Triple<File, File, File> zipFiles = initializeWorkingDirectoryWithFiles(language);
-        tempLaunchDirectory = zipFiles.getLeft();
-        localPrimaryDescriptorFile = zipFiles.getMiddle();
-        importsZipFile = zipFiles.getRight();
+        downloadFiles();
 
         try {
             // Provision the input files

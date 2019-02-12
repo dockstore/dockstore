@@ -21,11 +21,12 @@ public abstract class BaseLauncher {
     }
 
     /**
-     * Sets the files to be launched
+     * Set settings for launcher relevant to the current run
      * @param descriptor
      * @param imports
      * @param provisionedParameters
-     * @params originalParameters
+     * @param originalParameters
+     * @param workDir
      */
     public void setFiles(File descriptor, File imports, File provisionedParameters, String originalParameters, String workDir) {
         this.primaryDescriptor = descriptor;
