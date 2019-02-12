@@ -57,6 +57,10 @@ public class ToolVersionV1  {
             // looks like BeanUtils has issues due to https://issues.apache.org/jira/browse/BEANUTILS-321 and https://github.com/swagger-api/swagger-codegen/issues/7764
             this.dockerfile = toolVersion.isContainerfile();
             this.verified = toolVersion.isVerified();
+            // if request is V1 api, make sure url reflects this after conversion
+            if (this.getUrl() != null) {
+                this.setUrl(this.getUrl().replaceFirst("/ga4gh/v2/", "/ga4gh/v1/"));
+            }
             // descriptor type seems to have issues, maybe because nextflow didn't exist
             List<DescriptorType> newTypes = toolVersion.getDescriptorType();
             descriptorType.clear();
