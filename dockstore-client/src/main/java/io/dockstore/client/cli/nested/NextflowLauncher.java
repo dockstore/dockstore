@@ -14,7 +14,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class NextflowLauncher extends BaseLauncher {
     protected File nextflow;
-    protected String mainScript;
     protected final AbstractEntryClient abstractEntryClient;
 
     public NextflowLauncher(AbstractEntryClient abstractEntryClient) {
@@ -29,7 +28,9 @@ public class NextflowLauncher extends BaseLauncher {
 
     @Override
     public String buildRunCommand() {
-        List<String> executionCommand = getExecutionCommand(workingDirectory, workingDirectory, mainScript, originalParameterFile);
+        List<String> executionCommand = new ArrayList<>(Arrays
+                .asList("java", "-jar", nextflow.getAbsolutePath(), "run", "-with-docker", "--outdir", workingDirectory, "-work-dir",
+                        workingDirectory, "-params-file", originalParameterFile, primaryDescriptor.getAbsolutePath()));
         String join = Joiner.on(" ").join(executionCommand);
         System.out.println(join);
         return join;
@@ -39,15 +40,5 @@ public class NextflowLauncher extends BaseLauncher {
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
         LauncherCWL.outputIntegrationOutput(workingDirectory, ImmutablePair.of(stdout, stderr), stdout,
                 stderr, "NextFlow");
-    }
-
-    private List<String> getExecutionCommand(String outputDir, String workingDir, String nextflowFile, String jsonSettings) {
-        return new ArrayList<>(Arrays
-                .asList("java", "-jar", nextflow.getAbsolutePath(), "run", "-with-docker", "--outdir", outputDir, "-work-dir",
-                        workingDir, "-params-file", jsonSettings, nextflowFile));
-    }
-
-    public void setMainScript(String mainScript) {
-        this.mainScript = mainScript;
     }
 }

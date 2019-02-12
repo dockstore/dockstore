@@ -85,6 +85,7 @@ public abstract class BaseLanguageClient {
 
     /**
      * Download files and put them in a temporary directory
+     * Must set the variables localPrimaryDescriptorFile, importsZipFile, and provisionedParameterFile
      */
     public abstract void downloadFiles();
 

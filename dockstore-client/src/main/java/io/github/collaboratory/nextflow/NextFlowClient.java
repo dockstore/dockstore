@@ -18,11 +18,7 @@ package io.github.collaboratory.nextflow;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
-import com.google.common.base.Joiner;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.BaseLanguageClient;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
@@ -31,7 +27,6 @@ import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.Utilities;
 import io.swagger.client.ApiException;
-import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -56,11 +51,13 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
 
     @Override
     public void downloadFiles() {
-        // Remote launching not yet done for Nextflow
+        // TODO: Remote launching not yet done for Nextflow
         if (isLocalEntry) {
             final Configuration configuration = NextflowUtilities.grabConfig(new File(entry));
             String mainScript = configuration.getString("manifest.mainScript", "main.nf");
-            ((NextflowLauncher)launcher).setMainScript(mainScript);
+            localPrimaryDescriptorFile = new File(mainScript);
+            tempLaunchDirectory = localPrimaryDescriptorFile.getParentFile();
+            importsZipFile = null;
         } else {
             throw new UnsupportedOperationException("Remote entry not supported yet");
         }
