@@ -118,6 +118,10 @@ public class Organization implements Serializable, Aliasable {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    @Column
+    @ApiModelProperty(value = "URL of user avatar on GitHub/Google that can be selected by the user", position = 9)
+    private String avatarUrl;
+
     public long getId() {
         return id;
     }
@@ -241,4 +245,12 @@ public class Organization implements Serializable, Aliasable {
     }
 
     public enum ApplicationState { PENDING, REJECTED, APPROVED }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
 }

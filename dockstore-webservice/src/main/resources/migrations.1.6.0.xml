@@ -236,6 +236,12 @@
         <sql dbms="postgres">ALTER SEQUENCE organisation_id_seq RENAME TO organization_id_seq</sql>
     </changeSet>
 
+    <changeSet author="NatalieEO" id="addAvatarurlColumnToOrganizations">
+        <addColumn tableName="organization">
+            <column name="avatarUrl" type="varchar(255)"></column>
+        </addColumn>
+    </changeSet>
+
     <changeSet author="dyuen" id="maintain_consistency">
         <!-- looks like the above attempt didn't take -->
         <renameSequence oldSequenceName="organisation_id_seq" newSequenceName="organization_id_seq"/>
