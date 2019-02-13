@@ -79,6 +79,8 @@ public class CromwellLauncher extends BaseLauncher {
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
         if (Objects.equals(languageType, LanguageType.WDL)) {
+            stdout = stdout.replaceAll("(?m)^", "\t");
+            stderr = stderr.replaceAll("(?m)^", "\t");
             Gson gson = new Gson();
             String jsonString = null;
             try {
@@ -88,7 +90,7 @@ public class CromwellLauncher extends BaseLauncher {
             }
             Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
-            CWLClient.outputIntegrationOutput(workingDirectory, stdout, stderr, "Cromwell");
+            outputIntegrationOutput(workingDirectory, stdout, stderr, "Cromwell");
             // capture the output and provision it
             if (wdlOutputTarget != null) {
                 // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
@@ -117,10 +119,8 @@ public class CromwellLauncher extends BaseLauncher {
                 System.out.println("Output files left in place");
             }
         } else if (Objects.equals(languageType, LanguageType.CWL)) {
-            stdout = stdout.replaceAll("(?m)^", "\t");
-            stderr = stderr.replaceAll("(?m)^", "\t");
             // Display output information
-            CWLClient.outputIntegrationOutput(importsZip.getParentFile().getAbsolutePath(), stdout,
+            outputIntegrationOutput(importsZip.getParentFile().getAbsolutePath(), stdout,
                    stderr, "Cromwell");
 
             // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)

@@ -9,7 +9,6 @@ import com.google.common.base.Joiner;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.Utilities;
-import io.github.collaboratory.cwl.LauncherCWL;
 import org.apache.commons.configuration2.INIConfiguration;
 
 public class NextflowLauncher extends BaseLauncher {
@@ -37,7 +36,7 @@ public class NextflowLauncher extends BaseLauncher {
 
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
-        LauncherCWL.outputIntegrationOutput(workingDirectory, stdout,
+        outputIntegrationOutput(workingDirectory, stdout,
                 stderr, "NextFlow");
     }
 }

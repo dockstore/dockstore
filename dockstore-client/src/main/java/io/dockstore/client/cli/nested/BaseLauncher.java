@@ -1,8 +1,13 @@
 package io.dockstore.client.cli.nested;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import io.dockstore.common.LanguageType;
+import org.apache.commons.io.FileUtils;
 
 public abstract class BaseLauncher {
     protected final AbstractEntryClient abstractEntryClient;
@@ -63,4 +68,26 @@ public abstract class BaseLauncher {
      */
     public abstract void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget);
 
+    /**
+     * Prints and stores the stdout and stderr to files
+     * @param workingDir where to save stderr and stdout
+     * @param stdout     formatted stdout for outpuit
+     * @param stderr     formatted stderr for output
+     * @param executor    help text explaining name of integration
+     */
+    public void outputIntegrationOutput(String workingDir, String stdout, String stderr,
+            String executor) {
+        System.out.println(executor + " stdout:\n" + stdout);
+        System.out.println(executor + " stderr:\n" + stderr);
+        try {
+            final Path path = Paths.get(workingDir + File.separator + executor + ".stdout.txt");
+            FileUtils.writeStringToFile(path.toFile(), stdout, StandardCharsets.UTF_8, false);
+            System.out.println("Saving copy of " + executor + " stdout to: " + path.toAbsolutePath().toString());
+            final Path txt2 = Paths.get(workingDir + File.separator + executor + ".stderr.txt");
+            FileUtils.writeStringToFile(txt2.toFile(), stderr, StandardCharsets.UTF_8, false);
+            System.out.println("Saving copy of " + executor + " stderr to: " + txt2.toAbsolutePath().toString());
+        } catch (IOException e) {
+            throw new RuntimeException("unable to save " + executor + " output", e);
+        }
+    }
 }

@@ -92,6 +92,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
 
     protected static final Logger LOG = LoggerFactory.getLogger(CWLClient.class);
     protected static final String WORKING_DIRECTORY = "working-directory";
+    protected static final String CWL_RUNNER = "cwlrunner";
     protected static final String DEFAULT_LAUNCHER = "cwltool";
     protected static final String CWL_TOOL = "cwltool";
     protected static final String CROMWELL = "cromwell";
@@ -110,7 +111,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
 
         // Set the launcher
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
-        cwlLauncherType = config.getString("cwl-launcher", DEFAULT_LAUNCHER);
+        cwlLauncherType = config.getString(CWL_RUNNER, DEFAULT_LAUNCHER);
         switch (cwlLauncherType) {
         case CROMWELL:
             this.setLauncher(new CromwellLauncher(abstractEntryClient, LanguageType.CWL));
@@ -1148,28 +1149,5 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
             return FilenameUtils.removeExtension(outputParameterFile) + "." + mutationSuffixTarget;
         }
         return outputParameterFile.substring(0, replacementIndex) + mutationSuffixTarget;
-    }
-
-    /**
-     * Prints and stores the stdout and stderr to files
-     * @param workingDir where to save stderr and stdout
-     * @param stdout     formatted stdout for outpuit
-     * @param stderr     formatted stderr for output
-     * @param executor    help text explaining name of integration
-     */
-    public static void outputIntegrationOutput(String workingDir, String stdout, String stderr,
-            String executor) {
-        System.out.println(executor + " stdout:\n" + stdout);
-        System.out.println(executor + " stderr:\n" + stderr);
-        try {
-            final Path path = Paths.get(workingDir + File.separator + executor + ".stdout.txt");
-            FileUtils.writeStringToFile(path.toFile(), stdout, StandardCharsets.UTF_8, false);
-            System.out.println("Saving copy of " + executor + " stdout to: " + path.toAbsolutePath().toString());
-            final Path txt2 = Paths.get(workingDir + File.separator + executor + ".stderr.txt");
-            FileUtils.writeStringToFile(txt2.toFile(), stderr, StandardCharsets.UTF_8, false);
-            System.out.println("Saving copy of " + executor + " stderr to: " + txt2.toAbsolutePath().toString());
-        } catch (IOException e) {
-            throw new RuntimeException("unable to save " + executor + " output", e);
-        }
     }
 }

@@ -62,7 +62,7 @@ public class CwltoolLauncher extends BaseLauncher {
 
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
-        CWLClient.outputIntegrationOutput(workingDirectory + "/outputs/", stdout, stderr, FilenameUtils.getName(command.get(0)));
+        outputIntegrationOutput(workingDirectory + "/outputs/", stdout, stderr, FilenameUtils.getName(command.get(0)));
         Yaml yaml = new Yaml(new SafeConstructor());
         Map<String, Object> outputObj = yaml.load(stdout);
         if (outputMap.size() > 0) {
