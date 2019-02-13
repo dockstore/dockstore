@@ -35,6 +35,7 @@ import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.Bridge;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WDLFileProvisioning;
 import io.swagger.client.ApiException;
@@ -59,7 +60,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
 
     public WDLClient(AbstractEntryClient abstractEntryClient) {
-        super(abstractEntryClient, new CromwellLauncher(abstractEntryClient));
+        super(abstractEntryClient, new CromwellLauncher(abstractEntryClient, LanguageType.WDL));
     }
 
     /**

@@ -19,11 +19,14 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.FileProvisioning;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
-import io.github.collaboratory.cwl.LauncherCWL;
+import io.github.collaboratory.cwl.CWLClient;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.Client.IO_ERROR;
@@ -32,12 +35,15 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  * This is a base class for clients that launch workflows with Cromwell
  */
 public class CromwellLauncher extends BaseLauncher {
-
     protected static final String DEFAULT_CROMWELL_VERSION = "36";
-    protected File cromwell;
 
-    public CromwellLauncher(AbstractEntryClient abstractEntryClient) {
-        super(abstractEntryClient);
+    private static final Logger LOG = LoggerFactory.getLogger(CromwellLauncher.class);
+    protected File cromwell;
+    protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
+    protected FileProvisioning fileProvisioning;
+
+    public CromwellLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
+        super(abstractEntryClient, language);
     }
 
     @Override
@@ -71,76 +77,75 @@ public class CromwellLauncher extends BaseLauncher {
 
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
-        Gson gson = new Gson();
-        String jsonString = null;
-        try {
-            jsonString = abstractEntryClient.fileToJSON(originalParameterFile);
-        } catch (IOException ex) {
-            errorMessage(ex.getMessage(), IO_ERROR);
-        }
-        Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
-
-        LauncherCWL.outputIntegrationOutput(workingDirectory, ImmutablePair.of(stdout, stderr), stdout,
-                stderr, "Cromwell");
-        // capture the output and provision it
-        if (wdlOutputTarget != null) {
-            // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
-            // grab values from output JSON
-            Map<String, String> outputJson = parseOutputObjectFromCromwellStdout(stdout, new Gson());
-
-            System.out.println("Provisioning your output files to their final destinations");
-            Bridge bridge = new Bridge(primaryDescriptor.getParent());
-            final List<String> outputFiles = bridge.getOutputFiles(primaryDescriptor);
-            FileProvisioning fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
-            List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
-            for (String outFile : outputFiles) {
-                // find file path from output
-                final File resultFile = new File(outputJson.get(outFile));
-                FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
-                new1.setUrl(wdlOutputTarget + "/" + outFile);
-                new1.setLocalPath(resultFile.getAbsolutePath());
-                if (inputJson.containsKey(outFile + ".metadata")) {
-                    byte[] metadatas = Base64.getDecoder().decode((String)inputJson.get(outFile + ".metadata"));
-                    new1.setMetadata(new String(metadatas, StandardCharsets.UTF_8));
-                }
-                System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
-                outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
+        if (Objects.equals(languageType, LanguageType.WDL)) {
+            Gson gson = new Gson();
+            String jsonString = null;
+            try {
+                jsonString = abstractEntryClient.fileToJSON(originalParameterFile);
+            } catch (IOException ex) {
+                errorMessage(ex.getMessage(), IO_ERROR);
             }
+            Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
+
+            CWLClient.outputIntegrationOutput(workingDirectory, stdout, stderr, "Cromwell");
+            // capture the output and provision it
+            if (wdlOutputTarget != null) {
+                // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
+                // grab values from output JSON
+                Map<String, String> outputJson = parseOutputObjectFromCromwellStdout(stdout, new Gson());
+
+                System.out.println("Provisioning your output files to their final destinations");
+                Bridge bridge = new Bridge(primaryDescriptor.getParent());
+                final List<String> outputFiles = bridge.getOutputFiles(primaryDescriptor);
+                List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = new ArrayList<>();
+                for (String outFile : outputFiles) {
+                    // find file path from output
+                    final File resultFile = new File(outputJson.get(outFile));
+                    FileProvisioning.FileInfo new1 = new FileProvisioning.FileInfo();
+                    new1.setUrl(wdlOutputTarget + "/" + outFile);
+                    new1.setLocalPath(resultFile.getAbsolutePath());
+                    if (inputJson.containsKey(outFile + ".metadata")) {
+                        byte[] metadatas = Base64.getDecoder().decode((String)inputJson.get(outFile + ".metadata"));
+                        new1.setMetadata(new String(metadatas, StandardCharsets.UTF_8));
+                    }
+                    System.out.println("Uploading: " + outFile + " from " + resultFile + " to : " + new1.getUrl());
+                    outputList.add(ImmutablePair.of(resultFile.getAbsolutePath(), new1));
+                }
+                fileProvisioning.uploadFiles(outputList);
+            } else {
+                System.out.println("Output files left in place");
+            }
+        } else if (Objects.equals(languageType, LanguageType.CWL)) {
+            stdout = stdout.replaceAll("(?m)^", "\t");
+            stderr = stderr.replaceAll("(?m)^", "\t");
+            // Display output information
+            CWLClient.outputIntegrationOutput(importsZip.getParentFile().getAbsolutePath(), stdout,
+                   stderr, "Cromwell");
+
+            // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)
+            String outputPrefix = "Succeeded";
+            int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
+            int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
+            String bracketContents = stdout.substring(startIndex, endIndex).trim();
+            if (bracketContents.isEmpty()) {
+                throw new RuntimeException("No cromwell output");
+            }
+            Map<String, Object> outputJson = new Gson().fromJson(bracketContents, HashMap.class);
+
+            // Find the name of the workflow that is used as a suffix for workflow output IDs
+            startIndex = stdout.indexOf("Pre-Processing ");
+            endIndex = stdout.indexOf("\n", startIndex);
+            String temporaryWorkflowPath = stdout.substring(startIndex, endIndex).trim();
+            String[] splitPath = temporaryWorkflowPath.split("/");
+            String workflowName = splitPath[splitPath.length - 1];
+
+            // Create a list of pairs of output ID and FileInfo objects used for uploading files
+            List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = CWLClient
+                    .registerOutputFiles(outputMap, (Map<String, Object>)outputJson.get("outputs"), workflowName + ".");
+
+            // Provision output files
             fileProvisioning.uploadFiles(outputList);
-        } else {
-            System.out.println("Output files left in place");
         }
-
-        // For CWL cromwell
-
-        //stdout = stdout.replaceAll("(?m)^", "\t");
-        //stderr = stderr.replaceAll("(?m)^", "\t")
-        // Display output information
-        //LauncherCWL.outputIntegrationOutput(importsZipFile.getParentFile().getAbsolutePath(), ImmutablePair.of(stdout, stderr), stdout,
-        //       stderr, "Cromwell");
-
-        // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)
-        //String outputPrefix = "Succeeded";
-        //int startIndex = stdout.indexOf("\n{\n", stdout.indexOf(outputPrefix));
-        //int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
-        //String bracketContents = stdout.substring(startIndex, endIndex).trim();
-        //if (bracketContents.isEmpty()) {
-        //   throw new RuntimeException("No cromwell output");
-        //}
-        //Map<String, Object> outputJson = new Gson().fromJson(bracketContents, HashMap.class);
-
-        // Find the name of the workflow that is used as a suffix for workflow output IDs
-        //startIndex = stdout.indexOf("Pre-Processing ");
-        //endIndex = stdout.indexOf("\n", startIndex);
-        //String temporaryWorkflowPath = stdout.substring(startIndex, endIndex).trim();
-        //String[] splitPath = temporaryWorkflowPath.split("/");
-        //String workflowName = splitPath[splitPath.length - 1];
-
-        // Create a list of pairs of output ID and FileInfo objects used for uploading files
-        //List<ImmutablePair<String, FileProvisioning.FileInfo>> outputList = registerOutputFiles(outputMap, (Map<String, Object>)outputJson.get("outputs"), workflowName);
-
-        // Provision output files
-        //this.fileProvisioning.uploadFiles(outputList);
     }
 
     /**
@@ -199,5 +204,13 @@ public class CromwellLauncher extends BaseLauncher {
         }
 
         return gson.fromJson(bracketContents, HashMap.class);
+    }
+
+    public void setOutputMap(Map<String, List<FileProvisioning.FileInfo>> outputMap) {
+        this.outputMap = outputMap;
+    }
+
+    public void setFileProvisioning(FileProvisioning fileProvisioning) {
+        this.fileProvisioning = fileProvisioning;
     }
 }

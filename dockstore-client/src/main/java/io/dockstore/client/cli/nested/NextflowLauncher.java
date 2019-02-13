@@ -6,17 +6,17 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.common.base.Joiner;
+import io.dockstore.common.LanguageType;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.LauncherCWL;
 import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 
 public class NextflowLauncher extends BaseLauncher {
     protected File nextflow;
 
-    public NextflowLauncher(AbstractEntryClient abstractEntryClient) {
-        super(abstractEntryClient);
+    public NextflowLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
+        super(abstractEntryClient, language);
     }
 
     @Override
@@ -37,7 +37,7 @@ public class NextflowLauncher extends BaseLauncher {
 
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
-        LauncherCWL.outputIntegrationOutput(workingDirectory, ImmutablePair.of(stdout, stderr), stdout,
+        LauncherCWL.outputIntegrationOutput(workingDirectory, stdout,
                 stderr, "NextFlow");
     }
 }

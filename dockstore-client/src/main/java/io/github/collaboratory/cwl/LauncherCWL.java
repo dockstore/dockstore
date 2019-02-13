@@ -147,21 +147,20 @@ public class LauncherCWL {
     /**
      * Prints and stores the stdout and stderr to files
      * @param workingDir where to save stderr and stdout
-     * @param execute    a pair holding the unformatted stderr and stderr
      * @param stdout     formatted stdout for outpuit
      * @param stderr     formatted stderr for output
      * @param executor    help text explaining name of integration
      */
-    public static void outputIntegrationOutput(String workingDir, ImmutablePair<String, String> execute, String stdout, String stderr,
+    public static void outputIntegrationOutput(String workingDir, String stdout, String stderr,
             String executor) {
         System.out.println(executor + " stdout:\n" + stdout);
         System.out.println(executor + " stderr:\n" + stderr);
         try {
             final Path path = Paths.get(workingDir + File.separator + executor + ".stdout.txt");
-            FileUtils.writeStringToFile(path.toFile(), execute.getLeft(), StandardCharsets.UTF_8, false);
+            FileUtils.writeStringToFile(path.toFile(), stdout, StandardCharsets.UTF_8, false);
             System.out.println("Saving copy of " + executor + " stdout to: " + path.toAbsolutePath().toString());
             final Path txt2 = Paths.get(workingDir + File.separator + executor + ".stderr.txt");
-            FileUtils.writeStringToFile(txt2.toFile(), execute.getRight(), StandardCharsets.UTF_8, false);
+            FileUtils.writeStringToFile(txt2.toFile(), stderr, StandardCharsets.UTF_8, false);
             System.out.println("Saving copy of " + executor + " stderr to: " + txt2.toAbsolutePath().toString());
         } catch (IOException e) {
             throw new RuntimeException("unable to save " + executor + " output", e);
@@ -308,7 +307,7 @@ public class LauncherCWL {
         notificationsClient.sendMessage(NotificationsClient.PROVISION_OUTPUT, true);
         try {
             // Display output information
-            LauncherCWL.outputIntegrationOutput(zipFile.getParentFile().getAbsolutePath(), ImmutablePair.of(stdout, stderr), stdout,
+            LauncherCWL.outputIntegrationOutput(zipFile.getParentFile().getAbsolutePath(), stdout,
                     stderr, "Cromwell");
 
             // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)
@@ -678,7 +677,7 @@ public class LauncherCWL {
      * @param fileMap      indicates which output files need to be provisioned where
      * @param outputObject provides information on the output files from cwltool
      */
-    List<ImmutablePair<String, FileProvisioning.FileInfo>> registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap,
+    public List<ImmutablePair<String, FileProvisioning.FileInfo>> registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap,
             Map<String, Object> outputObject, String workflowName) {
 
         LOG.info("UPLOADING FILES...");
@@ -686,7 +685,7 @@ public class LauncherCWL {
 
         for (Entry<String, List<FileProvisioning.FileInfo>> entry : fileMap.entrySet()) {
             List<FileProvisioning.FileInfo> files = entry.getValue();
-            String key = workflowName + "." + entry.getKey();
+            String key = workflowName + entry.getKey();
 
             if ((outputObject.get(key) instanceof List)) {
                 List<Map<String, Object>> cwltoolOutput = (List)outputObject.get(key);
@@ -1042,4 +1041,6 @@ public class LauncherCWL {
             throw new RuntimeException("Could not parse command-line", exp);
         }
     }
+
+
 }

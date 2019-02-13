@@ -2,6 +2,8 @@ package io.dockstore.client.cli.nested;
 
 import java.io.File;
 
+import io.dockstore.common.LanguageType;
+
 public abstract class BaseLauncher {
     protected final AbstractEntryClient abstractEntryClient;
 
@@ -18,8 +20,12 @@ public abstract class BaseLauncher {
     // For remote entries this is the tmp dir where workflow files are downloaded to
     protected String workingDirectory;
 
-    public BaseLauncher(AbstractEntryClient abstractEntryClient) {
+    // CWL, WDL, NFL
+    protected LanguageType languageType;
+
+    public BaseLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
         this.abstractEntryClient = abstractEntryClient;
+        this.languageType = language;
     }
 
     /**
