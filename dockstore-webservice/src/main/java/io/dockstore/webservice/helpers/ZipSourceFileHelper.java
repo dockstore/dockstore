@@ -42,14 +42,14 @@ public final class ZipSourceFileHelper {
         });
     }
 
-    public static List<SourceFile> sourceFilesFromZip(ZipFile zipFile) {
+    public static List<SourceFile> sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
         Map<String, Object> dockstoreYml = readDockstoreYml(zipFile);
         Object primaryDescriptorName = dockstoreYml.get("primaryDescriptor");
         List<String> testParameterFiles = (List<String>)dockstoreYml.get("testParameterFiles");
         if (primaryDescriptorName instanceof String) {
             ZipEntry primaryDescriptor = zipFile
                     .stream().
-                    filter(zipEntry -> primaryDescriptorName.equals(((ZipEntry)zipEntry).getName()))
+                    filter(zipEntry -> primaryDescriptorName.equals(zipEntry.getName()))
                     .findFirst()
                     .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + primaryDescriptorName,
                             HttpStatus.SC_BAD_REQUEST));

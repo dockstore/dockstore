@@ -184,11 +184,12 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         checkEntry(workflow);
         checkHosted(workflow);
         checkUserCanUpdate(user, workflow);
+        final SourceFile.FileType fileType = workflow.getFileType();
         File tempDir = Files.createTempDir();
         File zipFile = new File(tempDir, entryId + ".zip");
         try {
             FileUtils.copyToFile(payload, zipFile);
-            ZipSourceFileHelper.sourceFilesFromZip(new ZipFile(zipFile));
+            ZipSourceFileHelper.sourceFilesFromZip(new ZipFile(zipFile), fileType);
         } catch (IOException e) {
             throw new CustomWebApplicationException("Error reading zip file", HttpStatus.SC_BAD_REQUEST);
         } finally {

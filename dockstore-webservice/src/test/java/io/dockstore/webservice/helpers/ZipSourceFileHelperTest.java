@@ -37,8 +37,8 @@ public class ZipSourceFileHelperTest {
     @Test
     public void sourceFilesFromZip() throws IOException {
         ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH));
-        final List<SourceFile> sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile);
+        final List<SourceFile> sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, SourceFile.FileType.DOCKSTORE_WDL);
         Assert.assertEquals(9, sourceFiles.size());
-        Assert.assertEquals(2, sourceFiles.stream().filter(sf -> sf.getType() == SourceFile.FileType.CWL_TEST_JSON).count());
+        Assert.assertEquals(2, sourceFiles.stream().filter(sf -> sf.getType() == SourceFile.FileType.WDL_TEST_JSON).count());
     }
 }
