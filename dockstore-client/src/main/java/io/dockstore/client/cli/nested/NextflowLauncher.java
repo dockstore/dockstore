@@ -31,7 +31,7 @@ public class NextflowLauncher extends BaseLauncher {
                 .asList("java", "-jar", nextflow.getAbsolutePath(), "run", "-with-docker", "--outdir", workingDirectory, "-work-dir",
                         workingDirectory, "-params-file", originalParameterFile, primaryDescriptor.getAbsolutePath()));
         String join = Joiner.on(" ").join(executionCommand);
-        System.out.println(join);
+        System.out.println("Executing: " + join);
         return join;
     }
 

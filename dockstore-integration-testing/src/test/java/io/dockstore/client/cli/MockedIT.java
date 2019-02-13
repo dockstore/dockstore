@@ -146,12 +146,6 @@ public class MockedIT {
                 "quay.io/collaboratory/dockstore-tool-linux-sort", "--json", ResourceHelpers.resourceFilePath("testMultipleRun.json") });
     }
 
-    @Test
-    public void runLaunchTSV() throws IOException {
-        Client.main(new String[] { "--config", TestUtility.getConfigFileLocation(true), "tool", "launch", "--entry",
-                "quay.io/collaboratory/dockstore-tool-linux-sort", "--tsv", ResourceHelpers.resourceFilePath("testMultipleRun.tsv") });
-    }
-
     /**
      * Tests local file input in arrays or as single files, output to local file
      *

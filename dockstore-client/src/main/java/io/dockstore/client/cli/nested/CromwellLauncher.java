@@ -55,7 +55,8 @@ public class CromwellLauncher extends BaseLauncher {
     public String buildRunCommand() {
         // Start building run command
         final List<String> runCommand;
-        if (importsZip == null || abstractEntryClient instanceof ToolClient) {
+        // Don't use imports option for WDL, only for CWL
+        if (importsZip == null || abstractEntryClient instanceof ToolClient || Objects.equals(languageType, LanguageType.WDL)) {
             runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
         } else {
             runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", importsZip.getAbsolutePath());
@@ -71,7 +72,7 @@ public class CromwellLauncher extends BaseLauncher {
         arguments.addAll(Arrays.asList(s));
         arguments.addAll(runCommand);
         final String join = Joiner.on(" ").join(arguments);
-        System.out.println(join);
+        System.out.println("Executing: " + join);
         return join;
     }
 

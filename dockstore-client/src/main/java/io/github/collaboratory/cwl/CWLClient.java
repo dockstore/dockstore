@@ -81,6 +81,7 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
+import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 
@@ -169,7 +170,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
             cwlObject = gson.fromJson(imageDescriptorContent, cwlClassTarget);
             if (cwlObject == null) {
                 LOG.info("CWL file was null.");
-                errorMessage("CWL file was null.", GENERIC_ERROR);
+                errorMessage("CWL file was null.", ENTRY_NOT_FOUND);
             }
         } catch (JsonParseException ex) {
             LOG.error("The CWL file provided is invalid.");
