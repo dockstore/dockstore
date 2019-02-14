@@ -33,6 +33,7 @@ import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
 import groovyjarjarantlr.TokenStreamException;
 import io.dockstore.common.NextflowUtilities;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Version;

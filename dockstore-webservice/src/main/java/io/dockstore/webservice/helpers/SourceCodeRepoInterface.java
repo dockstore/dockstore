@@ -34,6 +34,7 @@ import javax.validation.constraints.NotNull;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Bytes;
 import io.dockstore.common.LanguageType;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -548,13 +549,13 @@ public abstract class SourceCodeRepoInterface {
 
         // Validate descriptor set
         if (mainDescriptor.isPresent()) {
-            LanguageHandlerInterface.VersionTypeValidation validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
+            VersionTypeValidation validDescriptorSet = LanguageHandlerFactory.getInterface(identifiedType).validateWorkflowSet(sourceFiles, mainDescriptorPath);
             Validation descriptorValidation = new Validation(identifiedType, validDescriptorSet);
             version.addOrUpdateValidation(descriptorValidation);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
             validationMessage.put(mainDescriptorPath, "Missing the primary descriptor.");
-            LanguageHandlerInterface.VersionTypeValidation noPrimaryDescriptor = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
+            VersionTypeValidation noPrimaryDescriptor = new VersionTypeValidation(false, validationMessage);
             Validation noPrimaryDescriptorValidation = new Validation(identifiedType, noPrimaryDescriptor);
             version.addOrUpdateValidation(noPrimaryDescriptorValidation);
         }
@@ -576,7 +577,7 @@ public abstract class SourceCodeRepoInterface {
         }
 
         if (testParameterType != null) {
-            LanguageHandlerInterface.VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
+            VersionTypeValidation validTestParameterSet = LanguageHandlerFactory.getInterface(identifiedType).validateTestParameterSet(sourceFiles);
             Validation testParameterValidation = new Validation(testParameterType, validTestParameterSet);
             version.addOrUpdateValidation(testParameterValidation);
         }

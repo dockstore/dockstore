@@ -35,6 +35,7 @@ import javax.validation.constraints.NotNull;
 
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Registry;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
@@ -50,7 +51,6 @@ import io.dockstore.webservice.jdbi.TagDAO;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.languages.LanguageHandlerFactory;
-import io.dockstore.webservice.languages.LanguageHandlerInterface;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
@@ -481,14 +481,14 @@ public abstract class AbstractImageRegistry {
      */
     private Tag validateTagDockerfile(Tag tag, boolean isPrivateAccess) {
         Optional<SourceFile> dockerfile = tag.getSourceFiles().stream().filter(sourceFile -> Objects.equals(sourceFile.getType(), SourceFile.FileType.DOCKERFILE)).findFirst();
-        LanguageHandlerInterface.VersionTypeValidation validDockerfile;
+        VersionTypeValidation validDockerfile;
         // Private tools don't require a dockerfile
         if (dockerfile.isPresent() || isPrivateAccess) {
-            validDockerfile = new LanguageHandlerInterface.VersionTypeValidation(true, null);
+            validDockerfile = new VersionTypeValidation(true, null);
         } else {
             Map<String, String> validationMessage = new HashMap<>();
             validationMessage.put("/Dockerfile", "Missing a Dockerfile.");
-            validDockerfile = new LanguageHandlerInterface.VersionTypeValidation(false, validationMessage);
+            validDockerfile = new VersionTypeValidation(false, validationMessage);
         }
         Validation dockerfileValidation = new Validation(SourceFile.FileType.DOCKERFILE, validDockerfile);
         tag.addOrUpdateValidation(dockerfileValidation);
@@ -503,7 +503,7 @@ public abstract class AbstractImageRegistry {
      * @return Validated tag
      */
     private Tag validateTagDescriptorType(Tag tag, SourceFile.FileType fileType, String primaryDescriptorPath) {
-        LanguageHandlerInterface.VersionTypeValidation isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
+        VersionTypeValidation isValidDescriptor = LanguageHandlerFactory.getInterface(fileType)
                 .validateToolSet(tag.getSourceFiles(), primaryDescriptorPath);
         Validation descriptorValidation = new Validation(fileType, isValidDescriptor);
         tag.addOrUpdateValidation(descriptorValidation);
@@ -524,7 +524,7 @@ public abstract class AbstractImageRegistry {
         }
 
         if (testParamType != null) {
-            LanguageHandlerInterface.VersionTypeValidation isValidTestParameter = LanguageHandlerFactory.getInterface(fileType).validateTestParameterSet(tag.getSourceFiles());
+            VersionTypeValidation isValidTestParameter = LanguageHandlerFactory.getInterface(fileType).validateTestParameterSet(tag.getSourceFiles());
             Validation testParameterValidation = new Validation(testParamType, isValidTestParameter);
             tag.addOrUpdateValidation(testParameterValidation);
         }

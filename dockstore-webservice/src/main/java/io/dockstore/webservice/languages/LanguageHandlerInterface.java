@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tool;
@@ -443,29 +444,4 @@ public interface LanguageHandlerInterface {
         }
     }
 
-    class VersionTypeValidation {
-        protected boolean isValid;
-        protected Map<String, String> message;
-
-        public VersionTypeValidation(boolean isValid, Map<String, String> message) {
-            this.isValid = isValid;
-            this.message = message;
-        }
-
-        public boolean isValid() {
-            return isValid;
-        }
-
-        public void setValid(boolean valid) {
-            isValid = valid;
-        }
-
-        public Map<String, String> getMessage() {
-            return message;
-        }
-
-        public void setMessage(Map<String, String> message) {
-            this.message = message;
-        }
-    }
 }

@@ -36,6 +36,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import io.dockstore.common.Bridge;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.SourceFile;

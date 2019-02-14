@@ -31,7 +31,7 @@ import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ComparisonChain;
-import io.dockstore.webservice.languages.LanguageHandlerInterface;
+import io.dockstore.common.VersionTypeValidation;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -91,7 +91,7 @@ public class Validation implements Comparable<Validation> {
         this.message = versionValidation.getMessage();
     }
 
-    public Validation(SourceFile.FileType fileType, LanguageHandlerInterface.VersionTypeValidation validMessagePair) {
+    public Validation(SourceFile.FileType fileType, VersionTypeValidation validMessagePair) {
         this.type = fileType;
         this.valid = validMessagePair.isValid();
         this.message = new JSONObject(validMessagePair.getMessage()).toString();

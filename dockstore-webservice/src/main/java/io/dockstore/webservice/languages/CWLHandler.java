@@ -37,6 +37,7 @@ import io.cwl.avro.ExpressionTool;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.cwl.avro.WorkflowStep;
 import io.cwl.avro.WorkflowStepInput;
+import io.dockstore.common.VersionTypeValidation;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.FileFormat;
