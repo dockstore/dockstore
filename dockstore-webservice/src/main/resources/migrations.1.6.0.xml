@@ -238,7 +238,7 @@
 
     <changeSet author="NatalieEO" id="addAvatarurlColumnToOrganizations">
         <addColumn tableName="organization">
-            <column name="avatarUrl" type="varchar(255)"></column>
+            <column name="avatarurl" type="varchar(255)"></column>
         </addColumn>
     </changeSet>
 
