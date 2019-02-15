@@ -20,7 +20,9 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
+import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
+import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
 
 /**
@@ -146,15 +148,6 @@ public abstract class BaseLanguageClient {
         try {
             // Provision the input files
             provisionedParameterFile = provisionInputFiles();
-
-            // Update the launcher with references to the files to be launched
-            launcher.setFiles(localPrimaryDescriptorFile, importsZipFile, provisionedParameterFile, selectedParameterFile, workingDirectory);
-
-            // Attempt to run launcher
-            executeEntry();
-
-            // Provision the output files if run is successful
-            provisionOutputFiles();
         } catch (ApiException ex) {
             if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
                 exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
@@ -163,8 +156,25 @@ public abstract class BaseLanguageClient {
                 exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
                         ENTRY_NOT_FOUND);
             }
-        } catch (IOException ex) {
+        } catch (Exception ex) {
+            exceptionMessage(ex, ex.getMessage(), GENERIC_ERROR);
+        }
+
+        // Update the launcher with references to the files to be launched
+        launcher.setFiles(localPrimaryDescriptorFile, importsZipFile, provisionedParameterFile, selectedParameterFile, workingDirectory);
+
+        try {
+            // Attempt to run launcher
+            executeEntry();
+
+            // Provision the output files if run is successful
+            provisionOutputFiles();
+        } catch (ApiException ex) {
+            exceptionMessage(ex, ex.getMessage(), API_ERROR);
+        }  catch (IOException ex) {
             exceptionMessage(ex, ex.getMessage(), IO_ERROR);
+        } catch (Exception ex) {
+            exceptionMessage(ex, ex.getMessage(), GENERIC_ERROR);
         }
 
         notificationsClient.sendMessage(NotificationsClient.COMPLETED, true);

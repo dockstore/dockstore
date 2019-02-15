@@ -40,6 +40,9 @@ public class CwltoolLauncher extends BaseLauncher {
     @Override
     public String buildRunCommand() {
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
+        CWLRunnerFactory.setConfig(config);
+
+        // Handle extra parameters passed in the config file
         List<String> extraFlags = (List)(config.getList("cwltool-extra-parameters"));
         if (extraFlags.size() > 0) {
             System.out.println("########### WARNING ###########");
@@ -48,7 +51,8 @@ public class CwltoolLauncher extends BaseLauncher {
 
         extraFlags = extraFlags.stream().map(string -> string.split(",")).flatMap(Arrays::stream).map(this::trimAndPrintInput)
                 .collect(Collectors.toList());
-        // TODO: handle extra flags
+
+        // Create base execution command
         CWLRunnerInterface cwlRunner = CWLRunnerFactory.createCWLRunner();
         command = cwlRunner.getExecutionCommand(workingDirectory + "/outputs/", workingDirectory + "/tmp/", workingDirectory + "/working/",
                 primaryDescriptor.getAbsolutePath(), provisionedParameterFile.getAbsolutePath());

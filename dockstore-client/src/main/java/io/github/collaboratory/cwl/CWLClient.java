@@ -286,12 +286,10 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
      * @param yamlParameterFile      runtime descriptor, one of these is required
      * @param jsonParameterFile      runtime descriptor, one of these is required
      * @param uuid         uuid that was optional specified for notifications
-     * @throws IOException
-     * @throws ApiException
      */
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String outputTarget,
-        String uuid) throws ApiException {
+        String uuid) {
         // Call common launch command
         return launchPipeline(entry, isLocalEntry, yamlParameterFile, jsonParameterFile, outputTarget, uuid);
     }
@@ -1009,6 +1007,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
     /**
      * @param fileMap      indicates which output files need to be provisioned where
      * @param outputObject provides information on the output files from cwltool
+     * @param workflowName Prefix that cromwell adds to fields (must end in period)
      */
     public static List<ImmutablePair<String, FileProvisioning.FileInfo>> registerOutputFiles(Map<String, List<FileProvisioning.FileInfo>> fileMap,
             Map<String, Object> outputObject, String workflowName) {

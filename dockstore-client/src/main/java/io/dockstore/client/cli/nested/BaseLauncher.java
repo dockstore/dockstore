@@ -9,6 +9,10 @@ import java.nio.file.Paths;
 import io.dockstore.common.LanguageType;
 import org.apache.commons.io.FileUtils;
 
+/**
+ * This class is the base class for launchers used by the Dockstore CLI.
+ * Launchers such as cwltool and cromwell extend this.
+ */
 public abstract class BaseLauncher {
     protected final AbstractEntryClient abstractEntryClient;
 
@@ -71,7 +75,7 @@ public abstract class BaseLauncher {
     /**
      * Prints and stores the stdout and stderr to files
      * @param workingDir where to save stderr and stdout
-     * @param stdout     formatted stdout for outpuit
+     * @param stdout     formatted stdout for output
      * @param stderr     formatted stderr for output
      * @param executor    help text explaining name of integration
      */

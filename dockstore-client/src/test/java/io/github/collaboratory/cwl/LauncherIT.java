@@ -18,6 +18,7 @@ package io.github.collaboratory.cwl;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,9 +28,11 @@ import java.util.Map;
 import com.google.gson.Gson;
 import io.cwl.avro.CommandLineTool;
 import io.cwl.avro.Workflow;
+import io.dockstore.client.cli.Client;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
+import io.dropwizard.testing.ResourceHelpers;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -82,13 +85,21 @@ public abstract class LauncherIT {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
+        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(myOut));
+
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expectMessage("plugin threw an exception");
+            expectedEx.expectMessage("Unexpected call of System.exit(1)");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(
-                new String[] { "--config", getConfigFile(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
-                        jobFile.getAbsolutePath() });
-        launcherCWL.run(CommandLineTool.class, cwlFile.getParentFile(), cwlFile.getParentFile());
+
+        Client.main(new String[] { "--config", getConfigFile(), "tool", "launch", "--local-entry",
+                cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
+
+        if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
+            final String standardOutput = myOut.toString();
+            assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
+        }
+
     }
 
     @Test
@@ -96,47 +107,60 @@ public abstract class LauncherIT {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
+        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(myOut));
+
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expectMessage("plugin threw an exception");
+            expectedEx.expectMessage("Unexpected call of System.exit(1)");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(
-            new String[] { "--config", getConfigFileWithExtraParameters(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
-                jobFile.getAbsolutePath() });
-        launcherCWL.run(CommandLineTool.class, cwlFile.getParentFile(), cwlFile.getParentFile());
+
+        Client.main(new String[] { "--config", getConfigFileWithExtraParameters(), "tool", "launch", "--local-entry",
+                cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
+
+        if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
+            final String standardOutput = myOut.toString();
+            assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
+        }
     }
 
     @Test
     public void testCWLProgrammatic() {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+
+        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(myOut));
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expectMessage("plugin threw an exception");
+            expectedEx.expectMessage("Unexpected call of System.exit(1)");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(getConfigFile(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
-                stdout, stderr, jobFile.getAbsolutePath(), null);
-        launcherCWL.run(CommandLineTool.class, cwlFile.getParentFile(), cwlFile.getParentFile());
+        Client.main(new String[] { "--config", getConfigFile(), "tool", "launch", "--local-entry",
+                cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
-        assertTrue(!stdout.toString().isEmpty());
+        if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
+            final String standardOutput = myOut.toString();
+            assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
+        }
     }
 
     @Test
     public void testCWLWorkflowProgrammatic() {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "filtercount.cwl.yaml");
         File jobFile = FileUtils.getFile("src", "test", "resources", "filtercount-job.json");
-        ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-        ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+
+        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(myOut));
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            expectedEx.expectMessage("plugin threw an exception");
+            expectedEx.expectMessage("Unexpected call of System.exit(1)");
         }
-        final LauncherCWL launcherCWL = new LauncherCWL(getConfigFile(), cwlFile.getAbsolutePath(), jobFile.getAbsolutePath(),
-                stdout, stderr, jobFile.getAbsolutePath(), null);
-        launcherCWL.run(Workflow.class, cwlFile.getParentFile(), cwlFile.getParentFile());
+        Client.main(new String[] { "--config", getConfigFile(), "workflow", "launch", "--local-entry",
+                cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
-        assertTrue(!stdout.toString().isEmpty());
+        if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
+            final String standardOutput = myOut.toString();
+            assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
+        }
     }
 
     @Test

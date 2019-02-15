@@ -40,6 +40,7 @@ import io.swagger.client.model.PublishRequest;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.Tag;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -876,4 +877,5 @@ public class GeneralIT extends BaseIT {
             assert (innerFile.delete());
         });
     }
+
 }
