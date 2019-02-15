@@ -404,6 +404,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         oldOrganization.setEmail(organization.getEmail());
         oldOrganization.setLink(organization.getLink());
         oldOrganization.setLocation(organization.getLocation());
+        oldOrganization.setAvatarUrl(organization.getAvatarUrl());
 
         Event updateOrganizationEvent = new Event.Builder().withOrganization(oldOrganization).withInitiatorUser(user)
             .withType(Event.EventType.MODIFY_ORG).build();
