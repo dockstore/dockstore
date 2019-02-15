@@ -100,7 +100,7 @@ public class EntryResource implements AuthenticatedResourceInterface {
     @Path("/{id}/collections")
     @Timed
     @UnitOfWork
-    @ApiOperation(value = "Get a published entry's collections and organizations it's part of", notes = "Entry must be published", response = CollectionOrganization.class, responseContainer = "List")
+    @ApiOperation(value = "Get the collections and organizations that contain the published entry", notes = "Entry must be published", response = CollectionOrganization.class, responseContainer = "List")
     public List<CollectionOrganization> entryCollections(@ApiParam(value = "id", required = true) @PathParam("id") Long id) {
         Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
         if (entry == null || !entry.getIsPublished()) {

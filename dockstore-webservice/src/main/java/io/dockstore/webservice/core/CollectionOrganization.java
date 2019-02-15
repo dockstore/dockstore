@@ -18,21 +18,21 @@
 
 package io.dockstore.webservice.core;
 
-import org.hibernate.Hibernate;
-
 /**
  * This class is used as the response object of the entry collections endpoint.
  * @author gluu
  * @since 1.6.0
  */
 public class CollectionOrganization {
-    public final Collection collection;
-    public final Organization organization;
+    public final long collectionId;
+    public final String collectionName;
+    public final long organizationId;
+    public final String organizationName;
 
-    public CollectionOrganization(Collection collection, Organization organization)  {
-        Hibernate.initialize(organization);
-        Hibernate.initialize(collection);
-        this.collection = collection;
-        this.organization = organization;
+    public CollectionOrganization(long collectionId, String collectionName, long organizationId, String organizationName)  {
+        this.collectionId = collectionId;
+        this.collectionName = collectionName;
+        this.organizationId = organizationId;
+        this.organizationName = organizationName;
     }
 }

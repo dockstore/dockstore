@@ -73,7 +73,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
     @NamedQuery(name = "Entry.getGenericEntryById", query = "SELECT e from Entry e WHERE :id = e.id"),
         @NamedQuery(name = "Entry.getGenericEntryByAlias", query = "SELECT e from Entry e JOIN e.aliases a WHERE KEY(a) IN :alias"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select new io.dockstore.webservice.core.CollectionOrganization(col, organization) from Collection col join col.entries as entry join col.organization as organization where entry.id = :entryId")
+        @NamedQuery(name = "io.dockstore.webservice.core.Entry.findCollectionsByEntryId", query = "select new io.dockstore.webservice.core.CollectionOrganization(col.id, col.name, organization.id, organization.name) from Collection col join col.entries as entry join col.organization as organization where entry.id = :entryId")
 })
 // TODO: Replace this with JPA when possible
 @NamedNativeQueries({

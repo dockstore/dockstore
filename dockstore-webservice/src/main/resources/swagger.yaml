@@ -2516,7 +2516,7 @@ paths:
     get:
       tags:
       - "entries"
-      summary: "Get a published entry's collections and organizations it's part of"
+      summary: "Get the collections and organizations that contain the published entry"
       description: "Entry must be published"
       operationId: "entryCollections"
       produces:
@@ -5432,10 +5432,16 @@ definitions:
   CollectionOrganization:
     type: "object"
     properties:
-      collection:
-        $ref: "#/definitions/Collection"
-      organization:
-        $ref: "#/definitions/Organization"
+      collectionId:
+        type: "integer"
+        format: "int64"
+      collectionName:
+        type: "string"
+      organizationId:
+        type: "integer"
+        format: "int64"
+      organizationName:
+        type: "string"
   DescriptorLanguageBean:
     type: "object"
     properties:
