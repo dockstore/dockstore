@@ -165,15 +165,6 @@ public abstract class LauncherIT {
 
     @Test
     public void testBCBIOOutput() throws Exception {
-        // these files are not actually used in this test, but only satisfy the constructor
-        File iniFile = FileUtils.getFile("src", "test", "resources", "launcher.ini");
-        File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
-        File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
-
-        final LauncherCWL launcherCWL = new LauncherCWL(
-            new String[] { "--config", iniFile.getAbsolutePath(), "--descriptor", cwlFile.getAbsolutePath(), "--job",
-                jobFile.getAbsolutePath() });
-
         // mimicking the bcbio provision out process to replicate a bug
         Gson gson = new Gson();
         String outputObjectString = FileUtils.readFileToString(FileUtils.getFile("src", "test", "resources", "bcbio.output.json"), StandardCharsets.UTF_8);
@@ -189,7 +180,7 @@ public abstract class LauncherIT {
         fileMap.put("summary__multiqc", simulatedList);
         fileMap.put("variants__calls", simulatedList);
         fileMap.put("variants__gvcf", simulatedList);
-        launcherCWL.registerOutputFiles(fileMap, outputObject, "");
+        CWLClient.registerOutputFiles(fileMap, outputObject, "");
     }
 
     @Test

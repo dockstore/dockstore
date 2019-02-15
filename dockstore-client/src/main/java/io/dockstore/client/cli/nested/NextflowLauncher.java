@@ -28,9 +28,9 @@ public class NextflowLauncher extends BaseLauncher {
         List<String> executionCommand = new ArrayList<>(Arrays
                 .asList("java", "-jar", exectionFile.getAbsolutePath(), "run", "-with-docker", "--outdir", workingDirectory, "-work-dir",
                         workingDirectory, "-params-file", originalParameterFile, primaryDescriptor.getAbsolutePath()));
-        String join = Joiner.on(" ").join(executionCommand);
-        System.out.println("Executing: " + join);
-        return join;
+        String joinedCommand = Joiner.on(" ").join(executionCommand);
+        System.out.println("Executing: " + joinedCommand);
+        return joinedCommand;
     }
 
     @Override

@@ -85,7 +85,6 @@ public class CromwellLauncher extends BaseLauncher {
 
     @Override
     public String buildRunCommand() {
-        // Start building run command
         final List<String> runCommand;
         // Don't use imports option for WDL, only for CWL
         if (importsZip == null || abstractEntryClient instanceof ToolClient || Objects.equals(languageType, LanguageType.WDL)) {

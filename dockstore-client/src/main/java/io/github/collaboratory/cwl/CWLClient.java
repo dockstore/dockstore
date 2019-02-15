@@ -98,10 +98,10 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
     private static final String CROMWELL = "cromwell";
 
     protected final Yaml yaml = new Yaml(new SafeConstructor());
+    protected final Gson gson = CWL.getTypeSafeCWLToolDocument();
     private final FileProvisioning fileProvisioning;
     private String originalTestParameterFilePath;
     private Map<String, List<FileProvisioning.FileInfo>> outputMap;
-    protected final Gson gson = CWL.getTypeSafeCWLToolDocument();
     private String cwlLauncherType;
 
     public CWLClient(AbstractEntryClient abstractEntryClient) {

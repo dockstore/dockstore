@@ -35,7 +35,6 @@ import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.Bridge;
-import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
 import io.dockstore.common.WDLFileProvisioning;
@@ -64,15 +63,6 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         super(abstractEntryClient, new CromwellLauncher(abstractEntryClient, LanguageType.WDL));
     }
 
-    /**
-     * Launches the tool/workflow
-     * @param entry           file path for the wdl file or a dockstore id
-     * @param isLocalEntry
-     * @param jsonParameterFile           file path for the json parameter file
-     * @param outputTarget directory where to drop off output for wdl
-     * @param uuid
-     * @return an exit code for the run
-     */
     @Override
     public long launch(String entry, boolean isLocalEntry, String yamlParameterFile, String jsonParameterFile, String outputTarget, String uuid)
             throws ApiException {
