@@ -16,8 +16,10 @@
 
 package io.dockstore.client.cli;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -454,8 +456,13 @@ public class LaunchTestIT {
     public void runToolToMissingS3() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_s3_failed.json"));
-        thrown.expect(RuntimeException.class);
+        final ByteArrayOutputStream launcherOutput = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(launcherOutput));
+
+        thrown.expect(AssertionError.class);
         runTool(cwlFile, cwlJSON);
+        final String standardOutput = launcherOutput.toString();
+        assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
     }
 
     @Test
@@ -466,7 +473,7 @@ public class LaunchTestIT {
         runTool(cwlFile, cwlJSON);
 
         final int countMatches = StringUtils.countMatches(systemOutRule.getLog(), "Provisioning from");
-        assertEquals("output should include multiple provision out events, found " + countMatches, 2, countMatches);
+        assertEquals("output should include one provision out event, found " + countMatches, 1, countMatches);
         String filename = "test1";
         checkFileAndThenDeleteIt(filename);
         FileUtils.deleteDirectory(new File(filename));

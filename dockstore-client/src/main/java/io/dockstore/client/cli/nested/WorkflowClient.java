@@ -1155,7 +1155,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
     @Parameters(separators = "=", commandDescription = "Launch an entry locally or remotely.")
     private static class CommandLaunch {
-        @Parameter(names = "--local-entry", description = "Allows you to specify a full path to a lcoal descriptor instead of an entry path")
+        @Parameter(names = "--local-entry", description = "Allows you to specify a full path to a local descriptor instead of an entry path")
         private String localEntry;
         @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)")
         private String entry;
@@ -1163,8 +1163,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         private String json;
         @Parameter(names = "--yaml", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs")
         private String yaml;
-        @Parameter(names = "--tsv", description = "One row corresponds to parameters for one run in the dockstore (Only for CWL)")
-        private String tsv;
         @Parameter(names = "--wdl-output-target", description = "Allows you to specify a remote path to provision outputs files to (ex: s3://oicr.temp/testing-launcher/")
         private String wdlOutputTarget;
         @Parameter(names = "--help", description = "Prints help for launch command", help = true)

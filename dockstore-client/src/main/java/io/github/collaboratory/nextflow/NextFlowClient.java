@@ -46,6 +46,7 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
 
     @Override
     public void selectParameterFile() {
+        // Only JSON parameter file allowed
         assert (yamlParameterFile == null && jsonParameterFile != null);
         selectedParameterFile = jsonParameterFile;
     }
@@ -64,12 +65,14 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
         }
     }
 
+    // Does not have any parameter files to provision, everything done by Nextflow launcher
     @Override
     public File provisionInputFiles() {
-        // Does not have any parameter files to provision, everything done by Nextflow launcher
+        // Set the working directory to the current directory
         Path currentRelativePath = Paths.get("");
         workingDirectory = currentRelativePath.toAbsolutePath().toString();
 
+        // Does not provision any files so returns null
         return null;
     }
 

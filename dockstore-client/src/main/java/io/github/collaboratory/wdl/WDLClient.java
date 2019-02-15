@@ -62,7 +62,6 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
 
     public WDLClient(AbstractEntryClient abstractEntryClient) {
         super(abstractEntryClient, new CromwellLauncher(abstractEntryClient, LanguageType.WDL));
-        ((CromwellLauncher)launcher).setFileProvisioning(new FileProvisioning(abstractEntryClient.getConfigFile()));
     }
 
     /**

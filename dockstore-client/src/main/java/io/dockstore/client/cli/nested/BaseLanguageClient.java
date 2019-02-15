@@ -85,7 +85,7 @@ public abstract class BaseLanguageClient {
     public abstract void executeEntry() throws ExecuteException;
 
     /**
-     * Provisions the output files
+     * Provisions the output files to their appropriate location
      */
     public abstract void provisionOutputFiles();
 

@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
 import org.apache.commons.io.FileUtils;
 
@@ -15,7 +16,7 @@ import org.apache.commons.io.FileUtils;
  */
 public abstract class BaseLauncher {
     protected final AbstractEntryClient abstractEntryClient;
-
+    protected final FileProvisioning fileProvisioning;
     // The primary descriptor of the workflow
     protected File primaryDescriptor;
     // A zip file for the entire entry
@@ -29,11 +30,13 @@ public abstract class BaseLauncher {
     // For remote entries this is the tmp dir where workflow files are downloaded to
     protected String workingDirectory;
 
-    // CWL, WDL, NFL
+    // CWL, WDL, NEXTFLOW
     protected LanguageType languageType;
+    protected File exectionFile;
 
     public BaseLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
         this.abstractEntryClient = abstractEntryClient;
+        this.fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
         this.languageType = language;
     }
 

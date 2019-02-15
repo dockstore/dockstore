@@ -91,18 +91,18 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 public class CWLClient extends BaseLanguageClient implements LanguageClientInterface {
 
     protected static final Logger LOG = LoggerFactory.getLogger(CWLClient.class);
-    protected static final String WORKING_DIRECTORY = "working-directory";
-    protected static final String CWL_RUNNER = "cwlrunner";
-    protected static final String DEFAULT_LAUNCHER = "cwltool";
-    protected static final String CWL_TOOL = "cwltool";
-    protected static final String CROMWELL = "cromwell";
+    private static final String WORKING_DIRECTORY = "working-directory";
+    private static final String CWL_RUNNER = "cwlrunner";
+    private static final String DEFAULT_LAUNCHER = "cwltool";
+    private static final String CWL_TOOL = "cwltool";
+    private static final String CROMWELL = "cromwell";
 
     protected final Yaml yaml = new Yaml(new SafeConstructor());
-    protected final FileProvisioning fileProvisioning;
-    protected String originalTestParameterFilePath;
-    protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
+    private final FileProvisioning fileProvisioning;
+    private String originalTestParameterFilePath;
+    private Map<String, List<FileProvisioning.FileInfo>> outputMap;
     protected final Gson gson = CWL.getTypeSafeCWLToolDocument();
-    protected String cwlLauncherType;
+    private String cwlLauncherType;
 
     public CWLClient(AbstractEntryClient abstractEntryClient) {
         super(abstractEntryClient, null);
@@ -115,12 +115,10 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         switch (cwlLauncherType) {
         case CROMWELL:
             this.setLauncher(new CromwellLauncher(abstractEntryClient, LanguageType.CWL));
-            ((CromwellLauncher)launcher).setFileProvisioning(fileProvisioning);
             break;
         case CWL_TOOL:
         default:
             this.setLauncher(new CwltoolLauncher(abstractEntryClient, LanguageType.CWL));
-            ((CwltoolLauncher)launcher).setFileProvisioning(fileProvisioning);
             break;
         }
     }
@@ -153,7 +151,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
             String jsonTempRun = File.createTempFile("parameter", "json").getAbsolutePath();
             FileProvisioning.retryWrapper(null, parameterFile, Paths.get(jsonTempRun), 1, true, 1);
             selectedParameterFile = jsonTempRun;
-        } catch (IOException ex) {
+        } catch (IOException | RuntimeException ex) {
             errorMessage("No parameter file found.", IO_ERROR);
         }
     }

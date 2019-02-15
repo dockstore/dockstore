@@ -85,8 +85,8 @@ public abstract class LauncherIT {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
-        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(myOut));
+        final ByteArrayOutputStream launcherOutput = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(launcherOutput));
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
             expectedEx.expectMessage("Unexpected call of System.exit(1)");
@@ -96,7 +96,7 @@ public abstract class LauncherIT {
                 cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            final String standardOutput = myOut.toString();
+            final String standardOutput = launcherOutput.toString();
             assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
         }
 
@@ -107,8 +107,8 @@ public abstract class LauncherIT {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
-        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(myOut));
+        final ByteArrayOutputStream launcherOutput = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(launcherOutput));
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
             expectedEx.expectMessage("Unexpected call of System.exit(1)");
@@ -118,7 +118,7 @@ public abstract class LauncherIT {
                 cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            final String standardOutput = myOut.toString();
+            final String standardOutput = launcherOutput.toString();
             assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
         }
     }
@@ -128,8 +128,8 @@ public abstract class LauncherIT {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "collab.cwl");
         File jobFile = FileUtils.getFile("src", "test", "resources", "collab-cwl-job-pre.json");
 
-        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(myOut));
+        final ByteArrayOutputStream launcherOutput = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(launcherOutput));
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
             expectedEx.expectMessage("Unexpected call of System.exit(1)");
@@ -138,7 +138,7 @@ public abstract class LauncherIT {
                 cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            final String standardOutput = myOut.toString();
+            final String standardOutput = launcherOutput.toString();
             assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
         }
     }
@@ -148,8 +148,8 @@ public abstract class LauncherIT {
         File cwlFile = FileUtils.getFile("src", "test", "resources", "filtercount.cwl.yaml");
         File jobFile = FileUtils.getFile("src", "test", "resources", "filtercount-job.json");
 
-        final ByteArrayOutputStream myOut = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(myOut));
+        final ByteArrayOutputStream launcherOutput = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(launcherOutput));
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
             expectedEx.expectMessage("Unexpected call of System.exit(1)");
@@ -158,7 +158,7 @@ public abstract class LauncherIT {
                 cwlFile.getAbsolutePath(), "--json", jobFile.getAbsolutePath(), "--script" });
 
         if (System.getenv("AWS_ACCESS_KEY") == null || System.getenv("AWS_SECRET_KEY") == null) {
-            final String standardOutput = myOut.toString();
+            final String standardOutput = launcherOutput.toString();
             assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
         }
     }

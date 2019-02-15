@@ -22,10 +22,10 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public class CwltoolLauncher extends BaseLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(CwltoolLauncher.class);
+    private static final String LAUNCHER_NAME = "cwltool";
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
-    protected FileProvisioning fileProvisioning;
     public CwltoolLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
         super(abstractEntryClient, language);
     }
@@ -78,10 +78,6 @@ public class CwltoolLauncher extends BaseLauncher {
 
     public void setOutputMap(Map<String, List<FileProvisioning.FileInfo>> outputMap) {
         this.outputMap = outputMap;
-    }
-
-    public void setFileProvisioning(FileProvisioning fileProvisioning) {
-        this.fileProvisioning = fileProvisioning;
     }
 
     private String trimAndPrintInput(String input) {
