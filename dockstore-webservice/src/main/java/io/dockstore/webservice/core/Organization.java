@@ -27,67 +27,67 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * This describes a Dockstore organisation that can be created by users.
+ * This describes a Dockstore organization that can be created by users.
  *
  * @author aduncan
  */
-@ApiModel("Organisation")
+@ApiModel("Organization")
 @Entity
-@Table(name = "organisation")
+@Table(name = "organization")
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllApproved", query = "SELECT org FROM Organisation org WHERE org.status = 'APPROVED'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllPending", query = "SELECT org FROM Organisation org WHERE org.status = 'PENDING'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAllRejected", query = "SELECT org FROM Organisation org WHERE org.status = 'REJECTED'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findAll", query = "SELECT org FROM Organisation org"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findByName", query = "SELECT org FROM Organisation org WHERE org.name = :name"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedById", query = "SELECT org FROM Organisation org WHERE org.id = :id AND org.status = 'APPROVED'"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Organisation.findApprovedByName", query = "SELECT org FROM Organisation org WHERE org.name = :name AND org.status = 'APPROVED'")
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllApproved", query = "SELECT org FROM Organization org WHERE org.status = 'APPROVED'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllPending", query = "SELECT org FROM Organization org WHERE org.status = 'PENDING'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllRejected", query = "SELECT org FROM Organization org WHERE org.status = 'REJECTED'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAll", query = "SELECT org FROM Organization org"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name)"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedById", query = "SELECT org FROM Organization org WHERE org.id = :id AND org.status = 'APPROVED'"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name) AND org.status = 'APPROVED'")
 })
 @SuppressWarnings("checkstyle:magicnumber")
-public class Organisation implements Serializable {
+public class Organization implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @ApiModelProperty(value = "Implementation specific ID for the organisation in this web service", position = 0)
+    @ApiModelProperty(value = "Implementation specific ID for the organization in this web service", position = 0)
     private long id;
 
     @Column(nullable = false, unique = true)
     @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
-    @ApiModelProperty(value = "Name of the organisation (ex. OICR)", required = true, example = "OICR", position = 1)
+    @ApiModelProperty(value = "Name of the organization (ex. OICR)", required = true, example = "OICR", position = 1)
     private String name;
 
     @Column(columnDefinition = "TEXT")
-    @ApiModelProperty(value = "Description of the organisation", position = 2)
+    @ApiModelProperty(value = "Description of the organization", position = 2)
     private String description;
 
     @Column
-    @ApiModelProperty(value = "Link to the organisation website", position = 3)
+    @ApiModelProperty(value = "Link to the organization website", position = 3)
     private String link;
 
     @Column
-    @ApiModelProperty(value = "Location of the organisation", position = 4)
+    @ApiModelProperty(value = "Location of the organization", position = 4)
     private String location;
 
     @Column
-    @ApiModelProperty(value = "Contact email for the organisation", position = 5)
+    @ApiModelProperty(value = "Contact email for the organization", position = 5)
     private String email;
 
     @Column(columnDefinition = "text default 'PENDING'", nullable = false)
     @Enumerated(EnumType.STRING)
-    @ApiModelProperty(value = "Is the organisation approved, pending, or rejected", required = true, position = 6)
+    @ApiModelProperty(value = "Is the organization approved, pending, or rejected", required = true, position = 6)
     private ApplicationState status = ApplicationState.PENDING;
 
     @Column
-    @ApiModelProperty(value = "Set of users in the organisation", required = true, position = 7)
-    @OneToMany(mappedBy = "organisation", fetch = FetchType.LAZY)
-    private Set<OrganisationUser> users = new HashSet<>();
+    @ApiModelProperty(value = "Set of users in the organization", required = true, position = 7)
+    @OneToMany(mappedBy = "organization", fetch = FetchType.LAZY)
+    private Set<OrganizationUser> users = new HashSet<>();
 
     @Column
-    @ApiModelProperty(value = "Short description of the organisation", position = 8)
+    @ApiModelProperty(value = "Short description of the organization", position = 8)
     private String topic;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "organisation")
+    @OneToMany(mappedBy = "organization")
     private Set<Collection> collections = new HashSet<>();
 
     @Column(updatable = false)
@@ -162,11 +162,11 @@ public class Organisation implements Serializable {
         this.dbUpdateDate = dbUpdateDate;
     }
 
-    public Set<OrganisationUser> getUsers() {
+    public Set<OrganizationUser> getUsers() {
         return users;
     }
 
-    public void setUsers(Set<OrganisationUser> users) {
+    public void setUsers(Set<OrganizationUser> users) {
         this.users = users;
     }
 
@@ -180,12 +180,12 @@ public class Organisation implements Serializable {
 
     public void addCollection(Collection collection) {
         collections.add(collection);
-        collection.setOrganisation(this);
+        collection.setOrganization(this);
     }
 
     public void removeCollection(Collection collection) {
         collections.remove(collection);
-        collection.setOrganisation(null);
+        collection.setOrganization(null);
     }
 
     public String getTopic() {

@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-
 /**
  * A tool dockerfile is a document that describes how to build a particular Docker image.
  * Now used only by TRS V1

@@ -21,15 +21,15 @@ import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Collection;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.Event;
-import io.dockstore.webservice.core.Organisation;
-import io.dockstore.webservice.core.OrganisationUser;
+import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
-import io.dockstore.webservice.jdbi.OrganisationDAO;
+import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
 import io.dockstore.webservice.jdbi.WorkflowDAO;
 import io.dropwizard.auth.Auth;
@@ -51,24 +51,24 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
  * Collection of collection endpoints
  * @author aduncan
  */
-@Path("/organisations")
-@Api("/organisations")
+@Path("/organizations")
+@Api("/organizations")
 @Produces(MediaType.APPLICATION_JSON)
 public class CollectionResource implements AuthenticatedResourceInterface {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OrganisationResource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
-    private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organisations, authentication can be provided for unapproved organisations";
+    private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
 
     private final CollectionDAO collectionDAO;
-    private final OrganisationDAO organisationDAO;
+    private final OrganizationDAO organizationDAO;
     private final WorkflowDAO workflowDAO;
     private final UserDAO userDAO;
     private final EventDAO eventDAO;
 
     public CollectionResource(SessionFactory sessionFactory) {
         this.collectionDAO = new CollectionDAO(sessionFactory);
-        this.organisationDAO = new OrganisationDAO(sessionFactory);
+        this.organizationDAO = new OrganizationDAO(sessionFactory);
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
@@ -77,22 +77,22 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
-    @Path("{organisationId}/collections/{collectionId}")
+    @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Retrieves a collection by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection getCollectionById(@ApiParam(hidden = true) @Auth Optional<User> user,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId) {
 
         if (!user.isPresent()) {
-            // No user given, only show collections from approved organisations
+            // No user given, only show collections from approved organizations
             Collection collection = collectionDAO.findById(collectionId);
             if (collection == null) {
                 String msg = "Collection not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
-            Organisation organisation = organisationDAO.findApprovedById(collection.getOrganisation().getId());
-            if (organisation == null) {
+            Organization organization = organizationDAO.findApprovedById(collection.getOrganization().getId());
+            if (organization == null) {
                 String msg = "Collection not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
@@ -101,8 +101,8 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             Hibernate.initialize(collection.getEntries());
             return collection;
         } else {
-            // User is given, check if the collections organisation is either approved or the user has access
-            // Admins and curators should be able to see collections from unapproved organisations
+            // User is given, check if the collections organization is either approved or the user has access
+            // Admins and curators should be able to see collections from unapproved organizations
             boolean doesCollectionExist = doesCollectionExistToUser(collectionId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
             if (!doesCollectionExist) {
                 String msg = "Collection not found.";
@@ -119,10 +119,10 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @POST
     @Timed
     @UnitOfWork
-    @Path("{organisationId}/collections/{collectionId}/entry")
+    @Path("{organizationId}/collections/{collectionId}/entry")
     @ApiOperation(value = "Add an entry to a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection addEntryToCollection(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId,
             @ApiParam(value = "Entry ID", required = true) @QueryParam("entryId") Long entryId) {
         // Call common code to check if entry and collection exist and return them
@@ -132,10 +132,10 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         entryAndCollection.getRight().addEntry(entryAndCollection.getLeft());
 
         // Event for addition
-        Organisation organisation = organisationDAO.findById(organisationId);
+        Organization organization = organizationDAO.findById(organizationId);
 
         Event.Builder eventBuild = new Event.Builder()
-                .withOrganisation(organisation)
+                .withOrganization(organization)
                 .withCollection(entryAndCollection.getRight())
                 .withInitiatorUser(user)
                 .withType(Event.EventType.ADD_TO_COLLECTION);
@@ -155,23 +155,23 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @DELETE
     @Timed
     @UnitOfWork
-    @Path("{organisationId}/collections/{collectionId}/entry")
+    @Path("{organizationId}/collections/{collectionId}/entry")
     @ApiOperation(value = "Delete an entry from a collection.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection deleteEntryFromCollection(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId,
             @ApiParam(value = "Entry ID", required = true) @QueryParam("entryId") Long entryId) {
         // Call common code to check if entry and collection exist and return them
         ImmutablePair<Entry, Collection> entryAndCollection = commonModifyCollection(entryId, collectionId, user);
 
-        // Remove the entry from the organisation
+        // Remove the entry from the organization
         entryAndCollection.getRight().removeEntry(entryAndCollection.getLeft());
 
         // Event for deletion
-        Organisation organisation = organisationDAO.findById(organisationId);
+        Organization organization = organizationDAO.findById(organizationId);
 
         Event.Builder eventBuild = new Event.Builder()
-                .withOrganisation(organisation)
+                .withOrganization(organization)
                 .withCollection(entryAndCollection.getRight())
                 .withInitiatorUser(user)
                 .withType(Event.EventType.REMOVE_FROM_COLLECTION);
@@ -215,12 +215,12 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
         Collection collection = collectionDAO.findById(collectionId);
 
-        // Check that user is a member of the organisation
-        Organisation organisation = organisationDAO.findById(collection.getOrganisation().getId());
+        // Check that user is a member of the organization
+        Organization organization = organizationDAO.findById(collection.getOrganization().getId());
 
-        OrganisationUser organisationUser = getUserOrgRole(organisation, user.getId());
-        if (organisationUser == null) {
-            String msg = "User does not have rights to modify a collection from this organisation.";
+        OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
+        if (organizationUser == null) {
+            String msg = "User does not have rights to modify a collection from this organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
@@ -231,73 +231,73 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @GET
     @Timed
     @UnitOfWork
-    @Path("{organisationId}/collections")
-    @ApiOperation(value = "Retrieve all collections for an organisation.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
+    @Path("{organizationId}/collections")
+    @ApiOperation(value = "Retrieve all collections for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, responseContainer = "List", response = Collection.class)
-    public List<Collection> getCollectionsFromOrganisation(@ApiParam(hidden = true) @Auth Optional<User> user,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId, @QueryParam("include") String include) {
+    public List<Collection> getCollectionsFromOrganization(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId, @QueryParam("include") String include) {
         if (!user.isPresent()) {
-            Organisation organisation = organisationDAO.findApprovedById(organisationId);
-            if (organisation == null) {
-                String msg = "Organisation not found";
+            Organization organization = organizationDAO.findApprovedById(organizationId);
+            if (organization == null) {
+                String msg = "Organization not found";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
         } else {
-            boolean doesOrgExist = doesOrganisationExistToUser(organisationId, user.get().getId());
+            boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.get().getId());
             if (!doesOrgExist) {
-                String msg = "Organisation not found.";
+                String msg = "Organization not found.";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
         }
 
-        List<Collection> collections = collectionDAO.findAllByOrg(organisationId);
+        List<Collection> collections = collectionDAO.findAllByOrg(organizationId);
 
         if (checkIncludes(include, "entries")) {
             collections.forEach(collection -> Hibernate.initialize(collection.getEntries()));
         }
 
-        return collectionDAO.findAllByOrg(organisationId);
+        return collectionDAO.findAllByOrg(organizationId);
     }
 
     @PUT
     @Timed
     @UnitOfWork
-    @Path("{organisationId}/collections")
-    @ApiOperation(value = "Create a collection in the given organisation.", authorizations = {
+    @Path("{organizationId}/collections")
+    @ApiOperation(value = "Create a collection in the given organization.", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection createCollection(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection to register.", required = true) Collection collection) {
 
-        // First check if the organisation exists
-        boolean doesOrgExist = doesOrganisationExistToUser(organisationId, user.getId());
+        // First check if the organization exists
+        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
         if (!doesOrgExist) {
-            String msg = "Organisation not found.";
+            String msg = "Organization not found.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        // Check if any other collections in the organisation exist with that name
-        Collection matchingCollection = collectionDAO.findByNameAndOrg(collection.getName(), organisationId);
+        // Check if any other collections in the organization exist with that name
+        Collection matchingCollection = collectionDAO.findByNameAndOrg(collection.getName(), organizationId);
         if (matchingCollection != null) {
-            String msg = "A collection already exists with the name '" + collection.getName() + "' in the specified organisation.";
+            String msg = "A collection already exists with the name '" + collection.getName() + "' in the specified organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
-        // Get the organisation
-        Organisation organisation = organisationDAO.findById(organisationId);
+        // Get the organization
+        Organization organization = organizationDAO.findById(organizationId);
 
         // Save the collection
         long id = collectionDAO.create(collection);
-        organisation.addCollection(collection);
+        organization.addCollection(collection);
 
         // Event for creation
         User foundUser = userDAO.findById(user.getId());
         Event createCollectionEvent = new Event.Builder()
-                .withOrganisation(organisation)
+                .withOrganization(organization)
                 .withCollection(collection)
                 .withInitiatorUser(foundUser)
                 .withType(Event.EventType.CREATE_COLLECTION)
@@ -310,11 +310,11 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @POST
     @Timed
     @UnitOfWork
-    @Path("{organisationId}/collections/{collectionId}")
+    @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Update a collection.", notes = "Currently only name and description can be updated.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection updateCollection(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Collection to update with.", required = true) Collection collection,
-            @ApiParam(value = "Organisation ID.", required = true) @PathParam("organisationId") Long organisationId,
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId) {
         // Ensure collection exists to the user
         boolean doesCollectionExist = doesCollectionExistToUser(collectionId, user.getId());
@@ -325,19 +325,19 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         }
 
         Collection existingCollection = collectionDAO.findById(collectionId);
-        Organisation organisation = organisationDAO.findById(existingCollection.getOrganisation().getId());
+        Organization organization = organizationDAO.findById(existingCollection.getOrganization().getId());
 
-        // Check that the user has rights to the organisation
-        OrganisationUser organisationUser = getUserOrgRole(organisation, user.getId());
-        if (organisationUser == null) {
-            String msg = "User does not have rights to modify a collection from this organisation.";
+        // Check that the user has rights to the organization
+        OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
+        if (organizationUser == null) {
+            String msg = "User does not have rights to modify a collection from this organization.";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
         }
 
         // Check if new name is valid
         if (!Objects.equals(existingCollection.getName(), collection.getName())) {
-            Collection duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganisation().getId());
+            Collection duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
             if (duplicateName != null) {
                 String msg = "A collection already exists with the name '" + collection.getName() + "', please try another one.";
                 LOG.info(msg);
@@ -351,7 +351,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
         // Event for update
         Event updateCollectionEvent = new Event.Builder()
-                .withOrganisation(organisation)
+                .withOrganization(organization)
                 .withCollection(existingCollection)
                 .withInitiatorUser(user)
                 .withType(Event.EventType.MODIFY_COLLECTION)
@@ -363,14 +363,14 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     }
 
     /**
-     * For a collection to exist to a user, it must either be from an approved organisation
-     * or an organisation the user has access to.
+     * For a collection to exist to a user, it must either be from an approved organization
+     * or an organization the user has access to.
      * @param collectionId
      * @param userId
      * @return True if collection exists to user, false otherwise
      */
     private boolean doesCollectionExistToUser(Long collectionId, Long userId) {
-        // A collection is only visible to a user if the organisation it belongs to is approved or they are a member
+        // A collection is only visible to a user if the organization it belongs to is approved or they are a member
         Collection collection = collectionDAO.findById(collectionId);
         if (collection == null) {
             String msg = "Collection not found.";
@@ -378,35 +378,35 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        return doesOrganisationExistToUser(collection.getOrganisation().getId(), userId);
+        return doesOrganizationExistToUser(collection.getOrganization().getId(), userId);
     }
 
     /**
-     * Checks if the given user should know of the existence of the organisation
-     * For a user to see an organsation, either it must be approved or the user must have a role in the organisation
-     * @param organisationId
+     * Checks if the given user should know of the existence of the organization
+     * For a user to see an organsation, either it must be approved or the user must have a role in the organization
+     * @param organizationId
      * @param userId
-     * @return True if organisation exists to user, false otherwise
+     * @return True if organization exists to user, false otherwise
      */
-    private boolean doesOrganisationExistToUser(Long organisationId, Long userId) {
-        Organisation organisation = organisationDAO.findById(organisationId);
-        if (organisation == null) {
+    private boolean doesOrganizationExistToUser(Long organizationId, Long userId) {
+        Organization organization = organizationDAO.findById(organizationId);
+        if (organization == null) {
             return false;
         }
-        OrganisationUser organisationUser = getUserOrgRole(organisation, userId);
-        return Objects.equals(organisation.getStatus(), Organisation.ApplicationState.APPROVED) || (organisationUser != null);
+        OrganizationUser organizationUser = getUserOrgRole(organization, userId);
+        return Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED) || (organizationUser != null);
     }
 
     /**
-     * Determine the role of a user in an organisation
-     * @param organisation
+     * Determine the role of a user in an organization
+     * @param organization
      * @param userId
-     * @return OrganisationUser role
+     * @return OrganizationUser role
      */
-    private OrganisationUser getUserOrgRole(Organisation organisation, Long userId) {
-        Set<OrganisationUser> organisationUserSet = organisation.getUsers();
-        Optional<OrganisationUser> matchingUser = organisationUserSet.stream().filter(organisationUser -> Objects
-                .equals(organisationUser.getUser().getId(), userId)).findFirst();
+    private OrganizationUser getUserOrgRole(Organization organization, Long userId) {
+        Set<OrganizationUser> organizationUserSet = organization.getUsers();
+        Optional<OrganizationUser> matchingUser = organizationUserSet.stream().filter(organizationUser -> Objects
+                .equals(organizationUser.getUser().getId(), userId)).findFirst();
         return matchingUser.orElse(null);
     }
 

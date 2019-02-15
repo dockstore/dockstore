@@ -73,6 +73,10 @@ public class ToolV1 {
                 ToolVersionV1 oldVersion = new ToolVersionV1(version);
                 versions.add(oldVersion);
             }
+            // if request is V1 api, make sure url reflects this after conversion
+            if (this.getUrl() != null) {
+                this.setUrl(this.getUrl().replaceFirst("/ga4gh/v2/", "/ga4gh/v1/"));
+            }
         } catch (IllegalAccessException | InvocationTargetException e) {
             LOG.error("unable to backwards convert toolVersion");
             throw new RuntimeException(e);

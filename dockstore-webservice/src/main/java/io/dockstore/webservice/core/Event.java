@@ -31,7 +31,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Table(name = "event")
 @SuppressWarnings({"checkstyle:magicnumber", "checkstyle:hiddenfield"})
 @NamedQueries({
-        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganisation", query = "SELECT eve FROM Event eve WHERE eve.organisation.id = :organisationId ORDER BY dbCreateDate DESC")
+        @NamedQuery(name = "io.dockstore.webservice.core.Event.findAllForOrganization", query = "SELECT eve FROM Event eve WHERE eve.organization.id = :organizationId ORDER BY dbCreateDate DESC")
 })
 public class Event {
     @Id
@@ -45,9 +45,9 @@ public class Event {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "organisationId", referencedColumnName = "id")
-    @ApiModelProperty(value = "Organisation that the event is acting on.", position = 2)
-    private Organisation organisation;
+    @JoinColumn(name = "organizationId", referencedColumnName = "id")
+    @ApiModelProperty(value = "Organization that the event is acting on.", position = 2)
+    private Organization organization;
 
     @ManyToOne
     @JoinColumn(name = "toolId", referencedColumnName = "id")
@@ -84,9 +84,9 @@ public class Event {
     private Timestamp dbUpdateDate;
 
     public Event() { }
-    public Event(User user, Organisation organisation, Collection collection, Workflow workflow, Tool tool, User initiatorUser, EventType type) {
+    public Event(User user, Organization organization, Collection collection, Workflow workflow, Tool tool, User initiatorUser, EventType type) {
         this.user = user;
-        this.organisation = organisation;
+        this.organization = organization;
         this.collection = collection;
         this.workflow = workflow;
         this.tool = tool;
@@ -110,12 +110,12 @@ public class Event {
         this.user = user;
     }
 
-    public Organisation getOrganisation() {
-        return organisation;
+    public Organization getOrganization() {
+        return organization;
     }
 
-    public void setOrganisation(Organisation organisation) {
-        this.organisation = organisation;
+    public void setOrganization(Organization organization) {
+        this.organization = organization;
     }
 
     public Tool getTool() {
@@ -193,7 +193,7 @@ public class Event {
 
     public static class Builder {
         private User user;
-        private Organisation organisation;
+        private Organization organization;
         private Tool tool;
         private Workflow workflow;
         private Collection collection;
@@ -207,8 +207,8 @@ public class Event {
             return this;
         }
 
-        public Builder withOrganisation(Organisation organisation) {
-            this.organisation = organisation;
+        public Builder withOrganization(Organization organization) {
+            this.organization = organization;
             return this;
         }
 
@@ -240,7 +240,7 @@ public class Event {
         public Event build() {
             Event event = new Event();
             event.user = this.user;
-            event.organisation = this.organisation;
+            event.organization = this.organization;
             event.tool = this.tool;
             event.workflow = this.workflow;
             event.collection = this.collection;

@@ -15,6 +15,8 @@
  */
 package io.dockstore.client.cli.nested.NotificationsClients;
 
+import io.dockstore.client.cli.Client;
+
 /**
  * Message structure to be sent
  *
@@ -27,7 +29,7 @@ public class Message {
     // Slack keyword
     String username = System.getProperty("user.name");
     String uuid;
-    String platform = "Dockstore CLI " + Message.class.getPackage().getImplementationVersion();
+    String platform = "Dockstore CLI " + Client.getClientVersion();
 
     public String getUuid() {
         return uuid;

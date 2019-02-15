@@ -23,6 +23,8 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.Lists;
@@ -34,6 +36,9 @@ import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.api.WorkflowsApi;
+import io.swagger.client.model.ToolDescriptor;
+import io.swagger.client.model.Workflow;
+import io.swagger.client.model.WorkflowVersion;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -53,6 +58,9 @@ import static io.dockstore.common.DescriptorLanguage.CWL_STRING;
 import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 public class LaunchTestIT {
@@ -1196,6 +1204,85 @@ public class LaunchTestIT {
 
         assertTrue("output should include an error message", systemErrRule.getLog().contains("Syntax error while parsing a block collection"));
     }
+
+    @Test
+    public void entry2jsonNoVersion() throws IOException {
+        /*
+         * Make a runtime JSON template for input to the workflow
+         * but don't provide a version at the end of the entry
+         * E.g dockstore workflow convert entry2json --entry quay.io/collaboratory/dockstore-tool-linux-sort
+         * Dockstore will try to use the 'master' version, however the 'master' version
+         * is not valid so Dockstore should print an error message and exit
+         * */
+        WorkflowVersion aWorkflowVersion1 = new WorkflowVersion();
+        aWorkflowVersion1.setName("master");
+        aWorkflowVersion1.setValid(false);
+        Date earlierDate = new Date(100L);
+        aWorkflowVersion1.setLastModified(earlierDate);
+
+        List<WorkflowVersion> listWorkflowVersions = new ArrayList<WorkflowVersion>();
+        listWorkflowVersions.add(aWorkflowVersion1);
+
+        Workflow workflow = new Workflow();
+        workflow.setWorkflowVersions(listWorkflowVersions);
+        workflow.setLastModified(1);
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+
+        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include error message",
+                        systemErrRule.getLog().contains("Cannot use workflow version 'master'")));
+
+        workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort", ToolDescriptor.TypeEnum.WDL, false);
+    }
+
+    @Test
+    public void entry2jsonBadVersion() throws IOException {
+        /*
+         * Make a runtime JSON template for input to the workflow
+         * but provide a non existent version at the end of the entry
+         * E.g dockstore workflow convert entry2json --entry quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0
+         * Dockstore will try to use the last modified version (1.0.0) and print an explanation message.
+         * The last modified version is not valid so Dockstore should print an error message and exit
+         * */
+
+        WorkflowVersion aWorkflowVersion1 = new WorkflowVersion();
+        aWorkflowVersion1.setName("1.0.0");
+        aWorkflowVersion1.setValid(false);
+        Date laterDate = new Date(1000L);
+        aWorkflowVersion1.setLastModified(laterDate);
+
+        List<WorkflowVersion> listWorkflowVersions = new ArrayList<WorkflowVersion>();
+        listWorkflowVersions.add(aWorkflowVersion1);
+
+        Workflow workflow = new Workflow();
+        workflow.setWorkflowVersions(listWorkflowVersions);
+        workflow.setLastModified(1);
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+
+        doReturn(workflow).when(api).getPublishedWorkflowByPath(anyString(), eq(null));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+
+        exit.expectSystemExit();
+        exit.checkAssertionAfterwards(
+                () -> assertTrue("output should include error messages",
+                        (systemOutRule.getLog().contains("Could not locate workflow with version '2.0.0'") &&
+                                systemErrRule.getLog().contains("Cannot use workflow version '1.0.0'"))));
+
+        workflowClient.downloadTargetEntry("quay.io/collaboratory/dockstore-tool-linux-sort:2.0.0", ToolDescriptor.TypeEnum.WDL, false);
+    }
+
 
     @Test
     public void cwl2jsonNoOutput() {

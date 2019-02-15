@@ -35,8 +35,8 @@ import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.FileFormat;
 import io.dockstore.webservice.core.Label;
 import io.dockstore.webservice.core.OpenAPIDescription;
-import io.dockstore.webservice.core.Organisation;
-import io.dockstore.webservice.core.OrganisationUser;
+import io.dockstore.webservice.core.Organization;
+import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.SourceFile;
 import io.dockstore.webservice.core.Tag;
 import io.dockstore.webservice.core.Token;
@@ -65,7 +65,7 @@ import io.dockstore.webservice.resources.EntryResource;
 import io.dockstore.webservice.resources.HostedToolResource;
 import io.dockstore.webservice.resources.HostedWorkflowResource;
 import io.dockstore.webservice.resources.MetadataResource;
-import io.dockstore.webservice.resources.OrganisationResource;
+import io.dockstore.webservice.resources.OrganizationResource;
 import io.dockstore.webservice.resources.TemplateHealthCheck;
 import io.dockstore.webservice.resources.TokenResource;
 import io.dockstore.webservice.resources.UserResource;
@@ -128,7 +128,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
 
     private final HibernateBundle<DockstoreWebserviceConfiguration> hibernate = new HibernateBundle<DockstoreWebserviceConfiguration>(
             Token.class, Tool.class, User.class, Tag.class, Label.class, SourceFile.class, Workflow.class,
-            WorkflowVersion.class, FileFormat.class, Organisation.class, OrganisationUser.class, Event.class, Collection.class, Validation.class) {
+            WorkflowVersion.class, FileFormat.class, Organization.class, OrganizationUser.class, Event.class, Collection.class, Validation.class) {
         @Override
         public DataSourceFactory getDataSourceFactory(DockstoreWebserviceConfiguration configuration) {
             return configuration.getDataSourceFactory();
@@ -262,7 +262,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
-        environment.jersey().register(new OrganisationResource(getHibernate().getSessionFactory()));
+        environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(OpenApiResource.class);
         environment.jersey().register(OpenAPIDescription.class);
