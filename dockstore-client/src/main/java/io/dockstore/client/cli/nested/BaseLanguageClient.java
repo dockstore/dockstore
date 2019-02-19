@@ -18,6 +18,7 @@ import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 
+import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.Client.API_ERROR;
@@ -27,7 +28,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 
 /**
  * A base class for all language clients
- * Clients for CWL, WDL, Nextflow, etc should extend this.
+ * Clients for CWL, WDL, Nextflow, etc should extend this and implement the abstract functions.
  */
 public abstract class BaseLanguageClient {
     protected final AbstractEntryClient abstractEntryClient;
@@ -65,9 +66,8 @@ public abstract class BaseLanguageClient {
 
     /**
      * Selects the intended parameter file
-     * Must set the variable selectedParameterFile
      */
-    public abstract void selectParameterFile();
+    public abstract String selectParameterFile();
 
     /**
      * Provision the input files based on the selected parameter file.
@@ -134,7 +134,7 @@ public abstract class BaseLanguageClient {
         abstractEntryClient.loadDockerImages();
 
         // Select the appropriate parameter file
-        selectParameterFile();
+        selectedParameterFile = selectParameterFile();
 
         // Setup the launcher (Download dependencies)
         launcher.initialize();
@@ -224,8 +224,13 @@ public abstract class BaseLanguageClient {
             }
         } else {
             // For local entries zip the directory where the primary descriptor is located
-            primaryDescriptor = new File(entry);
+            File primaryDescriptorBase = new File(entry);
+            primaryDescriptor = new File(primaryDescriptorBase.getAbsolutePath());
+
             File parentFile = primaryDescriptor.getParentFile();
+            if (parentFile == null) {
+                errorMessage("Could not find parent directory of primary descriptor", GENERIC_ERROR);
+            }
             zipFile = zipDirectory(workingDir, parentFile);
             out("Using local file '" + entry + "' as primary descriptor");
         }
@@ -248,7 +253,9 @@ public abstract class BaseLanguageClient {
             zos.close();
             fos.close();
         } catch (IOException ex) {
-            exceptionMessage(ex, "There was a problem zipping the directoryToZip '" + directoryToZip.getPath() + "'", IO_ERROR);
+            exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", IO_ERROR);
+        } catch (Exception ex) {
+            exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", GENERIC_ERROR);
         }
         return new File(zipFilePath);
     }
@@ -261,6 +268,9 @@ public abstract class BaseLanguageClient {
      * @throws IOException
      */
     public void zipFile(File fileToZip, String fileName, ZipOutputStream zos) throws IOException {
+        if (fileToZip == null) {
+            return;
+        }
         if (fileToZip.isHidden()) {
             return;
         }
@@ -273,13 +283,11 @@ public abstract class BaseLanguageClient {
             }
             File[] children = fileToZip.listFiles();
             for (File childFile : children) {
-                //if (childFile.getName().endsWith(".cwl") || childFile.getName().endsWith(".wdl") || childFile.getName().endsWith(".yml") || childFile.getName().endsWith(".yaml")) {
                 if (Objects.equals(fileName, "/")) {
                     zipFile(childFile, childFile.getName(), zos);
                 } else {
                     zipFile(childFile, fileName + "/" + childFile.getName(), zos);
                 }
-                //}
             }
             return;
         }

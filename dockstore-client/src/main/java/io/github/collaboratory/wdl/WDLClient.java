@@ -72,14 +72,14 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     }
 
     @Override
-    public void selectParameterFile() {
+    public String selectParameterFile() {
         // Decide on which parameter file to use (JSON takes precedence)
         boolean hasRequiredFlags = ((yamlParameterFile != null || jsonParameterFile != null) && ((yamlParameterFile != null) != (jsonParameterFile != null)));
         if (!hasRequiredFlags) {
             errorMessage("dockstore: Missing required flag: one of --json or --yaml", CLIENT_ERROR);
         }
 
-        selectedParameterFile = jsonParameterFile != null ? jsonParameterFile : yamlParameterFile;
+        return jsonParameterFile != null ? jsonParameterFile : yamlParameterFile;
     }
 
     @Override

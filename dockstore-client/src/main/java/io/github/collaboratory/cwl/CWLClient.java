@@ -49,6 +49,7 @@ import io.cwl.avro.Workflow;
 import io.cwl.avro.WorkflowOutputParameter;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.BaseLanguageClient;
+import io.dockstore.client.cli.nested.BaseLauncher;
 import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.CwltoolLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
@@ -113,20 +114,24 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         // Set the launcher
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
         cwlLauncherType = config.getString(CWL_RUNNER, DEFAULT_LAUNCHER);
+
+        BaseLauncher launcher;
         switch (cwlLauncherType) {
         case CROMWELL:
-            this.setLauncher(new CromwellLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get()));
-            LOG.info("Cromwell is currently in beta.");
+            launcher = new CromwellLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get());
+            LOG.info("Cromwell is currently in beta for CWL tools and workflows.");
             break;
         case CWL_TOOL:
         default:
-            this.setLauncher(new CwltoolLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get()));
+            launcher = new CwltoolLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get());
             break;
         }
+
+        this.setLauncher(launcher);
     }
 
     @Override
-    public void selectParameterFile() {
+    public String selectParameterFile() {
         // Keep track of original parameter file
         originalTestParameterFilePath = abstractEntryClient.getFirstNotNullParameterFile(yamlParameterFile, jsonParameterFile);
 
@@ -152,10 +157,11 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         try {
             String jsonTempRun = File.createTempFile("parameter", "json").getAbsolutePath();
             FileProvisioning.retryWrapper(null, parameterFile, Paths.get(jsonTempRun), 1, true, 1);
-            selectedParameterFile = jsonTempRun;
+            return jsonTempRun;
         } catch (IOException | RuntimeException ex) {
             errorMessage("No parameter file found.", IO_ERROR);
         }
+        return null;
     }
 
     @Override

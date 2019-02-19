@@ -47,10 +47,10 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
     }
 
     @Override
-    public void selectParameterFile() {
+    public String selectParameterFile() {
         // Only JSON parameter file allowed
         assert (yamlParameterFile == null && jsonParameterFile != null);
-        selectedParameterFile = jsonParameterFile;
+        return jsonParameterFile;
     }
 
     @Override
