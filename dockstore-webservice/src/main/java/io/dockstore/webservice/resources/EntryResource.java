@@ -16,9 +16,11 @@
 package io.dockstore.webservice.resources;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -29,6 +31,8 @@ import javax.ws.rs.core.MediaType;
 import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
+import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
@@ -41,6 +45,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +94,20 @@ public class EntryResource implements AuthenticatedResourceInterface {
 
         elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
         return c;
+    }
+
+    @GET
+    @Path("/{id}/collections")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Get the collections and organizations that contain the published entry", notes = "Entry must be published", response = CollectionOrganization.class, responseContainer = "List")
+    public List<CollectionOrganization> entryCollections(@ApiParam(value = "id", required = true) @PathParam("id") Long id) {
+        Entry<? extends Entry, ? extends Version> entry = toolDAO.getGenericEntryById(id);
+        if (entry == null || !entry.getIsPublished()) {
+            throw new CustomWebApplicationException("Published entry does not exist.", HttpStatus.SC_BAD_REQUEST);
+        }
+        List<CollectionOrganization> collectionsByEntryId = this.toolDAO.findCollectionsByEntryId(entry.getId());
+        return collectionsByEntryId;
     }
 
 }
