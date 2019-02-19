@@ -19,7 +19,6 @@ import java.util.Map;
 
 import io.dockstore.common.VersionTypeValidation;
 import org.apache.commons.lang3.tuple.Pair;
-import ro.fortsoft.pf4j.ExtensionPoint;
 
 /**
  * Recommended interface for new workflow languages
@@ -28,10 +27,10 @@ import ro.fortsoft.pf4j.ExtensionPoint;
  * 1) Grammar for your language in order to highlight your language so it looks nice for users. We use https://ace.c9.io/#nav=higlighter
  * but have some experience converting from Linguist grammars ( https://github.com/github/linguist )
  */
-public interface RecommendedLanguageInterface extends ExtensionPoint, MinimalLanguageInterface {
+public interface RecommendedLanguageInterface extends MinimalLanguageInterface {
 
     /**
-     * This is relatively freeform instructions, given a TRS ID that corresponds to the TRS representation
+     * These are relatively freeform instructions, given a TRS ID that corresponds to the TRS representation
      * of your workflow, how do we launch your workflow.
      * Consider an ID of "#workflow/github.com/ICGC-TCGA-PanCancer/wdl-pcawg-sanger-cgp-workflow" leading to https://dockstore.org/api/api/ga4gh/v2/tools/%23workflow%2Fgithub.com%2FICGC-TCGA-PanCancer%2Fwdl-pcawg-sanger-cgp-workflow
      *

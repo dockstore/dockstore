@@ -15,11 +15,9 @@
  */
 package io.dockstore.language;
 
-import ro.fortsoft.pf4j.ExtensionPoint;
-
 /**
  * Minimal interface for new languages
  */
-public interface CompleteLanguageInterface extends ExtensionPoint, RecommendedLanguageInterface {
+public interface CompleteLanguageInterface extends RecommendedLanguageInterface {
 
 }

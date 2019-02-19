@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.tuple.Pair;
-import ro.fortsoft.pf4j.ExtensionPoint;
 
 /**
  * Minimal interface for new workflow languages
@@ -30,7 +29,7 @@ import ro.fortsoft.pf4j.ExtensionPoint;
  * b) Launch instructions for your language (i.e. given all the desciptors for a workflow locally, how would I run a workflow on the command-line?)
  * c) What language is your description in (Markdown, HTML, etc.)?
  */
-public interface MinimalLanguageInterface extends ExtensionPoint {
+public interface MinimalLanguageInterface {
 
     /**
      * @return short name for your language ("CWL")
@@ -43,7 +42,7 @@ public interface MinimalLanguageInterface extends ExtensionPoint {
     String longName();
 
     /**
-     * Validate a filename path that might be entered by your user (i.e. is /Dockstore.wdl a valid path to the "first" descriptor)
+     * Validate a filename path that might be entered by your user (i.e. is "/Dockstore.wdl" a valid path to the "first" descriptor)
      *
      * @return a pattern that can be used to validate filepaths
      */
