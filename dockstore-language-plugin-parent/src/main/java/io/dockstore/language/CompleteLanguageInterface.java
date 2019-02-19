@@ -16,7 +16,9 @@
 package io.dockstore.language;
 
 /**
- * Minimal interface for new languages
+ * Complete interface for new languages
+ *
+ * TODO: DAG interface methods
  */
 public interface CompleteLanguageInterface extends RecommendedLanguageInterface {
 
