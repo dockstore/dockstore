@@ -41,8 +41,8 @@ public class CromwellLauncher extends BaseLauncher {
     private static final String LAUNCHER_NAME = "Cromwell";
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
 
-    public CromwellLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
-        super(abstractEntryClient, language);
+    public CromwellLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+        super(abstractEntryClient, language, script);
     }
 
     /**

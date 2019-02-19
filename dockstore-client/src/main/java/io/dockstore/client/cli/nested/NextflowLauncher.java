@@ -13,8 +13,8 @@ import org.apache.commons.configuration2.INIConfiguration;
 public class NextflowLauncher extends BaseLauncher {
     private static final String LAUNCHER_NAME = "NextFlow";
 
-    public NextflowLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
-        super(abstractEntryClient, language);
+    public NextflowLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+        super(abstractEntryClient, language, script);
     }
 
     @Override

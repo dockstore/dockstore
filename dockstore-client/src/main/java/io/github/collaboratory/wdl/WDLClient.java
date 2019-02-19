@@ -51,6 +51,7 @@ import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
 import static io.dockstore.client.cli.Client.API_ERROR;
 import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
+import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * Grouping code for launching WDL tools and workflows
@@ -60,7 +61,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
 
     public WDLClient(AbstractEntryClient abstractEntryClient) {
-        super(abstractEntryClient, new CromwellLauncher(abstractEntryClient, LanguageType.WDL));
+        super(abstractEntryClient, new CromwellLauncher(abstractEntryClient, LanguageType.WDL, SCRIPT.get()));
     }
 
     @Override

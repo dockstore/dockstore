@@ -34,6 +34,8 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.client.cli.Client.SCRIPT;
+
 /**
  * Grouping code for launching NextFlow tools and workflows
  */
@@ -41,7 +43,7 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
     private static final Logger LOG = LoggerFactory.getLogger(NextFlowClient.class);
 
     public NextFlowClient(AbstractEntryClient abstractEntryClient) {
-        super(abstractEntryClient, new NextflowLauncher(abstractEntryClient, LanguageType.NEXTFLOW));
+        super(abstractEntryClient, new NextflowLauncher(abstractEntryClient, LanguageType.NEXTFLOW, SCRIPT.get()));
     }
 
     @Override

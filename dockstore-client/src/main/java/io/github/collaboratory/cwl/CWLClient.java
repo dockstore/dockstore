@@ -84,6 +84,7 @@ import static io.dockstore.client.cli.Client.CLIENT_ERROR;
 import static io.dockstore.client.cli.Client.ENTRY_NOT_FOUND;
 import static io.dockstore.client.cli.Client.GENERIC_ERROR;
 import static io.dockstore.client.cli.Client.IO_ERROR;
+import static io.dockstore.client.cli.Client.SCRIPT;
 
 /**
  * Grouping code for launching CWL tools and workflows
@@ -114,11 +115,12 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         cwlLauncherType = config.getString(CWL_RUNNER, DEFAULT_LAUNCHER);
         switch (cwlLauncherType) {
         case CROMWELL:
-            this.setLauncher(new CromwellLauncher(abstractEntryClient, LanguageType.CWL));
+            this.setLauncher(new CromwellLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get()));
+            LOG.info("Cromwell is currently in beta.");
             break;
         case CWL_TOOL:
         default:
-            this.setLauncher(new CwltoolLauncher(abstractEntryClient, LanguageType.CWL));
+            this.setLauncher(new CwltoolLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get()));
             break;
         }
     }

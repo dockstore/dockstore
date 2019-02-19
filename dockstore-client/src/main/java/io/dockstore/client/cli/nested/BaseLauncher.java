@@ -34,10 +34,13 @@ public abstract class BaseLauncher {
     protected LanguageType languageType;
     protected File exectionFile;
 
-    public BaseLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
+    protected boolean script;
+
+    public BaseLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         this.abstractEntryClient = abstractEntryClient;
         this.fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
         this.languageType = language;
+        this.script = script;
     }
 
     /**

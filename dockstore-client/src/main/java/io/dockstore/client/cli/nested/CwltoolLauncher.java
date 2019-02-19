@@ -26,15 +26,15 @@ public class CwltoolLauncher extends BaseLauncher {
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
-    public CwltoolLauncher(AbstractEntryClient abstractEntryClient, LanguageType language) {
-        super(abstractEntryClient, language);
+    public CwltoolLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
+        super(abstractEntryClient, language, script);
     }
 
     @Override
     public void initialize() {
-        //if (!SCRIPT.get()) {
-        //    abstractEntryClient.getClient().checkForCWLDependencies();
-        //}
+        if (!script) {
+            abstractEntryClient.getClient().checkForCWLDependencies();
+        }
     }
 
     @Override

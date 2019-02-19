@@ -26,13 +26,10 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
-import io.cwl.avro.CommandLineTool;
-import io.cwl.avro.Workflow;
 import io.dockstore.client.cli.Client;
 import io.dockstore.common.FileProvisionUtil;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
-import io.dropwizard.testing.ResourceHelpers;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import org.apache.commons.configuration2.INIConfiguration;
@@ -145,8 +142,8 @@ public abstract class LauncherIT {
 
     @Test
     public void testCWLWorkflowProgrammatic() {
-        File cwlFile = FileUtils.getFile("src", "test", "resources", "filtercount.cwl.yaml");
-        File jobFile = FileUtils.getFile("src", "test", "resources", "filtercount-job.json");
+        File cwlFile = FileUtils.getFile("src", "test", "resources", "filtercount/filtercount.cwl.yaml");
+        File jobFile = FileUtils.getFile("src", "test", "resources", "filtercount/filtercount-job.json");
 
         final ByteArrayOutputStream launcherOutput = new ByteArrayOutputStream();
         System.setOut(new PrintStream(launcherOutput));
