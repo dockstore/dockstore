@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -458,24 +457,5 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     public int compareTo(@NotNull Entry that) {
         return ComparisonChain.start().compare(this.getId(), that.getId(), Ordering.natural().nullsLast())
             .result();
-    }
-
-    /**
-     * Stores alias information for a tool.
-     * For now its just blank, but can be expanded with additional information on the aliases (such as if they point at dockstore mirrors)
-     */
-    @Embeddable
-    public static class Alias {
-        @Column(columnDefinition = "text")
-        public String content = "";
-
-        // database timestamps
-        @Column(updatable = false)
-        @CreationTimestamp
-        private Timestamp dbCreateDate;
-
-        @Column()
-        @UpdateTimestamp
-        private Timestamp dbUpdateDate;
     }
 }

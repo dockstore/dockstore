@@ -2,10 +2,13 @@ package io.dockstore.webservice.core;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -13,10 +16,14 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
@@ -89,6 +96,12 @@ public class Organization implements Serializable {
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
     private Set<Collection> collections = new HashSet<>();
+
+    @ElementCollection(targetClass = Alias.class)
+    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "alias" }))
+    @MapKeyColumn(name = "alias", columnDefinition = "text")
+    @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
+    private Map<String, Alias> aliases = new HashMap<>();
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -202,6 +215,14 @@ public class Organization implements Serializable {
 
     public void setStatus(ApplicationState status) {
         this.status = status;
+    }
+
+    public Map<String, Alias> getAliases() {
+        return aliases;
+    }
+
+    public void setAliases(Map<String, Alias> aliases) {
+        this.aliases = aliases;
     }
 
     public enum ApplicationState { PENDING, REJECTED, APPROVED }

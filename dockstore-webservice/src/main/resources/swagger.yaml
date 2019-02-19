@@ -5411,6 +5411,11 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Entry"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -5482,6 +5487,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5497,10 +5506,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5693,6 +5698,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5708,10 +5717,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5945,6 +5950,11 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the organization in this web\
           \ service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for entries"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -6721,6 +6731,10 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6736,10 +6750,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1

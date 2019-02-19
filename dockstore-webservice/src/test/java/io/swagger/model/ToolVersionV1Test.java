@@ -1,9 +1,9 @@
 package io.swagger.model;
 
+import java.util.Collections;
+
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Collections;
 
 public class ToolVersionV1Test {
     /**

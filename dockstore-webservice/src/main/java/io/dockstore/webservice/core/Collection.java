@@ -2,10 +2,13 @@ package io.dockstore.webservice.core;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -15,9 +18,11 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.MapKeyColumn;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
@@ -69,6 +74,12 @@ public class Collection implements Serializable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizationid")
     private Organization organization;
+
+    @ElementCollection(targetClass = Alias.class)
+    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "alias" }))
+    @MapKeyColumn(name = "alias", columnDefinition = "text")
+    @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
+    private Map<String, Alias> aliases = new HashMap<>();
 
     @Column(updatable = false)
     @CreationTimestamp
@@ -124,6 +135,14 @@ public class Collection implements Serializable {
 
     public void setOrganization(Organization organization) {
         this.organization = organization;
+    }
+
+    public Map<String, Alias> getAliases() {
+        return aliases;
+    }
+
+    public void setAliases(Map<String, Alias> aliases) {
+        this.aliases = aliases;
     }
 
     public Timestamp getDbCreateDate() {

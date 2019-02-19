@@ -5931,6 +5931,11 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Entry"
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for entries
+          additionalProperties:
+            $ref: "#/components/schemas/Alias"
         dbCreateDate:
           type: string
           format: date-time
@@ -6000,6 +6005,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6015,10 +6024,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6184,6 +6189,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6199,10 +6208,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6407,6 +6412,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the organization in this web service
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for entries
+          additionalProperties:
+            $ref: "#/components/schemas/Alias"
         dbCreateDate:
           type: string
           format: date-time
@@ -7128,6 +7138,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7143,10 +7157,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

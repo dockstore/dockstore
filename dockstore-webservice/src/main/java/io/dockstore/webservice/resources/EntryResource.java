@@ -32,6 +32,7 @@ import com.codahale.metrics.annotation.Timed;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.core.Alias;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
@@ -89,7 +90,7 @@ public class EntryResource implements AuthenticatedResourceInterface {
         Set<String> aliasesToAdd = Sets.difference(newAliases, oldAliases);
         Set<String> aliasesToRemove = new TreeSet<>(Sets.difference(oldAliases, newAliases));
         // add new ones and remove old ones while retaining the old entries and their order
-        aliasesToAdd.forEach(alias -> c.getAliases().put(alias, new Entry.Alias()));
+        aliasesToAdd.forEach(alias -> c.getAliases().put(alias, new Alias()));
         aliasesToRemove.forEach(alias -> c.getAliases().remove(alias));
 
         elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
