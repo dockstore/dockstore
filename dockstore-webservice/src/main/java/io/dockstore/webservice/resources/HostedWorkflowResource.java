@@ -33,6 +33,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
+import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
@@ -76,6 +77,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/workflows")
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);
+    public static final int ZIP_SIZE_LIMIT = 100_000;
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
@@ -186,10 +188,17 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         checkUserCanUpdate(user, workflow);
         final SourceFile.FileType fileType = workflow.getFileType();
         File tempDir = Files.createTempDir();
-        File zipFile = new File(tempDir, entryId + ".zip");
+        File tempZip = new File(tempDir, entryId + ".zip");
         try {
-            FileUtils.copyToFile(payload, zipFile);
-            ZipSourceFileHelper.sourceFilesFromZip(new ZipFile(zipFile), fileType);
+            try (InputStream limitStream = ByteStreams.limit(payload, ZIP_SIZE_LIMIT + 1)) {
+                FileUtils.copyToFile(limitStream, tempZip);
+                if (tempZip.length() > ZIP_SIZE_LIMIT) {
+                    throw new CustomWebApplicationException("Zip file too large", HttpStatus.SC_REQUEST_TOO_LONG);
+                }
+            }
+            try (ZipFile zipFile = new ZipFile(tempZip)) {
+                ZipSourceFileHelper.sourceFilesFromZip(zipFile, fileType);
+            }
         } catch (IOException e) {
             throw new CustomWebApplicationException("Error reading zip file", HttpStatus.SC_BAD_REQUEST);
         } finally {
