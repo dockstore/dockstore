@@ -31,6 +31,12 @@ jobs:
       - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE
 
+    - stage: automated-review
+      jdk: openjdk10
+      env:
+      - TESTING_PROFILE=automated-review
+      script: mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
+
     # no point in running integration tests if we don't pass unit tests
     # run a few tests with oraclejdk8 for backwards compat
     - stage: integration-tests

@@ -7,7 +7,7 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
-if [ "${TESTING_PROFILE}" = "unit-tests" ]; then
+if [ "${TESTING_PROFILE}" = "automated-review" ]; then
     bash propose_migration.sh
     ! grep "changeSet" dockstore-webservice/target/detected-migrations.xml
     exit 0;
