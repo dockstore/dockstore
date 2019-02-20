@@ -235,4 +235,13 @@
                       tableName="event"/>
         <sql dbms="postgres">ALTER SEQUENCE organisation_id_seq RENAME TO organization_id_seq</sql>
     </changeSet>
+
+    <changeSet author="dyuen" id="maintain_consistency">
+        <!-- looks like the above attempt didn't take -->
+        <renameSequence oldSequenceName="organisation_id_seq" newSequenceName="organization_id_seq"/>
+        <addUniqueConstraint columnNames="sourcecontrol, organization, repository, workflowname" constraintName="unique_workflow_paths" tableName="workflow"/>
+        <modifyDataType columnName="name" newDataType="varchar(39)" tableName="organization"/>
+        <modifyDataType columnName="type" newDataType="clob" tableName="validation"/>
+        <modifyDataType columnName="message" newDataType="clob" tableName="validation"/>
+    </changeSet>
 </databaseChangeLog>
