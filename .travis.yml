@@ -35,7 +35,9 @@ jobs:
       jdk: openjdk10
       env:
       - TESTING_PROFILE=automated-review
-      script: mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
+      script:
+      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
+      - scripts/check_migrations.sh
 
     # no point in running integration tests if we don't pass unit tests
     # run a few tests with oraclejdk8 for backwards compat
@@ -92,7 +94,7 @@ jobs:
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=other-integration-tests
-# build lifecycle is before_install, install, before_script, script, after_script
+# build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
 before_install:
 - export M2_HOME=$HOME/apache-maven-3.5.4
@@ -124,7 +126,6 @@ before_cache:
 - rm -rf $HOME/.m2/repository/.cache/download-maven-plugin directory
 
 after_success:
-- scripts/check_migrations.sh 
 - bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
   
 notifications:
