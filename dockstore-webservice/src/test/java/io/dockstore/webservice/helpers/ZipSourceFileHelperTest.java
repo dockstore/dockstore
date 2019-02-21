@@ -2,9 +2,9 @@ package io.dockstore.webservice.helpers;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.zip.ZipFile;
 
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
 import io.dropwizard.testing.ResourceHelpers;
 import org.junit.Assert;
@@ -37,8 +37,20 @@ public class ZipSourceFileHelperTest {
     @Test
     public void sourceFilesFromZip() throws IOException {
         ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH));
-        final List<SourceFile> sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, SourceFile.FileType.DOCKSTORE_WDL);
-        Assert.assertEquals(9, sourceFiles.size());
-        Assert.assertEquals(2, sourceFiles.stream().filter(sf -> sf.getType() == SourceFile.FileType.WDL_TEST_JSON).count());
+        final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, SourceFile.FileType.DOCKSTORE_WDL);
+        Assert.assertEquals("SmartSeq2SingleSample.wdl", sourceFiles.getPrimaryDescriptor().getPath());
+        Assert.assertEquals(9, sourceFiles.getAllDescriptors().size());
+    }
+
+    @Test
+    public void validateType() throws IOException {
+        ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH));
+        try {
+            ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, SourceFile.FileType.DOCKSTORE_CWL);
+            Assert.fail("Expected failure because zip has WDL but workflow is CWL");
+        } catch (CustomWebApplicationException ex) {
+            // This is expected
+        }
+
     }
 }

@@ -42,35 +42,76 @@ public final class ZipSourceFileHelper {
         });
     }
 
-    public static List<SourceFile> sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
+    /**
+     * Converts the values in a zip into a list
+     * @param zipFile
+     * @param workflowFileType
+     * @return
+     */
+    public static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
         Map<String, Object> dockstoreYml = readDockstoreYml(zipFile);
         Object primaryDescriptorName = dockstoreYml.get("primaryDescriptor");
         List<String> testParameterFiles = (List<String>)dockstoreYml.get("testParameterFiles");
         if (primaryDescriptorName instanceof String) {
+            String theName = (String)primaryDescriptorName;
+            checkWorkflowType(workflowFileType, theName);
             ZipEntry primaryDescriptor = zipFile
                     .stream().
-                    filter(zipEntry -> primaryDescriptorName.equals(zipEntry.getName()))
+                    filter(zipEntry -> theName.equals(zipEntry.getName()))
                     .findFirst()
-                    .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + primaryDescriptorName,
+                    .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + theName,
                             HttpStatus.SC_BAD_REQUEST));
-            return zipFile
-                    .stream()
-                    .map(zipEntry -> {
-                        SourceFile sourceFile = new SourceFile();
-                        if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
-                            sourceFile.setType(SourceFile.FileType.CWL_TEST_JSON);
-                        } else {
-                            sourceFile.setType(SourceFile.FileType.DOCKSTORE_CWL);
-                        }
-                        sourceFile.setPath(zipEntry.getName());
-                        sourceFile.setAbsolutePath(zipEntry.getName());
-                        sourceFile.setContent(getContent(zipFile, zipEntry));
-                        return sourceFile;
-                    })
-                    .filter(Objects::nonNull)
+            final List<SourceFile> sourceFiles = zipFile.stream().map(zipEntry -> {
+                SourceFile sourceFile = new SourceFile();
+                if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
+                    sourceFile.setType(paramFileType(workflowFileType));
+                } else {
+                    sourceFile.setType(workflowFileType);
+                }
+                sourceFile.setPath(zipEntry.getName());
+                sourceFile.setAbsolutePath(zipEntry.getName());
+                sourceFile.setContent(getContent(zipFile, zipEntry));
+                return sourceFile;
+            }).filter(Objects::nonNull)
                     .collect(Collectors.toList());
+            return new SourceFiles(
+                    // Guaranteed to find primary descriptor, or we would have thrown, above
+                    sourceFiles.stream().filter(sf -> sf.getPath().equals(primaryDescriptor.getName())).findFirst().get(),
+                    sourceFiles
+            );
         } else {
-            throw new CustomWebApplicationException("No primary descriptor specified in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Invalid or no primary descriptor specified in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private static void checkWorkflowType(SourceFile.FileType workflowFileType, String theName) {
+        switch (workflowFileType) {
+        case DOCKSTORE_CWL:
+            if (!theName.toLowerCase().endsWith(".cwl")) {
+               throw new CustomWebApplicationException("Zip file does not have a CWL primary descriptor", HttpStatus.SC_BAD_REQUEST);
+            }
+            break;
+        case DOCKSTORE_WDL:
+            if (!theName.toLowerCase().endsWith(".wdl")) {
+                throw new CustomWebApplicationException("Zip file does not have a WDL primary descriptor", HttpStatus.SC_BAD_REQUEST);
+            }
+            break;
+        default:
+            // Other languages unsupported for now
+            throw new CustomWebApplicationException("Unsupported workflow type: " + workflowFileType.toString(), HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private static SourceFile.FileType paramFileType(SourceFile.FileType workFileType) {
+        switch (workFileType) {
+        case DOCKSTORE_CWL:
+            return SourceFile.FileType.CWL_TEST_JSON;
+        case DOCKSTORE_WDL:
+            return SourceFile.FileType.WDL_TEST_JSON;
+        case DOCKERFILE:
+            return SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
+        default:
+            throw new CustomWebApplicationException("Fix me", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -94,6 +135,24 @@ public final class ZipSourceFileHelper {
         } catch (IOException e) {
             LOG.error("Error reading .dockstore.yml", e);
             throw new CustomWebApplicationException("Invalid syntax in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    public static class SourceFiles {
+        private final SourceFile primaryDescriptor;
+        private final List<SourceFile> allDescriptors;
+
+        public SourceFiles(SourceFile primaryDescriptor, List<SourceFile> allDescriptors) {
+            this.primaryDescriptor = primaryDescriptor;
+            this.allDescriptors = allDescriptors;
+        }
+
+        public SourceFile getPrimaryDescriptor() {
+            return primaryDescriptor;
+        }
+
+        public List<SourceFile> getAllDescriptors() {
+            return allDescriptors;
         }
     }
 

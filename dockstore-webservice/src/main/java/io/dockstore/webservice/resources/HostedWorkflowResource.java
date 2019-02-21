@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -77,7 +78,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/workflows")
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);
-    public static final int ZIP_SIZE_LIMIT = 100_000;
+    private static final int ZIP_SIZE_LIMIT = 100_000;
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
@@ -197,7 +198,11 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
                 }
             }
             try (ZipFile zipFile = new ZipFile(tempZip)) {
-                ZipSourceFileHelper.sourceFilesFromZip(zipFile, fileType);
+                final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(zipFile, fileType);
+                final WorkflowVersion version = getVersion(workflow);
+                this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
+                version.setWorkflowPath(sourceFiles.getPrimaryDescriptor().getPath());
+                return this.saveVersion(user, entryId, workflow, version, new HashSet(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
             }
         } catch (IOException e) {
             throw new CustomWebApplicationException("Error reading zip file", HttpStatus.SC_BAD_REQUEST);
@@ -208,7 +213,6 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
                 LOG.error("Error deleting temp zip", e);
             }
         }
-        return null;
     }
 
     @Override
@@ -236,10 +240,10 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     }
 
     @Override
-    protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry) {
+    protected WorkflowVersion versionValidation(WorkflowVersion version, Workflow entry, Optional<SourceFile> mainDescriptorOpt) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
         SourceFile.FileType identifiedType = entry.getFileType();
-        String mainDescriptorPath = this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase());
+        String mainDescriptorPath = mainDescriptorOpt.map(sf -> sf.getPath()).orElse(this.descriptorTypeToDefaultDescriptorPath.get(entry.getDescriptorType().toLowerCase()));
         Optional<SourceFile> mainDescriptor = sourceFiles.stream().filter((sourceFile -> Objects.equals(sourceFile.getPath(), mainDescriptorPath))).findFirst();
 
         // Validate descriptor set
@@ -278,6 +282,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
         return version;
     }
+
 
     /**
      * A workflow version is valid if it has a valid descriptor set and all valid test parameter files

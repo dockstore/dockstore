@@ -15,10 +15,12 @@
  */
 package io.dockstore.webservice.resources;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.ws.rs.DELETE;
@@ -190,7 +192,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
 
-        version = versionValidation(version, entry);
+        return saveVersion(user, entryId, entry, version, versionSourceFiles, Optional.empty());
+    }
+
+    protected T saveVersion(User user, Long entryId, T entry, U version, Set<SourceFile> versionSourceFiles, Optional<SourceFile> mainDescriptor) {
+        version = versionValidation(version, entry, mainDescriptor);
 
         boolean isValidVersion = isValidVersion(version);
         if (!isValidVersion) {
@@ -265,9 +271,10 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * Note: There is one validation entry for each sourcefile type. This is true for test parameter files too.
      * @param version Version to validate
      * @param entry Entry for the version
+     * @param mainDescriptor
      * @return Version with updated validation information
      */
-    protected abstract U versionValidation(U version, T entry);
+    protected abstract U versionValidation(U version, T entry, Optional<SourceFile> mainDescriptor);
 
     protected void checkHosted(T entry) {
         if (entry instanceof Tool) {
@@ -364,12 +371,17 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             tag.setName("1");
             sourceFiles.forEach(f -> map.put(f.getPath(), f));
         }
+        persistSourceFiles(tag, map.values());
 
+        return tag.getSourceFiles();
+    }
+
+    protected void persistSourceFiles(U tag, Collection<SourceFile> sourceFiles) {
         // create everything still in the map
-        for (SourceFile e : map.values()) {
+        for (SourceFile e : sourceFiles) {
             long l = fileDAO.create(e);
             tag.getSourceFiles().add(fileDAO.findById(l));
         }
-        return tag.getSourceFiles();
     }
+
 }
