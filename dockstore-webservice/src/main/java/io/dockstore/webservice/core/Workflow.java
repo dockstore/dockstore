@@ -34,8 +34,6 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -58,7 +56,6 @@ import org.hibernate.annotations.Check;
  */
 @ApiModel(value = "Workflow", description = "This describes one workflow in the dockstore")
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(name = "unique_workflow_paths", columnNames = { "sourceControl", "organization", "repository", "workflowName" }))
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.findPublishedById", query = "SELECT c FROM Workflow c WHERE c.id = :id AND c.isPublished = true"),
         @NamedQuery(name = "io.dockstore.webservice.core.Workflow.countAllPublished", query = "SELECT COUNT(c.id)" + Workflow.PUBLISHED_QUERY),
