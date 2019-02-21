@@ -998,7 +998,7 @@ public abstract class AbstractEntryClient<T> {
      * @return Path to first not null file
      */
     public String getFirstNotNullParameterFile(String yamlRun, String jsonRun) {
-        java.util.Optional<String> s = Stream.of(yamlRun, jsonRun).filter(Objects::nonNull).findFirst();
+        Optional<String> s = Stream.of(yamlRun, jsonRun).filter(Objects::nonNull).findFirst();
         if (s.isPresent() && Paths.get(s.get()).toFile().exists()) {
             // convert relative path to absolute path
             return s.get();

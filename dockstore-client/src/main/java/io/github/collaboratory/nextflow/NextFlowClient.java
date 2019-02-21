@@ -26,11 +26,9 @@ import io.dockstore.client.cli.nested.NextflowLauncher;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.NextflowUtilities;
-import io.dockstore.common.Utilities;
 import io.swagger.client.ApiException;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,25 +78,7 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
 
     @Override
     public void executeEntry() throws ExecuteException {
-        notificationsClient.sendMessage(NotificationsClient.RUN, true);
-        String runCommand = launcher.buildRunCommand();
-
-        int exitCode = 0;
-        try {
-            // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
-            final ImmutablePair<String, String> execute = Utilities.executeCommand(runCommand, System.out, System.err);
-            stdout = execute.getLeft();
-            stderr = execute.getRight();
-        } catch (RuntimeException e) {
-            LOG.error("Problem running NextFlow: ", e);
-            if (e.getCause() instanceof ExecuteException) {
-                exitCode = ((ExecuteException)e.getCause()).getExitValue();
-                throw new ExecuteException("problems running command: " + runCommand, exitCode);
-            }
-            notificationsClient.sendMessage(NotificationsClient.RUN, false);
-            throw new RuntimeException("Could not run NextFlow", e);
-        }
-        System.out.println("NextFlow exit code: " + exitCode);
+        commonExecutionCode(null, launcher.getLauncherName());
     }
 
     @Override

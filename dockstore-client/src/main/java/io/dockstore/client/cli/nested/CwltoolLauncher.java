@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Joiner;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
@@ -15,13 +14,10 @@ import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public class CwltoolLauncher extends BaseLauncher {
-    private static final Logger LOG = LoggerFactory.getLogger(CwltoolLauncher.class);
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
@@ -38,7 +34,7 @@ public class CwltoolLauncher extends BaseLauncher {
     }
 
     @Override
-    public String buildRunCommand() {
+    public List<String> buildRunCommand() {
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
         CWLRunnerFactory.setConfig(config);
 
@@ -59,9 +55,7 @@ public class CwltoolLauncher extends BaseLauncher {
 
         command.addAll(1, extraFlags);
 
-        final String runCommand = Joiner.on(" ").join(command);
-        System.out.println("Executing: " + runCommand);
-        return runCommand;
+        return command;
     }
 
     @Override
@@ -81,8 +75,8 @@ public class CwltoolLauncher extends BaseLauncher {
     }
 
     private String trimAndPrintInput(String input) {
-        input = input.trim();
-        System.out.println(input);
-        return input;
+        String trimmedInput = input.trim();
+        System.out.println(trimmedInput);
+        return trimmedInput;
     }
 }

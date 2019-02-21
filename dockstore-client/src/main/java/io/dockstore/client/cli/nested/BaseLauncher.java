@@ -5,10 +5,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
+import io.dockstore.common.Utilities;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 
 /**
  * This class is the base class for launchers used by the Dockstore CLI.
@@ -49,6 +52,10 @@ public abstract class BaseLauncher {
         this.launcherName = launcherName;
     }
 
+    public String getLauncherName() {
+        return launcherName;
+    }
+
     /**
      * Set settings for launcher relevant to the current run
      * @param descriptor
@@ -81,9 +88,9 @@ public abstract class BaseLauncher {
 
     /**
      * Create a command to execute entry on the command line
-     * @return Command to run entry
+     * @return Command to run in list format
      */
-    public abstract String buildRunCommand();
+    public abstract List<String> buildRunCommand();
 
     /**
      * Provisions output files defined in the parameter file
@@ -92,6 +99,21 @@ public abstract class BaseLauncher {
      * @param wdlOutputTarget
      */
     public abstract void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget);
+
+    /**
+     * Executes the run command given
+     * @param runCommand Command to be executed
+     * @param workingDir Optional working directory
+     * @return Pair of stdin and stdout
+     * @throws RuntimeException
+     */
+    public ImmutablePair<String, String> executeEntry(String runCommand, File workingDir) throws RuntimeException {
+        if (workingDir == null) {
+            return Utilities.executeCommand(runCommand, System.out, System.err);
+        } else {
+            return Utilities.executeCommand(runCommand, System.out, System.err, workingDir);
+        }
+    }
 
     /**
      * Prints and stores the stdout and stderr to files

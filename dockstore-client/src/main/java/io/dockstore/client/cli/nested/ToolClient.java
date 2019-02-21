@@ -650,7 +650,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                 File zipFile = new File(zipFilename(container));
                 FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
                 if (unzip) {
-                    SwaggerUtility.unzipFile(zipFile, directory, false);
+                    SwaggerUtility.unzipFile(zipFile, directory);
                 }
                 return new File(directory, type == ToolDescriptor.TypeEnum.CWL ? first.get().getCwlPath() : first.get().getWdlPath());
             } catch (IOException e) {

@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.common.Utilities;
@@ -15,8 +17,9 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.lang3.tuple.MutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
@@ -31,6 +34,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
  * Clients for CWL, WDL, Nextflow, etc should extend this and implement the abstract functions.
  */
 public abstract class BaseLanguageClient {
+    private static final Logger LOG = LoggerFactory.getLogger(BaseLanguageClient.class);
     protected final AbstractEntryClient abstractEntryClient;
     protected INIConfiguration config;
     protected String notificationsWebHookURL;
@@ -188,7 +192,7 @@ public abstract class BaseLanguageClient {
      * @param type CWL or WDL
      * @return Pair of downloaded primary descriptor and zip file
      */
-    public Triple<File, File, File> initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type) {
+    public LauncherFiles initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum type) {
         // Try to create a working directory
         File workingDir;
         try {
@@ -211,7 +215,7 @@ public abstract class BaseLanguageClient {
                 zipFile = new File(workingDir, convertedName);
                 out("Successfully downloaded files for entry '" + path + "'");
             } catch (ApiException ex) {
-                if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
+                if (abstractEntryClient.getEntryType().equalsIgnoreCase("tool")) {
                     exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
                             ENTRY_NOT_FOUND);
                 } else {
@@ -236,7 +240,7 @@ public abstract class BaseLanguageClient {
             out("Using local file '" + entry + "' as primary descriptor");
         }
 
-        return new MutableTriple<>(workingDir, primaryDescriptor, zipFile);
+        return new LauncherFiles(workingDir, primaryDescriptor, zipFile);
     }
 
     /**
@@ -247,27 +251,12 @@ public abstract class BaseLanguageClient {
      */
     public File zipDirectory(File workingDir, File directoryToZip) {
         String zipFilePath = workingDir.getAbsolutePath() + "/directory.zip";
-        try {
-            FileOutputStream fos = null;
-            ZipOutputStream zos = null;
-            try {
-                fos = new FileOutputStream(zipFilePath);
-                zos = new ZipOutputStream(fos);
-                zipFile(directoryToZip, "/", zos);
-            } catch (IOException ex) {
-                exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", IO_ERROR);
-            } catch (Exception ex) {
-                exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", GENERIC_ERROR);
-            } finally {
-                if (zos != null) {
-                    zos.close();
-                }
-                if (fos != null) {
-                    fos.close();
-                }
-            }
+        try (FileOutputStream fos = new FileOutputStream(zipFilePath); ZipOutputStream zos = new ZipOutputStream(fos)) {
+            zipFile(directoryToZip, "/", zos);
         } catch (IOException ex) {
             exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", IO_ERROR);
+        } catch (Exception ex) {
+            exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", GENERIC_ERROR);
         }
         return new File(zipFilePath);
     }
@@ -287,11 +276,9 @@ public abstract class BaseLanguageClient {
             return;
         }
         if (fileToZip.isDirectory()) {
-            if (fileName.endsWith("/")) {
-                if (!Objects.equals(fileName, "/")) {
-                    zos.putNextEntry(new ZipEntry(fileName.endsWith("/") ? fileName : fileName + "/"));
-                    zos.closeEntry();
-                }
+            if (fileName.endsWith("/") && !Objects.equals(fileName, "/")) {
+                zos.putNextEntry(new ZipEntry(fileName.endsWith("/") ? fileName : fileName + "/"));
+                zos.closeEntry();
             }
             File[] children = fileToZip.listFiles();
             for (File childFile : children) {
@@ -303,15 +290,48 @@ public abstract class BaseLanguageClient {
             }
             return;
         }
-        FileInputStream fis = new FileInputStream(fileToZip);
-        ZipEntry zipEntry = new ZipEntry(fileName);
-        zos.putNextEntry(zipEntry);
-        final int byteLength = 1024;
-        byte[] bytes = new byte[byteLength];
-        int length;
-        while ((length = fis.read(bytes)) >= 0) {
-            zos.write(bytes, 0, length);
+
+        try (FileInputStream fis = new FileInputStream(fileToZip)) {
+            ZipEntry zipEntry = new ZipEntry(fileName);
+            zos.putNextEntry(zipEntry);
+            final int byteLength = 1024;
+            byte[] bytes = new byte[byteLength];
+            int length;
+            while ((length = fis.read(bytes)) >= 0) {
+                zos.write(bytes, 0, length);
+            }
         }
-        fis.close();
+    }
+
+    /**
+     * Common code used for executing an entry
+     * @param workDir
+     * @param launcherName
+     * @throws ExecuteException
+     * @throws RuntimeException
+     */
+    public void commonExecutionCode(File workDir, String launcherName) throws ExecuteException, RuntimeException {
+        notificationsClient.sendMessage(NotificationsClient.RUN, true);
+        List<String> runCommand = launcher.buildRunCommand();
+        String joinedCommand = Joiner.on(" ").join(runCommand);
+        System.out.println("Executing: " + joinedCommand);
+
+        ImmutablePair<String, String> execute;
+        int exitCode = 0;
+        try {
+            execute = launcher.executeEntry(joinedCommand, workDir);
+            stdout = execute.getLeft();
+            stderr = execute.getRight();
+        } catch (RuntimeException ex) {
+            LOG.error("Problem running launcher" + launcherName + ": ", ex);
+            if (ex.getCause() instanceof ExecuteException) {
+                exitCode = ((ExecuteException)ex.getCause()).getExitValue();
+                throw new ExecuteException("problems running command: " + runCommand, exitCode);
+            }
+            notificationsClient.sendMessage(NotificationsClient.RUN, false);
+            throw new RuntimeException("Could not run launcher", ex);
+        } finally {
+            System.out.println(launcherName + " exit code: " + exitCode);
+        }
     }
 }

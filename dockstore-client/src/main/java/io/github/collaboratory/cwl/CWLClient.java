@@ -53,6 +53,7 @@ import io.dockstore.client.cli.nested.BaseLauncher;
 import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.CwltoolLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
+import io.dockstore.client.cli.nested.LauncherFiles;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.FileProvisioning;
@@ -69,7 +70,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.json.JSONObject;
 import org.json.simple.JSONArray;
 import org.slf4j.Logger;
@@ -244,26 +244,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
 
     @Override
     public void executeEntry() throws ExecuteException {
-        notificationsClient.sendMessage(NotificationsClient.RUN, true);
-        String runCommand = launcher.buildRunCommand();
-
-        int exitCode = 0;
-        try {
-            // TODO: probably want to make a new library call so that we can stream output properly and get this exit code
-            final ImmutablePair<String, String> execute = Utilities.executeCommand(runCommand, System.out, System.err);
-            stdout = execute.getLeft();
-            stderr = execute.getRight();
-        } catch (RuntimeException e) {
-            LOG.error("Problem running launcher: ", e);
-            if (e.getCause() instanceof ExecuteException) {
-                exitCode = ((ExecuteException)e.getCause()).getExitValue();
-                throw new ExecuteException("problems running command: " + runCommand, exitCode);
-            }
-            notificationsClient.sendMessage(NotificationsClient.RUN, false);
-            throw new RuntimeException("Could not run launcher", e);
-        } finally {
-            System.out.println("Launcher exit code: " + exitCode);
-        }
+        commonExecutionCode(null, launcher.getLauncherName());
     }
 
     @Override
@@ -279,10 +260,10 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
 
     @Override
     public void downloadFiles() {
-        Triple<File, File, File> workingDirectoryFiles = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL);
-        tempLaunchDirectory = workingDirectoryFiles.getLeft();
-        localPrimaryDescriptorFile = workingDirectoryFiles.getMiddle();
-        importsZipFile = workingDirectoryFiles.getRight();
+        LauncherFiles launcherFiles = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL);
+        tempLaunchDirectory = launcherFiles.getWorkingDirectory();
+        localPrimaryDescriptorFile = launcherFiles.getPrimaryDescriptor();
+        importsZipFile = launcherFiles.getZippedEntry();
     }
 
     /**

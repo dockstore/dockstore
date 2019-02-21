@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.google.common.base.Joiner;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.NextflowUtilities;
 import io.dockstore.common.Utilities;
@@ -24,13 +23,10 @@ public class NextflowLauncher extends BaseLauncher {
     }
 
     @Override
-    public String buildRunCommand() {
-        List<String> executionCommand = new ArrayList<>(Arrays
+    public List<String> buildRunCommand() {
+        return new ArrayList<>(Arrays
                 .asList("java", "-jar", executionFile.getAbsolutePath(), "run", "-with-docker", "--outdir", workingDirectory, "-work-dir",
                         workingDirectory, "-params-file", originalParameterFile, primaryDescriptor.getAbsolutePath()));
-        String joinedCommand = Joiner.on(" ").join(executionCommand);
-        System.out.println("Executing: " + joinedCommand);
-        return joinedCommand;
     }
 
     @Override

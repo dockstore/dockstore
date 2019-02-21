@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.dockstore.common.Bridge;
@@ -25,8 +24,6 @@ import io.github.collaboratory.cwl.CWLClient;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.Client.IO_ERROR;
@@ -37,7 +34,6 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 public class CromwellLauncher extends BaseLauncher {
     protected static final String DEFAULT_CROMWELL_VERSION = "36";
 
-    private static final Logger LOG = LoggerFactory.getLogger(CromwellLauncher.class);
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
 
     public CromwellLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
@@ -84,7 +80,7 @@ public class CromwellLauncher extends BaseLauncher {
     }
 
     @Override
-    public String buildRunCommand() {
+    public List<String> buildRunCommand() {
         final List<String> runCommand;
         // Don't use imports option for WDL, only for CWL
         if (importsZip == null || abstractEntryClient instanceof ToolClient || Objects.equals(languageType, LanguageType.WDL)) {
@@ -97,9 +93,7 @@ public class CromwellLauncher extends BaseLauncher {
         List<String> arguments = new ArrayList<>();
         arguments.addAll(Arrays.asList(s));
         arguments.addAll(runCommand);
-        final String join = Joiner.on(" ").join(arguments);
-        System.out.println("Executing: " + join);
-        return join;
+        return arguments;
     }
 
     @Override
@@ -118,8 +112,8 @@ public class CromwellLauncher extends BaseLauncher {
      * @param wdlOutputTarget
      */
     private void handleWDLOutputProvisioning(String stdout, String stderr, String wdlOutputTarget) {
-        stdout = stdout.replaceAll("(?m)^", "\t");
-        stderr = stderr.replaceAll("(?m)^", "\t");
+        String alteredStdout = stdout.replaceAll("(?m)^", "\t");
+        String alteredStderr = stderr.replaceAll("(?m)^", "\t");
         Gson gson = new Gson();
         String jsonString = null;
         try {
@@ -129,12 +123,12 @@ public class CromwellLauncher extends BaseLauncher {
         }
         Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
-        outputIntegrationOutput(workingDirectory, stdout, stderr, launcherName);
+        outputIntegrationOutput(workingDirectory, alteredStdout, alteredStderr, launcherName);
         // capture the output and provision it
         if (wdlOutputTarget != null) {
             // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
             // grab values from output JSON
-            Map<String, String> outputJson = parseOutputObjectFromCromwellStdout(stdout, new Gson());
+            Map<String, String> outputJson = parseOutputObjectFromCromwellStdout(alteredStdout, new Gson());
 
             System.out.println("Provisioning your output files to their final destinations");
             Bridge bridge = new Bridge(primaryDescriptor.getParent());

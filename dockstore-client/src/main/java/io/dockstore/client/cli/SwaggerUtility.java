@@ -44,6 +44,10 @@ public final class SwaggerUtility {
                 new String[] { "BEARER" }, type);
     }
 
+    public static void unzipFile(File zipFile, File unzipDirectory) throws IOException {
+        unzipFile(zipFile, unzipDirectory, false);
+    }
+
     public static void unzipFile(File zipFile, File unzipDirectory, boolean deleteZip) throws IOException {
         ZipFile zipFileActual = new ZipFile(zipFile);
         zipFileActual.stream().forEach((ZipEntry zipEntry) -> {

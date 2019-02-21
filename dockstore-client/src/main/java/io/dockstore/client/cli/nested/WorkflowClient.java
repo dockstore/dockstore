@@ -379,7 +379,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             File zipFile = new File(directory, zipFilename(workflow));
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
-                SwaggerUtility.unzipFile(zipFile, directory, false);
+                SwaggerUtility.unzipFile(zipFile, directory);
             }
             return new File(directory, first.get().getWorkflowPath());
         } else {

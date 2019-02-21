@@ -332,7 +332,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
      * @param workingDirectory need a working directory to translate relative paths (which we store) to absolute paths
      */
     default void writeStreamAsZip(Set<SourceFile> sourceFiles, OutputStream outputStream, Path workingDirectory) {
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
+        ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+        try {
             List<String> paths = new ArrayList<>();
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
@@ -353,10 +354,15 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
                 }
                 zipOutputStream.putNextEntry(secondaryZipEntry);
                 zipOutputStream.write(sourceFile.getContent().getBytes(Charsets.UTF_8));
-                zipOutputStream.closeEntry();
             }
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } finally {
+            try {
+                zipOutputStream.closeEntry();
+            } catch (IOException ex) {
+                throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
         }
     }
 
