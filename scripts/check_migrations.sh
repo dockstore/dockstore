@@ -9,6 +9,6 @@ set -o xtrace
 
 if [ "${TESTING_PROFILE}" = "automated-review" ]; then
     bash propose_migration.sh
-    ! grep "changeSet" dockstore-webservice/target/detected-migrations.xml
+    (! grep "changeSet" dockstore-webservice/target/detected-migrations.xml)
     exit 0;
 fi
