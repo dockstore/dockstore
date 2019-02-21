@@ -1,5 +1,6 @@
 package io.dockstore.webservice.helpers;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -11,8 +12,11 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.google.common.io.ByteStreams;
+import com.google.common.io.Files;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.SourceFile;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -25,12 +29,63 @@ import org.yaml.snakeyaml.Yaml;
  */
 public final class ZipSourceFileHelper {
 
+    public static final int ZIP_SIZE_LIMIT = 100_000;
+    public static final int ZIP_ENTRIES_LIMIT = 100;
     private static final Logger LOG = LoggerFactory.getLogger(ZipSourceFileHelper.class);
 
     private ZipSourceFileHelper() {
     }
 
-    public static void validateZip(ZipFile zipFile, int maxEntries, long maxSize) {
+    /**
+     * Reads an input stream and converts it to a SourceFiles object. The input stream is expected to have the following
+     * characteristics and the method will throw an exception if any of these conditions is not met.
+     *
+     * <ul>
+     *     <li>The input stream is zipped content</li>
+     *     <li>The zip content contains a .dockstore.yml (TBD define valid)</li>
+     *     <li>A valid .dockstore.yml in the root of the zip</li>
+     *     <li>The zip content, both compressed and uncompressed, does not exceed ZIP_SIZE_LIMIT.</li>
+     *     <li>The number of entries in the zip does not exceed ZIP_ENTRIES_LIMIT</li>
+     * </ul>
+     * @param payload
+     * @param fileType
+     * @throws CustomWebApplicationException if the size of the zip is greater than ZIP_SIZE_LIMIT
+     * @throws CustomWebApplicationException if the zip has more than ZIP_ENTRIES_LIMIT files in it
+     * @throws CustomWebApplicationException if the uncompressed size of the zip is greater than ZIP_SIZE_LIMIT
+     * @throws CustomWebApplicationException if there is an error reading the zip, e.g., if the content is not a valid zip
+     * @throws CustomWebApplicationException there is no valid .dockstore.yml in the zip
+     * @return a SourceFiles object
+     */
+    public static SourceFiles sourceFilesFromInputStream(InputStream payload, SourceFile.FileType fileType) {
+        File tempDir = null;
+        try {
+            tempDir = Files.createTempDir();
+            File tempZip = new File(tempDir, "workflow.zip");
+            try (InputStream limitStream = ByteStreams.limit(payload, ZIP_SIZE_LIMIT + 1)) {
+                FileUtils.copyToFile(limitStream, tempZip);
+                if (tempZip.length() > ZIP_SIZE_LIMIT) {
+                    throw new CustomWebApplicationException("Request body is too large", HttpStatus.SC_REQUEST_TOO_LONG);
+                }
+            }
+            try (ZipFile zipFile = new ZipFile(tempZip)) {
+                validateZip(zipFile, ZIP_ENTRIES_LIMIT, ZIP_SIZE_LIMIT);
+                return ZipSourceFileHelper.sourceFilesFromZip(zipFile, fileType);
+            }
+        } catch (Exception e) {
+            throw new CustomWebApplicationException("Error reading request", HttpStatus.SC_BAD_REQUEST);
+        } finally {
+            try {
+                if (tempDir != null) {
+                    FileUtils.deleteDirectory(tempDir);
+                }
+            } catch (IOException e) {
+                LOG.error("Error deleting temp zip", e);
+            }
+        }
+
+    }
+
+    static void validateZip(ZipFile zipFile, int maxEntries, long maxSize) {
         if (zipFile.stream().limit(maxEntries + 1).count() > maxEntries) {
             throw new CustomWebApplicationException("Too many entries in the zip", HttpStatus.SC_BAD_REQUEST);
         }
@@ -48,7 +103,7 @@ public final class ZipSourceFileHelper {
      * @param workflowFileType
      * @return
      */
-    public static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
+    static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
         Map<String, Object> dockstoreYml = readDockstoreYml(zipFile);
         Object primaryDescriptorName = dockstoreYml.get("primaryDescriptor");
         List<String> testParameterFiles = (List<String>)dockstoreYml.get("testParameterFiles");
@@ -124,6 +179,7 @@ public final class ZipSourceFileHelper {
         }
     }
 
+    // TODO: Should probably define a DockstoreYaml class
     private static Map<String, Object> readDockstoreYml(ZipFile zipFile) {
         ZipEntry dockstoreYml = zipFile.stream()
                 .filter(zipEntry -> ".dockstore.yml".equals(zipEntry.getName()))
