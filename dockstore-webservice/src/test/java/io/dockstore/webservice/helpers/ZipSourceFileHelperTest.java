@@ -1,5 +1,6 @@
 package io.dockstore.webservice.helpers;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.zip.ZipFile;
@@ -40,6 +41,7 @@ public class ZipSourceFileHelperTest {
         final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, SourceFile.FileType.DOCKSTORE_WDL);
         Assert.assertEquals("SmartSeq2SingleSample.wdl", sourceFiles.getPrimaryDescriptor().getPath());
         Assert.assertEquals(9, sourceFiles.getAllDescriptors().size());
+        Assert.assertEquals("Expecting one .dockstore.yml", 1, sourceFiles.getAllDescriptors().stream().filter(sf -> sf.getType() == SourceFile.FileType.DOCKSTORE_YML).count());
     }
 
     @Test
@@ -51,6 +53,5 @@ public class ZipSourceFileHelperTest {
         } catch (CustomWebApplicationException ex) {
             // This is expected
         }
-
     }
 }

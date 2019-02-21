@@ -120,6 +120,8 @@ public final class ZipSourceFileHelper {
                 SourceFile sourceFile = new SourceFile();
                 if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
                     sourceFile.setType(paramFileType(workflowFileType));
+                } else if (".dockstore.yml".equals(zipEntry.getName())) {
+                    sourceFile.setType(SourceFile.FileType.DOCKSTORE_YML);
                 } else {
                     sourceFile.setType(workflowFileType);
                 }
