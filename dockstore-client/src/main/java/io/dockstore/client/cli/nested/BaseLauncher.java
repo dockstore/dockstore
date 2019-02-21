@@ -32,15 +32,21 @@ public abstract class BaseLauncher {
 
     // CWL, WDL, NEXTFLOW
     protected LanguageType languageType;
-    protected File exectionFile;
+    protected File executionFile;
 
     protected boolean script;
+
+    protected String launcherName;
 
     public BaseLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         this.abstractEntryClient = abstractEntryClient;
         this.fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
         this.languageType = language;
         this.script = script;
+    }
+
+    public void setLauncherName(String launcherName) {
+        this.launcherName = launcherName;
     }
 
     /**
@@ -60,9 +66,18 @@ public abstract class BaseLauncher {
     }
 
     /**
+     * Prints the launch message
+     */
+    public void printLaunchMessage() {
+        System.out.println("Calling out to " + launcherName + " to run your workflow");
+    }
+
+    /**
      * Download and install the launcher if necessary
      */
-    public abstract void initialize();
+    public void initialize() {
+
+    }
 
     /**
      * Create a command to execute entry on the command line

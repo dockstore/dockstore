@@ -22,12 +22,12 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 public class CwltoolLauncher extends BaseLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(CwltoolLauncher.class);
-    private static final String LAUNCHER_NAME = "cwltool";
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
     public CwltoolLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         super(abstractEntryClient, language, script);
+        setLauncherName("cwltool");
     }
 
     @Override

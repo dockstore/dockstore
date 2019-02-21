@@ -55,13 +55,14 @@ public final class SwaggerUtility {
                     FileUtils.copyInputStreamToFile(zipFileActual.getInputStream(zipEntry), newFile);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
+                } finally {
+                    if (deleteZip) {
+                        FileUtils.deleteQuietly(zipFile);
+                    }
                 }
             }
         });
-
-        if (deleteZip) {
-            FileUtils.deleteQuietly(zipFile);
-        }
+        zipFileActual.close();
     }
 
     /**

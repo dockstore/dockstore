@@ -11,22 +11,22 @@ import io.dockstore.common.Utilities;
 import org.apache.commons.configuration2.INIConfiguration;
 
 public class NextflowLauncher extends BaseLauncher {
-    private static final String LAUNCHER_NAME = "NextFlow";
 
     public NextflowLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         super(abstractEntryClient, language, script);
+        setLauncherName("NextFlow");
     }
 
     @Override
     public void initialize() {
         INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
-        exectionFile = NextflowUtilities.getNextFlowTargetFile(config);
+        executionFile = NextflowUtilities.getNextFlowTargetFile(config);
     }
 
     @Override
     public String buildRunCommand() {
         List<String> executionCommand = new ArrayList<>(Arrays
-                .asList("java", "-jar", exectionFile.getAbsolutePath(), "run", "-with-docker", "--outdir", workingDirectory, "-work-dir",
+                .asList("java", "-jar", executionFile.getAbsolutePath(), "run", "-with-docker", "--outdir", workingDirectory, "-work-dir",
                         workingDirectory, "-params-file", originalParameterFile, primaryDescriptor.getAbsolutePath()));
         String joinedCommand = Joiner.on(" ").join(executionCommand);
         System.out.println("Executing: " + joinedCommand);
@@ -36,6 +36,6 @@ public class NextflowLauncher extends BaseLauncher {
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
         outputIntegrationOutput(workingDirectory, stdout,
-                stderr, LAUNCHER_NAME);
+                stderr, launcherName);
     }
 }

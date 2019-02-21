@@ -464,13 +464,24 @@ public class LaunchTestIT {
     public void runToolToMissingS3() {
         File cwlFile = new File(ResourceHelpers.resourceFilePath("file_provision/split.cwl"));
         File cwlJSON = new File(ResourceHelpers.resourceFilePath("file_provision/split_to_s3_failed.json"));
-        final ByteArrayOutputStream launcherOutput = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(launcherOutput));
+        ByteArrayOutputStream launcherOutput = null;
+        try {
+            launcherOutput = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(launcherOutput));
 
-        thrown.expect(AssertionError.class);
-        runTool(cwlFile, cwlJSON);
-        final String standardOutput = launcherOutput.toString();
-        assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
+            thrown.expect(AssertionError.class);
+            runTool(cwlFile, cwlJSON);
+            final String standardOutput = launcherOutput.toString();
+            assertTrue("Error should occur, caused by Amazon S3 Exception", standardOutput.contains("Caused by: com.amazonaws.services.s3.model.AmazonS3Exception"));
+        } finally {
+            try {
+                if (launcherOutput != null) {
+                    launcherOutput.close();
+                }
+            } catch (IOException ex) {
+                assertTrue("Error closing output stream.", true);
+            }
+        }
     }
 
     @Test

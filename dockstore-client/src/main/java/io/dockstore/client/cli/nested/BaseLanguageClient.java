@@ -165,6 +165,7 @@ public abstract class BaseLanguageClient {
 
         try {
             // Attempt to run launcher
+            launcher.printLaunchMessage();
             executeEntry();
 
             // Provision the output files if run is successful
@@ -247,15 +248,26 @@ public abstract class BaseLanguageClient {
     public File zipDirectory(File workingDir, File directoryToZip) {
         String zipFilePath = workingDir.getAbsolutePath() + "/directory.zip";
         try {
-            FileOutputStream fos = new FileOutputStream(zipFilePath);
-            ZipOutputStream zos = new ZipOutputStream(fos);
-            zipFile(directoryToZip, "/", zos);
-            zos.close();
-            fos.close();
+            FileOutputStream fos = null;
+            ZipOutputStream zos = null;
+            try {
+                fos = new FileOutputStream(zipFilePath);
+                zos = new ZipOutputStream(fos);
+                zipFile(directoryToZip, "/", zos);
+            } catch (IOException ex) {
+                exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", IO_ERROR);
+            } catch (Exception ex) {
+                exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", GENERIC_ERROR);
+            } finally {
+                if (zos != null) {
+                    zos.close();
+                }
+                if (fos != null) {
+                    fos.close();
+                }
+            }
         } catch (IOException ex) {
             exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", IO_ERROR);
-        } catch (Exception ex) {
-            exceptionMessage(ex, "There was a problem zipping the directory '" + directoryToZip.getPath() + "'", GENERIC_ERROR);
         }
         return new File(zipFilePath);
     }

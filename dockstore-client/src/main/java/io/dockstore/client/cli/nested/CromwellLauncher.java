@@ -38,11 +38,11 @@ public class CromwellLauncher extends BaseLauncher {
     protected static final String DEFAULT_CROMWELL_VERSION = "36";
 
     private static final Logger LOG = LoggerFactory.getLogger(CromwellLauncher.class);
-    private static final String LAUNCHER_NAME = "Cromwell";
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
 
     public CromwellLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         super(abstractEntryClient, language, script);
+        setLauncherName("Cromwell");
     }
 
     /**
@@ -69,7 +69,7 @@ public class CromwellLauncher extends BaseLauncher {
             cromwellURL = new URL(cromwellLocation);
             cromwellFileName = new File(cromwellURL.toURI().getPath()).getName();
         } catch (MalformedURLException | URISyntaxException e) {
-            throw new RuntimeException("Could not create " + LAUNCHER_NAME + " location", e);
+            throw new RuntimeException("Could not create " + launcherName + " location", e);
         }
         String cromwellTarget = libraryLocation + cromwellFileName;
         File cromwellTargetFile = new File(cromwellTarget);
@@ -77,10 +77,10 @@ public class CromwellLauncher extends BaseLauncher {
             try {
                 FileUtils.copyURLToFile(cromwellURL, cromwellTargetFile);
             } catch (IOException e) {
-                throw new RuntimeException("Could not download " + LAUNCHER_NAME + " location", e);
+                throw new RuntimeException("Could not download " + launcherName + " location", e);
             }
         }
-        exectionFile = cromwellTargetFile;
+        executionFile = cromwellTargetFile;
     }
 
     @Override
@@ -92,13 +92,8 @@ public class CromwellLauncher extends BaseLauncher {
         } else {
             runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", importsZip.getAbsolutePath());
         }
-        // run a workflow
-        System.out.println("Calling out to " + LAUNCHER_NAME + " to run your workflow");
 
-        // Currently Cromwell does not support HTTP(S) imports
-        // https://github.com/broadinstitute/cromwell/issues/1528
-
-        final String[] s = { "java", "-jar", exectionFile.getAbsolutePath(), "run" };
+        final String[] s = { "java", "-jar", executionFile.getAbsolutePath(), "run" };
         List<String> arguments = new ArrayList<>();
         arguments.addAll(Arrays.asList(s));
         arguments.addAll(runCommand);
@@ -134,7 +129,7 @@ public class CromwellLauncher extends BaseLauncher {
         }
         Map<String, Object> inputJson = gson.fromJson(jsonString, HashMap.class);
 
-        outputIntegrationOutput(workingDirectory, stdout, stderr, LAUNCHER_NAME);
+        outputIntegrationOutput(workingDirectory, stdout, stderr, launcherName);
         // capture the output and provision it
         if (wdlOutputTarget != null) {
             // TODO: this is very hacky, look for a runtime option or start cromwell as a server and communicate via REST
@@ -172,7 +167,7 @@ public class CromwellLauncher extends BaseLauncher {
     private void handleCWLOutputProvisioning(String stdout, String stderr) {
         // Display output information
         outputIntegrationOutput(importsZip.getParentFile().getAbsolutePath(), stdout,
-                stderr, LAUNCHER_NAME);
+                stderr, launcherName);
 
         // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)
         String outputPrefix = "Succeeded";
@@ -180,7 +175,7 @@ public class CromwellLauncher extends BaseLauncher {
         int endIndex = stdout.indexOf("\n}\n", startIndex) + 2;
         String bracketContents = stdout.substring(startIndex, endIndex).trim();
         if (bracketContents.isEmpty()) {
-            throw new RuntimeException("No " + LAUNCHER_NAME + " output");
+            throw new RuntimeException("No " + launcherName + " output");
         }
         Map<String, Object> outputJson = new Gson().fromJson(bracketContents, HashMap.class);
 
