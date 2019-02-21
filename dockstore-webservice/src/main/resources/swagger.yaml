@@ -6128,6 +6128,7 @@ definitions:
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
+        - "DOCKSTORE_YML"
       content:
         type: "string"
         position: 2
@@ -6663,6 +6664,7 @@ definitions:
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
+        - "DOCKSTORE_YML"
       valid:
         type: "boolean"
         position: 2

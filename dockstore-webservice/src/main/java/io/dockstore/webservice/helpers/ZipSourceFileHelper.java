@@ -41,20 +41,21 @@ public final class ZipSourceFileHelper {
      * characteristics and the method will throw an exception if any of these conditions is not met.
      *
      * <ul>
-     *     <li>The input stream is zipped content</li>
-     *     <li>The zip content contains a .dockstore.yml (TBD define valid)</li>
-     *     <li>A valid .dockstore.yml in the root of the zip</li>
-     *     <li>The zip content, both compressed and uncompressed, does not exceed ZIP_SIZE_LIMIT.</li>
-     *     <li>The number of entries in the zip does not exceed ZIP_ENTRIES_LIMIT</li>
+     * <li>The input stream is zipped content</li>
+     * <li>The zip content contains a .dockstore.yml (TBD define valid)</li>
+     * <li>A valid .dockstore.yml in the root of the zip</li>
+     * <li>The zip content, both compressed and uncompressed, does not exceed ZIP_SIZE_LIMIT.</li>
+     * <li>The number of entries in the zip does not exceed ZIP_ENTRIES_LIMIT</li>
      * </ul>
+     *
      * @param payload
      * @param fileType
+     * @return a SourceFiles object
      * @throws CustomWebApplicationException if the size of the zip is greater than ZIP_SIZE_LIMIT
      * @throws CustomWebApplicationException if the zip has more than ZIP_ENTRIES_LIMIT files in it
      * @throws CustomWebApplicationException if the uncompressed size of the zip is greater than ZIP_SIZE_LIMIT
      * @throws CustomWebApplicationException if there is an error reading the zip, e.g., if the content is not a valid zip
      * @throws CustomWebApplicationException there is no valid .dockstore.yml in the zip
-     * @return a SourceFiles object
      */
     public static SourceFiles sourceFilesFromInputStream(InputStream payload, SourceFile.FileType fileType) {
         File tempDir = null;
@@ -99,6 +100,7 @@ public final class ZipSourceFileHelper {
 
     /**
      * Converts the values in a zip into a list
+     *
      * @param zipFile
      * @param workflowFileType
      * @return
@@ -110,12 +112,10 @@ public final class ZipSourceFileHelper {
         if (primaryDescriptorName instanceof String) {
             String theName = (String)primaryDescriptorName;
             checkWorkflowType(workflowFileType, theName);
-            ZipEntry primaryDescriptor = zipFile
-                    .stream().
-                    filter(zipEntry -> theName.equals(zipEntry.getName()))
+            ZipEntry primaryDescriptor = zipFile.stream()
+                    .filter(zipEntry -> theName.equals(zipEntry.getName()))
                     .findFirst()
-                    .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + theName,
-                            HttpStatus.SC_BAD_REQUEST));
+                    .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + theName, HttpStatus.SC_BAD_REQUEST));
             final List<SourceFile> sourceFiles = zipFile.stream().map(zipEntry -> {
                 SourceFile sourceFile = new SourceFile();
                 if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
@@ -129,15 +129,13 @@ public final class ZipSourceFileHelper {
                 sourceFile.setAbsolutePath(zipEntry.getName());
                 sourceFile.setContent(getContent(zipFile, zipEntry));
                 return sourceFile;
-            }).filter(Objects::nonNull)
-                    .collect(Collectors.toList());
+            }).filter(Objects::nonNull).collect(Collectors.toList());
             return new SourceFiles(
                     // Guaranteed to find primary descriptor, or we would have thrown, above
-                    sourceFiles.stream().filter(sf -> sf.getPath().equals(primaryDescriptor.getName())).findFirst().get(),
-                    sourceFiles
-            );
+                    sourceFiles.stream().filter(sf -> sf.getPath().equals(primaryDescriptor.getName())).findFirst().get(), sourceFiles);
         } else {
-            throw new CustomWebApplicationException("Invalid or no primary descriptor specified in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("Invalid or no primary descriptor specified in .dockstore.yml",
+                    HttpStatus.SC_BAD_REQUEST);
         }
     }
 
@@ -145,7 +143,7 @@ public final class ZipSourceFileHelper {
         switch (workflowFileType) {
         case DOCKSTORE_CWL:
             if (!theName.toLowerCase().endsWith(".cwl")) {
-               throw new CustomWebApplicationException("Zip file does not have a CWL primary descriptor", HttpStatus.SC_BAD_REQUEST);
+                throw new CustomWebApplicationException("Zip file does not have a CWL primary descriptor", HttpStatus.SC_BAD_REQUEST);
             }
             break;
         case DOCKSTORE_WDL:
@@ -172,7 +170,7 @@ public final class ZipSourceFileHelper {
         }
     }
 
-    private static String getContent(ZipFile zipFile, ZipEntry zipEntry)  {
+    private static String getContent(ZipFile zipFile, ZipEntry zipEntry) {
         try (InputStream inputStream = zipFile.getInputStream(zipEntry)) {
             return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         } catch (IOException e) {
@@ -183,9 +181,7 @@ public final class ZipSourceFileHelper {
 
     // TODO: Should probably define a DockstoreYaml class
     private static Map<String, Object> readDockstoreYml(ZipFile zipFile) {
-        ZipEntry dockstoreYml = zipFile.stream()
-                .filter(zipEntry -> ".dockstore.yml".equals(zipEntry.getName()))
-                .findFirst()
+        ZipEntry dockstoreYml = zipFile.stream().filter(zipEntry -> ".dockstore.yml".equals(zipEntry.getName())).findFirst()
                 .orElseThrow(() -> new CustomWebApplicationException("Missing .dockstore.yml", HttpStatus.SC_BAD_REQUEST));
         final Yaml yaml = new Yaml();
         try {
