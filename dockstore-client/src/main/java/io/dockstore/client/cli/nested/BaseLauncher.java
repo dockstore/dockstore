@@ -23,7 +23,7 @@ public abstract class BaseLauncher {
     // The primary descriptor of the workflow
     protected File primaryDescriptor;
     // A zip file for the entire entry
-    protected File importsZip;
+    protected File zippedEntry;
     // Parameter file with all remote files resolved locally
     protected File provisionedParameterFile;
     // Path to original parameter file
@@ -59,14 +59,14 @@ public abstract class BaseLauncher {
     /**
      * Set settings for launcher relevant to the current run
      * @param descriptor
-     * @param imports
+     * @param entryZip
      * @param provisionedParameters
      * @param originalParameters
      * @param workDir
      */
-    public void setFiles(File descriptor, File imports, File provisionedParameters, String originalParameters, String workDir) {
+    public void setFiles(File descriptor, File entryZip, File provisionedParameters, String originalParameters, String workDir) {
         this.primaryDescriptor = descriptor;
-        this.importsZip = imports;
+        this.zippedEntry = entryZip;
         this.provisionedParameterFile = provisionedParameters;
         this.originalParameterFile = originalParameters;
         this.workingDirectory = workDir;

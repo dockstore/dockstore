@@ -85,7 +85,7 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
         LauncherFiles launcherFiles = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.WDL);
         tempLaunchDirectory = launcherFiles.getWorkingDirectory();
         localPrimaryDescriptorFile = launcherFiles.getPrimaryDescriptor();
-        importsZipFile = launcherFiles.getZippedEntry();
+        zippedEntryFile = launcherFiles.getZippedEntry();
     }
 
     @Override

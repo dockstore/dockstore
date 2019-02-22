@@ -263,7 +263,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
         LauncherFiles launcherFiles = initializeWorkingDirectoryWithFiles(ToolDescriptor.TypeEnum.CWL);
         tempLaunchDirectory = launcherFiles.getWorkingDirectory();
         localPrimaryDescriptorFile = launcherFiles.getPrimaryDescriptor();
-        importsZipFile = launcherFiles.getZippedEntry();
+        zippedEntryFile = launcherFiles.getZippedEntry();
     }
 
     /**

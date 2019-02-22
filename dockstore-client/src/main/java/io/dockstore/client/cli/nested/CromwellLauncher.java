@@ -83,10 +83,11 @@ public class CromwellLauncher extends BaseLauncher {
     public List<String> buildRunCommand() {
         final List<String> runCommand;
         // Don't use imports option for WDL, only for CWL
-        if (importsZip == null || abstractEntryClient instanceof ToolClient || Objects.equals(languageType, LanguageType.WDL)) {
+        if (zippedEntry == null || abstractEntryClient instanceof ToolClient || Objects.equals(languageType, LanguageType.WDL)) {
             runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath());
         } else {
-            runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", importsZip.getAbsolutePath());
+            runCommand = Lists.newArrayList(primaryDescriptor.getAbsolutePath(), "--inputs", provisionedParameterFile.getAbsolutePath(), "--imports", zippedEntry
+                    .getAbsolutePath());
         }
 
         final String[] s = { "java", "-jar", executionFile.getAbsolutePath(), "run" };
@@ -160,7 +161,7 @@ public class CromwellLauncher extends BaseLauncher {
      */
     private void handleCWLOutputProvisioning(String stdout, String stderr) {
         // Display output information
-        outputIntegrationOutput(importsZip.getParentFile().getAbsolutePath(), stdout,
+        outputIntegrationOutput(zippedEntry.getParentFile().getAbsolutePath(), stdout,
                 stderr, launcherName);
 
         // Grab outputs object from Cromwell output (TODO: This is incredibly fragile)

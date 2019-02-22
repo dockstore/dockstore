@@ -52,7 +52,7 @@ public abstract class BaseLanguageClient {
     // Fields generated during setup and running of entry
     protected File tempLaunchDirectory;
     protected File localPrimaryDescriptorFile;
-    protected File importsZipFile;
+    protected File zippedEntryFile;
     protected String selectedParameterFile;
     protected File provisionedParameterFile;
     protected String workingDirectory;
@@ -95,7 +95,7 @@ public abstract class BaseLanguageClient {
 
     /**
      * Download files and put them in a temporary directory
-     * Must set the variables localPrimaryDescriptorFile, importsZipFile, and provisionedParameterFile
+     * Must set the variables localPrimaryDescriptorFile, zippedEntryFile, and provisionedParameterFile
      */
     public abstract void downloadFiles();
 
@@ -153,7 +153,7 @@ public abstract class BaseLanguageClient {
             // Provision the input files
             provisionedParameterFile = provisionInputFiles();
         } catch (ApiException ex) {
-            if (abstractEntryClient.getEntryType().toLowerCase().equals("tool")) {
+            if (abstractEntryClient.getEntryType().equalsIgnoreCase("tool")) {
                 exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
                         ENTRY_NOT_FOUND);
             } else {
@@ -165,7 +165,7 @@ public abstract class BaseLanguageClient {
         }
 
         // Update the launcher with references to the files to be launched
-        launcher.setFiles(localPrimaryDescriptorFile, importsZipFile, provisionedParameterFile, selectedParameterFile, workingDirectory);
+        launcher.setFiles(localPrimaryDescriptorFile, zippedEntryFile, provisionedParameterFile, selectedParameterFile, workingDirectory);
 
         try {
             // Attempt to run launcher

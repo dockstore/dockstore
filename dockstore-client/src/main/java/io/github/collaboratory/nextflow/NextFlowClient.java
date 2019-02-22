@@ -59,7 +59,7 @@ public class NextFlowClient extends BaseLanguageClient implements LanguageClient
             String mainScript = configuration.getString("manifest.mainScript", "main.nf");
             localPrimaryDescriptorFile = new File(mainScript);
             tempLaunchDirectory = localPrimaryDescriptorFile.getParentFile();
-            importsZipFile = null; // No imports
+            zippedEntryFile = null; // No imports
         } else {
             throw new UnsupportedOperationException("Remote entry not supported yet");
         }
