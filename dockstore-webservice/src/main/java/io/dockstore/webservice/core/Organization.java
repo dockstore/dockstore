@@ -119,7 +119,6 @@ public class Organization implements Serializable, Aliasable {
     private Timestamp dbUpdateDate;
 
     @Column
-    //@Pattern(regexp = "((https://avatars)\\d(\\.githubusercontent.com\\/u\\/)(.*))|((https://www.gravatar.com/avatar/)(.*))")
     @Pattern(regexp = "(https://www.gravatar.com/avatar/)(.*)(?i)(\\.jpg|\\.jpeg|\\.png)(&s=500)")
     @ApiModelProperty(value = "URL of avatar on GitHub or gravatar associated with email that can be selected by the user", position = 9)
     private String avatarUrl;
