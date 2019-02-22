@@ -120,7 +120,7 @@ public class Organization implements Serializable, Aliasable {
 
     @Column
     @Pattern(regexp = "(https://www.gravatar.com/avatar/)(.*)(?i)(\\.jpg|\\.jpeg|\\.png)(&s=500)")
-    @ApiModelProperty(value = "URL of avatar on GitHub or gravatar associated with email that can be selected by the user", position = 9)
+    @ApiModelProperty(value = "Logo URL that's been filtered through gravatar", position = 9)
     private String avatarUrl;
 
     public long getId() {
