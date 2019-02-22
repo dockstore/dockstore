@@ -49,24 +49,24 @@ public final class SwaggerUtility {
     }
 
     public static void unzipFile(File zipFile, File unzipDirectory, boolean deleteZip) throws IOException {
-        ZipFile zipFileActual = new ZipFile(zipFile);
-        zipFileActual.stream().forEach((ZipEntry zipEntry) -> {
-            if (!zipEntry.isDirectory()) {
-                String fileName = zipEntry.getName();
-                File newFile = new File(unzipDirectory, fileName);
-                try {
-                    newFile.getParentFile().mkdirs();
-                    FileUtils.copyInputStreamToFile(zipFileActual.getInputStream(zipEntry), newFile);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                } finally {
-                    if (deleteZip) {
-                        FileUtils.deleteQuietly(zipFile);
+        try (ZipFile zipFileActual = new ZipFile(zipFile)) {
+            zipFileActual.stream().forEach((ZipEntry zipEntry) -> {
+                if (!zipEntry.isDirectory()) {
+                    String fileName = zipEntry.getName();
+                    File newFile = new File(unzipDirectory, fileName);
+                    try {
+                        newFile.getParentFile().mkdirs();
+                        FileUtils.copyInputStreamToFile(zipFileActual.getInputStream(zipEntry), newFile);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        if (deleteZip) {
+                            FileUtils.deleteQuietly(zipFile);
+                        }
                     }
                 }
-            }
-        });
-        zipFileActual.close();
+            });
+        }
     }
 
     /**
