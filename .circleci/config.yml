@@ -8,10 +8,10 @@ jobs:
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: dockstore-{{ checksum "pom.xml" }}
       - run: mvn clean install # run the actual tests
-      - run: rm -rf ~/.m2/repository/io/dockstore # clean the cache
+      - run: # clean the cache
           command: |
-            rm -rf ~/.m2/repository/io/dockstore # clean the cache
-            rm -rf ~/.m2/repository/.cache/download-maven-plugin directory # more clean cache
+            rm -rf ~/.m2/repository/io/dockstore
+            rm -rf ~/.m2/repository/.cache/download-maven-plugin directory
       - save_cache: # saves the project dependencies
           paths:
             - ~/.m2
