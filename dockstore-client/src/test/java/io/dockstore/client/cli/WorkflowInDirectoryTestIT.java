@@ -42,7 +42,7 @@ public class WorkflowInDirectoryTestIT {
 
     @BeforeClass
     public static void setup() {
-        configFile = new File(ResourceHelpers.resourceFilePath("config"));
+        configFile = new File(ResourceHelpers.resourceFilePath("clientConfig"));
     }
 
     /**
