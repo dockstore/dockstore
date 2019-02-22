@@ -172,7 +172,7 @@ public abstract class LauncherIT {
 
     @Test
     public void testCheckingSystemDependencies() {
-        MetadataApi metadataApi = new MetadataApi(Configuration.getDefaultApiClient());
+        MetadataApi metadataApi = new MetadataApi(Configuration.getDefaultApiClient().setBasePath("http://localhost:8080"));
         CWLRunnerFactory.setConfig(Utilities.parseConfig(getConfigFile()));
         CWLRunnerInterface cwlrunner = CWLRunnerFactory.createCWLRunner();
         cwlrunner.checkForCWLDependencies(metadataApi);

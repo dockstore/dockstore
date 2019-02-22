@@ -83,10 +83,10 @@ public class GeneralWorkflowRegressionIT extends BaseIT {
         dockstore = temporaryFolder.newFile("dockstore");
         FileUtils.copyURLToFile(url, dockstore);
         assertTrue(dockstore.setExecutable(true));
-        url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/master/checker-input-cwl.json");
+        url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/1.6.0/checker-input-cwl.json");
         md5sumJson = temporaryFolder.newFile("md5sum-wrapper-tool.json");
         FileUtils.copyURLToFile(url, md5sumJson);
-        url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/master/md5sum.input");
+        url = new URL("https://raw.githubusercontent.com/DockstoreTestUser2/md5sum-checker/1.6.0/md5sum.input");
         File md5sumInput = temporaryFolder.newFile("md5sum.input");
         FileUtils.copyURLToFile(url, md5sumInput);
     }
