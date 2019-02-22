@@ -70,7 +70,7 @@ public final class ZipSourceFileHelper {
             }
             try (ZipFile zipFile = new ZipFile(tempZip)) {
                 validateZip(zipFile, ZIP_ENTRIES_LIMIT, ZIP_SIZE_LIMIT);
-                return ZipSourceFileHelper.sourceFilesFromZip(zipFile, fileType);
+                return sourceFilesFromZip(zipFile, fileType);
             }
         } catch (Exception e) {
             throw new CustomWebApplicationException("Error reading request", HttpStatus.SC_BAD_REQUEST);

@@ -55,6 +55,7 @@ import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -176,7 +177,8 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @UnitOfWork
     @ApiOperation(nickname = "Post a zip", value = "Creates a new revision of a hosted workflow",
             authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
-    public Workflow addZip(@Auth User user, @PathParam("entryId") Long entryId, @RequestBody InputStream payload) {
+    public Workflow addZip(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "hosted entry ID")
+        @PathParam("entryId") Long entryId, @ApiParam(value = "zip") @RequestBody InputStream payload) {
         final Workflow workflow = getEntryDAO().findById(entryId);
         checkEntry(workflow);
         checkHosted(workflow);
@@ -185,6 +187,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         final WorkflowVersion version = getVersion(workflow);
         this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
         version.setWorkflowPath(sourceFiles.getPrimaryDescriptor().getPath());
+        version.setName(calculateNextVersionName(workflow.getVersions()));
         return this.saveVersion(user, entryId, workflow, version, new HashSet(sourceFiles.getAllDescriptors()), Optional.of(sourceFiles.getPrimaryDescriptor()));
     }
 

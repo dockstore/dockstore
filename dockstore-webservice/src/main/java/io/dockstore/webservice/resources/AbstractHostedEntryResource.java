@@ -328,13 +328,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private Set<SourceFile> handleSourceFileMerger(Long entryId, Set<SourceFile> sourceFiles, T entry, U tag) {
         Set<U> versions = entry.getVersions();
         Map<String, SourceFile> map = new HashMap<>();
+        tag.setName(calculateNextVersionName(versions));
 
         if (versions.size() > 0) {
             // get the last one and modify files accordingly
-            Comparator<Version> comp = Comparator.comparingInt(p -> Integer.parseInt(p.getName()));
-            // there should always be a max with size() > 0
-            U versionWithTheLargestName = versions.stream().max(comp).orElseThrow(RuntimeException::new);
-            tag.setName(String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
+            U versionWithTheLargestName = versionWithLargestName(versions);
             // carry over old files
             versionWithTheLargestName.getSourceFiles().forEach(v -> {
                 SourceFile newfile = new SourceFile();
@@ -368,7 +366,6 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             }
         } else {
             // for brand new hosted tools
-            tag.setName("1");
             sourceFiles.forEach(f -> map.put(f.getPath(), f));
         }
         persistSourceFiles(tag, map.values());
@@ -382,6 +379,28 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
             long l = fileDAO.create(e);
             tag.getSourceFiles().add(fileDAO.findById(l));
         }
+    }
+
+    /**
+     * Calculates the next version name. Currently assumes versions are always stringified numbers, and returns
+     * the highest number + 1 as a string. Need to update when we support arbitrary names for the version.
+     * @param versions
+     * @return
+     */
+    protected String calculateNextVersionName(Set<U> versions) {
+        if (versions.isEmpty()) {
+            return "1";
+        } else {
+            U versionWithTheLargestName = versionWithLargestName(versions);
+            return (String.valueOf(Integer.parseInt(versionWithTheLargestName.getName()) + 1));
+
+        }
+    }
+
+    private U versionWithLargestName(Set<U> versions) {
+        Comparator<Version> comp = Comparator.comparingInt(p -> Integer.parseInt(p.getName()));
+        // there should always be a max with size() > 0
+        return versions.stream().max(comp).orElseThrow(RuntimeException::new);
     }
 
 }
