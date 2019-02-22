@@ -6000,6 +6000,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6015,10 +6019,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6184,6 +6184,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6199,10 +6203,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6448,6 +6448,13 @@ components:
         topic:
           type: string
           description: Short description of the organization
+        displayName:
+          type: string
+          description: Display name for an organization (Ex. Ontario Institute for Cancer
+            Research). Not used for links.
+          minLength: 3
+          maxLength: 50
+          pattern: "[\\w\\p{Punct} ]*"
     OrganizationUser:
       type: object
       required:
@@ -7128,6 +7135,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7143,10 +7154,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

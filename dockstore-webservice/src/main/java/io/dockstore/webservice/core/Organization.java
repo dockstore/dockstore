@@ -86,6 +86,12 @@ public class Organization implements Serializable {
     @ApiModelProperty(value = "Short description of the organization", position = 8)
     private String topic;
 
+    @Column(nullable = false, unique = true)
+    @Pattern(regexp = "[\\w\\p{Punct} ]*")
+    @Size(min = 3, max = 50)
+    @ApiModelProperty(value = "Display name for an organization (Ex. Ontario Institute for Cancer Research). Not used for links.", position = 9)
+    private String displayName;
+
     @JsonIgnore
     @OneToMany(mappedBy = "organization")
     private Set<Collection> collections = new HashSet<>();
@@ -202,6 +208,14 @@ public class Organization implements Serializable {
 
     public void setStatus(ApplicationState status) {
         this.status = status;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     public enum ApplicationState { PENDING, REJECTED, APPROVED }

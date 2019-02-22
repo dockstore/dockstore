@@ -194,6 +194,11 @@ components:
           type: string
         description:
           type: string
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w\p{Punct} ]*'
+          type: string
         email:
           type: string
         id:
@@ -1030,7 +1035,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       parameters:
       - in: path
         name: organization
@@ -1045,7 +1050,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       responses:
         default:
           content:
@@ -3531,7 +3536,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -3647,7 +3652,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
@@ -4023,7 +4028,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:

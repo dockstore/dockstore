@@ -235,4 +235,19 @@
                       tableName="event"/>
         <sql dbms="postgres">ALTER SEQUENCE organisation_id_seq RENAME TO organization_id_seq</sql>
     </changeSet>
+
+    <changeSet author="aduncan" id="addDisplayNameToOrganization">
+        <addColumn tableName="organization">
+            <column name="displayname" type="varchar(50 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="aduncan" id="addDisplayNameToOrganizationUniqueConstraint">
+        <update tableName="organization">
+            <column name="displayname" valueComputed="name"/>
+            <where>displayname is null</where>
+        </update>
+        <addUniqueConstraint columnNames="displayname" constraintName="uk_displayName" tableName="organization"/>
+    </changeSet>
 </databaseChangeLog>
