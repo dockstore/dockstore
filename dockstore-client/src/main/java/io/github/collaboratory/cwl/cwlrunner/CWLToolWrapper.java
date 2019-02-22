@@ -25,9 +25,7 @@ import javax.ws.rs.ProcessingException;
 import com.google.common.base.Joiner;
 import io.dockstore.client.cli.ArgumentUtility;
 import io.dockstore.client.cli.Client;
-import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
-import io.swagger.client.Configuration;
 import io.swagger.client.api.MetadataApi;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 
@@ -35,7 +33,7 @@ import static io.dockstore.common.PipHelper.convertPipRequirementsStringToMap;
 
 public class CWLToolWrapper implements CWLRunnerInterface {
     @Override
-    public void checkForCWLDependencies() {
+    public void checkForCWLDependencies(MetadataApi metadataApi) {
         final String[] s1 = { "cwltool", "--version" };
         final ImmutablePair<String, String> pair1 = io.cwl.avro.Utilities
                 .executeCommand(Joiner.on(" ").join(Arrays.asList(s1)), false, com.google.common.base.Optional.absent(),
@@ -50,11 +48,10 @@ public class CWLToolWrapper implements CWLRunnerInterface {
         String[] split = pair2.getKey().split(" ");
         final String schemaSaladVersion = split[split.length - 1].trim();
 
-        ApiClient defaultApiClient = Configuration.getDefaultApiClient();
-        MetadataApi metadataApi = new MetadataApi(defaultApiClient);
         try {
+            String clientVersion = Client.getClientVersion();
             String runnerDependencies = metadataApi
-                .getRunnerDependencies(Client.getClientVersion(), "2", "cwltool", "text");
+                .getRunnerDependencies(clientVersion, "2", "cwltool", "text");
             Map<String, String> stringStringMap = convertPipRequirementsStringToMap(runnerDependencies);
             final String expectedCwltoolVersion = stringStringMap.get("cwltool");
             final String expectedSchemaSaladVersion = stringStringMap.get("schema-salad");
