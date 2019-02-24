@@ -107,36 +107,48 @@ public final class ZipSourceFileHelper {
      */
     static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
         Map<String, Object> dockstoreYml = readDockstoreYml(zipFile);
-        Object primaryDescriptorName = dockstoreYml.get("primaryDescriptor");
+        Object primaryDescriptor = dockstoreYml.get("primaryDescriptor");
         List<String> testParameterFiles = (List<String>)dockstoreYml.get("testParameterFiles");
-        if (primaryDescriptorName instanceof String) {
-            String theName = (String)primaryDescriptorName;
-            checkWorkflowType(workflowFileType, theName);
-            ZipEntry primaryDescriptor = zipFile.stream()
-                    .filter(zipEntry -> theName.equals(zipEntry.getName()))
+        if (primaryDescriptor instanceof String) {
+            String primaryDescriptorName = (String)primaryDescriptor;
+            checkWorkflowType(workflowFileType, primaryDescriptorName);
+            zipFile.stream()
+                    .filter(zipEntry -> primaryDescriptorName.equals(zipEntry.getName()))
                     .findFirst()
-                    .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + theName, HttpStatus.SC_BAD_REQUEST));
-            final List<SourceFile> sourceFiles = zipFile.stream().map(zipEntry -> {
-                SourceFile sourceFile = new SourceFile();
-                if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
-                    sourceFile.setType(paramFileType(workflowFileType));
-                } else if (".dockstore.yml".equals(zipEntry.getName())) {
-                    sourceFile.setType(SourceFile.FileType.DOCKSTORE_YML);
-                } else {
-                    sourceFile.setType(workflowFileType);
-                }
-                sourceFile.setPath(zipEntry.getName());
-                sourceFile.setAbsolutePath(zipEntry.getName());
-                sourceFile.setContent(getContent(zipFile, zipEntry));
-                return sourceFile;
-            }).filter(Objects::nonNull).collect(Collectors.toList());
+                    .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + primaryDescriptorName, HttpStatus.SC_BAD_REQUEST));
+            final List<SourceFile> sourceFiles = zipFile
+                    .stream()
+                    .filter(zipEntry -> !zipEntry.isDirectory())
+                    .map(zipEntry -> {
+                        SourceFile sourceFile = new SourceFile();
+                        if (testParameterFiles != null && testParameterFiles.contains(zipEntry.getName())) {
+                            sourceFile.setType(paramFileType(workflowFileType));
+                        } else if (".dockstore.yml".equals(zipEntry.getName())) {
+                            sourceFile.setType(SourceFile.FileType.DOCKSTORE_YML);
+                        } else {
+                            sourceFile.setType(workflowFileType);
+                        }
+                        final String path = addLeadingSlashIfNecessary(zipEntry.getName());
+                        sourceFile.setPath(path);
+                        sourceFile.setAbsolutePath(path);
+                        sourceFile.setContent(getContent(zipFile, zipEntry));
+                        return sourceFile;
+                    }).filter(Objects::nonNull).collect(Collectors.toList());
+            final String pdName = addLeadingSlashIfNecessary(primaryDescriptorName);
             return new SourceFiles(
                     // Guaranteed to find primary descriptor, or we would have thrown, above
-                    sourceFiles.stream().filter(sf -> sf.getPath().equals(primaryDescriptor.getName())).findFirst().get(), sourceFiles);
+                    sourceFiles.stream().filter(sf -> sf.getPath().equals(pdName)).findFirst().get(), sourceFiles);
         } else {
             throw new CustomWebApplicationException("Invalid or no primary descriptor specified in .dockstore.yml",
                     HttpStatus.SC_BAD_REQUEST);
         }
+    }
+
+    private static String addLeadingSlashIfNecessary(final String name) {
+        if (name.startsWith("/")) {
+            return name;
+        }
+        return "/" + name;
     }
 
     private static void checkWorkflowType(SourceFile.FileType workflowFileType, String theName) {
