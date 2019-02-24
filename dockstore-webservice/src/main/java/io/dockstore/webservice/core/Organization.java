@@ -119,8 +119,8 @@ public class Organization implements Serializable, Aliasable {
     private Timestamp dbUpdateDate;
 
     @Column
-    @Pattern(regexp = "(https://www.gravatar.com/avatar/)(.*)(?i)(\\.jpg|\\.jpeg|\\.png)(&s=500)")
-    @ApiModelProperty(value = "Logo URL that's been filtered through gravatar", position = 9)
+    @Pattern(regexp = "(.*)(?i)(\\.jpg|\\.jpeg|\\.png)(&s=500)?")
+    @ApiModelProperty(value = "Logo URL", position = 9)
     private String avatarUrl;
 
     public long getId() {
