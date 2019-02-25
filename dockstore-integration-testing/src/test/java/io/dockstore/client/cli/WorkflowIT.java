@@ -363,10 +363,12 @@ public class WorkflowIT extends BaseIT {
 
         // download and unzip via CLI
         Client.main(new String[] { "--config", ResourceHelpers.resourceFilePath("config_file2.txt"), "workflow", "download", "--entry", toolpath + ":" + workflowVersion.getName(), "--script" });
-        zipFile.stream().forEach(entry -> {
-            File innerFile = new File(System.getProperty("user.dir"),entry.getName());
-            assert(innerFile.exists());
-            assert(innerFile.delete());
+        zipFile.stream().forEach((ZipEntry entry) -> {
+            if (!(entry).isDirectory()) {
+                File innerFile = new File(System.getProperty("user.dir"), entry.getName());
+                assert (innerFile.exists());
+                assert (innerFile.delete());
+            }
         });
 
         // download zip via CLI

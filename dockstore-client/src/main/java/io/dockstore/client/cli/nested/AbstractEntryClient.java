@@ -981,26 +981,24 @@ public abstract class AbstractEntryClient<T> {
     private void launchCwl(String entry, final List<String> args, boolean isLocalEntry) throws ApiException, IOException {
         final String yamlRun = optVal(args, "--yaml", null);
         String jsonRun = optVal(args, "--json", null);
-        final String csvRuns = optVal(args, "--tsv", null);
         final String uuid = optVal(args, "--uuid", null);
 
-        if (!(yamlRun != null ^ jsonRun != null ^ csvRuns != null)) {
-            errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
+        if (!(yamlRun != null ^ jsonRun != null)) {
+            errorMessage("One of  --json or --yaml is required", CLIENT_ERROR);
         }
         CWLClient client = new CWLClient(this);
-        client.launch(entry, isLocalEntry, yamlRun, jsonRun, csvRuns, null, uuid);
+        client.launch(entry, isLocalEntry, yamlRun, jsonRun, null, uuid);
     }
 
     /**
-     * Returns the first path that is not null and is not remote
+     * Returns the first path that is not null and is not remote (YAML preference)
      *
      * @param yamlRun The yaml file path
      * @param jsonRun The json file path
-     * @param csvRun  The csv file path
-     * @return
+     * @return Path to first not null file
      */
-    public String getOriginalTestParameterFilePath(String yamlRun, String jsonRun, String csvRun) {
-        java.util.Optional<String> s = Stream.of(yamlRun, jsonRun, csvRun).filter(Objects::nonNull).findFirst();
+    public String getFirstNotNullParameterFile(String yamlRun, String jsonRun) {
+        Optional<String> s = Stream.of(yamlRun, jsonRun).filter(Objects::nonNull).findFirst();
         if (s.isPresent() && Paths.get(s.get()).toFile().exists()) {
             // convert relative path to absolute path
             return s.get();
@@ -1033,14 +1031,14 @@ public abstract class AbstractEntryClient<T> {
         final String wdlOutputTarget = optVal(args, "--wdl-output-target", null);
         final String uuid = optVal(args, "--uuid", null);
         WDLClient client = new WDLClient(this);
-        client.launch(entry, isLocalEntry, yamlRun, jsonRun, null, wdlOutputTarget, uuid);
+        client.launch(entry, isLocalEntry, yamlRun, jsonRun, wdlOutputTarget, uuid);
     }
 
     private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
         final String json = reqVal(args, "--json");
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);
-        client.launch(entry, isLocalEntry, null, json, null, null, uuid);
+        client.launch(entry, isLocalEntry, null, json, null, uuid);
     }
 
     private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {
@@ -1362,7 +1360,6 @@ public abstract class AbstractEntryClient<T> {
         out("Optional parameters:");
         out("  --json <json file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
         out("  --yaml <yaml file>                  Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs");
-        out("  --tsv <tsv file>                    One row corresponds to parameters for one run in the dockstore (Only for CWL)");
         out("  --descriptor <descriptor type>      Descriptor type used to launch workflow. Defaults to " + CWL_STRING);
         if (!(this instanceof CheckerClient)) {
             out("  --local-entry                       Allows you to specify a full path to a local descriptor for --entry instead of an entry path");

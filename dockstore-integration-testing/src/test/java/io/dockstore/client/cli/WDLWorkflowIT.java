@@ -108,7 +108,7 @@ public class WDLWorkflowIT extends BaseIT {
         LanguageClientInterface wdlClient = LanguageClientFactory.createLanguageCLient(main, LanguageType.WDL)
             .orElseThrow(RuntimeException::new);
         final long run = wdlClient
-            .launch(UNIFIED_WORKFLOW + ":" + testVersion, false, null, tempFile.toFile().getAbsolutePath(), null, null, null);
+            .launch(UNIFIED_WORKFLOW + ":" + testVersion, false, null, tempFile.toFile().getAbsolutePath(), null, null);
         Assert.assertEquals(0, run);
     }
 
