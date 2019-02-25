@@ -119,7 +119,7 @@ public class Organization implements Serializable, Aliasable {
     private Timestamp dbUpdateDate;
 
     @Column
-    @Pattern(regexp = "(.*)(?i)(\\.jpg|\\.jpeg|\\.png)(&s=500)?")
+    @Pattern(regexp = "(.*)(?i)(\\.jpg|\\.jpeg|\\.png)")
     @ApiModelProperty(value = "Logo URL", position = 9)
     private String avatarUrl;
 
