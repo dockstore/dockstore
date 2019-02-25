@@ -248,6 +248,17 @@
             <column name="displayname" valueComputed="name"/>
             <where>displayname is null</where>
         </update>
-        <addUniqueConstraint columnNames="displayname" constraintName="uk_displayName" tableName="organization"/>
+        <addUniqueConstraint columnNames="displayname" constraintName="uk_orgDisplayName" tableName="organization"/>
+    </changeSet>
+
+    <changeSet author="aduncan (generated)" id="addDisplayNameToCollection">
+        <addColumn tableName="collection">
+            <column name="displayname" type="varchar(50 BYTE)">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="aduncan (generated)" id="addDisplayNameToCollectionUniqueConstraint">
+        <addUniqueConstraint columnNames="displayname" constraintName="uk_collDisplayName" tableName="collection"/>
     </changeSet>
 </databaseChangeLog>

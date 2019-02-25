@@ -18,6 +18,11 @@ components:
           description: Description of the collection
           example: Alignment
           type: string
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w\p{Punct} ]*'
+          type: string
         entries:
           items:
             $ref: '#/components/schemas/Entry'
@@ -1664,7 +1669,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -3536,7 +3541,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -3652,7 +3657,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId
@@ -4054,7 +4059,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1

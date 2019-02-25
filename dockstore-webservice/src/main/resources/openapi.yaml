@@ -5947,6 +5947,13 @@ components:
         description:
           type: string
           description: Description of the collection
+        displayName:
+          type: string
+          description: Display name for a collection (Ex. Recommended Alignment
+            Algorithms). Not used for links.
+          minLength: 3
+          maxLength: 50
+          pattern: "[\\w\\p{Punct} ]*"
     CollectionOrganization:
       type: object
       properties:
