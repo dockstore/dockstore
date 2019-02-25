@@ -1,7 +1,8 @@
 {
   "bam_input": {
     "class": "File",
-    "path": "https://github.com/CancerCollaboratory/dockstore-tool-bamstats/raw/1.25-6_1.0/rna.SRR948778.bam"
+    "path": "https://github.com/CancerCollaboratory/dockstore-tool-bamstats/raw/1.25-6_1.0/rna.SRR948778.bam",
+    "format": "http://edamontology.org/format_2572"
   },
   "bamstats_report": {
     "class": "File",

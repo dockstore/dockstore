@@ -46,7 +46,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @ApiModel(value = "Token", description = "Access tokens for this web service and integrated services like quay.io and github")
 @Entity
-@Table(name = "token", uniqueConstraints = @UniqueConstraint(columnNames = { "username", "tokenSource" }))
+@Table(name = "token", uniqueConstraints = @UniqueConstraint(name = "one_token_link_per_identify", columnNames = { "username", "tokenSource" }))
 @NamedQueries({
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findByContent", query = "SELECT t FROM Token t WHERE t.content = :content"),
     @NamedQuery(name = "io.dockstore.webservice.core.Token.findByUserId", query = "SELECT t FROM Token t WHERE t.userId = :userId"),
@@ -82,7 +82,6 @@ public class Token implements Comparable<Token> {
     @ApiModelProperty(position = 4)
     private String refreshToken;
 
-    // TODO: tokens will need to be associated with a particular user
     @Column
     @ApiModelProperty(position = 5)
     private long userId;

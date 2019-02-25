@@ -6,12 +6,13 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1183288.svg)](https://doi.org/10.5281/zenodo.1183288)
 [![Uptime Robot status](https://img.shields.io/uptimerobot/status/m779655940-a297af07d1cac2d6ad40c491.svg)]()
 [![license](https://img.shields.io/hexpm/l/plug.svg?maxAge=2592000)](LICENSE)
+[![CircleCI](https://circleci.com/gh/ga4gh/dockstore/tree/develop.svg?style=svg)](https://circleci.com/gh/ga4gh/dockstore/tree/develop)
 
 
 # Dockstore
 
 Dockstore provides a place for users to share tools encapsulated in Docker and described with the Common 
-Workflow Language (CWL) or WDL (Workflow Description Language). This enables scientists to share analytical 
+Workflow Language (CWL), WDL (Workflow Description Language), or Nextflow. This enables scientists to share analytical 
 workflows so that they are  machine readable as well as runnable in a variety of environments. While the 
 Dockstore is focused on serving researchers in the biosciences, the combination of Docker + CWL/WDL can be used by 
 anyone to describe the tools and services in their Docker images in a standardized, machine-readable way.  

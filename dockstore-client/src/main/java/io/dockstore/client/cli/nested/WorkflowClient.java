@@ -376,7 +376,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 .getArbitraryURL("/workflows/" + workflow.getId() + "/zip/" + versionId, new GenericType<byte[]>() {
                 }, workflowsApi.getApiClient());
             workflowsApi.getApiClient().setDebugging(Client.DEBUG.get());
-            File zipFile = new File(zipFilename(workflow));
+            File zipFile = new File(directory, zipFilename(workflow));
             FileUtils.writeByteArrayToFile(zipFile, arbitraryURL, false);
             if (unzip) {
                 SwaggerUtility.unzipFile(zipFile, directory);
@@ -407,7 +407,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         String localEntry = commandLaunch.localEntry;
         String jsonRun = commandLaunch.json;
         String yamlRun = commandLaunch.yaml;
-        String tsvRun = commandLaunch.tsv;
         String wdlOutputTarget = commandLaunch.wdlOutputTarget;
         String uuid = commandLaunch.uuid;
 
@@ -429,11 +428,11 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
                         switch (descriptor) {
                         case CWL_STRING:
-                            if (!(yamlRun != null ^ jsonRun != null ^ tsvRun != null)) {
+                            if (!(yamlRun != null ^ jsonRun != null)) {
                                 errorMessage("One of  --json, --yaml, and --tsv is required", CLIENT_ERROR);
                             } else {
                                 try {
-                                    languageClientInterface.launch(entry, false, yamlRun, jsonRun, tsvRun, null, uuid);
+                                    languageClientInterface.launch(entry, false, yamlRun, jsonRun, null, uuid);
                                 } catch (IOException e) {
                                     errorMessage("Could not launch entry", IO_ERROR);
                                 }
@@ -445,7 +444,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                                 errorMessage("dockstore: missing required flag " + "--json", Client.CLIENT_ERROR);
                             } else {
                                 try {
-                                    languageClientInterface.launch(entry, false, null, jsonRun, null, wdlOutputTarget, uuid);
+                                    languageClientInterface.launch(entry, false, null, jsonRun, wdlOutputTarget, uuid);
                                 } catch (Exception e) {
                                     errorMessage("Could not launch entry", IO_ERROR);
                                 }
@@ -459,7 +458,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         errorMessage("Could not get workflow: " + path, ENTRY_NOT_FOUND);
                     }
                 } else {
-                    checkEntryFile(localEntry, jsonRun, yamlRun, tsvRun, wdlOutputTarget, uuid);
+                    checkEntryFile(localEntry, jsonRun, yamlRun, wdlOutputTarget, uuid);
                 }
             } else {
                 out("You can only use one of --local-entry and --entry at a time.");
@@ -481,7 +480,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
      *              OR proceed with launching the entry file (if it's valid)
      * @param uuid
      */
-    private void checkEntryFile(String entry, String jsonRun, String yamlRun, String tsvRuns, String wdlOutputTarget, String uuid) {
+    private void checkEntryFile(String entry, String jsonRun, String yamlRun, String wdlOutputTarget, String uuid) {
         File file = new File(entry);
         LanguageType ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
@@ -495,13 +494,13 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         try {
             switch (ext) {
             case CWL:
-                languageCLient.launch(entry, true, yamlRun, jsonRun, tsvRuns, null, uuid);
+                languageCLient.launch(entry, true, yamlRun, jsonRun, null, uuid);
                 break;
             case WDL:
-                languageCLient.launch(entry, true, yamlRun, jsonRun, null, wdlOutputTarget, uuid);
+                languageCLient.launch(entry, true, yamlRun, jsonRun, wdlOutputTarget, uuid);
                 break;
             case NEXTFLOW:
-                languageCLient.launch(entry, true, null, jsonRun, null, null, uuid);
+                languageCLient.launch(entry, true, null, jsonRun, null, uuid);
                 break;
             default:
                 LanguageType content = checkFileContent(file);             //check the file content (wdl,cwl or "")
@@ -509,17 +508,17 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 case CWL:
                     out("This is a CWL file.. Please put an extension to the entry file name.");
                     out("Launching entry file as a CWL file..");
-                    languageCLient.launch(entry, true, yamlRun, jsonRun, tsvRuns, null, uuid);
+                    languageCLient.launch(entry, true, yamlRun, jsonRun, null, uuid);
                     break;
                 case WDL:
                     out("This is a WDL file.. Please put an extension to the entry file name.");
                     out("Launching entry file as a WDL file..");
-                    languageCLient.launch(entry, true, null, jsonRun, null, wdlOutputTarget, uuid);
+                    languageCLient.launch(entry, true, null, jsonRun, wdlOutputTarget, uuid);
                     break;
                 case NEXTFLOW:
                     out("This is a Nextflow file.. Please put an extension to the entry file name.");
                     out("Launching entry file as a NextFlow file..");
-                    languageCLient.launch(entry, true, null, jsonRun, null, null, uuid);
+                    languageCLient.launch(entry, true, null, jsonRun, null, uuid);
                     break;
                 default:
                     errorMessage("Entry file is invalid. Please enter a valid CWL/WDL file with the correct extension on the file name.",
@@ -1165,7 +1164,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
     @Parameters(separators = "=", commandDescription = "Launch an entry locally or remotely.")
     private static class CommandLaunch {
-        @Parameter(names = "--local-entry", description = "Allows you to specify a full path to a lcoal descriptor instead of an entry path")
+        @Parameter(names = "--local-entry", description = "Allows you to specify a full path to a local descriptor instead of an entry path")
         private String localEntry;
         @Parameter(names = "--entry", description = "Complete workflow path in the Dockstore (ex. NCI-GDC/gdc-dnaseq-cwl/GDC_DNASeq:master)")
         private String entry;
@@ -1173,8 +1172,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         private String json;
         @Parameter(names = "--yaml", description = "Parameters to the entry in the dockstore, one map for one run, an array of maps for multiple runs")
         private String yaml;
-        @Parameter(names = "--tsv", description = "One row corresponds to parameters for one run in the dockstore (Only for CWL)")
-        private String tsv;
         @Parameter(names = "--wdl-output-target", description = "Allows you to specify a remote path to provision outputs files to (ex: s3://oicr.temp/testing-launcher/")
         private String wdlOutputTarget;
         @Parameter(names = "--help", description = "Prints help for launch command", help = true)

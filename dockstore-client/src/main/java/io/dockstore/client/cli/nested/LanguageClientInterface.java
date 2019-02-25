@@ -53,7 +53,6 @@ public interface LanguageClientInterface {
      * @param isLocalEntry is the descriptor a local file
      * @param yamlRun      runtime descriptor, one of these is required, takes first precedence
      * @param jsonRun      runtime descriptor, one of these is required, takes second precedence
-     * @param csvRuns      runtime descriptor, one of these is required, can be simplified away
      * @param wdlOutputTarget   directory where to drop off output for wdl
      *                          To elaborate, in CWL, the JSON object can specify unique output locations for each file. i.e.
      *                          we want the first output file to go to S3, the second file to go to Synapse, the third file
@@ -64,5 +63,5 @@ public interface LanguageClientInterface {
      * @throws IOException
      * @throws ApiException
      */
-    long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String csvRuns, String wdlOutputTarget, String uuid) throws IOException, ApiException;
+    long launch(String entry, boolean isLocalEntry, String yamlRun, String jsonRun, String wdlOutputTarget, String uuid) throws IOException, ApiException;
 }
