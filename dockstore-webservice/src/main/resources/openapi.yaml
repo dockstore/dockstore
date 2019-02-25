@@ -5953,7 +5953,7 @@ components:
             Algorithms). Not used for links.
           minLength: 3
           maxLength: 50
-          pattern: "[\\w\\p{Punct} ]*"
+          pattern: "[\\w ,_\\-&()']*"
     CollectionOrganization:
       type: object
       properties:
@@ -6461,7 +6461,7 @@ components:
             Research). Not used for links.
           minLength: 3
           maxLength: 50
-          pattern: "[\\w\\p{Punct} ]*"
+          pattern: "[\\w ,_\\-&()']*"
     OrganizationUser:
       type: object
       required:

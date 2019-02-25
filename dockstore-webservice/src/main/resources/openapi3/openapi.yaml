@@ -21,7 +21,7 @@ components:
         displayName:
           maxLength: 50
           minLength: 3
-          pattern: '[\w\p{Punct} ]*'
+          pattern: '[\w ,_\-&()'']*'
           type: string
         entries:
           items:
@@ -202,7 +202,7 @@ components:
         displayName:
           maxLength: 50
           minLength: 3
-          pattern: '[\w\p{Punct} ]*'
+          pattern: '[\w ,_\-&()'']*'
           type: string
         email:
           type: string

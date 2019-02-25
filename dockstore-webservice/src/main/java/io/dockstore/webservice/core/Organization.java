@@ -87,7 +87,7 @@ public class Organization implements Serializable {
     private String topic;
 
     @Column(nullable = false, unique = true)
-    @Pattern(regexp = "[\\w\\p{Punct} ]*")
+    @Pattern(regexp = "[\\w ,_\\-&()']*")
     @Size(min = 3, max = 50)
     @ApiModelProperty(value = "Display name for an organization (Ex. Ontario Institute for Cancer Research). Not used for links.", position = 9)
     private String displayName;

@@ -60,6 +60,10 @@ public class OrganizationIT extends BaseIT {
     // All numbers, too short, bad pattern, too long, foreign characters
     final List<String> badNames = Arrays.asList("1234", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "我喜欢狗");
 
+    final List<String> goodDisplayNames = Arrays.asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
+
+    final List<String> badDisplayNames = Arrays.asList("test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
+
     /**
      * Creates a stub Organization object
      * @return Organization object
@@ -680,6 +684,26 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * Tests that you can create organizations using some unique characters for the display name
+     */
+    @Test
+    public void testCreatedOrganizationWithValidDisplayNames() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        goodDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi, "testname" + goodDisplayNames.indexOf(displayName)));
+    }
+
+    /**
+     * Tests that you cannot create organizations with some display names
+     */
+    @Test
+    public void testCreateOrganizationsWithBadDisplayNames() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        badDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi, "testname" + badDisplayNames.indexOf(displayName)));
+    }
+
+    /**
      * Helper that creates an Organization with a name that should fail
      * @param name
      * @param organizationsApi
@@ -697,6 +721,107 @@ public class OrganizationIT extends BaseIT {
 
         if (!throwsError) {
             fail("Was able to create an Organization with an incorrect name: " + name);
+        }
+    }
+
+    /**
+     * Helper that creates an organization with a display name that should not fail
+     * @param displayName
+     * @param organizationsApi
+     */
+    private void createOrganizationWithValidDisplayName(String displayName, OrganizationsApi organizationsApi, String name) {
+        Organization organization = stubOrgObject();
+        organization.setName(name);
+        organization.setDisplayName(displayName);
+
+        organization = organizationsApi.createOrganization(organization);
+        assertNotNull("Should create the organization", organizationsApi.getOrganizationById(organization.getId()));
+    }
+
+    /**
+     * Helper method that create an organization with a display name that is invalid
+     * @param displayName
+     * @param organizationsApi
+     * @param name
+     */
+    private void createOrganizationWithInvalidDisplayName(String displayName, OrganizationsApi organizationsApi, String name) {
+        Organization organization = stubOrgObject();
+        organization.setName(name);
+        organization.setDisplayName(displayName);
+
+        boolean throwsError = false;
+        try {
+            organizationsApi.createOrganization(organization);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to create an Organization with an incorrect display name: " + displayName);
+        }
+    }
+
+    /**
+     * This tests that you can create collections with unique characters in their display name
+     */
+    @Test
+    public void testCreateCollectionWithValidDisplayNames() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+
+        final Long organizationID = organization.getId();
+        goodDisplayNames.forEach(displayName -> {
+            createCollectionWithValidName(displayName, organizationsApi, organizationID, "testname" + goodDisplayNames.indexOf(displayName));
+        });
+    }
+
+    @Test
+    public void testCreateCollectionWithInvalidDisplayNames() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+
+        final Long organizationID = organization.getId();
+        badDisplayNames.forEach(displayName -> {
+            createCollectionWithBadDisplayName(displayName, organizationsApi, organizationID, "testname" + badDisplayNames.indexOf(displayName));
+        });
+    }
+
+    private void createCollectionWithValidName(String displayName, OrganizationsApi organizationsApi, Long organizationId, String name) {
+        Collection collection = stubCollectionObject();
+        collection.setDisplayName(displayName);
+        collection.setName(name);
+
+        collection = organizationsApi.createCollection(organizationId, collection);
+        assertTrue("Should create the collection", organizationsApi.getCollectionById(organizationId, collection.getId()) != null);
+    }
+
+    /**
+     * Helper that creates an Organization with a display name that should fail
+     * @param name
+     * @param organizationsApi
+     */
+    private void createCollectionWithBadDisplayName(String displayName, OrganizationsApi organizationsApi, Long organizationId, String name) {
+        Collection collection = stubCollectionObject();
+        collection.setName(name);
+        collection.setDisplayName(displayName);
+
+        boolean throwsError = false;
+        try {
+            organizationsApi.createCollection(organizationId, collection);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to create a collection with an incorrect name: " + name);
         }
     }
 

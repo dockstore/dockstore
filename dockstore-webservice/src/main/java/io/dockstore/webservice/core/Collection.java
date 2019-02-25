@@ -62,7 +62,7 @@ public class Collection implements Serializable {
     private String description;
 
     @Column(nullable = false, unique = true)
-    @Pattern(regexp = "[\\w\\p{Punct} ]*")
+    @Pattern(regexp = "[\\w ,_\\-&()']*")
     @Size(min = 3, max = 50)
     @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.", position = 3)
     private String displayName;
