@@ -259,6 +259,10 @@
         </addColumn>
     </changeSet>
     <changeSet author="aduncan (generated)" id="addDisplayNameToCollectionUniqueConstraint">
+        <update tableName="collection">
+            <column name="displayname" valueComputed="name"/>
+            <where>displayname is null</where>
+        </update>
         <addUniqueConstraint columnNames="displayname" constraintName="uk_collDisplayName" tableName="collection"/>
     </changeSet>
 </databaseChangeLog>
