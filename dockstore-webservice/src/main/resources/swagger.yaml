@@ -3949,7 +3949,7 @@ paths:
       description: ""
       operationId: "Post a zip"
       consumes:
-      - "application/octet-stream"
+      - "multipart/form-data"
       produces:
       - "application/json"
       parameters:
@@ -3959,12 +3959,10 @@ paths:
         required: true
         type: "integer"
         format: "int64"
-      - in: "body"
-        name: "body"
-        description: "zip"
+      - name: "file"
+        in: "formData"
         required: false
-        schema:
-          $ref: "#/definitions/InputStream"
+        type: "file"
       responses:
         200:
           description: "successful operation"
@@ -5878,8 +5876,6 @@ definitions:
       \ that describes how to build a particular container image. Examples include\
       \ Dockerfiles for creating Docker images and Singularity recipes for Singularity\
       \ images "
-  InputStream:
-    type: "object"
   Label:
     type: "object"
     required:

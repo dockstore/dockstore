@@ -43,7 +43,8 @@ public class ZipSourceFileHelperTest {
     public void sourceFilesFromZip() throws IOException {
         try (ZipFile smartSeqZipFile = new ZipFile(new File(SMART_SEQ_ZIP_PATH))) {
             final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(smartSeqZipFile, SourceFile.FileType.DOCKSTORE_WDL);
-            Assert.assertEquals("/SmartSeq2SingleSample.wdl", sourceFiles.getPrimaryDescriptor().getPath());
+            Assert.assertEquals("SmartSeq2SingleSample.wdl", sourceFiles.getPrimaryDescriptor().getPath());
+            Assert.assertEquals("/SmartSeq2SingleSample.wdl", sourceFiles.getPrimaryDescriptor().getAbsolutePath());
             Assert.assertEquals(9, sourceFiles.getAllDescriptors().size());
             Assert.assertEquals("Expecting one .dockstore.yml", 1, sourceFiles.getAllDescriptors().stream().filter(sf -> sf.getType() == SourceFile.FileType.DOCKSTORE_YML).count());
         }
@@ -53,7 +54,8 @@ public class ZipSourceFileHelperTest {
     public void sourceFilesFromZipWithFolder() throws IOException {
         try (ZipFile whalesayZipFile = new ZipFile(new File(WHALESAY_ZIP_PATH))) {
             final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromZip(whalesayZipFile, SourceFile.FileType.DOCKSTORE_WDL);
-            Assert.assertEquals("/subdir/Dockstore.wdl", sourceFiles.getPrimaryDescriptor().getPath());
+            Assert.assertEquals("subdir/Dockstore.wdl", sourceFiles.getPrimaryDescriptor().getPath());
+            Assert.assertEquals("/subdir/Dockstore.wdl", sourceFiles.getPrimaryDescriptor().getAbsolutePath());
             Assert.assertEquals(2, sourceFiles.getAllDescriptors().size()); // One yml and one WDL
         }
     }

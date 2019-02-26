@@ -57,9 +57,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.http.HttpStatus;
+import org.glassfish.jersey.media.multipart.FormDataParam;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,14 +171,14 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
 
 
     @POST
-    @Consumes(MediaType.APPLICATION_OCTET_STREAM)
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
     @ApiOperation(nickname = "Post a zip", value = "Creates a new revision of a hosted workflow",
             authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
     public Workflow addZip(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "hosted entry ID")
-        @PathParam("entryId") Long entryId, @ApiParam(value = "zip") @RequestBody InputStream payload) {
+        @PathParam("entryId") Long entryId,  @FormDataParam("file") InputStream payload) {
         final Workflow workflow = getEntryDAO().findById(entryId);
         checkEntry(workflow);
         checkHosted(workflow);

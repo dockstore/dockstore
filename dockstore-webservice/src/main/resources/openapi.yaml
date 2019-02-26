@@ -4321,10 +4321,13 @@ paths:
             format: int64
       requestBody:
         content:
-          application/octet-stream:
+          multipart/form-data:
             schema:
-              $ref: "#/components/schemas/InputStream"
-        description: zip
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
       responses:
         "200":
           description: successful operation
@@ -6342,8 +6345,6 @@ components:
         containerfile is a document that describes how to build a particular
         container image. Examples include Dockerfiles for creating Docker images
         and Singularity recipes for Singularity images "
-    InputStream:
-      type: object
     Label:
       type: object
       required:

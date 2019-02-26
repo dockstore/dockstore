@@ -24,8 +24,20 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 /**
- * Converts the contents of a zip file into a <code>List</code> of <code>SourceFile</code>s, ensuring that
- * no zip exploits (e.g., zip bomb, path traversal) can execute
+ * Converts the contents of a zip file into a <code>SourceFiles</code> object, ensuring that
+ * no zip exploits (e.g., zip bomb, path traversal) can execute.
+ *
+ * It writes out the input stream to a local file. Unfortunately we can't get the compressed
+ * sizes from the request body without saving it to a file first:
+ * https://stackoverflow.com/questions/36045421/java-zipentry-getsize-returns-1
+ *
+ * For protection,
+ * <ol>
+ *     <li>Only write up to ZIP_SIZE_LIMIT of bytes to disk.</li>
+ *     <li>Look at the the compressed sizes and also only allow up to ZIP_SIZE_LIMIT of bytes</li>
+ *     <li>Also ensure that there are no more than ZIP_ENTRIES_LIMIT number of entries, e.g., so</li>
+ * </ol>
+ *
  */
 public final class ZipSourceFileHelper {
 
@@ -128,16 +140,14 @@ public final class ZipSourceFileHelper {
                         } else {
                             sourceFile.setType(workflowFileType);
                         }
-                        final String path = addLeadingSlashIfNecessary(zipEntry.getName());
-                        sourceFile.setPath(path);
-                        sourceFile.setAbsolutePath(path);
+                        sourceFile.setPath(zipEntry.getName());
+                        sourceFile.setAbsolutePath(addLeadingSlashIfNecessary(zipEntry.getName()));
                         sourceFile.setContent(getContent(zipFile, zipEntry));
                         return sourceFile;
                     }).filter(Objects::nonNull).collect(Collectors.toList());
-            final String pdName = addLeadingSlashIfNecessary(primaryDescriptorName);
             return new SourceFiles(
                     // Guaranteed to find primary descriptor, or we would have thrown, above
-                    sourceFiles.stream().filter(sf -> sf.getPath().equals(pdName)).findFirst().get(), sourceFiles);
+                    sourceFiles.stream().filter(sf -> sf.getPath().equals(primaryDescriptorName)).findFirst().get(), sourceFiles);
         } else {
             throw new CustomWebApplicationException("Invalid or no primary descriptor specified in .dockstore.yml",
                     HttpStatus.SC_BAD_REQUEST);

@@ -16,6 +16,9 @@
 
 package io.dockstore.client.cli;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -40,6 +43,7 @@ import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.testing.DropwizardTestSupport;
+import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
@@ -786,10 +790,24 @@ public class SwaggerClientIT extends BaseIT {
         userHostedApi.createHostedTool("hosted1", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "dockstore.org", null);
     }
 
+    @Test
+    public void testUploadZip() {
+        final ApiClient webClient = getWebClient();
+        final HostedApi hostedApi = new HostedApi(webClient);
+        final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
+        final String smartseqZip = ResourceHelpers.resourceFilePath("smarttseq.zip");
+//        try {
+//            hostedApi.addZip(hostedWorkflow.getId(), new io.swagger.client.model.InputStream(new FileInputStream(new File(smartseqZip))));
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+
+    }
+
     /**
      * Tests workflow sharing/permissions.
      *
-     * A longish method, but since we need to set up a hosted to workflow
+     * A longish method, but since we need to set up hosted workflows
      * to do the sharing, but don't want to do that with the other tests,
      * it seemed better to do the setup and variations all in this one method.
      */
