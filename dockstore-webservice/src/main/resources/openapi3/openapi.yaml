@@ -17,6 +17,11 @@ components:
         description:
           description: Description of the collection
           type: string
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
+          type: string
         entries:
           items:
             $ref: '#/components/schemas/Entry'
@@ -196,6 +201,11 @@ components:
           format: date-time
           type: string
         description:
+          type: string
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
           type: string
         email:
           type: string

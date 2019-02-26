@@ -5494,9 +5494,17 @@ definitions:
         type: "string"
         position: 2
         description: "Description of the collection"
-      topic:
+      displayName:
         type: "string"
         position: 3
+        description: "Display name for a collection (Ex. Recommended Alignment Algorithms).\
+          \ Not used for links."
+        minLength: 3
+        maxLength: 50
+        pattern: "[\\w ,_\\-&()']*"
+      topic:
+        type: "string"
+        position: 4
         description: "Short description of the collection"
   CollectionOrganization:
     type: "object"
@@ -6063,6 +6071,14 @@ definitions:
         type: "string"
         position: 8
         description: "Short description of the organization"
+      displayName:
+        type: "string"
+        position: 9
+        description: "Display name for an organization (Ex. Ontario Institute for\
+          \ Cancer Research). Not used for links."
+        minLength: 3
+        maxLength: 50
+        pattern: "[\\w ,_\\-&()']*"
   OrganizationUser:
     type: "object"
     required:
