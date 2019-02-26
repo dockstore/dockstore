@@ -3284,14 +3284,14 @@ paths:
       parameters:
         - name: organizationId
           in: path
-          description: Organization ID.
+          description: Organization ID
           required: true
           schema:
             type: integer
             format: int64
         - name: collectionId
           in: path
-          description: Collection ID.
+          description: Collection ID
           required: true
           schema:
             type: integer
@@ -3309,20 +3309,20 @@ paths:
     put:
       tags:
         - organizations
-      summary: Update an collection's description.
+      summary: Update a collection's description.
       description: Description in markdown
       operationId: updateCollectionDescription
       parameters:
         - name: organizationId
           in: path
-          description: Collection to update description.
+          description: Organization ID
           required: true
           schema:
             type: integer
             format: int64
         - name: collectionId
           in: path
-          description: Collection ID.
+          description: Collection ID
           required: true
           schema:
             type: integer
@@ -6081,10 +6081,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6100,6 +6096,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6265,10 +6265,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6284,6 +6280,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7216,10 +7216,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7235,6 +7231,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

@@ -2997,13 +2997,13 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Organization ID."
+        description: "Organization ID"
         required: true
         type: "integer"
         format: "int64"
       - name: "collectionId"
         in: "path"
-        description: "Collection ID."
+        description: "Collection ID"
         required: true
         type: "integer"
         format: "int64"
@@ -3017,7 +3017,7 @@ paths:
     put:
       tags:
       - "organizations"
-      summary: "Update an collection's description."
+      summary: "Update a collection's description."
       description: "Description in markdown"
       operationId: "updateCollectionDescription"
       produces:
@@ -3025,13 +3025,13 @@ paths:
       parameters:
       - name: "organizationId"
         in: "path"
-        description: "Collection to update description."
+        description: "Organization ID"
         required: true
         type: "integer"
         format: "int64"
       - name: "collectionId"
         in: "path"
-        description: "Collection ID."
+        description: "Collection ID"
         required: true
         type: "integer"
         format: "int64"
@@ -5559,10 +5559,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5578,6 +5574,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5770,10 +5770,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5789,6 +5785,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6806,10 +6806,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6825,6 +6821,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

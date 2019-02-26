@@ -368,16 +368,16 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @Timed
     @Path("{organizationId}/collections/{collectionId}/description")
     @UnitOfWork
-    @ApiOperation(value = "Update an collection's description.", notes = "Description in markdown", authorizations = {
+    @ApiOperation(value = "Update a collection's description.", notes = "Description in markdown", authorizations = {
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection updateCollectionDescription(@ApiParam(hidden = true) @Auth User user,
-            @ApiParam(value = "Collection to update description.", required = true) @PathParam("organizationId") Long organizationId,
-            @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId,
+            @ApiParam(value = "Organization ID", required = true) @PathParam("organizationId") Long organizationId,
+            @ApiParam(value = "Collection ID", required = true) @PathParam("collectionId") Long collectionId,
             @ApiParam(value = "Collections's description in markdown", required = true) String description) {
 
         boolean doesColExistToUser = doesCollectionExistToUser(collectionId, user.getId());
         if (!doesColExistToUser) {
-            String msg = "Collection not found";
+            String msg = "Collection" + collectionId + " not found for organization " + organizationId;
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
@@ -414,8 +414,8 @@ public class CollectionResource implements AuthenticatedResourceInterface {
     @Path("{organizationId}/collections/{collectionId}/description")
     @ApiOperation(value = "Retrieves a collection description by organization ID and collection ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
     public String getCollectionDescription(@ApiParam(hidden = true) @Auth Optional<User> user,
-            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
-            @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId) {
+            @ApiParam(value = "Organization ID", required = true) @PathParam("organizationId") Long organizationId,
+            @ApiParam(value = "Collection ID", required = true) @PathParam("collectionId") Long collectionId) {
         return getCollectionById(user, organizationId, collectionId).getDescription();
     }
 
