@@ -841,6 +841,9 @@ public class OrganizationIT extends BaseIT {
         Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
         long collectionId = collection.getId();
 
+        // approve the org
+       testingPostgres.runUpdateStatement("update organization set status = '"+ io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() +"'");
+
         // set aliases
         final Collection collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
         final Organization organizationWithAlias = organizationsApi
