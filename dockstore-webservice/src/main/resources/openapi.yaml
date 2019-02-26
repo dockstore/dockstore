@@ -2749,7 +2749,7 @@ paths:
     put:
       tags:
         - entries
-      summary: Update the aliases linked to an entry.
+      summary: Update the aliases linked to a entry in Dockstore.
       description: Aliases are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
       operationId: updateAliases
@@ -3030,6 +3030,40 @@ paths:
       security:
         - BEARER:
             []
+  "/organizations/collections/{collectionId}/aliases":
+    put:
+      tags:
+        - organizations
+      summary: Update the aliases linked to a Collection in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateCollectionAliases
+      parameters:
+        - name: collectionId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+      security:
+        - BEARER:
+            []
   "/organizations/name/{name}":
     get:
       tags:
@@ -3103,6 +3137,40 @@ paths:
               $ref: "#/components/schemas/Organization"
         description: Organization to update with.
         required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+      security:
+        - BEARER:
+            []
+  "/organizations/{organizationId}/aliases":
+    put:
+      tags:
+        - organizations
+      summary: Update the aliases linked to a listing in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateOrganizationAliases
+      parameters:
+        - name: organizationId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation
@@ -5933,7 +6001,7 @@ components:
             $ref: "#/components/schemas/Entry"
         aliases:
           type: object
-          description: aliases can be used as an alternate unique id for entries
+          description: aliases can be used as an alternate unique id for collections
           additionalProperties:
             $ref: "#/components/schemas/Alias"
         dbCreateDate:
@@ -6414,7 +6482,7 @@ components:
           description: Implementation specific ID for the organization in this web service
         aliases:
           type: object
-          description: aliases can be used as an alternate unique id for entries
+          description: aliases can be used as an alternate unique id for organizations
           additionalProperties:
             $ref: "#/components/schemas/Alias"
         dbCreateDate:

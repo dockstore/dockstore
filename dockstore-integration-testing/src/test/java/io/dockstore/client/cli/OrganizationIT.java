@@ -822,6 +822,38 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * This tests that aliases can be set on collections and workflows
+     */
+    @Test
+    public void testAliasOperations() {
+        // Setup postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+        Collection stubCollectionTwo = stubCollectionObject();
+        stubCollectionTwo.setName("anothername");
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        long collectionId = collection.getId();
+
+        // set aliases
+        final Collection collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
+        final Organization organizationWithAlias = organizationsApi
+            .updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+
+        //TODO: need a lookup by alias for these tests
+        assertEquals(2, collectionWithAlias.getAliases().size());
+        assertEquals(2, organizationWithAlias.getAliases().size());
+    }
+
+    /**
      * This tests that you can update the name and description of a collection.
      * Also tests when name is a duplicate.
      */

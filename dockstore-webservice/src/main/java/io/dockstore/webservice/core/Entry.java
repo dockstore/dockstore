@@ -89,7 +89,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         "SELECT 'tool' as type, id from tool where registry = :one and namespace = :two and name = :three and toolname IS NULL and ispublished = TRUE union"
             + " select 'workflow' as type, id from workflow where sourcecontrol = :one and organization = :two and repository = :three and workflowname IS NULL and ispublished = TRUE"),
     @NamedNativeQuery(name = "Entry.hostedWorkflowCount", query = "select (select count(*) from tool t, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = t.id) + (select count(*) from workflow w, user_entry ue where mode = 'HOSTED' and ue.userid = :userid and ue.entryid = w.id) as count;") })
-public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry> {
+public abstract class Entry<S extends Entry, T extends Version> implements Comparable<Entry>, Aliasable {
 
     /**
      * re-use existing generator for backwards compatibility
@@ -154,7 +154,7 @@ public abstract class Entry<S extends Entry, T extends Version> implements Compa
     private Workflow checkerWorkflow;
 
     @ElementCollection(targetClass = Alias.class)
-    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "alias" }))
+    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_entry_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
     private Map<String, Alias> aliases = new HashMap<>();

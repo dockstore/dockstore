@@ -47,7 +47,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE col.name = :name AND organizationid = :organizationId"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
-public class Collection implements Serializable {
+public class Collection implements Serializable, Aliasable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ApiModelProperty(value = "Implementation specific ID for the collection in this web service", position = 0)
@@ -76,9 +76,9 @@ public class Collection implements Serializable {
     private Organization organization;
 
     @ElementCollection(targetClass = Alias.class)
-    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "alias" }))
+    @JoinTable(name = "collection_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_col_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
-    @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
+    @ApiModelProperty(value = "aliases can be used as an alternate unique id for collections")
     private Map<String, Alias> aliases = new HashMap<>();
 
     @Column(updatable = false)

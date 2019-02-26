@@ -51,7 +51,7 @@ import org.hibernate.annotations.UpdateTimestamp;
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findApprovedByName", query = "SELECT org FROM Organization org WHERE lower(org.name) = lower(:name) AND org.status = 'APPROVED'")
 })
 @SuppressWarnings("checkstyle:magicnumber")
-public class Organization implements Serializable {
+public class Organization implements Serializable, Aliasable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ApiModelProperty(value = "Implementation specific ID for the organization in this web service", position = 0)
@@ -98,9 +98,9 @@ public class Organization implements Serializable {
     private Set<Collection> collections = new HashSet<>();
 
     @ElementCollection(targetClass = Alias.class)
-    @JoinTable(name = "entry_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(columnNames = { "alias" }))
+    @JoinTable(name = "organzation_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
-    @ApiModelProperty(value = "aliases can be used as an alternate unique id for entries")
+    @ApiModelProperty(value = "aliases can be used as an alternate unique id for organizations")
     private Map<String, Alias> aliases = new HashMap<>();
 
     @Column(updatable = false)
@@ -226,4 +226,8 @@ public class Organization implements Serializable {
     }
 
     public enum ApplicationState { PENDING, REJECTED, APPROVED }
+
+    public static class OrganizationAlias extends Alias {
+
+    }
 }

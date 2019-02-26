@@ -30,6 +30,7 @@ import org.hibernate.annotations.UpdateTimestamp;
  */
 @Embeddable
 public class Alias implements Serializable {
+
     @Column(columnDefinition = "text")
     public String content = "";
 

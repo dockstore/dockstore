@@ -22,6 +22,7 @@ import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
 import io.dockstore.webservice.core.User;
+import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
 import io.dockstore.webservice.jdbi.UserDAO;
@@ -49,7 +50,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/organizations")
 @Api("/organizations")
 @Produces(MediaType.APPLICATION_JSON)
-public class OrganizationResource implements AuthenticatedResourceInterface {
+public class OrganizationResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Organization> {
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
@@ -264,13 +265,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface {
     /**
      * Retrieve an organization using optional authentication
      * @param user Optional user to authenticate with
-     * @param id Organization id
+     * @param orgId Organization id
      * @return Organization with given id
      */
-    private Organization getOrganizationByIdOptionalAuth(Optional<User> user, Long id) {
+    private Organization getOrganizationByIdOptionalAuth(Optional<User> user, Long orgId) {
         if (!user.isPresent()) {
             // No user given, only show approved organizations
-            Organization organization = organizationDAO.findApprovedById(id);
+            Organization organization = organizationDAO.findApprovedById(orgId);
             if (organization == null) {
                 String msg = "Organization not found";
                 LOG.info(msg);
@@ -280,14 +281,14 @@ public class OrganizationResource implements AuthenticatedResourceInterface {
         } else {
             // User is given, check if organization is either approved or the user has access
             // Admins and curators should be able to see unapproved organizations
-            boolean doesOrgExist = doesOrganizationExistToUser(id, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
+            boolean doesOrgExist = doesOrganizationExistToUser(orgId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
             if (!doesOrgExist) {
                 String msg = "Organization not found";
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
 
-            Organization organization = organizationDAO.findById(id);
+            Organization organization = organizationDAO.findById(orgId);
             return organization;
         }
     }
@@ -680,4 +681,27 @@ public class OrganizationResource implements AuthenticatedResourceInterface {
         return new ImmutablePair<>(organization, userToAdd);
     }
 
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Override
+    @Path("{organizationId}/aliases")
+    @ApiOperation(nickname = "updateOrganizationAliases", value = "Update the aliases linked to a listing in Dockstore.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Organization.class)
+    public Organization updateAliases(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Entry to modify.", required = true) @PathParam("organizationId") Long id,
+        @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
+        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        return AliasableResourceInterface.super.updateAliases(user, id, aliases, emptyBody);
+    }
+
+    @Override
+    public Optional<ElasticManager> getElasticManager() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Organization getAndCheckResource(User user, Long id) {
+        return getOrganizationByIdOptionalAuth(Optional.of(user), id);
+    }
 }

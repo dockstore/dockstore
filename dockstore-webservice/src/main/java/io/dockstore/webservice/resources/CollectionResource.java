@@ -27,6 +27,7 @@ import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.core.Workflow;
+import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.jdbi.CollectionDAO;
 import io.dockstore.webservice.jdbi.EventDAO;
 import io.dockstore.webservice.jdbi.OrganizationDAO;
@@ -54,7 +55,7 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/organizations")
 @Api("/organizations")
 @Produces(MediaType.APPLICATION_JSON)
-public class CollectionResource implements AuthenticatedResourceInterface {
+public class CollectionResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Collection> {
 
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
@@ -72,6 +73,23 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         this.workflowDAO = new WorkflowDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);
         this.eventDAO = new EventDAO(sessionFactory);
+    }
+
+    /**
+     * TODO: Path looks a bit weird
+     */
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Override
+    @Path("/collections/{collectionId}/aliases")
+    @ApiOperation(nickname = "updateCollectionAliases", value = "Update the aliases linked to a Collection in Dockstore.", authorizations = {
+        @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Collection.class)
+    public Collection updateAliases(@ApiParam(hidden = true) @Auth User user,
+        @ApiParam(value = "Entry to modify.", required = true) @PathParam("collectionId") Long id,
+        @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
+        @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
+        return AliasableResourceInterface.super.updateAliases(user, id, aliases, emptyBody);
     }
 
     @GET
@@ -103,14 +121,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         } else {
             // User is given, check if the collections organization is either approved or the user has access
             // Admins and curators should be able to see collections from unapproved organizations
-            boolean doesCollectionExist = doesCollectionExistToUser(collectionId, user.get().getId()) || user.get().getIsAdmin() || user.get().isCurator();
-            if (!doesCollectionExist) {
-                String msg = "Collection not found.";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
-
-            Collection collection = collectionDAO.findById(collectionId);
+            Collection collection = getAndCheckCollection(collectionId, user.get());
             Hibernate.initialize(collection.getEntries());
             return collection;
         }
@@ -205,15 +216,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
-        // Check that collection exists to user
-        boolean doesCollectionExist = doesCollectionExistToUser(collectionId, user.getId()) || user.getIsAdmin() || user.isCurator();
-        if (!doesCollectionExist) {
-            String msg = "Collection not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-
-        Collection collection = collectionDAO.findById(collectionId);
+        Collection collection = getAndCheckCollection(collectionId, user);
 
         // Check that user is a member of the organization
         Organization organization = organizationDAO.findById(collection.getOrganization().getId());
@@ -226,6 +229,24 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         }
 
         return new ImmutablePair<>(entry, collection);
+    }
+
+    /**
+     * Get a collection and check whether user has rights to see and modify it
+     * @param collectionId
+     * @param user
+     * @return
+     */
+    private Collection getAndCheckCollection(Long collectionId, User user) {
+        // Check that collection exists to user
+        boolean doesCollectionExist = doesCollectionExistToUser(collectionId, user.getId()) || user.getIsAdmin() || user.isCurator();
+        if (!doesCollectionExist) {
+            String msg = "Collection not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        return collectionDAO.findById(collectionId);
     }
 
     @GET
@@ -317,14 +338,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
             @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long organizationId,
             @ApiParam(value = "Collection ID.", required = true) @PathParam("collectionId") Long collectionId) {
         // Ensure collection exists to the user
-        boolean doesCollectionExist = doesCollectionExistToUser(collectionId, user.getId());
-        if (!doesCollectionExist) {
-            String msg = "Collection not found.";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
-
-        Collection existingCollection = collectionDAO.findById(collectionId);
+        Collection existingCollection = this.getAndCheckCollection(collectionId, user);
         Organization organization = organizationDAO.findById(existingCollection.getOrganization().getId());
 
         // Check that the user has rights to the organization
@@ -420,5 +434,15 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         String includeString = (include == null ? "" : include);
         List<String> includeSplit = Arrays.asList(includeString.split(","));
         return includeSplit.contains(field);
+    }
+
+    @Override
+    public Optional<ElasticManager> getElasticManager() {
+        return Optional.empty();
+    }
+
+    @Override
+    public Collection getAndCheckResource(User user, Long id) {
+        return this.getAndCheckCollection(id, user);
     }
 }
