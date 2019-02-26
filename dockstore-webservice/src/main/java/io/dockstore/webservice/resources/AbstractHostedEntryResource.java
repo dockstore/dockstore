@@ -195,6 +195,24 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return saveVersion(user, entryId, entry, version, versionSourceFiles, Optional.empty());
     }
 
+    /**
+     * Saves a version of a hosted entry.
+     *
+     * This code was extracted from the editHosted method for reuse with with the zip posting functionality. For zips, the
+     * mainDescriptor parameter was added.
+     *
+     * Until the zip support, hosted entries only supported a workflow path of /Dockstore.[wdl|cwl]. With zips, the user can
+     * specify any workflow path. The mainDescriptor is used to override the default /Dockstore.[wdl\cwl] within a version.
+     *
+     *
+     * @param user
+     * @param entryId
+     * @param entry
+     * @param version
+     * @param versionSourceFiles
+     * @param mainDescriptor the path of the main descriptor if different than the workflow default
+     * @return
+     */
     protected T saveVersion(User user, Long entryId, T entry, U version, Set<SourceFile> versionSourceFiles, Optional<SourceFile> mainDescriptor) {
         final U validatedVersion = versionValidation(version, entry, mainDescriptor);
 
@@ -271,7 +289,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * Note: There is one validation entry for each sourcefile type. This is true for test parameter files too.
      * @param version Version to validate
      * @param entry Entry for the version
-     * @param mainDescriptor
+     * @param mainDescriptor the main descriptor if different than the default /Dockstore.wdl or /Dockstore.cwl
      * @return Version with updated validation information
      */
     protected abstract U versionValidation(U version, T entry, Optional<SourceFile> mainDescriptor);

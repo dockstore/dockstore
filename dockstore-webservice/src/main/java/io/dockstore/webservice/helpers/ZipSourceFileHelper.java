@@ -76,6 +76,8 @@ public final class ZipSourceFileHelper {
         try {
             tempDir = Files.createTempDir();
             File tempZip = new File(tempDir, "workflow.zip");
+            // ByteStreams.limit limits the amount of bytes that can be read from the input stream. No matter how large the input
+            // stream, only a max ZIP_SIZE_LIMIT + 1 bytes will be read, and only a max of ZIP_SIZE_LIMIT + 1 bytes will be written to disk.
             try (InputStream limitStream = ByteStreams.limit(payload, ZIP_SIZE_LIMIT + 1)) {
                 FileUtils.copyToFile(limitStream, tempZip);
                 if (tempZip.length() > ZIP_SIZE_LIMIT) {
@@ -180,16 +182,22 @@ public final class ZipSourceFileHelper {
         }
     }
 
+    /**
+     * Given a FileType for a descriptor, return the FileType of the corresponding parameter file.
+     * @param workFileType
+     * @return
+     * @throws CustomWebApplicationException if workFileType is not the file type of a descriptor
+     */
     private static SourceFile.FileType paramFileType(SourceFile.FileType workFileType) {
         switch (workFileType) {
         case DOCKSTORE_CWL:
             return SourceFile.FileType.CWL_TEST_JSON;
         case DOCKSTORE_WDL:
             return SourceFile.FileType.WDL_TEST_JSON;
-        case DOCKERFILE:
+        case NEXTFLOW:
             return SourceFile.FileType.NEXTFLOW_TEST_PARAMS;
         default:
-            throw new CustomWebApplicationException("Fix me", HttpStatus.SC_BAD_REQUEST);
+            throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
         }
     }
 
