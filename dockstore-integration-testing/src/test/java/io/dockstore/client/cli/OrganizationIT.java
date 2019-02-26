@@ -836,8 +836,6 @@ public class OrganizationIT extends BaseIT {
         // Create the Organization and collection
         Organization organization = createOrg(organizationsApi);
         Collection stubCollection = stubCollectionObject();
-        Collection stubCollectionTwo = stubCollectionObject();
-        stubCollectionTwo.setName("anothername");
 
         // Attach collections
         Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
@@ -848,9 +846,13 @@ public class OrganizationIT extends BaseIT {
         final Organization organizationWithAlias = organizationsApi
             .updateOrganizationAliases(organization.getId(), "test organization, spam", "");
 
-        //TODO: need a lookup by alias for these tests
         assertEquals(2, collectionWithAlias.getAliases().size());
         assertEquals(2, organizationWithAlias.getAliases().size());
+
+        final Collection spam1 = organizationsApi.getCollectionByAlias("spam");
+        assertNotNull(spam1);
+        final Organization spam = organizationsApi.getOrganizationByAlias("spam");
+        assertNotNull(spam);
     }
 
     /**

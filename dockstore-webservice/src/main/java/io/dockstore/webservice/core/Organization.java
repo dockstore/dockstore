@@ -42,6 +42,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "organization")
 @NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Organization.getByAlias", query = "SELECT e from Organization e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllApproved", query = "SELECT org FROM Organization org WHERE org.status = 'APPROVED'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllPending", query = "SELECT org FROM Organization org WHERE org.status = 'PENDING'"),
         @NamedQuery(name = "io.dockstore.webservice.core.Organization.findAllRejected", query = "SELECT org FROM Organization org WHERE org.status = 'REJECTED'"),
@@ -226,8 +227,4 @@ public class Organization implements Serializable, Aliasable {
     }
 
     public enum ApplicationState { PENDING, REJECTED, APPROVED }
-
-    public static class OrganizationAlias extends Alias {
-
-    }
 }

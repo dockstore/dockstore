@@ -32,7 +32,20 @@ public interface AliasableResourceInterface<T extends Aliasable> {
 
     Optional<ElasticManager> getElasticManager();
 
+    /**
+     * Get a resource with id and only return it if user has rights to see/change it
+     * @param user
+     * @param id
+     * @return
+     */
     T getAndCheckResource(User user, Long id);
+
+    /**
+     * Get aliases, only works on public entries for now
+     * @param alias
+     * @return
+     */
+    T getAndCheckResourceByAlias(String alias);
 
     default T updateAliases(User user, Long id, String aliases, String emptyBody) {
         T c = getAndCheckResource(user, id);

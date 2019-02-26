@@ -104,4 +104,9 @@ public class EntryResource implements AuthenticatedResourceInterface, AliasableR
         checkUserCanUpdate(user, c);
         return c;
     }
+
+    @Override
+    public Entry getAndCheckResourceByAlias(String alias) {
+        throw new UnsupportedOperationException("Use the TRS API for tools and workflows");
+    }
 }

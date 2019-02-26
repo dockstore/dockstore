@@ -95,6 +95,15 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @GET
     @Timed
     @UnitOfWork
+    @Path("/collections/{alias}/aliases")
+    @ApiOperation(nickname = "getCollectionByAlias", value = "Retrieves a collection by alias.", response = Collection.class)
+    public Collection getCollectionByAlias(@ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
+        return this.getAndCheckResourceByAlias(alias);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
     @Path("{organizationId}/collections/{collectionId}")
     @ApiOperation(value = "Retrieves a collection by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
     public Collection getCollectionById(@ApiParam(hidden = true) @Auth Optional<User> user,
@@ -109,15 +118,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
-            Organization organization = organizationDAO.findApprovedById(collection.getOrganization().getId());
-            if (organization == null) {
-                String msg = "Collection not found.";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
-
-            Hibernate.initialize(collection.getEntries());
-            return collection;
+            return getApprovalForCollection(collection);
         } else {
             // User is given, check if the collections organization is either approved or the user has access
             // Admins and curators should be able to see collections from unapproved organizations
@@ -444,5 +445,29 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
     @Override
     public Collection getAndCheckResource(User user, Long id) {
         return this.getAndCheckCollection(id, user);
+    }
+
+    @Override
+    public Collection getAndCheckResourceByAlias(String alias) {
+        final Collection byAlias = this.collectionDAO.getByAlias(alias);
+        if (byAlias == null) {
+            String msg = "Collection not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+        return getApprovalForCollection(byAlias);
+
+    }
+
+    private Collection getApprovalForCollection(Collection byAlias) {
+        Organization organization = organizationDAO.findApprovedById(byAlias.getOrganization().getId());
+        if (organization == null) {
+            String msg = "Collection not found.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Hibernate.initialize(byAlias.getEntries());
+        return byAlias;
     }
 }

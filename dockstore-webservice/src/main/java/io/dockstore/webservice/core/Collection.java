@@ -43,6 +43,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(name = "collection")
 @NamedQueries({
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE col.name = :name AND organizationid = :organizationId"),
 })

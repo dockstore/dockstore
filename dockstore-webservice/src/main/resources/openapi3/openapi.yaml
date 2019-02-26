@@ -1674,7 +1674,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -2951,6 +2951,22 @@ paths:
                   $ref: '#/components/schemas/Organization'
                 type: array
           description: default response
+  /organizations/collections/{alias}/aliases:
+    get:
+      operationId: getCollectionByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: default response
   /organizations/collections/{collectionId}/aliases:
     put:
       operationId: updateAliases_1
@@ -2991,6 +3007,22 @@ paths:
           '*/*':
             schema:
               $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: default response
+  /organizations/{alias}/aliases:
+    get:
+      operationId: getOrganizationByAlias
+      parameters:
+      - in: path
+        name: alias
+        required: true
+        schema:
+          type: string
       responses:
         default:
           content:

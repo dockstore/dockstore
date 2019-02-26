@@ -3030,6 +3030,27 @@ paths:
       security:
         - BEARER:
             []
+  "/organizations/collections/{alias}/aliases":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves a collection by alias.
+      description: ""
+      operationId: getCollectionByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
   "/organizations/collections/{collectionId}/aliases":
     put:
       tags:
@@ -3089,6 +3110,27 @@ paths:
       security:
         - BEARER:
             []
+  "/organizations/{alias}/aliases":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves a collection by alias.
+      description: ""
+      operationId: getOrganizationByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
   "/organizations/{organizationId}":
     get:
       tags:

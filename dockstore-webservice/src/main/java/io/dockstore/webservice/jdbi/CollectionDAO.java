@@ -44,4 +44,7 @@ public class CollectionDAO extends AbstractDAO<Collection> {
         return uniqueResult(query);
     }
 
+    public Collection getByAlias(String alias) {
+        return uniqueResult(namedQuery("io.dockstore.webservice.core.Collection.getByAlias").setParameter("alias", alias));
+    }
 }
