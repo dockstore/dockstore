@@ -795,13 +795,12 @@ public class SwaggerClientIT extends BaseIT {
         final ApiClient webClient = getWebClient();
         final HostedApi hostedApi = new HostedApi(webClient);
         final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
-        final String smartseqZip = ResourceHelpers.resourceFilePath("smarttseq.zip");
-//        try {
-//            hostedApi.addZip(hostedWorkflow.getId(), new io.swagger.client.model.InputStream(new FileInputStream(new File(smartseqZip))));
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        }
-
+        // Created workflow, no versions
+        Assert.assertEquals(0, hostedWorkflow.getWorkflowVersions().size());
+        final String smartseqZip = ResourceHelpers.resourceFilePath("smartseq.zip");
+        final Workflow updatedWorkflow = hostedApi.addZip(hostedWorkflow.getId(), new File(smartseqZip));
+        // A version should now exist.
+        Assert.assertEquals(1, updatedWorkflow.getWorkflowVersions().size());
     }
 
     /**

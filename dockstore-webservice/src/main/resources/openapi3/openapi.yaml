@@ -1019,7 +1019,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       parameters:
       - in: path
         name: organization
@@ -1034,7 +1034,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       responses:
         default:
           content:
@@ -3501,7 +3501,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -3617,7 +3617,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId
@@ -3993,7 +3993,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:

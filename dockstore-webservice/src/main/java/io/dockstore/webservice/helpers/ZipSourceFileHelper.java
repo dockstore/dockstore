@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,6 +21,9 @@ import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
+import org.yaml.snakeyaml.introspector.Property;
+import org.yaml.snakeyaml.introspector.PropertyUtils;
 
 /**
  * Converts the contents of a zip file into a <code>SourceFiles</code> object, ensuring that
@@ -118,16 +120,18 @@ public final class ZipSourceFileHelper {
      * @return
      */
     static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
-        Map<String, Object> dockstoreYml = readDockstoreYml(zipFile);
-        Object primaryDescriptor = dockstoreYml.get("primaryDescriptor");
-        List<String> testParameterFiles = (List<String>)dockstoreYml.get("testParameterFiles");
-        if (primaryDescriptor instanceof String) {
-            String primaryDescriptorName = (String)primaryDescriptor;
-            checkWorkflowType(workflowFileType, primaryDescriptorName);
+        DockstoreYaml dockstoreYml = readDockstoreYml(zipFile);
+        if (!"workflow".equals(dockstoreYml.clazz)) {
+            throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
+        }
+        final String primaryDescriptor = dockstoreYml.primaryDescriptor;
+        List<String> testParameterFiles = dockstoreYml.testParameterFiles;
+        if (primaryDescriptor != null) {
+            checkWorkflowType(workflowFileType, primaryDescriptor);
             zipFile.stream()
-                    .filter(zipEntry -> primaryDescriptorName.equals(zipEntry.getName()))
+                    .filter(zipEntry -> primaryDescriptor.equals(zipEntry.getName()))
                     .findFirst()
-                    .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + primaryDescriptorName, HttpStatus.SC_BAD_REQUEST));
+                    .orElseThrow(() -> new CustomWebApplicationException("Primary descriptor missing: " + primaryDescriptor, HttpStatus.SC_BAD_REQUEST));
             final List<SourceFile> sourceFiles = zipFile
                     .stream()
                     .filter(zipEntry -> !zipEntry.isDirectory())
@@ -147,7 +151,7 @@ public final class ZipSourceFileHelper {
                     }).filter(Objects::nonNull).collect(Collectors.toList());
             return new SourceFiles(
                     // Guaranteed to find primary descriptor, or we would have thrown, above
-                    sourceFiles.stream().filter(sf -> sf.getPath().equals(primaryDescriptorName)).findFirst().get(), sourceFiles);
+                    sourceFiles.stream().filter(sf -> sf.getPath().equals(primaryDescriptor)).findFirst().get(), sourceFiles);
         } else {
             throw new CustomWebApplicationException("Invalid or no primary descriptor specified in .dockstore.yml",
                     HttpStatus.SC_BAD_REQUEST);
@@ -201,14 +205,34 @@ public final class ZipSourceFileHelper {
         }
     }
 
-    // TODO: Should probably define a DockstoreYaml class
-    private static Map<String, Object> readDockstoreYml(ZipFile zipFile) {
+    private static DockstoreYaml readDockstoreYml(ZipFile zipFile) {
         ZipEntry dockstoreYml = zipFile.stream().filter(zipEntry -> ".dockstore.yml".equals(zipEntry.getName())).findFirst()
                 .orElseThrow(() -> new CustomWebApplicationException("Missing .dockstore.yml", HttpStatus.SC_BAD_REQUEST));
-        final Yaml yaml = new Yaml();
         try {
-            return yaml.load(zipFile.getInputStream(dockstoreYml));
+            return readDockstoreYml(zipFile.getInputStream(dockstoreYml));
         } catch (IOException e) {
+            LOG.error("Error reading .dockstore.yml", e);
+            throw new CustomWebApplicationException("Invalid syntax in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    // Should move this out of here when other components use dockstore.yml
+    static DockstoreYaml readDockstoreYml(InputStream inputStream) {
+        Constructor constructor = new Constructor(DockstoreYaml.class);
+        constructor.setPropertyUtils(new PropertyUtils() {
+            @Override
+            public Property getProperty(Class<?> type, String name) {
+                if ("class".equals(name)) {
+                    name = "clazz";
+                }
+                return super.getProperty(type, name);
+            }
+
+        });
+        final Yaml yaml = new Yaml(constructor);
+        try {
+            return yaml.load(inputStream);
+        } catch (Exception e) {
             LOG.error("Error reading .dockstore.yml", e);
             throw new CustomWebApplicationException("Invalid syntax in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
         }

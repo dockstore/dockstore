@@ -175,7 +175,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
     @Path("/hostedEntry/{entryId}")
     @Timed
     @UnitOfWork
-    @ApiOperation(nickname = "Post a zip", value = "Creates a new revision of a hosted workflow",
+    @ApiOperation(nickname = "addZip", value = "Creates a new revision of a hosted workflow from a zip",
             authorizations = {@Authorization(value = JWT_SECURITY_DEFINITION_NAME)}, response = Workflow.class)
     public Workflow addZip(@ApiParam(hidden = true) @Auth User user, @ApiParam(value = "hosted entry ID")
         @PathParam("entryId") Long entryId,  @FormDataParam("file") InputStream payload) {
