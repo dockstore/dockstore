@@ -120,10 +120,7 @@ public final class ZipSourceFileHelper {
      * @return
      */
     static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
-        DockstoreYaml dockstoreYml = readDockstoreYml(zipFile);
-        if (!"workflow".equals(dockstoreYml.clazz)) {
-            throw new CustomWebApplicationException("", HttpStatus.SC_BAD_REQUEST);
-        }
+        DockstoreYaml dockstoreYml = readAndPrevalidateDockstoreYml(zipFile);
         final String primaryDescriptor = dockstoreYml.primaryDescriptor;
         List<String> testParameterFiles = dockstoreYml.testParameterFiles;
         if (primaryDescriptor != null) {
@@ -205,11 +202,11 @@ public final class ZipSourceFileHelper {
         }
     }
 
-    private static DockstoreYaml readDockstoreYml(ZipFile zipFile) {
+    private static DockstoreYaml readAndPrevalidateDockstoreYml(ZipFile zipFile) {
         ZipEntry dockstoreYml = zipFile.stream().filter(zipEntry -> ".dockstore.yml".equals(zipEntry.getName())).findFirst()
                 .orElseThrow(() -> new CustomWebApplicationException("Missing .dockstore.yml", HttpStatus.SC_BAD_REQUEST));
         try {
-            return readDockstoreYml(zipFile.getInputStream(dockstoreYml));
+            return readAndPrevalidateDockstoreYml(zipFile.getInputStream(dockstoreYml));
         } catch (IOException e) {
             LOG.error("Error reading .dockstore.yml", e);
             throw new CustomWebApplicationException("Invalid syntax in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
@@ -217,7 +214,7 @@ public final class ZipSourceFileHelper {
     }
 
     // Should move this out of here when other components use dockstore.yml
-    static DockstoreYaml readDockstoreYml(InputStream inputStream) {
+    static DockstoreYaml readAndPrevalidateDockstoreYml(InputStream inputStream) {
         Constructor constructor = new Constructor(DockstoreYaml.class);
         constructor.setPropertyUtils(new PropertyUtils() {
             @Override
@@ -231,7 +228,15 @@ public final class ZipSourceFileHelper {
         });
         final Yaml yaml = new Yaml(constructor);
         try {
-            return yaml.load(inputStream);
+            DockstoreYaml dockstoreYaml = yaml.load(inputStream);
+            if (!DockstoreYaml.VERSION.equals(dockstoreYaml.dockstoreVersion)) {
+                throw  new CustomWebApplicationException("Invalid or missing dockstoreVersion in .dockstore.yml, expecting \"1.0\"", HttpStatus.SC_BAD_REQUEST);
+            } else if (!DockstoreYaml.CLAZZ.equals(dockstoreYaml.clazz)) {
+                throw new CustomWebApplicationException("Invalid or missing class in .dockstore.yml; expecting \"workflow\"", HttpStatus.SC_BAD_REQUEST);
+            }
+            return dockstoreYaml;
+        } catch (CustomWebApplicationException ex) {
+            throw ex;
         } catch (Exception e) {
             LOG.error("Error reading .dockstore.yml", e);
             throw new CustomWebApplicationException("Invalid syntax in .dockstore.yml", HttpStatus.SC_BAD_REQUEST);
