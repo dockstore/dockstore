@@ -347,6 +347,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
         // Update the collection
         existingCollection.setName(collection.getName());
+        existingCollection.setDisplayName(collection.getDisplayName());
         existingCollection.setDescription(collection.getDescription());
 
         // Event for update

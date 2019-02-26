@@ -61,6 +61,12 @@ public class Collection implements Serializable {
     @Schema(description = "Description of the collection", required = true, example = "Alignment")
     private String description;
 
+    @Column(nullable = false, unique = true)
+    @Pattern(regexp = "[\\w ,_\\-&()']*")
+    @Size(min = 3, max = 50)
+    @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.", position = 3)
+    private String displayName;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "collection_entry", joinColumns = @JoinColumn(name = "collectionid"), inverseJoinColumns = @JoinColumn(name = "entryid"))
     private Set<Entry> entries = new HashSet<>();
@@ -140,5 +146,13 @@ public class Collection implements Serializable {
 
     public void setDbUpdateDate(Timestamp dbUpdateDate) {
         this.dbUpdateDate = dbUpdateDate;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 }

@@ -5947,6 +5947,13 @@ components:
         description:
           type: string
           description: Description of the collection
+        displayName:
+          type: string
+          description: Display name for a collection (Ex. Recommended Alignment
+            Algorithms). Not used for links.
+          minLength: 3
+          maxLength: 50
+          pattern: "[\\w ,_\\-&()']*"
     CollectionOrganization:
       type: object
       properties:
@@ -6448,6 +6455,13 @@ components:
         topic:
           type: string
           description: Short description of the organization
+        displayName:
+          type: string
+          description: Display name for an organization (Ex. Ontario Institute for Cancer
+            Research). Not used for links.
+          minLength: 3
+          maxLength: 50
+          pattern: "[\\w ,_\\-&()']*"
     OrganizationUser:
       type: object
       required:
