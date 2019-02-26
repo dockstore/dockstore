@@ -60,9 +60,9 @@ public class OrganizationIT extends BaseIT {
     // All numbers, too short, bad pattern, too long, foreign characters
     final List<String> badNames = Arrays.asList("1234", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "我喜欢狗");
 
-    // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, or png.
+    // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, png, or gif.
     final List<String> badAvatarUrls = Arrays.asList("https://via.placeholder.com/150",
-            "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.gif",
+            "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
             "https://i2.wp.com/upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Patates.jpg/2560px-Patates.jpg?ssl=1");
 
     final List<String> goodDisplayNames = Arrays.asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
