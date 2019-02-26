@@ -100,7 +100,7 @@ public final class ZipSourceFileHelper {
 
     }
 
-    static void validateZip(ZipFile zipFile, int maxEntries, long maxSize) {
+    protected static void validateZip(ZipFile zipFile, int maxEntries, long maxSize) {
         if (zipFile.stream().limit(maxEntries + 1).count() > maxEntries) {
             throw new CustomWebApplicationException("Too many entries in the zip", HttpStatus.SC_BAD_REQUEST);
         }
@@ -113,13 +113,13 @@ public final class ZipSourceFileHelper {
     }
 
     /**
-     * Converts the values in a zip into a list
+     * Converts the values in a zip into a SourceFiles object
      *
      * @param zipFile
      * @param workflowFileType
      * @return
      */
-    static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
+    protected static SourceFiles sourceFilesFromZip(ZipFile zipFile, SourceFile.FileType workflowFileType) {
         DockstoreYaml dockstoreYml = readAndPrevalidateDockstoreYml(zipFile);
         final String primaryDescriptor = dockstoreYml.primaryDescriptor;
         List<String> testParameterFiles = dockstoreYml.testParameterFiles;
@@ -214,15 +214,12 @@ public final class ZipSourceFileHelper {
     }
 
     // Should move this out of here when other components use dockstore.yml
-    static DockstoreYaml readAndPrevalidateDockstoreYml(InputStream inputStream) {
+    protected static DockstoreYaml readAndPrevalidateDockstoreYml(InputStream inputStream) {
         Constructor constructor = new Constructor(DockstoreYaml.class);
         constructor.setPropertyUtils(new PropertyUtils() {
             @Override
             public Property getProperty(Class<?> type, String name) {
-                if ("class".equals(name)) {
-                    name = "clazz";
-                }
-                return super.getProperty(type, name);
+                return super.getProperty(type, "class".equals(name) ? "clazz" : name);
             }
 
         });

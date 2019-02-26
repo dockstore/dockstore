@@ -196,22 +196,22 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     }
 
     protected T saveVersion(User user, Long entryId, T entry, U version, Set<SourceFile> versionSourceFiles, Optional<SourceFile> mainDescriptor) {
-        version = versionValidation(version, entry, mainDescriptor);
+        final U validatedVersion = versionValidation(version, entry, mainDescriptor);
 
-        boolean isValidVersion = isValidVersion(version);
+        boolean isValidVersion = isValidVersion(validatedVersion);
         if (!isValidVersion) {
             String fallbackMessage = "Your edited files are invalid. No new version was created. Please check your syntax and try again.";
-            String validationMessages = createValidationMessages(version);
+            String validationMessages = createValidationMessages(validatedVersion);
             validationMessages = (validationMessages != null && !validationMessages.isEmpty()) ? validationMessages : fallbackMessage;
             throw new CustomWebApplicationException(validationMessages, HttpStatus.SC_BAD_REQUEST);
         }
 
-        version.setValid(true); // Hosted entry versions must be valid to save
-        version.setVersionEditor(user);
-        populateMetadata(versionSourceFiles, entry, version);
-        long l = getVersionDAO().create(version);
+        validatedVersion.setValid(true); // Hosted entry versions must be valid to save
+        validatedVersion.setVersionEditor(user);
+        populateMetadata(versionSourceFiles, entry, validatedVersion);
+        long l = getVersionDAO().create(validatedVersion);
         entry.getVersions().add(getVersionDAO().findById(l));
-        entry.setLastModified(version.getLastModified());
+        entry.setLastModified(validatedVersion.getLastModified());
         FileFormatHelper.updateFileFormats(entry.getVersions(), fileFormatDAO);
         userDAO.clearCache();
         T newTool = getEntryDAO().findById(entryId);

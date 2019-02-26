@@ -73,7 +73,6 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/workflows")
 public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow, WorkflowVersion, WorkflowDAO, WorkflowVersionDAO> {
     private static final Logger LOG = LoggerFactory.getLogger(HostedWorkflowResource.class);
-    private static final int ZIP_SIZE_LIMIT = 100_000;
     private final WorkflowDAO workflowDAO;
     private final WorkflowVersionDAO workflowVersionDAO;
     private final PermissionsInterface permissionsInterface;
