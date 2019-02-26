@@ -25,10 +25,18 @@ public class EventDAO extends AbstractDAO<Event> {
         return persist(event).getId();
     }
 
-    public List<Event> findEventsForOrganization(long organizationId) {
+    public List<Event> findEventsForOrganization(long organizationId, Integer offset, Integer limit) {
         Query query = namedQuery("io.dockstore.webservice.core.Event.findAllForOrganization")
-                .setParameter("organizationId", organizationId);
+                .setParameter("organizationId", organizationId)
+                .setFirstResult(offset)
+                .setMaxResults(limit);
         return list(query);
+    }
+
+    public long countAllEventsForOrganization(long organizationId) {
+        final Query query = namedQuery("io.dockstore.webservice.core.Event.countAllForOrganization")
+                .setParameter("organizationId", organizationId);
+        return ((Long)query.getSingleResult()).longValue();
     }
 
     public void delete(Event event) {

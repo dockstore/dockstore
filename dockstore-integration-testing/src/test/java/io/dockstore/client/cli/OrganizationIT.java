@@ -264,8 +264,18 @@ public class OrganizationIT extends BaseIT {
         organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
         assertEquals("organization should be returned and have an updated link.", link, organization.getLink());
 
-        List<Event> events = organizationsApiUser2.getOrganizationEvents(registeredOrganization.getId());
+        List<Event> events = organizationsApiUser2.getOrganizationEvents(registeredOrganization.getId(), 0, 5);
         assertEquals("There should be 4 events, there are " + events.size(),4, events.size());
+
+        // Events pagination tests
+        List<Event> firstTwoEvents = organizationsApiUser2.getOrganizationEvents(registeredOrganization.getId(), 0, 2);
+        assertEquals("There should only be 2 events, there are " + firstTwoEvents.size(), 2, firstTwoEvents.size());
+        assertEquals(firstTwoEvents.get(0), events.get(0));
+        assertEquals(firstTwoEvents.get(1), events.get(1));
+
+        List<Event> secondEvent = organizationsApiUser2.getOrganizationEvents(registeredOrganization.getId(), 1, 1);
+        assertEquals("There should only be 1 event, there are " + secondEvent.size(), 1, secondEvent.size());
+        assertEquals(secondEvent.get(0), events.get(1));
 
         List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(registeredOrganization.getId());
         assertEquals("There should be 1 user, there are " + users.size(),1, users.size());
@@ -588,7 +598,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals("There should be no roles for user 2 and org 1, there are " + count5, 0, count5);
 
         // Test that events are sorted by DESC dbCreateDate
-        List<Event> events = organizationsApiUser2.getOrganizationEvents(orgId);
+        List<Event> events = organizationsApiUser2.getOrganizationEvents(orgId, 0, 5);
         assertEquals("Should have 3 events returned, there are " + events.size(), 3, events.size());
         assertEquals("First event should be most recent, which is REJECT_ORG_INVITE, but is actually " + events.get(0).getType().getValue(), "REJECT_ORG_INVITE" , events.get(0).getType().getValue());
 

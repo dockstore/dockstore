@@ -1659,7 +1659,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -1685,7 +1685,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -3244,6 +3244,18 @@ paths:
         schema:
           format: int64
           type: integer
+      - in: query
+        name: offset
+        schema:
+          default: 0
+          format: int32
+          type: integer
+      - in: query
+        name: limit
+        schema:
+          default: 100
+          format: int32
+          type: integer
       requestBody:
         content:
           '*/*':
@@ -3531,7 +3543,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -3647,7 +3659,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
@@ -4049,7 +4061,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
     patch:
       operationId: editHosted_1

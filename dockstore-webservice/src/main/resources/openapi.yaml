@@ -3423,6 +3423,26 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: offset
+          in: query
+          description: Start index of paging.  If this exceeds the current result set
+            return an empty set.  If not specified in the request, this will
+            start at the beginning of the results.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+        - name: limit
+          in: query
+          description: Amount of records to return in a given page, limited to 100
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 100
       responses:
         "200":
           description: successful operation
