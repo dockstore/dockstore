@@ -807,6 +807,12 @@ public class OrganizationIT extends BaseIT {
         Collection unauthCollection = organizationsApiUnauth.getCollectionById(organization.getId(), collections.get(0).getId());
         assertEquals("Should have one entry returned with the collection, there are " + unauthCollection.getEntries().size(), 1, unauthCollection.getEntries().size());
 
+        // Test description
+        Collection collectionWithDesc = organizationsApi.updateCollectionDescription(organization.getId(), collectionId, "potato");
+        assertEquals("potato", collectionWithDesc.getDescription());
+        String description = organizationsApi.getCollectionDescription(organization.getId(), collectionId);
+        assertEquals("potato", description);
+
         // Should not be able to reject an approved organization
         boolean throwsError = false;
         try {

@@ -16,7 +16,6 @@ components:
           type: string
         description:
           description: Description of the collection
-          example: Alignment
           type: string
         entries:
           items:
@@ -34,9 +33,13 @@ components:
           minLength: 3
           pattern: '[a-zA-Z][a-zA-Z\d]*'
           type: string
+        topic:
+          description: Short description of the collection
+          example: A collection of alignment algorithms
+          type: string
       required:
-      - description
       - name
+      - topic
       type: object
     CollectionOrganization:
       properties:
@@ -3126,6 +3129,61 @@ paths:
               schema:
                 $ref: '#/components/schemas/Collection'
           description: default response
+  /organizations/{organizationId}/collections/{collectionId}/description:
+    get:
+      operationId: getCollectionDescription
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: collectionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: default response
+    put:
+      operationId: updateCollectionDescription
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: collectionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: default response
   /organizations/{organizationId}/collections/{collectionId}/entry:
     delete:
       operationId: deleteEntryFromCollection
@@ -3531,7 +3589,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -3647,7 +3705,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
