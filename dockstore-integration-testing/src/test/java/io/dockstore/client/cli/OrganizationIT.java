@@ -775,10 +775,13 @@ public class OrganizationIT extends BaseIT {
 
         final Long organizationID = organization.getId();
         goodDisplayNames.forEach(displayName -> {
-            createCollectionWithValidName(displayName, organizationsApi, organizationID, "testname" + goodDisplayNames.indexOf(displayName));
+            createCollectionWithValidDisplayName(displayName, organizationsApi, organizationID, "testname" + goodDisplayNames.indexOf(displayName));
         });
     }
 
+    /**
+     * This tests that you cannot create collections with invalid display names
+     */
     @Test
     public void testCreateCollectionWithInvalidDisplayNames() {
         // Setup user who creates Organization and collection
@@ -794,7 +797,14 @@ public class OrganizationIT extends BaseIT {
         });
     }
 
-    private void createCollectionWithValidName(String displayName, OrganizationsApi organizationsApi, Long organizationId, String name) {
+    /**
+     * A helper method for creating a collection with a valid display name
+     * @param displayName
+     * @param organizationsApi
+     * @param organizationId
+     * @param name
+     */
+    private void createCollectionWithValidDisplayName(String displayName, OrganizationsApi organizationsApi, Long organizationId, String name) {
         Collection collection = stubCollectionObject();
         collection.setDisplayName(displayName);
         collection.setName(name);
