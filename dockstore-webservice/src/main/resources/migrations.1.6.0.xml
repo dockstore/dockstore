@@ -273,4 +273,10 @@
         </update>
         <addUniqueConstraint columnNames="displayname" constraintName="uk_collDisplayName" tableName="collection"/>
     </changeSet>
+
+    <changeSet author="aduncan" id="addTopicToCollection">
+        <addColumn tableName="collection">
+            <column name="topic" type="varchar(255 BYTE)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

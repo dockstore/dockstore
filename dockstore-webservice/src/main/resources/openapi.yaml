@@ -3273,6 +3273,77 @@ paths:
       security:
         - BEARER:
             []
+  "/organizations/{organizationId}/collections/{collectionId}/description":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves a collection description by organization ID and collection ID.
+      description: Does not require authentication for approved organizations,
+        authentication can be provided for unapproved organizations
+      operationId: getCollectionDescription
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BEARER:
+            []
+    put:
+      tags:
+        - organizations
+      summary: Update a collection's description.
+      description: Description in markdown
+      operationId: updateCollectionDescription
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: collectionId
+          in: path
+          description: Collection ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Collections's description in markdown
+        required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+      security:
+        - BEARER:
+            []
   "/organizations/{organizationId}/collections/{collectionId}/entry":
     post:
       tags:
@@ -5954,6 +6025,9 @@ components:
           minLength: 3
           maxLength: 50
           pattern: "[\\w ,_\\-&()']*"
+        topic:
+          type: string
+          description: Short description of the collection
     CollectionOrganization:
       type: object
       properties:
@@ -6007,10 +6081,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6026,6 +6096,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6191,10 +6265,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6210,6 +6280,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -7142,10 +7216,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7161,6 +7231,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

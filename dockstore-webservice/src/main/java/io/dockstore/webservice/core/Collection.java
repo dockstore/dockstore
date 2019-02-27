@@ -58,7 +58,7 @@ public class Collection implements Serializable {
 
     @Column(columnDefinition = "TEXT")
     @ApiModelProperty(value = "Description of the collection", position = 2)
-    @Schema(description = "Description of the collection", required = true, example = "Alignment")
+    @Schema(description = "Description of the collection")
     private String description;
 
     @Column(nullable = false, unique = true)
@@ -66,6 +66,11 @@ public class Collection implements Serializable {
     @Size(min = 3, max = 50)
     @ApiModelProperty(value = "Display name for a collection (Ex. Recommended Alignment Algorithms). Not used for links.", position = 3)
     private String displayName;
+
+    @Column
+    @ApiModelProperty(value = "Short description of the collection", position = 4)
+    @Schema(description = "Short description of the collection", required = true, example = "A collection of alignment algorithms")
+    private String topic;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "collection_entry", joinColumns = @JoinColumn(name = "collectionid"), inverseJoinColumns = @JoinColumn(name = "entryid"))
@@ -146,6 +151,14 @@ public class Collection implements Serializable {
 
     public void setDbUpdateDate(Timestamp dbUpdateDate) {
         this.dbUpdateDate = dbUpdateDate;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
     }
 
     public String getDisplayName() {

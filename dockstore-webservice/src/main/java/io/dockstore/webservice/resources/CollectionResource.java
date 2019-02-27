@@ -349,6 +349,7 @@ public class CollectionResource implements AuthenticatedResourceInterface {
         existingCollection.setName(collection.getName());
         existingCollection.setDisplayName(collection.getDisplayName());
         existingCollection.setDescription(collection.getDescription());
+        existingCollection.setTopic(collection.getTopic());
 
         // Event for update
         Event updateCollectionEvent = new Event.Builder()
@@ -361,6 +362,61 @@ public class CollectionResource implements AuthenticatedResourceInterface {
 
         return collectionDAO.findById(collectionId);
 
+    }
+
+    @PUT
+    @Timed
+    @Path("{organizationId}/collections/{collectionId}/description")
+    @UnitOfWork
+    @ApiOperation(value = "Update a collection's description.", notes = "Description in markdown", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
+    public Collection updateCollectionDescription(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organization ID", required = true) @PathParam("organizationId") Long organizationId,
+            @ApiParam(value = "Collection ID", required = true) @PathParam("collectionId") Long collectionId,
+            @ApiParam(value = "Collections's description in markdown", required = true) String description) {
+
+        boolean doesColExistToUser = doesCollectionExistToUser(collectionId, user.getId());
+        if (!doesColExistToUser) {
+            String msg = "Collection" + collectionId + " not found for organization " + organizationId;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        Organization oldOrganization = organizationDAO.findById(organizationId);
+
+        // Ensure that the user is a member of the organization
+        OrganizationUser organizationUser = getUserOrgRole(oldOrganization, user.getId());
+        if (organizationUser == null) {
+            String msg = "You do not have permissions to update the collection.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_UNAUTHORIZED);
+        }
+
+        Collection oldCollection = collectionDAO.findById(collectionId);
+
+        // Update collection
+        oldCollection.setDescription(description);
+
+        Event updateCollectionEvent = new Event.Builder()
+                .withOrganization(oldOrganization)
+                .withCollection(oldCollection)
+                .withInitiatorUser(user)
+                .withType(Event.EventType.MODIFY_ORG)
+                .build();
+        eventDAO.create(updateCollectionEvent);
+
+        return collectionDAO.findById(collectionId);
+    }
+
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("{organizationId}/collections/{collectionId}/description")
+    @ApiOperation(value = "Retrieves a collection description by organization ID and collection ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = String.class)
+    public String getCollectionDescription(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organization ID", required = true) @PathParam("organizationId") Long organizationId,
+            @ApiParam(value = "Collection ID", required = true) @PathParam("collectionId") Long collectionId) {
+        return getCollectionById(user, organizationId, collectionId).getDescription();
     }
 
     /**
