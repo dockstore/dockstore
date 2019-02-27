@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-alpha.7-SNAPSHOT"
+  version: "1.6.0-alpha.7"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -5559,6 +5559,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5574,10 +5578,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5770,6 +5770,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5785,10 +5789,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6806,6 +6806,10 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6821,10 +6825,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
