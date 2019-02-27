@@ -63,7 +63,10 @@ public class OrganizationIT extends BaseIT {
     // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, png, or gif.
     final List<String> badAvatarUrls = Arrays.asList("https://via.placeholder.com/150",
             "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
-            "https://i2.wp.com/upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Patates.jpg/2560px-Patates.jpg?ssl=1");
+            "https://i2.wp.com/upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Patates.jpg/2560px-Patates.jpg?ssl=1",
+            ".png",
+            "https://via.placeholder.com/150.jpg asdf",
+            "ad .jpg");
 
     final List<String> goodDisplayNames = Arrays.asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
 
