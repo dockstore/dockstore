@@ -86,11 +86,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public Organization approveOrganization(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
-        if (organization == null) {
-            String msg = "Organization not found";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
+        throwExceptionForNullOrganization(organization);
 
         if (!Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED)) {
             organization.setStatus(Organization.ApplicationState.APPROVED);
@@ -113,11 +109,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     public Organization rejectOrganization(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id) {
         Organization organization = organizationDAO.findById(id);
-        if (organization == null) {
-            String msg = "Organization not found";
-            LOG.info(msg);
-            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-        }
+        throwExceptionForNullOrganization(organization);
 
         if (Objects.equals(organization.getStatus(), Organization.ApplicationState.PENDING)) {
             organization.setStatus(Organization.ApplicationState.REJECTED);
@@ -145,21 +137,13 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         if (!user.isPresent()) {
             // No user given, only show approved organizations
             Organization organization = organizationDAO.findApprovedByName(name);
-            if (organization == null) {
-                String msg = "Organization not found";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
+            throwExceptionForNullOrganization(organization);
             return organization;
         } else {
             // User is given, check if organization is either approved or the user has access
             // Admins and curators should be able to see unapproved organizations
             Organization organization = organizationDAO.findByName(name);
-            if (organization == null) {
-                String msg = "Organization not found";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
+            throwExceptionForNullOrganization(organization);
 
             // If approved then return
             if (Objects.equals(organization.getStatus(), Organization.ApplicationState.APPROVED)) {
@@ -176,6 +160,14 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
                 LOG.info(msg);
                 throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
             }
+        }
+    }
+
+    private void throwExceptionForNullOrganization(Organization organization) {
+        if (organization == null) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
     }
 
@@ -272,11 +264,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         if (!user.isPresent()) {
             // No user given, only show approved organizations
             Organization organization = organizationDAO.findApprovedById(orgId);
-            if (organization == null) {
-                String msg = "Organization not found";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
-            }
+            throwExceptionForNullOrganization(organization);
             return organization;
         } else {
             // User is given, check if organization is either approved or the user has access
@@ -588,7 +576,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      * @param userId
      * @return OrganizationUser role
      */
-    private OrganizationUser getUserOrgRole(Organization organization, Long userId) {
+    protected static OrganizationUser getUserOrgRole(Organization organization, Long userId) {
         Set<OrganizationUser> organizationUserSet = organization.getUsers();
         Optional<OrganizationUser> matchingUser = organizationUserSet.stream()
             .filter(organizationUser -> Objects.equals(organizationUser.getUser().getId(), userId)).findFirst();
@@ -625,6 +613,10 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         }
     }
 
+    private boolean doesOrganizationExistToUser(Long organizationId, Long userId) {
+        return doesOrganizationExistToUser(organizationId, userId, organizationDAO);
+    }
+
     /**
      * Checks if the given user should know of the existence of the organization
      * For a user to see an organsation, either it must be approved or the user must have a role in the organization
@@ -633,7 +625,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
      * @param userId
      * @return True if organization exists to user, false otherwise
      */
-    private boolean doesOrganizationExistToUser(Long organizationId, Long userId) {
+    static boolean doesOrganizationExistToUser(Long organizationId, Long userId, OrganizationDAO organizationDAO) {
         Organization organization = organizationDAO.findById(organizationId);
         if (organization == null) {
             return false;
