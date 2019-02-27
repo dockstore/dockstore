@@ -27,7 +27,11 @@ components:
           type: string
         description:
           description: Description of the collection
-          example: Alignment
+          type: string
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
           type: string
         entries:
           items:
@@ -45,9 +49,13 @@ components:
           minLength: 3
           pattern: '[a-zA-Z][a-zA-Z\d]*'
           type: string
+        topic:
+          description: Short description of the collection
+          example: A collection of alignment algorithms
+          type: string
       required:
-      - description
       - name
+      - topic
       type: object
     CollectionOrganization:
       properties:
@@ -208,6 +216,11 @@ components:
           format: date-time
           type: string
         description:
+          type: string
+        displayName:
+          maxLength: 50
+          minLength: 3
+          pattern: '[\w ,_\-&()'']*'
           type: string
         email:
           type: string
@@ -3200,6 +3213,61 @@ paths:
           description: default response
     post:
       operationId: updateCollection
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: collectionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
+          description: default response
+  /organizations/{organizationId}/collections/{collectionId}/description:
+    get:
+      operationId: getCollectionDescription
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      - in: path
+        name: collectionId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                type: string
+          description: default response
+    put:
+      operationId: updateCollectionDescription
       parameters:
       - in: path
         name: organizationId

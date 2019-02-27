@@ -60,6 +60,10 @@ public class OrganizationIT extends BaseIT {
     // All numbers, too short, bad pattern, too long, foreign characters
     final List<String> badNames = Arrays.asList("1234", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "我喜欢狗");
 
+    final List<String> goodDisplayNames = Arrays.asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
+
+    final List<String> badDisplayNames = Arrays.asList("test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
+
     /**
      * Creates a stub Organization object
      * @return Organization object
@@ -68,6 +72,7 @@ public class OrganizationIT extends BaseIT {
         String markdownDescription = "An h1 header ============ Paragraphs are separated by a blank line. 2nd paragraph. *Italic*, **bold**, and `monospace`. Itemized lists look like: * this one * that one * the other one Note that --- not considering the asterisk --- the actual text content starts at 4-columns in. > Block quotes are > written like so. > > They can span multiple paragraphs, > if you like. Use 3 dashes for an em-dash. Use 2 dashes for ranges (ex., \"it's all in chapters 12--14\"). Three dots ... will be converted to an ellipsis. Unicode is supported. ☺ ";
         Organization organization = new Organization();
         organization.setName("testname");
+        organization.setDisplayName("test name");
         organization.setLocation("testlocation");
         organization.setLink("testlink");
         organization.setEmail("test@email.com");
@@ -83,6 +88,7 @@ public class OrganizationIT extends BaseIT {
     private Collection stubCollectionObject() {
         Collection collection = new Collection();
         collection.setName("Alignment");
+        collection.setDisplayName("Alignment Algorithms");
         collection.setDescription("A collection of alignment algorithms");
         return collection;
     }
@@ -290,6 +296,63 @@ public class OrganizationIT extends BaseIT {
         organisationsApiUser2.createOrganization(organisation);
     }
 
+    /**
+     * This tests that you cannot add an organization with a duplicate display name
+     */
+    @Test
+    public void testDuplicateOrgDisplayName() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Create the organisation
+        Organization organisation = stubOrgObject();
+        organisationsApiUser2.createOrganization(organisation);
+
+        // Create org with different name and display name
+        organisation.setName("testname2");
+        organisation.setDisplayName("test name 2");
+        organisationsApiUser2.createOrganization(organisation);
+
+        // Create org with different name but same display name
+        organisation.setName("testname3");
+        organisation.setDisplayName("test name");
+        thrown.expect(ApiException.class);
+        organisationsApiUser2.createOrganization(organisation);
+    }
+
+    /**
+     * This tests that you cannot add a collection with a duplicate display name
+     */
+    @Test
+    public void testDuplicateCollectionDisplayName() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Create the organisation
+        Organization organisation = stubOrgObject();
+        organisation = organisationsApiUser2.createOrganization(organisation);
+
+        // Create a collection
+        Collection stubCollection = stubCollectionObject();
+        final Long organizationID = organisation.getId();
+
+        // Attach collection
+        Collection collection = organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+
+        // Create another collection with a different name and display name
+        stubCollection.setName("testcollection2");
+        stubCollection.setDisplayName("test collection 2");
+
+        Collection collectionTwo = organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+
+        // Create another collection with a different name but same display name
+        stubCollection.setName("testcollection3");
+        thrown.expect(ApiException.class);
+        organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+    }
+
     @Test
     public void testGetViaAlternateCase() {
         // Setup user two
@@ -387,6 +450,7 @@ public class OrganizationIT extends BaseIT {
         // Register another Organization
         Organization organization = stubOrgObject();
         organization.setName("anotherorg");
+        organization.setDisplayName("anotherorg");
 
         organization = organizationsApi.createOrganization(organization);
 
@@ -397,6 +461,7 @@ public class OrganizationIT extends BaseIT {
 
         // Try renaming Organization to testname, should fail
         organization.setName("testname");
+        organization.setDisplayName("testname2");
         try {
             organizationsApi.updateOrganization(organization, organization.getId());
         } catch (ApiException ex) {
@@ -619,6 +684,26 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * Tests that you can create organizations using some unique characters for the display name
+     */
+    @Test
+    public void testCreatedOrganizationWithValidDisplayNames() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        goodDisplayNames.forEach(displayName -> createOrganizationWithValidDisplayName(displayName, organizationsApi, "testname" + goodDisplayNames.indexOf(displayName)));
+    }
+
+    /**
+     * Tests that you cannot create organizations with some display names
+     */
+    @Test
+    public void testCreateOrganizationsWithBadDisplayNames() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        badDisplayNames.forEach(displayName -> createOrganizationWithInvalidDisplayName(displayName, organizationsApi, "testname" + badDisplayNames.indexOf(displayName)));
+    }
+
+    /**
      * Helper that creates an Organization with a name that should fail
      * @param name
      * @param organizationsApi
@@ -636,6 +721,117 @@ public class OrganizationIT extends BaseIT {
 
         if (!throwsError) {
             fail("Was able to create an Organization with an incorrect name: " + name);
+        }
+    }
+
+    /**
+     * Helper that creates an organization with a display name that should not fail
+     * @param displayName
+     * @param organizationsApi
+     */
+    private void createOrganizationWithValidDisplayName(String displayName, OrganizationsApi organizationsApi, String name) {
+        Organization organization = stubOrgObject();
+        organization.setName(name);
+        organization.setDisplayName(displayName);
+
+        organization = organizationsApi.createOrganization(organization);
+        assertNotNull("Should create the organization", organizationsApi.getOrganizationById(organization.getId()));
+    }
+
+    /**
+     * Helper method that create an organization with a display name that is invalid
+     * @param displayName
+     * @param organizationsApi
+     * @param name
+     */
+    private void createOrganizationWithInvalidDisplayName(String displayName, OrganizationsApi organizationsApi, String name) {
+        Organization organization = stubOrgObject();
+        organization.setName(name);
+        organization.setDisplayName(displayName);
+
+        boolean throwsError = false;
+        try {
+            organizationsApi.createOrganization(organization);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to create an Organization with an incorrect display name: " + displayName);
+        }
+    }
+
+    /**
+     * This tests that you can create collections with unique characters in their display name
+     */
+    @Test
+    public void testCreateCollectionWithValidDisplayNames() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+
+        final Long organizationID = organization.getId();
+        goodDisplayNames.forEach(displayName -> {
+            createCollectionWithValidDisplayName(displayName, organizationsApi, organizationID, "testname" + goodDisplayNames.indexOf(displayName));
+        });
+    }
+
+    /**
+     * This tests that you cannot create collections with invalid display names
+     */
+    @Test
+    public void testCreateCollectionWithInvalidDisplayNames() {
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+
+        final Long organizationID = organization.getId();
+        badDisplayNames.forEach(displayName -> {
+            createCollectionWithBadDisplayName(displayName, organizationsApi, organizationID, "testname" + badDisplayNames.indexOf(displayName));
+        });
+    }
+
+    /**
+     * A helper method for creating a collection with a valid display name
+     * @param displayName
+     * @param organizationsApi
+     * @param organizationId
+     * @param name
+     */
+    private void createCollectionWithValidDisplayName(String displayName, OrganizationsApi organizationsApi, Long organizationId, String name) {
+        Collection collection = stubCollectionObject();
+        collection.setDisplayName(displayName);
+        collection.setName(name);
+
+        collection = organizationsApi.createCollection(organizationId, collection);
+        assertTrue("Should create the collection", organizationsApi.getCollectionById(organizationId, collection.getId()) != null);
+    }
+
+    /**
+     * Helper that creates an Organization with a display name that should fail
+     * @param name
+     * @param organizationsApi
+     */
+    private void createCollectionWithBadDisplayName(String displayName, OrganizationsApi organizationsApi, Long organizationId, String name) {
+        Collection collection = stubCollectionObject();
+        collection.setName(name);
+        collection.setDisplayName(displayName);
+
+        boolean throwsError = false;
+        try {
+            organizationsApi.createCollection(organizationId, collection);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to create a collection with an incorrect name: " + name);
         }
     }
 
@@ -807,6 +1003,12 @@ public class OrganizationIT extends BaseIT {
         Collection unauthCollection = organizationsApiUnauth.getCollectionById(organization.getId(), collections.get(0).getId());
         assertEquals("Should have one entry returned with the collection, there are " + unauthCollection.getEntries().size(), 1, unauthCollection.getEntries().size());
 
+        // Test description
+        Collection collectionWithDesc = organizationsApi.updateCollectionDescription(organization.getId(), collectionId, "potato");
+        assertEquals("potato", collectionWithDesc.getDescription());
+        String description = organizationsApi.getCollectionDescription(organization.getId(), collectionId);
+        assertEquals("potato", description);
+
         // Should not be able to reject an approved organization
         boolean throwsError = false;
         try {
@@ -852,6 +1054,7 @@ public class OrganizationIT extends BaseIT {
         assertEquals(2, collectionWithAlias.getAliases().size());
         assertEquals(2, organizationWithAlias.getAliases().size());
 
+        // note that namespaces for organizations and collections are separate (therefore a collection can have the same alias as an organization)
         final Collection spam1 = organizationsApi.getCollectionByAlias("spam");
         assertNotNull(spam1);
         final Organization spam = organizationsApi.getOrganizationByAlias("spam");
@@ -876,6 +1079,7 @@ public class OrganizationIT extends BaseIT {
         Collection stubCollection = stubCollectionObject();
         Collection stubCollectionTwo = stubCollectionObject();
         stubCollectionTwo.setName("anothername");
+        stubCollectionTwo.setDisplayName("another name");
 
         // Attach collections
         Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
