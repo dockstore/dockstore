@@ -155,6 +155,7 @@
         <module>dockstore-integration-testing</module>
         <module>dockstore-event-consumer</module>
         <module>reports</module>
+        <module>swagger-java-wes-client</module>
     </modules>
 
 

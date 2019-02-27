@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -54,7 +55,14 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
+import io.swagger.wes.client.ApiClient;
+import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
+import io.swagger.wes.client.model.RunId;
+import io.swagger.wes.client.model.RunListResponse;
+import io.swagger.wes.client.model.RunLog;
+import io.swagger.wes.client.model.RunStatus;
 import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -105,9 +113,19 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  * @author dyuen
  */
 public abstract class AbstractEntryClient<T> {
+    private static final long LIST_RUNS_PAGE_SIZE = 60L;
+
+    private static final String AUTHORIZATION = "Authorization";
+    private static final String BEARER = "Bearer";
+    private static final String BASIC = "basic";
+    private static final String DIGEST = "digest";
+    private static final String WORKFLOW = "workflow";
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
+
     protected boolean isAdmin = false;
+    protected boolean isWesCommand = false;
+    protected String wesUri = "";
 
     static String getCleanedDescription(String description) {
         description = MoreObjects.firstNonNull(description, "");
@@ -117,6 +135,14 @@ public abstract class AbstractEntryClient<T> {
             description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
         }
         return description;
+    }
+
+    public String getWesUri() {
+        return wesUri;
+    }
+
+    public boolean isWesCommand() {
+        return isWesCommand;
     }
 
     public CWL getCwlUtil() {
@@ -161,6 +187,11 @@ public abstract class AbstractEntryClient<T> {
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
         out("");
         out("  " + DOWNLOAD + "         :  download " + getEntryType() + "s to the local directory");
+        if (getEntryType().toLowerCase().equals(WORKFLOW)) {
+            out("");
+            out("  wes              :  calls a Workflow Execution Schema API (WES) for a version of a " + getEntryType() + "");
+        }
+
         printClientSpecificHelp();
         if (isAdmin) {
             printAdminHelp();
@@ -243,6 +274,14 @@ public abstract class AbstractEntryClient<T> {
                 break;
             case "test_parameter":
                 testParameter(args);
+                break;
+            case "wes":
+                isWesCommand = true;
+                if (getEntryType().toLowerCase().equals(WORKFLOW)) {
+                    processWesCommands(args);
+                } else {
+                    errorMessage("WES API calls are only valid for workflows not tools.", CLIENT_ERROR);
+                }
                 break;
             default:
                 return false;
@@ -921,6 +960,160 @@ public abstract class AbstractEntryClient<T> {
         }
     }
 
+
+    /**
+     * Creates a WES API object and sets the endpoint.
+     *
+     * @param wesUrl URL to WES endpoint
+     */
+    public WorkflowExecutionServiceApi getWorkflowExecutionServiceApi(String wesUrl) {
+        WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
+        ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
+
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        SubnodeConfiguration configSubNode = null;
+        try {
+            configSubNode = config.getSection("WES");
+        } catch (Exception e) {
+            //?????what should the return code be?????
+            exceptionMessage(e, "Could not get WES section", ENTRY_NOT_FOUND);
+        }
+
+        if (wesUrl == null || wesUrl.isEmpty()) {
+            String wesEndpointUrl = configSubNode.getString("url");
+            if (wesEndpointUrl == null || wesEndpointUrl.isEmpty()) {
+                errorMessage("No WES URL found in config file and no WES URL entered on command line.", CLIENT_ERROR);
+            }
+            out("WES endpoint url is: " + wesEndpointUrl);
+            wesApiClient.setBasePath(wesEndpointUrl);
+        } else {
+            wesApiClient.setBasePath(wesUrl);
+        }
+
+        /**
+         * Setup authentication credentials for the WES URL
+         */
+        //TODO: somehow make this case insensitive?
+        String wesAuthorizationTypeCredentials = configSubNode.getString("authorization", null);
+        String wesAuthorizationType = null;
+        String wesAuthorizationCredentials = null;
+        //out("wes config authorization string is " + wesAuthorizationTypeCredentials);
+        if (wesAuthorizationTypeCredentials != null) {
+            String[] wesAuthorizationTypeCredentialsArray = wesAuthorizationTypeCredentials.split("\\s+");
+            //out("wes authorization credentials array:" + Arrays.toString(wesAuthorizationTypeCredentialsArray));
+            //out("wes auth array length is:" + wesAuthorizationTypeCredentialsArray.length);
+            if (wesAuthorizationTypeCredentialsArray.length > 1) {
+                wesAuthorizationType = wesAuthorizationTypeCredentialsArray[0];
+                //out("WES authorization type:" + wesAuthorizationType.toString());
+
+                wesAuthorizationCredentials = wesAuthorizationTypeCredentialsArray[1];
+                //out("WES authorization credentials:" + wesAuthorizationCredentials.toString());
+
+                if (wesAuthorizationType.equalsIgnoreCase(BEARER)) {
+                    //out("set token to " + wesAuthorizationCredentials);
+                    // TODO: The WES schema should specify the security scheme so we do not need to add a default header
+                    wesApiClient.addDefaultHeader(AUTHORIZATION, BEARER + " " + wesAuthorizationCredentials);
+                    //wesApiClient.setAccessToken(wesAuthorizationCredentials);
+                } else if (wesAuthorizationType.equalsIgnoreCase(BASIC)) {
+                    //wesApiClient.setPassword(wesAuthorizationCredentials);
+                    wesApiClient.addDefaultHeader(AUTHORIZATION, BASIC + " " + wesAuthorizationCredentials);
+                } else {
+                    out("Could not set Authorization header. Unsupported authorization type in config file. "
+                            + "Please use " + BEARER + " or " + BASIC);
+                }
+            }
+        } else {
+            out("Could not set Authorization header. Authorization key not found in config file. "
+                    + "Please add 'authorization: <type> <credentials> to config file");
+        }
+
+        clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
+        return clientWorkflowExecutionServiceApi;
+    }
+
+    /**
+     * Processes Workflow Execution Schema (WES) commands.
+     *
+     * @param args Arguments entered into the CLI
+     */
+    public void processWesCommands(final List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            launchHelp();
+        } else {
+            if (args.contains("launch")) {
+                out("Launching workflow using WES");
+                // Add the wes keyword back onto the args list so later on
+                // we can determine if this launch is to a WES endpoint
+                // Once that is determined later on we can pull it back off the
+                // argument list
+                args.add(0, "wes");
+                launch(args);
+            } else {
+                //out("Getting WES URL");
+                this.wesUri = optVal(args, "--wes-url", null);
+                WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(this.wesUri);
+
+                // TODO: broken needs to be fixed? Should we support this?
+                if (args.contains("listRuns")) {
+                    out("Getting list of WES workflows");
+                    RunListResponse response = null;
+                    try {
+                        response = clientWorkflowExecutionServiceApi.listRuns(LIST_RUNS_PAGE_SIZE, "1");
+                        //response = clientWorkflowExecutionServiceApi.listRuns(null, null);
+                    } catch (io.swagger.wes.client.ApiException e) {
+                        e.printStackTrace();
+                    }
+                    String nextPageToken = response.getNextPageToken();
+                    out("next page token is: " + nextPageToken);
+                    try {
+                        response = clientWorkflowExecutionServiceApi.listRuns(LIST_RUNS_PAGE_SIZE, nextPageToken);
+                    } catch (io.swagger.wes.client.ApiException e) {
+                        e.printStackTrace();
+                    }
+
+                    List runs = response.getRuns();
+                    if (runs != null) {
+                        out("runs is not null!!!!");
+                    }
+                    //out("runs list is:" + runs.toString());
+                    Iterator runIterator = runs.iterator();
+                    out("Run list response is:");
+                    while (runIterator.hasNext()) {
+                        System.out.println(runIterator.next().toString());
+                    }
+                } else if (args.contains("status")) {
+                    String workflowId = reqVal(args, "--id");
+                    out("Getting status of WES workflow");
+                    if (args.contains("--verbose")) {
+                        try {
+                            RunLog response = clientWorkflowExecutionServiceApi.getRunLog(workflowId);
+                            out("Verbose run status is: " + response.toString());
+                        } catch (io.swagger.wes.client.ApiException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        try {
+                            RunStatus response = clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
+                            out("Brief run status is: " + response.toString());
+                        } catch (io.swagger.wes.client.ApiException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (args.contains("cancel")) {
+                    out("Canceling WES workflow");
+                    String workflowId = reqVal(args, "--id");
+                    try {
+                        RunId response = clientWorkflowExecutionServiceApi.cancelRun(workflowId);
+                        out("Cancelled run with id: " + response.toString());
+                    } catch (io.swagger.wes.client.ApiException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+
     /**
      * Launches tools and workflows.
      *
@@ -988,6 +1181,8 @@ public abstract class AbstractEntryClient<T> {
         }
         CWLClient client = new CWLClient(this);
         client.launch(entry, isLocalEntry, yamlRun, jsonRun, null, uuid);
+        //String wesUrl = optVal(args, "--wes-url", null);
+        //client.launch(entry, isLocalEntry, yamlRun, jsonRun, null, uuid, wesUrl);
     }
 
     /**
@@ -1032,6 +1227,8 @@ public abstract class AbstractEntryClient<T> {
         final String uuid = optVal(args, "--uuid", null);
         WDLClient client = new WDLClient(this);
         client.launch(entry, isLocalEntry, yamlRun, jsonRun, wdlOutputTarget, uuid);
+        //String wesUrl = optVal(args, "--wes-url", null);
+        //client.launch(entry, isLocalEntry, yamlRun, jsonRun, wdlOutputTarget, uuid, wesUrl);
     }
 
     private void launchNextFlow(String entry, final List<String> args, boolean isLocalEntry) throws ApiException {
@@ -1039,6 +1236,8 @@ public abstract class AbstractEntryClient<T> {
         final String uuid = optVal(args, "--uuid", null);
         NextFlowClient client = new NextFlowClient(this);
         client.launch(entry, isLocalEntry, null, json, null, uuid);
+        //String wesUrl = optVal(args, "--wes-url", null);
+        //client.launch(entry, isLocalEntry, null, json, null, uuid, wesUrl);
     }
 
     private String convertEntry2Json(List<String> args, final boolean json) throws ApiException, IOException {

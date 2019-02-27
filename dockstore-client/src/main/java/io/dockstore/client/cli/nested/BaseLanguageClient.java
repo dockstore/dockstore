@@ -149,23 +149,35 @@ public abstract class BaseLanguageClient {
         // Setup temp directory and download files
         downloadFiles();
 
-        try {
-            // Provision the input files
-            provisionedParameterFile = provisionInputFiles();
-        } catch (ApiException ex) {
-            if (abstractEntryClient.getEntryType().equalsIgnoreCase("tool")) {
-                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
-                        ENTRY_NOT_FOUND);
-            } else {
-                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
-                        ENTRY_NOT_FOUND);
+        /*
+         Don't download the input files (from the input JSON or YAML) if we are making a request
+         to a WES endpoint. We want the WES endpoint to download the input files becuase they
+         could be very large and in that case we cannot send their contents in a POST request
+         efficiently.
+         TODO if there are input files on the local file system maybe we should send those to
+         the WES endpoint instead of assuming they will exist on the file system at the WES
+         endpoint.
+        */
+        if (!abstractEntryClient.isWesCommand()) {
+            try {
+                // Provision the input files
+                provisionedParameterFile = provisionInputFiles();
+            } catch (ApiException ex) {
+                if (abstractEntryClient.getEntryType().equalsIgnoreCase("tool")) {
+                    exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
+                            ENTRY_NOT_FOUND);
+                } else {
+                    exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
+                            ENTRY_NOT_FOUND);
+                }
+            } catch (Exception ex) {
+                exceptionMessage(ex, ex.getMessage(), GENERIC_ERROR);
             }
-        } catch (Exception ex) {
-            exceptionMessage(ex, ex.getMessage(), GENERIC_ERROR);
         }
 
         // Update the launcher with references to the files to be launched
         launcher.setFiles(localPrimaryDescriptorFile, zippedEntryFile, provisionedParameterFile, selectedParameterFile, workingDirectory);
+
 
         try {
             // Attempt to run launcher

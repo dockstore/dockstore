@@ -55,6 +55,7 @@ import io.dockstore.client.cli.nested.CwltoolLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.LauncherFiles;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
+import io.dockstore.client.cli.nested.WESLauncher;
 import io.dockstore.client.cli.nested.WorkflowClient;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
@@ -98,6 +99,7 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
     private static final String DEFAULT_LAUNCHER = "cwltool";
     private static final String CWL_TOOL = "cwltool";
     private static final String CROMWELL = "cromwell";
+    private static final String WES = "wes";
 
     protected final Yaml yaml = new Yaml(new SafeConstructor());
     protected final Gson gson = CWL.getTypeSafeCWLToolDocument();
@@ -111,12 +113,19 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
 
         fileProvisioning = new FileProvisioning(abstractEntryClient.getConfigFile());
 
-        // Set the launcher
-        INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
-        cwlLauncherType = config.getString(CWL_RUNNER, DEFAULT_LAUNCHER);
+        if (!abstractEntryClient.isWesCommand()) {
+            // Set the launcher
+            INIConfiguration config = Utilities.parseConfig(abstractEntryClient.getConfigFile());
+            cwlLauncherType = config.getString(CWL_RUNNER, DEFAULT_LAUNCHER);
+        } else {
+            cwlLauncherType = WES;
+        }
 
         BaseLauncher launcher;
         switch (cwlLauncherType) {
+        case WES:
+            launcher = new WESLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get());
+            break;
         case CROMWELL:
             launcher = new CromwellLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get());
             LOG.info("Cromwell is currently in beta for CWL tools and workflows.");
@@ -126,7 +135,6 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
             launcher = new CwltoolLauncher(abstractEntryClient, LanguageType.CWL, SCRIPT.get());
             break;
         }
-
         this.setLauncher(launcher);
     }
 
