@@ -49,6 +49,9 @@ components:
           minLength: 3
           pattern: '[a-zA-Z][a-zA-Z\d]*'
           type: string
+        organizationID:
+          format: int64
+          type: integer
         topic:
           description: Short description of the collection
           example: A collection of alignment algorithms
@@ -1687,7 +1690,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -4190,7 +4193,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:

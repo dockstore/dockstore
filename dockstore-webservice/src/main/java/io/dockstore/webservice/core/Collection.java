@@ -87,6 +87,9 @@ public class Collection implements Serializable, Aliasable {
     @JoinColumn(name = "organizationid")
     private Organization organization;
 
+    @Column(name = "organizationid", insertable = false, updatable = false)
+    private long organizationID;
+
     @ElementCollection(targetClass = Alias.class)
     @JoinTable(name = "collection_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_col_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
@@ -187,5 +190,13 @@ public class Collection implements Serializable, Aliasable {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public long getOrganizationID() {
+        return organizationID;
+    }
+
+    public void setOrganizationID(long organizationID) {
+        this.organizationID = organizationID;
     }
 }

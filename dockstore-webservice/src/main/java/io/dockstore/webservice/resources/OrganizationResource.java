@@ -581,11 +581,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         Set<OrganizationUser> organizationUserSet = organization.getUsers();
         Optional<OrganizationUser> matchingUser = organizationUserSet.stream()
             .filter(organizationUser -> Objects.equals(organizationUser.getUser().getId(), userId)).findFirst();
-        if (matchingUser.isPresent()) {
-            return matchingUser.get();
-        } else {
-            return null;
-        }
+        return matchingUser.orElse(null);
     }
 
     /**
