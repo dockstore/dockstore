@@ -25,7 +25,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 /**
- * Stores alias information for a tool.
+ * Currently stores alias information for tools, workflows, collections, workflows.
  * For now its just blank, but can be expanded with additional information on the aliases (such as if they point at dockstore mirrors)
  */
 @Embeddable

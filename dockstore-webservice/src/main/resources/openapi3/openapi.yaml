@@ -3414,6 +3414,18 @@ paths:
         schema:
           format: int64
           type: integer
+      - in: query
+        name: offset
+        schema:
+          default: 0
+          format: int32
+          type: integer
+      - in: query
+        name: limit
+        schema:
+          default: 100
+          format: int32
+          type: integer
       requestBody:
         content:
           '*/*':
@@ -4193,7 +4205,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /workflows/hostedEntry/{entryId}:
     delete:
