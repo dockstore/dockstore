@@ -355,6 +355,7 @@ components:
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
+          - DOCKSTORE_YML
           type: string
         verifiedBySource:
           additionalProperties:
@@ -629,6 +630,7 @@ components:
           - NEXTFLOW
           - NEXTFLOW_CONFIG
           - NEXTFLOW_TEST_PARAMS
+          - DOCKSTORE_YML
           type: string
         valid:
           type: boolean
@@ -1672,7 +1674,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
   /containers/hostedEntry/{entryId}:
     delete:
@@ -1698,7 +1700,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Tool'
           description: default response
     patch:
       operationId: editHosted
@@ -4129,7 +4131,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Entry'
+                $ref: '#/components/schemas/Workflow'
           description: default response
     patch:
       operationId: editHosted_1
@@ -4143,6 +4145,27 @@ paths:
       requestBody:
         content:
           '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+          description: default response
+    post:
+      operationId: addZip
+      parameters:
+      - in: path
+        name: entryId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/User'
       responses:

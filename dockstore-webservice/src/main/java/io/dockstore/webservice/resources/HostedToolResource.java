@@ -148,7 +148,7 @@ public class HostedToolResource extends AbstractHostedEntryResource<Tool, Tag, T
     }
 
     @Override
-    protected Tag versionValidation(Tag version, Tool entry) {
+    protected Tag versionValidation(Tag version, Tool entry, Optional<SourceFile> mainDescriptor) {
         Set<SourceFile> sourceFiles = version.getSourceFiles();
 
         LanguageHandlerInterface.VersionTypeValidation validDockerfile = validateDockerfile(sourceFiles);

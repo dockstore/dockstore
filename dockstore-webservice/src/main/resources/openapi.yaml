@@ -4420,6 +4420,39 @@ paths:
         - BEARER:
             []
   "/workflows/hostedEntry/{entryId}":
+    post:
+      tags:
+        - hosted
+      summary: Creates a new revision of a hosted workflow from a zip
+      description: ""
+      operationId: addZip
+      parameters:
+        - name: entryId
+          in: path
+          description: hosted entry ID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Workflow"
+      security:
+        - BEARER:
+            []
     delete:
       tags:
         - hosted
@@ -6690,6 +6723,7 @@ components:
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
+            - DOCKSTORE_YML
         content:
           type: string
           description: Cache for the contents of the target file
@@ -7181,6 +7215,7 @@ components:
             - NEXTFLOW
             - NEXTFLOW_CONFIG
             - NEXTFLOW_TEST_PARAMS
+            - DOCKSTORE_YML
         valid:
           type: boolean
           description: Is the file type valid

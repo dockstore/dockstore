@@ -4048,6 +4048,34 @@ paths:
       security:
       - BEARER: []
   /workflows/hostedEntry/{entryId}:
+    post:
+      tags:
+      - "hosted"
+      summary: "Creates a new revision of a hosted workflow from a zip"
+      description: ""
+      operationId: "addZip"
+      consumes:
+      - "multipart/form-data"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "entryId"
+        in: "path"
+        description: "hosted entry ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "file"
+        in: "formData"
+        required: false
+        type: "file"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Workflow"
+      security:
+      - BEARER: []
     delete:
       tags:
       - "hosted"
@@ -5577,10 +5605,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5596,6 +5620,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5788,10 +5816,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5807,6 +5831,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6232,6 +6260,7 @@ definitions:
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
+        - "DOCKSTORE_YML"
       content:
         type: "string"
         position: 2
@@ -6767,6 +6796,7 @@ definitions:
         - "NEXTFLOW"
         - "NEXTFLOW_CONFIG"
         - "NEXTFLOW_TEST_PARAMS"
+        - "DOCKSTORE_YML"
       valid:
         type: "boolean"
         position: 2
@@ -6824,10 +6854,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6843,6 +6869,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
