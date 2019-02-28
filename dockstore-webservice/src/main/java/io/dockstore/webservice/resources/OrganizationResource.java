@@ -21,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
 import io.dockstore.webservice.CustomWebApplicationException;
+import io.dockstore.webservice.api.StarRequest;
 import io.dockstore.webservice.core.Event;
 import io.dockstore.webservice.core.Organization;
 import io.dockstore.webservice.core.OrganizationUser;
@@ -295,6 +296,66 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         response.addHeader("X-total-count", String.valueOf(eventDAO.countAllEventsForOrganization(id)));
         response.addHeader("Access-Control-Expose-Headers", "X-total-count");
         return eventDAO.findEventsForOrganization(id, offset, limit);
+    }
+
+    @PUT
+    @Timed
+    @UnitOfWork
+    @Path("/{organizationId}/star")
+    @ApiOperation(value = "Star an organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void starOrganization(@ApiParam(hidden = true) @Auth User user,
+                          @ApiParam(value = "Organization to star.", required = true) @PathParam("organizationId") Long organizationId,
+                          @ApiParam(value = "StarRequest to star an organization for a user", required = true) StarRequest request) {
+        Organization organization = organizationDAO.findById(organizationId);
+        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        if (!doesOrgExist) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+        Set<User> starredUsers = organization.getStarredUsers();
+        if (!starredUsers.contains(user)) {
+            organization.addStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException(
+                    "You cannot star the organization " + organization.getName() + " because you have already starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+
+    }
+
+    @DELETE
+    @Timed
+    @UnitOfWork
+    @Path("/{organizationId}/unstar")
+    @ApiOperation(value = "Unstar an organization.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) })
+    public void unstarOrganization(@ApiParam(hidden = true) @Auth User user,
+                            @ApiParam(value = "Organization to unstar.", required = true) @PathParam("organizationId") Long organizationId) {
+        Organization organization = organizationDAO.findById(organizationId);
+        boolean doesOrgExist = doesOrganizationExistToUser(organizationId, user.getId());
+        if (!doesOrgExist) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+        Set<User> starredUsers = organization.getStarredUsers();
+        if (starredUsers.contains(user)) {
+            organization.removeStarredUser(user);
+        } else {
+            throw new CustomWebApplicationException(
+                    "You cannot unstar the organization " + organization.getName() + " because you have not starred it.", HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    @GET
+    @Path("/{organizationId}/starredUsers")
+    @Timed
+    @UnitOfWork
+    @ApiOperation(value = "Returns list of users who starred the given organization.", response = User.class, responseContainer = "List")
+    public Set<User> getStarredUsers(
+            @ApiParam(value = "Organization to grab starred users for.", required = true) @PathParam("organizationId") Long organizationId) {
+        Organization organization = organizationDAO.findById(organizationId);
+        checkOrganization(organization);
+        return organization.getStarredUsers();
     }
 
     /**
