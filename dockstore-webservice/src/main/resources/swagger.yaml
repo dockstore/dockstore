@@ -3186,6 +3186,24 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      - name: "offset"
+        in: "query"
+        description: "Start index of paging.  If this exceeds the current result set\
+          \ return an empty set.  If not specified in the request, this will start\
+          \ at the beginning of the results."
+        required: false
+        type: "integer"
+        default: 0
+        format: "int32"
+      - name: "limit"
+        in: "query"
+        description: "Amount of records to return in a given page, limited to 100"
+        required: false
+        type: "integer"
+        default: 100
+        maximum: 100
+        minimum: 1
+        format: "int32"
       responses:
         200:
           description: "successful operation"

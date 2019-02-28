@@ -6,7 +6,9 @@ import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -14,6 +16,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
@@ -53,6 +56,8 @@ public class OrganizationResource implements AuthenticatedResourceInterface {
     private static final Logger LOG = LoggerFactory.getLogger(OrganizationResource.class);
 
     private static final String OPTIONAL_AUTH_MESSAGE = "Does not require authentication for approved organizations, authentication can be provided for unapproved organizations";
+    private static final String PAGINATION_LIMIT = "100";
+    private static final String DEFAULT_OFFSET = "0";
 
     private final OrganizationDAO organizationDAO;
     private final UserDAO userDAO;
@@ -256,9 +261,15 @@ public class OrganizationResource implements AuthenticatedResourceInterface {
     @Path("/{organizationId}/events")
     @ApiOperation(value = "Retrieves all events for an organization.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Event.class, responseContainer = "List")
     public List<Event> getOrganizationEvents(@ApiParam(hidden = true) @Auth Optional<User> user,
-            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id) {
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id,
+            @ApiParam(value = "Start index of paging.  If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.", defaultValue = DEFAULT_OFFSET) @DefaultValue(DEFAULT_OFFSET) @QueryParam("offset") Integer offset,
+            @ApiParam(value = "Amount of records to return in a given page, limited to "
+                    + PAGINATION_LIMIT, allowableValues = "range[1,100]", defaultValue = PAGINATION_LIMIT) @DefaultValue(PAGINATION_LIMIT) @QueryParam("limit") Integer limit,
+            @Context HttpServletResponse response) {
         getOrganizationByIdOptionalAuth(user, id);
-        return eventDAO.findEventsForOrganization(id);
+        response.addHeader("X-total-count", String.valueOf(eventDAO.countAllEventsForOrganization(id)));
+        response.addHeader("Access-Control-Expose-Headers", "X-total-count");
+        return eventDAO.findEventsForOrganization(id, offset, limit);
     }
 
     /**

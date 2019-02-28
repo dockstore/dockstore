@@ -3312,6 +3312,18 @@ paths:
         schema:
           format: int64
           type: integer
+      - in: query
+        name: offset
+        schema:
+          default: 0
+          format: int32
+          type: integer
+      - in: query
+        name: limit
+        schema:
+          default: 100
+          format: int32
+          type: integer
       requestBody:
         content:
           '*/*':
@@ -3599,7 +3611,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser
+      operationId: getUser_1
       requestBody:
         content:
           '*/*':
@@ -3715,7 +3727,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser_1
+      operationId: getUser
       parameters:
       - in: path
         name: userId
