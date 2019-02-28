@@ -52,7 +52,7 @@
         <dependency>
             <groupId>io.dockstore</groupId>
             <artifactId>swagger-java-wes-client</artifactId>
-            <version>1.6.0-alpha.1-SNAPSHOT</version>
+            <version>1.6.0-alpha.7-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dockstore</groupId>
@@ -253,6 +253,12 @@
             <artifactId>activation</artifactId>
             <version>1.1.1</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-multipart</artifactId>
+            <version>2.25.1</version>
         </dependency>
     </dependencies>
 

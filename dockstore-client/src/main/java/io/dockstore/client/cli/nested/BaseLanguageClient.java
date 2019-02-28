@@ -324,26 +324,33 @@ public abstract class BaseLanguageClient {
      */
     public void commonExecutionCode(File workDir, String launcherName) throws ExecuteException, RuntimeException {
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
-        List<String> runCommand = launcher.buildRunCommand();
-        String joinedCommand = Joiner.on(" ").join(runCommand);
-        System.out.println("Executing: " + joinedCommand);
 
-        ImmutablePair<String, String> execute;
-        int exitCode = 0;
-        try {
-            execute = launcher.executeEntry(joinedCommand, workDir);
-            stdout = execute.getLeft();
-            stderr = execute.getRight();
-        } catch (RuntimeException ex) {
-            LOG.error("Problem running launcher" + launcherName + ": ", ex);
-            if (ex.getCause() instanceof ExecuteException) {
-                exitCode = ((ExecuteException)ex.getCause()).getExitValue();
-                throw new ExecuteException("problems running command: " + runCommand, exitCode);
+        if (abstractEntryClient.isWesCommand()) {
+            System.out.println("Executing: WES request");
+            launcher.executeEntry("", workDir);
+        } else {
+
+            List<String> runCommand = launcher.buildRunCommand();
+            String joinedCommand = Joiner.on(" ").join(runCommand);
+            System.out.println("Executing: " + joinedCommand);
+
+            ImmutablePair<String, String> execute;
+            int exitCode = 0;
+            try {
+                execute = launcher.executeEntry(joinedCommand, workDir);
+                stdout = execute.getLeft();
+                stderr = execute.getRight();
+            } catch (RuntimeException ex) {
+                LOG.error("Problem running launcher" + launcherName + ": ", ex);
+                if (ex.getCause() instanceof ExecuteException) {
+                    exitCode = ((ExecuteException)ex.getCause()).getExitValue();
+                    throw new ExecuteException("problems running command: " + runCommand, exitCode);
+                }
+                notificationsClient.sendMessage(NotificationsClient.RUN, false);
+                throw new RuntimeException("Could not run launcher", ex);
+            } finally {
+                System.out.println(launcherName + " exit code: " + exitCode);
             }
-            notificationsClient.sendMessage(NotificationsClient.RUN, false);
-            throw new RuntimeException("Could not run launcher", ex);
-        } finally {
-            System.out.println(launcherName + " exit code: " + exitCode);
         }
     }
 }

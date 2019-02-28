@@ -35,15 +35,19 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>io.swagger</groupId>
+                <groupId>io.swagger.codegen.v3 </groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
+                <version>3.0.5</version>
                 <executions>
                     <execution>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>https://raw.githubusercontent.com/ga4gh/workflow-execution-service-schemas/1.0.0/openapi/workflow_execution_service.swagger.yaml</inputSpec>
+                            <!--
+                                        <inputSpec>https://raw.githubusercontent.com/ga4gh/workflow-execution-service-schemas/1.0.0/openapi/workflow_execution_service.swagger.yaml</inputSpec>
+                             -->
+                            <inputSpec>${project.basedir}/src/main/resources/workflow-execution_service-1.0.0-oas3-swagger.yaml</inputSpec>
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
@@ -86,7 +90,7 @@
                 </executions>
             </plugin>
 
-            <!-- auto-generated java classes should not fail the build on style -->
+                        <!-- auto-generated java classes should not fail the build on style -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -238,12 +242,13 @@
     <dependencies>
         <!-- dependencies are needed for the client being generated -->
 
-
+        <!--
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
             <version>${swagger-annotations-version}</version>
         </dependency>
+        -->
 
         <!-- HTTP client: jersey-client -->
         <dependency>
@@ -318,6 +323,24 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
         </dependency>
+
+
+        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
+
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>2.0.6</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/junit/junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+        </dependency>
+
     </dependencies>
+
 
 </project>

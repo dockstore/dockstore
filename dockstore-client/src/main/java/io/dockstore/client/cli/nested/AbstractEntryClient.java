@@ -55,7 +55,6 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
-import io.swagger.wes.client.ApiClient;
 import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
 import io.swagger.wes.client.model.RunId;
 import io.swagger.wes.client.model.RunListResponse;
@@ -968,7 +967,13 @@ public abstract class AbstractEntryClient<T> {
      */
     public WorkflowExecutionServiceApi getWorkflowExecutionServiceApi(String wesUrl) {
         WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
-        ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
+        //ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
+
+        // Done so we can override the Serialize method in ApiClient
+        // Since Swagger Codegen does not create correct code for the
+        // workflow attachement
+        ApiClientExtended wesApiClient = new ApiClientExtended();
+        clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
 
         INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
         SubnodeConfiguration configSubNode = null;
@@ -1009,6 +1014,9 @@ public abstract class AbstractEntryClient<T> {
                 wesAuthorizationCredentials = wesAuthorizationTypeCredentialsArray[1];
                 //out("WES authorization credentials:" + wesAuthorizationCredentials.toString());
 
+                wesApiClient.addDefaultHeader("Accept", "*/*");
+                wesApiClient.addDefaultHeader("Expect", "100-continue");
+
                 if (wesAuthorizationType.equalsIgnoreCase(BEARER)) {
                     //out("set token to " + wesAuthorizationCredentials);
                     // TODO: The WES schema should specify the security scheme so we do not need to add a default header
@@ -1040,17 +1048,24 @@ public abstract class AbstractEntryClient<T> {
         if (args.isEmpty() || containsHelpRequest(args)) {
             launchHelp();
         } else {
+
+            this.wesUri = optVal(args, "--wes-url", "");
             if (args.contains("launch")) {
                 out("Launching workflow using WES");
                 // Add the wes keyword back onto the args list so later on
                 // we can determine if this launch is to a WES endpoint
                 // Once that is determined later on we can pull it back off the
                 // argument list
-                args.add(0, "wes");
+
+                //args.add(0, "wes");
+
+                //remove the launch keyword so command processing continues as usual
+                args.remove(0);
+
                 launch(args);
             } else {
                 //out("Getting WES URL");
-                this.wesUri = optVal(args, "--wes-url", null);
+                //this.wesUri = optVal(args, "--wes-url", null);
                 WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(this.wesUri);
 
                 // TODO: broken needs to be fixed? Should we support this?
