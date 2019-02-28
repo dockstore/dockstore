@@ -15,10 +15,8 @@
  */
 package io.dockstore.webservice.resources;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Optional;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -29,15 +27,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
 import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.CollectionOrganization;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.core.Version;
 import io.dockstore.webservice.helpers.ElasticManager;
-import io.dockstore.webservice.helpers.ElasticMode;
 import io.dockstore.webservice.jdbi.ToolDAO;
 import io.dropwizard.auth.Auth;
 import io.dropwizard.hibernate.UnitOfWork;
@@ -59,13 +54,13 @@ import static io.dockstore.webservice.Constants.JWT_SECURITY_DEFINITION_NAME;
 @Path("/entries")
 @Api("entries")
 @Produces(MediaType.APPLICATION_JSON)
-public class EntryResource implements AuthenticatedResourceInterface {
+public class EntryResource implements AuthenticatedResourceInterface, AliasableResourceInterface<Entry> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryResource.class);
     private final ToolDAO toolDAO;
     private final ElasticManager elasticManager;
 
-    public EntryResource(ObjectMapper mapper, ToolDAO toolDAO) {
+    public EntryResource(ToolDAO toolDAO) {
         this.toolDAO = toolDAO;
         elasticManager = new ElasticManager();
     }
@@ -73,27 +68,15 @@ public class EntryResource implements AuthenticatedResourceInterface {
     @PUT
     @Timed
     @UnitOfWork
-    @Path("/{id}/aliases")
-    @ApiOperation(value = "Update the aliases linked to an entry.", authorizations = {
+    @Override
+    @Path("{id}/aliases")
+    @ApiOperation(nickname = "updateAliases", value = "Update the aliases linked to a entry in Dockstore.", authorizations = {
         @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Aliases are alphanumerical (case-insensitive and may contain internal hyphens), given in a comma-delimited list.", response = Entry.class)
     public Entry updateAliases(@ApiParam(hidden = true) @Auth User user,
         @ApiParam(value = "Entry to modify.", required = true) @PathParam("id") Long id,
         @ApiParam(value = "Comma-delimited list of aliases.", required = true) @QueryParam("aliases") String aliases,
         @ApiParam(value = "This is here to appease Swagger. It requires PUT methods to have a body, even if it is empty. Please leave it empty.") String emptyBody) {
-        Entry<? extends Entry, ? extends Version> c = toolDAO.getGenericEntryById(id);
-        checkEntry(c);
-        checkUserCanUpdate(user, c);
-        // compute differences
-        Set<String> oldAliases = c.getAliases().keySet();
-        Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
-        Set<String> aliasesToAdd = Sets.difference(newAliases, oldAliases);
-        Set<String> aliasesToRemove = new TreeSet<>(Sets.difference(oldAliases, newAliases));
-        // add new ones and remove old ones while retaining the old entries and their order
-        aliasesToAdd.forEach(alias -> c.getAliases().put(alias, new Entry.Alias()));
-        aliasesToRemove.forEach(alias -> c.getAliases().remove(alias));
-
-        elasticManager.handleIndexUpdate(c, ElasticMode.UPDATE);
-        return c;
+        return AliasableResourceInterface.super.updateAliases(user, id, aliases, emptyBody);
     }
 
     @GET
@@ -106,8 +89,24 @@ public class EntryResource implements AuthenticatedResourceInterface {
         if (entry == null || !entry.getIsPublished()) {
             throw new CustomWebApplicationException("Published entry does not exist.", HttpStatus.SC_BAD_REQUEST);
         }
-        List<CollectionOrganization> collectionsByEntryId = this.toolDAO.findCollectionsByEntryId(entry.getId());
-        return collectionsByEntryId;
+        return this.toolDAO.findCollectionsByEntryId(entry.getId());
     }
 
+    @Override
+    public Optional<ElasticManager> getElasticManager() {
+        return Optional.of(elasticManager);
+    }
+
+    @Override
+    public Entry getAndCheckResource(User user, Long id) {
+        Entry<? extends Entry, ? extends Version> c = toolDAO.getGenericEntryById(id);
+        checkEntry(c);
+        checkUserCanUpdate(user, c);
+        return c;
+    }
+
+    @Override
+    public Entry getAndCheckResourceByAlias(String alias) {
+        throw new UnsupportedOperationException("Use the TRS API for tools and workflows");
+    }
 }

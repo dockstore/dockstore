@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-alpha.7"
+  version: "1.6.0-beta.0-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -2480,7 +2480,7 @@ paths:
     put:
       tags:
       - "entries"
-      summary: "Update the aliases linked to an entry."
+      summary: "Update the aliases linked to a entry in Dockstore."
       description: "Aliases are alphanumerical (case-insensitive and may contain internal\
         \ hyphens), given in a comma-delimited list."
       operationId: "updateAliases"
@@ -2762,6 +2762,62 @@ paths:
               $ref: "#/definitions/Organization"
       security:
       - BEARER: []
+  /organizations/collections/{alias}/aliases:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves a collection by alias."
+      description: ""
+      operationId: "getCollectionByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+  /organizations/collections/{collectionId}/aliases:
+    put:
+      tags:
+      - "organizations"
+      summary: "Update the aliases linked to a Collection in Dockstore."
+      description: "Aliases are alphanumerical (case-insensitive and may contain internal\
+        \ hyphens), given in a comma-delimited list."
+      operationId: "updateCollectionAliases"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "collectionId"
+        in: "path"
+        description: "Entry to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "aliases"
+        in: "query"
+        description: "Comma-delimited list of aliases."
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
   /organizations/name/{name}:
     get:
       tags:
@@ -2785,6 +2841,26 @@ paths:
             $ref: "#/definitions/Organization"
       security:
       - BEARER: []
+  /organizations/{alias}/aliases:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves a collection by alias."
+      description: ""
+      operationId: "getOrganizationByAlias"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "alias"
+        in: "path"
+        description: "Alias"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
   /organizations/{organizationId}:
     get:
       tags:
@@ -2831,6 +2907,42 @@ paths:
         required: true
         type: "integer"
         format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/aliases:
+    put:
+      tags:
+      - "organizations"
+      summary: "Update the aliases linked to a listing in Dockstore."
+      description: "Aliases are alphanumerical (case-insensitive and may contain internal\
+        \ hyphens), given in a comma-delimited list."
+      operationId: "updateOrganizationAliases"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Entry to modify."
+        required: true
+        type: "integer"
+        format: "int64"
+      - name: "aliases"
+        in: "query"
+        description: "Comma-delimited list of aliases."
+        required: true
+        type: "string"
+      - in: "body"
+        name: "body"
+        description: "This is here to appease Swagger. It requires PUT methods to\
+          \ have a body, even if it is empty. Please leave it empty."
+        required: false
+        schema:
+          type: "string"
       responses:
         200:
           description: "successful operation"
@@ -5522,6 +5634,14 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/Entry"
+      organizationID:
+        type: "integer"
+        format: "int64"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for collections"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"
@@ -6068,6 +6188,11 @@ definitions:
         format: "int64"
         description: "Implementation specific ID for the organization in this web\
           \ service"
+      aliases:
+        type: "object"
+        description: "aliases can be used as an alternate unique id for organizations"
+        additionalProperties:
+          $ref: "#/definitions/Alias"
       dbCreateDate:
         type: "string"
         format: "date-time"

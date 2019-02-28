@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-alpha.7-SNAPSHOT
+  version: 1.6.0-beta.0-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -2749,7 +2749,7 @@ paths:
     put:
       tags:
         - entries
-      summary: Update the aliases linked to an entry.
+      summary: Update the aliases linked to a entry in Dockstore.
       description: Aliases are alphanumerical (case-insensitive and may contain internal
         hyphens), given in a comma-delimited list.
       operationId: updateAliases
@@ -3030,6 +3030,61 @@ paths:
       security:
         - BEARER:
             []
+  "/organizations/collections/{alias}/aliases":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves a collection by alias.
+      description: ""
+      operationId: getCollectionByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+  "/organizations/collections/{collectionId}/aliases":
+    put:
+      tags:
+        - organizations
+      summary: Update the aliases linked to a Collection in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateCollectionAliases
+      parameters:
+        - name: collectionId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+      security:
+        - BEARER:
+            []
   "/organizations/name/{name}":
     get:
       tags:
@@ -3055,6 +3110,27 @@ paths:
       security:
         - BEARER:
             []
+  "/organizations/{alias}/aliases":
+    get:
+      tags:
+        - organizations
+      summary: Retrieves a collection by alias.
+      description: ""
+      operationId: getOrganizationByAlias
+      parameters:
+        - name: alias
+          in: path
+          description: Alias
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
   "/organizations/{organizationId}":
     get:
       tags:
@@ -3103,6 +3179,40 @@ paths:
               $ref: "#/components/schemas/Organization"
         description: Organization to update with.
         required: true
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+      security:
+        - BEARER:
+            []
+  "/organizations/{organizationId}/aliases":
+    put:
+      tags:
+        - organizations
+      summary: Update the aliases linked to a listing in Dockstore.
+      description: Aliases are alphanumerical (case-insensitive and may contain internal
+        hyphens), given in a comma-delimited list.
+      operationId: updateOrganizationAliases
+      parameters:
+        - name: organizationId
+          in: path
+          description: Entry to modify.
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: aliases
+          in: query
+          description: Comma-delimited list of aliases.
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/updateLabelsBody"
       responses:
         "200":
           description: successful operation
@@ -6055,6 +6165,14 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/Entry"
+        organizationID:
+          type: integer
+          format: int64
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for collections
+          additionalProperties:
+            $ref: "#/components/schemas/Alias"
         dbCreateDate:
           type: string
           format: date-time
@@ -6134,6 +6252,10 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6149,10 +6271,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6318,6 +6436,10 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6333,10 +6455,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6541,6 +6659,11 @@ components:
           type: integer
           format: int64
           description: Implementation specific ID for the organization in this web service
+        aliases:
+          type: object
+          description: aliases can be used as an alternate unique id for organizations
+          additionalProperties:
+            $ref: "#/components/schemas/Alias"
         dbCreateDate:
           type: string
           format: date-time
@@ -7271,6 +7394,10 @@ components:
           type: integer
           format: int64
           readOnly: true
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7286,10 +7413,6 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

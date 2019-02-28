@@ -1034,6 +1034,93 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * This tests that aliases can be set on collections and workflows
+     */
+    @Test
+    public void testAliasOperations() {
+        // Setup postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        long collectionId = collection.getId();
+
+        // approve the org
+       testingPostgres.runUpdateStatement("update organization set status = '"+ io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() +"'");
+
+        // set aliases
+        final Collection collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
+        final Organization organizationWithAlias = organizationsApi
+            .updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+
+        assertEquals(2, collectionWithAlias.getAliases().size());
+        assertEquals(2, organizationWithAlias.getAliases().size());
+
+        // note that namespaces for organizations and collections are separate (therefore a collection can have the same alias as an organization)
+        final Collection spam1 = organizationsApi.getCollectionByAlias("spam");
+        assertNotNull(spam1);
+        final Organization spam = organizationsApi.getOrganizationByAlias("spam");
+        assertNotNull(spam);
+    }
+
+    /**
+     * This tests that aliases can be set on collections and workflows
+     */
+    @Test
+    public void testDuplicateAliasOperations() {
+        // Setup postgres
+        final CommonTestUtilities.TestingPostgres testingPostgres = getTestingPostgres();
+
+        // Setup user who creates Organization and collection
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+
+        // Create the Organization and collection
+        Organization organization = createOrg(organizationsApi);
+        Collection stubCollection = stubCollectionObject();
+
+        // Attach collections
+        Collection collection = organizationsApi.createCollection(organization.getId(), stubCollection);
+        long collectionId = collection.getId();
+
+        // approve the org
+        testingPostgres.runUpdateStatement("update organization set status = '"+ io.dockstore.webservice.core.Organization.ApplicationState.APPROVED.toString() +"'");
+
+        // set aliases
+        Collection collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
+        Organization organizationWithAlias = organizationsApi
+            .updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+
+        assertEquals(2, collectionWithAlias.getAliases().size());
+        assertEquals(2, organizationWithAlias.getAliases().size());
+
+        // try to add duplicates
+        // set aliases
+        collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "test collection, spam", "");
+        organizationWithAlias = organizationsApi
+            .updateOrganizationAliases(organization.getId(), "test organization, spam", "");
+
+        assertEquals(2, collectionWithAlias.getAliases().size());
+        assertEquals(2, organizationWithAlias.getAliases().size());
+
+        // delete an alias
+        collectionWithAlias = organizationsApi.updateCollectionAliases(collectionId, "spam", "");
+        organizationWithAlias = organizationsApi
+            .updateOrganizationAliases(organization.getId(), "spam", "");
+
+        assertEquals(1, collectionWithAlias.getAliases().size());
+        assertEquals(1, organizationWithAlias.getAliases().size());
+    }
+
+    /**
      * This tests that you can update the name and description of a collection.
      * Also tests when name is a duplicate.
      */
