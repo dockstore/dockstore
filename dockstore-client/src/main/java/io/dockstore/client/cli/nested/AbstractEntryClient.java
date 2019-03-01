@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.ws.rs.core.HttpHeaders;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -111,7 +113,6 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  * @author dyuen
  */
 public abstract class AbstractEntryClient<T> {
-    private static final String AUTHORIZATION = "Authorization";
     private static final String WORKFLOW = "workflow";
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
@@ -966,11 +967,15 @@ public abstract class AbstractEntryClient<T> {
      */
     public WorkflowExecutionServiceApi getWorkflowExecutionServiceApi(String wesUrl, String wesCred) {
         WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
+
+        // Uncomment this code when Swagger Codegen generates correct Java
+        // for OpenApi 3.0 yaml with arrays of files
         //ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
 
         // Done so we can override the Serialize method in ApiClient
         // Since Swagger Codegen does not create correct code for the
         // workflow attachment
+        // Delete these next two lines when Swagger Codegen is fixed
         ApiClientExtended wesApiClient = new ApiClientExtended();
         clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
 
@@ -1000,7 +1005,7 @@ public abstract class AbstractEntryClient<T> {
                     + "Please add 'authorization: <type> <credentials> to config file in WES section or "
                     + "use --wes-auth '<type> <credentials>' option on the command line if authorization credentials are needed");
         } else {
-            wesApiClient.addDefaultHeader(AUTHORIZATION, wesAuthorizationCredentials);
+            wesApiClient.addDefaultHeader(HttpHeaders.AUTHORIZATION, wesAuthorizationCredentials);
         }
 
         // TODO Add these headers to the http request. Are these needed?
