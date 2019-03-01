@@ -46,10 +46,6 @@ public class ApiClientExtended extends ApiClient {
             for (Map.Entry<String, Object> param: formParams.entrySet()) {
                 if (param.getValue() instanceof File) {
                     createBodyPart(multiPart, param.getKey(), param.getValue());
-                    //File file = (File) param.getValue();
-                    //FormDataContentDisposition contentDisp = FormDataContentDisposition.name(param.getKey())
-                    //        .fileName(file.getName()).size(file.length()).build();
-                    //multiPart.bodyPart(new FormDataBodyPart(contentDisp, file, MediaType.APPLICATION_OCTET_STREAM_TYPE));
                 } else if (param.getValue() instanceof List) {
                     List formListObject = (List)param.getValue();
                     for (int i = 0; i < formListObject.size(); i++) {
@@ -57,8 +53,6 @@ public class ApiClientExtended extends ApiClient {
                     }
                 } else {
                     createBodyPart(multiPart, param.getKey(), param.getValue());
-                    //FormDataContentDisposition contentDisp = FormDataContentDisposition.name(param.getKey()).build();
-                    //multiPart.bodyPart(new FormDataBodyPart(contentDisp, parameterToString(param.getValue())));
                 }
             }
             entity = Entity.entity(multiPart, MediaType.MULTIPART_FORM_DATA_TYPE);

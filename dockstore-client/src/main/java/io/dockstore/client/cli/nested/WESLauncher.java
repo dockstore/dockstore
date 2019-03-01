@@ -12,13 +12,16 @@ import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
 import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
 import io.swagger.wes.client.model.RunId;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WESLauncher extends BaseLauncher {
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WESLauncher.class);
+    private static final String TAGS = "WorkflowExecutionService";
+    private static final String WORKFLOW_TYPE_VERSION = "v1.0";
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
@@ -38,7 +41,6 @@ public class WESLauncher extends BaseLauncher {
         String wesUrl = abstractEntryClient.getWesUri();
         String wesAuth = abstractEntryClient.getWesAuth();
         clientWorkflowExecutionServiceApi = abstractEntryClient.getWorkflowExecutionServiceApi(wesUrl, wesAuth);
-
     }
 
     /**
@@ -79,8 +81,7 @@ public class WESLauncher extends BaseLauncher {
         return false;
     }
 
-    protected void addFilesToWorkflowAttachment(List<File> workflowAttachment, File zippedEntry) {
-        final File tempDir = Files.createTempDir();
+    protected void addFilesToWorkflowAttachment(List<File> workflowAttachment, File zippedEntry, File tempDir) {
         try {
             SwaggerUtility.unzipFile(zippedEntry, tempDir);
         } catch (IOException e) {
@@ -108,31 +109,30 @@ public class WESLauncher extends BaseLauncher {
             }
         }
 
-        // TODO this doesn't seem to work on my mac
-        // delete the temporary directory when the Java virtual machine exits
-        //https://docs.oracle.com/javase/7/docs/api/java/io/File.html#deleteOnExit()
-        tempDir.deleteOnExit();
     }
 
-    public boolean runWESCommand(String jsonString, File localPrimaryDescriptorFile, File zippedEntry) {
+    public void runWESCommand(String jsonString, File localPrimaryDescriptorFile, File zippedEntry) {
+        String workflowURL = localPrimaryDescriptorFile.getName();
+        final File tempDir = Files.createTempDir();
+
+        List<File> workflowAttachment = new ArrayList<>();
+        addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry, tempDir);
+        workflowAttachment.add(localPrimaryDescriptorFile);
+        File jsonInputFile = new File(jsonString);
+        workflowAttachment.add(jsonInputFile);
+
         try {
-            String tags = "WorkflowExecutionService";
-            String workflowURL = localPrimaryDescriptorFile.getName();
-
-            List<File> workflowAttachment = new ArrayList<>();
-            addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry);
-            workflowAttachment.add(localPrimaryDescriptorFile);
-            File jsonInputFile = new File(jsonString);
-            workflowAttachment.add(jsonInputFile);
-
-            RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonInputFile, "CWL", "v1.0", tags,
+            RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonInputFile, this.languageType.toString().toUpperCase(), WORKFLOW_TYPE_VERSION, TAGS,
                     "", workflowURL, workflowAttachment);
             System.out.println("Launched WES run with id: " + response.toString());
-
         } catch (io.swagger.wes.client.ApiException e) {
             LOG.error("Error launching WES run", e);
-            return false;
+        } finally {
+            try {
+                FileUtils.deleteDirectory(tempDir);
+            } catch (IOException ioe) {
+                LOG.error("Could not delete temporary directory" + tempDir + " for workflow attachment files", ioe);
+            }
         }
-        return true;
     }
 }
