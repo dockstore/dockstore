@@ -14,11 +14,16 @@ import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
 import io.swagger.wes.client.model.RunId;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WESLauncher extends BaseLauncher {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
+
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
     protected WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi;
+
 
     public WESLauncher(AbstractEntryClient abstractEntryClient, LanguageType language, boolean script) {
         super(abstractEntryClient, language, script);
@@ -26,8 +31,7 @@ public class WESLauncher extends BaseLauncher {
     }
 
     /**
-     * Creates a local copy of the Cromwell JAR (May have to download from the GitHub).
-     * Uses the default version unless a version is specified in the Dockstore config.
+     * Creates a copy of the Workflow Execution Service (WES) API.
      */
     @Override
     public void initialize() {
@@ -63,6 +67,7 @@ public class WESLauncher extends BaseLauncher {
     /*
      * File type must match workflow language possible file types
      * E.g. for CWL workflows the file extension must be cwl, yaml, or yml
+     * Also include json files
      */
     protected boolean fileIsCorrectType(File potentialAttachmentFile) {
         LanguageType potentialAttachmentFileLanguage = abstractEntryClient.checkFileExtension(potentialAttachmentFile.getName()); //file extension could be cwl,wdl or ""
@@ -125,7 +130,7 @@ public class WESLauncher extends BaseLauncher {
             System.out.println("Launched WES run with id: " + response.toString());
 
         } catch (io.swagger.wes.client.ApiException e) {
-            e.printStackTrace();
+            LOG.error("Error launching WES run", e);
             return false;
         }
         return true;

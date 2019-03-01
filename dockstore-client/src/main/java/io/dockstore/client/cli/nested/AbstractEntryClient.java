@@ -186,7 +186,7 @@ public abstract class AbstractEntryClient<T> {
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
         out("");
         out("  " + DOWNLOAD + "         :  download " + getEntryType() + "s to the local directory");
-        if (getEntryType().toLowerCase().equals(WORKFLOW)) {
+        if (WORKFLOW.equalsIgnoreCase(getEntryType())) {
             out("");
             out("  wes              :  calls a Workflow Execution Schema API (WES) for a version of a " + getEntryType() + "");
         }
@@ -276,7 +276,7 @@ public abstract class AbstractEntryClient<T> {
                 break;
             case "wes":
                 isWesCommand = true;
-                if (getEntryType().toLowerCase().equals(WORKFLOW)) {
+                if (WORKFLOW.equalsIgnoreCase(getEntryType())) {
                     processWesCommands(args);
                 } else {
                     errorMessage("WES API calls are only valid for workflows not tools.", CLIENT_ERROR);
@@ -1008,7 +1008,7 @@ public abstract class AbstractEntryClient<T> {
             wesApiClient.addDefaultHeader(HttpHeaders.AUTHORIZATION, wesAuthorizationCredentials);
         }
 
-        // TODO Add these headers to the http request. Are these needed?
+        // Add these headers to the http request. Are these needed?
         wesApiClient.addDefaultHeader("Accept", "*/*");
         wesApiClient.addDefaultHeader("Expect", "100-continue");
 
@@ -1043,14 +1043,14 @@ public abstract class AbstractEntryClient<T> {
                             RunLog response = clientWorkflowExecutionServiceApi.getRunLog(workflowId);
                             out("Verbose run status is: " + response.toString());
                         } catch (io.swagger.wes.client.ApiException e) {
-                            e.printStackTrace();
+                            LOG.error("Error getting verbose WES run status", e);
                         }
                     } else {
                         try {
                             RunStatus response = clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
                             out("Brief run status is: " + response.toString());
                         } catch (io.swagger.wes.client.ApiException e) {
-                            e.printStackTrace();
+                            LOG.error("Error getting brief WES run status", e);
                         }
                     }
                 } else if (args.contains("cancel")) {
@@ -1060,7 +1060,7 @@ public abstract class AbstractEntryClient<T> {
                         RunId response = clientWorkflowExecutionServiceApi.cancelRun(workflowId);
                         out("Cancelled run with id: " + response.toString());
                     } catch (io.swagger.wes.client.ApiException e) {
-                        e.printStackTrace();
+                        LOG.error("Error canceling WES run", e);
                     }
                 }
             }
