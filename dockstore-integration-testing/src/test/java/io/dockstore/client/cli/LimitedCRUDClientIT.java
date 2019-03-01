@@ -97,8 +97,15 @@ public class LimitedCRUDClientIT {
     }
 
     @Before
-    public void resetDBBetweenTests() throws Exception {
+    public void resetDBAndAdminUserLimitsBetweenTests() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
+
+        // Tests can run in any order, and the CachingAuthenticator is not cleared between tests
+        // Reset limits for user between tests so it's not set when it's not supposed to be.
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+        usersApi.setUserLimits(user.getId(), new Limits());
     }
 
     @Rule
