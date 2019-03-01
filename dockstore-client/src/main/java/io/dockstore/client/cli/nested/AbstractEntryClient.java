@@ -1028,14 +1028,14 @@ public abstract class AbstractEntryClient<T> {
 
             this.wesUri = optVal(args, "--wes-url", null);
             this.wesAuth = optVal(args, "--wes-auth", null);
-            if (args.contains("launch")) {
+            if (args.get(0).equals("launch")) {
                 out("Launching workflow using WES");
                 //remove the launch keyword so command processing continues as usual
                 args.remove(0);
                 launch(args);
             } else {
                 WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(getWesUri(), getWesAuth());
-                if (args.contains("status")) {
+                if (args.get(0).equals("status")) {
                     String workflowId = reqVal(args, "--id");
                     out("Getting status of WES workflow");
                     if (args.contains("--verbose")) {
@@ -1053,7 +1053,7 @@ public abstract class AbstractEntryClient<T> {
                             LOG.error("Error getting brief WES run status", e);
                         }
                     }
-                } else if (args.contains("cancel")) {
+                } else if (args.get(0).equals("cancel")) {
                     out("Canceling WES workflow");
                     String workflowId = reqVal(args, "--id");
                     try {
