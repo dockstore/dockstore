@@ -81,6 +81,10 @@ public class LimitedCRUDClientIT {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    /**
+     * Used to set user based hosted entry count and hosted entry version limits -- higher than the system limits for those values.
+     */
     public static final int NEW_LIMITS = 20;
 
     //TODO: duplicates BaseIT but with a different config file, attempt to simplify after release
