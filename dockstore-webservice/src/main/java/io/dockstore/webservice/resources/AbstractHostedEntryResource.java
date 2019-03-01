@@ -124,8 +124,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         // check if the user has hit a limit yet
         final long currentCount = getEntryDAO().countAllHosted(user.getId());
-        if (currentCount >= calculatedEntryLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + calculatedEntryLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        // The user parameter is cached via the AuthenticationCachePolicy and may not reflect the latest changes to the user
+        User updatedUser = userDAO.findById(user.getId());
+        final int limit = updatedUser.getHostedEntryCountLimit() != null ? updatedUser.getHostedEntryCountLimit() : calculatedEntryLimit;
+        if (currentCount >= limit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         // Only check type for workflows
@@ -183,8 +186,11 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         // check if the user has hit a limit yet
         final long currentCount = entry.getVersions().size();
-        if (currentCount >= calculatedEntryVersionLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        // The user parameter is cached via the AuthenticationCachePolicy and may not reflect the latest changes to the user
+        User updatedUser = userDAO.findById(user.getId());
+        final int limit = updatedUser.getHostedEntryVersionsLimit() != null ? updatedUser.getHostedEntryVersionsLimit() : calculatedEntryVersionLimit;
+        if (currentCount >= limit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         updateUnsetAbsolutePaths(sourceFiles);
