@@ -2,8 +2,6 @@ package io.dockstore.client.cli.nested;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +32,8 @@ public class WESLauncher extends BaseLauncher {
     @Override
     public void initialize() {
         String wesUrl = abstractEntryClient.getWesUri();
-        clientWorkflowExecutionServiceApi = abstractEntryClient.getWorkflowExecutionServiceApi(wesUrl);
+        String wesAuth = abstractEntryClient.getWesAuth();
+        clientWorkflowExecutionServiceApi = abstractEntryClient.getWorkflowExecutionServiceApi(wesUrl, wesAuth);
 
     }
 
@@ -68,7 +67,6 @@ public class WESLauncher extends BaseLauncher {
     protected boolean fileIsCorrectType(File potentialAttachmentFile) {
         LanguageType potentialAttachmentFileLanguage = abstractEntryClient.checkFileExtension(potentialAttachmentFile.getName()); //file extension could be cwl,wdl or ""
         if (potentialAttachmentFile.exists() && !potentialAttachmentFile.isDirectory()) {
-            //String workflowLanguageType = this.languageType.toString().toLowerCase();
             if (potentialAttachmentFileLanguage.equals(this.languageType) || FilenameUtils.getExtension(potentialAttachmentFile.getAbsolutePath()).toLowerCase().equals("json")) {
                 return true;
             }
@@ -104,6 +102,8 @@ public class WESLauncher extends BaseLauncher {
                 System.out.println("Found directory " + listOfFiles[i].getName());
             }
         }
+
+        // TODO this doesn't seem to work on my mac
         // delete the temporary directory when the Java virtual machine exits
         //https://docs.oracle.com/javase/7/docs/api/java/io/File.html#deleteOnExit()
         tempDir.deleteOnExit();
@@ -112,66 +112,13 @@ public class WESLauncher extends BaseLauncher {
     public boolean runWESCommand(String jsonString, File localPrimaryDescriptorFile, File zippedEntry) {
         try {
             String tags = "WorkflowExecutionService";
-
-
-            // Convert the filename to an array of bytes using a standard encoding
-            //byte[] descriptorContent = localPrimaryDescriptorFile.getAbsolutePath().getBytes(StandardCharsets.UTF_8);
-            //byte[] descriptorContent = null;
-            //try {
-            //    descriptorContent = Files.toByteArray(localPrimaryDescriptorFile);
-            //} catch (IOException e) {
-            //    e.printStackTrace();
-            //}
-
-
-            //byte[] jsonContent = jsonString.getBytes(StandardCharsets.UTF_8);
-            //String jsonContent = null;
-            //try {
-            //    jsonContent = IOUtils.to(new FileReader(jsonString), "utf-8");
-            //    jsonContent = new String(Files.toByteArray(jsonString)
-            //} catch (IOException ioe) {
-            //    ioe.printStackTrace();
-            //}
-            String jsonContent = null;
-            try {
-                jsonContent = new String(java.nio.file.Files.readAllBytes(Paths.get(jsonString)), StandardCharsets.UTF_8);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-
+            String workflowURL = localPrimaryDescriptorFile.getName();
 
             List<File> workflowAttachment = new ArrayList<>();
             addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry);
             workflowAttachment.add(localPrimaryDescriptorFile);
-
-            //workflowAttachment.add(WORKFLOW_URL.getBytes(StandardCharsets.UTF_8));
-            //workflowAttachment.add(descriptorContent);
-
-
-            //workflowAttachment.add(jsonContent);
-            System.out.println("runWESCommand: json content is: " + jsonContent);
-
-            //jsonString = jsonString.replace(System.getProperty("line.separator"), ".");
-            System.out.println("runWESCommand: jsonString is: " + jsonString);
-            System.out.println("runWESCommand: workflow absolute path is: " + localPrimaryDescriptorFile.getAbsolutePath());
-
-            //String workflowURL = "file://" + localPrimaryDescriptorFile.getAbsolutePath();
-            String workflowURL = localPrimaryDescriptorFile.getName();
-            System.out.println("runWESCommand: workflow URI is: " + workflowURL);
-
-            //System.out.println("runWESCommand: workflow URI is: " + localPrimaryDescriptorFile.toURI().toString());
-
-            //ServiceInfo response = clientWorkflowExecutionServiceApi.getServiceInfo();
-
             File jsonInputFile = new File(jsonString);
             workflowAttachment.add(jsonInputFile);
-
-
-            for (int i = 0; i < workflowAttachment.size(); i++) {
-                String str = new String(workflowAttachment.get(i).getName());
-                System.out.println("runWESCommand: workflow attachment " + i + " is: " + str);
-                //System.out.println("runWESCommand: workflow attachment " + i + " is: " + Arrays.toString(workflowAttachment.get(i)));
-            }
 
             RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonInputFile, "CWL", "v1.0", tags,
                     "", workflowURL, workflowAttachment);
