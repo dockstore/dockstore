@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-beta.0-SNAPSHOT
+  version: 1.6.0-beta.1-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -3161,8 +3161,8 @@ paths:
       tags:
         - organizations
       summary: Update an organization.
-      description: Currently only name, description, email, link and location can be
-        updated.
+      description: Currently only name, description, email, link, avatarUrl, and location
+        can be updated.
       operationId: updateOrganization
       parameters:
         - name: organizationId
@@ -6712,6 +6712,10 @@ components:
           minLength: 3
           maxLength: 50
           pattern: "[\\w ,_\\-&()']*"
+        avatarUrl:
+          type: string
+          description: Logo URL
+          pattern: ([^\s]+)(?i)(\.jpg|\.jpeg|\.png|\.gif)
     OrganizationUser:
       type: object
       required:
