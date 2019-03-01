@@ -17,10 +17,6 @@ public class Limits {
 
     private Integer hostedEntryVersionLimit;
 
-    public Limits() {
-
-    }
-
     @JsonProperty
     public Integer getHostedEntryCountLimit() {
         return hostedEntryCountLimit;
