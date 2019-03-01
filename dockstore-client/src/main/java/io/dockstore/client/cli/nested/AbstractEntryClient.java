@@ -979,12 +979,13 @@ public abstract class AbstractEntryClient<T> {
         try {
             configSubNode = config.getSection("WES");
         } catch (Exception e) {
-            exceptionMessage(e, "Could not get WES section from config file", ENTRY_NOT_FOUND);
+            out("Could not get WES section from config file");
         }
 
         String wesEndpointUrl = ObjectUtils.firstNonNull(wesUrl, configSubNode.getString("url"));
         if (wesEndpointUrl == null || wesEndpointUrl.isEmpty()) {
-            errorMessage("No WES URL found in config file and no WES URL entered on command line.", CLIENT_ERROR);
+            errorMessage("No WES URL found in config file and no WES URL entered on command line. Please add url: <url> to "
+                    + "config file in a WES section or use --wes-url <url> option on the command line", CLIENT_ERROR);
         } else {
             out("WES endpoint url is: " + wesEndpointUrl);
             wesApiClient.setBasePath(wesEndpointUrl);
