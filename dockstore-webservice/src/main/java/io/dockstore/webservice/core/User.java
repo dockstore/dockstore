@@ -150,7 +150,7 @@ public class User implements Principal, Comparable<User>, Serializable {
     @ApiModelProperty(value = "Organizations in dockstore that this user starred", position = 14)
     @OrderBy("id")
     @JsonIgnore
-    private final SortedSet<Organization> starredOrganizations;
+    private final Set<Organization> starredOrganizations;
 
     /**
      * The total number of hosted entries (workflows and tools) a user is allowed to create.  A value of null

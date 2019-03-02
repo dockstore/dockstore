@@ -360,10 +360,10 @@
         </createTable>
     </changeSet>
     <changeSet author="louisecabansay (generated)" id="addUserIdStarOrgConstratint">
-        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="starred_organizations" constraintName="fk_userIdStarredOrganizations" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="enduser"/>
+        <addForeignKeyConstraint baseColumnNames="userid" baseTableName="starred_organizations" constraintName="fk_userIdStarredOrganizations" referencedColumnNames="id" referencedTableName="enduser"/>
     </changeSet>
     <changeSet author="louisecabansay (generated)" id="addOrganizationIdStarOrgConstratint">
-        <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="organization"/>
+        <addForeignKeyConstraint baseColumnNames="organizationid" baseTableName="starred_organizations" constraintName="fk_organizationIdStarredOrganizations" referencedColumnNames="id" referencedTableName="organization"/>
     </changeSet>
     <changeSet id="epicAbsolutePathFix" author="dyuen">
         <sql dbms="postgresql">
