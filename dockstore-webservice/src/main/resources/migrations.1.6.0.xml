@@ -310,4 +310,16 @@
             <column name="topic" type="varchar(255 BYTE)"/>
         </addColumn>
     </changeSet>
+
+    <changeSet author="charlesoverbeck (generated)" id="addHostedEntryCountlimitToUser">
+        <addColumn tableName="enduser">
+            <column name="hostedentrycountlimit" type="int4"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="charlesoverbeck (generated)" id="addHostedEntryVersionsLimitToUser">
+        <addColumn tableName="enduser">
+            <column name="hostedentryversionslimit" type="int4"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

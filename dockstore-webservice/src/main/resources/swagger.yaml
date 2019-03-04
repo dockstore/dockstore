@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-beta.0-SNAPSHOT"
+  version: "1.6.0-beta.1-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3737,6 +3737,57 @@ paths:
             $ref: "#/definitions/User"
       security:
       - BEARER: []
+  /users/user/{userId}/limits:
+    get:
+      tags:
+      - "users"
+      summary: "Returns the specified user's limits. ADMIN or CURATOR only"
+      description: ""
+      operationId: "getUserLimits"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Limits"
+      security:
+      - BEARER: []
+    put:
+      tags:
+      - "users"
+      summary: "Update the specified user's limits. ADMIN or CURATOR only"
+      description: ""
+      operationId: "setUserLimits"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "userId"
+        in: "path"
+        description: "User ID"
+        required: true
+        type: "integer"
+        format: "int64"
+      - in: "body"
+        name: "body"
+        description: "Limits to set for a user"
+        required: true
+        schema:
+          $ref: "#/definitions/Limits"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Limits"
+      security:
+      - BEARER: []
   /users/username/{username}:
     get:
       tags:
@@ -5725,6 +5776,10 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5740,10 +5795,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5936,6 +5987,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5951,10 +6006,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6143,6 +6194,15 @@ definitions:
         description: "String representation of the tag"
     description: "This describes a descriptive label that can be placed on an entry\
       \ in the dockstore"
+  Limits:
+    type: "object"
+    properties:
+      hostedEntryCountLimit:
+        type: "integer"
+        format: "int32"
+      hostedEntryVersionLimit:
+        type: "integer"
+        format: "int32"
   Metadata:
     type: "object"
     required:
@@ -6979,6 +7039,10 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6994,10 +7058,6 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       author:
         type: "string"
         position: 1

@@ -124,8 +124,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         // check if the user has hit a limit yet
         final long currentCount = getEntryDAO().countAllHosted(user.getId());
-        if (currentCount >= calculatedEntryLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + calculatedEntryLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        final int limit = user.getHostedEntryCountLimit() != null ? user.getHostedEntryCountLimit() : calculatedEntryLimit;
+        if (currentCount >= limit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflows which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         // Only check type for workflows
@@ -183,8 +184,9 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         // check if the user has hit a limit yet
         final long currentCount = entry.getVersions().size();
-        if (currentCount >= calculatedEntryVersionLimit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + calculatedEntryVersionLimit, HttpStatus.SC_PAYMENT_REQUIRED);
+        final int limit = user.getHostedEntryVersionsLimit() != null ? user.getHostedEntryVersionsLimit() : calculatedEntryVersionLimit;
+        if (currentCount >= limit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
         }
 
         updateUnsetAbsolutePaths(sourceFiles);

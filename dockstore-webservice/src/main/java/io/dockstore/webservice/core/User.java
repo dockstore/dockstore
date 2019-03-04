@@ -144,6 +144,23 @@ public class User implements Principal, Comparable<User>, Serializable {
     @JsonIgnore
     private Set<OrganizationUser> organizations;
 
+    /**
+     * The total number of hosted entries (workflows and tools) a user is allowed to create.  A value of null
+     * means to use the configured system limit.
+     */
+    @Column()
+    @JsonIgnore
+    private Integer hostedEntryCountLimit;
+
+    /**
+     * The total number of versions a user is allowed to create for a single entry. A value of null
+     * means to use the configured system limit.
+     */
+    @Column()
+    @JsonIgnore
+    private Integer hostedEntryVersionsLimit;
+
+
     public User() {
         entries = new TreeSet<>();
         starredEntries = new TreeSet<>();
@@ -351,6 +368,22 @@ public class User implements Principal, Comparable<User>, Serializable {
 
     public void setSetupComplete(boolean setupComplete) {
         this.setupComplete = setupComplete;
+    }
+
+    public Integer getHostedEntryCountLimit() {
+        return hostedEntryCountLimit;
+    }
+
+    public Integer getHostedEntryVersionsLimit() {
+        return hostedEntryVersionsLimit;
+    }
+
+    public void setHostedEntryCountLimit(Integer hostedEntryCountLimit) {
+        this.hostedEntryCountLimit = hostedEntryCountLimit;
+    }
+
+    public void setHostedEntryVersionsLimit(Integer hostedEntryVersionsLimit) {
+        this.hostedEntryVersionsLimit = hostedEntryVersionsLimit;
     }
 
     /**
