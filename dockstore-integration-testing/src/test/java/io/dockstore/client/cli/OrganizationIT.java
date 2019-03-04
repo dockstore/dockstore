@@ -332,6 +332,32 @@ public class OrganizationIT extends BaseIT {
     }
 
     /**
+     * This tests that just changing the case of your name should be fine
+     */
+    @Test
+    public void testRenameOrgByCase() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Create the organisation
+        Organization organisation = stubOrgObject();
+        organisation.setName("HCA");
+        organisation.setDisplayName("HCA");
+        organisation = organisationsApiUser2.createOrganization(organisation);
+
+        // Create org with different name and display name
+        Organization organisation2 = stubOrgObject();
+        organisation2.setName("testname2");
+        organisation2.setDisplayName("test name 2");
+        organisation2 = organisationsApiUser2.createOrganization(organisation2);
+
+        organisation.setName("hCa");
+        organisation.setDisplayName("hCa");
+        organisationsApiUser2.updateOrganization(organisation, organisation.getId());
+    }
+
+    /**
      * This tests that you cannot add a collection with a duplicate display name
      */
     @Test

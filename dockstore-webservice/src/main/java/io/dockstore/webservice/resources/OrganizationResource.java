@@ -389,10 +389,16 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         // Check if new name is valid
         if (!Objects.equals(oldOrganization.getName(), organization.getName())) {
             Organization duplicateName = organizationDAO.findByName(organization.getName());
+            // if the duplicate is the old org itself, ignore it
             if (duplicateName != null) {
-                String msg = "An organization already exists with the name '" + organization.getName() + "', please try another one.";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                if (duplicateName.getId() == oldOrganization.getId()) {
+                    // do nothing
+                    LOG.debug("this appears to be a case change");
+                } else {
+                    String msg = "An organization already exists with the name '" + organization.getName() + "', please try another one.";
+                    LOG.info(msg);
+                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                }
             }
         }
 
