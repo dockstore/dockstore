@@ -566,15 +566,10 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
                 if (correctSourceFile.isPresent()) {
                     SourceFile sourceFile = correctSourceFile.get();
-                    // annoyingly, test json, Dockerfiles, primaries include a fullpath whereas secondary descriptors
-                    // are just relative to the main descriptor this affects the url that needs to be built
-                    // in a non-hotfix, this could re-use code from the file listing
-                    StringBuilder sourceFileUrl = new StringBuilder(urlBuilt);
-                    if (!SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType()) && sourceFile.getType() != SourceFile.FileType.DOCKERFILE
-                        && !primaryDescriptors.contains(sourceFile.getPath())) {
-                        sourceFileUrl.append(StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/"));
-                    }
-                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl.toString(), sourceFile);
+                    String sourceFileUrl =
+                        urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
+                            .prependIfMissing(searchPath, "/");
+                    ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
                     if (toolDescriptor == null) {
                         return Response.status(Status.NOT_FOUND).build();
                     }
@@ -619,7 +614,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         searchPath = cleanRelativePath(searchPath);
 
         for (SourceFile sourceFile : sourceFiles) {
-            String calculatedPath = sourceFile.getPath();
+            String calculatedPath = sourceFile.getAbsolutePath();
             // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
             // so we need to standardize relative to the main descriptor
             if (SourceFile.TEST_FILE_TYPES.contains(sourceFile.getType())) {
@@ -709,18 +704,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private List<ToolFile> getToolFiles(Set<SourceFile> sourceFiles, List<String> mainDescriptor, String type, String workingDirectory) {
         List<SourceFile> filteredSourceFiles = filterSourcefiles(sourceFiles, type);
+        final Path path = Paths.get("/" + workingDirectory);
         return filteredSourceFiles.stream().map(file -> {
             ToolFile toolFile = new ToolFile();
-            toolFile.setPath(file.getPath());
+            toolFile.setPath(path.relativize(Paths.get(file.getAbsolutePath())).toString());
             ToolFile.FileTypeEnum fileTypeEnum = fileTypeToToolFileFileTypeEnum(file.getType());
             if (fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR) && mainDescriptor.contains(file.getPath())) {
                 fileTypeEnum = ToolFile.FileTypeEnum.PRIMARY_DESCRIPTOR;
-            }
-            if (!fileTypeEnum.equals(ToolFile.FileTypeEnum.SECONDARY_DESCRIPTOR)) {
-                Path pathBase = Paths.get(workingDirectory.isEmpty() ? "/" : StringUtils.prependIfMissing(workingDirectory, "/"));
-                Path specificPath = Paths.get(file.getPath());
-                Path pathRelative = pathBase.relativize(specificPath);
-                toolFile.setPath(pathRelative.toString());
             }
             toolFile.setFileType(fileTypeEnum);
             return toolFile;
