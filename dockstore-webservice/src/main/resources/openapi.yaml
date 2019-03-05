@@ -2976,7 +2976,7 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Organization"
-    put:
+    post:
       tags:
         - organizations
       summary: Create an organization.
@@ -3157,7 +3157,7 @@ paths:
       security:
         - BEARER:
             []
-    post:
+    put:
       tags:
         - organizations
       summary: Update an organization.

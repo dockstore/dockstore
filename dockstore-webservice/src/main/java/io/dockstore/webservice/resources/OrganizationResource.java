@@ -324,7 +324,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         return organizations;
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @ApiOperation(value = "Create an organization.", notes = "Organization requires approval by an admin before being made public.", authorizations = {
@@ -359,7 +359,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         return organizationDAO.findById(id);
     }
 
-    @POST
+    @PUT
     @Timed
     @UnitOfWork
     @Path("{organizationId}")

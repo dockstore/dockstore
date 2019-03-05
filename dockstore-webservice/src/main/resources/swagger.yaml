@@ -2711,7 +2711,7 @@ paths:
             type: "array"
             items:
               $ref: "#/definitions/Organization"
-    put:
+    post:
       tags:
       - "organizations"
       summary: "Create an organization."
@@ -2885,7 +2885,7 @@ paths:
             $ref: "#/definitions/Organization"
       security:
       - BEARER: []
-    post:
+    put:
       tags:
       - "organizations"
       summary: "Update an organization."
