@@ -328,4 +328,11 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="dyuen" id="redoconstraintOrgNames">
+        <!-- above didn't take, look out for exact dbms name -->
+        <sql dbms="postgresql">
+            create unique index organization_name_index on organization (LOWER(name));
+        </sql>
+    </changeSet>
+
 </databaseChangeLog>
