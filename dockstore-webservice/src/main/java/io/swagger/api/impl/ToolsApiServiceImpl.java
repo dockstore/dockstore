@@ -398,13 +398,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
 
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
-                    Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null);
+                    config.getExternalConfig().getBasePath() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
+                    Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
-                Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null);
+                config.getExternalConfig().getBasePath() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
+                Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
         } catch (URISyntaxException | MalformedURLException e) {
