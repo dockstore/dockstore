@@ -60,6 +60,14 @@ public class OrganizationIT extends BaseIT {
     // All numbers, too short, bad pattern, too long, foreign characters
     final List<String> badNames = Arrays.asList("1234", "ab", "1aab", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "我喜欢狗");
 
+    // Doesn't have extension, has query parameter at the end, extension is not jpg, jpeg, png, or gif.
+    final List<String> badAvatarUrls = Arrays.asList("https://via.placeholder.com/150",
+            "https://media.giphy.com/media/3o7bu4EJkrXG9Bvs9G/giphy.svg",
+            "https://i2.wp.com/upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Patates.jpg/2560px-Patates.jpg?ssl=1",
+            ".png",
+            "https://via.placeholder.com/150.jpg asdf",
+            "ad .jpg");
+
     final List<String> goodDisplayNames = Arrays.asList("test-name", "test name", "test,name", "test_name", "test(name)", "test'name", "test&name");
 
     final List<String> badDisplayNames = Arrays.asList("test@hello", "aa", "我喜欢狗", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", "%+%");
@@ -78,6 +86,7 @@ public class OrganizationIT extends BaseIT {
         organization.setEmail("test@email.com");
         organization.setDescription(markdownDescription);
         organization.setTopic("This is a short topic");
+        organization.setAvatarUrl("https://www.lifehardin.net/images/employees/default-logo.png");
         return organization;
     }
 
@@ -285,6 +294,20 @@ public class OrganizationIT extends BaseIT {
 
         List<io.swagger.client.model.OrganizationUser> users = organizationsApiUser2.getOrganizationMembers(registeredOrganization.getId());
         assertEquals("There should be 1 user, there are " + users.size(),1, users.size());
+
+        // Update the organization
+        String logo = "https://res.cloudinary.com/hellofresh/image/upload/f_auto,fl_lossy,q_auto,w_640/v1/hellofresh_s3/image/554a3abff8b25e1d268b456d.png";
+        newOrganization.setAvatarUrl(logo);
+        organization = organizationsApiUser2.updateOrganization(newOrganization, organization.getId());
+
+        // There should be three MODIFY_ORG events
+        final long count5 = testingPostgres
+                .runSelectStatement("select count(*) from event where type = 'MODIFY_ORG'", new ScalarHandler<>());
+        assertEquals("There should be 2 events of type MODIFY_ORG, there are " + count5, 3, count5);
+
+        // organization should have new information
+        organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
+        assertEquals("organization should be returned and have an updated logo image.", logo, organization.getAvatarUrl());
 
         // Update organization test
         organization = organizationsApiUser2.updateOrganizationDescription(organization.getId(), "potato");
@@ -731,6 +754,37 @@ public class OrganizationIT extends BaseIT {
 
         if (!throwsError) {
             fail("Was able to create an Organization with an incorrect name: " + name);
+        }
+    }
+
+    /**
+     * Test that Organization avatarUrl column constraints work as intended.
+     */
+    @Test
+    public void testAvatarUrlConstraints() {
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organizationsApi = new OrganizationsApi(webClientUser2);
+        badAvatarUrls.forEach(url -> createOrgWithBadAvatarUrl(url, organizationsApi));
+    }
+
+    /**
+     * Helper that creates an Organization with an avatar url that should fail
+     * @param url
+     * @param organizationsApi
+     */
+    private void createOrgWithBadAvatarUrl(String url, OrganizationsApi organizationsApi) {
+        Organization organization = stubOrgObject();
+        organization.setAvatarUrl(url);
+
+        boolean throwsError = false;
+        try {
+            organizationsApi.createOrganization(organization);
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to create an Organization with an incorrect avatar url: " + url);
         }
     }
 

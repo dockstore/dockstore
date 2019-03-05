@@ -118,6 +118,11 @@ public class Organization implements Serializable, Aliasable {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    @Column
+    @Pattern(regexp = "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)")
+    @ApiModelProperty(value = "Logo URL", position = 9)
+    private String avatarUrl;
+
     public long getId() {
         return id;
     }
@@ -241,4 +246,12 @@ public class Organization implements Serializable, Aliasable {
     }
 
     public enum ApplicationState { PENDING, REJECTED, APPROVED }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
 }

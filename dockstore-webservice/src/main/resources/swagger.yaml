@@ -2889,8 +2889,8 @@ paths:
       tags:
       - "organizations"
       summary: "Update an organization."
-      description: "Currently only name, description, email, link and location can\
-        \ be updated."
+      description: "Currently only name, description, email, link, avatarUrl, and\
+        \ location can be updated."
       operationId: "updateOrganization"
       produces:
       - "application/json"
@@ -6310,6 +6310,11 @@ definitions:
         minLength: 3
         maxLength: 50
         pattern: "[\\w ,_\\-&()']*"
+      avatarUrl:
+        type: "string"
+        position: 9
+        description: "Logo URL"
+        pattern: "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)"
   OrganizationUser:
     type: "object"
     required:
