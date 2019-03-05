@@ -45,7 +45,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @NamedQueries({
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.getByAlias", query = "SELECT e from Collection e JOIN e.aliases a WHERE KEY(a) IN :alias"),
         @NamedQuery(name = "io.dockstore.webservice.core.Collection.findAllByOrg", query = "SELECT col FROM Collection col WHERE organizationid = :organizationId"),
-        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE col.name = :name AND organizationid = :organizationId"),
+        @NamedQuery(name = "io.dockstore.webservice.core.Collection.findByNameAndOrg", query = "SELECT col FROM Collection col WHERE lower(col.name) = lower(:name) AND organizationid = :organizationId"),
 })
 @SuppressWarnings("checkstyle:magicnumber")
 public class Collection implements Serializable, Aliasable {
@@ -55,7 +55,7 @@ public class Collection implements Serializable, Aliasable {
     @Schema(description = "Implementation specific ID for the collection in this web service")
     private long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the collection.", required = true, example = "Alignment", position = 1)

@@ -380,6 +380,28 @@ public class OrganizationIT extends BaseIT {
         organisationsApiUser2.updateOrganization(organisation, organisation.getId());
     }
 
+
+    @Test
+    public void testCollectionAlternateCase() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Create the organisation
+        Organization organisation = stubOrgObject();
+        organisation = organisationsApiUser2.createOrganization(organisation);
+
+        // Create a collection
+        Collection stubCollection = stubCollectionObject();
+        stubCollection.setName("hcacollection");
+
+        // Attach collection
+        organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+        stubCollection.setName("HCAcollection");
+        thrown.expect(ApiException.class);
+        organisationsApiUser2.createCollection(organisation.getId(), stubCollection);
+    }
+
     /**
      * This tests that you cannot add a collection with a duplicate display name
      */
