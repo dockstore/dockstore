@@ -18,6 +18,9 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
+import static io.dockstore.client.cli.Client.IO_ERROR;
+
 public class WESLauncher extends BaseLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(WESLauncher.class);
     private static final String TAGS = "WorkflowExecutionService";
@@ -53,6 +56,12 @@ public class WESLauncher extends BaseLauncher {
         return null;
     }
 
+    /**
+     * Provisions output files defined in the parameter file
+     * @param stdout stdout of running entry
+     * @param stderr stderr of running entry
+     * @param wdlOutputTarget
+     */
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
 
@@ -73,10 +82,10 @@ public class WESLauncher extends BaseLauncher {
      */
     protected boolean fileIsCorrectType(File potentialAttachmentFile) {
         LanguageType potentialAttachmentFileLanguage = abstractEntryClient.checkFileExtension(potentialAttachmentFile.getName()); //file extension could be cwl,wdl or ""
-        if (potentialAttachmentFile.exists() && !potentialAttachmentFile.isDirectory()) {
-            if (potentialAttachmentFileLanguage.equals(this.languageType) || FilenameUtils.getExtension(potentialAttachmentFile.getAbsolutePath()).toLowerCase().equals("json")) {
-                return true;
-            }
+        if (potentialAttachmentFile.exists() && !potentialAttachmentFile.isDirectory()
+                && (potentialAttachmentFileLanguage.equals(this.languageType)
+                || FilenameUtils.getExtension(potentialAttachmentFile.getAbsolutePath()).toLowerCase().equals("json"))) {
+            return true;
         }
         return false;
     }
@@ -85,8 +94,8 @@ public class WESLauncher extends BaseLauncher {
         try {
             SwaggerUtility.unzipFile(zippedEntry, tempDir);
         } catch (IOException e) {
-            System.out.println("Could not get files from workflow attachment. Request not sent.");
-            throw new RuntimeException("Unable to get workflow attachment files from zip file", e);
+            System.out.println("Could not get files from workflow attachment " + zippedEntry.getName() + " Request not sent.");
+            exceptionMessage(e, "Unable to get workflow attachment files from zip file " + zippedEntry.getName(), IO_ERROR);
         }
 
         // Put file names in workflow attachment list
