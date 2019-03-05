@@ -64,7 +64,6 @@ public class WESLauncher extends BaseLauncher {
      */
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
-
     }
 
     @Override
@@ -82,12 +81,9 @@ public class WESLauncher extends BaseLauncher {
      */
     protected boolean fileIsCorrectType(File potentialAttachmentFile) {
         LanguageType potentialAttachmentFileLanguage = abstractEntryClient.checkFileExtension(potentialAttachmentFile.getName()); //file extension could be cwl,wdl or ""
-        if (potentialAttachmentFile.exists() && !potentialAttachmentFile.isDirectory()
+        return (potentialAttachmentFile.exists() && !potentialAttachmentFile.isDirectory()
                 && (potentialAttachmentFileLanguage.equals(this.languageType)
-                || FilenameUtils.getExtension(potentialAttachmentFile.getAbsolutePath()).toLowerCase().equals("json"))) {
-            return true;
-        }
-        return false;
+                || FilenameUtils.getExtension(potentialAttachmentFile.getAbsolutePath()).toLowerCase().equals("json")));
     }
 
     protected void addFilesToWorkflowAttachment(List<File> workflowAttachment, File zippedEntry, File tempDir) {
