@@ -64,6 +64,8 @@ public class WESLauncher extends BaseLauncher {
      */
     @Override
     public void provisionOutputFiles(String stdout, String stderr, String wdlOutputTarget) {
+        // Don't provision output files; the WES endpoint will do this
+        return;
     }
 
     @Override
