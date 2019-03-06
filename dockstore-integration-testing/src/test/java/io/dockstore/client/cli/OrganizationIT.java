@@ -82,7 +82,7 @@ public class OrganizationIT extends BaseIT {
         organization.setName("testname");
         organization.setDisplayName("test name");
         organization.setLocation("testlocation");
-        organization.setLink("testlink");
+        organization.setLink("https://www.google.com");
         organization.setEmail("test@email.com");
         organization.setDescription(markdownDescription);
         organization.setTopic("This is a short topic");
@@ -266,7 +266,7 @@ public class OrganizationIT extends BaseIT {
         assertNotNull("organization should be returned.", organization);
 
         // Update the organization
-        String link = "www.anothersite.com";
+        String link = "http:// www.anothersite.com";
         newOrganization.setLink(link);
         organization = organizationsApiUser2.updateOrganization(newOrganization, organization.getId());
 
@@ -326,6 +326,32 @@ public class OrganizationIT extends BaseIT {
         Organization organisation = stubOrgObject();
         organisationsApiUser2.createOrganization(organisation);
         organisation.setName(organisation.getName().toUpperCase());
+        organisationsApiUser2.createOrganization(organisation);
+    }
+
+    @Test
+    public void createOrgInvalidEmail() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Create the organisation
+        Organization organisation = stubOrgObject();
+        organisation.setEmail("thisisnotanemail");
+        thrown.expect(ApiException.class);
+        organisationsApiUser2.createOrganization(organisation);
+    }
+
+    @Test
+    public void createOrgInvalidLink() {
+        // Setup user two
+        final ApiClient webClientUser2 = getWebClient(USER_2_USERNAME);
+        OrganizationsApi organisationsApiUser2 = new OrganizationsApi(webClientUser2);
+
+        // Create the organisation
+        Organization organisation = stubOrgObject();
+        organisation.setLink("www.google.com");
+        thrown.expect(ApiException.class);
         organisationsApiUser2.createOrganization(organisation);
     }
 
