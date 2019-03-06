@@ -266,7 +266,7 @@ public class OrganizationIT extends BaseIT {
         assertNotNull("organization should be returned.", organization);
 
         // Update the organization
-        String link = "http:// www.anothersite.com";
+        String link = "http://www.anothersite.com";
         newOrganization.setLink(link);
         organization = organizationsApiUser2.updateOrganization(newOrganization, organization.getId());
 
