@@ -331,7 +331,7 @@
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
-            <version>2.0.6</version>
+            <version>${openapi-annotations-version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/junit/junit -->
