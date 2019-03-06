@@ -567,8 +567,11 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                     // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
                     // so in this stream we need to standardize relative to the main descriptor
                     final Path workingPath = Paths.get("/", entryVersion.get().getWorkingDirectory());
-                    final Path relativize = workingPath.relativize(Paths.get(sourceFile.getAbsolutePath()));
-                    String sourceFileUrl = urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils.prependIfMissing(relativize.toString(), "/");
+                    final Path relativize = workingPath
+                        .relativize(Paths.get(StringUtils.prependIfMissing(sourceFile.getAbsolutePath(), "/")));
+                    String sourceFileUrl =
+                        urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
+                            .prependIfMissing(relativize.toString(), "/");
                     ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
                     if (toolDescriptor == null) {
                         return Response.status(Status.NOT_FOUND).build();
