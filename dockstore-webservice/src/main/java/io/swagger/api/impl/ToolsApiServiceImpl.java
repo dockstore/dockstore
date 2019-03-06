@@ -33,7 +33,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -561,14 +560,15 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
                 }
 
                 final Set<SourceFile> sourceFiles = entryVersion.get().getSourceFiles();
-                // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
-                // so in this stream we need to standardize relative to the main descriptor
+
                 Optional<SourceFile> correctSourceFile = lookForFilePath(sourceFiles, searchPath, entryVersion.get().getWorkingDirectory());
                 if (correctSourceFile.isPresent()) {
                     SourceFile sourceFile = correctSourceFile.get();
-                    String sourceFileUrl =
-                        urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils
-                            .prependIfMissing(searchPath, "/");
+                    // annoyingly, test json and Dockerfiles include a fullpath whereas descriptors are just relative to the main descriptor,
+                    // so in this stream we need to standardize relative to the main descriptor
+                    final Path workingPath = Paths.get("/", entryVersion.get().getWorkingDirectory());
+                    final Path relativize = workingPath.relativize(Paths.get(sourceFile.getAbsolutePath()));
+                    String sourceFileUrl = urlBuilt + StringUtils.prependIfMissing(entryVersion.get().getWorkingDirectory(), "/") + StringUtils.prependIfMissing(relativize.toString(), "/");
                     ExtendedFileWrapper toolDescriptor = ToolsImplCommon.sourceFileToToolDescriptor(sourceFileUrl, sourceFile);
                     if (toolDescriptor == null) {
                         return Response.status(Status.NOT_FOUND).build();
@@ -745,8 +745,7 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
      */
     private boolean isCWL(SourceFile sourceFile) {
         SourceFile.FileType type = sourceFile.getType();
-        return Stream.of(SourceFile.FileType.CWL_TEST_JSON, SourceFile.FileType.DOCKERFILE, SourceFile.FileType.DOCKSTORE_CWL)
-            .anyMatch(type::equals);
+        return Arrays.asList(CWL_TEST_JSON, DOCKERFILE, DOCKSTORE_CWL).contains(type);
     }
 
     /**
