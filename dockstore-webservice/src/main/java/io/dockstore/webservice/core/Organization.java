@@ -58,7 +58,7 @@ public class Organization implements Serializable, Aliasable {
     @ApiModelProperty(value = "Implementation specific ID for the organization in this web service", position = 0)
     private long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     @Pattern(regexp = "[a-zA-Z][a-zA-Z\\d]*")
     @Size(min = 3, max = 39)
     @ApiModelProperty(value = "Name of the organization (ex. OICR)", required = true, example = "OICR", position = 1)

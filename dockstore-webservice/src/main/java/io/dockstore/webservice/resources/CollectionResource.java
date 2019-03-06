@@ -345,9 +345,14 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         if (!Objects.equals(existingCollection.getName(), collection.getName())) {
             Collection duplicateName = collectionDAO.findByNameAndOrg(collection.getName(), existingCollection.getOrganization().getId());
             if (duplicateName != null) {
-                String msg = "A collection already exists with the name '" + collection.getName() + "', please try another one.";
-                LOG.info(msg);
-                throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                if (duplicateName.getId() == existingCollection.getId()) {
+                    // do nothing
+                    LOG.debug("this appears to be a case change");
+                } else {
+                    String msg = "A collection already exists with the name '" + collection.getName() + "', please try another one.";
+                    LOG.info(msg);
+                    throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+                }
             }
         }
 
