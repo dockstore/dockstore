@@ -109,6 +109,8 @@ public class WorkflowIT extends BaseIT {
     private static final String DOCKSTORE_TEST_USER2_INCLUDECONFIG_WORKFLOW = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/vipr";
     private static final String DOCKSTORE_TEST_USER2_RELATIVE_IMPORTS_TOOL = Registry.QUAY_IO.toString() + "/dockstoretestuser2/dockstore-cgpmap";
 
+    private static final String DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE = SourceControl.GITHUB.toString() + "/DockstoreTestUser2/workflow-seq-import";
+
     @Rule
     public final SystemOutRule systemOutRule = new SystemOutRule().enableLog().muteForSuccessfulTests();
 
@@ -933,6 +935,33 @@ public class WorkflowIT extends BaseIT {
         } else {
             fail("Could not find version master");
         }
+    }
+
+    /**
+     * Tests for https://github.com/ga4gh/dockstore/issues/2154
+     */
+    @Test
+    public void testMoreCWLImportsStructure() throws ApiException, URISyntaxException, IOException {
+        final ApiClient webClient = getWebClient(USER_2_USERNAME);
+        WorkflowsApi workflowApi = new WorkflowsApi(webClient);
+        workflowApi.manualRegister("github", "DockstoreTestUser2/workflow-seq-import", "/cwls/chksum_seqval_wf_interleaved_fq.cwl", "", "cwl", "/examples/chksum_seqval_wf_interleaved_fq.json");
+        final Workflow workflowByPathGithub = workflowApi.getWorkflowByPath(DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, null);
+
+        workflowApi.refresh(workflowByPathGithub.getId());
+        workflowApi.publish(workflowByPathGithub.getId(), new PublishRequest(){
+            public Boolean isPublish() { return true;}
+        });
+
+        // check on URLs for workflows via ga4gh calls
+        Ga4GhApi ga4Ghv2Api = new Ga4GhApi(webClient);
+        FileWrapper toolDescriptor = ga4Ghv2Api
+            .toolsIdVersionsVersionIdTypeDescriptorGet("CWL", "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0");
+        String content = IOUtils.toString(new URI(toolDescriptor.getUrl()), StandardCharsets.UTF_8);
+        Assert.assertTrue("could not find content from generated URL", !content.isEmpty());
+        // check slashed paths
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0", "toolkit/if_input_is_bz2_convert_to_gz_else_just_rename.cwl");
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0", "toolkit/if_file_name_is_bz2_then_return_null_else_return_in_json_to_output.cwl");
+        checkForRelativeFile(ga4Ghv2Api, "#workflow/" + DOCKSTORE_TEST_USER2_MORE_IMPORT_STRUCTURE, "0.4.0", "../examples/chksum_seqval_wf_interleaved_fq.json");
     }
 
 
