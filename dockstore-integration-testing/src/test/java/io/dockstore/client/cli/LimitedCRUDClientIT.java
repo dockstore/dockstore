@@ -19,6 +19,7 @@ package io.dockstore.client.cli;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
@@ -33,8 +34,11 @@ import io.swagger.client.ApiClient;
 import io.swagger.client.ApiException;
 import io.swagger.client.api.ContainersApi;
 import io.swagger.client.api.HostedApi;
+import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.DockstoreTool;
+import io.swagger.client.model.Limits;
 import io.swagger.client.model.SourceFile;
+import io.swagger.client.model.User;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -78,6 +82,11 @@ public class LimitedCRUDClientIT {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
+    /**
+     * Used to set user based hosted entry count and hosted entry version limits -- higher than the system limits for those values.
+     */
+    public static final int NEW_LIMITS = 20;
+
     //TODO: duplicates BaseIT but with a different config file, attempt to simplify after release
 
     @BeforeClass
@@ -92,8 +101,15 @@ public class LimitedCRUDClientIT {
     }
 
     @Before
-    public void resetDBBetweenTests() throws Exception {
+    public void resetDBAndAdminUserLimitsBetweenTests() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
+
+        // Tests can run in any order, and the CachingAuthenticator is not cleared between tests
+        // Reset limits for user between tests so it's not set when it's not supposed to be.
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+        usersApi.setUserLimits(user.getId(), new Limits());
     }
 
     @Rule
@@ -139,11 +155,78 @@ public class LimitedCRUDClientIT {
     }
 
     @Test
+    public void testOverrideEntryLimit() {
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        HostedApi api = new HostedApi(webClient);
+
+        // Change limits for current user
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+        Limits limits = new Limits();
+        limits.setHostedEntryCountLimit(NEW_LIMITS);
+        usersApi.setUserLimits(user.getId(), limits);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        assertNotNull("tool was not created properly", hostedTool);
+        // createHostedTool() endpoint is safe to have user profiles because that profile is your own
+        assertEquals("One user should belong to this tool, yourself",1, hostedTool.getUsers().size());
+
+        // test repeated workflow creation up to limit
+        for(int i = 1; i <= NEW_LIMITS - 1; i++) {
+            api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+        }
+
+        thrown.expect(ApiException.class);
+        api.createHostedTool("awesomeTool" + NEW_LIMITS, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+    }
+
+    @Test
     public void testToolVersionCreation() throws IOException {
         ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
         HostedApi api = new HostedApi(webClient);
         DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
 
+        List<SourceFile> sourceFiles = generateSourceFiles();
+
+        api.editHostedTool(hostedTool.getId(), sourceFiles);
+
+        // test repeated workflow version creation up to limit
+        for(int i = 1; i <= 9; i++) {
+            //TODO: this is kind of dumb, we should check for no-change versions as a hotfix
+            api.editHostedTool(hostedTool.getId(), sourceFiles);
+        }
+
+        thrown.expect(ApiException.class);
+        api.editHostedTool(hostedTool.getId(), sourceFiles);
+    }
+
+    @Test
+    public void testOverrideVersionLimit() throws IOException {
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+
+        // Change limits for current user
+        UsersApi usersApi = new UsersApi(webClient);
+        User user = usersApi.getUser();
+        Limits limits = new Limits();
+        limits.setHostedEntryVersionLimit(NEW_LIMITS);
+        usersApi.setUserLimits(user.getId(), limits);
+
+        HostedApi api = new HostedApi(webClient);
+        DockstoreTool hostedTool = api.createHostedTool("awesomeTool", Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
+
+        List<SourceFile> sourceFiles = generateSourceFiles();
+        api.editHostedTool(hostedTool.getId(), sourceFiles);
+
+        // test repeated workflow version creation up to limit
+        for(int i = 1; i <= NEW_LIMITS - 1; i++) {
+            //TODO: this is kind of dumb, we should check for no-change versions as a hotfix
+            api.editHostedTool(hostedTool.getId(), sourceFiles);
+        }
+
+        thrown.expect(ApiException.class);
+        api.editHostedTool(hostedTool.getId(), sourceFiles);
+    }
+
+    private List<SourceFile> generateSourceFiles() throws IOException {
         SourceFile descriptorFile = new SourceFile();
         descriptorFile.setContent(FileUtils.readFileToString(new File(ResourceHelpers.resourceFilePath("tar-param.cwl")), StandardCharsets.UTF_8));
         descriptorFile.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
@@ -154,15 +237,7 @@ public class LimitedCRUDClientIT {
         dockerfile.setType(SourceFile.TypeEnum.DOCKERFILE);
         dockerfile.setPath("/Dockerfile");
         dockerfile.setAbsolutePath("/Dockerfile");
-        api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
+        return Lists.newArrayList(descriptorFile, dockerfile);
 
-        // test repeated workflow version creation up to limit
-        for(int i = 1; i <= 9; i++) {
-            //TODO: this is kind of dumb, we should check for no-change versions as a hotfix
-            api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
-        }
-
-        thrown.expect(ApiException.class);
-        api.editHostedTool(hostedTool.getId(), Lists.newArrayList(descriptorFile, dockerfile));
     }
 }

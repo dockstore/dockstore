@@ -81,6 +81,7 @@ import io.dropwizard.auth.CachingAuthenticator;
 import io.dropwizard.auth.oauth.OAuthCredentialAuthFilter;
 import io.dropwizard.client.HttpClientBuilder;
 import io.dropwizard.db.DataSourceFactory;
+import io.dropwizard.forms.MultiPartBundle;
 import io.dropwizard.hibernate.HibernateBundle;
 import io.dropwizard.hibernate.UnitOfWorkAwareProxyFactory;
 import io.dropwizard.jersey.jackson.JsonProcessingExceptionMapper;
@@ -168,6 +169,8 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
                 return configuration.getDataSourceFactory();
             }
         });
+
+        bootstrap.addBundle(new MultiPartBundle());
 
         if (cache == null) {
             int cacheSize = CACHE_IN_MB * BYTES_IN_KILOBYTE * KILOBYTES_IN_MEGABYTE; // 100 MiB
@@ -262,7 +265,7 @@ public class DockstoreWebserviceApplication extends Application<DockstoreWebserv
         environment.jersey().register(new MetadataResource(getHibernate().getSessionFactory(), configuration));
         environment.jersey().register(new HostedToolResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
         environment.jersey().register(new HostedWorkflowResource(getHibernate().getSessionFactory(), authorizer, configuration.getLimitConfig()));
-        environment.jersey().register(new EntryResource(environment.getObjectMapper(), toolDAO));
+        environment.jersey().register(new EntryResource(toolDAO));
         environment.jersey().register(new OrganizationResource(getHibernate().getSessionFactory()));
         environment.jersey().register(new CollectionResource(getHibernate().getSessionFactory()));
         environment.jersey().register(OpenApiResource.class);

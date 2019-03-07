@@ -47,7 +47,6 @@ import io.swagger.model.FileWrapper;
 import io.swagger.model.Tool;
 import io.swagger.model.ToolClass;
 import io.swagger.model.ToolVersion;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,16 +60,15 @@ public final class ToolsImplCommon {
     private ToolsImplCommon() { }
 
 
+
     /**
      * This converts a Dockstore's SourceFile to a GA4GH ToolDescriptor
      *
-     * @param urlWithWorkDirectory
+     * @param url clean url with no conversion
      * @param sourceFile The Dockstore SourceFile
      * @return The converted GA4GH ToolDescriptor paired with the raw content
      */
-    static ExtendedFileWrapper sourceFileToToolDescriptor(String urlWithWorkDirectory, SourceFile sourceFile) {
-        String processedSourceFilePath = StringUtils.prependIfMissing(sourceFile.getPath(), "/");
-        String url = StringUtils.removeEnd(urlWithWorkDirectory, "/") + processedSourceFilePath;
+    static ExtendedFileWrapper sourceFileToToolDescriptor(String url, SourceFile sourceFile) {
         ExtendedFileWrapper toolDescriptor = new ExtendedFileWrapper();
         toolDescriptor.setContent(sourceFile.getContent());
         toolDescriptor.setUrl(url);

@@ -16,6 +16,7 @@
 
 package io.dockstore.webservice.helpers;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
@@ -338,8 +339,8 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
             // Write each sourcefile
             for (SourceFile sourceFile : sourceFiles) {
                 Path resolve = workingDirectory.resolve(sourceFile.getAbsolutePath());
-                // remove quirk of working directory
-                String stripStart = StringUtils.stripStart(resolve.toFile().toString(), "./");
+                File file = resolve.toFile();
+                String stripStart = removeWorkingDirectory(file.getPath(), file.getName());
                 ZipEntry secondaryZipEntry = new ZipEntry(stripStart);
 
                 // Deal with folders
@@ -358,6 +359,13 @@ public interface EntryVersionHelper<T extends Entry<T, U>, U extends Version, W 
         } catch (IOException ex) {
             throw new CustomWebApplicationException("Could not create ZIP file", HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    static String removeWorkingDirectory(String path, String filename) {
+        // remove quirk of working directory, but preserve hidden files
+        final int nameIndex = path.lastIndexOf(filename);
+        final String pathWithoutName = StringUtils.stripStart(path.substring(0, nameIndex), "./");
+        return pathWithoutName + filename;
     }
 
     /**
