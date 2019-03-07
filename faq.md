@@ -165,9 +165,12 @@ The intent here is that you should be able to login with either login method and
 Note that for simplicity, each of your GitHub or Google accounts can only be associated with one account at a time. You will need to link with a different account for each login method or delete your account if you want to assign them to a new Dockstore account. 
 
 ## How do I launch tools/workflows without internet access on compute nodes
+> For Dockstore 1.6.0+
+
 Some tools/workflows require Docker images to launch even if they are local entries.  If the compute nodes do not have internet access, you can follow these steps:
 1. download the Docker image(s) on the head node which does have internet access using the `docker save -o <filename> <imagename>`
-1. place the image file(s) in a location that the compute nodes have access to
+1. ensure that the `<imagename>` matches the image name specific in the CWL or WDL descriptor
+1. place the image file(s) in a location that the compute nodes have access to (make sure there are only images in that directory)
 1. specify in the dockstore config file (default ~/.dockstore/config) the directory that contains your image(s) using `docker-images = /home/user/docker_images_directory`
 
 The Dockstore CLI will automatically load all Docker images in the directory specified prior to a `launch --local-entry` command
