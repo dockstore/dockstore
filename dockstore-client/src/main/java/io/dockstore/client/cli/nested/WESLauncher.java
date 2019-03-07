@@ -24,7 +24,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 public class WESLauncher extends BaseLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(WESLauncher.class);
     private static final String TAGS = "WorkflowExecutionService";
-    private static final String WORKFLOW_TYPE_VERSION = "v1.0";
+    private static final String WORKFLOW_TYPE_VERSION = "1.0";
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
@@ -127,8 +127,16 @@ public class WESLauncher extends BaseLauncher {
         File jsonInputFile = new File(jsonString);
         workflowAttachment.add(jsonInputFile);
 
+        String languageType = this.languageType.toString().toUpperCase();
+
+        // CWL uses workflow type version with a 'v' prefix, e.g 'v1.0', but WDL uses '1.0'
+        String workflowTypeVersion = WORKFLOW_TYPE_VERSION;
+        if ("CWL".equals(languageType.toUpperCase())) {
+            workflowTypeVersion = "v" + WORKFLOW_TYPE_VERSION;
+        }
+
         try {
-            RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonInputFile, this.languageType.toString().toUpperCase(), WORKFLOW_TYPE_VERSION, TAGS,
+            RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonInputFile, languageType, workflowTypeVersion, TAGS,
                     "", workflowURL, workflowAttachment);
             System.out.println("Launched WES run with id: " + response.toString());
         } catch (io.swagger.wes.client.ApiException e) {
