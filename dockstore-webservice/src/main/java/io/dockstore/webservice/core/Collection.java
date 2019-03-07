@@ -27,6 +27,7 @@ import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -103,6 +104,12 @@ public class Collection implements Serializable, Aliasable {
     @Column()
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
+
+    @JsonProperty("organizationName")
+    @ApiModelProperty(value = "The name of the organization the collection belongs to")
+    public String getOrganizationName() {
+        return getOrganization().getName();
+    }
 
     public long getId() {
         return id;
