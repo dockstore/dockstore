@@ -4,7 +4,7 @@ info:
   description: "This describes the dockstore API, a webservice that manages pairs\
     \ of Docker images and associated metadata such as CWL documents and Dockerfiles\
     \ used to build those images"
-  version: "1.6.0-beta.1"
+  version: "1.6.0-beta.2-SNAPSHOT"
   title: "Dockstore API"
   termsOfService: "TBD"
   contact:
@@ -3541,6 +3541,34 @@ paths:
             $ref: "#/definitions/OrganizationUser"
       security:
       - BEARER: []
+  /organizations/{organizationName}/collections/{collectionName}/name:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves a collection by ID."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getCollectionByName"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationName"
+        in: "path"
+        description: "Organization name."
+        required: true
+        type: "string"
+      - name: "collectionName"
+        in: "path"
+        description: "Collection name."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
   /users/checkUser/{username}:
     get:
       tags:
@@ -5699,6 +5727,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      organizationName:
+        type: "string"
+        description: "The name of the organization the collection belongs to"
+        readOnly: true
       name:
         type: "string"
         example: "Alignment"
