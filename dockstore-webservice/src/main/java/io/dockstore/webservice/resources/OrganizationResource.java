@@ -37,6 +37,8 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.Authorization;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.validator.routines.EmailValidator;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.apache.http.HttpStatus;
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
@@ -340,6 +342,14 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
         }
 
+        // Validate email and link
+        if (organization.getEmail() != null) {
+            validateEmail(organization.getEmail());
+        }
+        if (organization.getLink() != null) {
+            validateLink(organization.getLink());
+        }
+
         // Save organization
         organization.setStatus(Organization.ApplicationState.PENDING); // should not be approved by default
         long id = organizationDAO.create(organization);
@@ -401,6 +411,15 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             }
         }
 
+        // Validate email and link
+        if (organization.getEmail() != null) {
+            validateEmail(organization.getEmail());
+        }
+        if (organization.getLink() != null) {
+            validateLink(organization.getLink());
+        }
+
+
         // Update organization
         oldOrganization.setName(organization.getName());
         oldOrganization.setDisplayName(organization.getDisplayName());
@@ -416,6 +435,25 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         eventDAO.create(updateOrganizationEvent);
 
         return organizationDAO.findById(id);
+    }
+
+    private void validateEmail(String email) {
+        EmailValidator emailValidator = EmailValidator.getInstance();
+        if (!emailValidator.isValid(email)) {
+            String msg = "Email is invalid: " + email;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+    }
+
+    private void validateLink(String url) {
+        String[] schemes = { "http", "https" };
+        UrlValidator urlValidator = new UrlValidator(schemes);
+        if (!urlValidator.isValid(url)) {
+            String msg = "Link is invalid: " + url;
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
     }
 
     @PUT
