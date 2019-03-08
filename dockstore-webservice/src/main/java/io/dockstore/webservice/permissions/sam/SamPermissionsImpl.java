@@ -420,7 +420,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
         return googleAccessToken(user).map(credentials -> {
             apiClient.setAccessToken(credentials);
             return apiClient;
-        }).orElseThrow(() -> new CustomWebApplicationException("Unauthorized", HttpStatus.SC_UNAUTHORIZED));
+        }).orElseThrow(() -> new CustomWebApplicationException("Could not get Google access token. Try relinking your Google account.", HttpStatus.SC_UNAUTHORIZED));
     }
 
     private String encodedWorkflowResource(Workflow workflow, ApiClient apiClient) {
