@@ -100,6 +100,8 @@ public class WESLauncher extends BaseLauncher {
         for (int i = 0; i < listOfFiles.length; i++) {
             if (listOfFiles[i].isFile()) {
                 // TODO check file extension (type) only for a local entry; pass all files found in remote entry folder?
+                // Locate code that grabs all imports for a non local entry and use that instead of checking extension
+                // since CWL can import many file types
                 // There may be confidential or large files that are not needed in a local directory that should
                 // not be sent to a remote endpoint?
                 if (fileIsCorrectType(listOfFiles[i])) {
