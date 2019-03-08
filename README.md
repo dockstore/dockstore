@@ -35,17 +35,6 @@ launch tools).
 After registering at [dockstore.org](https://dockstore.org), you will be able to download the Dockstore 
 CLI at https://dockstore.org/onboarding
 
-The CLI has the following dependencies
-
-* Java 8 (Update 101 or newer)
-* cwltool (to run CWL workflows locally)
-
-To install CWL tool:
-
-    pip install --user cwl-runner cwltool==1.0.20170828135420 schema-salad==2.6.20170806163416 avro==1.8.1 ruamel.yaml==0.14.12 requests==2.18.4
-
-You may need other pip installable tools like `typing` or `setuptools`.  This depends on your python environment.
-
 ### Configuration File
 
 A basic Dockstore configuration file is available/should be created in `~/.dockstore/config` and contains the following
