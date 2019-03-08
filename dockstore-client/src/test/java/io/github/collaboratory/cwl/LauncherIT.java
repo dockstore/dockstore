@@ -32,6 +32,8 @@ import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerFactory;
 import io.github.collaboratory.cwl.cwlrunner.CWLRunnerInterface;
+import io.swagger.client.Configuration;
+import io.swagger.client.api.MetadataApi;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -182,9 +184,10 @@ public abstract class LauncherIT {
 
     @Test
     public void testCheckingSystemDependencies() {
+        MetadataApi metadataApi = new MetadataApi(Configuration.getDefaultApiClient().setBasePath("http://localhost:8080"));
         CWLRunnerFactory.setConfig(Utilities.parseConfig(getConfigFile()));
         CWLRunnerInterface cwlrunner = CWLRunnerFactory.createCWLRunner();
-        cwlrunner.checkForCWLDependencies();
+        cwlrunner.checkForCWLDependencies(metadataApi);
     }
 
 }

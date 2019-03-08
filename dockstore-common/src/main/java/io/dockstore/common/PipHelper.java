@@ -27,7 +27,10 @@ public final class PipHelper {
             semVerString = "9001.9001.9001";
         }
         Version semVer = Version.valueOf(semVerString);
-        // Use the 1.5.0 even for snapshot
+        // Use the 1.6.0 even for snapshot
+        if (semVer.greaterThan(Version.valueOf("1.5.0"))) {
+            return "1.6.0";
+        }
         if (semVer.greaterThan(Version.valueOf("1.4.0"))) {
             return "1.5.0";
         } else {
