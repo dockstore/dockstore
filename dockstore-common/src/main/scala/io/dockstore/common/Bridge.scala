@@ -22,9 +22,9 @@ import java.util
 import io.github.collaboratory.wdl.BridgeHelper
 import spray.json._
 import wdl4s.parser.WdlParser
-import wdl4s.wdl.{WdlCall, WdlNamespace, WdlNamespaceWithWorkflow, WdlTask, WorkflowSource}
 import wdl4s.wdl.types.{WdlArrayType, WdlFileType}
 import wdl4s.wdl.values.WdlValue
+import wdl4s.wdl.{WdlCall, WdlNamespace, WdlNamespaceWithWorkflow, WdlTask, WorkflowSource}
 
 import scala.collection.mutable.ListBuffer
 import scala.language.postfixOps
@@ -99,7 +99,8 @@ class Bridge(basePath : String) {
     } catch {
       case ex: NullPointerException => throw new WdlParser.SyntaxError("At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.")
       case ex: NoSuchMethodException =>
-        //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
+      //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
+      // https://github.com/ga4gh/dockstore/issues/2139
     }
   }
 
@@ -191,15 +192,22 @@ class Bridge(basePath : String) {
   @throws(classOf[WdlParser.SyntaxError])
   def getCallsToDockerMap(file: JFile): util.LinkedHashMap[String, String] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
-    val tasks = new util.LinkedHashMap[String, String]()
+    try {
+      val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
+      val tasks = new util.LinkedHashMap[String, String]()
 
-    val allTasks = findCallToTasks(ns)
-    allTasks.foreach(taskTuple => {
-      val dockerAttributes = taskTuple._2.runtimeAttributes.attrs.get("docker")
-      tasks.put("dockstore_" + taskTuple._1.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
-    })
-    tasks
+      val allTasks = findCallToTasks(ns)
+      allTasks.foreach(taskTuple => {
+        val dockerAttributes = taskTuple._2.runtimeAttributes.attrs.get("docker")
+        tasks.put("dockstore_" + taskTuple._1.unqualifiedName, if (dockerAttributes.isDefined) dockerAttributes.get.collectAsSeq(passthrough).map(x => x.toWdlString.replaceAll("\"", "")).mkString("") else null)
+      })
+      tasks
+    } catch {
+      case ex: NoSuchMethodException =>
+        //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
+        // https://github.com/ga4gh/dockstore/issues/2139
+      null
+    }
   }
 
   /**
@@ -242,18 +250,25 @@ class Bridge(basePath : String) {
 
   def getCallsToDependencies(file: JFile): util.LinkedHashMap[String, util.List[String]] = {
     val lines = scala.io.Source.fromFile(file).mkString
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
-    val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
-    ns.workflow.calls foreach { call =>
-      val dependencies = new util.ArrayList[String]()
-      call.inputMappings foreach { case (key, value) =>
-        value.prerequisiteCallNames foreach { inputDependency =>
-          dependencies.add("dockstore_" + inputDependency)
+    try {
+      val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
+      val dependencyMap = new util.LinkedHashMap[String, util.List[String]]()
+      ns.workflow.calls foreach { call =>
+        val dependencies = new util.ArrayList[String]()
+        call.inputMappings foreach { case (key, value) =>
+          value.prerequisiteCallNames foreach { inputDependency =>
+            dependencies.add("dockstore_" + inputDependency)
+          }
         }
+        dependencyMap.put("dockstore_" + call.unqualifiedName, dependencies)
       }
-      dependencyMap.put("dockstore_" + call.unqualifiedName, dependencies)
+      dependencyMap
+    } catch {
+      case ex: NoSuchMethodException =>
+        //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
+        // https://github.com/ga4gh/dockstore/issues/2139
+        null
     }
-    dependencyMap
   }
 
 
