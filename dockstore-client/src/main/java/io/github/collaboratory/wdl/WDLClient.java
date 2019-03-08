@@ -31,10 +31,12 @@ import com.google.common.io.Files;
 import com.google.gson.Gson;
 import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.BaseLanguageClient;
+import io.dockstore.client.cli.nested.BaseLauncher;
 import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.LauncherFiles;
 import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
+import io.dockstore.client.cli.nested.WESLauncher;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.WDLFileProvisioning;
@@ -59,7 +61,15 @@ public class WDLClient extends BaseLanguageClient implements LanguageClientInter
     private static final Logger LOG = LoggerFactory.getLogger(WDLClient.class);
 
     public WDLClient(AbstractEntryClient abstractEntryClient) {
-        super(abstractEntryClient, new CromwellLauncher(abstractEntryClient, LanguageType.WDL, SCRIPT.get()));
+        super(abstractEntryClient, null);
+
+        BaseLauncher launcher;
+        if (!abstractEntryClient.isWesCommand()) {
+            launcher = new CromwellLauncher(abstractEntryClient, LanguageType.WDL, SCRIPT.get());
+        } else {
+            launcher = new WESLauncher(abstractEntryClient, LanguageType.WDL, SCRIPT.get());
+        }
+        this.setLauncher(launcher);
     }
 
     @Override
