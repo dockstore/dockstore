@@ -123,6 +123,43 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
     }
 
+    @GET
+    @Timed
+    @UnitOfWork
+    @Path("{organizationName}/collections/{collectionName}/name")
+    @ApiOperation(value = "Retrieves a collection by ID.", notes = OPTIONAL_AUTH_MESSAGE, authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Collection.class)
+    public Collection getCollectionByName(@ApiParam(hidden = true) @Auth Optional<User> user,
+            @ApiParam(value = "Organization name.", required = true) @PathParam("organizationName") String organizationName,
+            @ApiParam(value = "Collection name.", required = true) @PathParam("collectionName") String collectionName) {
+
+        if (!user.isPresent()) {
+            // No user given, only show collections from approved organizations
+            Organization organization = organizationDAO.findApprovedByName(organizationName);
+            if (organization == null) {
+                String msg = "Organization " + organizationName + " not found.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            }
+
+            Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
+            throwExceptionForNullCollection(collection);
+            return getApprovalForCollection(collection);
+        } else {
+            // User is given, check if the collections organization is either approved or the user has access
+            // Admins and curators should be able to see collections from unapproved organizations
+            Organization organization = organizationDAO.findByName(organizationName);
+            if (organization == null || !OrganizationResource.doesOrganizationExistToUser(organization.getId(), user.get().getId(), organizationDAO)) {
+                String msg = "Organization " + organizationName + " not found.";
+                LOG.info(msg);
+                throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+            }
+
+            Collection collection = collectionDAO.findByNameAndOrg(collectionName, organization.getId());
+            Hibernate.initialize(collection.getEntries());
+            return collection;
+        }
+    }
+
     private void throwExceptionForNullCollection(Collection collection) {
         if (collection == null) {
             String msg = "Collection not found.";
@@ -244,6 +281,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
 
         return collectionDAO.findById(collectionId);
     }
+
 
     @GET
     @Timed

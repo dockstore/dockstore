@@ -1038,7 +1038,10 @@ public class OrganizationIT extends BaseIT {
 
         // The creating user should be able to see the collection even though the Organization is not approved
         collection = organizationsApi.getCollectionById(organization.getId(), collectionId);
-        assertNotNull("Should be able to see the collection." ,collection);
+        assertNotNull("Should be able to see the collection.", collection);
+
+        collection = organizationsApi.getCollectionByName(organization.getName(), collection.getName());
+        assertNotNull("Should be able to see the collection.", collection);
 
         // Other user should not be able to see
         try {
@@ -1052,6 +1055,14 @@ public class OrganizationIT extends BaseIT {
         collection = organizationsApiAdmin.getCollectionById(organization.getId(), collectionId);
         assertNotNull("Should be able to see the collection.", collection);
 
+        // Other user should not be able to see by name
+        try {
+            collection = organizationsApiOtherUser.getCollectionByName(organization.getName(), collection.getName());
+        } catch (ApiException ex) {
+            collection = null;
+        }
+        assertNull("Should not be able to see the collection.", collection);
+
         // Approve the Organization
         organization = organizationsApiAdmin.approveOrganization(organization.getId());
 
@@ -1061,6 +1072,9 @@ public class OrganizationIT extends BaseIT {
 
         // Other user should be able to see
         collection = organizationsApiOtherUser.getCollectionById(organization.getId(), collectionId);
+        assertNotNull("Should be able to see the collection.", collection);
+
+        collection = organizationsApiOtherUser.getCollectionByName(organization.getName(), collection.getName());
         assertNotNull("Should be able to see the collection.", collection);
 
         // Admin should be able to see the collection
