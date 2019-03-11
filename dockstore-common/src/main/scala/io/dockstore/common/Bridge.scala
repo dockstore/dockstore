@@ -156,13 +156,19 @@ class Bridge(basePath : String) {
     val lines = scala.io.Source.fromFile(file).mkString
     val importMap = new util.LinkedHashMap[String, String]()
 
-    val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
+    try {
+      val ns = WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
 
-    ns.imports foreach { imported =>
-      val importNamespace = imported.namespaceName
-      if (!importNamespace.isEmpty) {
-        importMap.put(importNamespace, imported.uri)
+      ns.imports foreach { imported =>
+        val importNamespace = imported.namespaceName
+        if (!importNamespace.isEmpty) {
+          importMap.put(importNamespace, imported.uri)
+        }
       }
+    } catch {
+      case ex: NoSuchMethodException =>
+        //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
+        // https://github.com/ga4gh/dockstore/issues/2139
     }
 
     importMap
@@ -206,7 +212,7 @@ class Bridge(basePath : String) {
       case ex: NoSuchMethodException =>
         //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
         // https://github.com/ga4gh/dockstore/issues/2139
-      null
+        new util.LinkedHashMap[String, String]()
     }
   }
 
@@ -267,7 +273,7 @@ class Bridge(basePath : String) {
       case ex: NoSuchMethodException =>
         //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
         // https://github.com/ga4gh/dockstore/issues/2139
-        null
+        new util.LinkedHashMap[String, util.List[String]]()
     }
   }
 
