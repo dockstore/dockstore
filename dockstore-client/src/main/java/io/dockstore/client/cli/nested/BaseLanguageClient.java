@@ -149,23 +149,35 @@ public abstract class BaseLanguageClient {
         // Setup temp directory and download files
         downloadFiles();
 
-        try {
-            // Provision the input files
-            provisionedParameterFile = provisionInputFiles();
-        } catch (ApiException ex) {
-            if (abstractEntryClient.getEntryType().equalsIgnoreCase("tool")) {
-                exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
-                        ENTRY_NOT_FOUND);
-            } else {
-                exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
-                        ENTRY_NOT_FOUND);
+        /*
+         Don't download the input files (from the input JSON or YAML) if we are making a request
+         to a WES endpoint. We want the WES endpoint to download the input files becuase they
+         could be very large and in that case we cannot send their contents in a POST request
+         efficiently.
+         TODO if there are input files on the local file system maybe we should send those to
+         the WES endpoint instead of assuming they will exist on the file system at the WES
+         endpoint.
+        */
+        if (!abstractEntryClient.isWesCommand()) {
+            try {
+                // Provision the input files
+                provisionedParameterFile = provisionInputFiles();
+            } catch (ApiException ex) {
+                if (abstractEntryClient.getEntryType().equalsIgnoreCase("tool")) {
+                    exceptionMessage(ex, "The tool entry does not exist. Did you mean to launch a local tool or a workflow?",
+                            ENTRY_NOT_FOUND);
+                } else {
+                    exceptionMessage(ex, "The workflow entry does not exist. Did you mean to launch a local workflow or a tool?",
+                            ENTRY_NOT_FOUND);
+                }
+            } catch (Exception ex) {
+                exceptionMessage(ex, ex.getMessage(), GENERIC_ERROR);
             }
-        } catch (Exception ex) {
-            exceptionMessage(ex, ex.getMessage(), GENERIC_ERROR);
         }
 
         // Update the launcher with references to the files to be launched
         launcher.setFiles(localPrimaryDescriptorFile, zippedEntryFile, provisionedParameterFile, selectedParameterFile, workingDirectory);
+
 
         try {
             // Attempt to run launcher
@@ -312,26 +324,33 @@ public abstract class BaseLanguageClient {
      */
     public void commonExecutionCode(File workDir, String launcherName) throws ExecuteException, RuntimeException {
         notificationsClient.sendMessage(NotificationsClient.RUN, true);
-        List<String> runCommand = launcher.buildRunCommand();
-        String joinedCommand = Joiner.on(" ").join(runCommand);
-        System.out.println("Executing: " + joinedCommand);
 
-        ImmutablePair<String, String> execute;
-        int exitCode = 0;
-        try {
-            execute = launcher.executeEntry(joinedCommand, workDir);
-            stdout = execute.getLeft();
-            stderr = execute.getRight();
-        } catch (RuntimeException ex) {
-            LOG.error("Problem running launcher" + launcherName + ": ", ex);
-            if (ex.getCause() instanceof ExecuteException) {
-                exitCode = ((ExecuteException)ex.getCause()).getExitValue();
-                throw new ExecuteException("problems running command: " + runCommand, exitCode);
+        if (abstractEntryClient.isWesCommand()) {
+            System.out.println("Executing: WES request");
+            launcher.executeEntry("", workDir);
+        } else {
+
+            List<String> runCommand = launcher.buildRunCommand();
+            String joinedCommand = Joiner.on(" ").join(runCommand);
+            System.out.println("Executing: " + joinedCommand);
+
+            ImmutablePair<String, String> execute;
+            int exitCode = 0;
+            try {
+                execute = launcher.executeEntry(joinedCommand, workDir);
+                stdout = execute.getLeft();
+                stderr = execute.getRight();
+            } catch (RuntimeException ex) {
+                LOG.error("Problem running launcher" + launcherName + ": ", ex);
+                if (ex.getCause() instanceof ExecuteException) {
+                    exitCode = ((ExecuteException)ex.getCause()).getExitValue();
+                    throw new ExecuteException("problems running command: " + runCommand, exitCode);
+                }
+                notificationsClient.sendMessage(NotificationsClient.RUN, false);
+                throw new RuntimeException("Could not run launcher", ex);
+            } finally {
+                System.out.println(launcherName + " exit code: " + exitCode);
             }
-            notificationsClient.sendMessage(NotificationsClient.RUN, false);
-            throw new RuntimeException("Could not run launcher", ex);
-        } finally {
-            System.out.println(launcherName + " exit code: " + exitCode);
         }
     }
 }

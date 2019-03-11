@@ -19,7 +19,7 @@
 
     <groupId>io.dockstore</groupId>
     <artifactId>dockstore</artifactId>
-    <version>1.6.0-beta.2-SNAPSHOT</version>
+    <version>1.6.0-beta.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>dockstore</name>
@@ -155,6 +155,7 @@
         <module>dockstore-integration-testing</module>
         <module>dockstore-event-consumer</module>
         <module>reports</module>
+        <module>swagger-java-wes-client</module>
     </modules>
 
 

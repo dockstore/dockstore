@@ -52,6 +52,8 @@ components:
         organizationID:
           format: int64
           type: integer
+        organizationName:
+          type: string
         topic:
           description: Short description of the collection
           example: A collection of alignment algorithms
@@ -1730,7 +1732,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted
@@ -3636,6 +3638,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrganizationUser'
+          description: default response
+  /organizations/{organizationName}/collections/{collectionName}/name:
+    get:
+      operationId: getCollectionByName
+      parameters:
+      - in: path
+        name: organizationName
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: collectionName
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Collection'
           description: default response
   /users/checkUser/{username}:
     get:

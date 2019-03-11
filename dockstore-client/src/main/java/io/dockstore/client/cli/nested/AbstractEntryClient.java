@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.ws.rs.core.HttpHeaders;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
@@ -54,9 +56,15 @@ import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
+import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
+import io.swagger.wes.client.model.RunId;
+import io.swagger.wes.client.model.RunLog;
+import io.swagger.wes.client.model.RunStatus;
 import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.json.JSONObject;
@@ -105,9 +113,14 @@ import static io.dockstore.common.DescriptorLanguage.WDL_STRING;
  * @author dyuen
  */
 public abstract class AbstractEntryClient<T> {
+    private static final String WORKFLOW = "workflow";
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEntryClient.class);
+
     protected boolean isAdmin = false;
+    protected boolean isWesCommand = false;
+    protected String wesUri = null;
+    protected String wesAuth = null;
 
     static String getCleanedDescription(String description) {
         description = MoreObjects.firstNonNull(description, "");
@@ -117,6 +130,18 @@ public abstract class AbstractEntryClient<T> {
             description = description.substring(0, MAX_DESCRIPTION - Client.PADDING) + "...";
         }
         return description;
+    }
+
+    public String getWesUri() {
+        return wesUri;
+    }
+
+    public String getWesAuth() {
+        return wesAuth;
+    }
+
+    public boolean isWesCommand() {
+        return isWesCommand;
     }
 
     public CWL getCwlUtil() {
@@ -161,6 +186,11 @@ public abstract class AbstractEntryClient<T> {
         out("  " + LAUNCH + "           :  launch " + getEntryType() + "s (locally)");
         out("");
         out("  " + DOWNLOAD + "         :  download " + getEntryType() + "s to the local directory");
+        if (WORKFLOW.equalsIgnoreCase(getEntryType())) {
+            out("");
+            out("  wes              :  calls a Workflow Execution Schema API (WES) for a version of a " + getEntryType() + "");
+        }
+
         printClientSpecificHelp();
         if (isAdmin) {
             printAdminHelp();
@@ -243,6 +273,14 @@ public abstract class AbstractEntryClient<T> {
                 break;
             case "test_parameter":
                 testParameter(args);
+                break;
+            case "wes":
+                isWesCommand = true;
+                if (WORKFLOW.equalsIgnoreCase(getEntryType())) {
+                    processWesCommands(args);
+                } else {
+                    errorMessage("WES API calls are only valid for workflows not tools.", CLIENT_ERROR);
+                }
                 break;
             default:
                 return false;
@@ -920,6 +958,115 @@ public abstract class AbstractEntryClient<T> {
             }
         }
     }
+
+
+    /**
+     * Creates a WES API object and sets the endpoint.
+     *
+     * @param wesUrl URL to WES endpoint
+     */
+    public WorkflowExecutionServiceApi getWorkflowExecutionServiceApi(String wesUrl, String wesCred) {
+        WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = new WorkflowExecutionServiceApi();
+
+        // Uncomment this code when Swagger Codegen generates correct Java
+        // for OpenApi 3.0 yaml with arrays of files
+        //ApiClient wesApiClient = clientWorkflowExecutionServiceApi.getApiClient();
+
+        // Done so we can override the Serialize method in ApiClient
+        // Since Swagger Codegen does not create correct code for the
+        // workflow attachment
+        // Delete these next two lines when Swagger Codegen is fixed
+        ApiClientExtended wesApiClient = new ApiClientExtended();
+        clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
+
+        INIConfiguration config = Utilities.parseConfig(this.getConfigFile());
+        SubnodeConfiguration configSubNode = null;
+        try {
+            configSubNode = config.getSection("WES");
+        } catch (Exception e) {
+            out("Could not get WES section from config file");
+        }
+
+        String wesEndpointUrl = ObjectUtils.firstNonNull(wesUrl, configSubNode.getString("url"));
+        if (wesEndpointUrl == null || wesEndpointUrl.isEmpty()) {
+            errorMessage("No WES URL found in config file and no WES URL entered on command line. Please add url: <url> to "
+                    + "config file in a WES section or use --wes-url <url> option on the command line", CLIENT_ERROR);
+        } else {
+            out("WES endpoint url is: " + wesEndpointUrl);
+            wesApiClient.setBasePath(wesEndpointUrl);
+        }
+
+        /**
+         * Setup authentication credentials for the WES URL
+         */
+        String wesAuthorizationCredentials = ObjectUtils.firstNonNull(wesCred, configSubNode.getString("authorization"));
+        if (wesAuthorizationCredentials == null) {
+            out("Could not set Authorization header. Authorization key not found in config file and not provided on the command line. "
+                    + "Please add 'authorization: <type> <credentials> to config file in WES section or "
+                    + "use --wes-auth '<type> <credentials>' option on the command line if authorization credentials are needed");
+        } else {
+            wesApiClient.addDefaultHeader(HttpHeaders.AUTHORIZATION, wesAuthorizationCredentials);
+        }
+
+        // Add these headers to the http request. Are these needed?
+        wesApiClient.addDefaultHeader("Accept", "*/*");
+        wesApiClient.addDefaultHeader("Expect", "100-continue");
+
+        clientWorkflowExecutionServiceApi.setApiClient(wesApiClient);
+        return clientWorkflowExecutionServiceApi;
+    }
+
+    /**
+     * Processes Workflow Execution Schema (WES) commands.
+     *
+     * @param args Arguments entered into the CLI
+     */
+    public void processWesCommands(final List<String> args) {
+        if (args.isEmpty() || containsHelpRequest(args)) {
+            launchHelp();
+        } else {
+
+            this.wesUri = optVal(args, "--wes-url", null);
+            this.wesAuth = optVal(args, "--wes-auth", null);
+            if (args.get(0).equals("launch")) {
+                out("Launching workflow using WES");
+                //remove the launch keyword so command processing continues as usual
+                args.remove(0);
+                launch(args);
+            } else {
+                WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(getWesUri(), getWesAuth());
+                if (args.get(0).equals("status")) {
+                    String workflowId = reqVal(args, "--id");
+                    out("Getting status of WES workflow");
+                    if (args.contains("--verbose")) {
+                        try {
+                            RunLog response = clientWorkflowExecutionServiceApi.getRunLog(workflowId);
+                            out("Verbose run status is: " + response.toString());
+                        } catch (io.swagger.wes.client.ApiException e) {
+                            LOG.error("Error getting verbose WES run status", e);
+                        }
+                    } else {
+                        try {
+                            RunStatus response = clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
+                            out("Brief run status is: " + response.toString());
+                        } catch (io.swagger.wes.client.ApiException e) {
+                            LOG.error("Error getting brief WES run status", e);
+                        }
+                    }
+                } else if (args.get(0).equals("cancel")) {
+                    out("Canceling WES workflow");
+                    String workflowId = reqVal(args, "--id");
+                    try {
+                        RunId response = clientWorkflowExecutionServiceApi.cancelRun(workflowId);
+                        out("Cancelled run with id: " + response.toString());
+                    } catch (io.swagger.wes.client.ApiException e) {
+                        LOG.error("Error canceling WES run", e);
+                    }
+                }
+            }
+        }
+    }
+
 
     /**
      * Launches tools and workflows.

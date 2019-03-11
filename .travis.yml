@@ -25,19 +25,21 @@ jobs:
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE
-    - stage: unit-tests
-      jdk: openjdk10
-      env:
-      - TESTING_PROFILE=unit-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE
+# moved to CircleCI (may move back if build speed improves)
+#    - stage: unit-tests
+#      jdk: openjdk10
+#      env:
+#      - TESTING_PROFILE=unit-tests
+#      script: mvn --batch-mode clean install -P$TESTING_PROFILE
 
-    - stage: automated-review
-      jdk: openjdk10
-      env:
-      - TESTING_PROFILE=automated-review
-      script:
-      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
-      - scripts/check_migrations.sh
+# moved to CircleCI (may move back if build speed improves)
+#    - stage: automated-review
+#      jdk: openjdk10
+#      env:
+#      - TESTING_PROFILE=automated-review
+#      script:
+#      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
+#      - scripts/check_migrations.sh
 
     # no point in running integration tests if we don't pass unit tests
     # run a few tests with oraclejdk8 for backwards compat

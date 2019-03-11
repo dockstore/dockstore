@@ -3541,6 +3541,34 @@ paths:
             $ref: "#/definitions/OrganizationUser"
       security:
       - BEARER: []
+  /organizations/{organizationName}/collections/{collectionName}/name:
+    get:
+      tags:
+      - "organizations"
+      summary: "Retrieves a collection by ID."
+      description: "Does not require authentication for approved organizations, authentication\
+        \ can be provided for unapproved organizations"
+      operationId: "getCollectionByName"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationName"
+        in: "path"
+        description: "Organization name."
+        required: true
+        type: "string"
+      - name: "collectionName"
+        in: "path"
+        description: "Collection name."
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Collection"
+      security:
+      - BEARER: []
   /users/checkUser/{username}:
     get:
       tags:
@@ -5699,6 +5727,10 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
+      organizationName:
+        type: "string"
+        description: "The name of the organization the collection belongs to"
+        readOnly: true
       name:
         type: "string"
         example: "Alignment"
@@ -5776,10 +5808,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5795,6 +5823,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -5987,10 +6019,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6006,6 +6034,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -7044,10 +7076,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7063,6 +7091,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

@@ -1,5 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
 <!--
-  ~    Copyright 2017 OICR
+  ~    Copyright 2019 OICR
   ~
   ~    Licensed under the Apache License, Version 2.0 (the "License");
   ~    you may not use this file except in compliance with the License.
@@ -14,40 +16,45 @@
   ~    limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>swagger-java-quay-client</artifactId>
+    <artifactId>swagger-java-wes-client</artifactId>
     <packaging>jar</packaging>
-    <name>swagger-java-quay-client</name>
+    <name>swagger-java-wes-client</name>
 
     <parent>
-        <version>1.6.0-beta.3-SNAPSHOT</version>
-        <groupId>io.dockstore</groupId>
         <artifactId>dockstore</artifactId>
+        <groupId>io.dockstore</groupId>
+        <version>1.6.0-beta.3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>io.swagger</groupId>
+                <groupId>io.swagger.codegen.v3 </groupId>
                 <artifactId>swagger-codegen-maven-plugin</artifactId>
+                <version>3.0.5</version>
                 <executions>
                     <execution>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/discovery.formatted.json</inputSpec>
+                            <!--
+                                        <inputSpec>https://raw.githubusercontent.com/ga4gh/workflow-execution-service-schemas/1.0.0/openapi/workflow_execution_service.swagger.yaml</inputSpec>
+                             -->
+                            <inputSpec>${project.basedir}/src/main/resources/workflow-execution_service-1.0.0-oas3-swagger.yaml</inputSpec>
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
                                 <library>jersey2</library>
                                 <dateLibrary>java8</dateLibrary>
-                                <invokerPackage>io.swagger.quay.client</invokerPackage>
-                                <modelPackage>io.swagger.quay.client.model</modelPackage>
-                                <apiPackage>io.swagger.quay.client.api</apiPackage>
+                                <invokerPackage>io.swagger.wes.client</invokerPackage>
+                                <modelPackage>io.swagger.wes.client.model</modelPackage>
+                                <apiPackage>io.swagger.wes.client.api</apiPackage>
                             </configOptions>
                             <generateModelTests>false</generateModelTests>
                             <generateApiTests>false</generateApiTests>
@@ -70,7 +77,7 @@
                             <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
-                                    <directory>target/generated-sources/swagger/src/gen/java/main/io/swagger/quay/client/api</directory>
+                                    <directory>target/generated-sources/swagger/src/gen/java/main/io/swagger/wes/client/api</directory>
                                     <includes>
                                         <include>ManifestApi.java</include>
                                         <include>SecscanApi.java</include>
@@ -82,7 +89,7 @@
                 </executions>
             </plugin>
 
-            <!-- auto-generated java classes should not fail the build on style -->
+                        <!-- auto-generated java classes should not fail the build on style -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -230,15 +237,17 @@
             </plugin>
         </plugins>
     </build>
+
     <dependencies>
         <!-- dependencies are needed for the client being generated -->
 
-
+        <!--
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-annotations</artifactId>
             <version>${swagger-annotations-version}</version>
         </dependency>
+        -->
 
         <!-- HTTP client: jersey-client -->
         <dependency>
@@ -313,5 +322,24 @@
             <artifactId>jackson-datatype-jsr310</artifactId>
             <version>${jackson.version}</version>
         </dependency>
+
+
+        <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
+
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations</artifactId>
+            <version>${openapi-annotations-version}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/junit/junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit-version}</version>
+        </dependency>
+
     </dependencies>
+
+
 </project>
