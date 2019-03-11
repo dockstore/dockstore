@@ -11,7 +11,7 @@ import java.util.zip.ZipOutputStream;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
-import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
+import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
 import io.dockstore.common.Utilities;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.ToolDescriptor;

@@ -23,7 +23,7 @@ import io.dockstore.client.cli.nested.AbstractEntryClient;
 import io.dockstore.client.cli.nested.BaseLanguageClient;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.NextflowLauncher;
-import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
+import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.NextflowUtilities;
 import io.swagger.client.ApiException;

@@ -34,7 +34,7 @@ import io.dockstore.client.cli.nested.BaseLanguageClient;
 import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.LauncherFiles;
-import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
+import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
 import io.dockstore.common.Bridge;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.WDLFileProvisioning;
