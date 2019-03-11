@@ -92,15 +92,13 @@ class Bridge(basePath : String) {
     * @throws wdl4s.parser.WdlParser.SyntaxError
     */
   @throws(classOf[WdlParser.SyntaxError])
+  @throws(classOf[NoSuchMethodException])
   def isValidWorkflow(file: JFile) = {
     try {
       val lines = scala.io.Source.fromFile(file).mkString
       WdlNamespaceWithWorkflow.load(lines, Seq(resolveHttpAndSecondaryFiles _)).get
     } catch {
       case ex: NullPointerException => throw new WdlParser.SyntaxError("At least one of the imported files is missing. Ensure that all imported files exist and are valid WDL documents.")
-      case ex: NoSuchMethodException =>
-      //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
-      // https://github.com/ga4gh/dockstore/issues/2139
     }
   }
 

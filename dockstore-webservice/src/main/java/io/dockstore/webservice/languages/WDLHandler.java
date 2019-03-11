@@ -212,7 +212,8 @@ public class WDLHandler implements LanguageHandlerInterface {
 
         if (filteredSourceFiles.size() > 0) {
             try {
-                Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream().filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
+                Optional<SourceFile> primaryDescriptor = filteredSourceFiles.stream()
+                    .filter(sourceFile -> Objects.equals(sourceFile.getPath(), primaryDescriptorFilePath)).findFirst();
 
                 if (primaryDescriptor.isPresent()) {
                     if (primaryDescriptor.get().getContent() == null || primaryDescriptor.get().getContent().trim().replaceAll("\n", "").isEmpty()) {
@@ -253,6 +254,11 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (WdlParser.SyntaxError | IllegalArgumentException e) {
                 validationMessageObject.put(primaryDescriptorFilePath, e.getMessage());
                 return new VersionTypeValidation(false, validationMessageObject);
+            } catch (NoSuchMethodException e) {
+                //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
+                // https://github.com/ga4gh/dockstore/issues/2139
+                validationMessageObject.put(primaryDescriptorFilePath, "unknown methods indicate that this might be a WDL 1.0 file\n we skipped validation: will likely break import parsing and dag generation:\n" + e.getMessage());
+                return new VersionTypeValidation(true, validationMessageObject);
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } finally {
