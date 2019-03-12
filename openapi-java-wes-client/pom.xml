@@ -53,7 +53,7 @@
                                 <library>jersey2</library>
                                 <dateLibrary>java8</dateLibrary>
                                 <invokerPackage>io.openapi.wes.client</invokerPackage>
-                                <modelPackage>io.opeanpi.wes.client.model</modelPackage>
+                                <modelPackage>io.openapi.wes.client.model</modelPackage>
                                 <apiPackage>io.openapi.wes.client.api</apiPackage>
                             </configOptions>
                             <generateModelTests>false</generateModelTests>
