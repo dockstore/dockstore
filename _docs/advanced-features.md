@@ -140,7 +140,7 @@ cwlrunner: cromwell
 
 Cromwell with CWL handles imports differently than cwltool with CWL. Cromwell requires imports of a workflow to be given in a zip directory, where the files are referenced relative to the root of the zip directory. With cwltool, the files imported are referenced relative to the file importing them. You can read more about how Cromwell handles imports [here](https://cromwell.readthedocs.io/en/stable/Imports/).
 
-When launching local CWL workflows with Cromwell, we zip the directory where the primary descriptor file is located and use this zip file for imports. This way the imports are resolved relative to the primary descriptor. This means you should store your descriptor files in a clean directory if you can.
+When launching local CWL workflows with Cromwell, we zip the directory where the primary descriptor file is located and use this zip file for imports. This way the imports are resolved relative to the primary descriptor. **You should store your descriptor files in a clean directory if you can.**
 
 For remote launches, we download the zip directory as returned by the Dockstore API. Note that this should work for most cases where the primary descriptor is in the root directory of its git repository.
 
