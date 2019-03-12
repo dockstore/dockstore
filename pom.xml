@@ -213,12 +213,6 @@
                 <artifactId>aws-java-sdk-s3</artifactId>
                 <version>${aws.version}</version>
             </dependency>
-
-            <dependency>
-                <groupId>commons-httpclient</groupId>
-                <artifactId>commons-httpclient</artifactId>
-                <version>3.1</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
@@ -1079,6 +1073,8 @@
                                         <exclude>commons-lang:commons-lang</exclude>
                                         <!-- superceded by org.apache.commons:commons-configuration2 for direct dependencies-->
                                         <exclude>commons-configuration:commons-configuration</exclude>
+                                        <!-- superceded by org.apache.httpcomponents:httpclient -->
+                                        <exclude>commons-httpclient:commons-httpclient</exclude>
                                     </excludes>
                                 </bannedDependencies>
                             </rules>

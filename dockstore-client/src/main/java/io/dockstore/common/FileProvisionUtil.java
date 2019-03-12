@@ -45,10 +45,12 @@ import org.apache.commons.net.io.Util;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.VFS;
+import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.provider.ftp.FtpFileSystemConfigBuilder;
+import org.apache.commons.vfs2.provider.http4.Http4FileProvider;
+import org.apache.commons.vfs2.provider.http4s.Http4sFileProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ro.fortsoft.pf4j.PluginManager;
@@ -70,13 +72,30 @@ public final class FileProvisionUtil {
         // VFS call, see https://github.com/abashev/vfs-s3/tree/branch-2.3.x and
         // https://commons.apache.org/proper/commons-vfs/filesystems.html
         try {
+            DefaultFileSystemManager fsManager = (DefaultFileSystemManager)VFS.getManager();
+            // https://issues.apache.org/jira/browse/VFS-360 replace http and http prefix with http and http4 to properly use httpclient4
+            String newPath = path;
+            if (path.startsWith("http")) {
+                // TODO: http not provided by default via commons-httpclient 4
+                // https://github.com/apache/commons-vfs/blob/commons-vfs-2.3/commons-vfs2/src/test/java/org/apache/commons/vfs2/provider/http4s/test/Http4sGetContentInfoTest.java#L42
+                if (!fsManager.hasProvider("http4")) {
+                    fsManager.addProvider("http4", new Http4FileProvider());
+                }
+                if (!fsManager.hasProvider("http4s")) {
+                    fsManager.addProvider("http4s", new Http4sFileProvider());
+                }
+                if (path.startsWith("http:")) {
+                    newPath = newPath.replaceFirst("http:", "http4:");
+                } else if (path.startsWith("https:")) {
+                    newPath = newPath.replaceFirst("https:", "http4s:");
+                }
+            }
             // force passive mode for FTP (see emails from Keiran)
             FileSystemOptions opts = new FileSystemOptions();
             FtpFileSystemConfigBuilder.getInstance().setPassiveMode(opts, true);
 
             // trigger a copy from the URL to a local file path that's a UUID to avoid collision
-            FileSystemManager fsManager = VFS.getManager();
-            try (FileObject src = fsManager.resolveFile(path, opts);
+            try (FileObject src = fsManager.resolveFile(newPath, opts);
                 FileObject dest = fsManager.resolveFile(targetFilePath.toFile().getAbsolutePath())) {
                 copyFromInputStreamToOutputStream(src, dest, threads);
             }

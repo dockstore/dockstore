@@ -84,11 +84,6 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
         </dependency>
-        <!-- seems redundant, but actually needed by commons-vfs2 at runtime. See https://issues.apache.org/jira/browse/VFS-360 -->
-        <dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
@@ -221,7 +216,13 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
-            <version>2.2</version>
+            <version>2.3</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-httpclient</groupId>
+                    <artifactId>commons-httpclient</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
@@ -335,7 +336,6 @@
 
                             <usedDependencies>
                                 <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
-                                <usedDependency>commons-httpclient:commons-httpclient</usedDependency>
                                 <usedDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base</usedDependency>
                                 <usedDependency>org.broadinstitute:wdl4s-wom_2.11</usedDependency>
                                 <usedDependency>io.spray:spray-json_2.11</usedDependency>
