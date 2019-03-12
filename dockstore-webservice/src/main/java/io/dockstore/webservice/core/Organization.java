@@ -105,7 +105,7 @@ public class Organization implements Serializable, Aliasable {
     private Set<Collection> collections = new HashSet<>();
 
     @ElementCollection(targetClass = Alias.class)
-    @JoinTable(name = "organzation_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
+    @JoinTable(name = "organization_alias", joinColumns = @JoinColumn(name = "id"), uniqueConstraints = @UniqueConstraint(name = "unique_org_aliases", columnNames = { "alias" }))
     @MapKeyColumn(name = "alias", columnDefinition = "text")
     @ApiModelProperty(value = "aliases can be used as an alternate unique id for organizations")
     private Map<String, Alias> aliases = new HashMap<>();

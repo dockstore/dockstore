@@ -215,7 +215,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @param mainDescriptor the path of the main descriptor if different than the workflow default
      * @return
      */
-    protected T saveVersion(User user, Long entryId, T entry, U version, Set<SourceFile> versionSourceFiles, Optional<SourceFile> mainDescriptor) {
+    T saveVersion(User user, Long entryId, T entry, U version, Set<SourceFile> versionSourceFiles, Optional<SourceFile> mainDescriptor) {
         final U validatedVersion = versionValidation(version, entry, mainDescriptor);
 
         boolean isValidVersion = isValidVersion(validatedVersion);
@@ -363,6 +363,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                 map.put(newfile.getPath(), newfile);
             });
 
+            boolean changed = false;
             // mutate sourcefiles accordingly
             // 1) matching filenames are updated with the new content
             // 2) empty files are deleted
@@ -374,15 +375,27 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
                 if (map.containsKey(file.getPath())) {
                     if (file.getContent() != null) {
                         // case 1)
-                        map.get(file.getPath()).setContent(file.getContent());
+                        final SourceFile sourceFile = map.get(file.getPath());
+                        if (!sourceFile.getContent().equals(file.getContent())) {
+                            sourceFile.setContent(file.getContent());
+                            changed = true;
+                        }
                     } else {
-                        // case 3)
+                        // case 2)
                         map.remove(file.getPath());
                         LOG.info("deleted " + file.getPath() + " for new revision of " + entryId);
+                        changed = true;
                     }
                 } else {
+                    // case 3
                     map.put(file.getPath(), file);
+                    changed = true;
                 }
+            }
+
+            if (!changed) {
+                LOG.info("aborting change, there were no differences detected for new revision of " + entryId);
+                throw new CustomWebApplicationException("no changes detected", HttpStatus.SC_NO_CONTENT);
             }
         } else {
             // for brand new hosted tools
@@ -393,7 +406,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         return tag.getSourceFiles();
     }
 
-    protected void persistSourceFiles(U tag, Collection<SourceFile> sourceFiles) {
+    void persistSourceFiles(U tag, Collection<SourceFile> sourceFiles) {
         // create everything still in the map
         for (SourceFile e : sourceFiles) {
             long l = fileDAO.create(e);
@@ -407,7 +420,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
      * @param versions
      * @return
      */
-    protected String calculateNextVersionName(Set<U> versions) {
+    String calculateNextVersionName(Set<U> versions) {
         if (versions.isEmpty()) {
             return "1";
         } else {

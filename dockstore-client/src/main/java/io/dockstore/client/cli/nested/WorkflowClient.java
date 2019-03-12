@@ -701,7 +701,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     out("The version " + versionName + " has already been verified by \'" + versionToUpdate.getVerifiedSource() + "\'");
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
-                    if (overwrite.toLowerCase().equals("y")) {
+                    if ("y".equalsIgnoreCase(overwrite)) {
                         verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                     } else {
                         toOverwrite = false;
@@ -866,7 +866,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             final String testParameterFile = optVal(args, "--test-parameter-path", "/test.json");
 
             // Check if valid input
-            if (!descriptorType.toLowerCase().equals("cwl") && !descriptorType.toLowerCase().equals("wdl")) {
+            if (!"cwl".equalsIgnoreCase(descriptorType) && !"wdl".equalsIgnoreCase(descriptorType)) {
                 errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
             }
 
@@ -949,7 +949,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 if (workflow.getMode() == io.swagger.client.model.Workflow.ModeEnum.STUB) {
 
                     // Check if valid input
-                    if (!descriptorType.toLowerCase().equals("cwl") && !descriptorType.toLowerCase().equals("wdl")) {
+                    if (!"cwl".equalsIgnoreCase(descriptorType) && !"wdl".equalsIgnoreCase(descriptorType)) {
                         errorMessage("Please ensure that the descriptor type is either cwl or wdl.", Client.CLIENT_ERROR);
                     }
 
