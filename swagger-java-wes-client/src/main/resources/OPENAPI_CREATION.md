@@ -3,7 +3,7 @@
 SwaggerHub was used to convert the WES 1.0.0 Swagger 2.0 yaml to OpenAPI 3.0 yaml
 
 ####Steps to convert:
-1. Launch SwaggerHub
+1. Launch SwaggerHub https://app.swaggerhub.com/home
 2. Create an account and login to SwaggerHub
 3. Click on the 'plus' (**+**) icon on the left side of the page
 3. Select 'Import and Document API'
@@ -21,4 +21,4 @@ https://raw.githubusercontent.com/ga4gh/workflow-execution-service-schemas/1.0.0
 **NOTE:**
 In the OpenAPI 3.0 yaml POST 'runs' request the workflow_params type was changed from 'string' to binary and the 'format' was removed to 
 enable the code generator to add the contents of the workflow params to a request body and not just the URI of the workflow_params. This 
-seems to be whatwas intended from looking at the example curl commands for running workflows.  
+seems to be what was intended from looking at the example curl commands for running workflows.  
