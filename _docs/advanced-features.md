@@ -109,24 +109,41 @@ As an example, adding the following line to your config file will stop cwl-runne
 cwltool-extra-parameters: --debug, --leave-container, --leave-tmpdir
 ```
 
-## Alternative CWL Launchers:
+## Alternative CWL Launchers
 
-By default, the dockstore CLI launches CWL tools/workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with several other launchers such as:
+By default, the dockstore CLI launches CWL tools/workflows using [cwltool](https://github.com/common-workflow-language/cwltool). However, we have an experimental integration with other launchers such as:
 - [cwl-runner](http://www.commonwl.org/v1.0/CommandLineTool.html#Executing_CWL_documents_as_scripts)
+- [Cromwell](https://cromwell.readthedocs.io/en/stable/) (For Dockstore 1.6.0+)
 
+Keep in mind that there are a few differences in how locked-down the Docker execution environments are between the launchers, so a workflow that succeeds in one may not necessarily succeed in another.
+
+You can test all the launchers by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git` and then test with cwl-runner, Cromwell, and cwltool using `dockstore tool launch --local-entry Dockstore.cwl --json test.json` after the required configurations have been made.
+
+Even though it's the default, you can also explicitly use cwltool by adding the following to your `~/.dockstore/config`:
+ ```
+ cwlrunner: cwltool
+ ```
+
+### cwl-runner
 If your workflow platform provides the cwl-runner alias as the platform's default CWL implementation, you can activate it by adding the following to your `~/.dockstore/config`:
 ```
 cwlrunner: cwl-runner
 ```
 
-Furthermore, even though it's the default, you can also explicitly use cwltool by adding the following to your `~/.dockstore/config`:
- ```
- cwlrunner: cwltool
- ```
+### Cromwell
+> For Dockstore 1.6.0+
 
-Keep in mind that there are a few differences in how locked-down the Docker execution environments are between any two alternatives, so a workflow that succeeds in one may not necessarily succeed in the other.
+You can launch CWL tools/workflows using Cromwell by adding the following to your `~/.dockstore/config`:
+```
+cwlrunner: cromwell
+```
 
-You can test all the launchers by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git` and then test with cwl-runner and cwltool using `dockstore tool launch --local-entry Dockstore.cwl --json test.json` after the above configurations have been made.
+Cromwell with CWL handles imports differently than cwltool with CWL. Cromwell requires imports of a workflow to be given in a zip directory, where the files are referenced relative to the root of the zip directory. With cwltool, the files imported are referenced relative to the file importing them. You can read more about how Cromwell handles imports [here](https://cromwell.readthedocs.io/en/stable/Imports/).
+
+When launching local CWL workflows with Cromwell, we zip the directory where the primary descriptor file is located and use this zip file for imports. This way the imports are resolved relative to the primary descriptor. This means you should store your descriptor files in a clean directory if you can.
+
+For remote launches, we download the zip directory as returned by the Dockstore API. Note that this should work for most cases where the primary descriptor is in the root directory of its git repository.
+
 
 ## WDL Launcher Configuration
 
@@ -137,6 +154,8 @@ cromwell-version = 34
 ```
 
 You can test cromwell by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git` and then test using `dockstore tool launch --local-entry Dockstore.wdl --json test.wdl.json`
+
+Note: The cromwell-version mentioned in `~/.dockstore/config` will also be used to specify the version of Cromwell used to launch CWL tools and workflows if you set `cwlrunner: cromwell`.
 
 ## Notifications
 The Dockstore CLI has the ability to provide notifications via an HTTP post to a user-defined endpoint for the following steps:
