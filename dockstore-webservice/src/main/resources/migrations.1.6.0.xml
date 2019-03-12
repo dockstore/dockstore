@@ -340,4 +340,7 @@
             UPDATE sourcefile SET absolutepath = CONCAT('/', absolutepath) WHERE absolutepath NOT LIKE '/%'
         </sql>
     </changeSet>
+    <changeSet author="dyuen" id="organization_alias_rename">
+        <renameTable oldTableName="organzation_alias" newTableName="organization_alias"/>
+    </changeSet>
 </databaseChangeLog>

@@ -1251,13 +1251,13 @@ public class WorkflowResource
         // construct git url like git@github.com:ga4gh/dockstore-ui.git
         String registryURLPrefix;
         SourceControl sourceControlEnum;
-        if (workflowRegistry.toLowerCase().equals(SourceControl.BITBUCKET.getFriendlyName().toLowerCase())) {
+        if (workflowRegistry.equalsIgnoreCase(SourceControl.BITBUCKET.getFriendlyName().toLowerCase())) {
             sourceControlEnum = SourceControl.BITBUCKET;
             registryURLPrefix = sourceControlEnum.toString();
-        } else if (workflowRegistry.toLowerCase().equals(SourceControl.GITHUB.getFriendlyName().toLowerCase())) {
+        } else if (workflowRegistry.equalsIgnoreCase(SourceControl.GITHUB.getFriendlyName().toLowerCase())) {
             sourceControlEnum = SourceControl.GITHUB;
             registryURLPrefix = sourceControlEnum.toString();
-        } else if (workflowRegistry.toLowerCase().equals(SourceControl.GITLAB.getFriendlyName().toLowerCase())) {
+        } else if (workflowRegistry.equalsIgnoreCase(SourceControl.GITLAB.getFriendlyName().toLowerCase())) {
             sourceControlEnum = SourceControl.GITLAB;
             registryURLPrefix = sourceControlEnum.toString();
         } else {

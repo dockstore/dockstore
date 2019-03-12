@@ -54,9 +54,9 @@ import io.dockstore.client.cli.nested.CromwellLauncher;
 import io.dockstore.client.cli.nested.CwltoolLauncher;
 import io.dockstore.client.cli.nested.LanguageClientInterface;
 import io.dockstore.client.cli.nested.LauncherFiles;
-import io.dockstore.client.cli.nested.NotificationsClients.NotificationsClient;
 import io.dockstore.client.cli.nested.WESLauncher;
 import io.dockstore.client.cli.nested.WorkflowClient;
+import io.dockstore.client.cli.nested.notificationsclients.NotificationsClient;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
 import io.dockstore.common.Utilities;
@@ -336,14 +336,14 @@ public class CWLClient extends BaseLanguageClient implements LanguageClientInter
                 } else if (matchSteps.find()) {
                     stepsFound = true;
                 } else {
-                    if (abstractEntryClient.getEntryType().toLowerCase().equals("workflow") && matchWf.find()) {
+                    if (abstractEntryClient.getEntryType().equalsIgnoreCase("workflow") && matchWf.find()) {
                         classWfFound = true;
-                    } else if (abstractEntryClient.getEntryType().toLowerCase().equals("tool") && matchTool.find()) {
+                    } else if (abstractEntryClient.getEntryType().equalsIgnoreCase("tool") && matchTool.find()) {
                         classToolFound = true;
-                    } else if ((abstractEntryClient.getEntryType().toLowerCase().equals("tool") && matchWf.find())) {
+                    } else if ((abstractEntryClient.getEntryType().equalsIgnoreCase("tool") && matchWf.find())) {
                         errorMessage("Expected a tool but the CWL file specified a workflow. Use 'dockstore workflow launch ...' instead.",
                             CLIENT_ERROR);
-                    } else if (abstractEntryClient.getEntryType().toLowerCase().equals("workflow") && matchTool.find()) {
+                    } else if (abstractEntryClient.getEntryType().equalsIgnoreCase("workflow") && matchTool.find()) {
                         errorMessage("Expected a workflow but the CWL file specified a tool. Use 'dockstore tool launch ...' instead.",
                             CLIENT_ERROR);
                     }

@@ -717,7 +717,7 @@ public abstract class AbstractEntryClient<T> {
 
             String parentEntry = optVal(args, "--parent-entry", entry);
 
-            if (getEntryType().toLowerCase().equals("tool")) {
+            if (getEntryType().equalsIgnoreCase("tool")) {
                 descriptorType = reqVal(args, "--descriptor-type");
                 descriptorType = descriptorType.toLowerCase();
                 boolean validType = false;
@@ -766,10 +766,9 @@ public abstract class AbstractEntryClient<T> {
      * Type.NONE if file extension is neither WDL nor CWL, could be no extension or some other random extension(e.g .txt)
      */
     LanguageType checkFileExtension(String path) {
-        if (FilenameUtils.getExtension(path).toLowerCase().equals(CWL_STRING) || FilenameUtils.getExtension(path).toLowerCase()
-                .equals("yaml") || FilenameUtils.getExtension(path).toLowerCase().equals("yml")) {
+        if (FilenameUtils.getExtension(path).equalsIgnoreCase(CWL_STRING) || FilenameUtils.getExtension(path).equalsIgnoreCase("yaml") || FilenameUtils.getExtension(path).equalsIgnoreCase("yml")) {
             return LanguageType.CWL;
-        } else if (FilenameUtils.getExtension(path).toLowerCase().equals(WDL_STRING)) {
+        } else if (FilenameUtils.getExtension(path).equalsIgnoreCase(WDL_STRING)) {
             return LanguageType.WDL;
         } else if (path.endsWith("nextflow.config")) {
             return LanguageType.NEXTFLOW;
@@ -792,7 +791,7 @@ public abstract class AbstractEntryClient<T> {
         LanguageType ext = checkFileExtension(file.getPath());     //file extension could be cwl,wdl or ""
 
         if (!file.exists() || file.isDirectory()) {
-            if (getEntryType().toLowerCase().equals("tool")) {
+            if (getEntryType().equalsIgnoreCase("tool")) {
                 errorMessage("The tool file " + file.getPath() + " does not exist. Did you mean to launch a remote tool or a workflow?",
                     ENTRY_NOT_FOUND);
             } else {
@@ -1326,7 +1325,7 @@ public abstract class AbstractEntryClient<T> {
         out("  --entry <entry>                                                          Complete " + getEntryType()
                 + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
         out("  --version <version>                                                      " + getEntryType() + " version name");
-        if (getEntryType().toLowerCase().equals("tool")) {
+        if (getEntryType().equalsIgnoreCase("tool")) {
             out("  --descriptor-type <descriptor-type>                                      CWL/WDL");
         }
         out("");

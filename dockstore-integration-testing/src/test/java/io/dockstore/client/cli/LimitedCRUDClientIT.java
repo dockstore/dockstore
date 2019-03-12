@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.UUID;
 
 import com.google.common.collect.Lists;
 import io.dockstore.common.CommonTestUtilities;
@@ -191,7 +192,7 @@ public class LimitedCRUDClientIT {
 
         // test repeated workflow version creation up to limit
         for(int i = 1; i <= 9; i++) {
-            //TODO: this is kind of dumb, we should check for no-change versions as a hotfix
+            sourceFiles.get(0).setContent(sourceFiles.get(0).getContent() + "\ns:citation: " + UUID.randomUUID().toString());
             api.editHostedTool(hostedTool.getId(), sourceFiles);
         }
 
@@ -216,9 +217,14 @@ public class LimitedCRUDClientIT {
         List<SourceFile> sourceFiles = generateSourceFiles();
         api.editHostedTool(hostedTool.getId(), sourceFiles);
 
+        // a few updates with no actual changes shouldn't break anything since they are ignored
+        for(int i = 1; i <= NEW_LIMITS - 1; i++) {
+            api.editHostedTool(hostedTool.getId(), sourceFiles);
+        }
+
         // test repeated workflow version creation up to limit
         for(int i = 1; i <= NEW_LIMITS - 1; i++) {
-            //TODO: this is kind of dumb, we should check for no-change versions as a hotfix
+            sourceFiles.get(0).setContent(sourceFiles.get(0).getContent() + "\ns:citation: " + UUID.randomUUID().toString());
             api.editHostedTool(hostedTool.getId(), sourceFiles);
         }
 

@@ -716,7 +716,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
                     out("The tag " + versionName + " has already been verified by \'" + tagToUpdate.getVerifiedSource() + "\'");
                     out("Would you like to overwrite this with \'" + verifySource + "\'? (y/n)");
                     String overwrite = scanner.nextLine();
-                    if (overwrite.toLowerCase().equals("y")) {
+                    if ("y".equalsIgnoreCase(overwrite)) {
                         verifyRequest = SwaggerUtility.createVerifyRequest(true, verifySource);
                     } else {
                         toOverwrite = false;
