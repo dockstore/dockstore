@@ -335,4 +335,9 @@
             create unique index collection_name_index on collection (LOWER(name), organizationid);
         </sql>
     </changeSet>
+    <changeSet id="fixAbsolutePath" author="aduncan">
+        <sql dbms="postgresql">
+            UPDATE sourcefile SET absolutepath = CONCAT('/', absolutepath) WHERE absolutepath NOT LIKE '/%'
+        </sql>
+    </changeSet>
 </databaseChangeLog>
