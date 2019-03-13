@@ -7,9 +7,13 @@ permalink: /docs/publisher-tutorials/publishing-zips/
 
 # Intro
 
-Dockstore 1.6 has introduced a new API to publish the contents of a ZIP file
-as a new hosted workflow version. This API makes it easier to programatically
+Dockstore 1.6 has introduced a <a href="https://dockstore.org/api/static/swagger-ui/index.html#/hosted/addZip">new API</a>
+to publish the contents of a ZIP file as a new hosted workflow version. This API makes it easier to programatically
 assemble and publish workflows.
+
+This API works in conjunction with the 
+<a href="/docs/publisher-tutorials/hosted-tools-and-workflows/">Hosted Tools and Workflows</a>
+Dockstore feature. The contents of the zip are stored directly on Dockstore.
 
 ## Use Cases
 
@@ -26,8 +30,7 @@ and if the tests pass, a new version of the workflow can be published.
 
 The ZIP file should contain:
 
-* The workflow's source files all of the workflow's files -- the actual source files such
-.wdl and .cwl. At least one file is required.
+* The workflow's source files -- the actual source files such .wdl and .cwl. At least one file is required.
 * Other file types used by the workflows, e.g., CWL can include JavaScript, Python, etc.
 files. This is optional.
 * Test parameter files. Optional JSON test parameter files.
@@ -78,8 +81,90 @@ limits, please contact the Dockstore team.
 
 ## Tutorial
 
-Following is a simple example using curl to create a hosted workflow and publish
+Following is a simple example using curl to create a hosted workflow, creating a zip, and posting the zip
+to create a version.
 
-### Requirements
+You will need to have registered with Dockstore, and you need your Dockstore token. To get
+your Dockstore token, after you have logged in, go to your 
+<a href="https://dockstore.org/accounts">Accounts</a> page, and copy the token to your
+clipboard by clicking on the Copy icon next to the token in your Dockstore Account section.
 
-* An account on Dockstore
+In a terminal window, assign the token to a environment variable:
+
+```
+set DOCKSTORE_TOKEN="<value in clipboard>"
+```
+
+Create a hosted workflow. This will create the workflow without any versions. We will give it the name `tutorial`,
+and let's make it a WDL workflow.
+
+```
+curl -X POST "https://dockstore.org/api/workflows/hostedEntry?name=tutorial&descriptorType=wdl" -H "accept: application/json" -H "Authorization: Bearer ${DOCKSTORE_TOKEN}"
+```
+
+The response to the above will be a JSON that will include a property named `id`. Save the value of the id, `8648`
+in this example.
+
+```
+{
+  "aliases": {},
+  "author": null,
+  "checker_id": null,
+  "dbCreateDate": 1552432560625,
+  "dbUpdateDate": 1552432560625,
+  "defaultTestParameterFilePath": "/test.json",
+  "defaultVersion": null,
+  "description": null,
+  "descriptorType": "wdl",
+  "email": null,
+  "full_workflow_path": "dockstore.org/tutorialuser/tutorial",
+  "gitUrl": "git@dockstore.org:workflows/dockstore.org/tutorialuser/tutorial.git",
+  "has_checker": false,
+  "id": 8648,
+  ...
+```
+
+Let's save it as an environment variable:
+
+```
+set WORKFLOW_ID=8648
+```
+
+Now that you have the hosted workflow, create the ZIP file that will contain the first version of the workflow.
+
+Create and navigate to an empty directory. Create a myWorkflow.wdl file with these contents, which come from
+<a href="https://cromwell.readthedocs.io/en/develop/tutorials/FiveMinuteIntro/">Cromwell.readthedocs.io</a>.
+
+```
+workflow myWorkflow {
+    call myTask
+}
+
+task myTask {
+    command {
+        echo "hello world"
+    }
+    output {
+        String out = read_string(stdout())
+    }
+}
+```
+Create a .dockstore.yml with the following content:
+
+```
+dockstoreVersion: 1.0
+class: workflow
+primaryDescriptor: myWorkflow.wdl
+```
+
+Combine the two files into a .zip:
+
+```
+zip firstversion.zip myworkflow.wdl .dockstore.yml
+```
+
+Create a new version using the zip:
+
+```
+curl -X POST "https://dockstore.org/api/workflows/hostedEntry/${WORKFLOW_ID}" -H "accept: application/json" -H "Authorization: Bearer ${DOCKSTORE_TOKEN}" -H "Content-Type: multipart/form-data" -F "file=@firstversion.zip;type=application/zip"
+```
