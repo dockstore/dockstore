@@ -10,8 +10,8 @@ import com.google.common.io.Files;
 import io.dockstore.client.cli.SwaggerUtility;
 import io.dockstore.common.FileProvisioning;
 import io.dockstore.common.LanguageType;
-import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
-import io.swagger.wes.client.model.RunId;
+import io.openapi.wes.client.api.WorkflowExecutionServiceApi;
+import io.openapi.wes.client.model.RunId;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -141,7 +141,7 @@ public class WESLauncher extends BaseLauncher {
             RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonInputFile, languageType, workflowTypeVersion, TAGS,
                     "", workflowURL, workflowAttachment);
             System.out.println("Launched WES run with id: " + response.toString());
-        } catch (io.swagger.wes.client.ApiException e) {
+        } catch (io.openapi.wes.client.ApiException e) {
             LOG.error("Error launching WES run", e);
         } finally {
             try {

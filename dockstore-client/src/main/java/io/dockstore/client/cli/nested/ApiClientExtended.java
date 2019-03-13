@@ -8,8 +8,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Form;
 import javax.ws.rs.core.MediaType;
 
-import io.swagger.wes.client.ApiClient;
-import io.swagger.wes.client.ApiException;
+import io.openapi.wes.client.ApiClient;
+import io.openapi.wes.client.ApiException;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.MultiPart;
