@@ -7,12 +7,12 @@ permalink: /docs/publisher-tutorials/posting-zips/
 
 # Intro
 
-Dockstore 1.6 has introduced a <a href="https://dockstore.org/api/static/swagger-ui/index.html#/hosted/addZip">new API</a>
+Dockstore has an [API](https://dockstore.org/api/static/swagger-ui/index.html#/hosted/addZip)
 to post the contents of a ZIP file as a new hosted workflow version. This API makes it easier to
 programatically post workflow versions that have been tested and produced by a build process.
 
 This API works in conjunction with the 
-<a href="/docs/publisher-tutorials/hosted-tools-and-workflows/">Hosted Tools and Workflows</a>
+[Hosted Tools and Workflows](/docs/publisher-tutorials/hosted-tools-and-workflows/)
 Dockstore feature. The contents of the zip are stored directly on Dockstore.
 
 ## Use Cases
@@ -29,7 +29,7 @@ and if the tests pass, a new version of the workflow can be pushed to Dockstore.
 
 The ZIP file that is posted to Dockstore should contain:
 
-* The workflow's source file(s) -- the actual source files such .wdl or .cwl. At least one such file is required.
+* The workflow descriptors; the CWL, WDL, etc.. At least one descriptor is required.
 * Other file types used by the workflows, e.g., CWL can include JavaScript, Python, etc.
 files. This is optional.
 * Test parameter files. Optional JSON test parameter files.
@@ -99,7 +99,7 @@ to create a version.
 
 You will need to have registered with Dockstore, and you need your Dockstore token. To get
 your Dockstore token, after you have logged in, go to your 
-<a href="https://dockstore.org/accounts">Accounts</a> page, and copy the token to your
+[Accounts](https://dockstore.org/accounts) page, and copy the token to your
 clipboard by clicking on the Copy icon next to the token in your Dockstore Account section.
 
 In a terminal window, assign the token to a environment variable:
@@ -145,7 +145,7 @@ set WORKFLOW_ID=8648
 Now that you have the hosted workflow, create the ZIP file that will contain the first version of the workflow.
 
 Create and navigate to an empty directory. Create a myWorkflow.wdl file with these contents (from 
-<a href="https://cromwell.readthedocs.io/en/develop/tutorials/FiveMinuteIntro/">cromwell.readthedocs.io</a>).
+[cromwell.readthedocs.io](https://cromwell.readthedocs.io/en/develop/tutorials/FiveMinuteIntro/)).
 
 ```
 workflow myWorkflow {
@@ -183,10 +183,9 @@ curl -X POST "https://dockstore.org/api/workflows/hostedEntry/${WORKFLOW_ID}" -H
 
 ## Summary
 
-This simple example should give you an idea of what you can do with this feature. With real
-world examples, you'll probably have multiple WDL or CWL files, with some of those files in
+This simple example should give you an idea of what you can do with this feature. With real-world
+examples, you'll probably have multiple WDL or CWL files, with some of those files in
 subdirectories. You won't want to post a version right away; you'll want to run tests first.
-And so forth.
 
-But once you have a workflow assembled and is passing tests, all you need to do is assemble
+But once you have a workflow assembled and passing tests, all you need to do is assemble it
 into a zip file and make an API call to get the contents on Dockstore.
