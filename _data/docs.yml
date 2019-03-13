@@ -26,6 +26,7 @@
     - publisher-tutorials/batch-services
     - publisher-tutorials/aws-batch
     - publisher-tutorials/azure-batch
+    - publisher-tutorials/posting-zips
 
 - title: End User Tutorials
   link: user-tutorials
