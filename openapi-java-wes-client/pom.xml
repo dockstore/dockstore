@@ -20,9 +20,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>swagger-java-wes-client</artifactId>
+    <artifactId>openapi-java-wes-client</artifactId>
     <packaging>jar</packaging>
-    <name>swagger-java-wes-client</name>
+    <name>openapi-java-wes-client</name>
 
     <parent>
         <artifactId>dockstore</artifactId>
@@ -46,15 +46,15 @@
                             <!--
                                         <inputSpec>https://raw.githubusercontent.com/ga4gh/workflow-execution-service-schemas/1.0.0/openapi/workflow_execution_service.swagger.yaml</inputSpec>
                              -->
-                            <inputSpec>${project.basedir}/src/main/resources/workflow-execution_service-1.0.0-oas3-swagger.yaml</inputSpec>
+                            <inputSpec>${project.basedir}/src/main/resources/workflow-execution_service-1.0.0-oas3-openapi.yaml</inputSpec>
                             <language>java</language>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
                                 <library>jersey2</library>
                                 <dateLibrary>java8</dateLibrary>
-                                <invokerPackage>io.swagger.wes.client</invokerPackage>
-                                <modelPackage>io.swagger.wes.client.model</modelPackage>
-                                <apiPackage>io.swagger.wes.client.api</apiPackage>
+                                <invokerPackage>io.openapi.wes.client</invokerPackage>
+                                <modelPackage>io.openapi.wes.client.model</modelPackage>
+                                <apiPackage>io.openapi.wes.client.api</apiPackage>
                             </configOptions>
                             <generateModelTests>false</generateModelTests>
                             <generateApiTests>false</generateApiTests>
@@ -68,7 +68,8 @@
                 <artifactId>maven-clean-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>kill-malformed-client</id>
+                        <id>kill-extra-stuff</id>
+                        <!-- see https://github.com/swagger-api/swagger-codegen/issues/8781 -->
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>clean</goal>
@@ -77,11 +78,8 @@
                             <excludeDefaultDirectories>true</excludeDefaultDirectories>
                             <filesets>
                                 <fileset>
-                                    <directory>target/generated-sources/swagger/src/gen/java/main/io/swagger/wes/client/api</directory>
-                                    <includes>
-                                        <include>ManifestApi.java</include>
-                                        <include>SecscanApi.java</include>
-                                    </includes>
+                                    <!-- remove generated test stubs since we are not using them -->
+                                    <directory>target/generated-sources/swagger/src/test</directory>
                                 </fileset>
                             </filesets>
                         </configuration>
@@ -240,15 +238,6 @@
 
     <dependencies>
         <!-- dependencies are needed for the client being generated -->
-
-        <!--
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-annotations</artifactId>
-            <version>${swagger-annotations-version}</version>
-        </dependency>
-        -->
-
         <!-- HTTP client: jersey-client -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
@@ -323,23 +312,12 @@
             <version>${jackson.version}</version>
         </dependency>
 
-
         <!-- https://mvnrepository.com/artifact/io.swagger.core.v3/swagger-annotations -->
-
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations</artifactId>
             <version>${openapi-annotations-version}</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/junit/junit -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit-version}</version>
-        </dependency>
-
     </dependencies>
-
-
 </project>

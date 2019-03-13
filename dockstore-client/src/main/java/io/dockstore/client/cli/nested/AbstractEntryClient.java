@@ -52,14 +52,14 @@ import io.dockstore.common.Utilities;
 import io.github.collaboratory.cwl.CWLClient;
 import io.github.collaboratory.nextflow.NextFlowClient;
 import io.github.collaboratory.wdl.WDLClient;
+import io.openapi.wes.client.api.WorkflowExecutionServiceApi;
+import io.openapi.wes.client.model.RunId;
+import io.openapi.wes.client.model.RunLog;
+import io.openapi.wes.client.model.RunStatus;
 import io.swagger.client.ApiException;
 import io.swagger.client.model.Label;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.ToolDescriptor;
-import io.swagger.wes.client.api.WorkflowExecutionServiceApi;
-import io.swagger.wes.client.model.RunId;
-import io.swagger.wes.client.model.RunLog;
-import io.swagger.wes.client.model.RunStatus;
 import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.SubnodeConfiguration;
 import org.apache.commons.io.FileUtils;
@@ -1041,14 +1041,14 @@ public abstract class AbstractEntryClient<T> {
                         try {
                             RunLog response = clientWorkflowExecutionServiceApi.getRunLog(workflowId);
                             out("Verbose run status is: " + response.toString());
-                        } catch (io.swagger.wes.client.ApiException e) {
+                        } catch (io.openapi.wes.client.ApiException e) {
                             LOG.error("Error getting verbose WES run status", e);
                         }
                     } else {
                         try {
                             RunStatus response = clientWorkflowExecutionServiceApi.getRunStatus(workflowId);
                             out("Brief run status is: " + response.toString());
-                        } catch (io.swagger.wes.client.ApiException e) {
+                        } catch (io.openapi.wes.client.ApiException e) {
                             LOG.error("Error getting brief WES run status", e);
                         }
                     }
@@ -1058,7 +1058,7 @@ public abstract class AbstractEntryClient<T> {
                     try {
                         RunId response = clientWorkflowExecutionServiceApi.cancelRun(workflowId);
                         out("Cancelled run with id: " + response.toString());
-                    } catch (io.swagger.wes.client.ApiException e) {
+                    } catch (io.openapi.wes.client.ApiException e) {
                         LOG.error("Error canceling WES run", e);
                     }
                 }
