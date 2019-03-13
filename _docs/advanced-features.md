@@ -130,8 +130,9 @@ If your workflow platform provides the cwl-runner alias as the platform's defaul
 cwlrunner: cwl-runner
 ```
 
-### Cromwell
+### Cromwell (Beta)
 > For Dockstore 1.6.0+
+
 
 You can launch CWL tools/workflows using Cromwell by adding the following to your `~/.dockstore/config`:
 ```
