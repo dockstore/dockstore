@@ -48,6 +48,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -159,6 +160,16 @@ public class User implements Principal, Comparable<User>, Serializable {
     @Column()
     @JsonIgnore
     private Integer hostedEntryVersionsLimit;
+
+    /**
+     * A temporary credential to hold the access token of a request made to Dockstore with
+     * a token not minted by/through Dockstore. For example, if a user got an access token
+     * by logging into Google outside of Dockstore, then made an API call to Dockstore using that token,
+     * this field is used to hold the token.
+     */
+    @Transient
+    @JsonIgnore
+    private String temporaryCredential;
 
 
     public User() {
@@ -385,6 +396,16 @@ public class User implements Principal, Comparable<User>, Serializable {
     public void setHostedEntryVersionsLimit(Integer hostedEntryVersionsLimit) {
         this.hostedEntryVersionsLimit = hostedEntryVersionsLimit;
     }
+
+    public String getTemporaryCredential() {
+        return temporaryCredential;
+    }
+
+    public void setTemporaryCredential(String temporaryCredential) {
+        this.temporaryCredential = temporaryCredential;
+    }
+
+
 
     /**
      * The profile of a user using a token (Google profile, GitHub profile, etc)

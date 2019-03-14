@@ -16,12 +16,10 @@
 
 package io.dockstore.webservice;
 
-import java.util.List;
 import java.util.Optional;
 
 import com.google.api.services.oauth2.model.Userinfoplus;
 import io.dockstore.webservice.core.Token;
-import io.dockstore.webservice.core.TokenType;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.GoogleHelper;
 import io.dockstore.webservice.jdbi.TokenDAO;
@@ -69,11 +67,10 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
                     .map(userinfoPlus -> {
                         final String email = userinfoPlus.getEmail();
                         User user = userDAO.findByGoogleEmail(email);
-                        if (user != null) {
-                            updateGoogleToken(credentials, user);
-                        } else {
-                            user = createUser(credentials, userinfoPlus);
+                        if (user == null) {
+                            user = createUser(userinfoPlus);
                         }
+                        user.setTemporaryCredential(credentials);
                         initializeUserProfiles(user);
                         return Optional.of(user);
                     })
@@ -90,23 +87,10 @@ public class SimpleAuthenticator implements Authenticator<String, User> {
         return GoogleHelper.userinfoplusFromToken(credentials);
     }
 
-    void updateGoogleToken(String credentials, User user) {
-        List<Token> tokens = dao.findByUserId(user.getId());
-        final Token googleToken = Token.extractToken(tokens, TokenType.GOOGLE_COM);
-        if (googleToken == null) {
-            dao.create(new Token(credentials, null, user.getId(), user.getUsername(), TokenType.GOOGLE_COM));
-        } else {
-            googleToken.setContent(credentials);
-            dao.update(googleToken);
-        }
-    }
-
-    User createUser(String credentials, Userinfoplus userinfoPlus) {
+    User createUser(Userinfoplus userinfoPlus) {
         User user = new User();
         GoogleHelper.updateUserFromGoogleUserinfoplus(userinfoPlus, user);
         user.setUsername(userinfoPlus.getEmail());
-        final long userID = userDAO.create(user);
-        dao.create(new Token(credentials, null, userID, user.getUsername(), TokenType.GOOGLE_COM));
         return user;
     }
 

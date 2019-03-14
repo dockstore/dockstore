@@ -35,7 +35,6 @@ public class SimpleAuthenticatorTest {
         userDAO = Mockito.mock(UserDAO.class);
         simpleAuthenticator = spy(new SimpleAuthenticator(tokenDAO, userDAO));
         doNothing().when(simpleAuthenticator).initializeUserProfiles(user);
-        doNothing().when(simpleAuthenticator).updateGoogleToken(credentials, user);
     }
 
     @Test
@@ -61,7 +60,7 @@ public class SimpleAuthenticatorTest {
         doReturn(Optional.of(userinfoplus)).when(simpleAuthenticator).userinfoPlusFromToken(credentials);
         when(userinfoplus.getEmail()).thenReturn(USER_EMAIL);
         when(userDAO.findByUsername(USER_EMAIL)).thenReturn(null);
-        doReturn(user).when(simpleAuthenticator).createUser(credentials, userinfoplus);
+        doReturn(user).when(simpleAuthenticator).createUser(userinfoplus);
         Assert.assertEquals(user, simpleAuthenticator.authenticate(credentials).get());
     }
 
