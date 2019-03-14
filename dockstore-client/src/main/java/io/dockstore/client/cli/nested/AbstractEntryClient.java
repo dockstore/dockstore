@@ -1280,7 +1280,7 @@ public abstract class AbstractEntryClient<T> {
         out("       dockstore " + getEntryType().toLowerCase() + " wes cancel [parameters]");
         out("");
         out("Description:");
-        out(" Executes a command on a Workflow Execution Service (WES) endpoint.");
+        out(" Sends a request to a Workflow Execution Service (WES) endpoint.");
         printWesHelpFooter();
         printHelpFooter();
     }
@@ -1302,7 +1302,7 @@ public abstract class AbstractEntryClient<T> {
         out("Description:");
         out("  Status, gets the status of a " + getEntryType() + ".");
         out("Required Parameters:");
-        out("  --id <id>                           Id of a " + getEntryType() + " at the WES endpoint, e.g. id returned from the launch command");
+        out("  --id <id>                           Id of a run at the WES endpoint, e.g. id returned from the launch command");
         out("Optional Parameters:");
         out("  --verbose                           Provide extra status information");
         out("");
@@ -1318,7 +1318,7 @@ public abstract class AbstractEntryClient<T> {
         out("Description:");
         out("  Cancels a " + getEntryType() + ".");
         out("Required Parameters:");
-        out("  --id <id>                           Id of a " + getEntryType() + " at the WES endpoint, e.g. id returned from the launch command");
+        out("  --id <id>                           Id of a run at the WES endpoint, e.g. id returned from the launch command");
         out("");
         printWesHelpFooter();
         printHelpFooter();
@@ -1326,7 +1326,7 @@ public abstract class AbstractEntryClient<T> {
 
     public void printWesHelpFooter() {
         out("Global Optional Parameters:");
-        out("  --wes-url <WES URI>                 WES URI where the WES command should run, e.g. 'http://localhost:8080/ga4gh/wes/v1'");
+        out("  --wes-url <WES URL>                 URL where the WES request should be sent, e.g. 'http://localhost:8080/ga4gh/wes/v1'");
         out("  --wes-auth <auth>                   Authorization credentials for the WES endpoint, e.g. 'Bearer 12345'");
         out("");
         out("NOTE: WES SUPPORT IS IN BETA AT THIS TIME. RESULTS MAY BE UNPREDICTABLE.");
