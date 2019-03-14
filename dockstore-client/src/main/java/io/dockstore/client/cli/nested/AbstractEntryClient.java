@@ -1021,20 +1021,26 @@ public abstract class AbstractEntryClient<T> {
      * @param args Arguments entered into the CLI
      */
     public void processWesCommands(final List<String> args) {
-        if (args.isEmpty() || containsHelpRequest(args)) {
-            launchHelp();
-        } else {
+        this.wesUri = optVal(args, "--wes-url", null);
+        this.wesAuth = optVal(args, "--wes-auth", null);
 
-            this.wesUri = optVal(args, "--wes-url", null);
-            this.wesAuth = optVal(args, "--wes-auth", null);
-            if (args.get(0).equals("launch")) {
-                out("Launching workflow using WES");
-                //remove the launch keyword so command processing continues as usual
-                args.remove(0);
-                launch(args);
-            } else {
-                WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(getWesUri(), getWesAuth());
-                if (args.get(0).equals("status")) {
+        if (args.isEmpty() || (args.size() == 1 && containsHelpRequest(args))) {
+            wesHelp();
+        } else {
+            final String cmd = args.remove(0);
+            switch (cmd) {
+            case "launch":
+                if (args.isEmpty() || containsHelpRequest(args)) {
+                    wesLaunchHelp();
+                } else {
+                    launch(args);
+                }
+                break;
+            case "status":
+                if (args.isEmpty() || containsHelpRequest(args)) {
+                    wesStatusHelp();
+                } else {
+                    WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(getWesUri(), getWesAuth());
                     String workflowId = reqVal(args, "--id");
                     out("Getting status of WES workflow");
                     if (args.contains("--verbose")) {
@@ -1052,7 +1058,13 @@ public abstract class AbstractEntryClient<T> {
                             LOG.error("Error getting brief WES run status", e);
                         }
                     }
-                } else if (args.get(0).equals("cancel")) {
+                }
+                break;
+            case "cancel":
+                if (args.isEmpty() || containsHelpRequest(args)) {
+                    wesCancelHelp();
+                } else {
+                    WorkflowExecutionServiceApi clientWorkflowExecutionServiceApi = getWorkflowExecutionServiceApi(getWesUri(), getWesAuth());
                     out("Canceling WES workflow");
                     String workflowId = reqVal(args, "--id");
                     try {
@@ -1062,10 +1074,14 @@ public abstract class AbstractEntryClient<T> {
                         LOG.error("Error canceling WES run", e);
                     }
                 }
+                break;
+            default:
+                invalid(cmd);
+                break;
             }
         }
-    }
 
+    }
 
     /**
      * Launches tools and workflows.
@@ -1249,9 +1265,72 @@ public abstract class AbstractEntryClient<T> {
 
     public abstract Client getClient();
 
+
+
     /**
      * help text output
      */
+    public void wesHelp() {
+        printHelpHeader();
+        out("Commands:");
+        out("");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " wes --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes launch [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes status [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes cancel [parameters]");
+        out("");
+        out("Description:");
+        out(" Executes a command on a Workflow Execution Service (WES) endpoint.");
+        printWesHelpFooter();
+        printHelpFooter();
+    }
+
+    protected void wesLaunchHelp() {
+        printHelpHeader();
+        out("Usage: dockstore wes " + getEntryType().toLowerCase() + " launch --help");
+        out("       dockstore wes " + getEntryType().toLowerCase() + " launch [parameters]");
+        printLaunchHelpBody();
+        printWesHelpFooter();
+        printHelpFooter();
+    }
+
+    public void wesStatusHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " wes status --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes status [parameters]");
+        out("");
+        out("Description:");
+        out("  Status, gets the status of a " + getEntryType() + ".");
+        out("Required Parameters:");
+        out("  --id <id>                           Id of a " + getEntryType() + " at the WES endpoint, e.g. id returned from the launch command");
+        out("Optional Parameters:");
+        out("  --verbose                           Provide extra status information");
+        out("");
+        printWesHelpFooter();
+        printHelpFooter();
+    }
+
+    public void wesCancelHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " wes cancel --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes cancel [parameters]");
+        out("");
+        out("Description:");
+        out("  Cancels a " + getEntryType() + ".");
+        out("Required Parameters:");
+        out("  --id <id>                           Id of a " + getEntryType() + " at the WES endpoint, e.g. id returned from the launch command");
+        out("");
+        printWesHelpFooter();
+        printHelpFooter();
+    }
+
+    public void printWesHelpFooter() {
+        out("Global Optional Parameters:");
+        out("  --wes-url <WES URI>                 WES URI where the WES command should run, e.g. 'http://localhost:8080/ga4gh/wes/v1'");
+        out("  --wes-auth <auth>                   Authorization credentials for the WES endpoint, e.g. 'Bearer 12345'");
+        out("");
+        out("NOTE: WES SUPPORT IS IN BETA AT THIS TIME. RESULTS MAY BE UNPREDICTABLE.");
+    }
 
     private void publishHelp() {
         printHelpHeader();
@@ -1488,10 +1567,7 @@ public abstract class AbstractEntryClient<T> {
         printHelpFooter();
     }
 
-    protected void launchHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + getEntryType().toLowerCase() + " launch --help");
-        out("       dockstore " + getEntryType().toLowerCase() + " launch [parameters]");
+    protected void printLaunchHelpBody() {
         out("");
         out("Description:");
         out("  Launch an entry locally.");
@@ -1512,6 +1588,14 @@ public abstract class AbstractEntryClient<T> {
         }
         out("  --wdl-output-target                 Allows you to specify a remote path to provision output files to ex: s3://oicr.temp/testing-launcher/");
         out("  --uuid                              Allows you to specify a uuid for 3rd party notifications");
+        out("");
+    }
+
+    protected void launchHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " launch --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " launch [parameters]");
+        printLaunchHelpBody();
         printHelpFooter();
     }
 
