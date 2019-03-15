@@ -343,4 +343,9 @@
             UPDATE sourcefile SET absolutepath = CONCAT('/', absolutepath) WHERE absolutepath NOT LIKE '/%'
         </sql>
     </changeSet>
+    <changeSet id="checkAbsolutePath" author="gluu">
+        <sql dbms="postgresql">
+            ALTER TABLE sourcefile ADD CONSTRAINT absolutepath_check CHECK (absolutepath LIKE '/%')
+        </sql>
+    </changeSet>
 </databaseChangeLog>
