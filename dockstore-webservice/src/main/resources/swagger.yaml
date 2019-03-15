@@ -3003,7 +3003,7 @@ paths:
               $ref: "#/definitions/Collection"
       security:
       - BEARER: []
-    put:
+    post:
       tags:
       - "organizations"
       summary: "Create a collection in the given organization."
@@ -3061,7 +3061,7 @@ paths:
             $ref: "#/definitions/Collection"
       security:
       - BEARER: []
-    post:
+    put:
       tags:
       - "organizations"
       summary: "Update a collection."

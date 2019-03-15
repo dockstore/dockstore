@@ -320,7 +320,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         }
     }
 
-    @PUT
+    @POST
     @Timed
     @UnitOfWork
     @Path("{organizationId}/collections")
@@ -366,7 +366,7 @@ public class CollectionResource implements AuthenticatedResourceInterface, Alias
         return collectionDAO.findById(id);
     }
 
-    @POST
+    @PUT
     @Timed
     @UnitOfWork
     @Path("{organizationId}/collections/{collectionId}")

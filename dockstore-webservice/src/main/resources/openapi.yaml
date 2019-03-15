@@ -3281,7 +3281,7 @@ paths:
       security:
         - BEARER:
             []
-    put:
+    post:
       tags:
         - organizations
       summary: Create a collection in the given organization.
@@ -3345,7 +3345,7 @@ paths:
       security:
         - BEARER:
             []
-    post:
+    put:
       tags:
         - organizations
       summary: Update a collection.
