@@ -157,7 +157,7 @@ public final class ZipSourceFileHelper {
         }
     }
 
-    private static String addLeadingSlashIfNecessary(final String name) {
+    public static String addLeadingSlashIfNecessary(final String name) {
         if (name.startsWith("/")) {
             return name;
         }

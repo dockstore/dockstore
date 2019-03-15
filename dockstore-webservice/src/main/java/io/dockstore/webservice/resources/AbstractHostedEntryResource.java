@@ -67,6 +67,8 @@ import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static io.dockstore.webservice.helpers.ZipSourceFileHelper.addLeadingSlashIfNecessary;
+
 /**
  * Methods to create and edit hosted tool and workflows.
  * Reuse existing methods to GET them, add labels to them, and other operations.
@@ -250,7 +252,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
     private void updateUnsetAbsolutePaths(Set<SourceFile> sourceFiles) {
         sourceFiles.stream().forEach(sourceFile -> {
             if (sourceFile.getAbsolutePath() == null) {
-                sourceFile.setAbsolutePath(sourceFile.getPath());
+                sourceFile.setAbsolutePath(addLeadingSlashIfNecessary(sourceFile.getPath()));
             }
         });
     }
