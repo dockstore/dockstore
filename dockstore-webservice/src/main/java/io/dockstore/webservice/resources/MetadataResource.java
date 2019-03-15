@@ -175,7 +175,7 @@ public class MetadataResource {
                 Workflow workflow = (Workflow)dbEntry;
                 Optional<WorkflowVersion> max = workflow.getWorkflowVersions().stream().filter(v -> v.getDbUpdateDate() != null)
                     .max(Comparator.comparing(Version::getDbUpdateDate));
-                entry.setTitle(workflow.getWorkflowPath() + (max.map(workflowVersion -> ":" + workflowVersion.getName()).orElse("")));
+                entry.setTitle(workflow.getWorkflowPath());
                 String workflowURL = createWorkflowURL(workflow);
                 entry.setGuid(workflowURL);
                 entry.setLink(workflowURL);
@@ -183,7 +183,7 @@ public class MetadataResource {
                 Tool tool = (Tool)dbEntry;
                 Optional<Tag> max = tool.getTags().stream().filter(v -> v.getDbUpdateDate() != null)
                     .max(Comparator.comparing(Version::getDbUpdateDate));
-                entry.setTitle(tool.getPath() + (max.map(tag -> ":" + tag.getName()).orElse("")));
+                entry.setTitle(tool.getPath());
                 String toolURL = createToolURL(tool);
                 entry.setGuid(toolURL);
                 entry.setLink(toolURL);
