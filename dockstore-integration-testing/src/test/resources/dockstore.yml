@@ -27,10 +27,10 @@ authenticationCachePolicy: maximumSize=10000, expireAfterAccess=10m
 server:
   applicationConnectors:
   - type: http 
-    port: 8080
+    port: 0
   adminConnectors:
   - type: http
-    port: 8001
+    port: 0
 
 limitConfig:
   workflowLimit: 10

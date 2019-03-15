@@ -29,6 +29,7 @@ import io.dockstore.common.DescriptorLanguage;
 import io.dockstore.common.Registry;
 import io.dockstore.webservice.DockstoreWebserviceApplication;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
+import io.dropwizard.testing.ConfigOverride;
 import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import io.swagger.client.ApiClient;
@@ -69,7 +70,8 @@ import static org.junit.Assert.assertTrue;
 public class LimitedCRUDClientIT {
 
     public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH);
+        DockstoreWebserviceApplication.class, CommonTestUtilities.PUBLIC_CONFIG_PATH, ConfigOverride
+        .config("database.url", BaseIT.THREAD_AWARE_DB_CONNECTION_STRING));
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -92,6 +94,7 @@ public class LimitedCRUDClientIT {
 
     @BeforeClass
     public static void dropAndRecreateDB() throws Exception {
+        BaseIT.dropAndRecreateDB(CommonTestUtilities.PUBLIC_CONFIG_PATH, SUPPORT);
         CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
         SUPPORT.before();
     }

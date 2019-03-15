@@ -151,7 +151,7 @@ public class TokenResourceIT extends BaseIT {
 
     @Before
     public void setup() {
-        DockstoreWebserviceApplication application = SUPPORT.getApplication();
+        DockstoreWebserviceApplication application = SUPPORT.get().getApplication();
         SessionFactory sessionFactory = application.getHibernate().getSessionFactory();
         this.tokenDAO = new TokenDAO(sessionFactory);
         this.userDAO = new UserDAO(sessionFactory);

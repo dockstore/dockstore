@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import com.google.common.io.Files;
+import io.dockstore.client.cli.BaseIT;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -47,10 +48,11 @@ public final class TestUtility {
     }
 
     public static String getConfigFileLocation(boolean correctUser, boolean validPort, boolean useCache) throws IOException {
+        final int localPort = BaseIT.SUPPORT.get().getLocalPort();
         File tempDir = Files.createTempDir();
         final File tempFile = File.createTempFile("config", "config", tempDir);
         FileUtils.write(tempFile, "token: " + (correctUser ? DUMMY_TOKEN_1 : "foobar") + "\n", StandardCharsets.UTF_8);
-        FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? "8080" : "9001") + "\n", StandardCharsets.UTF_8, true);
+        FileUtils.write(tempFile, "server-url: http://localhost:" + (validPort ? localPort : "9001") + "\n", StandardCharsets.UTF_8, true);
         if (useCache) {
             FileUtils.write(tempFile, "use-cache: true\n", StandardCharsets.UTF_8, true);
         }

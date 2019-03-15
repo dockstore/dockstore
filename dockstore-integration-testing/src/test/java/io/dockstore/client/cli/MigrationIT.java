@@ -17,14 +17,9 @@
 package io.dockstore.client.cli;
 
 import io.dockstore.common.CommonTestUtilities;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
-import io.dropwizard.testing.DropwizardTestSupport;
 import io.dropwizard.testing.ResourceHelpers;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.ExpectedSystemExit;
@@ -37,22 +32,7 @@ import org.junit.runner.Description;
  *
  * @author dyuen
  */
-public class MigrationIT {
-
-
-    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
-
-    @BeforeClass
-    public static void dumpDBAndCreateSchema() throws Exception {
-        CommonTestUtilities.dropAndRecreateNoTestData(SUPPORT);
-        SUPPORT.before();
-    }
-
-    @AfterClass
-    public static void afterClass(){
-        SUPPORT.after();
-    }
+public class MigrationIT extends BaseIT {
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -60,7 +40,6 @@ public class MigrationIT {
             System.out.println("Starting test: " + description.getMethodName());
         }
     };
-
 
     @Rule
     public final ExpectedSystemExit systemExit = ExpectedSystemExit.none();
@@ -72,19 +51,19 @@ public class MigrationIT {
     @Test
     public void testDB1WithNormalDatabase() throws Exception {
         CommonTestUtilities.dropAndCreateWithTestData(SUPPORT, false);
-        SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test");
+        SUPPORT.get().getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test");
     }
 
     @Test
     public void testDB1WithStandardMigration() throws Exception {
         CommonTestUtilities.cleanStatePrivate1(SUPPORT);
-        SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential1");
+        SUPPORT.get().getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential1");
     }
 
     @Test
     public void testDB2WithStandardMigration() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, false);
-        SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential2");
+        SUPPORT.get().getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--include", "test.confidential2");
     }
 
     /**
@@ -98,8 +77,8 @@ public class MigrationIT {
     }
 
     private void checkOnMigration() throws Exception {
-
-        SUPPORT.getApplication().run("db", "migrate", ResourceHelpers.resourceFilePath("dockstoreTest.yml"), "--migrations", ResourceHelpers.resourceFilePath("funky_migrations.xml"));
+        final String configFile = CommonTestUtilities.getConfigFile();
+        SUPPORT.get().getApplication().run("db", "migrate", configFile, "--migrations", ResourceHelpers.resourceFilePath("funky_migrations.xml"));
         // check that column was added
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         final long count = testingPostgres.runSelectStatement("select count(funkfile) from tool", new ScalarHandler<>());

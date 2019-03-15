@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.dockstore.client.cli.BaseIT;
 import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dropwizard.Application;
 import io.dropwizard.testing.DropwizardTestSupport;
@@ -33,6 +34,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,10 @@ public final class CommonTestUtilities {
 
     }
 
+    public static void dropAndRecreateNoTestData(ThreadLocal<DropwizardTestSupport<DockstoreWebserviceConfiguration>> support) throws Exception {
+        dropAndRecreateNoTestData(support.get());
+    }
+
     /**
      * Drops the database and recreates from migrations, not including any test data, using new application
      * @param support reference to testing instance of the dockstore web service
@@ -68,8 +74,27 @@ public final class CommonTestUtilities {
     public static void dropAndRecreateNoTestData(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Dropping and Recreating the database with no test data");
         Application<DockstoreWebserviceConfiguration> application = support.newApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0");
+        String configFileToUse = getConfigFile(support);
+        application.run("db", "drop-all", "--confirm-delete-everything", configFileToUse);
+        application.run("db", "migrate", configFileToUse, "--include", "1.3.0.generated,1.3.1.consistency,1.4.0,1.5.0,1.6.0");
+    }
+
+    public static String getConfigFile() {
+        return getConfigFile(BaseIT.SUPPORT.get());
+    }
+
+    private static String getConfigFile(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) {
+        String configFileToUse;
+        if (BaseIT.supportMap.containsKey(support)) {
+            configFileToUse = BaseIT.supportMap.get(support).getLeft().getAbsolutePath();
+        } else {
+            configFileToUse = CONFIDENTIAL_CONFIG_PATH;
+        }
+        return configFileToUse;
+    }
+
+    public static void dropAndCreateWithTestData(ThreadLocal<DropwizardTestSupport<DockstoreWebserviceConfiguration>> support, boolean isNewApplication) throws Exception {
+        dropAndCreateWithTestData(support.get(), isNewApplication);
     }
 
     /**
@@ -85,10 +110,11 @@ public final class CommonTestUtilities {
         } else {
             application= support.getApplication();
         }
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        String configFileToUse = getConfigFile(support);
+        application.run("db", "drop-all", "--confirm-delete-everything", configFileToUse);
 
         List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "1.5.0", "test_1.5.0", "1.6.0");
-        runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
+        runMigration(migrationList, application, configFileToUse);
     }
 
     /**
@@ -96,9 +122,10 @@ public final class CommonTestUtilities {
      * @param support reference to testing instance of the dockstore web service
      * @throws Exception
      */
-    public static void cleanStatePrivate1(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
+    public static void cleanStatePrivate1(ThreadLocal<DropwizardTestSupport<DockstoreWebserviceConfiguration>> support) throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 1 test data");
-        cleanStatePrivate1(support, CONFIDENTIAL_CONFIG_PATH);
+        String configFileToUse = getConfigFile(support.get());
+        cleanStatePrivate1(support.get(), configFileToUse);
         // TODO: it looks like gitlab's API has gone totally unresponsive, delete after recovery
         // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
@@ -132,9 +159,10 @@ public final class CommonTestUtilities {
      * @param support reference to testing instance of the dockstore web service
      * @throws Exception
      */
-    public static void cleanStatePrivate2(DropwizardTestSupport<DockstoreWebserviceConfiguration> support, boolean isNewApplication) throws Exception {
+    public static void cleanStatePrivate2(ThreadLocal<DropwizardTestSupport<DockstoreWebserviceConfiguration>> support, boolean isNewApplication) throws Exception {
         LOG.info("Dropping and Recreating the database with confidential 2 test data");
-        cleanStatePrivate2(support, CONFIDENTIAL_CONFIG_PATH, isNewApplication);
+        String configFileToUse = getConfigFile(support.get());
+        cleanStatePrivate2(support.get(), configFileToUse, isNewApplication);
         // TODO: You can uncomment the following line to disable GitLab tool and workflow discovery
         // getTestingPostgres().runUpdateStatement("delete from token where tokensource = 'gitlab.com'");
     }
@@ -167,8 +195,9 @@ public final class CommonTestUtilities {
      */
     public static void setupSamePathsTest(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating samepaths migrations");
+        String configFileToUse = getConfigFile(support);
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "migrate", CONFIDENTIAL_CONFIG_PATH, "--include", "samepaths");
+        application.run("db", "migrate", configFileToUse, "--include", "samepaths");
     }
 
 
@@ -180,10 +209,11 @@ public final class CommonTestUtilities {
      */
     public static void setupTestWorkflow(DropwizardTestSupport<DockstoreWebserviceConfiguration> support) throws Exception {
         LOG.info("Migrating testworkflow migrations");
+        String configFileToUse = getConfigFile(support);
         Application<DockstoreWebserviceConfiguration> application = support.getApplication();
-        application.run("db", "drop-all", "--confirm-delete-everything", CONFIDENTIAL_CONFIG_PATH);
+        application.run("db", "drop-all", "--confirm-delete-everything", configFileToUse);
         List<String> migrationList = Arrays.asList("1.3.0.generated", "1.3.1.consistency", "test", "1.4.0", "testworkflow", "1.5.0", "test_1.5.0", "1.6.0");
-        runMigration(migrationList, application, CONFIDENTIAL_CONFIG_PATH);
+        runMigration(migrationList, application, configFileToUse);
     }
 
     /**
@@ -193,7 +223,19 @@ public final class CommonTestUtilities {
     public static TestingPostgres getTestingPostgres() {
         final File configFile = FileUtils.getFile("src", "test", "resources", "config");
         final INIConfiguration parseConfig = Utilities.parseConfig(configFile.getAbsolutePath());
+        setThreadedPort(parseConfig);
         return new TestingPostgres(parseConfig);
+    }
+
+    public static void setThreadedPort(INIConfiguration parseConfig) {
+        Pair<File, String> configPairToUse = BaseIT.supportMap.get(BaseIT.SUPPORT.get());
+        if (configPairToUse != null) {
+            //FIXME this code is really crufty and should use a normal DockstoreWebserviceConfiguration
+            parseConfig.setProperty(Constants.POSTGRES_DBNAME, configPairToUse.getRight());
+            String wsBasePath = parseConfig.getString(Constants.WEBSERVICE_BASE_PATH);
+            wsBasePath = wsBasePath.replaceAll("(.*):(.*)", "$1:" + BaseIT.SUPPORT.get().getLocalPort());
+            parseConfig.setProperty(Constants.WEBSERVICE_BASE_PATH, wsBasePath);
+        }
     }
 
     public static ImmutablePair<String, String> runOldDockstoreClient(File dockstore, String[] commandArray) throws RuntimeException {

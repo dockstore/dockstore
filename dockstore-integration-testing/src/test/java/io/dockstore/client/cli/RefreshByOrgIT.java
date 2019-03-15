@@ -29,16 +29,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dockstore.common.CommonTestUtilities;
 import io.dockstore.common.ConfidentialTest;
-import io.dockstore.webservice.DockstoreWebserviceApplication;
-import io.dockstore.webservice.DockstoreWebserviceConfiguration;
 import io.dockstore.webservice.core.Tool;
 import io.dockstore.webservice.core.Workflow;
 import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
-import io.dropwizard.testing.DropwizardTestSupport;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.glassfish.jersey.client.ClientProperties;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -52,15 +48,7 @@ import static org.junit.Assert.assertEquals;
  * @since 25/09/17
  */
 @Category(ConfidentialTest.class)
-public class RefreshByOrgIT {
-
-    public static final DropwizardTestSupport<DockstoreWebserviceConfiguration> SUPPORT = new DropwizardTestSupport<>(
-        DockstoreWebserviceApplication.class, CommonTestUtilities.CONFIDENTIAL_CONFIG_PATH);
-
-    @AfterClass
-    public static void afterClass(){
-        SUPPORT.after();
-    }
+public class RefreshByOrgIT extends BaseIT {
 
     private static final List<String> newDockstoreTestUser2Tools = Collections.singletonList("dockstore-tool-imports");
     private static final List<String> newDockstoreTestUser2Workflows = Arrays
@@ -80,10 +68,10 @@ public class RefreshByOrgIT {
     @BeforeClass
     public static void clearDBandSetup() throws Exception {
         CommonTestUtilities.cleanStatePrivate2(SUPPORT, true);
-        SUPPORT.before();
+        SUPPORT.get().before();
         final CommonTestUtilities.TestingPostgres testingPostgres = CommonTestUtilities.getTestingPostgres();
         id = testingPostgres.runSelectStatement("select id from enduser where username='DockstoreTestUser2';", new ScalarHandler<>());
-        Environment environment = SUPPORT.getEnvironment();
+        Environment environment = SUPPORT.get().getEnvironment();
         token = testingPostgres.runSelectStatement("select content from token where tokensource='dockstore';", new ScalarHandler<>());
         client = new JerseyClientBuilder(environment).build("test client").property(ClientProperties.READ_TIMEOUT, WAIT_TIME);
         objectMapper = environment.getObjectMapper();
@@ -186,7 +174,7 @@ public class RefreshByOrgIT {
     }
 
     private List<Tool> clientHelperTool(String url) throws IOException {
-        Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
+        Response response = client.target(String.format(url, SUPPORT.get().getLocalPort())).request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
         return objectMapper.readValue(entity, new TypeReference<List<Tool>>() {
@@ -292,7 +280,7 @@ public class RefreshByOrgIT {
     }
 
     private List<Workflow> clientHelperWorkflow(String url) throws IOException {
-        Response response = client.target(String.format(url, SUPPORT.getLocalPort())).request()
+        Response response = client.target(String.format(url, SUPPORT.get().getLocalPort())).request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token).get();
         String entity = response.readEntity(String.class);
         return objectMapper.readValue(entity, new TypeReference<List<Workflow>>() {

@@ -120,7 +120,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider jacksonJsonProvider = new JacksonJaxbJsonProvider().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         client = ClientBuilder.newClient();
         client.register(jacksonJsonProvider);
-        application = SUPPORT.getApplication();
+        application = SUPPORT.get().getApplication();
         this.session = application.getHibernate().getSessionFactory().openSession();
         ManagedSessionContext.bind(session);
         fixedStringLabels = randomlyGenerateFixedAuthors();
@@ -171,7 +171,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
         for (int i = 0; i < TOOL_COUNT; i++) {
             createTool();
         }
-        Response response = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/published").request().get();
+        Response response = client.target("http://localhost:" + SUPPORT.get().getLocalPort() + "/containers/published").request().get();
         List<Tool> tools = response.readEntity(new GenericType<List<Tool>>() {
         });
         int actualToolCount = tools.size();
@@ -184,7 +184,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     }
 
     private void buildIndex() {
-        Response response = client.target("http://localhost:" + SUPPORT.getLocalPort() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended/tools/index").request()
+        Response response = client.target("http://localhost:" + SUPPORT.get().getLocalPort() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/extended/tools/index").request()
                 .post(null);
         long startTime = System.nanoTime();
         String output = response.readEntity(String.class);
@@ -195,7 +195,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     }
 
     private void refresh(long id) {
-        Response registerManualResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/" + id + "/refresh")
+        Response registerManualResponse = client.target("http://localhost:" + SUPPORT.get().getLocalPort() + "/containers/" + id + "/refresh")
                 .request().header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken").get();
         Tool tool = registerManualResponse.readEntity(Tool.class);
     }
@@ -207,7 +207,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     }
 
     private void addLabels(long id) {
-        Response registerPutLabelResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/" + id + "/labels")
+        Response registerPutLabelResponse = client.target("http://localhost:" + SUPPORT.get().getLocalPort() + "/containers/" + id + "/labels")
                 .queryParam("labels", randomlyGeneratedQueryLabels()).request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
                 .put(Entity.entity("asdf", MediaType.APPLICATION_JSON_TYPE));
@@ -218,7 +218,7 @@ public class AdvancedIndexingBenchmarkIT extends BaseIT {
     // Directly injecting into database to avoid authentication issues
     private void createTool() {
         Tool tool = randomlyGenerateTool();
-        Response registerManualResponse = client.target("http://localhost:" + SUPPORT.getLocalPort() + "/containers/registerManual").request()
+        Response registerManualResponse = client.target("http://localhost:" + SUPPORT.get().getLocalPort() + "/containers/registerManual").request()
                 .header(HttpHeaders.AUTHORIZATION, "Bearer iamafakedockstoretoken")
                 .post(Entity.entity(tool, MediaType.APPLICATION_JSON_TYPE));
 
