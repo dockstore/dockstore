@@ -156,7 +156,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public Map<Role, List<String>> workflowsSharedWithUser(User user) {
-        if (googleToken(user) == null) {
+        if (!hasGoogleToken(user)) {
             return Collections.emptyMap();
         }
         ResourcesApi resourcesApi = getResourcesApi(user);
@@ -333,7 +333,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public void selfDestruct(User user) {
-        if (googleToken(user) != null) {
+        if (hasGoogleToken(user)) {
             final ResourcesApi resourcesApi = getResourcesApi(user);
             try {
                 final List<String> resourceIds = ownedResourceIds(resourcesApi);
@@ -352,7 +352,7 @@ public class SamPermissionsImpl implements PermissionsInterface {
 
     @Override
     public boolean isSharing(User user) {
-        if (googleToken(user) == null) {
+        if (!hasGoogleToken(user)) {
             return false;
         }
         final ResourcesApi resourcesApi = getResourcesApi(user);
@@ -437,6 +437,9 @@ public class SamPermissionsImpl implements PermissionsInterface {
      * @return
      */
     Optional<String> googleAccessToken(User user) {
+        if (user.getTemporaryCredential() != null) {
+            return Optional.of(user.getTemporaryCredential());
+        }
         Token token = googleToken(user);
         if (token != null) {
             return GoogleHelper.getValidAccessToken(token).map(accessToken -> {
@@ -453,6 +456,10 @@ public class SamPermissionsImpl implements PermissionsInterface {
     Token googleToken(User user) {
         List<Token> tokens = tokenDAO.findByUserId(user.getId());
         return Token.extractToken(tokens, TokenType.GOOGLE_COM);
+    }
+
+    boolean hasGoogleToken(User user) {
+        return user.getTemporaryCredential() != null || googleToken(user) != null;
     }
 
     /**
