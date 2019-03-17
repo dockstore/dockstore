@@ -41,61 +41,33 @@ jobs:
 #      - mvn --batch-mode clean install -DskipTests -P$TESTING_PROFILE
 #      - scripts/check_migrations.sh
 
-    # no point in running integration tests if we don't pass unit tests
-    # run a few tests with oraclejdk8 for backwards compat
-    - stage: integration-tests
-      jdk: oraclejdk8
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true
-    - stage: integration-tests
-      jdk: openjdk10
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipITs=true
-
-    - stage: integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=tool-integration-tests
-    - stage: integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=workflow-integration-tests
-    - stage: integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-      env:
-        - TESTING_PROFILE=other-integration-tests
-    - stage: integration-tests
-      env:
-        - TESTING_PROFILE=toil-integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-    - stage: integration-tests
-      jdk: oraclejdk8
-      env:
-        - TESTING_PROFILE=regression-integration-tests
-      script: mvn --batch-mode clean install -P$TESTING_PROFILE -DskipClientITs=true
-
-    # no point in running coverage if we don't pass integration tests
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install jacoco:report jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipITs=true
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=tool-integration-tests
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=workflow-integration-tests
     - stage: coverage
-      if: type IN (pull_request) OR branch IN (master, develop)
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=other-integration-tests
+    - stage: coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=toil-integration-tests         
+    - stage: coverage
+      script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
+      env:
+        - TESTING_PROFILE=regression-integration-tests
+        
 # build lifecycle is before_install, install, before_script, script, before_cache, after_success/after_failure, after_script
 
 before_install:
