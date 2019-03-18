@@ -64,6 +64,7 @@ jobs:
       env:
         - TESTING_PROFILE=toil-integration-tests         
     - stage: coverage
+      jdk: oraclejdk8
       script: mvn --batch-mode clean install jacoco:report-integration jacoco:report-aggregate coveralls:report -P$TESTING_PROFILE,coverage -DskipClientITs=true
       env:
         - TESTING_PROFILE=regression-integration-tests
