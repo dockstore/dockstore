@@ -26,13 +26,17 @@ package io.dockstore.webservice.core;
 public class CollectionOrganization {
     public final long collectionId;
     public final String collectionName;
+    public final String collectionDisplayName;
     public final long organizationId;
     public final String organizationName;
+    public final String organizationDisplayName;
 
-    public CollectionOrganization(long collectionId, String collectionName, long organizationId, String organizationName)  {
+    public CollectionOrganization(long collectionId, String collectionName, String collectionDisplayName, long organizationId, String organizationName, String organizationDisplayName)  {
         this.collectionId = collectionId;
         this.collectionName = collectionName;
+        this.collectionDisplayName = collectionDisplayName;
         this.organizationId = organizationId;
         this.organizationName = organizationName;
+        this.organizationDisplayName = organizationDisplayName;
     }
 }

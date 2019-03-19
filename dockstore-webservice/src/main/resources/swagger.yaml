@@ -2845,7 +2845,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by alias."
+      summary: "Retrieves an organization by alias."
       description: ""
       operationId: "getOrganizationByAlias"
       produces:
@@ -5763,10 +5763,14 @@ definitions:
         format: "int64"
       collectionName:
         type: "string"
+      collectionDisplayName:
+        type: "string"
       organizationId:
         type: "integer"
         format: "int64"
       organizationName:
+        type: "string"
+      organizationDisplayName:
         type: "string"
   DescriptorLanguageBean:
     type: "object"
