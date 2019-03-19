@@ -133,6 +133,37 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
         return organizationDAO.findById(id);
     }
 
+    @POST
+    @Timed
+    @UnitOfWork
+    @Path("{organizationId}/request/")
+    @ApiOperation(value = "Request an organization approval.", authorizations = {
+            @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Only for rejected organizations", response = Organization.class)
+    public Organization requestOrganizationReview(@ApiParam(hidden = true) @Auth User user,
+            @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id) {
+        Organization organization = organizationDAO.findById(id);
+        throwExceptionForNullOrganization(organization);
+        OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
+        if (organizationUser == null) {
+            String msg = "Organization not found";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
+        }
+
+        if (Objects.equals(organization.getStatus(), Organization.ApplicationState.REJECTED)) {
+            organization.setStatus(Organization.ApplicationState.PENDING);
+            Event rerequestOrgEvent = new Event.Builder().withOrganization(organization).withInitiatorUser(user)
+                    .withType(Event.EventType.REREQUEST_ORG).build();
+            eventDAO.create(rerequestOrgEvent);
+        } else {
+            String msg = "Only rejected organizations can request re-review.";
+            LOG.info(msg);
+            throw new CustomWebApplicationException(msg, HttpStatus.SC_BAD_REQUEST);
+        }
+
+        return organizationDAO.findById(id);
+    }
+
     @GET
     @Timed
     @UnitOfWork
