@@ -744,7 +744,7 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
     @Timed
     @UnitOfWork
     @Path("{alias}/aliases")
-    @ApiOperation(nickname = "getOrganizationByAlias", value = "Retrieves a collection by alias.", response = Organization.class)
+    @ApiOperation(nickname = "getOrganizationByAlias", value = "Retrieves an organization by alias.", response = Organization.class)
     public Organization getOrganizationByAlias(@ApiParam(value = "Alias", required = true) @PathParam("alias") String alias) {
         return this.getAndCheckResourceByAlias(alias);
     }
