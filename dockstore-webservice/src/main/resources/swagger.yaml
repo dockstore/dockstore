@@ -2845,7 +2845,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by alias."
+      summary: "Retrieves an organization by alias."
       description: ""
       operationId: "getOrganizationByAlias"
       produces:

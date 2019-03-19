@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.common.base.CharMatcher;
 import groovyjarjarantlr.RecognitionException;
@@ -57,8 +59,10 @@ public class NextFlowHandler implements LanguageHandlerInterface {
     public Entry parseWorkflowContent(Entry entry, String filepath, String content, Set<SourceFile> sourceFiles) {
         // this is where we can look for things like NextFlow config files or maybe a future Dockstore.yml
         final Configuration configuration = NextflowUtilities.grabConfig(content);
+        String descriptionInProgress = null;
         if (configuration.containsKey("manifest.description")) {
             entry.setDescription(configuration.getString("manifest.description"));
+            descriptionInProgress = entry.getDescription();
         }
         if (configuration.containsKey("manifest.author")) {
             entry.setAuthor(configuration.getString("manifest.author"));
@@ -77,7 +81,8 @@ public class NextFlowHandler implements LanguageHandlerInterface {
             if (!StringUtils.isEmpty(helpMessage)) {
                 helpMessage = "\n\n" + helpMessage;
             }
-            String builder = String.join("", entry.getDescription(), helpMessage);
+            String builder = Stream.of(descriptionInProgress, helpMessage).filter(s -> s != null && !s.isEmpty())
+                .collect(Collectors.joining(""));
             entry.setDescription(builder);
         }
         return entry;
