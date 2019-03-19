@@ -69,7 +69,7 @@ It should look something like this:
 
 ```
 dockstoreToken=abcdefghijklmnopqrstuvwxyz1234567890
-server-url=https://www.dockstore.org:8443
+server-url=https://www.dockstore.org/api
 organization=test_organization
 repo=test_repository
 write-api-url=http://localhost:8080/api/ga4gh/v1
