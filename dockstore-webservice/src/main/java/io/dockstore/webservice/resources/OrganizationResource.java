@@ -141,18 +141,17 @@ public class OrganizationResource implements AuthenticatedResourceInterface, Ali
             @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, notes = "Only for rejected organizations", response = Organization.class)
     public Organization requestOrganizationReview(@ApiParam(hidden = true) @Auth User user,
             @ApiParam(value = "Organization ID.", required = true) @PathParam("organizationId") Long id) {
-        boolean doesOrgExist = doesOrganizationExistToUser(id, user.getId());
-        if (!doesOrgExist) {
+        Organization organization = organizationDAO.findById(id);
+        throwExceptionForNullOrganization(organization);
+        OrganizationUser organizationUser = getUserOrgRole(organization, user.getId());
+        if (organizationUser == null) {
             String msg = "Organization not found";
             LOG.info(msg);
             throw new CustomWebApplicationException(msg, HttpStatus.SC_NOT_FOUND);
         }
 
-        Organization organization = organizationDAO.findById(id);
-
         if (Objects.equals(organization.getStatus(), Organization.ApplicationState.REJECTED)) {
             organization.setStatus(Organization.ApplicationState.PENDING);
-
             Event rerequestOrgEvent = new Event.Builder().withOrganization(organization).withInitiatorUser(user)
                     .withType(Event.EventType.REREQUEST_ORG).build();
             eventDAO.create(rerequestOrgEvent);
