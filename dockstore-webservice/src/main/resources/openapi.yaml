@@ -3114,7 +3114,7 @@ paths:
     get:
       tags:
         - organizations
-      summary: Retrieves a collection by alias.
+      summary: Retrieves an organization by alias.
       description: ""
       operationId: getOrganizationByAlias
       parameters:
@@ -3699,6 +3699,31 @@ paths:
       summary: Rejects an organization.
       description: Admin/curator only
       operationId: rejectOrganization
+      parameters:
+        - name: organizationId
+          in: path
+          description: Organization ID.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+      security:
+        - BEARER:
+            []
+  "/organizations/{organizationId}/request":
+    post:
+      tags:
+        - organizations
+      summary: Request an organization approval.
+      description: Only for rejected organizations
+      operationId: requestOrganizationReview
       parameters:
         - name: organizationId
           in: path
@@ -6343,10 +6368,6 @@ components:
         custom_docker_registry_path:
           type: string
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6362,6 +6383,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6527,10 +6552,6 @@ components:
         dbUpdateDate:
           type: string
           format: date-time
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -6546,6 +6567,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl
@@ -6646,6 +6671,7 @@ components:
             - MODIFY_ORG
             - APPROVE_ORG
             - REJECT_ORG
+            - REREQUEST_ORG
             - ADD_USER_TO_ORG
             - REMOVE_USER_FROM_ORG
             - MODIFY_USER_ROLE_ORG
@@ -7498,10 +7524,6 @@ components:
           type: integer
           format: int64
           readOnly: true
-        last_modified_date:
-          type: string
-          format: date-time
-          readOnly: true
         has_checker:
           type: boolean
           readOnly: true
@@ -7517,6 +7539,10 @@ components:
           uniqueItems: true
           items:
             $ref: "#/components/schemas/FileFormat"
+        last_modified_date:
+          type: string
+          format: date-time
+          readOnly: true
         author:
           type: string
           description: This is the name of the author stated in the Dockstore.cwl

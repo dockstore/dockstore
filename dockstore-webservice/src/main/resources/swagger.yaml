@@ -2845,7 +2845,7 @@ paths:
     get:
       tags:
       - "organizations"
-      summary: "Retrieves a collection by alias."
+      summary: "Retrieves an organization by alias."
       description: ""
       operationId: "getOrganizationByAlias"
       produces:
@@ -3385,6 +3385,29 @@ paths:
       summary: "Rejects an organization."
       description: "Admin/curator only"
       operationId: "rejectOrganization"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "organizationId"
+        in: "path"
+        description: "Organization ID."
+        required: true
+        type: "integer"
+        format: "int64"
+      responses:
+        200:
+          description: "successful operation"
+          schema:
+            $ref: "#/definitions/Organization"
+      security:
+      - BEARER: []
+  /organizations/{organizationId}/request:
+    post:
+      tags:
+      - "organizations"
+      summary: "Request an organization approval."
+      description: "Only for rejected organizations"
+      operationId: "requestOrganizationReview"
       produces:
       - "application/json"
       parameters:
@@ -5808,10 +5831,6 @@ definitions:
       custom_docker_registry_path:
         type: "string"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -5827,6 +5846,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6019,10 +6042,6 @@ definitions:
       dbUpdateDate:
         type: "string"
         format: "date-time"
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -6038,6 +6057,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1
@@ -6163,6 +6186,7 @@ definitions:
         - "MODIFY_ORG"
         - "APPROVE_ORG"
         - "REJECT_ORG"
+        - "REREQUEST_ORG"
         - "ADD_USER_TO_ORG"
         - "REMOVE_USER_FROM_ORG"
         - "MODIFY_USER_ROLE_ORG"
@@ -7076,10 +7100,6 @@ definitions:
         type: "integer"
         format: "int64"
         readOnly: true
-      last_modified_date:
-        type: "string"
-        format: "date-time"
-        readOnly: true
       has_checker:
         type: "boolean"
         readOnly: true
@@ -7095,6 +7115,10 @@ definitions:
         uniqueItems: true
         items:
           $ref: "#/definitions/FileFormat"
+      last_modified_date:
+        type: "string"
+        format: "date-time"
+        readOnly: true
       author:
         type: "string"
         position: 1

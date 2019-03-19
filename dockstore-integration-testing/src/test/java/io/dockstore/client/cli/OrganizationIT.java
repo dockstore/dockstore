@@ -32,6 +32,7 @@ import org.junit.rules.ExpectedException;
 
 import static io.dockstore.common.CommonTestUtilities.getTestingPostgres;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -225,6 +226,16 @@ public class OrganizationIT extends BaseIT {
         organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
         assertEquals("organization should be returned and have an updated email.", email, organization.getEmail());
 
+        // Should not be able to request re-review
+        boolean canRequestReview = true;
+        try {
+            organizationsApiUser2.requestOrganizationReview(registeredOrganization.getId());
+        } catch (ApiException ex) {
+            canRequestReview = false;
+        } finally {
+            assertFalse("Can request re-review, but should not be able to", canRequestReview);
+        }
+
         // Admin approve it
         organizationsApiAdmin.approveOrganization(registeredOrganization.getId());
 
@@ -240,6 +251,16 @@ public class OrganizationIT extends BaseIT {
         // Should now appear in approved list
         organizationList = organizationsApiUser2.getApprovedOrganizations();
         assertEquals("Should have one approved Organizations." , organizationList.size(), 1);
+
+        // Should not be able to request re-review
+        canRequestReview = true;
+        try {
+            organizationsApiUser2.requestOrganizationReview(registeredOrganization.getId());
+        } catch (ApiException ex) {
+            canRequestReview = false;
+        } finally {
+            assertFalse("Can request re-review, but should not be able to", canRequestReview);
+        }
 
         // User should be able to get by id
         organization = organizationsApiUser2.getOrganizationById(registeredOrganization.getId());
@@ -521,6 +542,13 @@ public class OrganizationIT extends BaseIT {
         // Should not appear in approved
         organizationList = organizationsApiAdmin.getAllOrganizations("approved");
         assertEquals("Should have no approved Organizations, there are " + organizationList.size(), 0 , organizationList.size());
+
+        // Should be able to request a re-review
+        organizationsApiUser2.requestOrganizationReview(registeredOrganization.getId());
+
+        // Should appear in pending
+        organizationList = organizationsApiAdmin.getAllOrganizations("pending");
+        assertEquals("Should have one pending Organization, there are " + organizationList.size(), 1, organizationList.size());
     }
 
     /**

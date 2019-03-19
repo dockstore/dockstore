@@ -175,6 +175,7 @@ components:
           - MODIFY_ORG
           - APPROVE_ORG
           - REJECT_ORG
+          - REREQUEST_ORG
           - ADD_USER_TO_ORG
           - REMOVE_USER_FROM_ORG
           - MODIFY_USER_ROLE_ORG
@@ -1077,7 +1078,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/containers/{organization}:
     get:
-      operationId: entriesOrgGet
+      operationId: entriesOrgGet_1
       parameters:
       - in: path
         name: organization
@@ -1092,7 +1093,7 @@ paths:
           description: default response
   /api/ga4gh/v2/extended/organizations:
     get:
-      operationId: entriesOrgGet_1
+      operationId: entriesOrgGet
       responses:
         default:
           content:
@@ -1732,7 +1733,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Tool'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted
@@ -2772,7 +2773,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Entry'
           description: default response
   /entries/{id}/collections:
     get:
@@ -3023,7 +3024,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Aliasable'
+                $ref: '#/components/schemas/Collection'
           description: default response
   /organizations/name/{name}:
     get:
@@ -3527,6 +3528,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Organization'
           description: default response
+  /organizations/{organizationId}/request:
+    post:
+      operationId: requestOrganizationReview
+      parameters:
+      - in: path
+        name: organizationId
+        required: true
+        schema:
+          format: int64
+          type: integer
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Organization'
+          description: default response
   /organizations/{organizationId}/user:
     delete:
       operationId: deleteUserRole
@@ -3755,7 +3778,7 @@ paths:
                 type: boolean
           description: default response
     get:
-      operationId: getUser_1
+      operationId: getUser
       requestBody:
         content:
           '*/*':
@@ -3914,7 +3937,7 @@ paths:
           description: default response
   /users/{userId}:
     get:
-      operationId: getUser
+      operationId: getUser_1
       parameters:
       - in: path
         name: userId
@@ -4316,7 +4339,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Workflow'
+                $ref: '#/components/schemas/Entry'
           description: default response
     patch:
       operationId: editHosted_1
