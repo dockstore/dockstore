@@ -48,7 +48,7 @@ Note that as with the above approach, you will want to double-check that the wor
 
 ## Limitations
 0. While we support launching of WDL workflows, tools as listed in Dockstore are currently not supported.
-0. DNAStack does not currently support http(s) or file-path based imports.  Importing a workflow with those imports will result in an error.  See [cromwell imports docs](https://cromwell.readthedocs.io/en/develop/Imports/) for more info about imports.
+0. DNAstack does not currently support HTTP(S) or file-path based imports.  Importing a workflow with those imports will result in an error.  See [cromwell imports docs](https://cromwell.readthedocs.io/en/develop/Imports/) for more info about imports.
 
 ## See Also
 
