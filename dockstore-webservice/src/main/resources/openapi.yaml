@@ -6323,10 +6323,14 @@ components:
           format: int64
         collectionName:
           type: string
+        collectionDisplayName:
+          type: string
         organizationId:
           type: integer
           format: int64
         organizationName:
+          type: string
+        organizationDisplayName:
           type: string
     DescriptorLanguageBean:
       type: object

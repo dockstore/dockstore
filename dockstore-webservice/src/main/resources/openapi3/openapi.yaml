@@ -64,10 +64,14 @@ components:
       type: object
     CollectionOrganization:
       properties:
+        collectionDisplayName:
+          type: string
         collectionId:
           format: int64
           type: integer
         collectionName:
+          type: string
+        organizationDisplayName:
           type: string
         organizationId:
           format: int64

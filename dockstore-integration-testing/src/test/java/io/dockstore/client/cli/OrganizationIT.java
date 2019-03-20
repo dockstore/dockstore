@@ -1128,7 +1128,11 @@ public class OrganizationIT extends BaseIT {
         Assert.assertEquals(1, collectionOrganizations.size());
         CollectionOrganization collectionOrganization = collectionOrganizations.get(0);
         Assert.assertEquals(organization.getId(), collectionOrganization.getOrganizationId());
+        Assert.assertEquals(organization.getName(), collectionOrganization.getOrganizationName());
+        Assert.assertEquals(organization.getDisplayName(), collectionOrganization.getOrganizationDisplayName());
         Assert.assertEquals(collection.getId(), collectionOrganization.getCollectionId());
+        Assert.assertEquals(collection.getName(), collectionOrganization.getCollectionName());
+        Assert.assertEquals(collection.getDisplayName(), collectionOrganization.getCollectionDisplayName());
 
         // Unable to retrieve the collection and organization of an entry that does not exist
         try {
