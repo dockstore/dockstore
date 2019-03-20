@@ -171,7 +171,7 @@ Additionally, it will also provide notifications when any of these steps have fa
 - Define a webhook URL in the Dockstore config file with the "notifications" property like:
 ```
 token: iamafakedockstoretoken
-server-url: https://dockstore.org:8443
+server-url: https://dockstore.org/api
 notifications: https://hooks.slack.com/services/aaa/bbb/ccc
 ```
 - UUID can be generated or user-defined uuid in the dockstore launch command like:
