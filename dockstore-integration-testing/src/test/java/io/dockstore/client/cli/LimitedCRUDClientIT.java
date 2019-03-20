@@ -40,6 +40,7 @@ import io.swagger.client.model.DockstoreTool;
 import io.swagger.client.model.Limits;
 import io.swagger.client.model.SourceFile;
 import io.swagger.client.model.User;
+import io.swagger.client.model.Workflow;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -87,6 +88,12 @@ public class LimitedCRUDClientIT {
      * Used to set user based hosted entry count and hosted entry version limits -- higher than the system limits for those values.
      */
     public static final int NEW_LIMITS = 20;
+
+    /**
+     * The system limit for hosted entry count and hosted entry version.
+     * Specified in dockstore-integration-testing/src/test/resources/dockstore.yml
+     */
+    public static final int SYSTEM_LIMIT = 10;
 
     //TODO: duplicates BaseIT but with a different config file, attempt to simplify after release
 
@@ -147,7 +154,7 @@ public class LimitedCRUDClientIT {
         container.getUsers().forEach(user -> assertNull("getContainer() endpoint should not have user profiles", user.getUserProfiles()));
 
         // test repeated workflow creation up to limit
-        for(int i = 1; i <= 9; i++) {
+        for(int i = 1; i < SYSTEM_LIMIT; i++) {
             api.createHostedTool("awesomeTool" + i, Registry.QUAY_IO.toString().toLowerCase(), DescriptorLanguage.CWL_STRING, "coolNamespace", null);
         }
 
@@ -191,7 +198,7 @@ public class LimitedCRUDClientIT {
         api.editHostedTool(hostedTool.getId(), sourceFiles);
 
         // test repeated workflow version creation up to limit
-        for(int i = 1; i <= 9; i++) {
+        for(int i = 1; i < SYSTEM_LIMIT; i++) {
             sourceFiles.get(0).setContent(sourceFiles.get(0).getContent() + "\ns:citation: " + UUID.randomUUID().toString());
             api.editHostedTool(hostedTool.getId(), sourceFiles);
         }
@@ -230,6 +237,21 @@ public class LimitedCRUDClientIT {
 
         thrown.expect(ApiException.class);
         api.editHostedTool(hostedTool.getId(), sourceFiles);
+    }
+
+    @Test
+    public void testUploadZipHonorsVersionLimit() {
+        ApiClient webClient = BaseIT.getWebClient(BaseIT.ADMIN_USERNAME);
+        final HostedApi hostedApi = new HostedApi(webClient);
+        final Workflow hostedWorkflow = hostedApi.createHostedWorkflow("hosted", "something", "wdl", "something", null);
+        // Created workflow, no versions
+        File smartSeqFile = new File(ResourceHelpers.resourceFilePath("smartseq.zip"));
+        for (int i = 0; i < SYSTEM_LIMIT; i++) {
+            hostedApi.addZip(hostedWorkflow.getId(), smartSeqFile);
+        }
+        thrown.expect(ApiException.class);
+        hostedApi.addZip(hostedWorkflow.getId(), smartSeqFile);
+
     }
 
     private List<SourceFile> generateSourceFiles() throws IOException {

@@ -182,6 +182,7 @@ public class HostedWorkflowResource extends AbstractHostedEntryResource<Workflow
         checkEntry(workflow);
         checkHosted(workflow);
         checkUserCanUpdate(user, workflow);
+        checkVersionLimit(user, workflow);
         final ZipSourceFileHelper.SourceFiles sourceFiles = ZipSourceFileHelper.sourceFilesFromInputStream(payload, workflow.getFileType());
         final WorkflowVersion version = getVersion(workflow);
         this.persistSourceFiles(version, sourceFiles.getAllDescriptors());
