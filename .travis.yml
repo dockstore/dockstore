@@ -85,6 +85,9 @@ before_install:
 - scripts/decrypt.sh
 # turn this back on with updates to swagger (particularly swagger-maven-plugin), current implementation is too non-deterministic
 #- scripts/check-swagger.sh
+# codacy hookup
+- sudo apt-get install jq
+- wget -O ~/codacy-coverage-reporter-assembly-latest.jar https://github.com/codacy/codacy-coverage-reporter/releases/download/4.0.5/codacy-coverage-reporter-4.0.5-assembly.jar
 
 install:
 - docker version
@@ -102,6 +105,7 @@ before_cache:
 
 after_success:
 - bash <(curl -s https://codecov.io/bash) -F ${TESTING_PROFILE//-} || echo "Codecov did not collect coverage reports"
+- java -jar ~/codacy-coverage-reporter-assembly-latest.jar report -l Java -r reports/target/site/jacoco-aggregate/jacoco.xml 
   
 notifications:
   slack:
