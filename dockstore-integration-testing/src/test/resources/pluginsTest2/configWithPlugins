@@ -1,5 +1,5 @@
 token: test
-server-url: https://www.dockstore.org:8443
+server-url: https://www.dockstore.org/api
 file-plugins-location: src/test/resources/pluginsTest2/plugins
 
 [dockstore-icgc-get-plugin]
