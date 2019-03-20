@@ -182,12 +182,7 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         checkUserCanUpdate(user, entry);
         checkHosted(entry);
 
-        // check if the user has hit a limit yet
-        final long currentCount = entry.getVersions().size();
-        final int limit = user.getHostedEntryVersionsLimit() != null ? user.getHostedEntryVersionsLimit() : calculatedEntryVersionLimit;
-        if (currentCount >= limit) {
-            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
-        }
+        checkVersionLimit(user, entry);
 
         updateUnsetAbsolutePaths(sourceFiles);
 
@@ -195,6 +190,15 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
 
         return saveVersion(user, entryId, entry, version, versionSourceFiles, Optional.empty());
+    }
+
+    protected void checkVersionLimit(@Auth @ApiParam(hidden = true) User user, T entry) {
+        // check if the user has hit a limit yet
+        final long currentCount = entry.getVersions().size();
+        final int limit = user.getHostedEntryVersionsLimit() != null ? user.getHostedEntryVersionsLimit() : calculatedEntryVersionLimit;
+        if (currentCount >= limit) {
+            throw new CustomWebApplicationException("You have " + currentCount + " workflow versions which is at the current limit of " + limit, HttpStatus.SC_PAYMENT_REQUIRED);
+        }
     }
 
     /**
