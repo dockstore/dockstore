@@ -345,7 +345,7 @@
     </changeSet>
     <changeSet id="checkAbsolutePath" author="gluu">
         <sql dbms="postgresql">
-            ALTER TABLE sourcefile ADD CONSTRAINT absolutepath_check CHECK (absolutepath LIKE '/%')
+            ALTER TABLE sourcefile ADD CONSTRAINT absolutepath_check CHECK (absolutepath LIKE '/%' OR absolutepath='')
         </sql>
     </changeSet>
 </databaseChangeLog>
