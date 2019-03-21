@@ -2,7 +2,9 @@ package io.dockstore.common;
 
 import java.io.File;
 import java.net.URI;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Optional;
 
 import io.dockstore.provision.ProvisionInterface;
 import org.apache.commons.io.FileUtils;
@@ -44,10 +46,10 @@ public class FileProvisionTest {
     }
 
     @Test
-    public void testCreateFileURISpaces(){
-        //verifies that creation of URI for input file provisioning can handle paths with space characters
+    public void testCreateFileURISpaces() {
+        //verifies that creation of URI for input file provisioning can encode paths with space characters
         String encodedPath = "src/test/resources/testDirectory%20With%20Spaces/hello.json";
-        File inputFile = FileUtils.getFile("src", "test", "resources", "testDirectory With Spaces","hello.json");
-        assertEquals(URI.create(encodedPath), FileProvisioning.createInputFileIdentifier(inputFile.getPath()));
-        }
+        File inputFile = FileUtils.getFile("src", "test", "resources", "testDirectory With Spaces", "hello.json");
+        assertEquals(URI.create(encodedPath), FileProvisioning.createURIFromUnencodedPath(inputFile.getPath()));
+    }
 }

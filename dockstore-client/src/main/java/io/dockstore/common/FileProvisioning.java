@@ -239,7 +239,9 @@ public class FileProvisioning {
         executorService.shutdownNow();
     }
 
-    public static URI createInputFileIdentifier(String filepath) {
+    protected static URI createURIFromUnencodedPath(String filepath) {
+        //#1663
+        //pre-encoded paths will also work
         URI fileIdentifier = URI.create(filepath.replace(" ", "%20"));
         return fileIdentifier;
     }
@@ -294,7 +296,7 @@ public class FileProvisioning {
             }
         }
 
-        URI objectIdentifier = createInputFileIdentifier(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
+        URI objectIdentifier = createURIFromUnencodedPath(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
         if (objectIdentifier.getScheme() != null) {
             String scheme = objectIdentifier.getScheme().toLowerCase();
             for (PreProvisionInterface plugin : preProvisionPlugins) {

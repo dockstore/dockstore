@@ -1352,4 +1352,26 @@ public class LaunchTestIT {
         );
         runClientCommand(args, false);
     }
+    @Test
+    public void provisionInputWithPathSpaces() {
+        //Tests if workflow runs when json points to an input file path that contains spaces
+        File helloWDL = new File(ResourceHelpers.resourceFilePath("helloSpaces.wdl"));
+        File helloJSON = new File(ResourceHelpers.resourceFilePath("helloSpaces.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("--local-entry");
+            add("--json");
+            add(helloJSON.getPath());
+        }};
+
+        WorkflowsApi api = mock(WorkflowsApi.class);
+        UsersApi usersApi = mock(UsersApi.class);
+        Client client = new Client();
+        client.setConfigFile(ResourceHelpers.resourceFilePath("config"));
+
+        WorkflowClient workflowClient = new WorkflowClient(api, usersApi, client, false);
+        workflowClient.checkEntryFile(helloWDL.getAbsolutePath(), args, null);
+
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog().contains("Cromwell exit code: 0"));
+    }
 }
