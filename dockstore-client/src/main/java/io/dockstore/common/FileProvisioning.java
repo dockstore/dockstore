@@ -239,6 +239,11 @@ public class FileProvisioning {
         executorService.shutdownNow();
     }
 
+    public static URI createInputFileIdentifier(String filepath) {
+        URI fileIdentifier = URI.create(filepath.replace(" ", "%20"));
+        return fileIdentifier;
+    }
+
     /**
      * This is an entry point from both WDL and CWL.
      * This method downloads both local and remote files into the working directory.
@@ -289,7 +294,7 @@ public class FileProvisioning {
             }
         }
 
-        URI objectIdentifier = URI.create(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
+        URI objectIdentifier = createInputFileIdentifier(targetPath);    // throws IllegalArgumentException if it isn't a valid URI
         if (objectIdentifier.getScheme() != null) {
             String scheme = objectIdentifier.getScheme().toLowerCase();
             for (PreProvisionInterface plugin : preProvisionPlugins) {

@@ -1,10 +1,11 @@
 package io.dockstore.common;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
+import java.io.File;
+import java.net.URI;
+import java.util.*;
 
 import io.dockstore.provision.ProvisionInterface;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -41,4 +42,12 @@ public class FileProvisionTest {
         assertEquals("io.dockstore.provision.S3Plugin", FileProvisioning.findPluginName(s3Class));
         assertEquals("io.dockstore.provision.DOSPlugin", FileProvisioning.findPluginName(dosClass));
     }
+
+    @Test
+    public void testCreateFileURISpaces(){
+        //verifies that creation of URI for input file provisioning can handle paths with space characters
+        String encodedPath = "src/test/resources/testDirectory%20With%20Spaces/hello.json";
+        File inputFile = FileUtils.getFile("src", "test", "resources", "testDirectory With Spaces","hello.json");
+        assertEquals(URI.create(encodedPath), FileProvisioning.createInputFileIdentifier(inputFile.getPath()));
+        }
 }
