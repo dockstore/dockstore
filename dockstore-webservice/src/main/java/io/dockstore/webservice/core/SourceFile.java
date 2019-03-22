@@ -157,7 +157,7 @@ public class SourceFile implements Comparable<SourceFile> {
     public void setAbsolutePath(String absolutePath) {
         // TODO: Figure out the actual absolute path before this workaround
         this.absolutePath = ZipSourceFileHelper.addLeadingSlashIfNecessary((absolutePath));
-        if (this.absolutePath.equals(absolutePath)) {
+        if (!this.absolutePath.equals(absolutePath)) {
             LOG.warn("Absolute path workaround used, this should be fixed at some point");
         }
     }
