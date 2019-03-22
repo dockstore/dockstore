@@ -24,4 +24,4 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 <sup>[3] Does not support file-path or http(s) based imports. See [DNAstack Limitations](/docs/user-tutorials/dnastack-launch-with/#limitations) for limitations.
 </sup>
 
-<sup> [4] The small number of verified Dockstore WDL tools/workflows were tested successfully.  More verification/testing likely needed.</sup>
+<sup> [4] All verified Dockstore WDL tools/workflows were tested successfully. However, we anticipate that more testing is needed for WDL workflows that use language features not contained within that dataset.</sup>
