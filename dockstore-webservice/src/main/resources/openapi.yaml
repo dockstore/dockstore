@@ -3,7 +3,7 @@ info:
   description: This describes the dockstore API, a webservice that manages pairs of Docker
     images and associated metadata such as CWL documents and Dockerfiles used to
     build those images
-  version: 1.6.0-beta.4-SNAPSHOT
+  version: 1.6.0-rc.0-SNAPSHOT
   title: Dockstore API
   termsOfService: TBD
   contact:
@@ -6191,7 +6191,7 @@ externalDocs:
   description: Dockstore documentation
   url: https://www.dockstore.org/docs/getting-started
 servers:
-  - url: https://dockstore.org:8443
+  - url: https://dockstore.org/api
 components:
   requestBodies:
     PublishRequest:

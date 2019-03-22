@@ -774,7 +774,7 @@ public class Client {
         INIConfiguration config = getIniConfiguration(args);
         // pull out the variables from the config
         String token = config.getString("token", "");
-        String serverUrl = config.getString("server-url", "https://www.dockstore.org:8443");
+        String serverUrl = config.getString("server-url", "https://www.dockstore.org/api");
         ApiClient defaultApiClient;
         defaultApiClient = Configuration.getDefaultApiClient();
         String cliVersion = getClientVersion();

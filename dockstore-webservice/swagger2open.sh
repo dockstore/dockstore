@@ -6,7 +6,7 @@ if [ "$?" -eq 0 ] && [ "$HTTP_STATUS" -eq 200  ]; then
   # Parse out position variable not compatible with open-api schemas
   sed -n '/position/d;s/<html><body><pre>//;w src/main/resources/openapi1.yaml' src/main/resources/open_api.yaml
   # Aggregate correct url for dockstore api. Using pipe instead of forward slash, avoid dealing with scape chars
-  sed -n 's|url: /|url: https://dockstore.org:8443|; w src/main/resources/openapi2.yaml' src/main/resources/openapi1.yaml
+  sed -n 's|url: /|url: https://dockstore.org/api|; w src/main/resources/openapi2.yaml' src/main/resources/openapi1.yaml
 
   # Additional tag for smart-api compliance.
   # Note: Need "\ \" at beginning of subsequent line in order to work on both Linux and Mac
