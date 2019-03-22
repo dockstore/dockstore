@@ -15,7 +15,7 @@ This is the first part of a tutorial series where you will create a tool called 
 
 ## Introduction to Docker
 
-Docker is a fantastic tool for creating light-weight containers to run your tools.  What this means is it gives you a fast VM-like environment for Linux where you can automatically install dependencies, make configurations, and setup your tool exactly the way you want, as you would on a "normal" Linux host.  You can then quickly and easily share these Docker images with the world using registries like Quay.io (indexed by Dockstore), Docker Hub, and GitLab.
+Docker is a fantastic tool for creating light-weight containers to run your tools. It gives you a fast, VM-like environment for Linux where you can automatically install dependencies, make configurations, and setup your tool exactly the way you want, just as you would on a "normal" Linux host.  You can then quickly and easily share these Docker images with the world using registries like Quay.io (indexed by Dockstore), Docker Hub, and GitLab.
 
 Here we will go through a simple representative example. The end-product is a Dockerfile for a BAMStats tool stored in a supported Git repository.
 
@@ -27,7 +27,7 @@ For the rest of this tutorial, you may wish to work in your own repository with 
 With a repository established in GitHub, the next step is to create the Docker image with BAMStats correctly installed.
 
 ## Creating a Dockerfile
-We will create the Docker image with BAMStats installed along with all of its dependencies. To do this we must create a `Dockerfile`.
+We will create a Docker image with BAMStats and all of its dependencies installed. To do this we must create a `Dockerfile`.
 Here's my sample [Dockerfile](https://github.com/CancerCollaboratory/dockstore-tool-bamstats/blob/develop/Dockerfile):
 
 
@@ -69,7 +69,7 @@ This Dockerfile has a lot going on in it.  There are good tutorials online about
 FROM ubuntu:14.04
 ```
 
-This uses the ubuntu 14.04 base distribution.  How do I know to use `ubuntu:14.04`?  This comes from either a search on Ubuntu's home page for their "official" Docker images or you can simply go to [DockerHub](http://hub.docker.com) or [Quay](http://quay.io) and search for whatever base image you like.  You can extend anything you find there so if you come across an image that contains most of what you want you can use it as the base here.  Just be aware of its source, I tend to stick with "official", basic images for security reasons.
+This uses the ubuntu 14.04 base distribution.  How do I know to use `ubuntu:14.04`?  This comes from either a search on Ubuntu's home page for their "official" Docker images or you can simply go to [DockerHub](http://hub.docker.com) or [Quay](http://quay.io) and search for whatever base image you like.  You can extend anything you find there. So if you come across an image that contains most of what you want, you can use it as the base here.  Just be aware of its source: I tend to stick with "official", basic images for security reasons.
 
 ```Dockerfile
 MAINTAINER Brian OConnor <briandoconnor@gmail.com>
@@ -84,7 +84,7 @@ RUN unzip BAMStats-1.25.zip && \
     rm BAMStats-1.25.zip && \
     mv BAMStats-1.25 /opt/
 ```
-This switches to the `root` user to perform software installs. It downloads BAMStats, unzips it, and installs it in the correct location, here it's
+This switches to the `root` user to perform software installs. It downloads BAMStats, unzips it, and installs it in the correct location,
 `/opt`.
 
 **This is why Docker is so powerful.**  On HPC systems the above process might take days or weeks of working with a sys admin to install dependencies on all compute nodes.  Here I can control and install whatever I like inside my Docker image - correctly configuring the environment for my tool and avoiding the time to set up these dependencies in the places I want to run.  This greatly simplifies the install process for other users that you share your tool with as well.
@@ -93,7 +93,7 @@ This switches to the `root` user to perform software installs. It downloads BAMS
 COPY bin/bamstats /usr/local/bin/
 RUN chmod a+x /usr/local/bin/bamstats
 ```
-This copies the local helper script `bamstats` from the git checkout directory to `/usr/local/bin`.  This is an important example, it shows how to use `COPY` to copy files in the git directory structure to inside the Docker image. After copying to `/usr/local/bin` the script is made runnable by all users.
+This copies the local helper script `bamstats` from the git checkout directory to `/usr/local/bin`.  This is an important example; it shows how to use `COPY` to copy files in the git directory structure to inside the Docker image. After copying to `/usr/local/bin` the script is made runnable by all users.
 
 ```Dockerfile
 RUN groupadd -r -g 1000 ubuntu && useradd -r -g ubuntu -u 1000 ubuntu
@@ -104,14 +104,14 @@ CMD ["/bin/bash"]
 ```
 The user `ubuntu` is created and switched to in order to make file ownership easier and the default command for this Docker image is set to `/bin/bash` which is a typical default.
 
-An important thing to note, this `Dockerfile` just really scratches the surface.  Take a look at [Best practices for writing Dockerfiles](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/) for a really terrific in-depth look at writing Dockerfiles.
+An important thing to note is that this `Dockerfile` only scratches the surface.  Take a look at [Best practices for writing Dockerfiles](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/) for a really terrific in-depth look at writing Dockerfiles.
 
 
 Read more on the development process at [https://docs.docker.com](https://docs.docker.com/). For information on building your Docker image on Quay.io we recommend their [tutorial](https://quay.io/tutorial/).
 
 ### Building Docker Images
 
-Now that you've created the `Dockerfile` the next step is to build the image.
+Now that you've created the `Dockerfile`, the next step is to build the image.
 The docker command line is used for this:
 
 ```
@@ -170,9 +170,9 @@ rm -rf bamstats_report.html bamstats_report.html.data
 
 You can see it just executes the BAMStats jar - passing in the GB of memory and the BAM file while collecting the output HTML report as a zip file followed by cleanup.
 
-An important thing to note, notice how the output is written to whatever the current directory is. This is the correct directory to put your output in since the CWL tool described later assumes that outputs are all located in the current working directory that it executes your command in.
+**Note:** notice how the output is written to whatever the current directory is. This is the correct directory to put your output in since the CWL tool described later assumes that outputs are all located in the current working directory that it executes your command in.
 
-The `-v` parameter used earlier is mounting the current working directory into `/home/ubuntu` which was the directory we worked in when running `/usr/local/bin/bamstats` above. The net effect is when you exit the Docker container, you're left with a `bamstats_report.zip` file in the current directory.  This is a key point, it shows you how files are retrieved from inside a Docker container.
+The `-v` parameter used earlier is mounting the current working directory into `/home/ubuntu` which was the directory we worked in when running `/usr/local/bin/bamstats` above. The net effect is when you exit the Docker container (with command `exit` or pressing `ctrl + d`), you're left with a `bamstats_report.zip` file in the current directory.  This is a key point, it shows you how files are retrieved from inside a Docker container.
 
 You can now unzip and examine the `bamstats_report.zip` file on your computer to see what type of reports are created by this tool. For example, here's a snippet:
 
@@ -185,7 +185,7 @@ $> wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/data/NA12878/alignment/N
 $> docker run -w="/home/ubuntu" -it -v `pwd`:/home/ubuntu --user `echo $UID`:1000 quay.io/collaboratory/dockstore-tool-bamstats:1.25-3 bamstats 4 NA12878.chrom20.ILLUMINA.bwa.CEU.low_coverage.20121211.bam
 ```
 
-In the next section, we will also demonstrate how this command-line including the input file can be parameterized and constructed via CWL.
+In the next section, we will demonstrate how the command-line and input file can be parameterized and constructed via CWL.
 
 ## Next Steps
 **You could stop here!** However, what you lose is a standardized way to describe how to run your tool.  That's what descriptor languages and Dockstore provide.  We think it's valuable and there's an increasing number of tools and workflows designed to work with various descriptor languages so there are benefits to not just stopping here.
