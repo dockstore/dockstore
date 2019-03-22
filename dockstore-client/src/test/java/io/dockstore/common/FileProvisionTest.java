@@ -48,8 +48,8 @@ public class FileProvisionTest {
     @Test
     public void testCreateFileURISpaces() {
         //verifies that creation of URI for input file provisioning can encode paths with space characters
-        String encodedPath = "src/test/resources/testDirectory%20With%20Spaces/hello.json";
-        File inputFile = FileUtils.getFile("src", "test", "resources", "testDirectory With Spaces", "hello.json");
+        String encodedPath = "src/test/resources/testDirectory%20With%20Spaces/hello.txt";
+        File inputFile = FileUtils.getFile("src", "test", "resources", "testDirectory With Spaces", "hello.txt");
         assertEquals(URI.create(encodedPath), FileProvisioning.createURIFromUnencodedPath(inputFile.getPath()));
     }
 }

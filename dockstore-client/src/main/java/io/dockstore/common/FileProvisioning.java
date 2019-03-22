@@ -40,6 +40,7 @@ import java.util.stream.Stream;
 import com.github.zafarkhaja.semver.UnexpectedCharacterException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.net.UrlEscapers;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.dockstore.client.cli.Client;
 import io.dockstore.provision.PreProvisionInterface;
@@ -242,7 +243,8 @@ public class FileProvisioning {
     protected static URI createURIFromUnencodedPath(String filepath) {
         //#1663
         //pre-encoded paths will also work
-        URI fileIdentifier = URI.create(filepath.replace(" ", "%20"));
+        //URI fileIdentifier = URI.create(filepath.replace(" ", "%20"));
+        URI fileIdentifier = URI.create(UrlEscapers.urlFragmentEscaper().escape(filepath));
         return fileIdentifier;
     }
 
