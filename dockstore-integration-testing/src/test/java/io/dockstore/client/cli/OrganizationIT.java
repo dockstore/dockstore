@@ -16,6 +16,7 @@ import io.swagger.client.api.UsersApi;
 import io.swagger.client.model.Collection;
 import io.swagger.client.model.CollectionOrganization;
 import io.swagger.client.model.Event;
+import io.swagger.client.model.Limits;
 import io.swagger.client.model.Organization;
 import io.swagger.client.model.Organization.StatusEnum;
 import io.swagger.client.model.PublishRequest;
@@ -1206,7 +1207,6 @@ public class OrganizationIT extends BaseIT {
         }
 
     }
-
     /**
      * This tests that aliases can be set on collections and workflows
      */
@@ -1243,6 +1243,25 @@ public class OrganizationIT extends BaseIT {
         assertNotNull(spam1);
         final Organization spam = organizationsApi.getOrganizationByAlias("spam");
         assertNotNull(spam);
+
+        // test that an alias cannot start with one of our reserved prefixes
+
+        // demote self to test setting invalid aliases
+        testingPostgres.runUpdateStatement("update enduser set  isadmin='f'");
+        // need to invalidate cached creds
+        UsersApi usersApi = new UsersApi(webClientUser2);
+        usersApi.setUserLimits(usersApi.getUser().getId(), new Limits());
+
+        boolean throwsError = false;
+        try {
+            organizationsApi.updateCollectionAliases(collectionId, "test collection, doi: foo", "");
+        } catch (ApiException ex) {
+            throwsError = true;
+        }
+
+        if (!throwsError) {
+            fail("Was able to use a reserved prefix.");
+        }
     }
 
     /**
