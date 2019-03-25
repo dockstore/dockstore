@@ -26,6 +26,6 @@ You can link to an organization that has the alias `MyOrganization` using the li
 
 If you would like to setup aliases for your organization or collection, you must first ensure that the corresponding organization has been approved. Then you can use one of the corresponding endpoints to create the alias.
 
-Use the `/organizations/{id}/aliases` endpoint to add an alias for a organization.
+Use the `/organizations/{id}/aliases` endpoint to add an alias for an organization.
 
 Use the `/organizations/collections/{id}/aliases` endpoint to add an alias for a collection.
