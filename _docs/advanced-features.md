@@ -81,8 +81,6 @@ Get more information on the implementing plugin at [synapse-plugin
 
 ### Data Object Service (DOS)
 
-> For Dockstore 1.5.0+
-
 Currently, no additional configuration is directly supported by the Data Object Service plugin.
 However, specifying a DOS URI will lead to downloading a file by either built-in
 support or by one of the plugins. If one of the plugins, that plugin may need to be
