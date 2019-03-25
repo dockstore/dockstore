@@ -21,12 +21,15 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.google.common.collect.Sets;
+import io.dockstore.webservice.CustomWebApplicationException;
 import io.dockstore.webservice.core.Alias;
 import io.dockstore.webservice.core.Aliasable;
 import io.dockstore.webservice.core.Entry;
 import io.dockstore.webservice.core.User;
 import io.dockstore.webservice.helpers.ElasticManager;
 import io.dockstore.webservice.helpers.ElasticMode;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpStatus;
 
 public interface AliasableResourceInterface<T extends Aliasable> {
 
@@ -52,6 +55,19 @@ public interface AliasableResourceInterface<T extends Aliasable> {
         // compute differences
         Set<String> oldAliases = c.getAliases().keySet();
         Set<String> newAliases = Sets.newHashSet(Arrays.stream(aliases.split(",")).map(String::trim).toArray(String[]::new));
+
+        // reserve some prefixes for our own use
+        String[] invalidPrefixes = {"dockstore", "doi", "drs", "trs", "dos", "wes"};
+
+        if (!user.isCurator() && !user.getIsAdmin()) {
+            for (String newAlias : newAliases) {
+                if (StringUtils.startsWithAny(newAlias, invalidPrefixes)) {
+                    throw new CustomWebApplicationException(newAlias + " starts with a reserved string, please try another alias",
+                        HttpStatus.SC_BAD_REQUEST);
+                }
+            }
+        }
+
         Set<String> aliasesToAdd = Sets.difference(newAliases, oldAliases);
         Set<String> aliasesToRemove = new TreeSet<>(Sets.difference(oldAliases, newAliases));
         // add new ones and remove old ones while retaining the old entries and their order
