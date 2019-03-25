@@ -65,6 +65,7 @@ import io.swagger.model.ExtendedFileWrapper;
 import io.swagger.model.FileWrapper;
 import io.swagger.model.ToolFile;
 import io.swagger.model.ToolVersion;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
@@ -380,9 +381,13 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
         final Response.ResponseBuilder responseBuilder = Response.ok(results);
         responseBuilder.header("current_offset", offset);
         responseBuilder.header("current_limit", limit);
-        responseBuilder.header("self_link", value.getUriInfo().getRequestUri().toString());
-        // construct links to other pages
         try {
+            int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
+            responseBuilder.header("self_link",
+                new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + value.getUriInfo().getRequestUri().getPath(),
+                    value.getUriInfo().getRequestUri().getQuery(), null).normalize().toURL().toString());
+        // construct links to other pages
             List<String> filters = new ArrayList<>();
             handleParameter(id, "id", filters);
             handleParameter(organization, "organization", filters);
@@ -393,16 +398,14 @@ public class ToolsApiServiceImpl extends ToolsApiService implements Authenticate
             handleParameter(registry, "registry", filters);
             handleParameter(limit.toString(), "limit", filters);
 
-            int port = config.getExternalConfig().getPort() == null ? -1 : Integer.parseInt(config.getExternalConfig().getPort());
-
             if (offsetInteger + 1 < pagedResults.size()) {
                 URI nextPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                    config.getExternalConfig().getBasePath() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
+                    ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
                     Joiner.on('&').join(filters) + "&offset=" + (offsetInteger + 1), null).normalize();
                 responseBuilder.header("next_page", nextPageURI.toURL().toString());
             }
             URI lastPageURI = new URI(config.getExternalConfig().getScheme(), null, config.getExternalConfig().getHostname(), port,
-                config.getExternalConfig().getBasePath() + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
+                ObjectUtils.firstNonNull(config.getExternalConfig().getBasePath(), "") + DockstoreWebserviceApplication.GA4GH_API_PATH + "/tools",
                 Joiner.on('&').join(filters) + "&offset=" + (pagedResults.size() - 1), null).normalize();
             responseBuilder.header("last_page", lastPageURI.toURL().toString());
 
