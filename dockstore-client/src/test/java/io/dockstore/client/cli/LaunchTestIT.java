@@ -647,6 +647,13 @@ public class LaunchTestIT {
         Client.main(args.toArray(new String[0]));
     }
 
+    private void runClientCommandConfig(ArrayList<String> args, File config) {
+        //used to run client with a specified config file
+        args.add(0, config.getPath());
+        args.add(0, "--config");
+        Client.main(args.toArray(new String[0]));
+    }
+
     private void runToolThreaded(File cwlFile, ArrayList<String> args, ContainersApi api, UsersApi usersApi, Client client) {
         client.setConfigFile(ResourceHelpers.resourceFilePath("config.withThreads"));
 
@@ -1330,7 +1337,8 @@ public class LaunchTestIT {
         exit.checkAssertionAfterwards(() ->
                 assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch, syntax error in json file: " + jsonFile))
         );
-        runClientCommand(args, false);
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
     }
     @Test
     public void malJsonToolWdlLocal() {
@@ -1350,6 +1358,27 @@ public class LaunchTestIT {
         exit.checkAssertionAfterwards(() ->
                 assertTrue("output should include an error message", systemErrRule.getLog().contains("Could not launch, syntax error in json file: " + jsonFile))
         );
-        runClientCommand(args, false);
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
+    }
+    @Test
+    public void provisionInputWithPathSpaces() {
+        //Tests if file provisioning can handle a json parameter that specifies a file path containing spaces
+        File helloWDL = new File(ResourceHelpers.resourceFilePath("helloSpaces.wdl"));
+        File helloJSON = new File(ResourceHelpers.resourceFilePath("helloSpaces.json"));
+
+        ArrayList<String> args = new ArrayList<String>() {{
+            add("workflow");
+            add("launch");
+            add("--local-entry");
+            add(helloWDL.getAbsolutePath());
+            add("--json");
+            add(helloJSON.getPath());
+        }};
+
+        File config = new File(ResourceHelpers.resourceFilePath("clientConfig"));
+        runClientCommandConfig(args, config);
+
+        assertTrue("output should include a successful cromwell run", systemOutRule.getLog().contains("Cromwell exit code: 0"));
     }
 }
