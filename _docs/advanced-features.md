@@ -52,6 +52,10 @@ For AWS S3, create a `~/.aws/credentials` file and a `~/.aws/config` file as doc
 
 Get more information on the implementing plugin at [s3-plugin](https://github.com/dockstore/s3-plugin).
 
+### Google Cloud Storage
+
+For Google Cloud Storage, you can download, upload, and set metadata on uploaded objects with the gs-plugin.  The plugin handles urls with the `gs://` prefix such as `gs://genomics-public-data/references/GRCh38/chr1.fa.gz`. Get more information on the implementing plugin at https://github.com/dockstore/gs-plugin.
+
 ### ICGC Storage
 
 For ICGC Storage, configure the location of the client using the configuration key `dockstore-file-icgc-storage-client-plugin.client` in `~/.dockstore/config` under the section `[dockstore-file-icgc-storage-client-plugin]`. Then configure the ICGC storage client as documented [here](https://docs.icgc.org/download/guide/#configuration).
