@@ -75,7 +75,7 @@ workflow bamstatsWorkflow {
 
 Let us break it down piece by piece.
 
-You'll notice that there are two main sections of the file. First is a task section where we define the task level inputs and outputs of a given step, along with the runtime. Next there is a workflow section, where we define workflow level inputs and outputs, along with the calling of the task.
+You'll notice that there are two main sections of the file. First is a task section where we define the task level inputs and outputs of a given step, along with the runtime. Next, there is a workflow section where we define workflow level inputs and outputs, and the calling of the task.
 
 At the top of the task section we define two inputs: the input bam file and the amount of memory in GB to use to run the task. This looks very similar to variable declaration in most programming languages.
 
@@ -109,7 +109,7 @@ runtime {
 }
 ```
 
-Finally, we have a metadata section where we can store key value pairs. It is freeform, so we could put anything here. Dockstore is able to pick up author, email, and description if they are defined here. All metadata values must be a single-line string. 
+Finally, we have a metadata section where we can store key value pairs. It is free-form, so we could put anything here. Dockstore is able to pick up author, email, and description if they are defined here. All metadata values must be a single-line string. 
 
 The description field can be used to add documentation and Dockstore will treat the string as markdown, rendering accordingly. When writing a description in markdown that requires newlines, specify the newlines with \n or specify a blank line with \n\n. 
 
@@ -157,7 +157,7 @@ This downloads to my current directory.  I could choose another location, it rea
 }
 ```
 
-**Tip:** the Dockstore CLI can handle inputs at HTTPS, FTP, and S3 URLs but that's beyond the scope of this tutorial.
+**Tip:** the Dockstore CLI can handle inputs with HTTPS, FTP, and S3 URLs but that's beyond the scope of this tutorial.
 
 You can see in the above I give the relative path to the input under `bam_input` and the memory in GB that I want to use for the task.
 
@@ -194,7 +194,7 @@ So what's going on here?  What's the Dockstore CLI doing?  It can best be summed
 
 ![Lifecycle](/assets/images/docs/dockstore_lifecycle.png)
 
-The command line first provisions input files.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs pointing to remote files.  After provisioning the docker image is pulled and ran via the `Cromwell` command line. This uses the `Dockstore.wdl` and parameterization JSON file (`test.wdl.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.
+The command line first provisions input files.  In our case, the files were local so no provisioning was needed.  But as the tip above mentioned, these can be various URLs pointing to remote files.  After provisioning the docker image is pulled and ran via the `Cromwell` command line. This uses the `Dockstore.wdl` and parameterization JSON file (`test.wdl.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.
 
 **Tip:** you can use `--debug` to get much more information during this run, including the actual call to Cromwell (which can be super helpful in debugging):
 

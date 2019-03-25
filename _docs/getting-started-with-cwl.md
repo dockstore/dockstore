@@ -88,7 +88,7 @@ baseCommand: ["bash", "/usr/local/bin/bamstats"]
 
 You can see this tool takes two inputs, a parameter to control memory usage and a BAM file (binary sequence alignment file).  It produces one output, a zip file, that contains various HTML reports that BAMStats creates.
 
-The CWL is actually recognized and parsed by Dockstore (when we register this later). By default it recognizes `Dockstore.cwl` but you can customize this if you need to.  One of the most important items below is the [CWL version](http://www.commonwl.org/v1.0/CommandLineTool.html#CWLVersion), you should label your CWL with the version you are using so CWL tools that cannot run this version can error out appropriately. Our tools have been tested with v1.0.
+The CWL is actually recognized and parsed by Dockstore (when we register this later). By default it recognizes `Dockstore.cwl` but you can customize this if you need to.  One of the most important items below is the [CWL version](http://www.commonwl.org/v1.0/CommandLineTool.html#CWLVersion). You should label your CWL with the version you are using so that CWL tools that cannot run this version will error out appropriately. Our tools have been tested with v1.0.
 
 ```
 class: CommandLineTool
@@ -109,7 +109,7 @@ dct:creator:
   foaf:mbox: "mailto:briandoconnor@gmail.com"
 ```
 
-This section includes the tool author referenced by Dockstore. It is open to your interpretation whether that is the person that registers the tool, the person who made the Docker image, or the developer of the original tool.  I'm biased towards the person that registers the tool since that is likely to be the primary contact when asking questions about how the tool was setup.
+This section includes the tool author referenced by Dockstore. It is open to your interpretation whether that is the person that registers the tool, the person who made the Docker image, or the developer of the original tool.  I'm biased towards the person that registers the tool since they are likely to be the primary contact when asking questions about how the tool was setup.
 
 You can register for an [ORCID](http://orcid.org/) (a digital identifer for researchers) or use an email address for your id.
 
@@ -119,7 +119,7 @@ requirements:
     dockerPull: "quay.io/collaboratory/dockstore-tool-bamstats:1.25-6"
 ```
 
-This section links the Docker image used to this CWL.  Notice it's exactly the same as the `-t` you used when building your image.
+This section links the Docker image used for this CWL.  Notice it's exactly the same as the `-t` you used when building your image.
 
 ```
 hints:
@@ -129,7 +129,7 @@ hints:
     outdirMin: 512000
 ```
 
-This may or may not be honoured by the tool calling this CWL but at least it gives you a place to declare computational requirements.
+This may or may not be honoured by the tool calling this CWL, but at least it gives you a place to declare computational requirements.
 
 ```
 inputs:
@@ -148,9 +148,11 @@ inputs:
       position: 2
 ```
 
-This is one of the items from the inputs section.  Notice a few things, first, the `bam_input:` matches with `bam_input` in the sample parameterization JSON (shown in the next section as `sample_configs.local.json`). Also, you can control the position of the variable, it can have a type (int or File here), and, for tools that require a prefix (`--prefix`) before a parameter you can use the `prefix: key` in the inputBindings section.
-
-Also, I'm using the `format` field to specify a file format via the [EDAM](http://bioportal.bioontology.org/ontologies/EDAM) ontology.
+This is one of the items from the inputs section.  Notice a few things:
+ 1. The `bam_input:` matches with `bam_input` in the sample parameterization JSON (shown in the next section as `sample_configs.local.json`). 
+ 2. You can control the position of the variable. 
+ 3. It can have a type (int or File here), and, for tools that require a prefix (`--prefix`) before a parameter you can use the `prefix: key` in the inputBindings section.
+ 3. I'm using the `format` field to specify a file format via the [EDAM](http://bioportal.bioontology.org/ontologies/EDAM) ontology.
 
 ```
 outputs:
@@ -174,7 +176,7 @@ The [CWL standard](http://www.commonwl.org/) is continuing to evolve and hopeful
 
 ## Testing Locally
 
-So at this point, you've created a Docker-based tool and have described how to call that tool using CWL.  Let's test running the BAMStats using the Dockstore command line and descriptor rather than just directly calling it via Docker.  This will test that the CWL correctly describes how to run your tool.
+So at this point, you've created a Docker-based tool and have described how to call that tool using CWL.  Let's test running the BAMStats using the Dockstore command line and descriptor, rather than just directly calling it via Docker.  This will test that the CWL correctly describes how to run your tool.
 
 First thing I'll do is create a completely local dataset and JSON parameterization file:
 
@@ -201,7 +203,7 @@ This downloads to my current directory and then moves to `/tmp`.  I could choose
 }
 ```
 
-**Tip:** the Dockstore CLI can handle inputs at HTTPS, FTP, and S3 URLs but that's beyond the scope of this tutorial.
+**Tip:** the Dockstore CLI can handle inputs with HTTPS, FTP, and S3 URLs but that's beyond the scope of this tutorial.
 
 You can see in the above I give the full path to the input under `bam_input` and full path to the output `bamstats_report`.
 
@@ -252,7 +254,7 @@ tats_report.zip
 
 ```
 
-So that's a lot of information but you can see the process was a success.  We get output from the command we ran and also see the file being moved to the correct output location:
+So that's a lot of information, but you can see the process was a success.  We get output from the command we ran and also see the file being moved to the correct output location:
 
 ```
 $> ls -lth /tmp/bamstats_report.zip
@@ -265,11 +267,11 @@ So what's going on here?  What's the Dockstore CLI doing?  It can best be summed
 
 ![Lifecycle](/assets/images/docs/dockstore_lifecycle.png)
 
-The command line first provisions file.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs.  After provisioning the docker image is pulled and ran via the `cwltool` command line. This uses the `Dockerfile.cwl` and parameterization JSON file (`sample_configs.local.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.  In this case it's just a file copy to `/tmp/bamstats_report.zip` but it could copy the result to a destination in S3 for example.
+The command line first provisions files.  In our case, the files were local so no provisioning was needed.  But as the Tip above mentioned, these can be various URLs.  After provisioning the docker image is pulled and ran via the `cwltool` command line. This uses the `Dockerfile.cwl` and parameterization JSON file (`sample_configs.local.json`) to construct the underlying `docker run` command.  Finally, the Dockstore CLI provisions files back.  In this case it's just a file copy to `/tmp/bamstats_report.zip` but it could copy the result to a destination in S3 for example.
 
 **Tip:** you can use `--debug` to get much more information during this run, including the actual call to cwltool (which can be super helpful in debugging).
 
-**Tip:** the `dockstore` CLI automatically create a `datastore` directory in the current working directory where you execute the command and uses it for inputs/outputs.  It can get quite large depending on the tool/inputs/outputs being used.  Plan accordingly e.g. execute the dockstore CLI in a directory located on a partition with sufficient storage.
+**Tip:** the `dockstore` CLI automatically creates a `datastore` directory in the current working directory where you execute the command and uses it for inputs/outputs.  It can get quite large depending on the tool/inputs/outputs being used.  Plan accordingly e.g. execute the dockstore CLI in a directory located on a partition with sufficient storage.
 
 ## Adding a Test Parameter File
 

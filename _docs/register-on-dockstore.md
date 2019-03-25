@@ -16,7 +16,7 @@ Before you can publish your new tool, you need to create a Dockstore account and
 
 *Only available in 1.5.0*
 
-You can also login with your Google Account. This is required to use the workflow sharing feature for users coming from Firecloud
+You can also login with your Google Account. This is required to use the workflow sharing feature for users coming from Firecloud.
 
 ## Dockstore usernames
 
