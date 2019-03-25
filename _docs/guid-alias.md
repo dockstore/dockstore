@@ -10,6 +10,7 @@ Currently the only way to add an alias to an entity is through our API. You can 
 **Some things to note:**
 * You can create multiple aliases per digital entity, however they must all be unique
 * Aliases are restricted to alphanumerical strings that are case-insensitive and can contain internal hyphens
+* An alias cannot be removed
 
 ## Tools and Workflows
 If you would like to setup aliases for your tool or workflow, you can now do so through our API for now. Aliases can deal with the situation where there are multiple Dockstore-like sites (including Dockstore), and you have the same tool on each platform. You can use an alias to give this tool a unique name that could potentially be valid across all sites, independent of site specific naming conventions.
