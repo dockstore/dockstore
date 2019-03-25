@@ -15,12 +15,13 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 <sup>[0] Available in both classic and <a href="https://view.commonwl.org/">CWL Viewer</a> modes 
 </sup>
 
-<sup>[1] Does not support file-path based imports. See [FireCloud Limitations](/docs/user-tutorials/firecloud-launch-with/#limitations) for limitations.
+<sup>[1] Available in both classic and WDL EPAM Pipeline Builder
 </sup>
 
-<sup>[2] Does not support file-path or http(s) based imports. See [DNAStack Limitations](/docs/user-tutorials/dnastack-launch-with/#limitations) for limitations.
+<sup>[2] Does not support file-path based imports. See [FireCloud Limitations](/docs/user-tutorials/firecloud-launch-with/#limitations) for limitations.
 </sup>
 
-<sup> [3] The small number of verified Dockstore WDL tools/workflows were tested successfully.  More verification/testing likely needed.</sup>
+<sup>[3] Does not support file-path or http(s) based imports. See [DNAstack Limitations](/docs/user-tutorials/dnastack-launch-with/#limitations) for limitations.
+</sup>
 
-<sup> [4] The official Nextflow CLI is not yet connected to Dockstore. However, the Nextflow CLI does have file provisioning directly baked in.</sup>
+<sup> [4] All verified Dockstore WDL tools/workflows were tested successfully. However, we anticipate that more testing is needed for WDL workflows that use language features not contained within that dataset.</sup>
