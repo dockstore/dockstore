@@ -41,10 +41,13 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This describes a cached copy of a remotely accessible file. Implementation specific.
@@ -67,6 +70,8 @@ public class SourceFile implements Comparable<SourceFile> {
         // Add supported descriptor types here
         DOCKSTORE_CWL, DOCKSTORE_WDL, DOCKERFILE, CWL_TEST_JSON, WDL_TEST_JSON, NEXTFLOW, NEXTFLOW_CONFIG, NEXTFLOW_TEST_PARAMS, DOCKSTORE_YML
     }
+
+    private static final Logger LOG = LoggerFactory.getLogger(SourceFile.class);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -150,7 +155,11 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     public void setAbsolutePath(String absolutePath) {
-        this.absolutePath = absolutePath;
+        // TODO: Figure out the actual absolute path before this workaround
+        this.absolutePath = ZipSourceFileHelper.addLeadingSlashIfNecessary((absolutePath));
+        if (!this.absolutePath.equals(absolutePath)) {
+            LOG.warn("Absolute path workaround used, this should be fixed at some point");
+        }
     }
 
     @JsonIgnore
