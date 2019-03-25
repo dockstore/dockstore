@@ -46,6 +46,15 @@ Provisioning for output files works in the same way and has been tested with S3 
 
 For some file provisioning methods, additional configuration may be required.
 
+The below summarizes some of the plugins available:
+
+| Plugin                                                                                | Prefix  | Example                                                                                          | Supported Operations                     |
+|---------------------------------------------------------------------------------------|:-------:|--------------------------------------------------------------------------------------------------|------------------------------------------|
+| [s3-plugin](https://github.com/dockstore/s3-plugin)                                   | s3://   | s3://oicr.temp/bamstats_report.zip                                                               | upload, download, set metadata on upload |
+| [icgc-storage-client-plugin](https://github.com/dockstore/icgc-storage-client-plugin) | icgc:// | icgc://eeca3ccd-fa4e-57bf-9fde-c9d0ddf69935                                                      | download directories                     |
+| [synapse-plugin](https://github.com/dockstore/synapse-plugin)                         | syn://  | syn://syn8299856                                                                                 | download                                 |
+| [data-object-service-plugin](https://github.com/dockstore/data-object-service-plugin) | dos://  | dos://ec2-52-26-45-130.us-west-2.compute.amazonaws.com:8080/911bda59-b6f9-4330-9543-c2bf96df1eca | download                                 |
+
 ### AWS S3
 
 For AWS S3, create a `~/.aws/credentials` file and a `~/.aws/config` file as documented at the following [location](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-config-files).
