@@ -1287,8 +1287,8 @@ public abstract class AbstractEntryClient<T> {
 
     protected void wesLaunchHelp() {
         printHelpHeader();
-        out("Usage: dockstore wes " + getEntryType().toLowerCase() + " launch --help");
-        out("       dockstore wes " + getEntryType().toLowerCase() + " launch [parameters]");
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " wes launch --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " wes launch [parameters]");
         printLaunchHelpBody();
         printWesHelpFooter();
         printHelpFooter();
