@@ -29,7 +29,7 @@ When Dockstore was created, CWL was the first descriptor language we supported. 
 ## Create Your Workflow
 
 The combination of light-weight Docker containers to run your tools and programmatic descriptors takes us part of the way there.
-However, the next step is to chain together these containers in order to call tools in a particular sequence or in a particular pattern in order to create larger workflows.
+However, the next step is to chain together these containers in order to call tools in a particular sequence or pattern in order to create larger workflows.
 Dockstore provides a few simple tools to share workflows, similar to how Dockstore shares command-line tools.
 
 The steps to accomplish this task, at a high level, are:
@@ -37,14 +37,14 @@ The steps to accomplish this task, at a high level, are:
 0. Create a new repository on GitHub, Bitbucket or GitLab
 0. Describe your workflow as either a [CWL](http://www.commonwl.org/user_guide/), [WDL](https://github.com/openwdl/wdl/blob/develop/SPEC.md#workflow-definition) or a [Nextflow](https://www.nextflow.io/) workflow
 0. Test your workflow using an environment that supports full CWL, WDL or Nextflow workflows
-0. Use the release process on GitHub, Bitbucket or GitLab to make distinct release tags, we like the  [HubFlow](https://datasift.github.io/gitflow/) process in our group for managing releases in git
+0. Use the release process on GitHub, Bitbucket or GitLab to make distinct release tags. We like the  [HubFlow](https://datasift.github.io/gitflow/) process in our group for managing releases in git
 0. Create an entry on Dockstore and then publish it
 
 ## Create Workflow Stubs from GitHub, Bitbucket, and GitLab
 
-The first step is to create a CWL or WDL workflow descriptor for your workflow and then check it into GitHub, Bitbucket or GitLab in a repo, we recommend the filename `Dockstore.cwl` at the root of your repository for simplicity but anything else with a consistent extension should work just as well. The details as to how to write a workflow are somewhat beyond the scope of this tutorial but we can recommend the [Introduction to the CWL](http://www.commonwl.org/user_guide/) and [Getting Started with WDL](https://github.com/openwdl/wdl/tree/master#getting-started-with-wdl).
+The first step is to create a CWL or WDL workflow descriptor for your workflow and then check it into GitHub, Bitbucket or GitLab in a repo. We recommend the filename `Dockstore.cwl` at the root of your repository for simplicity, but anything else with a consistent extension should work just as well. The details as to how to write a workflow are somewhat beyond the scope of this tutorial, but we can recommend the [Introduction to the CWL](http://www.commonwl.org/user_guide/) and [Getting Started with WDL](https://github.com/openwdl/wdl/tree/master#getting-started-with-wdl).
 
-You can also check in test parameter files into the same Git repo. These files are example input JSON (or YAML) files for running the given workflow. It should be easy for a user to run your workflow with the test parameter files in order to see an example of your workflow, so try and store any required files in the same Git repository or somewhere else where the files are likely to be present.
+You can also check in test parameter files into the same Git repo. These files are example input JSON (or YAML) files for running the given workflow. It should be easy for a user to run your workflow with the test parameter files in order to see an example of your workflow. So try to store any required files in the same Git repository or somewhere else where the files are likely to be present.
 
 You can set a default test parameter file for a workflow, which defaults to `/test.json`. Whenever a new version is added, Dockstore will look for a file matching the default test parameter in the corresponding Git repository, and add it if it exists. Updating the default test parameter file path for an existing workflow will be propagated to any versions that have not been edited.
 
@@ -64,19 +64,23 @@ Now that you have linked your credentials and refreshed, there should be one stu
 
 In the authenticated Web UI, navigate to 'My Workflows' to begin managing workflows imported through your linked account(s). These pages will allow you to quickly register workflows that follow a particularly simple format (look below to manual registration for more complex formats). For quick registration, we look through your GitHub, Bitbucket and GitLab accounts and create a stub for each one. You can refresh and publish each repo that you identify as a real workflow in order to get, edit, and display additional information such as available versions.
 
-In the above image, the left side menu is a list of all workflow repositories associated with the user, grouped lexicographically by namespace. Words encapsulated in parentheses denotes a custom toolname if provided. Detailed information and links for each Workflow is located on the 'Info' tab. The 'Labels' tab allows editing of keywords to be associated with a workflow for efficient searching and grouping. Settings such as the path to the CWL/WDL descriptor can be modified on a per-tag basis in the 'Versions' tab. The Descriptors and test parameter files may be viewed in the 'Files' tab, by the Version tag (corresponding to a Git tag/branch).
+In the above image, the left side menu is a list of all workflow repositories associated with the user, grouped lexicographically by namespace. Words encapsulated in parentheses denotes a custom toolname if provided. Detailed information and links for each Workflow are located on the 'Info' tab.  Settings, such as the path to the CWL/WDL descriptor, can be modified on a per-tag basis in the 'Versions' tab. The Descriptors and test parameter files may be viewed in the 'Files' tab, by the Version tag (corresponding to a Git tag/branch). Finally, 'Manage labels' (located above the tabs) allows you to add/edit keywords that you want to be associated with a workflow for efficient searching and grouping.
 
-Just like with Tools, a workflow is not visible on the public 'Workflows' listing unless it is published. To publish a container, click the yellow 'Publish' button in the top-right corner.
+Just like with Tools, a workflow is not visible on the public 'Workflows' listing unless it is published. To publish a container, click the blue 'Publish' button in the top-right corner.
 
 #### Manual Registration of Workflows
 
 In certain cases, you may wish to register workflows in a different source code structure, especially when working with complex project structures. For example, if you want to register two workflows from the same repository.
 
-Workflows can be registered manually from the 'My Workflows' page by pressing the 'Register Workflow' button at the bottom of the right side bar, or any of the '+' buttons in each accordion namespace group. A modal will appear as below:
+Workflows can be registered manually from the 'My Workflows' page by pressing the 'Register Workflow' button at the bottom of the right side bar. A modal will appear as below:
 
 ![Register Workflow Manual](/assets/images/docs/register_workflow_manual.png)
 
-The Source Code Repository field must be filled out and is in the format `namespace/name` (the two paths may differ). The Workflow (descriptor) path and test parameter path are relative to the root of the Source Code Repository (and must begin with '/'), these will be the default locations to find their corresponding files, unless specified otherwise in the tags. The toolname is an optional 'suffix' appended to the Dockstore path, it allows for two workflows to share the same Git paths; the toolname uniquely distinguishes image repositories in Dockstore.
+The first option allows you to register a workflow from an existing third party repository.  The second option allows you to write your workflow files and store them directly on Dockstore.org. You can read more about hosted workflows [here](/docs/publisher-tutorials/hosted-tools-and-workflows/), but for now, let's select the first option.  Clicking 'Next' will bring up the following modal: 
+
+![Register Workflow Manual2](/assets/images/docs/register_workflow_manual2.png)
+
+Source Code Provider allows you to choose between GitHub, BitBucket, and GitLab (your respective accounts for these third party repositories need to be linked to your Dockstore account). The Source Code Repository field must be filled out and is in the format `namespace/name` (the two paths may differ). The Workflow (descriptor) path and test parameter path are relative to the root of the Source Code Repository (and must begin with '/'). These will be the default locations to find their corresponding files, unless specified otherwise in the tags. The Workflow Name is an optional 'suffix' appended to the Dockstore path. It allows for two workflows to share the same Git paths; the Workflow Name uniquely distinguishes workflow repositories in Dockstore.
 
 Upon successful submission and publishing of the workflow, a resynchronization call will be made to fetch all available data from the given sources.
 

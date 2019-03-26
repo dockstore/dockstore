@@ -22,7 +22,7 @@ In the authenticated Web UI, navigate to 'My Tools' to begin managing Docker ima
 
 ![My Tools](/assets/images/docs/register_ui.png)
 
-The left side menu is a list of all image repositories associated with the user, grouped lexicographically by namespace. Each tool is named after the docker location of the associated Docker image, in this example, `quay.io/collaboratory/dockstore-tool-bamstats`. Detailed information and links for each tool are located on the 'Info' tab. The 'Launch' tab includes commands for launching the tool locally with the Dockstore CLI. The 'Labels' tab allows editing of keywords to be associated with a tool for efficient searching and grouping. Settings such as the path to the Dockerfile and the Descriptor files can be modified on a per-tag basis in the 'Versions' tab. The Dockerfile, CWL/WDL Descriptor and test parameter files may be viewed in the 'Files' tab, by the Version tag (corresponding to a Git tag/branch).
+The left side menu is a list of all image repositories associated with the user, grouped lexicographically by namespace. Each tool is named after the docker location of the associated Docker image, in this example, `quay.io/collaboratory/dockstore-tool-bamstats`. Detailed information and links for each tool are located on the 'Info' tab. The 'Launch' tab includes commands for launching the tool locally with the Dockstore CLI. Settings such as the path to the Dockerfile and the Descriptor files can be modified on a per-tag basis in the 'Versions' tab. The Dockerfile, CWL/WDL Descriptor and test parameter files may be viewed in the 'Files' tab, by the Version tag (corresponding to a Git tag/branch). Finally, 'Manage labels' (located above the tabs) allows you to add/edit keywords that you want to be associated with a workflow for efficient searching and grouping.
 
 We also look for `/test.cwl.json` and `/test.wdl.json` in the git repositories on quick registration. These are the default test parameter file locations. Whenever a new version is added, we will check for these default files. You can also change these after quick registration. They will be applied to all versions that have not been edited, as well as any new versions that may appear.
 
@@ -67,9 +67,9 @@ Tools can be registered manually from the 'My Tools' page by pressing the plus b
 
 Select 'Use CWL, WDL or Nextflow from GitHub, BitBucket, etc' and click next.
 
-The Source Code Repository and Image Registry fields must be filled out, they are in the format `namespace/name` (the two paths may differ). The Dockerfile Path,  CWL/WDL Descriptor Paths, and CWL/WDL Test Parameter Paths are relative to the root of the Source Code Repository (and must begin with '/'), these will be the default locations to find their corresponding files, unless specified otherwise in the tags. The toolname is an optional 'suffix' appended to the Dockstore path, it allows for two repositories to share the same Git and Image Registry paths; the combination of Docker image registry path and toolname uniquely distinguishes tools in Dockstore.
+The Source Code Repository and Image Registry fields must be filled out, and they are in the format `namespace/name` (the two paths may differ). The Dockerfile Path,  CWL/WDL Descriptor Paths, and CWL/WDL Test Parameter Paths are relative to the root of the Source Code Repository (and must begin with '/'). These will be the default locations to find their corresponding files, unless specified otherwise in the tags. The toolname is an optional 'suffix' appended to the Dockstore path. It allows for two repositories to share the same Git and Image Registry paths; the combination of Docker image registry path and toolname uniquely distinguishes tools in Dockstore.
 
-If you want to register a private Docker image and manage access, please click the "private" checkbox. You will also be asked for a tool maintainer email. This is the email of the person responsible for giving users access to your tool on external sites. If you do not provide a tool maintainer email, we will use the email found in the tool's CWL descriptor instead if provided.
+If you want to register a private Docker image and manage access, please click the "private" checkbox. You will also be asked for a tool maintainer email. This is the email of the person responsible for giving users access to your tool on external sites. If you do not provide a tool maintainer email, we will use the email found in the tool's CWL descriptor instead, if provided.
 
 Upon successful submission and registration of the tool, a resynchronization call will be made to fetch all available data from the given sources. If the image registry is Quay.io, existing version tags will be prepopulated for the Dockstore record.
 
@@ -190,8 +190,8 @@ Flags:
 
 You can then use `dockstore tool publish` to see the list of available Docker images you can register with Dockstore. This is for you to publish tools that are auto-detected from Quay.io. The key is that Docker images you wish to (quick) publish have the following qualities:
 
-0. public
-0. at least one valid tag. In order to be valid, a tag has to:
+0. Public
+0. At least one valid tag. In order to be valid, a tag has to:
     * be automated from a GitHub, Bitbucket, or GitLab reference
     * have the reference be linked to the `Dockerfile`
     * have the reference be linked a corresponding `Dockstore.cwl`
@@ -299,7 +299,7 @@ Recommended when you are using a Quay.io registry, want a quick and easy way to 
 
 **When to use**:
 
-Recommended when you're not using Quay.io or if someone else has the same tool name already and you want your own tool instead.  Also if you are not using build triggers.
+Recommended when you're not using Quay.io, someone else has the same tool name already and you want your own tool instead, or if you are not using build triggers.
 
 ### Converting Between Build Modes
 

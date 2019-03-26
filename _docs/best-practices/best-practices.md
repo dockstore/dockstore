@@ -78,7 +78,7 @@ For file formats, we recommend one of the following before sharing your tool wit
 - reference a local ontology for your institution
 - not add a file format initially for quick development
 
-Note that as a value-add `cwltool` can do some basic reasoning based on file formats and warn you if there seem to be some obvious mismatches.
+Note that as a value-add, `cwltool` can do some basic reasoning based on file formats and warn you if there seem to be some obvious mismatches.
 
 *metadata_example1.cwl*
 ```
