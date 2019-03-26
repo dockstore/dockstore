@@ -33,7 +33,7 @@ All of the information that was defined in the organization registration form ca
 
 Additionally, you can add a freeform markdown description to an organization, however it is entirely optional. It is recommended that organizations have at least a basic description.
 
-### Handling organization requests
+### Viewing organization requests
 Organization requests can be viewed on the `requests` tab of the [accounts](https://dockstore.org/accounts) page. Currently this is the only way to track your unapproved organizations. Once your organization is approved, it will disappear from this page.
 
 ![Pending Organization Request](/assets/images/docs/PendingRequests.png)
