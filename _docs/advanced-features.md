@@ -50,10 +50,12 @@ The below summarizes some of the plugins available:
 
 | Plugin                                                                                | Prefix  | Example                                                                                          | Supported Operations                     |
 |---------------------------------------------------------------------------------------|:-------:|--------------------------------------------------------------------------------------------------|------------------------------------------|
-| [s3-plugin](https://github.com/dockstore/s3-plugin)                                   | s3://   | s3://oicr.temp/bamstats_report.zip                                                               | upload, download, set metadata on upload |
+| [s3-plugin](https://github.com/dockstore/s3-plugin)                                   | s3://   | s3://oicr.temp/bamstats_report.zip                                                               | download, upload, set metadata on upload |
 | [icgc-storage-client-plugin](https://github.com/dockstore/icgc-storage-client-plugin) | icgc:// | icgc://eeca3ccd-fa4e-57bf-9fde-c9d0ddf69935                                                      | download directories                     |
 | [synapse-plugin](https://github.com/dockstore/synapse-plugin)                         | syn://  | syn://syn8299856                                                                                 | download                                 |
 | [data-object-service-plugin](https://github.com/dockstore/data-object-service-plugin) | dos://  | dos://ec2-52-26-45-130.us-west-2.compute.amazonaws.com:8080/911bda59-b6f9-4330-9543-c2bf96df1eca | download                                 |
+| [gcs-plugin](https://github.com/dockstore/gs-plugin)                                  | gs://   | gs://genomics-public-data/references/GRCh38/chr1.fa.gz                                           | download, upload, set metadata on upload |
+
 
 ### AWS S3
 
@@ -63,7 +65,7 @@ Get more information on the implementing plugin at [s3-plugin](https://github.co
 
 ### Google Cloud Storage
 
-For Google Cloud Storage, you can download, upload, and set metadata on uploaded objects with the gs-plugin.  The plugin handles urls with the `gs://` prefix such as `gs://genomics-public-data/references/GRCh38/chr1.fa.gz`. Get more information on the implementing plugin at https://github.com/dockstore/gs-plugin.
+For Google Cloud Storage, you can download, upload, and set metadata on uploaded objects with the gs-plugin.  The plugin handles urls with the `gs://` prefix such as `gs://genomics-public-data/references/GRCh38/chr1.fa.gz`. Get more information on the implementing plugin at [gs-plugin](https://github.com/dockstore/gs-plugin).
 
 ### ICGC Storage
 
