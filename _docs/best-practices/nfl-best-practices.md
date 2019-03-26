@@ -6,8 +6,6 @@ permalink: /docs/publisher-tutorials/nfl-best-practices/
 
 ## Authorship Metadata
 
-> For Dockstore 1.5.0+
-
 {% include_relative authorship-metadata-intro.md %}
 
 This example includes author and description metadata:
@@ -36,3 +34,6 @@ This results in the workflow's Info Tab being populated like:
 ## Next Steps
 
 {% include_relative authorship-metadata-outro.md %}
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbLTEzMzk2NjQ0ODhdfQ==
+-->
