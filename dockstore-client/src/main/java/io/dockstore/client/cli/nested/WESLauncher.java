@@ -25,6 +25,7 @@ public class WESLauncher extends BaseLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(WESLauncher.class);
     private static final String TAGS = "WorkflowExecutionService";
     private static final String WORKFLOW_TYPE_VERSION = "1.0";
+    private static final String WDL_WORKFLOW_TYPE_VERSION = "draft-2";
 
     protected List<String> command;
     protected Map<String, List<FileProvisioning.FileInfo>> outputMap;
@@ -124,8 +125,12 @@ public class WESLauncher extends BaseLauncher {
         final File tempDir = Files.createTempDir();
 
         List<File> workflowAttachment = new ArrayList<>();
-        addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry, tempDir);
+
+        // Our current Cromwell endpoint requires that the first workflow attachment item be the source
+        // for the primary descriptor
         workflowAttachment.add(localPrimaryDescriptorFile);
+
+        addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry, tempDir);
         File jsonInputFile = new File(jsonString);
         workflowAttachment.add(jsonInputFile);
 
@@ -135,6 +140,8 @@ public class WESLauncher extends BaseLauncher {
         String workflowTypeVersion = WORKFLOW_TYPE_VERSION;
         if ("CWL".equals(languageType.toUpperCase())) {
             workflowTypeVersion = "v" + WORKFLOW_TYPE_VERSION;
+        } else if ("WDL".equals(languageType.toUpperCase())) {
+            workflowTypeVersion = WDL_WORKFLOW_TYPE_VERSION;
         }
 
         try {
