@@ -65,6 +65,8 @@ Get more information on the implementing plugin at [s3-plugin](https://github.co
 
 ### Google Cloud Storage
 
+> Automatically installed in Dockstore 1.6.0+
+
 For Google Cloud Storage, you can download, upload, and set metadata on uploaded objects with the gs-plugin.  The plugin handles urls with the `gs://` prefix such as `gs://genomics-public-data/references/GRCh38/chr1.fa.gz`. Get more information on the implementing plugin at [gs-plugin](https://github.com/dockstore/gs-plugin).
 
 ### ICGC Storage
@@ -204,3 +206,6 @@ dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUU
 ### Notes
 - To disable notifications, simply remove the webhook URL from the Dockstore config file
 - If the UUID is generated, the generated UUID will be displayed in beginning of the launch stdout
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbMjA4MjI5MzQ4NV19
+-->
