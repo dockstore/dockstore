@@ -100,19 +100,20 @@ public class WESLauncher extends BaseLauncher {
         File[] listOfFiles = tempDir.listFiles();
         for (int i = 0; i < listOfFiles.length; i++) {
             if (listOfFiles[i].isFile()) {
-                // TODO check file extension (type) only for a local entry; pass all files found in remote entry folder?
-                // Locate code that grabs all imports for a non local entry and use that instead of checking extension
+                // TODO Locate code that grabs all imports for a non local entry and use that instead of checking extension
                 // since CWL can import many file types
                 // There may be confidential or large files that are not needed in a local directory that should
                 // not be sent to a remote endpoint?
-                if (fileIsCorrectType(listOfFiles[i])) {
-                    System.out.println("Adding file " + listOfFiles[i].getName() + " to workflow attachment");
-                    File fileToAdd = new File(tempDir, listOfFiles[i].getName());
-                    workflowAttachment.add(fileToAdd);
-                } else {
+                if (abstractEntryClient.isLocalEntry() && !fileIsCorrectType(listOfFiles[i])) {
                     System.out.println("File " + listOfFiles[i].getName() + " is not the correct type for the workflow so it will not be "
                             + "added to the workflow attachment");
+                    continue;
                 }
+
+                System.out.println("Adding file " + listOfFiles[i].getName() + " to workflow attachment");
+                File fileToAdd = new File(tempDir, listOfFiles[i].getName());
+                workflowAttachment.add(fileToAdd);
+
             } else if (listOfFiles[i].isDirectory()) {
                 System.out.println("Found directory " + listOfFiles[i].getName());
             }
@@ -126,8 +127,11 @@ public class WESLauncher extends BaseLauncher {
 
         List<File> workflowAttachment = new ArrayList<>();
 
-        // Our current Cromwell endpoint requires that the first workflow attachment item be the source
+        // Our current Cromwell WES endpoint requires that the first workflow attachment item be the source
         // for the primary descriptor
+        // add it as the first item in the workflow attachement even though it may again
+        // be added as an attachment in addFilesToWorkflowAttachment
+        // Including it twice should not cause a problem
         workflowAttachment.add(localPrimaryDescriptorFile);
 
         addFilesToWorkflowAttachment(workflowAttachment, this.zippedEntry, tempDir);
