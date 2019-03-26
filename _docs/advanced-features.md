@@ -244,7 +244,7 @@ dockstore workflow wes launch --local-entry Dockstore.cwl --json test.json --wes
 
 - Get status on a run (a run id is returned in the response from launching a WES workflow run):
 ```bash
-dockstore workflow wes cancel --id <run id> [--verbose]
+dockstore workflow wes status --id <run id> [--verbose]
 ```
 
 - Cancel a run (a run id is returned in the response from launching a WES workflow run):
