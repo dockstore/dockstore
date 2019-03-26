@@ -257,7 +257,7 @@ public class WDLHandler implements LanguageHandlerInterface {
             } catch (NoSuchMethodException e) {
                 //FIXME: the best we can do is be generous and assume that unknown methods are WDL 1.0 methods until we update
                 // https://github.com/ga4gh/dockstore/issues/2139
-                validationMessageObject.put(primaryDescriptorFilePath, "unknown methods indicate that this might be a WDL 1.0 file\n we skipped validation: will likely break import parsing and dag generation:\n" + e.getMessage());
+                validationMessageObject.put(primaryDescriptorFilePath, "Unknown methods were found, indicating that this may be a WDL 1.0 file. Currently Dockstore cannot parse WDL 1.0, so validation has been skipped. It is likely that the import processing and DAG generation will be broken.\n" + e.getMessage());
                 return new VersionTypeValidation(true, validationMessageObject);
             } catch (Exception e) {
                 throw new CustomWebApplicationException(e.getMessage(), HttpStatus.SC_INTERNAL_SERVER_ERROR);
