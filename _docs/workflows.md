@@ -42,7 +42,7 @@ The steps to accomplish this task, at a high level, are:
 
 ## Create Workflow Stubs from GitHub, Bitbucket, and GitLab
 
-The first step is to create a CWL or WDL workflow descriptor for your workflow and then check it into GitHub, Bitbucket or GitLab in a repo, we recommend the filename `Dockstore.cwl` at the root of your repository for simplicity but anything else with a consistent extension should work just as well. The details as to how to write a workflow are somewhat beyond the scope of this tutorial, but we can recommend the [Introduction to the CWL](http://www.commonwl.org/user_guide/) and [Getting Started with WDL](https://github.com/openwdl/wdl/tree/master#getting-started-with-wdl).
+The first step is to create a CWL or WDL workflow descriptor for your workflow and then check it into GitHub, Bitbucket or GitLab in a repo. We recommend the filename `Dockstore.cwl` at the root of your repository for simplicity, but anything else with a consistent extension should work just as well. The details as to how to write a workflow are somewhat beyond the scope of this tutorial, but we can recommend the [Introduction to the CWL](http://www.commonwl.org/user_guide/) and [Getting Started with WDL](https://github.com/openwdl/wdl/tree/master#getting-started-with-wdl).
 
 You can also check in test parameter files into the same Git repo. These files are example input JSON (or YAML) files for running the given workflow. It should be easy for a user to run your workflow with the test parameter files in order to see an example of your workflow. So try to store any required files in the same Git repository or somewhere else where the files are likely to be present.
 

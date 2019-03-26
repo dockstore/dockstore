@@ -271,7 +271,7 @@ The command line first provisions files.  In our case, the files were local so n
 
 **Tip:** you can use `--debug` to get much more information during this run, including the actual call to cwltool (which can be super helpful in debugging).
 
-**Tip:** the `dockstore` CLI automatically creates a `datastore` directory in the current working directory where you execute the command and uses it for inputs/outputs.  It can get quite large depending on the tool/inputs/outputs being used.  Plan accordingly e.g. execute the dockstore CLI in a directory located on a partition with sufficient storage.
+**Tip:** the `dockstore` CLI automatically creates a `datastore` directory in the current working directory where you execute the command and uses it for inputs/outputs.  It can get quite large depending on the tool/inputs/outputs being used.  Plan accordingly, e.g. execute the dockstore CLI in a directory located on a partition with sufficient storage.
 
 ## Adding a Test Parameter File
 

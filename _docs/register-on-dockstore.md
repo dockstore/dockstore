@@ -14,8 +14,6 @@ This tutorial is a continuation of <a href="/docs/prereqs/getting-started-with-c
 ## Register on Dockstore
 Before you can publish your new tool, you need to create a Dockstore account and link the relevant services. Dockstore supports login through GitHub using OAuth2. You can register at the [login/register page](https://www.dockstore.org/login).
 
-*Only available in 1.5.0*
-
 You can also login with your Google Account. This is required to use the workflow sharing feature for users coming from Firecloud.
 
 ## Dockstore usernames
@@ -25,7 +23,6 @@ Your username will be visible in any public tool or workflow that you have.
 If you register with GitHub, we will default to your GitHub username. As of 1.5.0, if you register with Google, we will default to the email associated with your Google account.
 
 ### Changing your username
-*Only available in 1.5.0*
 
 You can change your username in the onboarding wizard during setup or from the accounts page at the Dockstore Account Controls tab.
 
@@ -44,8 +41,6 @@ Once you register you can start linking your external accounts. There is also a 
 * Quay.io
 
 Your link to GitHub is established on login and you will then be prompted to link your other accounts.
-
-*Only available in 1.5.0*
 
 If you registered with Google, you will also need to link your GitHub account to follow along with the tutorial.
 

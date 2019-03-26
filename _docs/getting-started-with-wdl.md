@@ -157,7 +157,7 @@ This downloads to my current directory.  I could choose another location, it rea
 }
 ```
 
-**Tip:** the Dockstore CLI can handle inputs with HTTPS, FTP, and S3 URLs but that's beyond the scope of this tutorial.
+**Tip:** the Dockstore CLI can handle inputs with HTTPS, FTP, GS, and S3 URLs but that's beyond the scope of this tutorial.
 
 You can see in the above I give the relative path to the input under `bam_input` and the memory in GB that I want to use for the task.
 
