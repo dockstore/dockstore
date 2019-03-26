@@ -3,8 +3,6 @@ title: Sharing Workflows
 permalink: /docs/publisher-tutorials/sharing-workflows/
 ---
 
-> For Dockstore 1.5.0+
-
 # Intro
 
 Starting in Dockstore 1.5, a limited sharing functionality has been introduced. With sharing,
