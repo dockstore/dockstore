@@ -4,54 +4,66 @@ permalink: /docs/publisher-tutorials/organizations-and-collections/
 ---
 
 # Organizations and Collections
-Dockstore 1.6.0 adds the ability to create organizations and associated collections in order to organize tools and workflows in a public facing way.
 
 ## Organizations
-Any user can request for an organization to be created by filling out the following form. Note that the request must be accepted by a Dockstore curator in order to be public. To create an organization request, go to the [organizations](https://dockstore.org/organizations) page and select `Create Organization Request`.
+Organizations are landing pages for collaborations, institutions, consortiums, companies, etc. that allow users to showcase tools and workflows. This is achieved through the creation of collections, which are groupings of related tools and workflows. The users of an organization do not need to own the tools or workflows in any way, the tools and workflows just have to be published. Collections can be thought of as a playlist on a Music Streaming Service where tools and workflows are analogous to individual songs. They can be shared publicly, and the user does not need to own them.
+
+### Creating an organization
+To create an organization request, go to the [organizations](https://dockstore.org/organizations) page and select `Create Organization Request`. Any user can request to create an organization by filling out the following form. For now, the request must be approved by a Dockstore curator in order to be public. Until it is, you are still able to edit it, add collections, add members, etc.
 
 ![Create Organization Request](/assets/images/docs/CreateOrganizationRequest.png)
 
-The name, display name, and topic are all **required**. Note that they can be changed later.
-* **name** - the name used in URLs and as an identifier (unique)
-* **display name** - the pretty name used anywhere the organization is mentioned (unique)
-* **topic** - a short description of the organization (1-2 sentences)
+The fields for name, display name, and topic are all required. These can be changed later.
+* **Name** - the name used in URLs and as an identifier (unique)
+* **Display Name** - the pretty name used anywhere the organization is mentioned that allows for other characters such as spaces (unique)
+* **Topic** - a short description of the organization (1-2 sentences)
 
-Once a user creates an organization request, they will be redirected to the organization page. Here they can make edits to the organization, add collections, even add members. The organization is not public though, and will require acceptance by a Dockstore curator before it can be viewed publicly.
+Once a user creates an organization request, they will be redirected to the organization page. Here they can make edits to the organization, add collections, even add members. The organization is not public though, and will require acceptance by a Dockstore curator before it can be viewed publicly..
 
 ![Pending Organization](/assets/images/docs/PendingOrganization.png)
 
+Optional Fields:
+* **Website** - a link to the organization’s external webpage
+* **Location**  - where an organization is located, for example a city or university   
+* **Email** - a general contact email address for users to direct queries
+* **Avatar** - a link to the organization's logo. Link must end in .jpg, .jpeg, .png, or .gif
+
 ### Updating the metadata
-All of the information that was defined in the register organization form can be updated after the organization is created.
+All of the information that was defined in the organization registration form can be updated after the organization is created.
 
-### Updating the description
-A freeform markdown description can be added to an organization, however it is entirely optional. It is recommended that organizations have at least a basic description.
+Additionally, you can add a freeform markdown description to an organization, however it is entirely optional. It is recommended that organizations have at least a basic description.
 
-### Viewing organization requests
-Organization requests can be viewed on the `requests` tab of the [accounts](https://dockstore.org/accounts) page. Currently this is the only way to find your unapproved organizations.
+### Handling organization requests
+Organization requests can be viewed on the `requests` tab of the [accounts](https://dockstore.org/accounts) page. Currently this is the only way to track your unapproved organizations. Once your organization is approved, it will disappear from this page.
+
 ![Pending Organization Request](/assets/images/docs/PendingRequests.png)
+
+If your organization was rejected, it will move to the rejected section of the requests tab. Once you’ve made changes to the organization, you can request a re-review from here.
+
+![Rejected Organization Request](/assets/images/docs/RejectedRequests.png)
 
 ### Handling organization membership
 Anyone can see an approved organization, though only members and maintainers of the organization can perform actions on the organizations. This includes adding collections, updating metadata, and adding new members.
 
 There are two types of roles available:
-* **maintainer** - can update organization, collections and membership
-* **member** - can only update organization and collections
+* **Maintainer** - can update organization, collections and membership
+* **Member** - can only update organization and collections
 
-Membership can be updated on the membership tab of the organization page. Note that a maintainer cannot delete their own membership.
+Membership can be updated on the membership tab of the organization page. A maintainer cannot delete their own membership.
 
-When a user is requested to join an organization, they will get a request which is available at the `requests` tab of the [accounts](https://dockstore.org/accounts) page. Here they can either accept or reject the invitation.
+When a user is requested to join an organization, they will get an invite which is available at the `requests` tab of the [accounts](https://dockstore.org/accounts) page. Here they can either accept or reject the invitation.
 
 ## Collections
-Collections are a way of organizing related tools and workflows in an easily accessible location. They can be used for grouping tools and workflows for a specific grant, theme, field, etc. A collection is only publicly visible to users if the organization that it belongs to is approved.
+Collections are a way of gathering related tools and workflows in an easily accessible location. They can be used for grouping tools and workflows for a specific grant, theme, field, etc. A collection is only publicly visible if the organization that it belongs to is approved.
 
 ### Creating a collection
 To create a collection, go to the collections tab on the organization page and select `Create collection`.
 ![Create Collection](/assets/images/docs/CreateCollection.png)
 
-Collections have the same core information as organizations. The name, display name, and topic are all **required**. Note that they can be changed later.
-* **name** - the name used in URLs and as an identifier (unique within organization)
-* **display name** - the pretty name used anywhere the collection is mentioned (unique within organization)
-* **topic** - a short description of the collection (1-2 sentences)
+Collections have the same core information as organizations. The name, display name, and topic are all **required**. They can be changed later.
+* **Name** - the name used in URLs and as an identifier (unique within organization)
+* **Display Name** - the pretty name used anywhere the collection is mentioned (unique within organization)
+* **Topic** - a short description of the collection (1-2 sentences)
 
 **Note**: Tools and workflows are added to the collection after it is created.
 
@@ -60,11 +72,10 @@ Collections have the same core information as organizations. The name, display n
 ### Updating the metadata
 All of the information that was defined in the add collection form can be updated after the collection is created.
 
-### Updating the description
 A freeform markdown description can be added to a collection, however it is entirely optional. It is recommended that collections have at least a basic description.
 
 ### Adding tools and workflows
-Only published tools and workflows can be added to a collection. To add a tool or a workflow to a collection, go to the public page for the entry and click `Add to collection` on the right-hand side.
+Only published tools and workflows can be added to a collection. If a tool belonging to a collection is unpublished, it will be hidden until it is published again. To add a tool or a workflow to a collection, go to the public page for the entry and click `Add to collection` on the right-hand side.
 
 ![Add to Collection](/assets/images/docs/AddToCollection.png)
 
