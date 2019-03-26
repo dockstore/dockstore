@@ -6,8 +6,6 @@ permalink: /docs/publisher-tutorials/wdl-best-practices/
 
 ## Authorship Metadata
 
-> For Dockstore 1.5.0+
-
 {% include_relative authorship-metadata-intro.md %}
 
 This example includes author, email, and description metadata:
@@ -100,3 +98,6 @@ Cromwell stdout:
 ## Next Steps
 
 {% include_relative authorship-metadata-outro.md %}
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbLTIwODc2OTc1NTldfQ==
+-->
