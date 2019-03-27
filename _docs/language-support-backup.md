@@ -11,7 +11,7 @@ Sample markdown table
 | Tool registration      | ✔             | ✔     | 
 | Workflow registration  | ✔             | ✔     |  
 | DAG Display            | ✔             | ✔     |  
-| Launch-with Platforms  | N/A           | FireCloud<br>DNAStack |  
+| Launch-with Platforms  | N/A           | FireCloud<br>DNAstack |  
 | **CLI**                |               |       |
 | File Provisioning      | Local File System<br>HTTP<br>FTP<br>S3             | Local File System     | 
 | Local workflow engines | cwltool<br>Bunny<br>Toil (experimental)              | Cromwell* |

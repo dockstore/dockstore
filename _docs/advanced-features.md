@@ -46,11 +46,28 @@ Provisioning for output files works in the same way and has been tested with S3 
 
 For some file provisioning methods, additional configuration may be required.
 
+The below summarizes some of the plugins available:
+
+| Plugin                                                                                | Prefix  | Example                                                                                          | Supported Operations                     |
+|---------------------------------------------------------------------------------------|:-------:|--------------------------------------------------------------------------------------------------|------------------------------------------|
+| [s3-plugin](https://github.com/dockstore/s3-plugin)                                   | s3://   | s3://oicr.temp/bamstats_report.zip                                                               | download, upload, set metadata on upload |
+| [icgc-storage-client-plugin](https://github.com/dockstore/icgc-storage-client-plugin) | icgc:// | icgc://eeca3ccd-fa4e-57bf-9fde-c9d0ddf69935                                                      | download directories                     |
+| [synapse-plugin](https://github.com/dockstore/synapse-plugin)                         | syn://  | syn://syn8299856                                                                                 | download                                 |
+| [data-object-service-plugin](https://github.com/dockstore/data-object-service-plugin) | dos://  | dos://ec2-52-26-45-130.us-west-2.compute.amazonaws.com:8080/911bda59-b6f9-4330-9543-c2bf96df1eca | download                                 |
+| [gcs-plugin](https://github.com/dockstore/gs-plugin)                                  | gs://   | gs://genomics-public-data/references/GRCh38/chr1.fa.gz                                           | download, upload, set metadata on upload |
+
+
 ### AWS S3
 
 For AWS S3, create a `~/.aws/credentials` file and a `~/.aws/config` file as documented at the following [location](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-config-files).
 
 Get more information on the implementing plugin at [s3-plugin](https://github.com/dockstore/s3-plugin).
+
+### Google Cloud Storage
+
+> Automatically installed in Dockstore 1.6.0+
+
+For Google Cloud Storage, you can download, upload, and set metadata on uploaded objects with the gs-plugin.  The plugin handles urls with the `gs://` prefix such as `gs://genomics-public-data/references/GRCh38/chr1.fa.gz`. Get more information on the implementing plugin at [gs-plugin](https://github.com/dockstore/gs-plugin).
 
 ### ICGC Storage
 
@@ -67,8 +84,6 @@ Get more information on the implementing plugin at [synapse-plugin
 ](https://github.com/dockstore/synapse-plugin).
 
 ### Data Object Service (DOS)
-
-> For Dockstore 1.5.0+
 
 Currently, no additional configuration is directly supported by the Data Object Service plugin.
 However, specifying a DOS URI will lead to downloading a file by either built-in
@@ -171,7 +186,7 @@ Additionally, it will also provide notifications when any of these steps have fa
 - Define a webhook URL in the Dockstore config file with the "notifications" property like:
 ```
 token: iamafakedockstoretoken
-server-url: https://dockstore.org:8443
+server-url: https://dockstore.org/api
 notifications: https://hooks.slack.com/services/aaa/bbb/ccc
 ```
 - UUID can be generated or user-defined uuid in the dockstore launch command like:
@@ -191,3 +206,6 @@ dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUU
 ### Notes
 - To disable notifications, simply remove the webhook URL from the Dockstore config file
 - If the UUID is generated, the generated UUID will be displayed in beginning of the launch stdout
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbMjA4MjI5MzQ4NV19
+-->

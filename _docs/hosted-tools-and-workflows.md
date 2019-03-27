@@ -17,7 +17,7 @@ A hosted tool or workflow is simply an entry where instead of files being stored
 **Note:** For hosted tools we do not store the Docker image in our own registry.
 
 ## Adding a Hosted Workflow
-In this example we are going to add a simple CWL workflow to Dockstore as a hosted workflows.
+In this example we are going to add a simple CWL workflow to Dockstore as a hosted workflow.
 
 To add a hosted workflow do the following:
 * Go to [my workflows](https://dockstore.org/my-workflows)
