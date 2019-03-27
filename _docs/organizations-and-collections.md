@@ -6,19 +6,19 @@ permalink: /docs/publisher-tutorials/organizations-and-collections/
 # Organizations and Collections
 
 ## Organizations
-Organizations are landing pages for collaborations, institutions, consortiums, companies, etc. that allow users to showcase tools and workflows. This is achieved through the creation of collections, which are groupings of related tools and workflows. The users of an organization do not need to own the tools or workflows in any way, the tools and workflows just have to be published. Collections can be thought of as a playlist on a Music Streaming Service where tools and workflows are analogous to individual songs. They can be shared publicly, and the user does not need to own them.
+Organizations are landing pages for collaborations, institutions, consortiums, companies, etc. that allow users to showcase tools and workflows. This is achieved through the creation of collections, which are groupings of related tools and workflows. The users of an organization do not need to own the tools or workflows in any way; the tools and workflows just have to be published. Collections can be thought of as a playlist on a music streaming service where tools and workflows are analogous to individual songs. They can be shared publicly, and the user does not need to own them.
 
 ### Creating an organization
-To create an organization request, go to the [organizations](https://dockstore.org/organizations) page and select `Create Organization Request`. Any user can request to create an organization by filling out the following form. For now, the request must be approved by a Dockstore curator in order to be public. Until it is, you are still able to edit it, add collections, add members, etc.
+To create an organization request, go to the [organizations](https://dockstore.org/organizations) page and select `Create Organization Request`. Any user can request to create an organization by filling out the following form. For now, the request must be approved by a Dockstore curator in order to be public. Until it is approved, you are still able to edit it, add collections, add members, etc.
 
 ![Create Organization Request](/assets/images/docs/CreateOrganizationRequest.png)
 
-The fields for name, display name, and topic are all required. These can be changed later.
-* **Name** - the name used in URLs and as an identifier (unique)
-* **Display Name** - the pretty name used anywhere the organization is mentioned that allows for other characters such as spaces (unique)
+The fields for name, display name, and topic are all required. These can be changed later. The organization name and display name must be unique across all of Dockstore.
+* **Name** - the name used in URLs and as an identifier
+* **Display Name** - the pretty name used anywhere the organization is mentioned that allows for other characters such as spaces
 * **Topic** - a short description of the organization (1-2 sentences)
 
-Once a user creates an organization request, they will be redirected to the organization page. Here they can make edits to the organization, add collections, even add members. The organization is not public though, and will require acceptance by a Dockstore curator before it can be viewed publicly..
+Once a user creates an organization request, they will be redirected to the organization page. Here they can make edits to the organization, add collections, even add members. The organization is not public though, and will require acceptance by a Dockstore curator before it can be viewed publicly.
 
 ![Pending Organization](/assets/images/docs/PendingOrganization.png)
 
@@ -60,9 +60,9 @@ Collections are a way of gathering related tools and workflows in an easily acce
 To create a collection, go to the collections tab on the organization page and select `Create collection`.
 ![Create Collection](/assets/images/docs/CreateCollection.png)
 
-Collections have the same core information as organizations. The name, display name, and topic are all **required**. They can be changed later.
-* **Name** - the name used in URLs and as an identifier (unique within organization)
-* **Display Name** - the pretty name used anywhere the collection is mentioned (unique within organization)
+Collections have the same core information as organizations. The name, display name, and topic are all **required**. They can be changed later. The collection name and display name must be unique across all collections within the organization.
+* **Name** - the name used in URLs and as an identifier
+* **Display Name** - the pretty name used anywhere the collection is mentioned
 * **Topic** - a short description of the collection (1-2 sentences)
 
 **Note**: Tools and workflows are added to the collection after it is created.
@@ -84,9 +84,9 @@ This will open a dialog where you can select which collection to add the entry t
 
 Once added, the entry will appear on the collection page. If a user wants to remove an entry from a collection, they can do so from the collections page.
 
-The `Current Collections` seciton will now link to the PCAWG collection.
+The `Current Collections` section will now link to the PCAWG collection.
 ![Add to Collection PCAWG](/assets/images/docs/CurrentCollectionsWithPCAWG.png)
 
 ## Events
-We keep track of events occurring related to organizations and collections and display the important ones in the `events` tab of the organization. Only a subset of all events are shown.
+We keep track of events occurring related to organizations and collections and display the important ones in the `events` tab of the organization.
 ![Events](/assets/images/docs/Events.png)
