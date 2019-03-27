@@ -1,5 +1,5 @@
 ---
-title: GUID Alias
+title: Alias
 permalink: /docs/publisher-tutorials/guid-alias/
 ---
 
