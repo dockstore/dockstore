@@ -131,6 +131,11 @@ public class Organization implements Serializable, Aliasable {
     @UpdateTimestamp
     private Timestamp dbUpdateDate;
 
+    @Column
+    @Pattern(regexp = "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)")
+    @ApiModelProperty(value = "Logo URL", position = 9)
+    private String avatarUrl;
+
     public Organization() {
         starredUsers = new TreeSet<>();
     }
@@ -139,11 +144,6 @@ public class Organization implements Serializable, Aliasable {
         this.id = id;
         starredUsers = new TreeSet<>();
     }
-
-    @Column
-    @Pattern(regexp = "([^\\s]+)(?i)(\\.jpg|\\.jpeg|\\.png|\\.gif)")
-    @ApiModelProperty(value = "Logo URL", position = 9)
-    private String avatarUrl;
 
     public long getId() {
         return id;
