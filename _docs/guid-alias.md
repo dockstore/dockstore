@@ -14,14 +14,14 @@ Currently the only way to add an alias to an entity is through our API. You can 
 * An alias cannot be removed
 
 ## Tools and Workflows
-If you would like to setup aliases for your tool or workflow, you can now do so through our API for now. Aliases can deal with the situation where there are multiple Dockstore-like sites (including Dockstore), and you have the same tool on each platform. You can use an alias to give this tool a unique name that could potentially be valid across all sites, independent of site specific naming conventions.
+If you would like to setup aliases for your tool or workflow, you can now do so through our API. Aliases are useful for when you would like to publish your work on Dockstore and other Dockstore-like sites. You can use an alias to give this tool a unique name that could potentially be valid across all sites, independent of site specific naming conventions.
 
 Use the `/entries/{id}/aliases` endpoint to add new aliases. You can specify the aliases as a comma-delimited list.
 
 ## Organizations and Collections
 > For Dockstore 1.6.0+
 
-The main use of an alias is as a permanent identifier for an entity, as the alias cannot change nor be removed. For example, an institution might go through a rebranding exercise. This might mean that the organization name might change. Similarly, a collection might change its name over time to highlight whether these are the current workflows in use.  However, the alias would survive and provide a permanent URL to a collection or organization.
+The main use of an alias is as a permanent identifier for an entity that is used to create a stable URL. Aliases can neither be changed nor removed. For example, an institution that must change its name would also like to modify its organization name in Dockstore. Similarly, a collection might change its name over time to highlight the current workflows in use. By providing an alias, a stable URL is created for a collection or organization regardless of its name.
 
 You can link to an organization that has the alias `MyOrganization` using the link [https://dockstore.org/aliases/organizations/MyOrganization](https://dockstore.org/aliases/organizations/MyOrganization). Similarily, you can link to a collection that has the alias `MyCollection` using the link [https://dockstore.org/aliases/collections/MyCollection](https://dockstore.org/aliases/collections/MyCollection). This is the recommended way to link to organizations and collections, as names can be changed, making linking by names quite fragile.
 
