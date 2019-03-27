@@ -18,15 +18,15 @@ The fields for name, display name, and topic are all required. These can be chan
 * **Display Name** - the pretty name used anywhere the organization is mentioned that allows for other characters such as spaces
 * **Topic** - a short description of the organization (1-2 sentences)
 
-Once a user creates an organization request, they will be redirected to the organization page. Here they can make edits to the organization, add collections, even add members. The organization is not public though, and will require acceptance by a Dockstore curator before it can be viewed publicly.
-
-![Pending Organization](/assets/images/docs/PendingOrganization.png)
-
 Optional Fields:
 * **Website** - a link to the organization’s external webpage
 * **Location**  - where an organization is located, for example a city or university   
 * **Email** - a general contact email address for users to direct queries
-* **Avatar** - a link to the organization's logo. Link must end in .jpg, .jpeg, .png, or .gif
+* **Avatar** - a link to the organization's logo. Link must end in .jpg, .jpeg, .png, or .gif````
+
+Once a user creates an organization request, they will be redirected to the organization page. Here they can make edits to the organization, add collections, even add members. The organization page and will require approval from a Dockstore curator before it can be viewed publicly.
+
+![Pending Organization](/assets/images/docs/PendingOrganization.png)
 
 ### Updating the metadata
 All of the information that was defined in the organization registration form can be updated after the organization is created.
@@ -42,16 +42,16 @@ If your organization was rejected, it will move to the rejected section of the r
 
 ![Rejected Organization Request](/assets/images/docs/RejectedRequests.png)
 
-### Handling organization membership
-Anyone can see an approved organization, though only members and maintainers of the organization can perform actions on the organizations. This includes adding collections, updating metadata, and adding new members.
+### Organization membership
+Anyone can see an approved organization, though only members and maintainers of the organization can perform actions on the organizations. This includes creating and adding to collections, updating metadata, and adding new members.
 
 There are two types of roles available:
-* **Maintainer** - can update organization, collections and membership
+* **Maintainer** - can update organization, collections, and membership
 * **Member** - can only update organization and collections
 
 Membership can be updated on the membership tab of the organization page. A maintainer cannot delete their own membership.
 
-When a user is requested to join an organization, they will get an invite which is available at the `requests` tab of the [accounts](https://dockstore.org/accounts) page. Here they can either accept or reject the invitation.
+When a user is requested to join an organization, they will receive an invite. Pending invitatons are displayed on the `requests` tab of the [accounts](https://dockstore.org/accounts) page and here a user can either accept or reject the request.
 
 ## Collections
 Collections are a way of gathering related tools and workflows in an easily accessible location. They can be used for grouping tools and workflows for a specific grant, theme, field, etc. A collection is only publicly visible if the organization that it belongs to is approved.
@@ -65,7 +65,7 @@ Collections have the same core information as organizations. The name, display n
 * **Display Name** - the pretty name used anywhere the collection is mentioned
 * **Topic** - a short description of the collection (1-2 sentences)
 
-**Note**: Tools and workflows are added to the collection after it is created.
+**Note**: Tools and workflows are added to a collection after it is created.
 
 ![Collection](/assets/images/docs/CollectionView.png)
 
@@ -75,18 +75,24 @@ All of the information that was defined in the add collection form can be update
 A freeform markdown description can be added to a collection, however it is entirely optional. It is recommended that collections have at least a basic description.
 
 ### Adding tools and workflows
-Only published tools and workflows can be added to a collection. If a tool belonging to a collection is unpublished, it will be hidden until it is published again. To add a tool or a workflow to a collection, go to the public page for the entry and click `Add to collection` on the right-hand side.
+Only published tools and workflows can be added to a collection. If a tool belonging to a collection is unpublished, it will be hidden on the collection page until the entry is published again. 
+To add a tool or a workflow to a collection, go to the public page for the entry and click `Add to collection` on the right-hand side.
 
 ![Add to Collection](/assets/images/docs/AddToCollection.png)
 
 This will open a dialog where you can select which collection to add the entry to.
+
 ![Add to Collection Dialog](/assets/images/docs/AddToCollectionModal.png)
+
+
+The `Current Collections` section will now link to the PCAWG collection.
+
+![Add to Collection PCAWG](/assets/images/docs/CurrentCollectionsWithPCAWG.png)
 
 Once added, the entry will appear on the collection page. If a user wants to remove an entry from a collection, they can do so from the collections page.
 
-The `Current Collections` section will now link to the PCAWG collection.
-![Add to Collection PCAWG](/assets/images/docs/CurrentCollectionsWithPCAWG.png)
-
 ## Events
-We keep track of events occurring related to organizations and collections and display the important ones in the `events` tab of the organization.
+We keep track of events occurring related to the activity on the organization page and display the important ones in the `events` tab of the organization.
+Details are displayed when hovering over the individual events.
+
 ![Events](/assets/images/docs/Events.png)
