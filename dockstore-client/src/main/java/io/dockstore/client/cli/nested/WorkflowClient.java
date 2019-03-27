@@ -419,6 +419,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         } else {
             if ((entry == null) != (localEntry == null)) {
                 if (entry != null) {
+                    this.isLocalEntry = false;
                     String[] parts = entry.split(":");
                     String path = parts[0];
                     try {
@@ -458,6 +459,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                         errorMessage("Could not get workflow: " + path, ENTRY_NOT_FOUND);
                     }
                 } else {
+                    this.isLocalEntry = true;
                     checkEntryFile(localEntry, jsonRun, yamlRun, wdlOutputTarget, uuid);
                 }
             } else {
