@@ -1332,7 +1332,7 @@ public abstract class AbstractEntryClient<T> {
         out("NOTE: WES SUPPORT IS IN BETA AT THIS TIME. RESULTS MAY BE UNPREDICTABLE.");
     }
 
-    private void publishHelp() {
+    protected void publishHelp() {
         printHelpHeader();
         out("Usage: dockstore " + getEntryType().toLowerCase() + " publish --help");
         out("       dockstore " + getEntryType().toLowerCase() + " publish");

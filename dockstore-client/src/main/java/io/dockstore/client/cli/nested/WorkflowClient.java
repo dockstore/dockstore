@@ -67,7 +67,6 @@ import static io.dockstore.client.cli.ArgumentUtility.columnWidthsWorkflow;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
-import static io.dockstore.client.cli.ArgumentUtility.getGitRegistry;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.outFormatted;
@@ -628,6 +627,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
     @Override
     protected void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest) {
+        //for workflows this method currently doesn't work with --entryname flag
         Workflow existingWorkflow;
         boolean isPublished = false;
         try {
@@ -643,6 +643,11 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 out("This workflow is already unpublished.");
             }
         } else {
+            if (newName != null) {
+                errorMessage("Parameter '--entryname' currently only supported for tools.", CLIENT_ERROR);
+            }
+            /*
+            Needs fixing
             if (newName == null) {
                 if (isPublished) {
                     out("This workflow is already published.");
@@ -671,7 +676,28 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
                 }
             }
+        */
         }
+    }
+
+    @Override
+    protected void publishHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " publish --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish --unpub [parameters]");
+        out("");
+        out("Description:");
+        out("  Publish/unpublish a registered " + getEntryType() + ".");
+        out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
+        out("Required Parameters:");
+        out("  --entry <entry>             Complete " + getEntryType()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        //out("Optional Parameters:");
+        //out("  --entryname <" + getEntryType() + "name>      " + "New name of "+ getEntryType()
+        //        + " to published based on " + getEntryType() " specified by --entry");
+        printHelpFooter();
     }
 
     @Override
