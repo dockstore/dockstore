@@ -1,0 +1,28 @@
+## Highlighted new features include 
+
+* initial support for [organizations and collections](https://docs.dockstore.org/docs/publisher-tutorials/organizations-and-collections/)
+  * institutions, grant agencies, consortiums, and more can now organize, describe, and highlight worthy workflows and tools found on Dockstore
+* language support updates
+  * cwltool updates from 1.0.20180403145700 to 1.0.20181217162649
+  * cromwell updates from 30.2 to 36 (also a mode for CWL with [Cromwell via the CLI](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/#cromwell-beta))
+  * to elaborate, [verified](https://docs.dockstore.org/faq/#what-is-a-verified-tool-or-workflow) workflows have been run in-house succesfully with these versions but feel free to try newer versions as well and let us know if things are broken 
+  * select between classic and [EPAM](https://github.com/epam/pipeline-builder) visualizations for WDL workflows
+  * improved support for Nextflow workflows
+      * using Nextflow code to parse and process workflow authors and descriptions for better compatibility
+* beta support for launching workflows directly onto GA4GH WES endpoints
+  * see a tutorial at [WES CLI Tutorial](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/)
+  <!-- replace with better location when available -->
+* launch-with support for [Terra](https://terra.bio/)
+* improved display of validation errors
+* support for [aliases](https://docs.dockstore.org/docs/publisher-tutorials/guid-alias/) for advanced developers
+* a huge host of bugfixes for everything from Nextflow DAGs, our support for GA4GH TRS endpoints, the usability of search, description file encoding, display of files on iOS, and display of error messages
+
+See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/milestone/20)
+
+## Breaking changes 
+
+### Major
+* none known (or intended anyway)
+
+### Minor
+* none
