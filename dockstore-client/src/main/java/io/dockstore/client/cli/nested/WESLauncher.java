@@ -101,7 +101,6 @@ public class WESLauncher extends BaseLauncher {
                 workflowAttachment.add(afile);
             }
         } catch (Exception e) {
-            e.printStackTrace();
             LOG.error("Unable to traverse directory " + tempDir.getName() + " to get workflow attachment files", e);
             exceptionMessage(e, "Unable to traverse directory " + tempDir.getName() + " to get workflow "
                     + "attachment files", GENERIC_ERROR);
@@ -131,9 +130,9 @@ public class WESLauncher extends BaseLauncher {
 
         // CWL uses workflow type version with a 'v' prefix, e.g 'v1.0', but WDL uses '1.0'
         String workflowTypeVersion = WORKFLOW_TYPE_VERSION;
-        if ("CWL".equals(languageType.toUpperCase())) {
+        if ("CWL".equalsIgnoreCase(languageType)) {
             workflowTypeVersion = "v" + WORKFLOW_TYPE_VERSION;
-        } else if ("WDL".equals(languageType.toUpperCase())) {
+        } else if ("WDL".equalsIgnoreCase(languageType)) {
             workflowTypeVersion = WDL_WORKFLOW_TYPE_VERSION;
         }
 
