@@ -61,7 +61,7 @@ dockstore-file-s3-plugin
 dockstore-file-synapse-plugin
 ```
 
-See https://github.com/decebals/pf4j#enabledisable-plugins more details.
+See https://github.com/decebals/pf4j#enabledisable-plugins for more details.
 ## Write-API Conversion Process
 ### Client Configuration
 The configuration file used by the write-api-client is located at ~/.dockstore/write.api.config.properties
@@ -176,7 +176,7 @@ Generally, Write API webservice and client has the highest setup time compared t
 
 See [https://cromwell.readthedocs.io/en/develop/Imports/](https://cromwell.readthedocs.io/en/develop/Imports/) for general knowledge on imports.  
 
-Imports allow you to reference other files in your workflow.  There are two types of resources that are supported in imports: http(s) and file-path based. Any public http(s) based URL can be used as the resource for an import, such as a website, GitHub, GA4GH compliant TES endpoint, and etc.
+Imports allow you to reference other files in your workflow.  There are two types of resources that are supported in imports: http(s) and file-path based. Any public http(s) based URL can be used as the resource for an import, such as a website, GitHub, GA4GH compliant TES endpoint, etc.
 
 There are times when you may want to convert file-path based imports to public http(s) imports.  One such reason is to ensure compatibility with FireCloud since it currently does not support file-path based imports.  There are many different ways to convert to a public http(s) based import, the following are two examples.
 
