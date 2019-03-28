@@ -627,7 +627,6 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
 
     @Override
     protected void handlePublishUnpublish(String entryPath, String newName, boolean unpublishRequest) {
-        //for workflows this method currently doesn't work with --entryname flag
         Workflow existingWorkflow;
         boolean isPublished = false;
         try {
@@ -644,39 +643,10 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
             }
         } else {
             if (newName != null) {
-                errorMessage("Parameter '--entryname' currently only supported for tools.", CLIENT_ERROR);
+                //for workflows method currently doesn't work with --entryname flag
+                //since abstract parent method takes --entryname in as newName, this handles the case when passed by user
+                errorMessage("Parameter '--entryname' currently only supported for tools. See `workflow publish --help` for more information.", CLIENT_ERROR);
             }
-            /*
-            Needs fixing
-            if (newName == null) {
-                if (isPublished) {
-                    out("This workflow is already published.");
-                } else {
-                    publish(true, entryPath);
-                }
-            } else {
-                try {
-                    Workflow workflow = workflowsApi.getWorkflowByPath(entryPath, null);
-
-                    Workflow newWorkflow = new Workflow();
-                    String registry = getGitRegistry(workflow.getGitUrl());
-
-                    newWorkflow = workflowsApi
-                            .manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(),
-                                    workflow.getDescriptorType(), workflow.getDefaultTestParameterFilePath());
-
-                    if (newWorkflow != null) {
-                        out("Successfully registered " + entryPath + "/" + newName);
-                        workflowsApi.refresh(newWorkflow.getId());
-                        publish(true, newWorkflow.getPath());
-                    } else {
-                        errorMessage("Unable to publish " + newName, COMMAND_ERROR);
-                    }
-                } catch (ApiException ex) {
-                    exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
-                }
-            }
-        */
         }
     }
 

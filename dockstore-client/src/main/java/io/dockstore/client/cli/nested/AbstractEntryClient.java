@@ -1332,22 +1332,7 @@ public abstract class AbstractEntryClient<T> {
         out("NOTE: WES SUPPORT IS IN BETA AT THIS TIME. RESULTS MAY BE UNPREDICTABLE.");
     }
 
-    protected void publishHelp() {
-        printHelpHeader();
-        out("Usage: dockstore " + getEntryType().toLowerCase() + " publish --help");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish [parameters]");
-        out("       dockstore " + getEntryType().toLowerCase() + " publish --unpub [parameters]");
-        out("");
-        out("Description:");
-        out("  Publish/unpublish a registered " + getEntryType() + ".");
-        out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
-        out("Required Parameters:");
-        out("  --entry <entry>             Complete " + getEntryType()
-                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        out("  --entryname <" + getEntryType() + "name>      " + getEntryType() + "name of new entry");
-        printHelpFooter();
-    }
+    protected abstract void publishHelp();
 
     private void starHelp() {
         printHelpHeader();
