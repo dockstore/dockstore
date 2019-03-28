@@ -216,7 +216,7 @@ eyJoaXN0b3J5IjpbMjA4MjI5MzQ4NV19
 The Workflow Execution Service API describes a standard programmatic way to run and manage workflows, see more information here: 
 https://github.com/ga4gh/workflow-execution-service-schemas
 
-The Dockstore CLI supports a WES client that allows users to submit a request to launch a workflow run, get the status of a run, or cancel a
+The Dockstore CLI implements a WES client that allows users to submit a request to launch a workflow run, get the status of a run, or cancel a
 run at a WES endpoint. 
 
 
@@ -267,7 +267,7 @@ Place WES settings after a separate '[WES]' section of the config file. At this 
 For example:
 ```bash
 token: <my token>
-server-url: https://dockstore.org:8443
+server-url: https://dockstore.org/api
 cromwell-version: 36
 [WES]
 url: https://wes.qr1hi.arvadosapi.com/ga4gh/wes/v1
