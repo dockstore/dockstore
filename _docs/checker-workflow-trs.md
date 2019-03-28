@@ -3,21 +3,21 @@ title: Checker Workflows and the TRS
 permalink: /docs/publisher-tutorials/checker-workflow-trs/
 ---
 # TRS With Checker Workflows
-You can interact with checker workflows using the TRS in the same way you interact with regular workflows.
+You can interact with checker workflows using TRS in the same way you interact with regular workflows.
 
-The Swagger UI for the the TRS endpoints can be found [here](https://dockstore.org/api/static/swagger-ui/index.html#/GA4GH).
+The Swagger UI for the TRS endpoints can be found [here](https://dockstore.org/api/static/swagger-ui/index.html#/GA4GH).
 
 For this section we will reference the tool and checker workflow mentioned in the [Checker workflows](/docs/publisher-tutorials/checker-workflows/) tutorial.
 
 ### Distinguishing Between an Entry and a Checker Workflow
-We can use the TRS to find all entries on Dockstore, but how do we know which are checker workflows?
+We can use TRS to find all entries on Dockstore, but how do we know which are checker workflows?
 
 Run the following command to retrieve all entries in Dockstore (limit to 1000):
 ```
 curl -X GET "https://dockstore.org/api/api/ga4gh/v2/tools?limit=1000" -H "accept: application/json"
 ```
 
-There are two fields to look for in the results. The first is the `has_checker` field, which will tell you wether or not the entry has a checker workflow. If it does have a checker workflow, then the `checker_url` field contains a link to the checker workflow using the TRS. This is how we can determine if an entry has a checker, and also interact with the associated checker.
+There are two fields to look for in the results. The first is the `has_checker` field, which will tell you wether or not the entry has a checker workflow. If it does have a checker workflow, then the `checker_url` field contains a link to the checker workflow using TRS. This is how we can determine if an entry has a checker, and also interact with the associated checker.
 
 Once we have the checker URL, we can start to interact with it like a regular workflow.
 
@@ -30,7 +30,7 @@ curl -X GET "https://dockstore.org/api/api/ga4gh/v2/tools?checker=true&limit=100
 This will get the first 1000 checker workflows in Dockstore.
 
 ### Retrieve the checker workflow
-Lets use the TRS to retrieve the checker workflow from the checker workflows tutorial mentioned above. The following command will retrieve the checker workflow object. Note that this is simply using the typical TRS endpoint
+Lets use TRS to retrieve the checker workflow from the checker workflows tutorial mentioned above. The following command will retrieve the checker workflow object. Note that this is simply using the typical TRS endpoint
 to grab an entry.
 
 ```
@@ -73,4 +73,4 @@ This will return an array of objects representing the test parameter files. Each
 - **url**: the relative path
 
 ### Other Usage
-This does not cover all of the uses of the TRS for checker workflows. You can see the full list of commands  [here](https://dockstore.org/api/static/swagger-ui/index.html#/GA4GH). Note that any call that works for a normal tool or workflow will also work with a checker workflow.
+This does not cover all of the uses of TRS for checker workflows. You can see the full list of commands  [here](https://dockstore.org/api/static/swagger-ui/index.html#/GA4GH). Note that any call that works for a normal tool or workflow will also work with a checker workflow.

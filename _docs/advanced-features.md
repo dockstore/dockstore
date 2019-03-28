@@ -8,7 +8,7 @@ permalink: /docs/publisher-tutorials/advanced-features/
 
 As a convenience, the dockstore command-line can perform file provisioning for inputs and outputs.
 
-File provisioning for some protocols like HTTP and FTP is built-in while other protocols are handled by plugins as documented [here](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent).
+File provisioning for some protocols, like HTTP and FTP, is built-in while other protocols are handled by plugins as documented [here](https://github.com/ga4gh/dockstore/tree/develop/dockstore-file-plugin-parent).
 
 To illustrate, for this [tool](https://dockstore.org/containers/quay.io/collaboratory/dockstore-tool-bamstats) we provide a couple of parameter files that can be used to parameterize a run of bamstats.
 
@@ -27,7 +27,7 @@ In the following JSON file, this file indicates for a CWL run that the input fil
 }
 ```
 
-The Dockstore command-line allows you to specify that the input file can be at an HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](https://docs.icgc.org/download/guide/), or a [DRS URI](https://github.com/ga4gh/data-repository-service-schemas/issues/49) in place of that path. For example the following indicates that the input file will be downloaded under HTTP.
+The Dockstore command-line allows you to specify that the input file can be at an HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](https://docs.icgc.org/download/guide/), or a [DRS URI](https://github.com/ga4gh/data-repository-service-schemas/issues/49) in place of that path. For example, the following indicates that the input file will be downloaded under HTTP.
 
 ```
 {
@@ -86,8 +86,8 @@ Get more information on the implementing plugin at [synapse-plugin
 ### Data Object Service (DOS)
 
 Currently, no additional configuration is directly supported by the Data Object Service plugin.
-However, specifying a DOS URI will lead to downloading a file by either built-in
-support or by one of the plugins. If one of the plugins, that plugin may need to be
+However, specifying a DOS URI will download a file with either built-in
+support or one of the plugins. If done through one of the plugins, that plugin may need to be
 configured, e.g., if a DOS URI leads to downloading a file from AWS S3, then you 
 may need to configure your AWS S3 plugin.
 
@@ -96,9 +96,9 @@ Get more information on the implementing plugin at [data-object-service-plugin](
 
 ## Input File Cache
 
-When developing or debugging tools, it can be time consuming (and space-consuming) to repeatedly download input files for your tools. A feature of the Dockstore CLI is the ability to cache input files locally so that they can be quickly re-used for multiple attempts at launching a tool.
+When developing or debugging tools, it can be time and space consuming to repeatedly download input files for your tools. A feature of the Dockstore CLI is the ability to cache input files locally so that they can be quickly re-used for multiple attempts at launching a tool.
 
-This feature relies upon Linux [hard-linking](https://en.wikipedia.org/wiki/Hard_link) so when enabling this feature, it is important to ensure that the location of the cache directory (by default, at `~/.dockstore/cache/`) is on the same filesystem as the working directory where you intend on running your tools.
+This feature relies upon Linux [hard-linking](https://en.wikipedia.org/wiki/Hard_link). So when enabling this feature, it is important to ensure that the location of the cache directory (by default `~/.dockstore/cache/`) is on the same filesystem as the working directory where you intend on running your tools.
 
 There are two configuration file keys that can be used to activate input file caching and to configure the location of the cache.  These are added (or changed) inside your configuration file at `~/.dockstore/config`.
 
@@ -130,7 +130,7 @@ By default, the dockstore CLI launches CWL tools/workflows using [cwltool](https
 - [cwl-runner](http://www.commonwl.org/v1.0/CommandLineTool.html#Executing_CWL_documents_as_scripts)
 - [Cromwell](https://cromwell.readthedocs.io/en/stable/) (For Dockstore 1.6.0+)
 
-Keep in mind that there are a few differences in how locked-down the Docker execution environments are between the launchers, so a workflow that succeeds in one may not necessarily succeed in another.
+Keep in mind that there are a few differences in how locked-down the Docker execution environments are between the launchers. So a workflow that succeeds in one may not necessarily succeed in another.
 
 You can test all the launchers by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git` and then test with cwl-runner, Cromwell, and cwltool using `dockstore tool launch --local-entry Dockstore.cwl --json test.json` after the required configurations have been made.
 

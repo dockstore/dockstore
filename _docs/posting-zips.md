@@ -30,7 +30,7 @@ and if the tests pass, a new version of the workflow can be pushed to Dockstore.
 The ZIP file that is posted to Dockstore should contain:
 
 * The workflow descriptors; the CWL, WDL, etc.. At least one descriptor is required.
-* Other file types used by the workflows, e.g., CWL can include JavaScript, Python, etc.
+* Other file types used by the workflows, e.g., CWL, can include JavaScript, Python, etc.
 files. This is optional.
 * Test parameter files. Optional JSON test parameter files.
 * A .dockstore.yml file in the root of the zip file. This is a manifest describing the 
@@ -94,7 +94,7 @@ limits, please contact the Dockstore team.
 
 ## Tutorial
 
-Following is a simple example using curl to create a hosted workflow, creating a zip, and posting the zip
+The following is a simple example using curl to create a hosted workflow, creating a zip, and posting the zip
 to create a version.
 
 You will need to have registered with Dockstore, and you need your Dockstore token. To get
@@ -102,14 +102,13 @@ your Dockstore token, after you have logged in, go to your
 [Accounts](https://dockstore.org/accounts) page, and copy the token to your
 clipboard by clicking on the Copy icon next to the token in your Dockstore Account section.
 
-In a terminal window, assign the token to a environment variable:
+In a terminal window, assign the token to an environment variable:
 
 ```
-set DOCKSTORE_TOKEN="<value in clipboard>"
+export DOCKSTORE_TOKEN="<value in clipboard>"
 ```
 
-Create a hosted workflow. This will create the workflow without any versions. We will give it the name `tutorial`,
-and let's make it a WDL workflow.
+The following command creates a hosted WDL workflow, named `tutorial`, without any versions.
 
 ```
 curl -X POST "https://dockstore.org/api/workflows/hostedEntry?name=tutorial&descriptorType=wdl" -H "accept: application/json" -H "Authorization: Bearer ${DOCKSTORE_TOKEN}"
@@ -172,7 +171,7 @@ primaryDescriptor: myWorkflow.wdl
 Combine the two files into a .zip:
 
 ```
-zip firstversion.zip myworkflow.wdl .dockstore.yml
+zip firstversion.zip myWorkflow.wdl .dockstore.yml
 ```
 
 Create a new version of the hosted workflow using the zip:
