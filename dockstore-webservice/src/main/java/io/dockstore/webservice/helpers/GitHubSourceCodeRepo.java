@@ -58,7 +58,6 @@ import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHMyself;
-import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
@@ -216,24 +215,15 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
             // get repos under the user directly
+            // TODO: This code should be optimized. Ex. Only grab repositories from a specific org if refreshing by org.
             final int pageSize = 30;
-            Map<String, GHRepository> repos = new TreeMap<>();
-            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.OWNER).forEach((GHRepository r) -> repos.put(r.getName(), r));
+            Map<String, GHRepository> allMyRepos = new TreeMap<>();
+            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> allMyRepos.put(r.getFullName(), r));
 
-            Map<String, GHRepository> allRepositories = Collections.unmodifiableMap(repos);
+            Map<String, GHRepository> allRepositories = Collections.unmodifiableMap(allMyRepos);
 
             for (Map.Entry<String, GHRepository> innerEntry : allRepositories.entrySet()) {
                 reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-            }
-
-            // get organizations that user has access to
-            Map<String, GHOrganization> myOrganizations = github.getMyOrganizations();
-            for (Map.Entry<String, GHOrganization> entry : myOrganizations.entrySet()) {
-                GHOrganization organization = github.getOrganization(entry.getKey());
-                Map<String, GHRepository> repositories = organization.getRepositories();
-                for (Map.Entry<String, GHRepository> innerEntry : repositories.entrySet()) {
-                    reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-                }
             }
             return reposByGitURl;
         } catch (IOException e) {
