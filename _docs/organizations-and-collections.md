@@ -93,7 +93,7 @@ A freeform markdown description can be added to a collection, however it is enti
 ![Collection](/assets/images/docs/CollectionView.png)
 
 ### Adding tools and workflows
-Only published tools and workflows can be added to a collection. If an tool/workflow belonging to a collection is unpublished, it will be hidden on the collection page until the tool/workflow is published again. 
+Only published tools and workflows can be added to a collection. If a tool/workflow belonging to a collection is unpublished, it will be hidden on the collection page until the tool/workflow is published again. 
 To add a tool or a workflow to a collection, go to the public page for the tool/workflow and click `Add to collection` on the right-hand side.
 
 ![Add to Collection](/assets/images/docs/AddToCollection.png)
@@ -107,7 +107,7 @@ The `Current Collections` section will now link to the PCAWG collection.
 
 ![Add to Collection PCAWG](/assets/images/docs/CurrentCollectionsWithPCAWG.png)
 
-Once added, the tool/workflow will appear on the collection page. If a user wants to remove an tool/workflow from a collection, they can do so from the collections page.
+Once added, the tool/workflow will appear on the collection page. If a user wants to remove a tool/workflow from a collection, they can do so from the collections page.
 
 ## Events
 We keep track of events occurring related to the activity on the organization page and display the important ones in the `events` tab of the organization.
