@@ -29,11 +29,11 @@ Optional Fields:
 * **Website** - a link to the organization’s external webpage
 * **Location**  - where an organization is located, for example a city or university   
 * **Email** - a general contact email address for users to direct queries
-* **Avatar** - a link to the organization's logo. Link must end in .jpg, .jpeg, .png, or .gif````
+* **Avatar** - a link to the organization's logo. Link must end in .jpg, .jpeg, .png, or .gif
 
 Once a user creates an organization request, they will be redirected to the organization page. 
 Here they can make edits to the organization, add collections, even add members. 
-The organization page and will require approval from a Dockstore curator before it can be viewed publicly.
+The organization will require approval from a Dockstore curator before it can be viewed publicly.
 
 ![Pending Organization](/assets/images/docs/PendingOrganization.png)
 
@@ -93,12 +93,12 @@ A freeform markdown description can be added to a collection, however it is enti
 ![Collection](/assets/images/docs/CollectionView.png)
 
 ### Adding tools and workflows
-Only published tools and workflows can be added to a collection. If an entry belonging to a collection is unpublished, it will be hidden on the collection page until the entry is published again. 
-To add a tool or a workflow to a collection, go to the public page for the entry and click `Add to collection` on the right-hand side.
+Only published tools and workflows can be added to a collection. If an tool/workflow belonging to a collection is unpublished, it will be hidden on the collection page until the tool/workflow is published again. 
+To add a tool or a workflow to a collection, go to the public page for the tool/workflow and click `Add to collection` on the right-hand side.
 
 ![Add to Collection](/assets/images/docs/AddToCollection.png)
 
-This will open a dialog where you can select a collection to add the entry.
+This will open a dialog where you can select a collection to add the tool/workflow.
 
 ![Add to Collection Dialog](/assets/images/docs/AddToCollectionModal.png)
 
@@ -107,7 +107,7 @@ The `Current Collections` section will now link to the PCAWG collection.
 
 ![Add to Collection PCAWG](/assets/images/docs/CurrentCollectionsWithPCAWG.png)
 
-Once added, the entry will appear on the collection page. If a user wants to remove an entry from a collection, they can do so from the collections page.
+Once added, the tool/workflow will appear on the collection page. If a user wants to remove an tool/workflow from a collection, they can do so from the collections page.
 
 ## Events
 We keep track of events occurring related to the activity on the organization page and display the important ones in the `events` tab of the organization.
