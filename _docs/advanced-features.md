@@ -163,10 +163,10 @@ For remote launches, we download the zip directory as returned by the Dockstore 
 
 ## WDL Launcher Configuration
 
-By default, WDL tools/workflows will automatically be ran with [cromwell](https://github.com/broadinstitute/cromwell) 30.2.
+By default, WDL tools/workflows will automatically be ran with [cromwell](https://github.com/broadinstitute/cromwell) 36.
 Additionally, you can override the cromwell version in your `~/.dockstore/config` using:
 ```
-cromwell-version = 34
+cromwell-version = 36
 ```
 
 You can test cromwell by cloning the dockstore-tool-md5sum repository: `git clone git@github.com:briandoconnor/dockstore-tool-md5sum.git` and then test using `dockstore tool launch --local-entry Dockstore.wdl --json test.wdl.json`
