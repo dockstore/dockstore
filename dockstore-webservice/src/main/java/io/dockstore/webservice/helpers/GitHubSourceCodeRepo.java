@@ -22,11 +22,13 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -214,7 +216,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
             // get repos under the user directly
-            Map<String, GHRepository> allRepositories = github.getMyself().getAllRepositories();
+            final int pageSize = 30;
+            Map<String, GHRepository> repos = new TreeMap<>();
+            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.OWNER).forEach((GHRepository r) -> repos.put(r.getName(), r));
+
+            Map<String, GHRepository> allRepositories = Collections.unmodifiableMap(repos);
+
             for (Map.Entry<String, GHRepository> innerEntry : allRepositories.entrySet()) {
                 reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
             }
