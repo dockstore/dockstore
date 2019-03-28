@@ -10,8 +10,7 @@
   * improved support for Nextflow workflows
       * using Nextflow code to parse and process workflow authors and descriptions for better compatibility
 * beta support for launching workflows directly onto GA4GH WES endpoints
-  * see a tutorial at [WES CLI Tutorial](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/)
-  <!-- replace with better location when available -->
+  * see our first steps at [WES CLI](https://docs.dockstore.org/docs/publisher-tutorials/advanced-features/)
 * launch-with support for [Terra](https://terra.bio/)
 * improved display of validation errors
 * support for [aliases](https://docs.dockstore.org/docs/publisher-tutorials/guid-alias/) for advanced developers
