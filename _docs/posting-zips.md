@@ -138,7 +138,7 @@ Save the value of the id, `8648` in this example, to a variable.
 
 
 ```
-set WORKFLOW_ID=8648
+export WORKFLOW_ID=8648
 ```
 
 Now that you have the hosted workflow, create the ZIP file that will contain the first version of the workflow.
