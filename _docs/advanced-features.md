@@ -48,6 +48,7 @@ For some file provisioning methods, additional configuration may be required.
 
 The below summarizes some of the plugins available:
 
+{:class="table table-bordered"}
 | Plugin                                                                                | Prefix  | Example                                                                                          | Supported Operations                     |
 |---------------------------------------------------------------------------------------|:-------:|--------------------------------------------------------------------------------------------------|------------------------------------------|
 | [s3-plugin](https://github.com/dockstore/s3-plugin)                                   | s3://   | s3://oicr.temp/bamstats_report.zip                                                               | download, upload, set metadata on upload |
