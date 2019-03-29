@@ -697,7 +697,7 @@ public class WorkflowIT extends BaseIT {
         // Check that a workflow from my namespace is present
         assertTrue("Should have at least one repo from DockstoreTestUser2.", workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")));
 
-        // Check that a workflow from an organization I below to is present
+        // Check that a workflow from an organization I belong to is present
         assertTrue("Should have at least one repo from organization dockstoretesting.", workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("dockstoretesting")));
 
         // Check that a workflow that I am a collaborator on is present

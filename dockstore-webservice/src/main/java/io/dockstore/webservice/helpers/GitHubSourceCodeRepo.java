@@ -214,8 +214,12 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
-            // get repos under the user directly
             // TODO: This code should be optimized. Ex. Only grab repositories from a specific org if refreshing by org.
+            // The filter all includes:
+            // * All repositories I own
+            // * All repositories I am a contributor on
+            // * All repositories from organizations I belong to
+
             final int pageSize = 30;
             Map<String, GHRepository> allMyRepos = new TreeMap<>();
             github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> allMyRepos.put(r.getFullName(), r));
