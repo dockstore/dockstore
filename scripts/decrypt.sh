@@ -8,7 +8,7 @@ set -o pipefail
 set -o nounset
 set -o xtrace
 
-if [[ "${TESTING_PROFILE}" == *"integration-tests"* ]]; then
-    openssl aes-256-cbc -K $encrypted_56104cec4f5a_key -iv $encrypted_56104cec4f5a_iv -in secrets.tar.enc -out secrets.tar -d
+if [[ "${TESTING_PROFILE}" == *"integration-tests"* ]] || [[ "${TESTING_PROFILE}" == "automated-review" ]]; then
+    openssl aes-256-cbc -K $encrypted_5454045417e3_key -iv $encrypted_5454045417e3_iv -in secrets.tar.enc -out secrets.tar -d
     tar xvf secrets.tar
 fi
