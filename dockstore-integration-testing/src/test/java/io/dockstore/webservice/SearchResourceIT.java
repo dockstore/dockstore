@@ -77,7 +77,7 @@ public class SearchResourceIT extends BaseIT {
         ExtendedGa4GhApi extendedGa4GhApi = new ExtendedGa4GhApi(webClient);
         // update the search index
         extendedGa4GhApi.toolsIndexGet();
-
+        waitForRefresh(5000);
         waitForRefresh(5000);
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         workflowApi.manualRegister("github", "DockstoreTestUser2/dockstore_workflow_cnv", "/workflow/cnv.cwl", "", "cwl", "/test.json");
