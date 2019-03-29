@@ -695,16 +695,24 @@ public class WorkflowIT extends BaseIT {
         assertNotNull("could get mta as a specific tool", toolV2);
 
         // Check that a workflow from my namespace is present
-        assertTrue("Should have at least one repo from DockstoreTestUser2.", workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")));
+        assertTrue("Should have at least one repo from DockstoreTestUser2.",
+                workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")));
 
         // Check that a workflow from an organization I belong to is present
-        assertTrue("Should have at least one repo from organization dockstoretesting.", workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("dockstoretesting")));
+        assertTrue("Should have repository basic-workflow from organization dockstoretesting.",
+                workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("dockstoretesting") &&
+                        workflow.getRepository().equalsIgnoreCase("basic-workflow")));
 
         // Check that a workflow that I am a collaborator on is present
-        assertTrue("Should have at least one repo from DockstoreTestUser.", workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser")));
+        assertTrue("Should have repository dockstore-whalesay-2 from DockstoreTestUser.", workflows.stream().anyMatch((Workflow workflow) ->
+                workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser") &&
+                workflow.getRepository().equalsIgnoreCase("dockstore-whalesay-2")));
 
         // Check that for a repo from my organization that I forked to DockstoreTestUser2, that it along with the original repo are present
-        assertEquals("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.", 2, workflows.stream().filter((Workflow workflow) -> workflow.getRepository().equalsIgnoreCase("basic-workflow")).count());
+        assertEquals("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.", 2, workflows.stream().filter((Workflow workflow) ->
+                (workflow.getOrganization().equalsIgnoreCase("dockstoretesting") ||
+                workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")) &&
+                workflow.getRepository().equalsIgnoreCase("basic-workflow")).count());
 
     }
 
