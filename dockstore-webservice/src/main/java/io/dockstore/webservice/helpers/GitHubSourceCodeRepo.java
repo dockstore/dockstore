@@ -22,11 +22,13 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -56,7 +58,6 @@ import org.kohsuke.github.GHBranch;
 import org.kohsuke.github.GHCommit;
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHMyself;
-import org.kohsuke.github.GHOrganization;
 import org.kohsuke.github.GHRateLimit;
 import org.kohsuke.github.GHRef;
 import org.kohsuke.github.GHRepository;
@@ -213,20 +214,20 @@ public class GitHubSourceCodeRepo extends SourceCodeRepoInterface {
     public Map<String, String> getWorkflowGitUrl2RepositoryId() {
         Map<String, String> reposByGitURl = new HashMap<>();
         try {
-            // get repos under the user directly
-            Map<String, GHRepository> allRepositories = github.getMyself().getAllRepositories();
+            // TODO: This code should be optimized. Ex. Only grab repositories from a specific org if refreshing by org.
+            // The filter all includes:
+            // * All repositories I own
+            // * All repositories I am a contributor on
+            // * All repositories from organizations I belong to
+
+            final int pageSize = 30;
+            Map<String, GHRepository> allMyRepos = new TreeMap<>();
+            github.getMyself().listRepositories(pageSize, GHMyself.RepositoryListFilter.ALL).forEach((GHRepository r) -> allMyRepos.put(r.getFullName(), r));
+
+            Map<String, GHRepository> allRepositories = Collections.unmodifiableMap(allMyRepos);
+
             for (Map.Entry<String, GHRepository> innerEntry : allRepositories.entrySet()) {
                 reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-            }
-
-            // get organizations that user has access to
-            Map<String, GHOrganization> myOrganizations = github.getMyOrganizations();
-            for (Map.Entry<String, GHOrganization> entry : myOrganizations.entrySet()) {
-                GHOrganization organization = github.getOrganization(entry.getKey());
-                Map<String, GHRepository> repositories = organization.getRepositories();
-                for (Map.Entry<String, GHRepository> innerEntry : repositories.entrySet()) {
-                    reposByGitURl.put(innerEntry.getValue().getSshUrl(), innerEntry.getValue().getFullName());
-                }
             }
             return reposByGitURl;
         } catch (IOException e) {

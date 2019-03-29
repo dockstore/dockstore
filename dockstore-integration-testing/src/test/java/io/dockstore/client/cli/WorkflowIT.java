@@ -644,7 +644,7 @@ public class WorkflowIT extends BaseIT {
 
         final ApiClient webClient = getWebClient(USER_2_USERNAME);
         UsersApi usersApi = new UsersApi(webClient);
-        final List<Workflow> workflow = usersApi.refreshWorkflows(userId);
+        final List<Workflow> workflows = usersApi.refreshWorkflows(userId);
 
         // Check that there are multiple workflows
         final long count = testingPostgres.runSelectStatement("select count(*) from workflow", new ScalarHandler<>());
@@ -658,9 +658,9 @@ public class WorkflowIT extends BaseIT {
         assertEquals("No workflows are in full mode", 0, count3);
 
         // check that a nextflow workflow made it
-        long nfWorkflowCount = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
+        long nfWorkflowCount = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).count();
         assertTrue("Nextflow workflow not found", nfWorkflowCount > 0);
-        Workflow mtaNf = workflow.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
+        Workflow mtaNf = workflows.stream().filter(w -> w.getGitUrl().contains("mta-nf")).findFirst().get();
         WorkflowsApi workflowApi = new WorkflowsApi(webClient);
         mtaNf.setWorkflowPath("/nextflow.config");
         mtaNf.setDescriptorType(LanguageType.NEXTFLOW.toString());
@@ -693,6 +693,27 @@ public class WorkflowIT extends BaseIT {
         assertTrue("could get mta as part of list", toolV2s.size() > 0 && toolV2s.stream().anyMatch(tool -> Objects
             .equals(tool.getId(), mtaWorkflowID)));
         assertNotNull("could get mta as a specific tool", toolV2);
+
+        // Check that a workflow from my namespace is present
+        assertTrue("Should have at least one repo from DockstoreTestUser2.",
+                workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")));
+
+        // Check that a workflow from an organization I belong to is present
+        assertTrue("Should have repository basic-workflow from organization dockstoretesting.",
+                workflows.stream().anyMatch((Workflow workflow) -> workflow.getOrganization().equalsIgnoreCase("dockstoretesting") &&
+                        workflow.getRepository().equalsIgnoreCase("basic-workflow")));
+
+        // Check that a workflow that I am a collaborator on is present
+        assertTrue("Should have repository dockstore-whalesay-2 from DockstoreTestUser.", workflows.stream().anyMatch((Workflow workflow) ->
+                workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser") &&
+                workflow.getRepository().equalsIgnoreCase("dockstore-whalesay-2")));
+
+        // Check that for a repo from my organization that I forked to DockstoreTestUser2, that it along with the original repo are present
+        assertEquals("Should have two repos with name basic-workflow, one from DockstoreTestUser2 and one from dockstoretesting.", 2, workflows.stream().filter((Workflow workflow) ->
+                (workflow.getOrganization().equalsIgnoreCase("dockstoretesting") ||
+                workflow.getOrganization().equalsIgnoreCase("DockstoreTestUser2")) &&
+                workflow.getRepository().equalsIgnoreCase("basic-workflow")).count());
+
     }
 
     /**
