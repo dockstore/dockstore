@@ -642,10 +642,17 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                 out("This workflow is already unpublished.");
             }
         } else {
-            if (newName != null) {
-                //for workflows method currently doesn't work with --entryname flag
-                //since abstract parent method takes --entryname in as newName, this handles the case when passed by user
-                errorMessage("Parameter '--entryname' currently only supported for tools. See `workflow publish --help` for more information.", CLIENT_ERROR);
+            if (newName == null) {
+                if (isPublished) {
+                    out("This workflow is already published.");
+                } else {
+                    publish(true, entryPath);
+                }
+            } else {
+                if (newName != null) {
+                    //for workflows method currently doesn't work with --entryname flag
+                    errorMessage("Parameter '--entryname' not valid for workflows. See `workflow publish --help` for more information.", CLIENT_ERROR);
+                }
             }
         }
     }
