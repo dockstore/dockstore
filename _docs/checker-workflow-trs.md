@@ -17,7 +17,7 @@ Run the following command to retrieve all entries in Dockstore (limit to 1000):
 curl -X GET "https://dockstore.org/api/api/ga4gh/v2/tools?limit=1000" -H "accept: application/json"
 ```
 
-There are two fields to look for in the results. The first is the `has_checker` field, which will tell you wether or not the entry has a checker workflow. If it does have a checker workflow, then the `checker_url` field contains a link to the checker workflow using TRS. This is how we can determine if an entry has a checker, and also interact with the associated checker.
+There are two fields to look for in the results. The first is the `has_checker` field, which will tell you whether or not the entry has a checker workflow. If it does have a checker workflow, then the `checker_url` field contains a link to the checker workflow using TRS. This is how we can determine if an entry has a checker, and also interact with the associated checker.
 
 Once we have the checker URL, we can start to interact with it like a regular workflow.
 
@@ -30,7 +30,7 @@ curl -X GET "https://dockstore.org/api/api/ga4gh/v2/tools?checker=true&limit=100
 This will get the first 1000 checker workflows in Dockstore.
 
 ### Retrieve the checker workflow
-Lets use TRS to retrieve the checker workflow from the checker workflows tutorial mentioned above. The following command will retrieve the checker workflow object. Note that this is simply using the typical TRS endpoint
+Let's use TRS to retrieve the checker workflow from the checker workflows tutorial mentioned above. The following command will retrieve the checker workflow object. Note that this is simply using the typical TRS endpoint
 to grab an entry.
 
 ```

@@ -27,7 +27,7 @@ In the following JSON file, this file indicates for a CWL run that the input fil
 }
 ```
 
-The Dockstore command-line allows you to specify that the input file can be at an HTTP(S) location, an FTP location, an AWS S3 location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](https://docs.icgc.org/download/guide/), or a [DRS URI](https://github.com/ga4gh/data-repository-service-schemas/issues/49) in place of that path. For example, the following indicates that the input file will be downloaded under HTTP.
+The Dockstore command-line allows you to specify that the input file can be at an HTTP(S) location, an FTP location, an AWS S3 location, a Google Storage gs location, a [synapse id](http://python-docs.synapse.org/#accessing-data), an [ICGC storage id](https://docs.icgc.org/download/guide/), or a [DRS URI](https://github.com/ga4gh/data-repository-service-schemas/issues/49) in place of that path. For example, the following indicates that the input file will be downloaded under HTTP.
 
 ```
 {
