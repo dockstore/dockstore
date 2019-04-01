@@ -26,6 +26,9 @@ public class WESLauncher extends BaseLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(WESLauncher.class);
     private static final String TAGS = "WorkflowExecutionService";
     private static final String WORKFLOW_TYPE_VERSION = "1.0";
+
+    // Cromwell currently supports draft-2 of the WDL specification
+    // https://cromwell.readthedocs.io/en/stable/LanguageSupport/
     private static final String WDL_WORKFLOW_TYPE_VERSION = "draft-2";
 
     protected List<String> command;
@@ -87,6 +90,7 @@ public class WESLauncher extends BaseLauncher {
 
         try {
 
+            // A null fileFilter causes all files to be returned
             String[] fileFilter = null;
             // For a local entry restrict the kinds of files that can be added to the workflow attachment. CWL can import many
             // file types but there may be confidential or large files in a local directory that should
