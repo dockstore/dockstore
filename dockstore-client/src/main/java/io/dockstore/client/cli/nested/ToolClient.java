@@ -19,7 +19,6 @@ package io.dockstore.client.cli.nested;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -125,7 +124,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
     }
 
     private static void printToolList(List<DockstoreTool> containers) {
-        containers.sort(new ToolComparator());
+        containers.sort((c1, c2) -> c1.getPath().compareToIgnoreCase(c2.getPath()));
 
         int[] maxWidths = columnWidthsTool(containers);
 
@@ -160,7 +159,7 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
     }
 
     private static void printPublishedList(List<DockstoreTool> containers) {
-        containers.sort(new ToolComparator());
+        containers.sort((c1, c2) -> c1.getPath().compareToIgnoreCase(c2.getPath()));
 
         int[] maxWidths = columnWidthsTool(containers);
 
@@ -1270,16 +1269,6 @@ public class ToolClient extends AbstractEntryClient<DockstoreTool> {
             } else {
                 out(" *" + r.name() + " (Custom)");
             }
-        }
-    }
-
-    private static class ToolComparator implements Comparator<DockstoreTool> {
-        @Override
-        public int compare(DockstoreTool c1, DockstoreTool c2) {
-            String path1 = c1.getPath();
-            String path2 = c2.getPath();
-
-            return path1.compareToIgnoreCase(path2);
         }
     }
 }

@@ -2,7 +2,7 @@ version: 2
 jobs:
   build: # runs not using Workflows must have a `build` job as entry point
     docker: # run the steps with Docker
-      - image: circleci/openjdk:10.0.2-13
+      - image: circleci/openjdk:11.0.2-jdk
         environment:
           PGHOST: 127.0.0.1
       - image: circleci/postgres:9.6.5-alpine-ram

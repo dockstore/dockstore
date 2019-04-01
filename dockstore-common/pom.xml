@@ -28,6 +28,10 @@
 
 
     <dependencies>
+	<dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.github.zafarkhaja</groupId>
             <artifactId>java-semver</artifactId>
@@ -165,6 +169,26 @@
                             <failsOnError>false</failsOnError>
                             <consoleOutput>true</consoleOutput>
                             <excludes>**/cwl/**</excludes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+	    <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                            <outputXML>true</outputXML>
+                            <ignoreNonCompile>true</ignoreNonCompile>
+
+                            <usedDependencies>
+				    <usedDependency>javax.annotation:javax.annotation-api</usedDependency>
+                            </usedDependencies>
                         </configuration>
                     </execution>
                 </executions>
