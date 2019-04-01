@@ -206,6 +206,72 @@ dockstore tool launch --local-entry Dockstore.cwl --json test.json --uuid fakeUU
 ### Notes
 - To disable notifications, simply remove the webhook URL from the Dockstore config file
 - If the UUID is generated, the generated UUID will be displayed in beginning of the launch stdout
+
 <!--stackedit_data:
 eyJoaXN0b3J5IjpbMjA4MjI5MzQ4NV19
 -->
+
+## Workflow Execution Service (WES) Command Line Interface (CLI)
+
+The Workflow Execution Service API describes a standard programmatic way to run and manage workflows. See more information here: 
+https://github.com/ga4gh/workflow-execution-service-schemas
+
+The Dockstore CLI implements a WES client that allows users to submit a request to launch a workflow run, get the status of a run, or cancel a
+run at a WES endpoint. 
+
+
+### Usage
+- Get help on WES commands:
+```bash
+dockstore workflow wes --help
+```
+
+- Get help on the WES command to launch a workflow:
+```bash
+dockstore workflow wes launch --help
+```
+
+- Launch a workflow run, e.g.:
+```bash
+dockstore workflow wes launch --local-entry Dockstore.cwl --json test.json
+```
+
+- Launch a workflow run and override the WES URL and credentials specified in the config file:
+```bash
+dockstore workflow wes launch --local-entry Dockstore.cwl --json test.json --wes-url https://wes.qr1hi.arvadosapi.com/ga4gh/wes/v1
+--wes-auth 'Bearer <my token>'
+```
+
+- Get status on a run (a run id is returned in the response from launching a WES workflow run):
+```bash
+dockstore workflow wes status --id <run id> [--verbose]
+```
+
+- Cancel a run (a run id is returned in the response from launching a WES workflow run):
+```bash
+dockstore workflow wes cancel --id <run id>
+```
+
+
+### WES Endpoint and Authorization
+By default Dockstore WES CLI requests will be sent to the WES endpoint specified in the Dockstore config file and will use authorization credentials
+specified in the Dockstore config file.
+
+You can override the WES config file settings on the command line by using global optional parameters
+- --wes-url \<WES URL>                 URL where the WES request should be sent, e.g. 'http://localhost:8080/ga4gh/wes/v1'
+- --wes-auth \<auth>                   Authorization credentials for the WES endpoint, e.g. 'Bearer 12345'
+
+
+#### Config file settings
+Place WES settings after a separate '[WES]' section of the config file. At this time only 'url' and 'authorization' settings are supported.
+For example:
+```bash
+token: <my token>
+server-url: https://dockstore.org/api
+cromwell-version: 36
+[WES]
+url: https://wes.qr1hi.arvadosapi.com/ga4gh/wes/v1
+authorization: Bearer <my token>
+```
+***NOTE: WES SUPPORT IS IN BETA AT THIS TIME. RESULTS MAY BE UNPREDICTABLE.***
+
