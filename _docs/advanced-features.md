@@ -213,7 +213,7 @@ eyJoaXN0b3J5IjpbMjA4MjI5MzQ4NV19
 
 ## Workflow Execution Service (WES) Command Line Interface (CLI)
 
-The Workflow Execution Service API describes a standard programmatic way to run and manage workflows, see more information here: 
+The Workflow Execution Service API describes a standard programmatic way to run and manage workflows. See more information here: 
 https://github.com/ga4gh/workflow-execution-service-schemas
 
 The Dockstore CLI implements a WES client that allows users to submit a request to launch a workflow run, get the status of a run, or cancel a
@@ -254,7 +254,7 @@ dockstore workflow wes cancel --id <run id>
 
 
 ### WES Endpoint and Authorization
-Dockstore WES CLI requests will be sent to the WES endpoint specified in the Dockstore config file and will use authorization credentials
+By default Dockstore WES CLI requests will be sent to the WES endpoint specified in the Dockstore config file and will use authorization credentials
 specified in the Dockstore config file.
 
 You can override the WES config file settings on the command line by using global optional parameters
