@@ -671,9 +671,7 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
         out("Required Parameters:");
         out("  --entry <entry>             Complete " + getEntryType()
                 + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
-        //out("Optional Parameters:");
-        //out("  --entryname <" + getEntryType() + "name>      " + "New name of "+ getEntryType()
-        //        + " to published based on " + getEntryType() " specified by --entry");
+        //TODO add support for optional parameter '--entryname'
         printHelpFooter();
     }
 
