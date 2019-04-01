@@ -42,6 +42,7 @@ import javax.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ComparisonChain;
+import io.dockstore.webservice.helpers.ZipSourceFileHelper;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.hibernate.annotations.CreationTimestamp;
@@ -151,11 +152,19 @@ public class SourceFile implements Comparable<SourceFile> {
     }
 
     public String getAbsolutePath() {
+        if (absolutePath == null) {
+            return null;
+        }
         return Paths.get(absolutePath).normalize().toString();
     }
 
     public void setAbsolutePath(String absolutePath) {
-        this.absolutePath = absolutePath;
+        // TODO: Figure out the actual absolute path before this workaround
+        // FIXME: it looks like dockstore tool test_parameter --add and a number of other CLI commands depend on this now
+        this.absolutePath = ZipSourceFileHelper.addLeadingSlashIfNecessary((absolutePath));
+        if (!this.absolutePath.equals(absolutePath)) {
+            LOG.warn("Absolute path workaround used, this should be fixed at some point");
+        }
     }
 
     @JsonIgnore
