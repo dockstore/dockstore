@@ -67,7 +67,6 @@ import static io.dockstore.client.cli.ArgumentUtility.columnWidthsWorkflow;
 import static io.dockstore.client.cli.ArgumentUtility.containsHelpRequest;
 import static io.dockstore.client.cli.ArgumentUtility.errorMessage;
 import static io.dockstore.client.cli.ArgumentUtility.exceptionMessage;
-import static io.dockstore.client.cli.ArgumentUtility.getGitRegistry;
 import static io.dockstore.client.cli.ArgumentUtility.optVal;
 import static io.dockstore.client.cli.ArgumentUtility.out;
 import static io.dockstore.client.cli.ArgumentUtility.outFormatted;
@@ -650,28 +649,30 @@ public class WorkflowClient extends AbstractEntryClient<Workflow> {
                     publish(true, entryPath);
                 }
             } else {
-                try {
-                    Workflow workflow = workflowsApi.getWorkflowByPath(entryPath, null);
-
-                    Workflow newWorkflow = new Workflow();
-                    String registry = getGitRegistry(workflow.getGitUrl());
-
-                    newWorkflow = workflowsApi
-                            .manualRegister(registry, workflow.getPath(), workflow.getWorkflowPath(), newWorkflow.getWorkflowName(),
-                                    workflow.getDescriptorType(), workflow.getDefaultTestParameterFilePath());
-
-                    if (newWorkflow != null) {
-                        out("Successfully registered " + entryPath + "/" + newName);
-                        workflowsApi.refresh(newWorkflow.getId());
-                        publish(true, newWorkflow.getPath());
-                    } else {
-                        errorMessage("Unable to publish " + newName, COMMAND_ERROR);
-                    }
-                } catch (ApiException ex) {
-                    exceptionMessage(ex, "Unable to publish " + newName, Client.API_ERROR);
+                if (newName != null) {
+                    //for workflows method currently doesn't work with --entryname flag
+                    errorMessage("Parameter '--entryname' not valid for workflows. See `workflow publish --help` for more information.", CLIENT_ERROR);
                 }
             }
         }
+    }
+
+    @Override
+    protected void publishHelp() {
+        printHelpHeader();
+        out("Usage: dockstore " + getEntryType().toLowerCase() + " publish --help");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish [parameters]");
+        out("       dockstore " + getEntryType().toLowerCase() + " publish --unpub [parameters]");
+        out("");
+        out("Description:");
+        out("  Publish/unpublish a registered " + getEntryType() + ".");
+        out("  No arguments will list the current and potential " + getEntryType() + "s to share.");
+        out("Required Parameters:");
+        out("  --entry <entry>             Complete " + getEntryType()
+                + " path in the Dockstore (ex. quay.io/collaboratory/seqware-bwa-workflow)");
+        //TODO add support for optional parameter '--entryname'
+        printHelpFooter();
     }
 
     @Override
