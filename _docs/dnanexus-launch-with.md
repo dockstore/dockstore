@@ -32,3 +32,4 @@ Then hit the "Submit" button and continue from within the DNAnexus interface to 
 * [Azure Batch](/docs/publisher-tutorials/azure-batch/)
 * [DNAstack Launch With](/docs/user-tutorials/dnastack-launch-with/)
 * [FireCloud Launch With](/docs/user-tutorials/firecloud-launch-with/)
+* [Terra Launch With](/docs/user-tutorials/terra-launch-with/)

@@ -33,3 +33,4 @@ Additionally, keep in mind that if you have a knowledge of CWL and/or do not nee
 * [Azure Batch](/docs/publisher-tutorials/azure-batch/)
 * [DNAstack Launch With](/docs/user-tutorials/dnastack-launch-with/)
 * [FireCloud Launch With](/docs/user-tutorials/firecloud-launch-with/)
+* [Terra Launch With](/docs/user-tutorials/terra-launch-with/)
