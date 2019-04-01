@@ -61,7 +61,7 @@ dockstore-file-s3-plugin
 dockstore-file-synapse-plugin
 ```
 
-See https://github.com/decebals/pf4j#enabledisable-plugins more details.
+See https://github.com/decebals/pf4j#enabledisable-plugins for more details.
 ## Write-API Conversion Process
 ### Client Configuration
 The configuration file used by the write-api-client is located at ~/.dockstore/write.api.config.properties
@@ -75,7 +75,7 @@ repo=test_repository
 write-api-url=http://localhost:8080/api/ga4gh/v1
 ```
 
-"token" is the dockstore token which is acquired from the dockstore website.
+"dockstoreToken" is acquired from your account page on the dockstore website .
 "server-url" is the dockstore server url.
 "organization" is the organization/user of the repository to create.
 "repo" is the repository to create.
@@ -154,29 +154,29 @@ There are 3 major ways to register tools on Dockstore
 - The Dockstore webservice
 - The Write API webservice and client
 
-There is no clear cut answer for determining which is the best way to register tools on Dockstore.  Many factors affect it.  The below is merely our a suggestion, feel free to register tools on Dockstore in whichever way you prefer.
+There is no clear cut answer for determining which is the best way to register tools on Dockstore.  Many factors affect it.  Below is merely our a suggestion, so feel free to register tools on Dockstore whichever way you prefer.
 
-Registering many tools or very few tools?
+Registering many tools or only a few?
   - Very Few
-    - Use the Dockstore website.  Just need to manually create the GitHub and Quay.io repository (if they don't exist).  If you're using Quay.io as the image registry, you can simply "Refresh All Tools" on the Dockstore website.  Otherwise, you can manually register the tool.
+    - Use the Dockstore website.  You just need to manually create the GitHub and Quay.io repository (if they don't exist).  If you're using Quay.io as the image registry, you can simply "Refresh All Tools" on the Dockstore website.  Otherwise, you can manually register the tool.
   - Many
     - GitHub and image registry repositories already made for each tool?
       - Yes
         - Are you using Quay.io for your image registry?
           - Yes
-            - Use either the Dockstore webservice or website.  Just need to refresh all tools.  All of your Quay.io tools should automatically register on Dockstore.
+            - Use either the Dockstore webservice or website.  You just need to refresh all tools.  All of your Quay.io tools should automatically register on Dockstore.
           - No
             - Use the Dockstore webservice so you can programmatically register and publish all tools.
       - No
-        - Use the Write API webservice and client.  After some setup time (getting GitHub and Quay.io tokens, setting up service, etc), it allows you to programmatically create GitHub and Quay.io repositories on the fly, then register/publish them on Dockstore.
+        - Use the Write API webservice and client.  After some setup time (getting GitHub and Quay.io tokens, setting up service, etc), it allows you to programmatically create GitHub and Quay.io repositories on the fly, and then register/publish them on Dockstore.
 
 Generally, Write API webservice and client has the highest setup time compared to the other methods of registering.  But, as you register more tools, the Write API tends to become the better choice (since it performs many intermediary steps for you).
 
 ## Converting File-path Based Imports to Public http(s) Based Imports
 
-See https://cromwell.readthedocs.io/en/develop/Imports/ for a general knowledge on imports.  
+See [https://cromwell.readthedocs.io/en/develop/Imports/](https://cromwell.readthedocs.io/en/develop/Imports/) for general knowledge on imports.  
 
-Imports allow you to reference other files in your workflow.  There are two types of resources that are supported in imports: http(s) and file-path based. Any public http(s) based URL can be used as the resource for an import, such as a website, GitHub, GA4GH compliant TES endpoint, and etc.
+Imports allow you to reference other files in your workflow.  There are two types of resources that are supported in imports: http(s) and file-path based. Any public http(s) based URL can be used as the resource for an import, such as a website, GitHub, GA4GH compliant TES endpoint, etc.
 
 There are times when you may want to convert file-path based imports to public http(s) imports.  One such reason is to ensure compatibility with FireCloud since it currently does not support file-path based imports.  There are many different ways to convert to a public http(s) based import, the following are two examples.
 

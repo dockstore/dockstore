@@ -14,7 +14,7 @@ permalink: /docs/publisher-tutorials/checker-workflows/
 ## Overview of Checker Workflows
 Checker workflows are additional workflows you can associate with a tool or workflow. The purpose of them is to ensure that a tool or workflow, given some inputs, produces the expected outputs on a platform different from the one where you are developing.
 
-Checker workflows can be used in the near future for iterations of the GA4GH-DREAM challenge and in the long-term picked up and run by the automated GA4GH workflow "testbed" to test your workflows across a variety of workflow platforms. See this [presentation](https://docs.google.com/presentation/d/1VXdReGYXayzO7Jr-9XaLHNv6Wt46CwfvkfFDR8OEgJM/edit?usp=sharing) for more details and contact the GA4GH Cloud Work Stream for more information on contributing to the workflow testbed or related APIs.
+In the near future, checker workflows can be used for iterations of the GA4GH-DREAM challenge. In the long-term, they can picked up and run by the automated GA4GH workflow "testbed" to test your workflows across a variety of workflow platforms. See this [presentation](https://docs.google.com/presentation/d/1VXdReGYXayzO7Jr-9XaLHNv6Wt46CwfvkfFDR8OEgJM/edit?usp=sharing) for more details and contact the GA4GH Cloud Work Stream for more information on contributing to the workflow testbed or related APIs.
 
 Below is a visual overview of how a checker workflow looks.
 
@@ -94,9 +94,9 @@ For now we are interested in the add command.
 
 Using our example checker workflow, we would run the following:
 
-`dockstore checker add --entry quay.io/agduncan94/my-md5sum --descriptor-type cwl --descriptor-path /checker-workflow-wrapping-tool.cwl --input-parameter-path checker-input-cwl.json`
+`dockstore checker add --entry quay.io/natalieeo/md5sum-checker --descriptor-type cwl --descriptor-path /checker-workflow-wrapping-tool.cwl --input-parameter-path /checker-input-cwl.json`
 
-This will add the checker workflow defined by [/checker-workflow-wrapping-tool.cwl](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-workflow-wrapping-tool.cwl) to the entry `quay.io/agduncan94/my-md5sum`.
+This will add the checker workflow defined by [/checker-workflow-wrapping-tool.cwl](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-workflow-wrapping-tool.cwl) to the entry `quay.io/natalieeo/md5sum-checker`.
 
 The descriptor type will default to 'CWL' if none is provided.
 The default input parameter path will default to the default input parameter path of the original entry.
@@ -112,14 +112,14 @@ Updating a checker workflow can be done the same way as updating a normal workfl
 You can update the default test parameter path and the default descriptor path. Run `dockstore checker update --help` for more information.
 
 Lets update the default descriptor path in our example to a new value.
-`dockstore checker update --entry quay.io/agduncan94/my-md5sum --default-descriptor-path /checker-workflow-wrapping-tool.cwl`
+`dockstore checker update --entry quay.io/natalieeo/md5sum-checker --default-descriptor-path /checker-workflow-wrapping-tool.cwl`
 
-This will update the default descriptor path for the checker workflow. Though in this example, this path is already properly set.
+This will update the default descriptor path for the checker workflow. Although in this example, the path is already properly set.
 
-Updating versions of a checker workflow is also quite similar to updating versions of a workflow, though with fewer options. Run `dockstore checker update_version --help` for more information.
+Updating versions of a checker workflow is also quite similar to updating versions of a workflow, but again, there are fewer options. Run `dockstore checker update_version --help` for more information.
 
-We can update the master version of our example checker workflow to be hidden
-`dockstore checker update_version --entry quay.io/agduncan94/my-md5sum --name master --hidden true`
+We can update the master version of our example checker workflow to be hidden by running
+`dockstore checker update_version --entry quay.io/natalieeo/md5sum-checker --name master --hidden true`
 
 ## Adding/Removing test input parameter files for a version
 
@@ -127,9 +127,9 @@ We can update the master version of our example checker workflow to be hidden
 Updating the test input parameter files associated with a checker workflow version can be done the same way as with normal workflows. The only difference is that to get to the correct page in My Workflows you must go through the original tool or workflow, in My Tools and My Workflows respectively.
 
 ### From the CLI
-Like most commands, adding/removing test input parameter files to a checker workflow version can be done in a similar fashion as with normal workflows. No functionality is lost for this command. Run `dockstore checker test_parameter --help` for more information.
+Like most commands, adding/removing test input parameter files to a checker workflow version can be done in a similar fashion to normal workflows. No functionality is lost for this command. Run `dockstore checker test_parameter --help` for more information.
 
-`dockstore checker test_parameter --entry quay.io/agduncan94/my-md5sum --version master --add /checker-input-cwl.json`
+`dockstore checker test_parameter --entry quay.io/natalieeo/md5sum-checker --version master --add /checker-input-cwl.json`
 
 This will add the test parameter file [/checker-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json) to the master version of the checker workflow. Though in our example we already added it when we added the checker workflow, so nothing will happen.
 
@@ -140,7 +140,7 @@ Launching a checker workflow from the CLI should feel very familiar if you have 
 
 Below is an example of launching a checker workflow for our md5sum example.
 
-`dockstore checker launch --entry quay.io/agduncan94/my-md5sum:master --json test.json`
+`dockstore checker launch --entry quay.io/natalieeo/md5sum-checker:master --json test.json`
 
 In this example, test.json is a local version of the following file:
 [/checker-input-cwl.json](https://github.com/dockstore-testing/md5sum-checker/blob/master/checker-input-cwl.json)
@@ -154,10 +154,10 @@ It can be useful to have all relevant files for a checker workflow locally. This
 ### From the CLI
 The command for this is very simple. Again note that the entry is for the original entry, and not the checker workflow.
 
-`dockstore checker download --entry quay.io/agduncan94/my-md5sum --version master`
+`dockstore checker download --entry quay.io/natalieeo/md5sum-checker --version master`
 
-This will download the descriptor and any secondary descriptors, maintaining the correct directory structure.
+This will download the descriptor and any secondary descriptors, while maintaining the correct directory structure.
 
 ## For Advanced Users
-You can interact with checker workflows using the TRS. See
+You can interact with checker workflows using TRS. See
 [Checker Workflows and the TRS](/docs/publisher-tutorials/checker-workflow-trs/) for more information.
