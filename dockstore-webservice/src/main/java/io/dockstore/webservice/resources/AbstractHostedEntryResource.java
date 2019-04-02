@@ -184,12 +184,26 @@ public abstract class AbstractHostedEntryResource<T extends Entry<T, U>, U exten
 
         checkVersionLimit(user, entry);
 
+        // Ensure all paths are absolute (copy path to absolute path)
+        checkAbsolutePath(sourceFiles);
         updateUnsetAbsolutePaths(sourceFiles);
 
         U version = getVersion(entry);
         Set<SourceFile> versionSourceFiles = handleSourceFileMerger(entryId, sourceFiles, entry, version);
 
         return saveVersion(user, entryId, entry, version, versionSourceFiles, Optional.empty());
+    }
+
+    /**
+     * Checks that all sourcefiles have absolute paths
+     * @param sourceFiles
+     */
+    protected void checkAbsolutePath(Set<SourceFile> sourceFiles) {
+        sourceFiles.forEach(((SourceFile sourceFile) -> {
+            if (!(sourceFile.getPath().startsWith("/"))) {
+                throw new CustomWebApplicationException("Hosted files must all be absolute path, but " + sourceFile.getPath() + " is not.", HttpStatus.SC_BAD_REQUEST);
+            }
+        }));
     }
 
     protected void checkVersionLimit(@Auth @ApiParam(hidden = true) User user, T entry) {
