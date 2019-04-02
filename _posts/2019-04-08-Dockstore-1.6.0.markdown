@@ -15,6 +15,7 @@
 * improved display of validation errors
 * support for [aliases](https://docs.dockstore.org/docs/publisher-tutorials/guid-alias/) for advanced developers
 * a huge host of bugfixes for everything from Nextflow DAGs, our support for GA4GH TRS endpoints, the usability of search, description file encoding, display of files on iOS, and display of error messages
+* a plugin for provisioning files to and from Google Cloud Storage 
 
 See a full list of our changes on [GitHub](https://github.com/ga4gh/dockstore/milestone/20)
 
