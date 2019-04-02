@@ -644,7 +644,7 @@ public class WorkflowResource
             if (!version.isDirtyBit()) {
                 version.setWorkflowPath(workflow.getDefaultWorkflowPath());
             }
-        }https://www.javatpoint.com/java-enummap
+        }
         elasticManager.handleIndexUpdate(wf, ElasticMode.UPDATE);
         return wf;
     }

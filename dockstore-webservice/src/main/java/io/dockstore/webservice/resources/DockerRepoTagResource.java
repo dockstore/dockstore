@@ -80,7 +80,7 @@ public class DockerRepoTagResource implements AuthenticatedResourceInterface {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("/path/{containerId}/tags")
     @ApiOperation(value = "Get tags for a tool by id.", authorizations = { @Authorization(value = JWT_SECURITY_DEFINITION_NAME) }, response = Tag.class, responseContainer = "Set")
     public Set<Tag> getTagsByPath(@ApiParam(hidden = true) @Auth User user,
