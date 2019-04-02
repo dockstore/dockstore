@@ -173,6 +173,21 @@ public class CRUDClientIT extends BaseIT {
         // files should be visible afterwards
         List<SourceFile> files = otherUserApi.getTestParameterFiles(dockstoreTool.getId(), DescriptorType.CWL.toString(), revisionWithTestFile);
         assertTrue(!files.isEmpty() &&!files.get(0).getContent().isEmpty());
+
+        // Try adding a file with relative path
+        SourceFile file3 = new SourceFile();
+        file3.setContent("{\"message\": \"Hello world again!\"}");
+        file3.setType(SourceFile.TypeEnum.CWL_TEST_JSON);
+        file3.setPath("test2.json");
+        file3.setAbsolutePath("test2.json");
+
+        thrownException = false;
+        try {
+            api.editHostedTool(hostedTool.getId(), Lists.newArrayList(file3));
+        } catch (ApiException e) {
+            thrownException = true;
+        }
+        assertTrue("Should not be able to add a file with a relative path.", thrownException);
     }
 
     @Test
