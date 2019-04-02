@@ -46,3 +46,4 @@ and disks).
 * [Azure Batch](/docs/publisher-tutorials/azure-batch/)
 * [DNAnexus Launch With](/docs/user-tutorials/dnanexus-launch-with/)
 * [DNAstack Launch With](/docs/user-tutorials/dnastack-launch-with/)
+* [Terra Launch With](/docs/user-tutorials/terra-launch-with/)
