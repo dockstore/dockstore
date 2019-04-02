@@ -22,8 +22,8 @@ You will need to pick a workspace to export it into. You can either select an ex
 
 Then hit the "Import" button and continue from within the Terra interface to configure and run your workflow.
 
-Note that you will want to double-check that the workflow specifies a runtime environment (docker, cpu, memory,
-and disks). 
+Note that you may want to double-check that the workflow specifies a runtime environment (docker, cpu, memory, and disks) to avoid using limiting defaults on Terra.
+See more [here](https://cromwell.readthedocs.io/en/stable/wf_options/Overview).
 
 ## Limitations
 1. While we support launching of WDL workflows, tools as listed in Dockstore are currently not supported.
