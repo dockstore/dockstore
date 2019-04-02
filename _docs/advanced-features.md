@@ -163,7 +163,7 @@ For remote launches, we download the zip directory as returned by the Dockstore 
 
 ## WDL Launcher Configuration
 
-By default, WDL tools/workflows will automatically be ran with [cromwell](https://github.com/broadinstitute/cromwell) 36.
+By default, WDL tools/workflows will automatically be run with [cromwell](https://github.com/broadinstitute/cromwell) 36.
 Additionally, you can override the cromwell version in your `~/.dockstore/config` using:
 ```
 cromwell-version = 39
