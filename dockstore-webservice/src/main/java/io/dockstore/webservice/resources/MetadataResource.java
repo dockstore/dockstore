@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -108,7 +107,7 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("sitemap")
     @Operation(summary = "List all published workflow and tool paths", description = "List all published workflow and tool paths, NO authentication")
     @ApiOperation(value = "List all published workflow and tool paths.", notes = "NO authentication")
@@ -140,7 +139,7 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
+    @UnitOfWork(readOnly = true)
     @Path("rss")
     @Produces(MediaType.TEXT_XML)
     @Operation(summary = "List all published tools and workflows in creation order", description = "List all published tools and workflows in creation order, NO authentication")
@@ -245,7 +244,6 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/sourceControlList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of source controls supported on Dockstore", description = "Get the list of source controls supported on Dockstore, NO authentication")
@@ -254,14 +252,13 @@ public class MetadataResource {
         array = @ArraySchema(schema = @Schema(implementation = SourceControl.SourceControlBean.class))))
     @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "NO authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
     public List<SourceControl.SourceControlBean> getSourceControlList() {
-        List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
-        Arrays.asList(SourceControl.values()).forEach(sourceControl -> sourceControlList.add(new SourceControl.SourceControlBean(sourceControl)));
-        return sourceControlList;
+        return new ArrayList<SourceControl>().stream()
+                .map(repo -> new SourceControl.SourceControlBean(repo))
+                .collect(Collectors.toList());
     }
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/dockerRegistryList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of docker registries supported on Dockstore", description = "Get the list of docker registries supported on Dockstore, NO authentication")
@@ -270,9 +267,9 @@ public class MetadataResource {
         array = @ArraySchema(schema = @Schema(implementation = Registry.RegistryBean.class))))
     @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
-        List<Registry.RegistryBean> registryList = new ArrayList<>();
-        Arrays.asList(Registry.values()).forEach(registry -> registryList.add(new Registry.RegistryBean(registry)));
-        return registryList;
+        return new ArrayList<Registry>().stream()
+                .map(registry -> new Registry.RegistryBean(registry))
+                .collect(Collectors.toList());
     }
 
     @GET
