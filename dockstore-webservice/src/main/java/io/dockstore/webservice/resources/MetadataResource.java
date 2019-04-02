@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -276,7 +277,6 @@ public class MetadataResource {
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/descriptorLanguageList")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get the list of descriptor languages supported on Dockstore", description = "Get the list of descriptor languages supported on Dockstore, NO authentication")
@@ -285,14 +285,13 @@ public class MetadataResource {
         array = @ArraySchema(schema = @Schema(implementation = DescriptorLanguage.DescriptorLanguageBean.class))))
     @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "NO authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
     public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
-        List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
-        Arrays.asList(DescriptorLanguage.values()).forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
-        return descriptorLanguageList;
+        return new ArrayList<DescriptorLanguage>()
+                .stream().map((descriptorLanguage) -> new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage))
+                .collect(Collectors.toList());
     }
 
     @GET
     @Timed
-    @UnitOfWork
     @Path("/okHttpCachePerformance")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get measures of cache performance", description = "Get measures of cache performance, NO authentication")
@@ -306,11 +305,14 @@ public class MetadataResource {
 
     public static Map<String, String> extractCacheStatistics() {
         Cache cache = DockstoreWebserviceApplication.getCache();
-        Map<String, String> results = new HashMap<>();
-        results.put("requestCount", String.valueOf(cache.requestCount()));
-        results.put("networkCount", String.valueOf(cache.networkCount()));
-        results.put("hitCount", String.valueOf(cache.hitCount()));
-        results.put("maxSize", String.valueOf(cache.maxSize()) + " bytes");
+        Map<String, String> results = new HashMap<String, String>() {
+                {
+                    put("requestCount", String.valueOf(cache.requestCount()));
+                    put("networkCount", String.valueOf(cache.networkCount()));
+                    put("hitCount", String.valueOf(cache.hitCount()));
+                    put("maxSize", String.valueOf(cache.maxSize()) + " bytes");
+                }
+        };
         try {
             results.put("size", String.valueOf(cache.size()) + " bytes");
         } catch (IOException e) {
