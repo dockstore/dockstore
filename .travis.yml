@@ -21,7 +21,6 @@ env:
 jobs:
   include:
     - stage: unit-tests
-      jdk: oraclejdk8
       env:
         - TESTING_PROFILE=unit-tests
       script: mvn --batch-mode clean install -P$TESTING_PROFILE
