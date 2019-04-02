@@ -877,12 +877,12 @@ public class WorkflowIT extends BaseIT {
         source.setContent("cwlVersion: v1.0\nclass: Workflow");
         source.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         SourceFile source1 = new SourceFile();
-        source1.setPath("sorttool.cwl");
+        source1.setPath("/sorttool.cwl");
         source1.setContent("foo");
         source1.setAbsolutePath("/sorttool.cwl");
         source1.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
         SourceFile source2 = new SourceFile();
-        source2.setPath("revtool.cwl");
+        source2.setPath("/revtool.cwl");
         source2.setContent("foo");
         source2.setAbsolutePath("/revtool.cwl");
         source2.setType(SourceFile.TypeEnum.DOCKSTORE_CWL);
