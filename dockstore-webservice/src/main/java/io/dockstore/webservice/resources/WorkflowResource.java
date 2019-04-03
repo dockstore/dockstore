@@ -421,10 +421,11 @@ public class WorkflowResource
 
             // Update source files for each version
             Map<String, SourceFile> existingFileMap = new HashMap<>();
-            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getPath(), file));
+            workflowVersionFromDB.getSourceFiles().forEach(file -> existingFileMap.put(file.getType().toString() + file.getAbsolutePath(), file));
+
             for (SourceFile file : version.getSourceFiles()) {
-                if (existingFileMap.containsKey(file.getType().toString() + file.getPath())) {
-                    existingFileMap.get(file.getType().toString() + file.getPath()).setContent(file.getContent());
+                if (existingFileMap.containsKey(file.getType().toString() + file.getAbsolutePath())) {
+                    existingFileMap.get(file.getType().toString() + file.getAbsolutePath()).setContent(file.getContent());
                 } else {
                     final long fileID = fileDAO.create(file);
                     final SourceFile fileFromDB = fileDAO.findById(fileID);
@@ -432,11 +433,11 @@ public class WorkflowResource
                 }
             }
 
-            // Remove existing files that are no longer present
+            // Remove existing files that are no longer present on remote
             for (Map.Entry<String, SourceFile> entry : existingFileMap.entrySet()) {
                 boolean toDelete = true;
                 for (SourceFile file : version.getSourceFiles()) {
-                    if (entry.getKey().equals(file.getType().toString() + file.getPath())) {
+                    if (entry.getKey().equals(file.getType().toString() + file.getAbsolutePath())) {
                         toDelete = false;
                     }
                 }
