@@ -1,10 +1,113 @@
 ---
-title: Conversion Processes
+title: Write-API Conversion Process
 permalink: /docs/publisher-tutorials/conversions/
 ---
 
 ## Write-API Conversion Process
-### Client Configuration
+
+This is a service aimed at two tasks
+
+1. Providing a concrete reference implementation of a proposed GA4GH Write API.
+2. Providing a utility for developers to convert plain CWL/WDL files and Dockerfiles into GitHub repos storing those plain CWL/WDL files and Quay.io repos storing Docker images built from those Dockerfiles. This can be used by those converting tools described in other formats into "Dockstore-friendly" tools that can be quickly registered and published in Dockstore by using the Write API Client's publish command or programmatically via the Dockstore API. It is an alternative to using a GUI to register tools on Dockstore.
+
+This is intended to be used by:
+
+* Tool Migrators - Developers that have access to a large number of tools in some different format and wants to migrate them all programmatically to Dockstore with minimal effort.
+
+* Tool Developers - Developers of tools that wants a quick and simple way of creating one without spending a large amount of time to post a single Dockerfile and CWL descriptor to implement each tool.
+
+### Building/Downloading the API jars
+
+You have the option to either build or download the API jars.
+
+#### Build
+
+```
+git clone https://github.com/dockstore/write_api_service.git
+cd write_api_service
+mvn clean install -DskipTests
+```
+The built jars will be available as:
+
+`write-api-service/target/write-api-service*.jar`
+
+`write-api-client/target/write-api-client*shaded.jar`
+
+#### Download
+
+Additionally, you can download the Write API jars using the following:
+
+```
+wget https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/write-api-client/1.0.2/write-api-client-1.0.2-shaded.jar
+wget https://artifacts.oicr.on.ca/artifactory/collab-release/io/dockstore/write-api-service/1.0.2/write-api-service-1.0.2.jar
+```
+
+Note that the client one is a shaded jar.
+
+### Web Service Prerequisites
+
+* GitHub token - Learn how to create tokens on GitHub here. You will need the scope "repo".
+
+* GitHub organization(s) - Your GitHub token must have access to at least a single existing GitHub organization. The organization can be changed as long as the the GitHub token still has access to it. The Write API web service currently does not create GitHub organizations. The name of this organization must match the Quay.io organization. This organization will contain the repository that will be created.
+
+* Quay.io organization and Quay.io token
+
+    You will need an existing Quay.io organization. The Write API currently does not create Quay.io organizations. The name of this organization must match the GitHub organization. Once you have an organization, a token must be created for it.
+
+    This organization will contain the repository that will be created. Changing the Quay.io organization requires the token to be recreated/changed too.
+
+    Learn how to create a token on Quay.io for your organizations here under the heading "Generating a Token (for internal application use)". You will need to provide these permissions:
+    
+    * Create Repositories
+    
+    * View all visible repositories
+    
+    * Read/Write to any accessible repository
+    
+#### Server Configuration
+
+The web service alone only requires a GitHub and Quay.io token. There are two ways to specify your tokens.
+
+1. Environmental variables.
+    You can set them in Bash like the following:
+```
+export quayioToken=<your token here>
+export githubToken=<your token here>
+```
+2. The YAML configuration file. The tokens can be entered in the top two lines. An example of a YAML configuration file can be seen here.
+
+Run the service using a configuration file:
+`java -jar write-api-service-*.jar server example.yml`
+The example.yml shown previously uses port 8082 by default, this can be changed. Note this port number, it will later be used for the Write API Client properties file.
+
+After running the webservice, you can check out the web service endpoints through swagger. By default, it is available at http://localhost:8082/static/swagger-ui/index.html.
+
+The basic workflow is that GitHub repos are created when posting a new tool. When files are posted or put to a version of a tool, we will create or delete and re-create a GitHub release/branch/tag with a matching name. When Dockerfiles are added, the tool will be created and built as a Quay.io repo. After adding both Dockerfiles and descriptors, you basically have a tool that is ready to be quickly registered and published under a Dockstore 1.2 web service. Go to Dockstore, do a refresh, and then hit quick register on the repos that you wish to publish. You can also do this programmatically through the write api client
+
+#### Client Prerequisites
+
+* Write API web service and all its prerequisites
+
+By now, then web service should be up and running with valid GitHub and Quay.io tokens. If not, please return to the web service usage section to get that running first. It is advised to ensure that the Write API web service is functioning correctly before using the client.
+
+* [Dockstore token](https://docs.dockstore.org/docs/publisher-tutorials/register-on-dockstore/)
+
+Follow the "Getting Started with Dockstore" tutorial to get a Dockstore token. Note this down, it will later be used in the Write API client properties file.
+
+* Dockstore server-url
+
+The Dockstore tutorial earlier would've specified the server-url alongside the token. Unless you're running your own dockstore webservice, the Dockstore production server-url is "https://www.dockstore.org:8443" and the Dockstore staging server-url is "https://staging.dockstore.org:8443". Note this down, it will also later be used in the Write API client properties file.
+
+* Quay.io integration
+
+In order to publish to Dockstore, Quay.io must be linked to Dockstore. See [Dockstore](https://docs.dockstore.org/docs/publisher-tutorials/register-on-dockstore/#linking-with-external-services) on how to link your Quay.io account to Dockstore.
+
+* Write API web service URL
+
+You will need to know the URL of the Write API web service you ran previously. If you've been using the example.yml, it should be "http://localhost:8082/api/ga4gh/v1"
+
+#### Client Configuration
+
 The configuration file used by the write-api-client is located at ~/.dockstore/write.api.config.properties
 It should look something like this:
 
@@ -22,19 +125,6 @@ write-api-url=http://localhost:8080/api/ga4gh/v1
 "repo" is the repository to create.
 "write-api-url" is the url of the write-api-service
 
-### Server Configuration
-The write-api-service uses githubToken and quayToken from the server yml file and looks something like this:
-
-```
-quayioToken: abcdefghijklmnopqrstuvwxyz1234567890
-githubToken: abcdefghijklmnopqrstuvwxyz1234567890
-...
-```
-The github token can be attained by following the instructions from [GitHub Help](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/)
-The quay.io token can be attained by following the instruction from [Quay.io API docs](https://docs.quay.io/api/) -> OAuth 2 Access Tokens -> Generating a Token (for internal application use).  When generating the token, provide these 3 permissions:
-* Create Repositories
-* View all visible repositories
-* Read/Write to any accessible repositories
 
 ### Client Usage
 ```
@@ -88,26 +178,3 @@ and then:
 client publish --tool test.json
 ```
 
-
-## Converting File-path Based Imports to Public http(s) Based Imports
-
-See [https://cromwell.readthedocs.io/en/develop/Imports/](https://cromwell.readthedocs.io/en/develop/Imports/) for general knowledge on imports.  
-
-Imports allow you to reference other files in your workflow.  There are two types of resources that are supported in imports: http(s) and file-path based. Any public http(s) based URL can be used as the resource for an import, such as a website, GitHub, GA4GH compliant TES endpoint, etc.
-
-There are times when you may want to convert file-path based imports to public http(s) imports.  One such reason is to ensure compatibility with FireCloud since it currently does not support file-path based imports.  There are many different ways to convert to a public http(s) based import, the following are two examples.
-
-You can host your file on GitHub and import it in the workflow descriptor like this:
-
-```
-import "https://raw.githubusercontent.com/DataBiosphere/topmed-workflows/1.11.0/variant-caller/variant-caller-wdl/topmed_freeze3_calling.wdl" as TopMed_variantcaller
-import "https://raw.githubusercontent.com/DataBiosphere/topmed-workflows/1.11.0/variant-caller/variant-caller-wdl-checker/topmed-variantcaller-checker.wdl" as checker
-...
-```
-
-Similarly, you can also host your file on a public google bucket and import it in the workflow descriptor like this:
-
-```
-import "http://storage.googleapis.com/..."
-...
-```

@@ -8,7 +8,7 @@ permalink: /docs/publisher-tutorials/ways-to-register-tools-on-dockstore/
 There are 3 major ways to register tools on Dockstore
 - The Dockstore website
 - The Dockstore webservice
-- The Write API webservice and client
+- The [Write API webservice and client](/docs/publisher-tutorials/conversions/)
 
 There is no clear cut answer for determining which is the best way to register tools on Dockstore.  Many factors affect it.  Below is merely our a suggestion, so feel free to register tools on Dockstore whichever way you prefer.
 
