@@ -48,7 +48,7 @@ Note that the client one is a shaded jar.
 
 * GitHub token - Learn how to create tokens on GitHub here. You will need the scope "repo".
 
-* GitHub organization(s) - Your GitHub token must have access to at least a one existing GitHub organization. The organization can be changed as long as the the GitHub token still has access to it. The Write API web service currently does not create GitHub organizations. The name of this organization must match the Quay.io organization. This organization will contain the repository that will be created.
+* GitHub organization(s) - Your GitHub token must have access to at least one existing GitHub organization. The organization can be changed as long as the the GitHub token still has access to it. The Write API web service currently does not create GitHub organizations. The name of this organization must match the Quay.io organization. This organization will contain the repository that will be created.
 
 * Quay.io organization and Quay.io token
 
