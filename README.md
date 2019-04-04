@@ -28,7 +28,7 @@ To add a new document to an existing section, do the following:
 
   permalink: /docs/publisher-tutorials/advanced-features
 ```
-3. Add to the appropriate list in `_data/docs.yml` the filename (not including extension)
+3. Add to the appropriate list in `_data/docs.yml` the portion after `/docs/` in the permalink you gave your file
 4. If the doc has images, place them in `assets/images/docs`
 
 ## Building and Serving the site locally

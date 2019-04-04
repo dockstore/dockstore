@@ -9,6 +9,7 @@
     - publisher-tutorials/register-on-dockstore
     - publisher-tutorials/getting-started-with-dockstore
     - publisher-tutorials/workflows
+    - publisher-tutorials/ways-to-register-tools-on-dockstore
     - publisher-tutorials/hosted-tools-and-workflows
     - publisher-tutorials/best-practices-toc
 
@@ -21,8 +22,10 @@
     - publisher-tutorials/checker-workflow-trs
     - publisher-tutorials/sharing-workflows
     - publisher-tutorials/guid-alias
-    - publisher-tutorials/for-developers
+    - publisher-tutorials/set-up-file-provisioning-plugins
+    - publisher-tutorials/developing-file-provisioning-plugins
     - publisher-tutorials/advanced-features
+    - publisher-tutorials/conversions
     - publisher-tutorials/batch-services
     - publisher-tutorials/aws-batch
     - publisher-tutorials/azure-batch
