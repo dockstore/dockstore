@@ -653,17 +653,13 @@ public class Client {
                 .getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME);
         if (flag(args, "--debug") || flag(args, "--d")) {
             DEBUG.set(true);
-            INFO.set(false);
             // turn on logback
             root.setLevel(Level.DEBUG);
         } else if (flag(args, "--info") || flag(args, "--i")) {
             INFO.set(true);
-            DEBUG.set(false);
             // turn on logback
             root.setLevel(Level.INFO);
         } else {
-            INFO.set(false);
-            DEBUG.set(false);
             root.setLevel(Level.ERROR);
         }
         if (flag(args, "--script") || flag(args, "--s")) {
