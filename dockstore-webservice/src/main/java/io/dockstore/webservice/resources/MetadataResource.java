@@ -21,13 +21,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -252,9 +252,9 @@ public class MetadataResource {
         array = @ArraySchema(schema = @Schema(implementation = SourceControl.SourceControlBean.class))))
     @ApiOperation(value = "Get the list of source controls supported on Dockstore.", notes = "NO authentication", response = SourceControl.SourceControlBean.class, responseContainer = "List")
     public List<SourceControl.SourceControlBean> getSourceControlList() {
-        return new ArrayList<SourceControl>().stream()
-                .map(repo -> new SourceControl.SourceControlBean(repo))
-                .collect(Collectors.toList());
+        List<SourceControl.SourceControlBean> sourceControlList = new ArrayList<>();
+        Arrays.asList(SourceControl.values()).forEach(sourceControl -> sourceControlList.add(new SourceControl.SourceControlBean(sourceControl)));
+        return sourceControlList;
     }
 
     @GET
@@ -267,9 +267,9 @@ public class MetadataResource {
         array = @ArraySchema(schema = @Schema(implementation = Registry.RegistryBean.class))))
     @ApiOperation(value = "Get the list of docker registries supported on Dockstore.", notes = "NO authentication", response = Registry.RegistryBean.class, responseContainer = "List")
     public List<Registry.RegistryBean> getDockerRegistries() {
-        return new ArrayList<Registry>().stream()
-                .map(registry -> new Registry.RegistryBean(registry))
-                .collect(Collectors.toList());
+        List<Registry.RegistryBean> registryList = new ArrayList<>();
+        Arrays.asList(Registry.values()).forEach(registry -> registryList.add(new Registry.RegistryBean(registry)));
+        return registryList;
     }
 
     @GET
@@ -282,9 +282,9 @@ public class MetadataResource {
         array = @ArraySchema(schema = @Schema(implementation = DescriptorLanguage.DescriptorLanguageBean.class))))
     @ApiOperation(value = "Get the list of descriptor languages supported on Dockstore.", notes = "NO authentication", response = DescriptorLanguage.DescriptorLanguageBean.class, responseContainer = "List")
     public List<DescriptorLanguage.DescriptorLanguageBean> getDescriptorLanguages() {
-        return new ArrayList<DescriptorLanguage>()
-                .stream().map((descriptorLanguage) -> new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage))
-                .collect(Collectors.toList());
+        List<DescriptorLanguage.DescriptorLanguageBean> descriptorLanguageList = new ArrayList<>();
+        Arrays.asList(DescriptorLanguage.values()).forEach(descriptorLanguage -> descriptorLanguageList.add(new DescriptorLanguage.DescriptorLanguageBean(descriptorLanguage)));
+        return descriptorLanguageList;
     }
 
     @GET
