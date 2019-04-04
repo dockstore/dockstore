@@ -48,7 +48,7 @@ Note that the client one is a shaded jar.
 
 * GitHub token - Learn how to create tokens on GitHub here. You will need the scope "repo".
 
-* GitHub organization(s) - Your GitHub token must have access to at least a single existing GitHub organization. The organization can be changed as long as the the GitHub token still has access to it. The Write API web service currently does not create GitHub organizations. The name of this organization must match the Quay.io organization. This organization will contain the repository that will be created.
+* GitHub organization(s) - Your GitHub token must have access to at least a one existing GitHub organization. The organization can be changed as long as the the GitHub token still has access to it. The Write API web service currently does not create GitHub organizations. The name of this organization must match the Quay.io organization. This organization will contain the repository that will be created.
 
 * Quay.io organization and Quay.io token
 
@@ -74,7 +74,7 @@ The web service alone only requires a GitHub and Quay.io token. There are two wa
 export quayioToken=<your token here>
 export githubToken=<your token here>
 ```
-2. The YAML configuration file. The tokens can be entered in the top two lines. An example of a YAML configuration file can be seen here.
+2. The YAML configuration file. The tokens can be entered in the top two lines. An example of a YAML configuration file can be seen [here](https://github.com/dockstore/write_api_service/blob/develop/write-api-service/src/main/resources/example.yml).
 
 Run the service using a configuration file:
 `java -jar write-api-service-*.jar server example.yml`
@@ -82,7 +82,7 @@ The example.yml shown previously uses port 8082 by default, this can be changed.
 
 After running the webservice, you can check out the web service endpoints through swagger. By default, it is available at http://localhost:8082/static/swagger-ui/index.html.
 
-The basic workflow is that GitHub repos are created when posting a new tool. When files are posted or put to a version of a tool, we will create or delete and re-create a GitHub release/branch/tag with a matching name. When Dockerfiles are added, the tool will be created and built as a Quay.io repo. After adding both Dockerfiles and descriptors, you basically have a tool that is ready to be quickly registered and published under a Dockstore 1.2 web service. Go to Dockstore, do a refresh, and then hit quick register on the repos that you wish to publish. You can also do this programmatically through the write api client
+The basic workflow is that GitHub repos are created when posting a new tool. When files are posted or put to a version of a tool, we will create or delete and re-create a GitHub release/branch/tag with a matching name. When Dockerfiles are added, the tool will be created and built as a Quay.io repo. After adding both Dockerfiles and descriptors, you basically have a tool that is ready to be quickly registered and published under the Dockstore web service. Go to Dockstore, do a refresh, and then hit quick register on the repos that you wish to publish. You can also do this programmatically through the write api client
 
 #### Client Prerequisites
 
@@ -96,7 +96,7 @@ Follow the "Getting Started with Dockstore" tutorial to get a Dockstore token. N
 
 * Dockstore server-url
 
-The Dockstore tutorial earlier would've specified the server-url alongside the token. Unless you're running your own dockstore webservice, the Dockstore production server-url is "https://www.dockstore.org:8443" and the Dockstore staging server-url is "https://staging.dockstore.org:8443". Note this down, it will also later be used in the Write API client properties file.
+The Dockstore tutorial earlier would've specified the server-url alongside the token. Unless you're running your own dockstore webservice, the Dockstore production server-url is "https://www.dockstore.org/api". Note this down as it will be used later in the Write API client properties file.
 
 * Quay.io integration
 
@@ -127,7 +127,10 @@ write-api-url=http://localhost:8080/api/ga4gh/v1
 
 
 ### Client Usage
+Here is the general usage information for the client:
+
 ```
+$ java -jar write-api-client-*-shaded.jar --help
 Usage: client [options] [command] [command options]
   Options:
     --help

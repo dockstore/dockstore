@@ -27,7 +27,7 @@ To help lay out what parts of Dockstore are available in which languages, we cov
 <sup> [4] All verified Dockstore WDL tools/workflows were tested successfully. However, we anticipate that more testing is needed for WDL workflows that use language features not contained within that dataset.</sup>
 
 
-## Converting File-path Based Imports to Public http(s) Based Imports
+## Converting File-path Based Imports to Public http(s) Based Imports for WDL
 
 See [https://cromwell.readthedocs.io/en/develop/Imports/](https://cromwell.readthedocs.io/en/develop/Imports/) for general knowledge on imports.  
 
