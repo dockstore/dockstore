@@ -24,7 +24,7 @@ import static io.dockstore.client.cli.Client.IO_ERROR;
 
 public class WESLauncher extends BaseLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(WESLauncher.class);
-    private static final String TAGS = "WorkflowExecutionService";
+    private static final String TAGS = "{\"Client\":\"Dockstore\"}";
     private static final String WORKFLOW_TYPE_VERSION = "1.0";
 
     // Cromwell currently supports draft-2 of the WDL specification
@@ -142,7 +142,7 @@ public class WESLauncher extends BaseLauncher {
 
         try {
             RunId response = clientWorkflowExecutionServiceApi.runWorkflow(jsonInputFile, languageType, workflowTypeVersion, TAGS,
-                    "", workflowURL, workflowAttachment);
+                    "{}", workflowURL, workflowAttachment);
             System.out.println("Launched WES run with id: " + response.toString());
         } catch (io.openapi.wes.client.ApiException e) {
             LOG.error("Error launching WES run", e);
