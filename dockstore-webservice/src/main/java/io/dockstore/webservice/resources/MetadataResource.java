@@ -302,14 +302,12 @@ public class MetadataResource {
 
     public static Map<String, String> extractCacheStatistics() {
         Cache cache = DockstoreWebserviceApplication.getCache();
-        Map<String, String> results = new HashMap<String, String>() {
-                {
-                    put("requestCount", String.valueOf(cache.requestCount()));
-                    put("networkCount", String.valueOf(cache.networkCount()));
-                    put("hitCount", String.valueOf(cache.hitCount()));
-                    put("maxSize", String.valueOf(cache.maxSize()) + " bytes");
-                }
-        };
+        Map<String, String> results = new HashMap<>();
+        results.put("requestCount", String.valueOf(cache.requestCount()));
+        results.put("networkCount", String.valueOf(cache.networkCount()));
+        results.put("hitCount", String.valueOf(cache.hitCount()));
+        results.put("maxSize", String.valueOf(cache.maxSize()) + " bytes");
+
         try {
             results.put("size", String.valueOf(cache.size()) + " bytes");
         } catch (IOException e) {
