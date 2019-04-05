@@ -1057,10 +1057,10 @@
                                 </requireReleaseDeps>
                                 <requireUpperBoundDeps />
                                 <requireMavenVersion>
-                                    <version>3.3.9</version>
+                                    <version>3.5.4</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>1.8.0</version>
+                                    <version>11</version>
                                 </requireJavaVersion>
                                 <banDuplicatePomDependencyVersions />
                                 <bannedDependencies>
