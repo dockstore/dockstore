@@ -52,3 +52,4 @@ Of course, keep in mind that if you have a knowledge of CWL and/or do not need t
 * [AWS Batch](/docs/publisher-tutorials/aws-batch/)
 * [DNAstack Launch With](/docs/user-tutorials/dnastack-launch-with/)
 * [FireCloud Launch With](/docs/user-tutorials/firecloud-launch-with/)
+* [Terra Launch With](/docs/user-tutorials/terra-launch-with/)

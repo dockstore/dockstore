@@ -6,7 +6,7 @@ permalink: /docs/publisher-tutorials/sharing-workflows/
 # Intro
 
 Starting in Dockstore 1.5, a limited sharing functionality has been introduced. With sharing,
-you no longer have to choose to make a workflow either completely private or completely public.
+you no longer have to choose between making a workflow completely private or public.
 You can share workflows with specific accounts, giving those other users either owner,
 write, or read permissions. This allows you to collaborate with a smaller set of users
 without making the workflow public to everyone.
@@ -19,8 +19,7 @@ but for now the following requirements must be met in order to share a workflow:
 * You must be either logged in with Google, or have associated a Google account with
 your Dockstore account
 * Your Google account must be registered with [FireCloud](https://portal.firecloud.org/).
-* The accounts that you share with must also be Google accounts, and must also be
-registered with FireCloud
+* The accounts that you share with must also be Google accounts registered with FireCloud
 * The sharing feature is only enabled for Dockstore-hosted workflows. It is not enabled
 for tools, nor is it enabled for workflows whose source code lives on external version
 control system such as GitHub, Bitbucket, etc.
@@ -33,13 +32,13 @@ can also correspond to a user group.
 When sharing a workflow, you can specify one of 3 permissions for each email
 you share with:
 
-* Owner -- the other user can also share the workflow, as well as modify and read it
-* Writer -- the other user can modify the workflow and read it
 * Reader -- the other user can only read the workflow
+* Writer -- the other user can read and modify the workflow
+* Owner -- the other user can read, modify and share the workflow
 
 ## Sharing Workflows
 
-If you are in My Workflows, viewing a hosted workflow, there is a Permissions tab.
+If you are viewing a hosted workflow on the My Workflows page, there is a Permissions tab.
 If you are also logged in with Google account that is registered with FireCloud, the
 UI will show you who the workflow is currently shared with. Type in the email
 that you wish to share the workflow at the permission you want and press return.
@@ -52,8 +51,8 @@ in the process of adding joe@example.com, giving him writer permissions to the w
 ## Viewing Workflows Shared With You
 
 On the My Workflows page, on the left-hand side, there is a `Shared with me` section
-that shows all workflows that have been shared with you. You can select any of those 
-workflows, and depending on the permission you have been granted, share, modify, and/or
+that shows all workflows that have been shared with you. You can select any of these 
+workflows and, depending on the permission you have been granted, share, modify, and/or
 read those workflows.
 
 In the following screenshot, jsmith is sharing the workflow `test_cwl` with the

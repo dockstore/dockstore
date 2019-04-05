@@ -93,3 +93,4 @@ There are three descriptor languages available on Dockstore. Follow the links fo
 * [Azure Batch](/docs/publisher-tutorials/azure-batch/)
 * [DNAstack Launch With](/docs/user-tutorials/dnastack-launch-with/)
 * [FireCloud Launch With](/docs/user-tutorials/firecloud-launch-with/)
+* [Terra Launch With](/docs/user-tutorials/terra-launch-with/)

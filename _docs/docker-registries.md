@@ -8,7 +8,7 @@ There are a number of alternative Docker Registries aside from Quay.io, Docker H
 
 ## Public vs Private Docker Registries
 
-A `public registry` is a Docker registry where Docker images are available to all users through a public website. They may also include private images, though this is not mandatory. Docker Hub is a good example of a public registry. You can browse a list of public Docker images, and also store and view private Docker images.
+A `public registry` is a Docker registry where Docker images are available to all users through a public website. They may also include private images, although this is not mandatory. Docker Hub is a good example of a public registry. You can browse a list of public Docker images, and also store and view private Docker images.
 
 We currently support the following public registries:
 * Docker Hub
@@ -23,7 +23,7 @@ We currently support the following private registries:
 ## Registries with Custom Docker Paths
 Many Docker registries that you may be familiar with use standard paths. For example, Docker Hub uses `registry.hub.docker.com`. These are used to uniquely identify a registry. While standard paths are common for major public registries, there are some registries which require a custom Docker registry path.
 
-This is common for services like Amazon ECR which allow users to create their own registries, instead of just using one big registry. Having your own registry makes it easy to restrict access to your Docker images.
+This is common for services like Amazon ECR which allow users to create their own registries instead of just using one big registry. Having your own registry makes it easy to restrict access to your Docker images.
 
 For registries that require a custom path, Dockstore lets you set these paths during manual registration of a tool.
 
@@ -42,9 +42,7 @@ Amazon ECR images are treated in Dockstore as a custom Docker registry path and 
 
 The following images demonstrate registering a tool with a registry-id and an empty namespace, represented as `_`.
 
-![Add ECR tool](/assets/images/docs/ecr-1.png)
-![Add ECR tool version](/assets/images/docs/ecr-2.png)
-
+![Add ECR tool](/assets/images/docs/ecr.png)
 
 Amazon ECR images have an associated file containing the `Repository Policies`. When a tool user requests access to an Amazon ECR image, the tool maintainer should add them to the list of users with pull access. More information can be found on this [Amazon ECR](http://docs.aws.amazon.com/AmazonECR/latest/userguide/RepositoryPolicyExamples.html#IAM_allow_other_accounts) page.
 
@@ -58,7 +56,7 @@ Now if the user runs the Docker login command returned by the get-login call, th
 ## Private Docker Registry Common Errors
 
 ### CWLTool can't find a Docker image
-If you are trying to launch a private docker tool and are getting errors like `image not found` or `CalledProcessError: Command '['docker', 'pull', 'registrypath/namespace/name']' returned non-zero exit status 1`, then you likely do not have access to the Docker image. You'll have to request access to the Docker image by clicking the `Request Access` button on the tool's Dockstore page. If you have already done so then you may need to contact the tool maintainer again to confirm that you have been authorized to pull the image.
+If you are trying to launch a private docker tool and are getting errors like `image not found` or `CalledProcessError: Command '['docker', 'pull', 'registrypath/namespace/name']' returned non-zero exit status 1`, then you likely do not have access to the Docker image. You'll have to request access to the Docker image by clicking the `Request Access` button on the tool's Dockstore page. If you have already done so, then you may need to contact the tool maintainer again to confirm that you have been authorized to pull the image.
 
 
 ## Docker Registry Request

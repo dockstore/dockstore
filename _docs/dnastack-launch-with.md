@@ -56,4 +56,5 @@ Note that as with the above approach, you will want to double-check that the wor
 * [Azure Batch](/docs/publisher-tutorials/azure-batch/)
 * [DNAnexus Launch With](/docs/user-tutorials/dnanexus-launch-with/)
 * [FireCloud Launch With](/docs/user-tutorials/firecloud-launch-with/)
+* [Terra Launch With](/docs/user-tutorials/terra-launch-with/)
 
